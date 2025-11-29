@@ -1,9 +1,10 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import Link from "next/link";
-import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NewTeamModal } from "@/components/new-team-modal";
 import { getCurrentWorkspaceId } from "@/app/actions";
+import { TeamsFilter } from "@/components/teams-filter";
 
 interface Team {
     id: string;
@@ -14,7 +15,12 @@ interface Team {
     created_at: string;
 }
 
-async function TeamListLoader() {
+interface FilterParams {
+    search?: string;
+}
+
+async function TeamListLoader({ filters }: { filters: FilterParams }) {
+    await connection();
     const supabase = await createClient();
     const workspaceId = await getCurrentWorkspaceId();
 
@@ -28,6 +34,11 @@ async function TeamListLoader() {
         query = query.eq('workspace_id', workspaceId);
     }
 
+    // Apply search filter
+    if (filters.search) {
+        query = query.or(`name.ilike.%${filters.search}%,key.ilike.%${filters.search}%`);
+    }
+
     const { data: teams, error } = await query;
 
     if (error) {
@@ -37,7 +48,7 @@ async function TeamListLoader() {
     if (!teams || teams.length === 0) {
         return (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
-                No teams found
+                {filters.search ? `No teams matching "${filters.search}"` : "No teams found"}
             </div>
         );
     }
@@ -86,7 +97,13 @@ function TeamListSkeleton() {
     );
 }
 
-export default function TeamsPage() {
+export default async function TeamsPage({
+    searchParams,
+}: {
+    searchParams: Promise<FilterParams>;
+}) {
+    const filters = await searchParams;
+
     return (
         <div className="flex flex-col h-full">
             <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
@@ -94,17 +111,14 @@ export default function TeamsPage() {
                     <h1 className="text-lg font-medium text-foreground">Teams</h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        <Filter className="w-4 h-4" />
-                        <span>Filter</span>
-                    </button>
+                    <TeamsFilter />
                     <NewTeamModal />
                 </div>
             </header>
 
             <div className="flex-1 overflow-y-auto p-6">
                 <Suspense fallback={<TeamListSkeleton />}>
-                    <TeamListLoader />
+                    <TeamListLoader filters={filters} />
                 </Suspense>
             </div>
         </div>

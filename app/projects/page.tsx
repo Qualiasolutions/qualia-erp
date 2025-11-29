@@ -1,11 +1,18 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { ProjectList, Project } from "@/components/project-list";
-import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NewProjectModal } from "@/components/new-project-modal";
-import { getCurrentWorkspaceId } from "@/app/actions";
+import { getCurrentWorkspaceId, getTeams } from "@/app/actions";
+import { ProjectsFilter } from "@/components/projects-filter";
 
-async function ProjectListLoader() {
+interface FilterParams {
+    status?: string;
+    team?: string;
+}
+
+async function ProjectListLoader({ filters }: { filters: FilterParams }) {
+    await connection();
     const supabase = await createClient();
     const workspaceId = await getCurrentWorkspaceId();
 
@@ -28,6 +35,18 @@ async function ProjectListLoader() {
     // Filter by workspace if available
     if (workspaceId) {
         query = query.eq('workspace_id', workspaceId);
+    }
+
+    // Apply status filter
+    if (filters.status) {
+        const statuses = filters.status.split(',');
+        query = query.in('status', statuses);
+    }
+
+    // Apply team filter
+    if (filters.team) {
+        const teams = filters.team.split(',');
+        query = query.in('team_id', teams);
     }
 
     const { data: projects, error } = await query;
@@ -65,6 +84,12 @@ async function ProjectListLoader() {
     return <ProjectList projects={projectsWithStats} />;
 }
 
+async function FilterLoader() {
+    await connection();
+    const teams = await getTeams();
+    return <ProjectsFilter teams={teams} />;
+}
+
 function ProjectListSkeleton() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
@@ -84,23 +109,24 @@ function ProjectListSkeleton() {
     );
 }
 
-export default function ProjectsPage() {
+export default async function ProjectsPage({
+    searchParams,
+}: {
+    searchParams: Promise<FilterParams>;
+}) {
+    const filters = await searchParams;
+
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
             <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
                 <div className="flex items-center gap-4">
                     <h1 className="text-lg font-medium text-foreground">Projects</h1>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="px-2 py-0.5 rounded bg-muted text-foreground">Active</span>
-                        <span className="px-2 py-0.5 rounded hover:bg-muted cursor-pointer">All</span>
-                    </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        <Filter className="w-4 h-4" />
-                        <span>Filter</span>
-                    </button>
+                    <Suspense fallback={<div className="w-20 h-8" />}>
+                        <FilterLoader />
+                    </Suspense>
                     <NewProjectModal />
                 </div>
             </header>
@@ -108,7 +134,7 @@ export default function ProjectsPage() {
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
                 <Suspense fallback={<ProjectListSkeleton />}>
-                    <ProjectListLoader />
+                    <ProjectListLoader filters={filters} />
                 </Suspense>
             </div>
         </div>

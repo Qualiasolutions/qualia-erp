@@ -1,10 +1,9 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getRecentActivities } from "@/app/actions";
 import { ActivityFeed } from "@/components/activity-feed";
 import Chat from "@/components/chat";
-
-export const dynamic = 'force-dynamic';
 
 interface DashboardStats {
   activeProjects: number;
@@ -13,6 +12,7 @@ interface DashboardStats {
 }
 
 async function getStats(): Promise<DashboardStats> {
+  await connection();
   const supabase = await createClient();
 
   const { count: activeProjects } = await supabase
@@ -71,6 +71,7 @@ function StatsSkeleton() {
 }
 
 async function ActivityLoader() {
+  await connection();
   const activities = await getRecentActivities(15);
   return <ActivityFeed activities={activities} />;
 }
