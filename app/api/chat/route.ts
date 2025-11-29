@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { streamText, tool, stepCountIs } from 'ai';
+import { streamText, tool, stepCountIs, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 
@@ -53,7 +53,7 @@ Guidelines:
 
     const result = streamText({
       model: google('gemini-2.0-flash'),
-      messages,
+      messages: convertToModelMessages(messages),
       system: systemPrompt,
       tools: {
         getDashboardStats: tool({
