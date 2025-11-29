@@ -11,6 +11,19 @@ export default {
   theme: {
     extend: {
       colors: {
+        qualia: {
+          DEFAULT: "#00A4AC",
+          50: "#E0F7F8",
+          100: "#B3EBED",
+          200: "#80DDE1",
+          300: "#4DCFD5",
+          400: "#26C4CB",
+          500: "#00A4AC",
+          600: "#008A91",
+          700: "#006F75",
+          800: "#00555A",
+          900: "#003A3E",
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

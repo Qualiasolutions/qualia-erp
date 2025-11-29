@@ -1,23 +1,15 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import { ThemeProvider } from "next-themes";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { Sidebar } from "@/components/sidebar";
+import { CommandMenu } from "@/components/command-menu";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
-  title: "Next.js and Supabase Starter Kit",
-  description: "The fastest way to build apps with Next.js and Supabase",
+  title: "Qualia",
+  description: "Project Planning & Management",
 };
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  display: "swap",
-  subsets: ["latin"],
-});
 
 export default function RootLayout({
   children,
@@ -25,16 +17,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.className} antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
+    <html lang="en" className="dark">
+      <body className={`${inter.className} bg-[#141414] text-[#EDEDED] antialiased flex h-screen overflow-hidden`}>
+        <CommandMenu />
+        <Sidebar />
+        <main className="flex-1 overflow-y-auto bg-[#141414]">
           {children}
-        </ThemeProvider>
+        </main>
       </body>
     </html>
   );
