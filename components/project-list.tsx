@@ -136,8 +136,6 @@ function formatDate(dateString: string | null): string {
 
 function ProjectCard({ project }: { project: Project }) {
     const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG['Active'];
-    const health = getHealthIndicator(project);
-    const HealthIcon = health.icon;
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
     const progress = project.issue_stats?.total
         ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
@@ -164,27 +162,17 @@ function ProjectCard({ project }: { project: Project }) {
                         <h3 className="text-sm font-semibold text-foreground group-hover:text-qualia-400 transition-colors">
                             {project.name}
                         </h3>
-                        <div className="flex items-center gap-2 mt-1">
-                            <span className={cn(
-                                "text-[10px] px-2 py-0.5 rounded-md border font-medium",
-                                statusConfig.bgColor,
-                                statusConfig.borderColor,
-                                statusConfig.color
-                            )}>
-                                {project.status}
-                            </span>
-                        </div>
                     </div>
                 </div>
-                {/* Health Indicator */}
-                <div className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium",
-                    health.bgColor,
-                    health.color
+                {/* Status Badge - Top Right */}
+                <span className={cn(
+                    "text-[10px] px-2 py-1 rounded-md border font-medium",
+                    statusConfig.bgColor,
+                    statusConfig.borderColor,
+                    statusConfig.color
                 )}>
-                    <HealthIcon className="w-3 h-3" />
-                    <span>{health.label}</span>
-                </div>
+                    {project.status}
+                </span>
             </div>
 
             {/* Progress */}
@@ -235,8 +223,6 @@ function ProjectCard({ project }: { project: Project }) {
 
 function ProjectRow({ project }: { project: Project }) {
     const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG['Active'];
-    const health = getHealthIndicator(project);
-    const HealthIcon = health.icon;
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
     const progress = project.issue_stats?.total
         ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
@@ -260,14 +246,6 @@ function ProjectRow({ project }: { project: Project }) {
                 <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-foreground group-hover:text-qualia-400 transition-colors truncate">
                         {project.name}
-                    </span>
-                    <span className={cn(
-                        "text-[10px] px-2 py-0.5 rounded-md border shrink-0",
-                        statusConfig.bgColor,
-                        statusConfig.borderColor,
-                        statusConfig.color
-                    )}>
-                        {project.status}
                     </span>
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -300,15 +278,15 @@ function ProjectRow({ project }: { project: Project }) {
                 </div>
             </div>
 
-            {/* Health */}
-            <div className={cn(
-                "flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-medium shrink-0",
-                health.bgColor,
-                health.color
+            {/* Status Badge - Right */}
+            <span className={cn(
+                "text-[10px] px-2 py-1 rounded-md border font-medium shrink-0",
+                statusConfig.bgColor,
+                statusConfig.borderColor,
+                statusConfig.color
             )}>
-                <HealthIcon className="w-3 h-3" />
-                <span>{health.label}</span>
-            </div>
+                {project.status}
+            </span>
         </Link>
     );
 }
