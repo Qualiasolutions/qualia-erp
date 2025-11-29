@@ -65,6 +65,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         role: membershipMap.get(ws.id)?.role || null,
       }));
 
+      // Sort: Qualia first, then alphabetically
+      workspacesWithAccess.sort((a, b) => {
+        if (a.slug === 'qualia') return -1;
+        if (b.slug === 'qualia') return 1;
+        return a.name.localeCompare(b.name);
+      });
+
       setWorkspaces(workspacesWithAccess);
 
       // Find default workspace or first workspace user has access to
