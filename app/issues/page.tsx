@@ -1,8 +1,9 @@
+import { Suspense } from "react";
 import { IssueList, Issue } from "@/components/issue-list";
 import { Plus, Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function IssuesPage() {
+async function IssueListLoader() {
     const supabase = await createClient();
 
     const { data: issues, error } = await supabase
@@ -31,6 +32,24 @@ export default async function IssuesPage() {
         assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee,
     }));
 
+    return <IssueList issues={transformedIssues} />;
+}
+
+function IssueListSkeleton() {
+    return (
+        <div className="w-full animate-pulse">
+            {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-6 py-3 border-b border-[#1C1C1C]">
+                    <div className="w-24 h-4 bg-[#2C2C2C] rounded" />
+                    <div className="flex-1 h-4 bg-[#2C2C2C] rounded" />
+                    <div className="w-20 h-4 bg-[#2C2C2C] rounded" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
+export default function IssuesPage() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
@@ -56,7 +75,9 @@ export default async function IssuesPage() {
 
             {/* Content */}
             <div className="flex-1 overflow-hidden">
-                <IssueList issues={transformedIssues} />
+                <Suspense fallback={<IssueListSkeleton />}>
+                    <IssueListLoader />
+                </Suspense>
             </div>
         </div>
     );
