@@ -206,7 +206,7 @@ Guidelines:
       stopWhen: stepCountIs(5),
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response(
