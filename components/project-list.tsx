@@ -49,7 +49,7 @@ function formatDate(dateString: string | null): string {
 export function ProjectList({ projects }: ProjectListProps) {
     if (projects.length === 0) {
         return (
-            <div className="flex items-center justify-center h-64 text-gray-500">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
                 No projects found
             </div>
         );
@@ -67,23 +67,23 @@ export function ProjectList({ projects }: ProjectListProps) {
                     <Link
                         key={project.id}
                         href={`/projects/${project.id}`}
-                        className="group bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 hover:border-gray-600 transition-colors cursor-pointer block"
+                        className="group bg-card border border-border rounded-lg p-4 hover:border-muted-foreground transition-colors cursor-pointer block"
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-[#2C2C2C] flex items-center justify-center text-gray-400">
+                                <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground">
                                     <Folder className="w-4 h-4" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-200 group-hover:text-white">{project.name}</h3>
-                                    <div className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                                    <h3 className="text-sm font-medium text-foreground group-hover:text-foreground">{project.name}</h3>
+                                    <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
                                         <span>{leadName}</span>
                                         <span>•</span>
                                         <span>{formatDate(project.target_date)}</span>
                                     </div>
                                 </div>
                             </div>
-                            <button className="text-gray-500 hover:text-white">
+                            <button className="text-muted-foreground hover:text-foreground">
                                 <MoreHorizontal className="w-4 h-4" />
                             </button>
                         </div>
@@ -91,10 +91,10 @@ export function ProjectList({ projects }: ProjectListProps) {
                         <div className="space-y-3">
                             <div className="flex items-center justify-between text-xs">
                                 <StatusBadge status={project.status} />
-                                <span className="text-gray-500">{progress}%</span>
+                                <span className="text-muted-foreground">{progress}%</span>
                             </div>
 
-                            <div className="h-1 w-full bg-[#2C2C2C] rounded-full overflow-hidden">
+                            <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-qualia-500 rounded-full"
                                     style={{ width: `${progress}%` }}

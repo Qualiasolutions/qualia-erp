@@ -60,15 +60,15 @@ function ProjectListSkeleton() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
             {[...Array(6)].map((_, i) => (
-                <div key={i} className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4">
+                <div key={i} className="bg-card border border-border rounded-lg p-4">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded bg-[#2C2C2C]" />
+                        <div className="w-8 h-8 rounded bg-muted" />
                         <div className="flex-1">
-                            <div className="w-32 h-4 bg-[#2C2C2C] rounded mb-2" />
-                            <div className="w-20 h-3 bg-[#2C2C2C] rounded" />
+                            <div className="w-32 h-4 bg-muted rounded mb-2" />
+                            <div className="w-20 h-3 bg-muted rounded" />
                         </div>
                     </div>
-                    <div className="h-1 w-full bg-[#2C2C2C] rounded-full" />
+                    <div className="h-1 w-full bg-muted rounded-full" />
                 </div>
             ))}
         </div>
@@ -79,16 +79,16 @@ export default function ProjectsPage() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 border-b border-[#2C2C2C] bg-[#141414]">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-lg font-medium text-white">Projects</h1>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <span className="px-2 py-0.5 rounded bg-[#2C2C2C] text-gray-300">Active</span>
-                        <span className="px-2 py-0.5 rounded hover:bg-[#2C2C2C] cursor-pointer">All</span>
+                    <h1 className="text-lg font-medium text-foreground">Projects</h1>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="px-2 py-0.5 rounded bg-muted text-foreground">Active</span>
+                        <span className="px-2 py-0.5 rounded hover:bg-muted cursor-pointer">All</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+                    <button className="flex items-center gap-2 px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
                         <Filter className="w-4 h-4" />
                         <span>Filter</span>
                     </button>

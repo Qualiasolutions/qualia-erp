@@ -76,8 +76,8 @@ const PriorityIcon = ({ priority }: { priority: string }) => {
         case 'Urgent': return <SignalHigh className="w-4 h-4 text-red-500" />;
         case 'High': return <SignalHigh className="w-4 h-4 text-orange-500" />;
         case 'Medium': return <SignalMedium className="w-4 h-4 text-yellow-500" />;
-        case 'Low': return <SignalLow className="w-4 h-4 text-gray-500" />;
-        default: return <MoreHorizontal className="w-4 h-4 text-gray-600" />;
+        case 'Low': return <SignalLow className="w-4 h-4 text-muted-foreground" />;
+        default: return <MoreHorizontal className="w-4 h-4 text-muted-foreground" />;
     }
 };
 
@@ -86,7 +86,7 @@ const StatusIcon = ({ status }: { status: string }) => {
         case 'Done': return <CheckCircle2 className="w-4 h-4 text-qualia-500" />;
         case 'In Progress': return <Circle className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />;
         case 'Canceled': return <Circle className="w-4 h-4 text-red-500" />;
-        default: return <Circle className="w-4 h-4 text-gray-500" />;
+        default: return <Circle className="w-4 h-4 text-muted-foreground" />;
     }
 };
 
@@ -225,13 +225,13 @@ export function IssueDetailClient() {
     if (loading) {
         return (
             <div className="flex flex-col h-full">
-                <header className="flex items-center gap-4 px-6 py-4 border-b border-[#2C2C2C] bg-[#141414]">
-                    <div className="w-32 h-6 bg-[#2C2C2C] rounded animate-pulse" />
+                <header className="flex items-center gap-4 px-6 py-4 border-b border-border bg-background">
+                    <div className="w-32 h-6 bg-muted rounded animate-pulse" />
                 </header>
                 <div className="flex-1 p-6">
                     <div className="max-w-4xl space-y-6">
-                        <div className="h-8 bg-[#2C2C2C] rounded w-1/2 animate-pulse" />
-                        <div className="h-32 bg-[#2C2C2C] rounded animate-pulse" />
+                        <div className="h-8 bg-muted rounded w-1/2 animate-pulse" />
+                        <div className="h-32 bg-muted rounded animate-pulse" />
                     </div>
                 </div>
             </div>
@@ -240,7 +240,7 @@ export function IssueDetailClient() {
 
     if (error && !issue) {
         return (
-            <div className="flex flex-col h-full items-center justify-center text-gray-500">
+            <div className="flex flex-col h-full items-center justify-center text-muted-foreground">
                 <p>{error}</p>
                 <Link href="/issues" className="text-qualia-400 hover:underline mt-2">
                     Back to Issues
@@ -254,14 +254,14 @@ export function IssueDetailClient() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 border-b border-[#2C2C2C] bg-[#141414]">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
                 <div className="flex items-center gap-4">
-                    <Link href="/issues" className="text-gray-400 hover:text-white">
+                    <Link href="/issues" className="text-muted-foreground hover:text-foreground">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <div className="flex items-center gap-2">
                         <StatusIcon status={status} />
-                        <span className="text-xs font-mono text-gray-500">{id.slice(0, 8)}</span>
+                        <span className="text-xs font-mono text-muted-foreground">{id.slice(0, 8)}</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -303,24 +303,24 @@ export function IssueDetailClient() {
                             <Input
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="text-xl font-semibold bg-transparent border-0 px-0 focus-visible:ring-0 text-white placeholder:text-gray-500"
+                                className="text-xl font-semibold bg-transparent border-0 px-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
                                 placeholder="Issue title"
                             />
 
                             {/* Description */}
                             <div>
-                                <label className="text-xs text-gray-500 mb-2 block">Description</label>
+                                <label className="text-xs text-muted-foreground mb-2 block">Description</label>
                                 <Textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="min-h-[150px] bg-[#1C1C1C] border-[#2C2C2C] text-gray-200"
+                                    className="min-h-[150px] bg-card border-border text-foreground"
                                     placeholder="Add a description..."
                                 />
                             </div>
 
                             {/* Comments Section */}
-                            <div className="border-t border-[#2C2C2C] pt-6">
-                                <h3 className="text-sm font-medium text-gray-200 flex items-center gap-2 mb-4">
+                            <div className="border-t border-border pt-6">
+                                <h3 className="text-sm font-medium text-foreground flex items-center gap-2 mb-4">
                                     <MessageSquare className="w-4 h-4" />
                                     Comments ({issue.comments.length})
                                 </h3>
@@ -328,7 +328,7 @@ export function IssueDetailClient() {
                                 {/* Comment List */}
                                 <div className="space-y-4 mb-4">
                                     {issue.comments.length === 0 ? (
-                                        <p className="text-sm text-gray-500">No comments yet</p>
+                                        <p className="text-sm text-muted-foreground">No comments yet</p>
                                     ) : (
                                         issue.comments.map((comment) => (
                                             <div key={comment.id} className="flex gap-3">
@@ -337,14 +337,14 @@ export function IssueDetailClient() {
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 mb-1">
-                                                        <span className="text-sm font-medium text-gray-200">
+                                                        <span className="text-sm font-medium text-foreground">
                                                             {comment.user?.full_name || comment.user?.email?.split('@')[0] || 'Unknown'}
                                                         </span>
-                                                        <span className="text-xs text-gray-500">
+                                                        <span className="text-xs text-muted-foreground">
                                                             {formatTimeAgo(comment.created_at)}
                                                         </span>
                                                     </div>
-                                                    <p className="text-sm text-gray-400">{comment.body}</p>
+                                                    <p className="text-sm text-muted-foreground">{comment.body}</p>
                                                 </div>
                                             </div>
                                         ))
@@ -353,7 +353,7 @@ export function IssueDetailClient() {
 
                                 {/* Add Comment */}
                                 <div className="flex gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[#2C2C2C] flex items-center justify-center text-xs text-gray-400 shrink-0">
+                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground shrink-0">
                                         <User className="w-4 h-4" />
                                     </div>
                                     <div className="flex-1">
@@ -361,7 +361,7 @@ export function IssueDetailClient() {
                                             value={newComment}
                                             onChange={(e) => setNewComment(e.target.value)}
                                             placeholder="Add a comment..."
-                                            className="bg-[#1C1C1C] border-[#2C2C2C] text-gray-200 min-h-[80px]"
+                                            className="bg-card border-border text-foreground min-h-[80px]"
                                         />
                                         <div className="flex justify-end mt-2">
                                             <Button
@@ -380,15 +380,15 @@ export function IssueDetailClient() {
 
                         {/* Sidebar */}
                         <div className="space-y-4">
-                            <div className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 space-y-4">
+                            <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                                 {/* Status */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <StatusIcon status={status} />
                                         Status
                                     </label>
                                     <Select value={status} onValueChange={setStatus}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -401,12 +401,12 @@ export function IssueDetailClient() {
 
                                 {/* Priority */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <PriorityIcon priority={priority} />
                                         Priority
                                     </label>
                                     <Select value={priority} onValueChange={setPriority}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -419,12 +419,12 @@ export function IssueDetailClient() {
 
                                 {/* Assignee */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <User className="w-3 h-3" />
                                         Assignee
                                     </label>
                                     <Select value={assigneeId || "unassigned"} onValueChange={(v) => setAssigneeId(v === "unassigned" ? null : v)}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="Unassigned" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -440,12 +440,12 @@ export function IssueDetailClient() {
 
                                 {/* Team */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <Users className="w-3 h-3" />
                                         Team
                                     </label>
                                     <Select value={teamId || "none"} onValueChange={(v) => setTeamId(v === "none" ? null : v)}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="No team" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -461,12 +461,12 @@ export function IssueDetailClient() {
 
                                 {/* Project */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <Folder className="w-3 h-3" />
                                         Project
                                     </label>
                                     <Select value={projectId || "none"} onValueChange={(v) => setProjectId(v === "none" ? null : v)}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="No project" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -482,7 +482,7 @@ export function IssueDetailClient() {
                             </div>
 
                             {/* Metadata */}
-                            <div className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 space-y-3 text-xs text-gray-500">
+                            <div className="bg-card border border-border rounded-lg p-4 space-y-3 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-3 h-3" />
                                     Created {formatTimeAgo(issue.created_at)}

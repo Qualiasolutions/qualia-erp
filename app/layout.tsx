@@ -4,6 +4,9 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { CommandMenu } from "@/components/command-menu";
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeSwitcher } from "@/components/theme-switcher";
+import { WorkspaceProvider } from "@/components/workspace-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -14,16 +17,16 @@ export const metadata: Metadata = {
 
 function SidebarSkeleton() {
   return (
-    <div className="flex flex-col h-screen w-64 bg-[#1C1C1C] border-r border-[#2C2C2C]">
-      <div className="p-4 border-b border-[#2C2C2C]">
-        <div className="h-6 w-32 bg-[#2C2C2C] rounded animate-pulse" />
+    <div className="flex flex-col h-screen w-64 bg-card border-r border-border">
+      <div className="p-4 border-b border-border">
+        <div className="h-6 w-32 bg-muted rounded animate-pulse" />
       </div>
       <div className="p-3">
-        <div className="h-8 bg-[#2C2C2C] rounded animate-pulse" />
+        <div className="h-8 bg-muted rounded animate-pulse" />
       </div>
       <nav className="flex-1 px-2 py-2 space-y-1">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-8 bg-[#2C2C2C] rounded animate-pulse" />
+          <div key={i} className="h-8 bg-muted rounded animate-pulse" />
         ))}
       </nav>
     </div>
@@ -36,17 +39,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.className} bg-[#141414] text-[#EDEDED] antialiased flex h-screen overflow-hidden`}>
-        <Suspense fallback={null}>
-          <CommandMenu />
-        </Suspense>
-        <Suspense fallback={<SidebarSkeleton />}>
-          <Sidebar />
-        </Suspense>
-        <main className="flex-1 overflow-y-auto bg-[#141414]">
-          {children}
-        </main>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} bg-background text-foreground antialiased flex h-screen overflow-hidden`}>
+        <ThemeProvider>
+          <WorkspaceProvider>
+            <Suspense fallback={null}>
+              <CommandMenu />
+            </Suspense>
+            <Suspense fallback={<SidebarSkeleton />}>
+              <Sidebar />
+            </Suspense>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <header className="flex items-center justify-end px-4 py-2 border-b border-border bg-background">
+                <ThemeSwitcher />
+              </header>
+              <main className="flex-1 overflow-y-auto bg-background">
+                {children}
+              </main>
+            </div>
+          </WorkspaceProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

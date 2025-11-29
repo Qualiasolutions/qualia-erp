@@ -220,13 +220,13 @@ export function ProjectDetailClient() {
     if (loading) {
         return (
             <div className="flex flex-col h-full">
-                <header className="flex items-center gap-4 px-6 py-4 border-b border-[#2C2C2C] bg-[#141414]">
-                    <div className="w-32 h-6 bg-[#2C2C2C] rounded animate-pulse" />
+                <header className="flex items-center gap-4 px-6 py-4 border-b border-border bg-background">
+                    <div className="w-32 h-6 bg-muted rounded animate-pulse" />
                 </header>
                 <div className="flex-1 p-6">
                     <div className="max-w-4xl space-y-6">
-                        <div className="h-8 bg-[#2C2C2C] rounded w-1/2 animate-pulse" />
-                        <div className="h-32 bg-[#2C2C2C] rounded animate-pulse" />
+                        <div className="h-8 bg-muted rounded w-1/2 animate-pulse" />
+                        <div className="h-32 bg-muted rounded animate-pulse" />
                     </div>
                 </div>
             </div>
@@ -235,7 +235,7 @@ export function ProjectDetailClient() {
 
     if (error && !project) {
         return (
-            <div className="flex flex-col h-full items-center justify-center text-gray-500">
+            <div className="flex flex-col h-full items-center justify-center text-muted-foreground">
                 <p>{error}</p>
                 <Link href="/projects" className="text-qualia-400 hover:underline mt-2">
                     Back to Projects
@@ -253,13 +253,13 @@ export function ProjectDetailClient() {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 border-b border-[#2C2C2C] bg-[#141414]">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
                 <div className="flex items-center gap-4">
-                    <Link href="/projects" className="text-gray-400 hover:text-white">
+                    <Link href="/projects" className="text-muted-foreground hover:text-foreground">
                         <ArrowLeft className="w-5 h-5" />
                     </Link>
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded bg-[#2C2C2C] flex items-center justify-center text-gray-400">
+                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground">
                             <Folder className="w-4 h-4" />
                         </div>
                         <StatusBadge status={status} />
@@ -304,23 +304,23 @@ export function ProjectDetailClient() {
                             <Input
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="text-xl font-semibold bg-transparent border-0 px-0 focus-visible:ring-0 text-white placeholder:text-gray-500"
+                                className="text-xl font-semibold bg-transparent border-0 px-0 focus-visible:ring-0 text-foreground placeholder:text-muted-foreground"
                                 placeholder="Project name"
                             />
 
                             {/* Progress */}
-                            <div className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4">
+                            <div className="bg-card border border-border rounded-lg p-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm text-gray-400">Progress</span>
-                                    <span className="text-sm text-gray-200">{progress}%</span>
+                                    <span className="text-sm text-muted-foreground">Progress</span>
+                                    <span className="text-sm text-foreground">{progress}%</span>
                                 </div>
-                                <div className="h-2 w-full bg-[#2C2C2C] rounded-full overflow-hidden">
+                                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-qualia-500 rounded-full transition-all"
                                         style={{ width: `${progress}%` }}
                                     />
                                 </div>
-                                <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+                                <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                                     <span>{project.issue_stats.done} done</span>
                                     <span>{project.issue_stats.total} total issues</span>
                                 </div>
@@ -328,34 +328,34 @@ export function ProjectDetailClient() {
 
                             {/* Description */}
                             <div>
-                                <label className="text-xs text-gray-500 mb-2 block">Description</label>
+                                <label className="text-xs text-muted-foreground mb-2 block">Description</label>
                                 <Textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
-                                    className="min-h-[100px] bg-[#1C1C1C] border-[#2C2C2C] text-gray-200"
+                                    className="min-h-[100px] bg-card border-border text-foreground"
                                     placeholder="Add a description..."
                                 />
                             </div>
 
                             {/* Issues List */}
-                            <div className="border-t border-[#2C2C2C] pt-6">
-                                <h3 className="text-sm font-medium text-gray-200 mb-4">
+                            <div className="border-t border-border pt-6">
+                                <h3 className="text-sm font-medium text-foreground mb-4">
                                     Issues ({project.issues.length})
                                 </h3>
 
                                 {project.issues.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No issues in this project</p>
+                                    <p className="text-sm text-muted-foreground">No issues in this project</p>
                                 ) : (
                                     <div className="space-y-1">
                                         {project.issues.map((issue) => (
                                             <Link
                                                 key={issue.id}
                                                 href={`/issues/${issue.id}`}
-                                                className="flex items-center gap-3 px-3 py-2 rounded hover:bg-[#1C1C1C] transition-colors group"
+                                                className="flex items-center gap-3 px-3 py-2 rounded hover:bg-card transition-colors group"
                                             >
                                                 <StatusIcon status={issue.status} />
                                                 <PriorityIcon priority={issue.priority} />
-                                                <span className="text-sm text-gray-200 group-hover:text-white flex-1 truncate">
+                                                <span className="text-sm text-foreground flex-1 truncate">
                                                     {issue.title}
                                                 </span>
                                                 {issue.assignee && (
@@ -363,7 +363,7 @@ export function ProjectDetailClient() {
                                                         {issue.assignee.full_name?.[0]?.toUpperCase() || issue.assignee.email?.[0]?.toUpperCase() || '?'}
                                                     </div>
                                                 )}
-                                                <span className="text-xs text-gray-500">
+                                                <span className="text-xs text-muted-foreground">
                                                     {formatTimeAgo(issue.created_at)}
                                                 </span>
                                             </Link>
@@ -375,12 +375,12 @@ export function ProjectDetailClient() {
 
                         {/* Sidebar */}
                         <div className="space-y-4">
-                            <div className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 space-y-4">
+                            <div className="bg-card border border-border rounded-lg p-4 space-y-4">
                                 {/* Status */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block">Status</label>
+                                    <label className="text-xs text-muted-foreground mb-2 block">Status</label>
                                     <Select value={status} onValueChange={setStatus}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -393,12 +393,12 @@ export function ProjectDetailClient() {
 
                                 {/* Lead */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <User className="w-3 h-3" />
                                         Lead
                                     </label>
                                     <Select value={leadId || "none"} onValueChange={(v) => setLeadId(v === "none" ? null : v)}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="No lead" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -414,12 +414,12 @@ export function ProjectDetailClient() {
 
                                 {/* Team */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <Users className="w-3 h-3" />
                                         Team
                                     </label>
                                     <Select value={teamId || "none"} onValueChange={(v) => setTeamId(v === "none" ? null : v)}>
-                                        <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                        <SelectTrigger className="bg-background border-border">
                                             <SelectValue placeholder="No team" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -435,7 +435,7 @@ export function ProjectDetailClient() {
 
                                 {/* Target Date */}
                                 <div>
-                                    <label className="text-xs text-gray-500 mb-2 block flex items-center gap-1">
+                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
                                         <Calendar className="w-3 h-3" />
                                         Target Date
                                     </label>
@@ -443,13 +443,13 @@ export function ProjectDetailClient() {
                                         type="date"
                                         value={targetDate}
                                         onChange={(e) => setTargetDate(e.target.value)}
-                                        className="bg-[#141414] border-[#2C2C2C]"
+                                        className="bg-background border-border"
                                     />
                                 </div>
                             </div>
 
                             {/* Metadata */}
-                            <div className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 space-y-3 text-xs text-gray-500">
+                            <div className="bg-card border border-border rounded-lg p-4 space-y-3 text-xs text-muted-foreground">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-3 h-3" />
                                     Created {formatDate(project.created_at)}

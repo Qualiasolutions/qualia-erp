@@ -8,13 +8,12 @@ import {
     ListTodo,
     Users,
     Settings,
-    Plus,
-    Search,
     Bell,
     HelpCircle,
     Folder
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { WorkspaceSelector } from '@/components/workspace-selector';
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutGrid },
@@ -28,10 +27,10 @@ export function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <div className="flex flex-col h-screen w-64 bg-[#1C1C1C] border-r border-[#2C2C2C] text-[#D4D4D4]">
+        <div className="flex flex-col h-screen w-64 bg-card border-r border-border text-muted-foreground">
             {/* Header / User / Org */}
-            <div className="p-4 flex items-center justify-between border-b border-[#2C2C2C]">
-                <div className="flex items-center gap-2 font-semibold text-white">
+            <div className="p-4 flex items-center justify-between border-b border-border">
+                <div className="flex items-center gap-2 font-semibold text-foreground">
                     <Image
                         src="/logo.webp"
                         alt="Qualia Internal Suite"
@@ -41,16 +40,12 @@ export function Sidebar() {
                     />
                     <span className="text-sm">Qualia Internal Suite</span>
                 </div>
-                <Bell className="w-4 h-4 text-gray-500 hover:text-white cursor-pointer" />
+                <Bell className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer" />
             </div>
 
-            {/* Quick Actions */}
+            {/* Workspace Selector */}
             <div className="p-3">
-                <button className="w-full flex items-center gap-2 bg-[#2C2C2C] hover:bg-[#3C3C3C] text-white px-3 py-1.5 rounded-md text-sm transition-colors border border-[#3C3C3C]">
-                    <Plus className="w-4 h-4" />
-                    <span>New Issue</span>
-                    <span className="ml-auto text-xs text-gray-500">C</span>
-                </button>
+                <WorkspaceSelector />
             </div>
 
             {/* Navigation */}
@@ -64,11 +59,11 @@ export function Sidebar() {
                             className={cn(
                                 "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors group",
                                 isActive
-                                    ? "bg-[#2C2C2C] text-white"
-                                    : "text-gray-400 hover:bg-[#262626] hover:text-gray-200"
+                                    ? "bg-muted text-foreground"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                             )}
                         >
-                            <item.icon className={cn("w-4 h-4", isActive ? "text-qualia-400" : "text-gray-500 group-hover:text-gray-400")} />
+                            <item.icon className={cn("w-4 h-4", isActive ? "text-qualia-400" : "text-muted-foreground group-hover:text-foreground")} />
                             {item.name}
                         </Link>
                     );
@@ -76,8 +71,8 @@ export function Sidebar() {
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-[#2C2C2C]">
-                <div className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 cursor-pointer">
+            <div className="p-4 border-t border-border">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
                     <HelpCircle className="w-4 h-4" />
                     <span>Help & Feedback</span>
                 </div>

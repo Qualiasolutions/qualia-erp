@@ -65,7 +65,7 @@ export function NewProjectModal() {
                     <span>New Project</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1C1C1C] border-[#2C2C2C] text-white">
+            <DialogContent className="bg-card border-border text-foreground">
                 <DialogHeader>
                     <DialogTitle>Create New Project</DialogTitle>
                 </DialogHeader>
@@ -77,7 +77,7 @@ export function NewProjectModal() {
                             name="name"
                             placeholder="My Project"
                             required
-                            className="bg-[#141414] border-[#2C2C2C]"
+                            className="bg-background border-border"
                         />
                     </div>
 
@@ -87,7 +87,7 @@ export function NewProjectModal() {
                             id="description"
                             name="description"
                             placeholder="Describe the project..."
-                            className="bg-[#141414] border-[#2C2C2C] min-h-[100px]"
+                            className="bg-background border-border min-h-[100px]"
                         />
                     </div>
 
@@ -95,10 +95,10 @@ export function NewProjectModal() {
                         <div className="space-y-2">
                             <Label>Team *</Label>
                             <Select name="team_id" required>
-                                <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                <SelectTrigger className="bg-background border-border">
                                     <SelectValue placeholder="Select team" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1C1C1C] border-[#2C2C2C]">
+                                <SelectContent className="bg-card border-border">
                                     {teams.map((team) => (
                                         <SelectItem key={team.id} value={team.id}>
                                             {team.name} ({team.key})
@@ -111,10 +111,10 @@ export function NewProjectModal() {
                         <div className="space-y-2">
                             <Label>Status</Label>
                             <Select name="status" defaultValue="Active">
-                                <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                <SelectTrigger className="bg-background border-border">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1C1C1C] border-[#2C2C2C]">
+                                <SelectContent className="bg-card border-border">
                                     {PROJECT_STATUSES.map((status) => (
                                         <SelectItem key={status} value={status}>
                                             {status}
@@ -131,12 +131,12 @@ export function NewProjectModal() {
                             id="target_date"
                             name="target_date"
                             type="date"
-                            className="bg-[#141414] border-[#2C2C2C]"
+                            className="bg-background border-border"
                         />
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-400">{error}</p>
+                        <p className="text-sm text-destructive">{error}</p>
                     )}
 
                     <div className="flex justify-end gap-3 pt-4">
@@ -144,7 +144,7 @@ export function NewProjectModal() {
                             type="button"
                             variant="ghost"
                             onClick={() => setOpen(false)}
-                            className="text-gray-400 hover:text-white"
+                            className="text-muted-foreground hover:text-foreground"
                         >
                             Cancel
                         </Button>

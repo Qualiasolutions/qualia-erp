@@ -73,7 +73,7 @@ export function NewIssueModal() {
                     <span>New Issue</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1C1C1C] border-[#2C2C2C] text-white">
+            <DialogContent className="bg-card border-border text-foreground">
                 <DialogHeader>
                     <DialogTitle>Create New Issue</DialogTitle>
                 </DialogHeader>
@@ -85,7 +85,7 @@ export function NewIssueModal() {
                             name="title"
                             placeholder="Issue title"
                             required
-                            className="bg-[#141414] border-[#2C2C2C]"
+                            className="bg-background border-border"
                         />
                     </div>
 
@@ -95,7 +95,7 @@ export function NewIssueModal() {
                             id="description"
                             name="description"
                             placeholder="Describe the issue..."
-                            className="bg-[#141414] border-[#2C2C2C] min-h-[100px]"
+                            className="bg-background border-border min-h-[100px]"
                         />
                     </div>
 
@@ -103,10 +103,10 @@ export function NewIssueModal() {
                         <div className="space-y-2">
                             <Label>Status</Label>
                             <Select name="status" defaultValue="Backlog">
-                                <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                <SelectTrigger className="bg-background border-border">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1C1C1C] border-[#2C2C2C]">
+                                <SelectContent className="bg-card border-border">
                                     {ISSUE_STATUSES.map((status) => (
                                         <SelectItem key={status} value={status}>
                                             {status}
@@ -119,10 +119,10 @@ export function NewIssueModal() {
                         <div className="space-y-2">
                             <Label>Priority</Label>
                             <Select name="priority" defaultValue="No Priority">
-                                <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                <SelectTrigger className="bg-background border-border">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1C1C1C] border-[#2C2C2C]">
+                                <SelectContent className="bg-card border-border">
                                     {ISSUE_PRIORITIES.map((priority) => (
                                         <SelectItem key={priority} value={priority}>
                                             {priority}
@@ -137,10 +137,10 @@ export function NewIssueModal() {
                         <div className="space-y-2">
                             <Label>Team</Label>
                             <Select name="team_id">
-                                <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                <SelectTrigger className="bg-background border-border">
                                     <SelectValue placeholder="Select team" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1C1C1C] border-[#2C2C2C]">
+                                <SelectContent className="bg-card border-border">
                                     {teams.map((team) => (
                                         <SelectItem key={team.id} value={team.id}>
                                             {team.name} ({team.key})
@@ -153,10 +153,10 @@ export function NewIssueModal() {
                         <div className="space-y-2">
                             <Label>Project</Label>
                             <Select name="project_id">
-                                <SelectTrigger className="bg-[#141414] border-[#2C2C2C]">
+                                <SelectTrigger className="bg-background border-border">
                                     <SelectValue placeholder="Select project" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1C1C1C] border-[#2C2C2C]">
+                                <SelectContent className="bg-card border-border">
                                     {projects.map((project) => (
                                         <SelectItem key={project.id} value={project.id}>
                                             {project.name}
@@ -168,7 +168,7 @@ export function NewIssueModal() {
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-400">{error}</p>
+                        <p className="text-sm text-destructive">{error}</p>
                     )}
 
                     <div className="flex justify-end gap-3 pt-4">
@@ -176,7 +176,7 @@ export function NewIssueModal() {
                             type="button"
                             variant="ghost"
                             onClick={() => setOpen(false)}
-                            className="text-gray-400 hover:text-white"
+                            className="text-muted-foreground hover:text-foreground"
                         >
                             Cancel
                         </Button>

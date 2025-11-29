@@ -25,8 +25,8 @@ const PriorityIcon = ({ priority }: { priority: string }) => {
         case 'Urgent': return <SignalHigh className="w-4 h-4 text-red-500" />;
         case 'High': return <SignalHigh className="w-4 h-4 text-orange-500" />;
         case 'Medium': return <SignalMedium className="w-4 h-4 text-yellow-500" />;
-        case 'Low': return <SignalLow className="w-4 h-4 text-gray-500" />;
-        default: return <MoreHorizontal className="w-4 h-4 text-gray-600" />;
+        case 'Low': return <SignalLow className="w-4 h-4 text-muted-foreground" />;
+        default: return <MoreHorizontal className="w-4 h-4 text-muted-foreground" />;
     }
 };
 
@@ -34,7 +34,7 @@ const StatusIcon = ({ status }: { status: string }) => {
     switch (status) {
         case 'Done': return <CheckCircle2 className="w-4 h-4 text-qualia-500" />;
         case 'In Progress': return <Circle className="w-4 h-4 text-yellow-500 fill-yellow-500/20" />;
-        default: return <Circle className="w-4 h-4 text-gray-500" />;
+        default: return <Circle className="w-4 h-4 text-muted-foreground" />;
     }
 };
 
@@ -53,7 +53,7 @@ function formatTimeAgo(dateString: string): string {
 export function IssueList({ issues }: IssueListProps) {
     if (issues.length === 0) {
         return (
-            <div className="flex items-center justify-center h-64 text-gray-500">
+            <div className="flex items-center justify-center h-64 text-muted-foreground">
                 No issues found
             </div>
         );
@@ -67,19 +67,19 @@ export function IssueList({ issues }: IssueListProps) {
                     <Link
                         key={issue.id}
                         href={`/issues/${issue.id}`}
-                        className="group flex items-center gap-4 px-6 py-3 border-b border-[#1C1C1C] hover:bg-[#1C1C1C] cursor-pointer transition-colors"
+                        className="group flex items-center gap-4 px-6 py-3 border-b border-border hover:bg-card cursor-pointer transition-colors"
                     >
                         <div className="flex items-center gap-3 w-[120px] shrink-0">
-                            <span className="text-xs font-mono text-gray-500">{issue.id.slice(0, 8)}</span>
+                            <span className="text-xs font-mono text-muted-foreground">{issue.id.slice(0, 8)}</span>
                             <PriorityIcon priority={issue.priority} />
                         </div>
 
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <StatusIcon status={issue.status} />
-                            <span className="text-sm text-gray-200 font-medium truncate">{issue.title}</span>
+                            <span className="text-sm text-foreground font-medium truncate">{issue.title}</span>
                         </div>
 
-                        <div className="flex items-center gap-6 shrink-0 text-sm text-gray-500">
+                        <div className="flex items-center gap-6 shrink-0 text-sm text-muted-foreground">
                             <div className="w-24 hidden md:block">{issue.status}</div>
                             <div className="w-24 hidden md:block flex items-center gap-2">
                                 <div className="w-5 h-5 rounded-full bg-qualia-900 flex items-center justify-center text-[10px] text-qualia-200">
@@ -87,7 +87,7 @@ export function IssueList({ issues }: IssueListProps) {
                                 </div>
                                 <span>{assigneeName}</span>
                             </div>
-                            <div className="w-20 text-right text-xs text-gray-600 group-hover:text-gray-400">
+                            <div className="w-20 text-right text-xs text-muted-foreground group-hover:text-foreground">
                                 {formatTimeAgo(issue.created_at)}
                             </div>
                         </div>

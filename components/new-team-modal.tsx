@@ -73,7 +73,7 @@ export function NewTeamModal() {
                     <span>New Team</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1C1C1C] border-[#2C2C2C] text-white max-w-md">
+            <DialogContent className="bg-card border-border text-foreground max-w-md">
                 <DialogHeader>
                     <DialogTitle>Create New Team</DialogTitle>
                 </DialogHeader>
@@ -85,7 +85,7 @@ export function NewTeamModal() {
                             name="name"
                             placeholder="Engineering"
                             required
-                            className="bg-[#141414] border-[#2C2C2C]"
+                            className="bg-background border-border"
                         />
                     </div>
 
@@ -97,9 +97,9 @@ export function NewTeamModal() {
                             placeholder="ENG"
                             required
                             maxLength={5}
-                            className="bg-[#141414] border-[#2C2C2C] uppercase"
+                            className="bg-background border-border uppercase"
                         />
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                             Short identifier (2-5 characters). Will be uppercased.
                         </p>
                     </div>
@@ -110,7 +110,7 @@ export function NewTeamModal() {
                             id="description"
                             name="description"
                             placeholder="Describe the team..."
-                            className="bg-[#141414] border-[#2C2C2C] min-h-[80px]"
+                            className="bg-background border-border min-h-[80px]"
                         />
                     </div>
 
@@ -119,30 +119,30 @@ export function NewTeamModal() {
                             <Users className="w-4 h-4" />
                             Team Members
                         </Label>
-                        <div className="bg-[#141414] border border-[#2C2C2C] rounded-md max-h-[160px] overflow-y-auto">
+                        <div className="bg-background border border-border rounded-md max-h-[160px] overflow-y-auto">
                             {profiles.length === 0 ? (
-                                <p className="text-sm text-gray-500 p-3">No members available</p>
+                                <p className="text-sm text-muted-foreground p-3">No members available</p>
                             ) : (
-                                <div className="divide-y divide-[#2C2C2C]">
+                                <div className="divide-y divide-border">
                                     {profiles.map((profile) => (
                                         <label
                                             key={profile.id}
-                                            className="flex items-center gap-3 p-3 hover:bg-[#1C1C1C] cursor-pointer"
+                                            className="flex items-center gap-3 p-3 hover:bg-card cursor-pointer"
                                         >
                                             <Checkbox
                                                 checked={selectedMembers.includes(profile.id)}
                                                 onCheckedChange={() => toggleMember(profile.id)}
-                                                className="border-[#3C3C3C] data-[state=checked]:bg-qualia-600 data-[state=checked]:border-qualia-600"
+                                                className="border-border data-[state=checked]:bg-qualia-600 data-[state=checked]:border-qualia-600"
                                             />
                                             <div className="flex items-center gap-2 flex-1 min-w-0">
                                                 <div className="w-7 h-7 rounded-full bg-qualia-600 flex items-center justify-center text-xs text-white shrink-0">
                                                     {profile.full_name?.charAt(0) || profile.email?.charAt(0) || "?"}
                                                 </div>
                                                 <div className="min-w-0">
-                                                    <p className="text-sm text-gray-200 truncate">
+                                                    <p className="text-sm text-foreground truncate">
                                                         {profile.full_name || "Unnamed"}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 truncate">
+                                                    <p className="text-xs text-muted-foreground truncate">
                                                         {profile.email}
                                                     </p>
                                                 </div>
@@ -153,14 +153,14 @@ export function NewTeamModal() {
                             )}
                         </div>
                         {selectedMembers.length > 0 && (
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                                 {selectedMembers.length} member{selectedMembers.length !== 1 ? "s" : ""} selected
                             </p>
                         )}
                     </div>
 
                     {error && (
-                        <p className="text-sm text-red-400">{error}</p>
+                        <p className="text-sm text-destructive">{error}</p>
                     )}
 
                     <div className="flex justify-end gap-3 pt-4">
@@ -168,7 +168,7 @@ export function NewTeamModal() {
                             type="button"
                             variant="ghost"
                             onClick={() => setOpen(false)}
-                            className="text-gray-400 hover:text-white"
+                            className="text-muted-foreground hover:text-foreground"
                         >
                             Cancel
                         </Button>
