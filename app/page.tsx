@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import Chat from "@/components/chat";
 import { createClient } from "@/lib/supabase/server";
 import { getRecentActivities } from "@/app/actions";
 import { ActivityFeed } from "@/components/activity-feed";
@@ -102,31 +101,16 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {/* Stats / Overview */}
-        <div className="col-span-2 space-y-6">
-          <Suspense fallback={<StatsSkeleton />}>
-            <StatsLoader />
-          </Suspense>
+        <Suspense fallback={<StatsSkeleton />}>
+          <StatsLoader />
+        </Suspense>
 
-          <div className="bg-card border border-border rounded-lg p-6 min-h-[400px]">
-            <h3 className="text-lg font-medium text-foreground mb-4">Recent Activity</h3>
-            <Suspense fallback={<ActivitySkeleton />}>
-              <ActivityLoader />
-            </Suspense>
-          </div>
-        </div>
-
-        {/* AI Assistant */}
-        <div className="col-span-1">
-          <Suspense fallback={
-            <div className="flex flex-col h-[600px] w-full max-w-md border rounded-lg overflow-hidden bg-background shadow-xl animate-pulse">
-              <div className="bg-muted p-4 border-b h-14" />
-              <div className="flex-1 p-4" />
-              <div className="p-4 border-t h-16" />
-            </div>
-          }>
-            <Chat />
+        <div className="bg-card border border-border rounded-lg p-6 min-h-[400px]">
+          <h3 className="text-lg font-medium text-foreground mb-4">Recent Activity</h3>
+          <Suspense fallback={<ActivitySkeleton />}>
+            <ActivityLoader />
           </Suspense>
         </div>
       </div>
