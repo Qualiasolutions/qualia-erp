@@ -9,6 +9,47 @@ export type ActionResult = {
     data?: unknown;
 };
 
+// Activity types that match the database enum
+type ActivityType =
+    | 'project_created'
+    | 'project_updated'
+    | 'issue_created'
+    | 'issue_updated'
+    | 'issue_completed'
+    | 'issue_assigned'
+    | 'comment_added'
+    | 'team_created'
+    | 'member_added';
+
+// Helper to create activity records
+async function createActivity(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    actorId: string,
+    type: ActivityType,
+    refs: {
+        project_id?: string | null;
+        issue_id?: string | null;
+        team_id?: string | null;
+        comment_id?: string | null;
+    },
+    metadata?: Record<string, unknown>
+) {
+    try {
+        await supabase.from("activities").insert({
+            actor_id: actorId,
+            type,
+            project_id: refs.project_id || null,
+            issue_id: refs.issue_id || null,
+            team_id: refs.team_id || null,
+            comment_id: refs.comment_id || null,
+            metadata: metadata || {},
+        });
+    } catch (err) {
+        // Don't fail the main operation if activity logging fails
+        console.error("Failed to create activity:", err);
+    }
+}
+
 export async function createIssue(formData: FormData): Promise<ActionResult> {
     const supabase = await createClient();
 
@@ -46,6 +87,19 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
         console.error("Error creating issue:", error);
         return { success: false, error: error.message };
     }
+
+    // Record activity
+    await createActivity(
+        supabase,
+        user.id,
+        'issue_created',
+        {
+            issue_id: data.id,
+            team_id: teamId,
+            project_id: projectId,
+        },
+        { title: data.title, priority: data.priority }
+    );
 
     revalidatePath("/issues");
     revalidatePath("/");
@@ -91,6 +145,18 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
         console.error("Error creating project:", error);
         return { success: false, error: error.message };
     }
+
+    // Record activity
+    await createActivity(
+        supabase,
+        user.id,
+        'project_created',
+        {
+            project_id: data.id,
+            team_id: teamId,
+        },
+        { name: data.name, status: data.status }
+    );
 
     revalidatePath("/projects");
     revalidatePath("/");
@@ -152,7 +218,17 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
         }
     }
 
+    // Record activity
+    await createActivity(
+        supabase,
+        user.id,
+        'team_created',
+        { team_id: team.id },
+        { name: team.name, key: team.key }
+    );
+
     revalidatePath("/teams");
+    revalidatePath("/");
     return { success: true, data: team };
 }
 
@@ -521,6 +597,79 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
         return { success: false, error: error.message };
     }
 
+    // Get the issue to find its team/project for activity visibility
+    const { data: issue } = await supabase
+        .from("issues")
+        .select("team_id, project_id, title")
+        .eq("id", issueId)
+        .single();
+
+    // Record activity
+    await createActivity(
+        supabase,
+        user.id,
+        'comment_added',
+        {
+            comment_id: data.id,
+            issue_id: issueId,
+            team_id: issue?.team_id,
+            project_id: issue?.project_id,
+        },
+        { issue_title: issue?.title }
+    );
+
     revalidatePath(`/issues/${issueId}`);
+    revalidatePath("/");
     return { success: true, data };
+}
+
+// ============ ACTIVITY ACTIONS ============
+
+export type Activity = {
+    id: string;
+    type: ActivityType;
+    created_at: string;
+    metadata: Record<string, unknown>;
+    actor: {
+        id: string;
+        full_name: string | null;
+        email: string | null;
+        avatar_url: string | null;
+    } | null;
+    project: { id: string; name: string } | null;
+    issue: { id: string; title: string } | null;
+    team: { id: string; name: string; key: string } | null;
+};
+
+export async function getRecentActivities(limit: number = 20): Promise<Activity[]> {
+    const supabase = await createClient();
+
+    const { data: activities, error } = await supabase
+        .from("activities")
+        .select(`
+            id,
+            type,
+            created_at,
+            metadata,
+            actor:profiles!activities_actor_id_fkey (id, full_name, email, avatar_url),
+            project:projects (id, name),
+            issue:issues (id, title),
+            team:teams (id, name, key)
+        `)
+        .order("created_at", { ascending: false })
+        .limit(limit);
+
+    if (error) {
+        console.error("Error fetching activities:", error);
+        return [];
+    }
+
+    // Normalize the response (arrays to single objects)
+    return (activities || []).map((a) => ({
+        ...a,
+        actor: Array.isArray(a.actor) ? a.actor[0] || null : a.actor,
+        project: Array.isArray(a.project) ? a.project[0] || null : a.project,
+        issue: Array.isArray(a.issue) ? a.issue[0] || null : a.issue,
+        team: Array.isArray(a.team) ? a.team[0] || null : a.team,
+    })) as Activity[];
 }

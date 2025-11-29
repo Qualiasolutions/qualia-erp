@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Chat from "@/components/chat";
 import { createClient } from "@/lib/supabase/server";
+import { getRecentActivities } from "@/app/actions";
+import { ActivityFeed } from "@/components/activity-feed";
 
 interface DashboardStats {
   activeProjects: number;
@@ -73,6 +75,27 @@ function StatsSkeleton() {
   );
 }
 
+async function ActivityLoader() {
+  const activities = await getRecentActivities(15);
+  return <ActivityFeed activities={activities} />;
+}
+
+function ActivitySkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-start gap-3 py-3 px-4">
+          <div className="w-8 h-8 bg-[#2C2C2C] rounded-full" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 bg-[#2C2C2C] rounded w-3/4" />
+            <div className="h-3 bg-[#2C2C2C] rounded w-1/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -92,9 +115,9 @@ export default function Home() {
 
           <div className="bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-6 min-h-[400px]">
             <h3 className="text-lg font-medium text-white mb-4">Recent Activity</h3>
-            <div className="text-center text-gray-500 py-10">
-              No recent activity
-            </div>
+            <Suspense fallback={<ActivitySkeleton />}>
+              <ActivityLoader />
+            </Suspense>
           </div>
         </div>
 

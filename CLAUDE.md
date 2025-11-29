@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Qualia is a project management and issue tracking platform built with Next.js 15 (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired dark UI with a sidebar navigation, command palette (Cmd+K), and an integrated AI assistant.
+Qualia is a project management and issue tracking platform built with Next.js 15 (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired dark UI with a sidebar navigation, command palette (Cmd+K), and a context-aware AI assistant.
 
 ## Development Commands
 
@@ -39,17 +39,23 @@ Two Supabase clients for different contexts:
 ### Server Actions Pattern
 
 `app/actions.ts` contains all server actions for data mutations:
-- `createIssue`, `createProject`, `createTeam` - CRUD operations with auth checks
-- `getTeams`, `getProjects`, `getProfiles` - Data fetching for forms
+- **CRUD operations**: `createIssue`, `createProject`, `createTeam`, `updateIssue`, `updateProject`, `deleteIssue`, `deleteProject`, `createComment`
+- **Fetch by ID**: `getIssueById`, `getProjectById`, `getTeamById` - Return fully hydrated entities with related data
+- **Data fetching for forms**: `getTeams`, `getProjects`, `getProfiles`
 - All mutations call `revalidatePath()` to refresh relevant pages
 - Returns `ActionResult` type: `{ success: boolean; error?: string; data?: unknown }`
 
+**Important pattern for Supabase joins**: Foreign key relationships may return arrays. Actions normalize this:
+```tsx
+assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee
+```
+
 Modal components (e.g., `NewIssueModal`) fetch dropdown data on-demand when opened via `useEffect`.
 
-### Database Schema
+### Database Schema & RLS
 
 Core entities in `supabase/migrations/`:
-- **profiles** - User profiles (extends auth.users via trigger on signup)
+- **profiles** - User profiles (extends auth.users via trigger on signup), has `role` field (`admin`/`employee`)
 - **clients** - Client organizations
 - **teams** - Teams with unique keys (e.g., "ENG", "DES")
 - **team_members** - Junction table for team membership with roles
@@ -58,32 +64,45 @@ Core entities in `supabase/migrations/`:
 - **comments** - Issue comments
 - **documents** - Knowledge base with vector embeddings (pgvector, 1536 dimensions)
 
-All tables have RLS enabled. The second migration (`20240102...`) optimizes RLS policies by wrapping `auth.uid()` in subqueries.
+**Role-Based Access Control (RBAC)**:
+- Helper functions: `is_admin()`, `is_team_member(team_uuid)`
+- **Admins**: Full access to all records
+- **Employees**: Can only see/edit issues they created, are assigned to, or belong to their teams
+- Delete operations are admin-only for issues, projects, teams
+- See migration `20240104000000_add_role_based_access_control.sql` for complete policy definitions
 
 ### Data Fetching Pattern
 
 Pages use the async Server Component pattern with Suspense:
 ```tsx
-// Page component
+// Page component (e.g., app/issues/[id]/page.tsx)
 <Suspense fallback={<Skeleton />}>
-  <DataLoader />  // async server component that fetches data
+  <DetailClient />  // Client component that fetches via server actions
 </Suspense>
 ```
 
-Example: `app/issues/page.tsx` uses `IssueListLoader` to fetch issues with joined assignee data.
+Detail pages (`/issues/[id]`, `/projects/[id]`, `/teams/[id]`) use a client component pattern that:
+1. Extracts `id` from `useParams()`
+2. Calls server action (e.g., `getIssueById`) in `useEffect`
+3. Manages local loading/error state
 
 ### AI Integration
 
-- Chat API endpoint: `app/api/chat/route.ts` using Vercel AI SDK with Google Gemini (`gemini-1.5-flash`)
+- Chat API: `app/api/chat/route.ts` using Vercel AI SDK with Google Gemini (`gemini-1.5-flash`)
+- **Context-aware**: `getUserContext()` fetches user's teams, projects, and recent issues to build a personalized system prompt
+- Uses `convertToModelMessages()` to transform `UIMessage[]` format
 - Chat component: `components/chat.tsx` - Client component using `useChat` hook
-- Documents table supports RAG with pgvector embeddings
+- Documents table supports RAG with pgvector embeddings (not yet implemented)
 
 ### Routing Structure
 
 - `/` - Dashboard with stats and activity
-- `/issues` - Issue list with real-time Supabase data
+- `/issues` - Issue list
+- `/issues/[id]` - Issue detail with comments
 - `/projects` - Project grid view
+- `/projects/[id]` - Project detail with issues list
 - `/teams` - Team management
+- `/teams/[id]` - Team detail with members and projects
 - `/settings` - User settings
 - `/auth/*` - Authentication flows
 - `/api/chat` - AI chat streaming endpoint
