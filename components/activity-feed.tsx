@@ -42,11 +42,6 @@ const activityConfig: Record<
         label: 'completed an issue',
         color: 'text-emerald-400',
     },
-    issue_assigned: {
-        icon: UserPlus,
-        label: 'assigned an issue',
-        color: 'text-purple-400',
-    },
     comment_added: {
         icon: MessageSquarePlus,
         label: 'commented on',
@@ -91,8 +86,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
     } else if (
         activity.type === 'issue_created' ||
         activity.type === 'issue_updated' ||
-        activity.type === 'issue_completed' ||
-        activity.type === 'issue_assigned'
+        activity.type === 'issue_completed'
     ) {
         targetName = activity.issue?.title || (activity.metadata?.title as string) || 'an issue';
         targetLink = activity.issue ? `/issues/${activity.issue.id}` : '';

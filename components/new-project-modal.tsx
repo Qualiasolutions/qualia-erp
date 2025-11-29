@@ -21,6 +21,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { createProject, getTeams } from "@/app/actions";
+import { useWorkspace } from "@/components/workspace-provider";
 
 const PROJECT_STATUSES = ["Demos", "Active", "Launched", "Delayed", "Archived", "Canceled"];
 
@@ -35,16 +36,23 @@ export function NewProjectModal() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [teams, setTeams] = useState<Team[]>([]);
+    const { currentWorkspace } = useWorkspace();
 
     useEffect(() => {
-        if (open) {
-            getTeams().then(setTeams);
+        if (open && currentWorkspace) {
+            // Fetch teams for current workspace
+            getTeams(currentWorkspace.id).then(setTeams);
         }
-    }, [open]);
+    }, [open, currentWorkspace]);
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
         setError(null);
+
+        // Add workspace_id to form data
+        if (currentWorkspace) {
+            formData.set("workspace_id", currentWorkspace.id);
+        }
 
         const result = await createProject(formData);
 

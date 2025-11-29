@@ -3,12 +3,14 @@ import { ProjectList, Project } from "@/components/project-list";
 import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NewProjectModal } from "@/components/new-project-modal";
+import { getCurrentWorkspaceId } from "@/app/actions";
 
 async function ProjectListLoader() {
     const supabase = await createClient();
+    const workspaceId = await getCurrentWorkspaceId();
 
     // Fetch projects with lead info
-    const { data: projects, error } = await supabase
+    let query = supabase
         .from('projects')
         .select(`
             id,
@@ -22,6 +24,13 @@ async function ProjectListLoader() {
             )
         `)
         .order('created_at', { ascending: false });
+
+    // Filter by workspace if available
+    if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId);
+    }
+
+    const { data: projects, error } = await query;
 
     if (error) {
         console.error('Error fetching projects:', error);

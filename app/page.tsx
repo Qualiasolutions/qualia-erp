@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { getRecentActivities } from "@/app/actions";
+import { getRecentActivities, getCurrentWorkspaceId } from "@/app/actions";
 import { ActivityFeed } from "@/components/activity-feed";
 
 interface DashboardStats {
@@ -11,23 +11,34 @@ interface DashboardStats {
 
 async function getStats(): Promise<DashboardStats> {
   const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
 
-  // Count active projects (user can see based on RLS)
-  const { count: activeProjects } = await supabase
+  // Build query with workspace filter
+  let activeProjectsQuery = supabase
     .from('projects')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'Active');
 
-  // Count total issues (user can see based on RLS)
-  const { count: totalIssues } = await supabase
+  let totalIssuesQuery = supabase
     .from('issues')
     .select('*', { count: 'exact', head: true });
 
-  // Count completed issues
-  const { count: completed } = await supabase
+  let completedQuery = supabase
     .from('issues')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'Done');
+
+  // Apply workspace filter if available
+  if (workspaceId) {
+    activeProjectsQuery = activeProjectsQuery.eq('workspace_id', workspaceId);
+    totalIssuesQuery = totalIssuesQuery.eq('workspace_id', workspaceId);
+    completedQuery = completedQuery.eq('workspace_id', workspaceId);
+  }
+
+  // Execute queries
+  const { count: activeProjects } = await activeProjectsQuery;
+  const { count: totalIssues } = await totalIssuesQuery;
+  const { count: completed } = await completedQuery;
 
   return {
     activeProjects: activeProjects || 0,

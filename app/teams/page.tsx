@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NewTeamModal } from "@/components/new-team-modal";
+import { getCurrentWorkspaceId } from "@/app/actions";
 
 interface Team {
     id: string;
@@ -15,11 +16,19 @@ interface Team {
 
 async function TeamListLoader() {
     const supabase = await createClient();
+    const workspaceId = await getCurrentWorkspaceId();
 
-    const { data: teams, error } = await supabase
+    let query = supabase
         .from('teams')
         .select('*')
         .order('name', { ascending: true });
+
+    // Filter by workspace if available
+    if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId);
+    }
+
+    const { data: teams, error } = await query;
 
     if (error) {
         console.error('Error fetching teams:', error);

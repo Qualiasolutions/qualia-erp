@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { createTeam, getProfiles } from "@/app/actions";
+import { useWorkspace } from "@/components/workspace-provider";
 
 interface Profile {
     id: string;
@@ -29,6 +30,7 @@ export function NewTeamModal() {
     const [error, setError] = useState<string | null>(null);
     const [profiles, setProfiles] = useState<Profile[]>([]);
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+    const { currentWorkspace } = useWorkspace();
 
     useEffect(() => {
         if (open) {
@@ -47,6 +49,11 @@ export function NewTeamModal() {
     async function handleSubmit(formData: FormData) {
         setLoading(true);
         setError(null);
+
+        // Add workspace_id to form data
+        if (currentWorkspace) {
+            formData.set("workspace_id", currentWorkspace.id);
+        }
 
         // Add selected members to form data
         selectedMembers.forEach((id) => {
