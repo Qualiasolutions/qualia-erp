@@ -1,160 +1,212 @@
 import { google } from '@ai-sdk/google';
-import { streamText, convertToModelMessages, UIMessage } from 'ai';
+import { streamText, tool, stepCountIs } from 'ai';
 import { createClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 
-// Allow streaming responses up to 30 seconds
-export const maxDuration = 30;
+// Reference to prevent tree-shaking
+void tool;
+void stepCountIs;
 
-async function getUserContext() {
+export const maxDuration = 60;
+
+async function getUserInfo() {
   const supabase = await createClient();
-
-  // Get current user
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  // Fetch user's profile
   const { data: profile } = await supabase
     .from('profiles')
     .select('id, full_name, email, role')
     .eq('id', user.id)
     .single();
 
-  // Fetch all teams
-  const { data: teams } = await supabase
-    .from('teams')
-    .select('id, name, key, description')
-    .order('name');
-
-  // Fetch all projects with team info
-  const { data: projects } = await supabase
-    .from('projects')
-    .select(`
-      id, name, description, status, target_date,
-      team:teams(name, key)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(20);
-
-  // Fetch recent issues (user's issues or assigned to user)
-  const { data: issues } = await supabase
-    .from('issues')
-    .select(`
-      id, title, status, priority, created_at,
-      project:projects(name),
-      team:teams(name, key),
-      assignee:profiles!issues_assignee_id_fkey(full_name, email)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(30);
-
-  // Get issue counts by status
-  const { data: issueCounts } = await supabase
-    .from('issues')
-    .select('status')
-    .then(({ data }) => {
-      const counts: Record<string, number> = {};
-      data?.forEach(issue => {
-        counts[issue.status] = (counts[issue.status] || 0) + 1;
-      });
-      return { data: counts };
-    });
-
-  return {
-    user: profile,
-    teams: teams || [],
-    projects: projects || [],
-    issues: issues || [],
-    issueCounts: issueCounts || {},
-  };
-}
-
-function buildSystemPrompt(context: Awaited<ReturnType<typeof getUserContext>>) {
-  if (!context) {
-    return `You are Qualia AI, an intelligent assistant for the Qualia platform.
-The user is not currently logged in. Please ask them to sign in to access their projects and issues.`;
-  }
-
-  const { user, teams, projects, issues, issueCounts } = context;
-
-  const userName = user?.full_name || user?.email?.split('@')[0] || 'User';
-
-  // Format teams
-  const teamsInfo = teams.length > 0
-    ? teams.map(t => `- ${t.name} (${t.key})${t.description ? `: ${t.description}` : ''}`).join('\n')
-    : 'No teams yet';
-
-  // Format projects
-  const projectsInfo = projects.length > 0
-    ? projects.map(p => {
-        const team = Array.isArray(p.team) ? p.team[0] : p.team;
-        return `- ${p.name} [${p.status}]${team ? ` (Team: ${team.name})` : ''}${p.target_date ? ` - Target: ${p.target_date}` : ''}`;
-      }).join('\n')
-    : 'No projects yet';
-
-  // Format recent issues
-  const issuesInfo = issues.length > 0
-    ? issues.slice(0, 15).map(i => {
-        const project = Array.isArray(i.project) ? i.project[0] : i.project;
-        const assignee = Array.isArray(i.assignee) ? i.assignee[0] : i.assignee;
-        const assigneeName = assignee?.full_name || assignee?.email?.split('@')[0] || 'Unassigned';
-        return `- "${i.title}" [${i.status}] (Priority: ${i.priority})${project ? ` in ${project.name}` : ''} - Assigned to: ${assigneeName}`;
-      }).join('\n')
-    : 'No issues yet';
-
-  // Format issue statistics
-  const statsInfo = Object.entries(issueCounts)
-    .map(([status, count]) => `${status}: ${count}`)
-    .join(', ') || 'No issues';
-
-  return `You are Qualia AI, an intelligent assistant for the Qualia project management platform.
-You are currently helping ${userName}.
-
-## User's Current Data
-
-### Teams (${teams.length})
-${teamsInfo}
-
-### Projects (${projects.length})
-${projectsInfo}
-
-### Recent Issues (${issues.length} total)
-Issue Statistics: ${statsInfo}
-
-Recent issues:
-${issuesInfo}
-
-## Your Capabilities
-- Answer questions about the user's projects, issues, and teams
-- Provide status updates and summaries
-- Help draft new issues or project descriptions
-- Suggest prioritization and workflow improvements
-- Provide insights about workload and progress
-
-## Guidelines
-- Be professional, helpful, and concise
-- Reference specific projects, issues, or teams by name when relevant
-- If asked about something not in the data above, acknowledge the limitation
-- Help users understand their project status and priorities
-- When suggesting actions, be specific about which project/issue/team`;
+  return profile;
 }
 
 export async function POST(req: Request) {
   try {
-    const { messages }: { messages: UIMessage[] } = await req.json();
+    const { messages } = await req.json();
+    const supabase = await createClient();
 
-    // Get user context from Supabase
-    const context = await getUserContext();
-    const systemPrompt = buildSystemPrompt(context);
+    const user = await getUserInfo();
+    if (!user) {
+      return new Response(
+        JSON.stringify({ error: 'Please sign in to use the AI assistant' }),
+        { status: 401, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userName = user.full_name || user.email?.split('@')[0] || 'User';
+    const isAdmin = user.role === 'admin';
+
+    const systemPrompt = `You are Qualia AI, an intelligent assistant for the Qualia project management platform.
+
+Current User: ${userName} (${user.email}) - ${isAdmin ? 'Administrator' : 'Team Member'}
+
+You have tools to query the database for real-time information. Always use them to get current data before answering questions about projects, issues, or teams.
+
+Guidelines:
+- Use tools to get current data - don't guess
+- Be concise and helpful
+- Format lists clearly
+- Reference items by name when discussing them`;
 
     const result = streamText({
-      model: google('gemini-1.5-flash'),
-      messages: convertToModelMessages(messages),
+      model: google('gemini-2.0-flash'),
+      messages,
       system: systemPrompt,
+      tools: {
+        getDashboardStats: tool({
+          description: 'Get statistics: project counts, issue counts by status, team counts',
+          inputSchema: z.object({
+            _placeholder: z.string().optional().describe('Not used'),
+          }),
+          execute: async () => {
+            const [projects, issues, teams] = await Promise.all([
+              supabase.from('projects').select('status'),
+              supabase.from('issues').select('status, priority'),
+              supabase.from('teams').select('id'),
+            ]);
+
+            const byStatus: Record<string, number> = {};
+            const byPriority: Record<string, number> = {};
+            issues.data?.forEach(i => {
+              byStatus[i.status] = (byStatus[i.status] || 0) + 1;
+              byPriority[i.priority] = (byPriority[i.priority] || 0) + 1;
+            });
+
+            return {
+              projects: projects.data?.length || 0,
+              issues: { total: issues.data?.length || 0, byStatus, byPriority },
+              teams: teams.data?.length || 0,
+            };
+          },
+        }),
+
+        searchIssues: tool({
+          description: 'Search/list issues with optional filters',
+          inputSchema: z.object({
+            query: z.string().optional().describe('Search in title'),
+            status: z.string().optional().describe('Filter by status'),
+            priority: z.string().optional().describe('Filter by priority'),
+            limit: z.number().optional().describe('Max results (default 10)'),
+          }),
+          execute: async ({ query, status, priority, limit = 10 }) => {
+            let q = supabase
+              .from('issues')
+              .select(`id, title, status, priority, created_at,
+                creator:profiles!issues_creator_id_fkey(full_name),
+                project:projects(name), team:teams(name)`)
+              .order('created_at', { ascending: false })
+              .limit(limit);
+
+            if (query) q = q.ilike('title', `%${query}%`);
+            if (status) q = q.eq('status', status);
+            if (priority) q = q.eq('priority', priority);
+
+            const { data, error } = await q;
+            if (error) return { error: error.message };
+
+            return {
+              count: data?.length || 0,
+              issues: data?.map(i => ({
+                id: i.id,
+                title: i.title,
+                status: i.status,
+                priority: i.priority,
+                creator: Array.isArray(i.creator) ? i.creator[0]?.full_name : null,
+                project: Array.isArray(i.project) ? i.project[0]?.name : null,
+                team: Array.isArray(i.team) ? i.team[0]?.name : null,
+              })) || [],
+            };
+          },
+        }),
+
+        searchProjects: tool({
+          description: 'Search/list projects with optional status filter',
+          inputSchema: z.object({
+            query: z.string().optional().describe('Search in name'),
+            status: z.string().optional().describe('Filter by status'),
+            limit: z.number().optional().describe('Max results (default 10)'),
+          }),
+          execute: async ({ query, status, limit = 10 }) => {
+            let q = supabase
+              .from('projects')
+              .select(`id, name, status, target_date,
+                lead:profiles!projects_lead_id_fkey(full_name),
+                team:teams(name)`)
+              .order('created_at', { ascending: false })
+              .limit(limit);
+
+            if (query) q = q.ilike('name', `%${query}%`);
+            if (status) q = q.eq('status', status);
+
+            const { data, error } = await q;
+            if (error) return { error: error.message };
+
+            return {
+              count: data?.length || 0,
+              projects: data?.map(p => ({
+                id: p.id,
+                name: p.name,
+                status: p.status,
+                target_date: p.target_date,
+                lead: Array.isArray(p.lead) ? p.lead[0]?.full_name : null,
+                team: Array.isArray(p.team) ? p.team[0]?.name : null,
+              })) || [],
+            };
+          },
+        }),
+
+        getTeams: tool({
+          description: 'Get all teams',
+          inputSchema: z.object({
+            _placeholder: z.string().optional().describe('Not used'),
+          }),
+          execute: async () => {
+            const { data, error } = await supabase
+              .from('teams')
+              .select('id, name, key, description')
+              .order('name');
+
+            if (error) return { error: error.message };
+            return { count: data?.length || 0, teams: data || [] };
+          },
+        }),
+
+        getRecentActivity: tool({
+          description: 'Get recent activity feed',
+          inputSchema: z.object({
+            limit: z.number().optional().describe('Number of activities (default 10)'),
+          }),
+          execute: async ({ limit = 10 }) => {
+            const { data, error } = await supabase
+              .from('activities')
+              .select(`type, created_at, metadata,
+                actor:profiles!activities_actor_id_fkey(full_name),
+                project:projects(name), issue:issues(title), team:teams(name)`)
+              .order('created_at', { ascending: false })
+              .limit(limit);
+
+            if (error) return { error: error.message };
+
+            return {
+              activities: data?.map(a => ({
+                type: a.type,
+                actor: Array.isArray(a.actor) ? a.actor[0]?.full_name : null,
+                project: Array.isArray(a.project) ? a.project[0]?.name : null,
+                issue: Array.isArray(a.issue) ? a.issue[0]?.title : null,
+                team: Array.isArray(a.team) ? a.team[0]?.name : null,
+                created_at: a.created_at,
+              })) || [],
+            };
+          },
+        }),
+      },
+      stopWhen: stepCountIs(5),
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error('Chat API error:', error);
     return new Response(
