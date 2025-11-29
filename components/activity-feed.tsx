@@ -15,47 +15,63 @@ import type { Activity } from '@/app/actions';
 
 const activityConfig: Record<
     Activity['type'],
-    { icon: typeof FolderPlus; label: string; color: string }
+    { icon: typeof FolderPlus; label: string; color: string; bgColor: string; borderColor: string }
 > = {
     project_created: {
         icon: FolderPlus,
         label: 'created a project',
-        color: 'text-blue-400',
+        color: 'text-qualia-400',
+        bgColor: 'bg-qualia-500/10',
+        borderColor: 'border-qualia-500/20',
     },
     project_updated: {
         icon: Edit,
         label: 'updated a project',
-        color: 'text-blue-400',
+        color: 'text-qualia-400',
+        bgColor: 'bg-qualia-500/10',
+        borderColor: 'border-qualia-500/20',
     },
     issue_created: {
         icon: ListPlus,
         label: 'created an issue',
-        color: 'text-green-400',
+        color: 'text-neon-green',
+        bgColor: 'bg-neon-green/10',
+        borderColor: 'border-neon-green/20',
     },
     issue_updated: {
         icon: Edit,
         label: 'updated an issue',
-        color: 'text-yellow-400',
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/10',
+        borderColor: 'border-amber-500/20',
     },
     issue_completed: {
         icon: CheckCircle,
         label: 'completed an issue',
-        color: 'text-emerald-400',
+        color: 'text-neon-green',
+        bgColor: 'bg-neon-green/10',
+        borderColor: 'border-neon-green/20',
     },
     comment_added: {
         icon: MessageSquarePlus,
         label: 'commented on',
         color: 'text-orange-400',
+        bgColor: 'bg-orange-500/10',
+        borderColor: 'border-orange-500/20',
     },
     team_created: {
         icon: Users,
         label: 'created a team',
-        color: 'text-cyan-400',
+        color: 'text-neon-purple',
+        bgColor: 'bg-neon-purple/10',
+        borderColor: 'border-neon-purple/20',
     },
     member_added: {
         icon: UserPlus,
         label: 'added a member to',
-        color: 'text-pink-400',
+        color: 'text-neon-pink',
+        bgColor: 'bg-neon-pink/10',
+        borderColor: 'border-neon-pink/20',
     },
 };
 
@@ -99,37 +115,37 @@ function ActivityItem({ activity }: { activity: Activity }) {
     }
 
     return (
-        <div className="flex items-start gap-3 py-3 px-4 hover:bg-[#262626] rounded-lg transition-colors">
-            <div className={`p-2 rounded-full bg-[#2C2C2C] ${config.color}`}>
+        <div className="flex items-start gap-3 py-3 px-4 hover:bg-white/[0.03] rounded-xl transition-all duration-300 group">
+            <div className={`p-2.5 rounded-xl ${config.bgColor} border ${config.borderColor} ${config.color} transition-all duration-300 group-hover:scale-110`}>
                 <Icon className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-300">
-                    <span className="font-medium text-white">{actorName}</span>{' '}
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                    <span className="font-medium text-foreground">{actorName}</span>{' '}
                     {config.label}{' '}
                     {targetLink ? (
                         <Link
                             href={targetLink}
-                            className="font-medium text-qualia-400 hover:text-qualia-300 hover:underline"
+                            className="font-medium text-qualia-400 hover:text-qualia-300 transition-colors"
                         >
                             {targetName}
                         </Link>
                     ) : (
-                        <span className="font-medium text-white">{targetName}</span>
+                        <span className="font-medium text-foreground">{targetName}</span>
                     )}
                     {activity.team && activity.type !== 'team_created' && activity.type !== 'member_added' && (
-                        <span className="text-gray-500">
+                        <span className="text-muted-foreground/60">
                             {' '}in{' '}
                             <Link
                                 href={`/teams/${activity.team.id}`}
-                                className="text-gray-400 hover:text-gray-300"
+                                className="text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 {activity.team.name}
                             </Link>
                         </span>
                     )}
                 </p>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-muted-foreground/60 mt-1">
                     {formatRelativeTime(activity.created_at)}
                 </p>
             </div>
@@ -140,16 +156,26 @@ function ActivityItem({ activity }: { activity: Activity }) {
 export function ActivityFeed({ activities }: { activities: Activity[] }) {
     if (activities.length === 0) {
         return (
-            <div className="text-center text-gray-500 py-10">
-                No recent activity
+            <div className="text-center py-12">
+                <div className="inline-flex p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-4">
+                    <FolderPlus className="w-6 h-6 text-muted-foreground/40" />
+                </div>
+                <p className="text-muted-foreground">No recent activity</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Activity will appear here as your team works</p>
             </div>
         );
     }
 
     return (
-        <div className="divide-y divide-[#2C2C2C]">
-            {activities.map((activity) => (
-                <ActivityItem key={activity.id} activity={activity} />
+        <div className="space-y-1">
+            {activities.map((activity, index) => (
+                <div
+                    key={activity.id}
+                    className="animate-slide-in"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                >
+                    <ActivityItem activity={activity} />
+                </div>
             ))}
         </div>
     );
