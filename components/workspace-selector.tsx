@@ -34,8 +34,8 @@ export function WorkspaceSelector() {
 
     const success = await setCurrentWorkspace(workspace);
     if (success) {
-      // Refresh the page to load data for the new workspace
-      router.refresh();
+      // Force full page reload to load data for the new workspace
+      window.location.reload();
     }
   };
 
