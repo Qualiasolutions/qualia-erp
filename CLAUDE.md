@@ -24,7 +24,7 @@ Required in `.env.local`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
-OPENAI_API_KEY=<openai-api-key>  # For AI chat functionality
+GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat functionality (Gemini)
 ```
 
 ## Architecture
@@ -52,7 +52,7 @@ All tables have RLS enabled with basic authenticated user policies.
 
 ### AI Integration
 
-- Chat API endpoint: `app/api/chat/route.ts` using Vercel AI SDK with `gpt-4-turbo`
+- Chat API endpoint: `app/api/chat/route.ts` using Vercel AI SDK with Google Gemini (`gemini-1.5-flash`)
 - Chat component: `components/chat.tsx` - Client component using `useChat` hook
 - Documents table supports RAG with pgvector embeddings
 

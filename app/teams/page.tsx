@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import { Plus, Filter, Users } from "lucide-react";
+import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { NewTeamModal } from "@/components/new-team-modal";
 
 interface Team {
     id: string;
@@ -86,10 +87,7 @@ export default function TeamsPage() {
                         <Filter className="w-4 h-4" />
                         <span>Filter</span>
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-md transition-colors">
-                        <Plus className="w-4 h-4" />
-                        <span>New Team</span>
-                    </button>
+                    <NewTeamModal />
                 </div>
             </header>
 

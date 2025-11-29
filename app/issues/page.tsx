@@ -1,7 +1,8 @@
 import { Suspense } from "react";
 import { IssueList, Issue } from "@/components/issue-list";
-import { Plus, Filter } from "lucide-react";
+import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { NewIssueModal } from "@/components/new-issue-modal";
 
 async function IssueListLoader() {
     const supabase = await createClient();
@@ -66,10 +67,7 @@ export default function IssuesPage() {
                         <Filter className="w-4 h-4" />
                         <span>Filter</span>
                     </button>
-                    <button className="flex items-center gap-2 px-3 py-1.5 bg-qualia-600 hover:bg-qualia-500 text-white text-sm font-medium rounded-md transition-colors">
-                        <Plus className="w-4 h-4" />
-                        <span>New Issue</span>
-                    </button>
+                    <NewIssueModal />
                 </div>
             </header>
 
