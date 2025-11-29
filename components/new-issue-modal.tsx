@@ -21,8 +21,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { createIssue, getTeams, getProjects } from "@/app/actions";
+import { useWorkspace } from "@/components/workspace-provider";
 
-const ISSUE_STATUSES = ["Backlog", "Todo", "In Progress", "Done", "Canceled"];
+const ISSUE_STATUSES = ["Yet to Start", "Todo", "In Progress", "Done", "Canceled"];
 const ISSUE_PRIORITIES = ["No Priority", "Urgent", "High", "Medium", "Low"];
 
 interface Team {
@@ -42,17 +43,24 @@ export function NewIssueModal() {
     const [error, setError] = useState<string | null>(null);
     const [teams, setTeams] = useState<Team[]>([]);
     const [projects, setProjects] = useState<Project[]>([]);
+    const { currentWorkspace } = useWorkspace();
 
     useEffect(() => {
-        if (open) {
-            getTeams().then(setTeams);
-            getProjects().then(setProjects);
+        if (open && currentWorkspace) {
+            // Fetch teams and projects for current workspace
+            getTeams(currentWorkspace.id).then(setTeams);
+            getProjects(currentWorkspace.id).then(setProjects);
         }
-    }, [open]);
+    }, [open, currentWorkspace]);
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
         setError(null);
+
+        // Add workspace_id to form data
+        if (currentWorkspace) {
+            formData.set("workspace_id", currentWorkspace.id);
+        }
 
         const result = await createIssue(formData);
 
@@ -102,7 +110,7 @@ export function NewIssueModal() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Status</Label>
-                            <Select name="status" defaultValue="Backlog">
+                            <Select name="status" defaultValue="Yet to Start">
                                 <SelectTrigger className="bg-background border-border">
                                     <SelectValue />
                                 </SelectTrigger>

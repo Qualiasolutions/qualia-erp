@@ -36,10 +36,9 @@ import {
     createComment,
     getTeams,
     getProjects,
-    getProfiles,
 } from "@/app/actions";
 
-const STATUSES = ["Backlog", "Todo", "In Progress", "Done", "Canceled"];
+const STATUSES = ["Yet to Start", "Todo", "In Progress", "Done", "Canceled"];
 const PRIORITIES = ["No Priority", "Urgent", "High", "Medium", "Low"];
 
 interface Profile {
@@ -64,7 +63,6 @@ interface Issue {
     priority: string;
     created_at: string;
     updated_at: string;
-    assignee: Profile | null;
     creator: Profile | null;
     project: { id: string; name: string } | null;
     team: { id: string; name: string; key: string } | null;
@@ -118,14 +116,12 @@ export function IssueDetailClient() {
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("");
     const [priority, setPriority] = useState("");
-    const [assigneeId, setAssigneeId] = useState<string | null>(null);
     const [teamId, setTeamId] = useState<string | null>(null);
     const [projectId, setProjectId] = useState<string | null>(null);
 
     // Options for selects
     const [teams, setTeams] = useState<{ id: string; name: string; key: string }[]>([]);
     const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
-    const [profiles, setProfiles] = useState<Profile[]>([]);
 
     // Comment state
     const [newComment, setNewComment] = useState("");
@@ -134,11 +130,10 @@ export function IssueDetailClient() {
     useEffect(() => {
         async function loadData() {
             setLoading(true);
-            const [issueData, teamsData, projectsData, profilesData] = await Promise.all([
+            const [issueData, teamsData, projectsData] = await Promise.all([
                 getIssueById(id),
                 getTeams(),
                 getProjects(),
-                getProfiles(),
             ]);
 
             if (issueData) {
@@ -147,7 +142,6 @@ export function IssueDetailClient() {
                 setDescription(issueData.description || "");
                 setStatus(issueData.status);
                 setPriority(issueData.priority);
-                setAssigneeId(issueData.assignee?.id || null);
                 setTeamId(issueData.team?.id || null);
                 setProjectId(issueData.project?.id || null);
             } else {
@@ -156,7 +150,6 @@ export function IssueDetailClient() {
 
             setTeams(teamsData);
             setProjects(projectsData);
-            setProfiles(profilesData as Profile[]);
             setLoading(false);
         }
         loadData();
@@ -172,7 +165,6 @@ export function IssueDetailClient() {
         formData.set("description", description);
         formData.set("status", status);
         formData.set("priority", priority);
-        if (assigneeId) formData.set("assignee_id", assigneeId);
         if (teamId) formData.set("team_id", teamId);
         if (projectId) formData.set("project_id", projectId);
 
@@ -412,27 +404,6 @@ export function IssueDetailClient() {
                                         <SelectContent>
                                             {PRIORITIES.map((p) => (
                                                 <SelectItem key={p} value={p}>{p}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Assignee */}
-                                <div>
-                                    <label className="text-xs text-muted-foreground mb-2 block flex items-center gap-1">
-                                        <User className="w-3 h-3" />
-                                        Assignee
-                                    </label>
-                                    <Select value={assigneeId || "unassigned"} onValueChange={(v) => setAssigneeId(v === "unassigned" ? null : v)}>
-                                        <SelectTrigger className="bg-background border-border">
-                                            <SelectValue placeholder="Unassigned" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="unassigned">Unassigned</SelectItem>
-                                            {profiles.map((p) => (
-                                                <SelectItem key={p.id} value={p.id}>
-                                                    {p.full_name || p.email}
-                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

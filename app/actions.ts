@@ -16,10 +16,214 @@ type ActivityType =
     | 'issue_created'
     | 'issue_updated'
     | 'issue_completed'
-    | 'issue_assigned'
     | 'comment_added'
     | 'team_created'
     | 'member_added';
+
+// ============ WORKSPACE HELPERS ============
+
+// Get current user's default workspace ID
+export async function getCurrentWorkspaceId(): Promise<string | null> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
+
+    const { data } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("profile_id", user.id)
+        .eq("is_default", true)
+        .single();
+
+    return data?.workspace_id || null;
+}
+
+// Get all workspaces (for admin management)
+export async function getWorkspaces() {
+    const supabase = await createClient();
+    const { data: workspaces } = await supabase
+        .from("workspaces")
+        .select("id, name, slug, logo_url, description")
+        .order("name");
+    return workspaces || [];
+}
+
+// Get user's workspace memberships with access info
+export async function getUserWorkspaces() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return [];
+
+    // Fetch all workspaces
+    const { data: allWorkspaces } = await supabase
+        .from("workspaces")
+        .select("id, name, slug, logo_url, description")
+        .order("name");
+
+    // Fetch user's memberships
+    const { data: memberships } = await supabase
+        .from("workspace_members")
+        .select("workspace_id, role, is_default")
+        .eq("profile_id", user.id);
+
+    const membershipMap = new Map(
+        (memberships || []).map(m => [m.workspace_id, { role: m.role, is_default: m.is_default }])
+    );
+
+    return (allWorkspaces || []).map(ws => ({
+        ...ws,
+        hasAccess: membershipMap.has(ws.id),
+        role: membershipMap.get(ws.id)?.role || null,
+        isDefault: membershipMap.get(ws.id)?.is_default || false,
+    }));
+}
+
+// Set user's default workspace
+export async function setDefaultWorkspace(workspaceId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    // Check if user is a member of this workspace
+    const { data: membership } = await supabase
+        .from("workspace_members")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("profile_id", user.id)
+        .single();
+
+    if (!membership) {
+        return { success: false, error: "You don't have access to this workspace" };
+    }
+
+    // Set all other workspaces as non-default
+    await supabase
+        .from("workspace_members")
+        .update({ is_default: false })
+        .eq("profile_id", user.id);
+
+    // Set selected workspace as default
+    await supabase
+        .from("workspace_members")
+        .update({ is_default: true })
+        .eq("workspace_id", workspaceId)
+        .eq("profile_id", user.id);
+
+    revalidatePath("/");
+    return { success: true };
+}
+
+// Create a new workspace (admin only)
+export async function createWorkspace(formData: FormData): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const name = formData.get("name") as string;
+    const slug = formData.get("slug") as string;
+    const description = formData.get("description") as string | null;
+
+    if (!name?.trim()) {
+        return { success: false, error: "Workspace name is required" };
+    }
+
+    if (!slug?.trim()) {
+        return { success: false, error: "Workspace slug is required" };
+    }
+
+    const { data, error } = await supabase
+        .from("workspaces")
+        .insert({
+            name: name.trim(),
+            slug: slug.trim().toLowerCase().replace(/\s+/g, '-'),
+            description: description?.trim() || null,
+            created_by: user.id,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error creating workspace:", error);
+        return { success: false, error: error.message };
+    }
+
+    // Add the creator as the workspace owner
+    await supabase
+        .from("workspace_members")
+        .insert({
+            workspace_id: data.id,
+            profile_id: user.id,
+            role: "owner",
+            is_default: false,
+        });
+
+    revalidatePath("/");
+    return { success: true, data };
+}
+
+// Add a member to a workspace
+export async function addWorkspaceMember(
+    workspaceId: string,
+    profileId: string,
+    role: string = "member"
+): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("workspace_members")
+        .insert({
+            workspace_id: workspaceId,
+            profile_id: profileId,
+            role,
+            is_default: false,
+        });
+
+    if (error) {
+        console.error("Error adding workspace member:", error);
+        return { success: false, error: error.message };
+    }
+
+    return { success: true };
+}
+
+// Remove a member from a workspace
+export async function removeWorkspaceMember(
+    workspaceId: string,
+    profileId: string
+): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("workspace_members")
+        .delete()
+        .eq("workspace_id", workspaceId)
+        .eq("profile_id", profileId);
+
+    if (error) {
+        console.error("Error removing workspace member:", error);
+        return { success: false, error: error.message };
+    }
+
+    return { success: true };
+}
 
 // Helper to create activity records
 async function createActivity(
@@ -31,6 +235,7 @@ async function createActivity(
         issue_id?: string | null;
         team_id?: string | null;
         comment_id?: string | null;
+        workspace_id?: string | null;
     },
     metadata?: Record<string, unknown>
 ) {
@@ -42,6 +247,7 @@ async function createActivity(
             issue_id: refs.issue_id || null,
             team_id: refs.team_id || null,
             comment_id: refs.comment_id || null,
+            workspace_id: refs.workspace_id || null,
             metadata: metadata || {},
         });
     } catch (err) {
@@ -60,13 +266,24 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
 
     const title = formData.get("title") as string;
     const description = formData.get("description") as string | null;
-    const status = formData.get("status") as string || "Backlog";
+    const status = formData.get("status") as string || "Yet to Start";
     const priority = formData.get("priority") as string || "No Priority";
     const teamId = formData.get("team_id") as string | null;
     const projectId = formData.get("project_id") as string | null;
+    const workspaceId = formData.get("workspace_id") as string | null;
 
     if (!title?.trim()) {
         return { success: false, error: "Title is required" };
+    }
+
+    // Get workspace ID from form or from user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    if (!wsId) {
+        return { success: false, error: "Workspace is required" };
     }
 
     const { data, error } = await supabase
@@ -79,6 +296,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
             team_id: teamId || null,
             project_id: projectId || null,
             creator_id: user.id,
+            workspace_id: wsId,
         })
         .select()
         .single();
@@ -97,6 +315,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
             issue_id: data.id,
             team_id: teamId,
             project_id: projectId,
+            workspace_id: wsId,
         },
         { title: data.title, priority: data.priority }
     );
@@ -119,6 +338,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
     const status = formData.get("status") as string || "Active";
     const teamId = formData.get("team_id") as string | null;
     const targetDate = formData.get("target_date") as string | null;
+    const workspaceId = formData.get("workspace_id") as string | null;
 
     if (!name?.trim()) {
         return { success: false, error: "Project name is required" };
@@ -126,6 +346,16 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
 
     if (!teamId) {
         return { success: false, error: "Team is required" };
+    }
+
+    // Get workspace ID from form or from user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    if (!wsId) {
+        return { success: false, error: "Workspace is required" };
     }
 
     const { data, error } = await supabase
@@ -137,6 +367,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
             team_id: teamId,
             lead_id: user.id,
             target_date: targetDate || null,
+            workspace_id: wsId,
         })
         .select()
         .single();
@@ -154,6 +385,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
         {
             project_id: data.id,
             team_id: teamId,
+            workspace_id: wsId,
         },
         { name: data.name, status: data.status }
     );
@@ -175,6 +407,7 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
     const key = formData.get("key") as string;
     const description = formData.get("description") as string | null;
     const memberIds = formData.getAll("member_ids") as string[];
+    const workspaceId = formData.get("workspace_id") as string | null;
 
     if (!name?.trim()) {
         return { success: false, error: "Team name is required" };
@@ -184,6 +417,16 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Team key is required" };
     }
 
+    // Get workspace ID from form or from user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    if (!wsId) {
+        return { success: false, error: "Workspace is required" };
+    }
+
     // Create the team
     const { data: team, error } = await supabase
         .from("teams")
@@ -191,6 +434,7 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
             name: name.trim(),
             key: key.trim().toUpperCase(),
             description: description?.trim() || null,
+            workspace_id: wsId,
         })
         .select()
         .single();
@@ -223,7 +467,7 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
         supabase,
         user.id,
         'team_created',
-        { team_id: team.id },
+        { team_id: team.id, workspace_id: wsId },
         { name: team.name, key: team.key }
     );
 
@@ -232,21 +476,47 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
     return { success: true, data: team };
 }
 
-export async function getTeams() {
+export async function getTeams(workspaceId?: string | null) {
     const supabase = await createClient();
-    const { data: teams } = await supabase
+
+    // Get workspace ID from parameter or user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    let query = supabase
         .from("teams")
         .select("id, name, key")
         .order("name");
+
+    if (wsId) {
+        query = query.eq("workspace_id", wsId);
+    }
+
+    const { data: teams } = await query;
     return teams || [];
 }
 
-export async function getProjects() {
+export async function getProjects(workspaceId?: string | null) {
     const supabase = await createClient();
-    const { data: projects } = await supabase
+
+    // Get workspace ID from parameter or user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    let query = supabase
         .from("projects")
         .select("id, name")
         .order("name");
+
+    if (wsId) {
+        query = query.eq("workspace_id", wsId);
+    }
+
+    const { data: projects } = await query;
     return projects || [];
 }
 
@@ -267,7 +537,6 @@ export async function getIssueById(id: string) {
         .from("issues")
         .select(`
             *,
-            assignee:profiles!issues_assignee_id_fkey (id, full_name, email, avatar_url),
             creator:profiles!issues_creator_id_fkey (id, full_name, email),
             project:projects (id, name),
             team:teams (id, name, key),
@@ -289,7 +558,6 @@ export async function getIssueById(id: string) {
     // Transform arrays to single objects for foreign keys
     return {
         ...issue,
-        assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee,
         creator: Array.isArray(issue.creator) ? issue.creator[0] || null : issue.creator,
         project: Array.isArray(issue.project) ? issue.project[0] || null : issue.project,
         team: Array.isArray(issue.team) ? issue.team[0] || null : issue.team,
@@ -326,8 +594,7 @@ export async function getProjectById(id: string) {
             title,
             status,
             priority,
-            created_at,
-            assignee:profiles!issues_assignee_id_fkey (id, full_name, email)
+            created_at
         `)
         .eq("project_id", id)
         .order("created_at", { ascending: false });
@@ -349,10 +616,7 @@ export async function getProjectById(id: string) {
         lead: Array.isArray(project.lead) ? project.lead[0] || null : project.lead,
         team: Array.isArray(project.team) ? project.team[0] || null : project.team,
         client: Array.isArray(project.client) ? project.client[0] || null : project.client,
-        issues: (issues || []).map((i: { assignee: unknown[] | unknown }) => ({
-            ...i,
-            assignee: Array.isArray(i.assignee) ? i.assignee[0] || null : i.assignee,
-        })),
+        issues: issues || [],
         issue_stats: {
             total: totalIssues || 0,
             done: doneIssues || 0,
@@ -423,7 +687,6 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
     const description = formData.get("description") as string | null;
     const status = formData.get("status") as string;
     const priority = formData.get("priority") as string;
-    const assigneeId = formData.get("assignee_id") as string | null;
     const teamId = formData.get("team_id") as string | null;
     const projectId = formData.get("project_id") as string | null;
 
@@ -442,7 +705,6 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
             description: description?.trim() || null,
             status,
             priority,
-            assignee_id: assigneeId || null,
             team_id: teamId || null,
             project_id: projectId || null,
             updated_at: new Date().toISOString(),
@@ -641,10 +903,16 @@ export type Activity = {
     team: { id: string; name: string; key: string } | null;
 };
 
-export async function getRecentActivities(limit: number = 20): Promise<Activity[]> {
+export async function getRecentActivities(limit: number = 20, workspaceId?: string | null): Promise<Activity[]> {
     const supabase = await createClient();
 
-    const { data: activities, error } = await supabase
+    // Get workspace ID from parameter or user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    let query = supabase
         .from("activities")
         .select(`
             id,
@@ -658,6 +926,12 @@ export async function getRecentActivities(limit: number = 20): Promise<Activity[
         `)
         .order("created_at", { ascending: false })
         .limit(limit);
+
+    if (wsId) {
+        query = query.eq("workspace_id", wsId);
+    }
+
+    const { data: activities, error } = await query;
 
     if (error) {
         console.error("Error fetching activities:", error);

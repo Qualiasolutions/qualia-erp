@@ -3,37 +3,35 @@ import { IssueList, Issue } from "@/components/issue-list";
 import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NewIssueModal } from "@/components/new-issue-modal";
+import { getCurrentWorkspaceId } from "@/app/actions";
 
 async function IssueListLoader() {
     const supabase = await createClient();
+    const workspaceId = await getCurrentWorkspaceId();
 
-    const { data: issues, error } = await supabase
+    let query = supabase
         .from('issues')
         .select(`
             id,
             title,
             status,
             priority,
-            created_at,
-            assignee:profiles!issues_assignee_id_fkey (
-                id,
-                full_name,
-                email
-            )
+            created_at
         `)
         .order('created_at', { ascending: false });
+
+    // Filter by workspace if available
+    if (workspaceId) {
+        query = query.eq('workspace_id', workspaceId);
+    }
+
+    const { data: issues, error } = await query;
 
     if (error) {
         console.error('Error fetching issues:', error);
     }
 
-    // Transform data to match Issue interface (assignee is returned as array from Supabase)
-    const transformedIssues: Issue[] = (issues || []).map((issue) => ({
-        ...issue,
-        assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee,
-    }));
-
-    return <IssueList issues={transformedIssues} />;
+    return <IssueList issues={issues || []} />;
 }
 
 function IssueListSkeleton() {
@@ -59,7 +57,7 @@ export default function IssuesPage() {
                     <h1 className="text-lg font-medium text-foreground">All Issues</h1>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span className="px-2 py-0.5 rounded bg-muted text-foreground">Active</span>
-                        <span className="px-2 py-0.5 rounded hover:bg-muted cursor-pointer">Backlog</span>
+                        <span className="px-2 py-0.5 rounded hover:bg-muted cursor-pointer">Yet to Start</span>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">

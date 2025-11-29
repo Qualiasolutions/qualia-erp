@@ -9,11 +9,6 @@ export interface Issue {
     status: string;
     priority: string;
     created_at: string;
-    assignee?: {
-        id: string;
-        full_name: string | null;
-        email: string | null;
-    } | null;
 }
 
 interface IssueListProps {
@@ -61,39 +56,30 @@ export function IssueList({ issues }: IssueListProps) {
 
     return (
         <div className="w-full">
-            {issues.map((issue) => {
-                const assigneeName = issue.assignee?.full_name || issue.assignee?.email?.split('@')[0] || 'Unassigned';
-                return (
-                    <Link
-                        key={issue.id}
-                        href={`/issues/${issue.id}`}
-                        className="group flex items-center gap-4 px-6 py-3 border-b border-border hover:bg-card cursor-pointer transition-colors"
-                    >
-                        <div className="flex items-center gap-3 w-[120px] shrink-0">
-                            <span className="text-xs font-mono text-muted-foreground">{issue.id.slice(0, 8)}</span>
-                            <PriorityIcon priority={issue.priority} />
-                        </div>
+            {issues.map((issue) => (
+                <Link
+                    key={issue.id}
+                    href={`/issues/${issue.id}`}
+                    className="group flex items-center gap-4 px-6 py-3 border-b border-border hover:bg-card cursor-pointer transition-colors"
+                >
+                    <div className="flex items-center gap-3 w-[120px] shrink-0">
+                        <span className="text-xs font-mono text-muted-foreground">{issue.id.slice(0, 8)}</span>
+                        <PriorityIcon priority={issue.priority} />
+                    </div>
 
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                            <StatusIcon status={issue.status} />
-                            <span className="text-sm text-foreground font-medium truncate">{issue.title}</span>
-                        </div>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <StatusIcon status={issue.status} />
+                        <span className="text-sm text-foreground font-medium truncate">{issue.title}</span>
+                    </div>
 
-                        <div className="flex items-center gap-6 shrink-0 text-sm text-muted-foreground">
-                            <div className="w-24 hidden md:block">{issue.status}</div>
-                            <div className="w-24 hidden md:block flex items-center gap-2">
-                                <div className="w-5 h-5 rounded-full bg-qualia-900 flex items-center justify-center text-[10px] text-qualia-200">
-                                    {assigneeName[0]?.toUpperCase() || '?'}
-                                </div>
-                                <span>{assigneeName}</span>
-                            </div>
-                            <div className="w-20 text-right text-xs text-muted-foreground group-hover:text-foreground">
-                                {formatTimeAgo(issue.created_at)}
-                            </div>
+                    <div className="flex items-center gap-6 shrink-0 text-sm text-muted-foreground">
+                        <div className="w-24 hidden md:block">{issue.status}</div>
+                        <div className="w-20 text-right text-xs text-muted-foreground group-hover:text-foreground">
+                            {formatTimeAgo(issue.created_at)}
                         </div>
-                    </Link>
-                );
-            })}
+                    </div>
+                </Link>
+            ))}
         </div>
     );
 }

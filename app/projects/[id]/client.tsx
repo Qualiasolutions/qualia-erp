@@ -51,7 +51,6 @@ interface Issue {
     status: string;
     priority: string;
     created_at: string;
-    assignee: Profile | null;
 }
 
 interface Project {
@@ -358,11 +357,6 @@ export function ProjectDetailClient() {
                                                 <span className="text-sm text-foreground flex-1 truncate">
                                                     {issue.title}
                                                 </span>
-                                                {issue.assignee && (
-                                                    <div className="w-5 h-5 rounded-full bg-qualia-900 flex items-center justify-center text-[10px] text-qualia-200">
-                                                        {issue.assignee.full_name?.[0]?.toUpperCase() || issue.assignee.email?.[0]?.toUpperCase() || '?'}
-                                                    </div>
-                                                )}
                                                 <span className="text-xs text-muted-foreground">
                                                     {formatTimeAgo(issue.created_at)}
                                                 </span>
