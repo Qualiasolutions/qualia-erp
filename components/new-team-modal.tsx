@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Users } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -13,21 +13,51 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createTeam } from "@/app/actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { createTeam, getProfiles } from "@/app/actions";
+
+interface Profile {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+}
 
 export function NewTeamModal() {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [profiles, setProfiles] = useState<Profile[]>([]);
+    const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (open) {
+            getProfiles().then(setProfiles);
+        }
+    }, [open]);
+
+    function toggleMember(profileId: string) {
+        setSelectedMembers((prev) =>
+            prev.includes(profileId)
+                ? prev.filter((id) => id !== profileId)
+                : [...prev, profileId]
+        );
+    }
 
     async function handleSubmit(formData: FormData) {
         setLoading(true);
         setError(null);
 
+        // Add selected members to form data
+        selectedMembers.forEach((id) => {
+            formData.append("member_ids", id);
+        });
+
         const result = await createTeam(formData);
 
         if (result.success) {
             setOpen(false);
+            setSelectedMembers([]);
         } else {
             setError(result.error || "Failed to create team");
         }
@@ -38,12 +68,12 @@ export function NewTeamModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500">
+                <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
                     <Plus className="w-4 h-4" />
                     <span>New Team</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1C1C1C] border-[#2C2C2C] text-white">
+            <DialogContent className="bg-[#1C1C1C] border-[#2C2C2C] text-white max-w-md">
                 <DialogHeader>
                     <DialogTitle>Create New Team</DialogTitle>
                 </DialogHeader>
@@ -84,6 +114,51 @@ export function NewTeamModal() {
                         />
                     </div>
 
+                    <div className="space-y-2">
+                        <Label className="flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Team Members
+                        </Label>
+                        <div className="bg-[#141414] border border-[#2C2C2C] rounded-md max-h-[160px] overflow-y-auto">
+                            {profiles.length === 0 ? (
+                                <p className="text-sm text-gray-500 p-3">No members available</p>
+                            ) : (
+                                <div className="divide-y divide-[#2C2C2C]">
+                                    {profiles.map((profile) => (
+                                        <label
+                                            key={profile.id}
+                                            className="flex items-center gap-3 p-3 hover:bg-[#1C1C1C] cursor-pointer"
+                                        >
+                                            <Checkbox
+                                                checked={selectedMembers.includes(profile.id)}
+                                                onCheckedChange={() => toggleMember(profile.id)}
+                                                className="border-[#3C3C3C] data-[state=checked]:bg-qualia-600 data-[state=checked]:border-qualia-600"
+                                            />
+                                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                <div className="w-7 h-7 rounded-full bg-qualia-600 flex items-center justify-center text-xs text-white shrink-0">
+                                                    {profile.full_name?.charAt(0) || profile.email?.charAt(0) || "?"}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm text-gray-200 truncate">
+                                                        {profile.full_name || "Unnamed"}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 truncate">
+                                                        {profile.email}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        {selectedMembers.length > 0 && (
+                            <p className="text-xs text-gray-500">
+                                {selectedMembers.length} member{selectedMembers.length !== 1 ? "s" : ""} selected
+                            </p>
+                        )}
+                    </div>
+
                     {error && (
                         <p className="text-sm text-red-400">{error}</p>
                     )}
@@ -100,7 +175,7 @@ export function NewTeamModal() {
                         <Button
                             type="submit"
                             disabled={loading}
-                            className="bg-indigo-600 hover:bg-indigo-500"
+                            className="bg-qualia-600 hover:bg-qualia-500"
                         >
                             {loading ? "Creating..." : "Create Team"}
                         </Button>

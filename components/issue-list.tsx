@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import { Circle, CheckCircle2, MoreHorizontal, SignalHigh, SignalMedium, SignalLow } from "lucide-react";
 
 export interface Issue {
@@ -63,8 +64,9 @@ export function IssueList({ issues }: IssueListProps) {
             {issues.map((issue) => {
                 const assigneeName = issue.assignee?.full_name || issue.assignee?.email?.split('@')[0] || 'Unassigned';
                 return (
-                    <div
+                    <Link
                         key={issue.id}
+                        href={`/issues/${issue.id}`}
                         className="group flex items-center gap-4 px-6 py-3 border-b border-[#1C1C1C] hover:bg-[#1C1C1C] cursor-pointer transition-colors"
                     >
                         <div className="flex items-center gap-3 w-[120px] shrink-0">
@@ -89,7 +91,7 @@ export function IssueList({ issues }: IssueListProps) {
                                 {formatTimeAgo(issue.created_at)}
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 );
             })}
         </div>

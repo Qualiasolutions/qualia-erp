@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import { MoreHorizontal, Folder } from "lucide-react";
 
 export interface Project {
@@ -63,9 +64,10 @@ export function ProjectList({ projects }: ProjectListProps) {
                     : 0;
 
                 return (
-                    <div
+                    <Link
                         key={project.id}
-                        className="group bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 hover:border-gray-600 transition-colors cursor-pointer"
+                        href={`/projects/${project.id}`}
+                        className="group bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 hover:border-gray-600 transition-colors cursor-pointer block"
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
@@ -99,7 +101,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                                 />
                             </div>
                         </div>
-                    </div>
+                    </Link>
                 );
             })}
         </div>

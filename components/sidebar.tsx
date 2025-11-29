@@ -34,12 +34,12 @@ export function Sidebar() {
                 <div className="flex items-center gap-2 font-semibold text-white">
                     <Image
                         src="/logo.webp"
-                        alt="Qualia"
+                        alt="Qualia Internal Suite"
                         width={24}
                         height={24}
                         className="rounded"
                     />
-                    <span>Qualia</span>
+                    <span className="text-sm">Qualia Internal Suite</span>
                 </div>
                 <Bell className="w-4 h-4 text-gray-500 hover:text-white cursor-pointer" />
             </div>

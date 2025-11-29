@@ -4,14 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Qualia is a project management and issue tracking platform built with Next.js 15 (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired dark UI with a sidebar navigation, command palette (Cmd+K), and an integrated AI assistant powered by OpenAI.
+Qualia is a project management and issue tracking platform built with Next.js 15 (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired dark UI with a sidebar navigation, command palette (Cmd+K), and an integrated AI assistant.
 
 ## Development Commands
 
 ```bash
 npm run dev      # Start development server (http://localhost:3000)
 npm run build    # Production build
-npm run start    # Start production server
 npm run lint     # ESLint with Next.js + TypeScript rules
 
 # Add shadcn/ui components
@@ -24,7 +23,7 @@ Required in `.env.local`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
-GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat functionality (Gemini)
+GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini)
 ```
 
 ## Architecture
@@ -37,18 +36,41 @@ Two Supabase clients for different contexts:
 
 **Note:** No middleware.ts exists yet - protected routes (`/protected/*`) have a separate layout but auth guard middleware is not implemented.
 
+### Server Actions Pattern
+
+`app/actions.ts` contains all server actions for data mutations:
+- `createIssue`, `createProject`, `createTeam` - CRUD operations with auth checks
+- `getTeams`, `getProjects`, `getProfiles` - Data fetching for forms
+- All mutations call `revalidatePath()` to refresh relevant pages
+- Returns `ActionResult` type: `{ success: boolean; error?: string; data?: unknown }`
+
+Modal components (e.g., `NewIssueModal`) fetch dropdown data on-demand when opened via `useEffect`.
+
 ### Database Schema
 
-Core entities defined in `supabase/migrations/20240101000000_initial_schema.sql`:
-- **profiles** - User profiles (extends auth.users via trigger)
+Core entities in `supabase/migrations/`:
+- **profiles** - User profiles (extends auth.users via trigger on signup)
 - **clients** - Client organizations
 - **teams** - Teams with unique keys (e.g., "ENG", "DES")
-- **projects** - Projects with status enum: Demos, Active, Launched, Delayed, Archived, Canceled
-- **issues** - Issues with status (Backlog, Todo, In Progress, Done, Canceled) and priority (No Priority, Urgent, High, Medium, Low), supports parent/child hierarchy
+- **team_members** - Junction table for team membership with roles
+- **projects** - Status enum: Demos, Active, Launched, Delayed, Archived, Canceled
+- **issues** - Status (Backlog, Todo, In Progress, Done, Canceled), priority (No Priority, Urgent, High, Medium, Low), supports parent/child hierarchy via `parent_id`
 - **comments** - Issue comments
-- **documents** - Knowledge base with vector embeddings (pgvector, 1536 dimensions for OpenAI)
+- **documents** - Knowledge base with vector embeddings (pgvector, 1536 dimensions)
 
-All tables have RLS enabled with basic authenticated user policies.
+All tables have RLS enabled. The second migration (`20240102...`) optimizes RLS policies by wrapping `auth.uid()` in subqueries.
+
+### Data Fetching Pattern
+
+Pages use the async Server Component pattern with Suspense:
+```tsx
+// Page component
+<Suspense fallback={<Skeleton />}>
+  <DataLoader />  // async server component that fetches data
+</Suspense>
+```
+
+Example: `app/issues/page.tsx` uses `IssueListLoader` to fetch issues with joined assignee data.
 
 ### AI Integration
 
@@ -56,33 +78,20 @@ All tables have RLS enabled with basic authenticated user policies.
 - Chat component: `components/chat.tsx` - Client component using `useChat` hook
 - Documents table supports RAG with pgvector embeddings
 
-### UI Components
-
-- shadcn/ui configured in `components.json` (new-york style, neutral base color)
-- UI primitives in `components/ui/` (button, card, input, label, checkbox, dropdown-menu, badge)
-- Icons: lucide-react
-
-### Key Components
-
-- `components/sidebar.tsx` - Main navigation (Dashboard, Issues, Projects, Teams, Settings)
-- `components/command-menu.tsx` - Cmd+K command palette using cmdk
-- `components/issue-list.tsx` - Issue list with status/priority icons (**currently static data - needs Supabase integration**)
-- `components/project-list.tsx` - Project cards with progress (**currently static data - needs Supabase integration**)
-
 ### Routing Structure
 
 - `/` - Dashboard with stats and activity
-- `/issues` - Issue list view
+- `/issues` - Issue list with real-time Supabase data
 - `/projects` - Project grid view
-- `/auth/*` - Authentication flows (login, sign-up, forgot-password, update-password)
-- `/protected/*` - Authenticated routes with separate layout
+- `/teams` - Team management
+- `/settings` - User settings
+- `/auth/*` - Authentication flows
 - `/api/chat` - AI chat streaming endpoint
 
 ## Styling
 
 - Dark theme by default (`<html className="dark">`)
 - Custom dark palette: backgrounds #141414, #1C1C1C; borders #2C2C2C
-- Brand color: `qualia` (#00A4AC teal) - primary accent color via `bg-qualia-500`, `text-qualia-400`, etc.
-- Logo: `/public/logo.webp` (500x500 WebP)
+- Brand color: `qualia` (#00A4AC teal) - use `bg-qualia-600`, `text-qualia-400`, etc.
 - Tailwind CSS with tailwindcss-animate plugin
 - Inter font family

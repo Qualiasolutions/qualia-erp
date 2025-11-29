@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { Filter } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { NewTeamModal } from "@/components/new-team-modal";
@@ -35,9 +36,10 @@ async function TeamListLoader() {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {teams.map((team: Team) => (
-                <div
+                <Link
                     key={team.id}
-                    className="group bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 hover:border-gray-600 transition-colors cursor-pointer"
+                    href={`/teams/${team.id}`}
+                    className="group bg-[#1C1C1C] border border-[#2C2C2C] rounded-lg p-4 hover:border-gray-600 transition-colors cursor-pointer block"
                 >
                     <div className="flex items-center gap-3 mb-3">
                         <div className="w-10 h-10 rounded bg-indigo-600 flex items-center justify-center text-white font-medium">
@@ -51,7 +53,7 @@ async function TeamListLoader() {
                     {team.description && (
                         <p className="text-xs text-gray-500 line-clamp-2">{team.description}</p>
                     )}
-                </div>
+                </Link>
             ))}
         </div>
     );
