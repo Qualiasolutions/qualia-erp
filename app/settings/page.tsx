@@ -1,20 +1,48 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { LogoutButton } from "@/components/logout-button";
 
 async function AccountInfoLoader() {
+    await connection();
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Fetch profile details
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name, job_title, location, role')
+        .eq('id', user?.id)
+        .single();
+
     return (
         <div className="space-y-4">
-            <div>
-                <label className="text-sm text-muted-foreground">Email</label>
-                <p className="text-sm text-foreground mt-1">{user?.email || 'Not logged in'}</p>
+            <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-qualia-600 flex items-center justify-center text-white text-xl font-medium">
+                    {profile?.full_name?.split(' ').map((n: string) => n[0]).join('') || '?'}
+                </div>
+                <div>
+                    <p className="text-lg font-medium text-foreground">{profile?.full_name || 'Unknown'}</p>
+                    <p className="text-sm text-muted-foreground">{profile?.job_title || 'No title'}</p>
+                </div>
             </div>
-            <div>
-                <label className="text-sm text-muted-foreground">User ID</label>
-                <p className="text-xs text-muted-foreground font-mono mt-1">{user?.id || 'N/A'}</p>
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div>
+                    <label className="text-sm text-muted-foreground">Email</label>
+                    <p className="text-sm text-foreground mt-1">{user?.email || 'Not logged in'}</p>
+                </div>
+                <div>
+                    <label className="text-sm text-muted-foreground">Location</label>
+                    <p className="text-sm text-foreground mt-1">{profile?.location || 'Not set'}</p>
+                </div>
+                <div>
+                    <label className="text-sm text-muted-foreground">Role</label>
+                    <p className="text-sm text-foreground mt-1 capitalize">{profile?.role || 'N/A'}</p>
+                </div>
+                <div>
+                    <label className="text-sm text-muted-foreground">User ID</label>
+                    <p className="text-xs text-muted-foreground font-mono mt-1">{user?.id || 'N/A'}</p>
+                </div>
             </div>
         </div>
     );
