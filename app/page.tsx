@@ -1,7 +1,10 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
-import { getRecentActivities, getCurrentWorkspaceId } from "@/app/actions";
+import { getRecentActivities } from "@/app/actions";
 import { ActivityFeed } from "@/components/activity-feed";
+import Chat from "@/components/chat";
+
+export const dynamic = 'force-dynamic';
 
 interface DashboardStats {
   activeProjects: number;
@@ -11,34 +14,20 @@ interface DashboardStats {
 
 async function getStats(): Promise<DashboardStats> {
   const supabase = await createClient();
-  const workspaceId = await getCurrentWorkspaceId();
 
-  // Build query with workspace filter
-  let activeProjectsQuery = supabase
+  const { count: activeProjects } = await supabase
     .from('projects')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'Active');
 
-  let totalIssuesQuery = supabase
+  const { count: totalIssues } = await supabase
     .from('issues')
     .select('*', { count: 'exact', head: true });
 
-  let completedQuery = supabase
+  const { count: completed } = await supabase
     .from('issues')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'Done');
-
-  // Apply workspace filter if available
-  if (workspaceId) {
-    activeProjectsQuery = activeProjectsQuery.eq('workspace_id', workspaceId);
-    totalIssuesQuery = totalIssuesQuery.eq('workspace_id', workspaceId);
-    completedQuery = completedQuery.eq('workspace_id', workspaceId);
-  }
-
-  // Execute queries
-  const { count: activeProjects } = await activeProjectsQuery;
-  const { count: totalIssues } = await totalIssuesQuery;
-  const { count: completed } = await completedQuery;
 
   return {
     activeProjects: activeProjects || 0,
@@ -112,17 +101,24 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="space-y-6">
-        {/* Stats / Overview */}
-        <Suspense fallback={<StatsSkeleton />}>
-          <StatsLoader />
-        </Suspense>
-
-        <div className="bg-card border border-border rounded-lg p-6 min-h-[400px]">
-          <h3 className="text-lg font-medium text-foreground mb-4">Recent Activity</h3>
-          <Suspense fallback={<ActivitySkeleton />}>
-            <ActivityLoader />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Stats & Activity */}
+        <div className="lg:col-span-2 space-y-6">
+          <Suspense fallback={<StatsSkeleton />}>
+            <StatsLoader />
           </Suspense>
+
+          <div className="bg-card border border-border rounded-lg p-6 min-h-[400px]">
+            <h3 className="text-lg font-medium text-foreground mb-4">Recent Activity</h3>
+            <Suspense fallback={<ActivitySkeleton />}>
+              <ActivityLoader />
+            </Suspense>
+          </div>
+        </div>
+
+        {/* AI Assistant */}
+        <div className="lg:col-span-1">
+          <Chat />
         </div>
       </div>
     </div>
