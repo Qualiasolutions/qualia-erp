@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { streamText } from 'ai';
+import { streamText, convertToModelMessages, UIMessage } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 
 // Allow streaming responses up to 30 seconds
@@ -141,17 +141,25 @@ ${issuesInfo}
 }
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { messages }: { messages: UIMessage[] } = await req.json();
 
-  // Get user context from Supabase
-  const context = await getUserContext();
-  const systemPrompt = buildSystemPrompt(context);
+    // Get user context from Supabase
+    const context = await getUserContext();
+    const systemPrompt = buildSystemPrompt(context);
 
-  const result = streamText({
-    model: google('gemini-1.5-flash'),
-    messages,
-    system: systemPrompt,
-  });
+    const result = streamText({
+      model: google('gemini-1.5-flash'),
+      messages: convertToModelMessages(messages),
+      system: systemPrompt,
+    });
 
-  return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
+    console.error('Chat API error:', error);
+    return new Response(
+      JSON.stringify({ error: 'Failed to process chat request' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }
