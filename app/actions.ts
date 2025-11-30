@@ -900,6 +900,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     const startTime = formData.get("start_time") as string;
     const endTime = formData.get("end_time") as string;
     const projectId = formData.get("project_id") as string | null;
+    const workspaceId = formData.get("workspace_id") as string | null;
 
     if (!title?.trim()) {
         return { success: false, error: "Title is required" };
@@ -911,6 +912,12 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "End time is required" };
     }
 
+    // Get workspace ID from form or from user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
     const { data, error } = await supabase
         .from("meetings")
         .insert({
@@ -920,6 +927,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
             end_time: endTime,
             project_id: projectId || null,
             created_by: user.id,
+            workspace_id: wsId,
         })
         .select()
         .single();
@@ -955,10 +963,16 @@ export async function deleteMeeting(meetingId: string): Promise<ActionResult> {
     return { success: true };
 }
 
-export async function getMeetings() {
+export async function getMeetings(workspaceId?: string | null) {
     const supabase = await createClient();
-    
-    const { data: meetings, error } = await supabase
+
+    // Get workspace ID from parameter or user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    let query = supabase
         .from("meetings")
         .select(`
             id,
@@ -968,9 +982,19 @@ export async function getMeetings() {
             end_time,
             created_at,
             project:projects (id, name),
-            creator:profiles!meetings_created_by_fkey (id, full_name, email)
+            creator:profiles!meetings_created_by_fkey (id, full_name, email),
+            attendees:meeting_attendees (
+                id,
+                profile:profiles (id, full_name, email, avatar_url)
+            )
         `)
         .order("start_time", { ascending: true });
+
+    if (wsId) {
+        query = query.eq("workspace_id", wsId);
+    }
+
+    const { data: meetings, error } = await query;
 
     if (error) {
         console.error("Error fetching meetings:", error);
@@ -981,6 +1005,10 @@ export async function getMeetings() {
         ...meeting,
         project: Array.isArray(meeting.project) ? meeting.project[0] || null : meeting.project,
         creator: Array.isArray(meeting.creator) ? meeting.creator[0] || null : meeting.creator,
+        attendees: (meeting.attendees || []).map((a: { profile: unknown[] | unknown }) => ({
+            ...a,
+            profile: Array.isArray(a.profile) ? a.profile[0] || null : a.profile,
+        })),
     }));
 }
 
@@ -1045,4 +1073,192 @@ export async function getRecentActivities(limit: number = 20, workspaceId?: stri
         issue: Array.isArray(a.issue) ? a.issue[0] || null : a.issue,
         team: Array.isArray(a.team) ? a.team[0] || null : a.team,
     })) as Activity[];
+}
+
+// ============ MEETING ATTENDEE ACTIONS ============
+
+export async function addMeetingAttendee(meetingId: string, profileId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { data, error } = await supabase
+        .from("meeting_attendees")
+        .insert({
+            meeting_id: meetingId,
+            profile_id: profileId,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error adding meeting attendee:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/schedule");
+    return { success: true, data };
+}
+
+export async function removeMeetingAttendee(meetingId: string, profileId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("meeting_attendees")
+        .delete()
+        .eq("meeting_id", meetingId)
+        .eq("profile_id", profileId);
+
+    if (error) {
+        console.error("Error removing meeting attendee:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/schedule");
+    return { success: true };
+}
+
+export async function updateMeetingAttendeeStatus(
+    meetingId: string,
+    profileId: string,
+    status: 'pending' | 'accepted' | 'declined' | 'tentative'
+): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("meeting_attendees")
+        .update({ status })
+        .eq("meeting_id", meetingId)
+        .eq("profile_id", profileId);
+
+    if (error) {
+        console.error("Error updating attendee status:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/schedule");
+    return { success: true };
+}
+
+// ============ ISSUE ASSIGNEE ACTIONS ============
+
+export async function addIssueAssignee(issueId: string, profileId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { data, error } = await supabase
+        .from("issue_assignees")
+        .insert({
+            issue_id: issueId,
+            profile_id: profileId,
+            assigned_by: user.id,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error adding issue assignee:", error);
+        return { success: false, error: error.message };
+    }
+
+    // Get issue details for activity
+    const { data: issue } = await supabase
+        .from("issues")
+        .select("team_id, project_id, title, workspace_id")
+        .eq("id", issueId)
+        .single();
+
+    // Get assignee name for activity
+    const { data: assignee } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", profileId)
+        .single();
+
+    // Record activity
+    await createActivity(
+        supabase,
+        user.id,
+        'issue_assigned' as ActivityType,
+        {
+            issue_id: issueId,
+            team_id: issue?.team_id,
+            project_id: issue?.project_id,
+            workspace_id: issue?.workspace_id,
+        },
+        {
+            issue_title: issue?.title,
+            assignee_name: assignee?.full_name || assignee?.email,
+        }
+    );
+
+    revalidatePath(`/issues/${issueId}`);
+    revalidatePath("/issues");
+    return { success: true, data };
+}
+
+export async function removeIssueAssignee(issueId: string, profileId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("issue_assignees")
+        .delete()
+        .eq("issue_id", issueId)
+        .eq("profile_id", profileId);
+
+    if (error) {
+        console.error("Error removing issue assignee:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/issues/${issueId}`);
+    revalidatePath("/issues");
+    return { success: true };
+}
+
+export async function getIssueAssignees(issueId: string) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("issue_assignees")
+        .select(`
+            id,
+            assigned_at,
+            profile:profiles (id, full_name, email, avatar_url),
+            assigned_by_profile:profiles!issue_assignees_assigned_by_fkey (id, full_name)
+        `)
+        .eq("issue_id", issueId);
+
+    if (error) {
+        console.error("Error fetching issue assignees:", error);
+        return [];
+    }
+
+    return (data || []).map(a => ({
+        ...a,
+        profile: Array.isArray(a.profile) ? a.profile[0] || null : a.profile,
+        assigned_by_profile: Array.isArray(a.assigned_by_profile) ? a.assigned_by_profile[0] || null : a.assigned_by_profile,
+    }));
 }

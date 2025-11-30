@@ -3,10 +3,17 @@ import { connection } from "next/server";
 import { getMeetings } from "@/app/actions";
 import { MeetingList } from "@/components/meeting-list";
 import { NewMeetingModal } from "@/components/new-meeting-modal";
+import { CalendarView } from "@/components/calendar-view";
+import { ScheduleViewToggle } from "@/components/schedule-view-toggle";
 
-async function ScheduleLoader() {
+async function ScheduleLoader({ view }: { view: string }) {
     await connection();
     const meetings = await getMeetings();
+
+    if (view === 'calendar') {
+        return <CalendarView meetings={meetings} />;
+    }
+
     return <MeetingList meetings={meetings} />;
 }
 
@@ -32,7 +39,14 @@ function ScheduleSkeleton() {
     );
 }
 
-export default function SchedulePage() {
+export default async function SchedulePage({
+    searchParams,
+}: {
+    searchParams: Promise<{ view?: string }>;
+}) {
+    const params = await searchParams;
+    const view = params.view || 'list';
+
     return (
         <div className="relative flex flex-col h-full">
             {/* Background effects */}
@@ -54,7 +68,8 @@ export default function SchedulePage() {
                         </div>
                     </div>
                 </div>
-                <div>
+                <div className="flex items-center gap-3">
+                    <ScheduleViewToggle currentView={view} />
                     <NewMeetingModal />
                 </div>
             </header>
@@ -62,7 +77,7 @@ export default function SchedulePage() {
             {/* Content */}
             <div className="relative z-10 flex-1 overflow-y-auto p-6">
                 <Suspense fallback={<ScheduleSkeleton />}>
-                    <ScheduleLoader />
+                    <ScheduleLoader view={view} />
                 </Suspense>
             </div>
         </div>
