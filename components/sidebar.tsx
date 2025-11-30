@@ -19,6 +19,7 @@ import {
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
 import { useSidebar } from '@/components/sidebar-provider';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutGrid },
@@ -176,10 +177,18 @@ export function Sidebar() {
             {/* Footer with Toggle */}
             <div className="relative z-10 p-3 border-t border-white/[0.06] space-y-2">
                 {!isCollapsed && (
-                    <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group w-full px-1">
-                        <HelpCircle className="w-4 h-4 group-hover:text-qualia-400 transition-colors" />
-                        <span>Help & Feedback</span>
-                    </button>
+                    <div className="flex items-center justify-between px-1">
+                        <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
+                            <HelpCircle className="w-4 h-4 group-hover:text-qualia-400 transition-colors" />
+                            <span>Help & Feedback</span>
+                        </button>
+                        <ThemeToggle />
+                    </div>
+                )}
+                {isCollapsed && (
+                    <div className="flex justify-center">
+                        <ThemeToggle />
+                    </div>
                 )}
 
                 {/* Collapse Toggle Button */}
