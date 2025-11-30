@@ -14,7 +14,8 @@ import {
     Sparkles,
     PanelLeftClose,
     PanelLeft,
-    Calendar
+    Calendar,
+    Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
@@ -25,6 +26,7 @@ const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutGrid },
     { name: 'Issues', href: '/issues', icon: ListTodo },
     { name: 'Projects', href: '/projects', icon: Folder },
+    { name: 'Clients', href: '/clients', icon: Building2 },
     { name: 'Teams', href: '/teams', icon: Users },
     { name: 'Schedule', href: '/schedule', icon: Calendar },
     { name: 'Settings', href: '/settings', icon: Settings },

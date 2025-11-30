@@ -20,11 +20,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { createMeeting, getProjects } from "@/app/actions";
+import { createMeeting, getProjects, getClients } from "@/app/actions";
 
 interface Project {
     id: string;
     name: string;
+}
+
+interface Client {
+    id: string;
+    display_name: string;
+    lead_status: string;
 }
 
 export function NewMeetingModal() {
@@ -32,10 +38,13 @@ export function NewMeetingModal() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [projects, setProjects] = useState<Project[]>([]);
+    const [clients, setClients] = useState<Client[]>([]);
+    const [meetingType, setMeetingType] = useState<"internal" | "client">("internal");
 
     useEffect(() => {
         if (open) {
             getProjects().then(setProjects);
+            getClients().then((data) => setClients(data as Client[]));
         }
     }, [open]);
 
@@ -111,6 +120,43 @@ export function NewMeetingModal() {
                             />
                         </div>
                     </div>
+
+                    <div className="space-y-2">
+                        <Label>Meeting Type</Label>
+                        <Select
+                            value={meetingType}
+                            onValueChange={(v) => setMeetingType(v as "internal" | "client")}
+                        >
+                            <SelectTrigger className="bg-background border-border">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border">
+                                <SelectItem value="internal">Internal Meeting</SelectItem>
+                                <SelectItem value="client">Client Meeting</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    {meetingType === "client" && (
+                        <div className="space-y-2">
+                            <Label>Client *</Label>
+                            <Select name="client_id">
+                                <SelectTrigger className="bg-background border-border">
+                                    <SelectValue placeholder="Select client" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-card border-border">
+                                    {clients.map((client) => (
+                                        <SelectItem key={client.id} value={client.id}>
+                                            {client.display_name}
+                                            <span className="ml-2 text-xs text-muted-foreground">
+                                                ({client.lead_status.replace("_", " ")})
+                                            </span>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
 
                     <div className="space-y-2">
                         <Label>Project (Optional)</Label>

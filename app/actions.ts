@@ -885,6 +885,289 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
     return { success: true, data };
 }
 
+// ============ CLIENT ACTIONS ============
+
+export type LeadStatus = 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client';
+
+export async function createClientRecord(formData: FormData): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const displayName = formData.get("display_name") as string;
+    const phone = formData.get("phone") as string | null;
+    const website = formData.get("website") as string | null;
+    const billingAddress = formData.get("billing_address") as string | null;
+    const leadStatus = formData.get("lead_status") as LeadStatus || 'cold';
+    const notes = formData.get("notes") as string | null;
+    const workspaceId = formData.get("workspace_id") as string | null;
+
+    if (!displayName?.trim()) {
+        return { success: false, error: "Client name is required" };
+    }
+
+    // Get workspace ID from form or from user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    if (!wsId) {
+        return { success: false, error: "Workspace is required" };
+    }
+
+    const { data, error } = await supabase
+        .from("clients")
+        .insert({
+            display_name: displayName.trim(),
+            phone: phone?.trim() || null,
+            website: website?.trim() || null,
+            billing_address: billingAddress?.trim() || null,
+            lead_status: leadStatus,
+            notes: notes?.trim() || null,
+            workspace_id: wsId,
+            created_by: user.id,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error creating client:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/clients");
+    return { success: true, data };
+}
+
+export async function updateClientRecord(formData: FormData): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const id = formData.get("id") as string;
+    const displayName = formData.get("display_name") as string;
+    const phone = formData.get("phone") as string | null;
+    const website = formData.get("website") as string | null;
+    const billingAddress = formData.get("billing_address") as string | null;
+    const leadStatus = formData.get("lead_status") as LeadStatus;
+    const notes = formData.get("notes") as string | null;
+
+    if (!id) {
+        return { success: false, error: "Client ID is required" };
+    }
+
+    if (!displayName?.trim()) {
+        return { success: false, error: "Client name is required" };
+    }
+
+    const { data, error } = await supabase
+        .from("clients")
+        .update({
+            display_name: displayName.trim(),
+            phone: phone?.trim() || null,
+            website: website?.trim() || null,
+            billing_address: billingAddress?.trim() || null,
+            lead_status: leadStatus,
+            notes: notes?.trim() || null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error updating client:", error);
+        return { success: false, error: error.message };
+    }
+
+    // Log status change activity if status changed
+    const { data: oldClient } = await supabase
+        .from("clients")
+        .select("lead_status")
+        .eq("id", id)
+        .single();
+
+    if (oldClient && oldClient.lead_status !== leadStatus) {
+        await supabase
+            .from("client_activities")
+            .insert({
+                client_id: id,
+                type: 'status_change',
+                description: `Status changed from ${oldClient.lead_status} to ${leadStatus}`,
+                metadata: { old_status: oldClient.lead_status, new_status: leadStatus },
+                created_by: user.id,
+            });
+    }
+
+    revalidatePath("/clients");
+    revalidatePath(`/clients/${id}`);
+    return { success: true, data };
+}
+
+export async function deleteClientRecord(id: string): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("clients")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        console.error("Error deleting client:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/clients");
+    return { success: true };
+}
+
+export async function getClients(workspaceId?: string | null, leadStatus?: LeadStatus | null) {
+    const supabase = await createClient();
+
+    // Get workspace ID from parameter or user's default
+    let wsId = workspaceId;
+    if (!wsId) {
+        wsId = await getCurrentWorkspaceId();
+    }
+
+    let query = supabase
+        .from("clients")
+        .select(`
+            id,
+            display_name,
+            phone,
+            website,
+            billing_address,
+            lead_status,
+            notes,
+            last_contacted_at,
+            created_at,
+            creator:profiles!clients_created_by_fkey (id, full_name, email),
+            assigned:profiles!clients_assigned_to_fkey (id, full_name, email)
+        `)
+        .order("created_at", { ascending: false });
+
+    if (wsId) {
+        query = query.eq("workspace_id", wsId);
+    }
+
+    if (leadStatus) {
+        query = query.eq("lead_status", leadStatus);
+    }
+
+    const { data: clients, error } = await query;
+
+    if (error) {
+        console.error("Error fetching clients:", error);
+        return [];
+    }
+
+    return (clients || []).map(client => ({
+        ...client,
+        creator: Array.isArray(client.creator) ? client.creator[0] || null : client.creator,
+        assigned: Array.isArray(client.assigned) ? client.assigned[0] || null : client.assigned,
+    }));
+}
+
+export async function getClientById(id: string) {
+    const supabase = await createClient();
+
+    const { data: client, error } = await supabase
+        .from("clients")
+        .select(`
+            *,
+            creator:profiles!clients_created_by_fkey (id, full_name, email),
+            assigned:profiles!clients_assigned_to_fkey (id, full_name, email),
+            contacts:client_contacts (
+                id,
+                name,
+                email,
+                phone,
+                position,
+                is_primary
+            ),
+            activities:client_activities (
+                id,
+                type,
+                description,
+                metadata,
+                created_at,
+                created_by:profiles (id, full_name, email)
+            )
+        `)
+        .eq("id", id)
+        .single();
+
+    if (error) {
+        console.error("Error fetching client:", error);
+        return null;
+    }
+
+    return {
+        ...client,
+        creator: Array.isArray(client.creator) ? client.creator[0] || null : client.creator,
+        assigned: Array.isArray(client.assigned) ? client.assigned[0] || null : client.assigned,
+        activities: (client.activities || []).map((a: any) => ({
+            ...a,
+            created_by: Array.isArray(a.created_by) ? a.created_by[0] || null : a.created_by,
+        })),
+    };
+}
+
+export async function logClientActivity(
+    clientId: string,
+    type: 'call' | 'email' | 'meeting' | 'note' | 'status_change',
+    description: string,
+    metadata?: Record<string, any>
+): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { data, error } = await supabase
+        .from("client_activities")
+        .insert({
+            client_id: clientId,
+            type,
+            description,
+            metadata: metadata || {},
+            created_by: user.id,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error logging client activity:", error);
+        return { success: false, error: error.message };
+    }
+
+    // Update last_contacted_at if it's a contact activity
+    if (['call', 'email', 'meeting'].includes(type)) {
+        await supabase
+            .from("clients")
+            .update({ last_contacted_at: new Date().toISOString() })
+            .eq("id", clientId);
+    }
+
+    revalidatePath(`/clients/${clientId}`);
+    return { success: true, data };
+}
+
 // ============ MEETING ACTIONS ============
 
 export async function createMeeting(formData: FormData): Promise<ActionResult> {
@@ -900,6 +1183,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     const startTime = formData.get("start_time") as string;
     const endTime = formData.get("end_time") as string;
     const projectId = formData.get("project_id") as string | null;
+    const clientId = formData.get("client_id") as string | null; // New field for client association
     const workspaceId = formData.get("workspace_id") as string | null;
 
     if (!title?.trim()) {
@@ -926,6 +1210,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
             start_time: startTime,
             end_time: endTime,
             project_id: projectId || null,
+            client_id: clientId || null, // Include client_id in insert
             created_by: user.id,
             workspace_id: wsId,
         })
@@ -935,6 +1220,16 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     if (error) {
         console.error("Error creating meeting:", error);
         return { success: false, error: error.message };
+    }
+
+    // Log client activity if meeting is with a client
+    if (clientId) {
+        await logClientActivity(
+            clientId,
+            'meeting',
+            `Meeting scheduled: ${title}`,
+            { meeting_id: data.id, start_time: startTime, end_time: endTime }
+        );
     }
 
     revalidatePath("/schedule");
@@ -982,6 +1277,7 @@ export async function getMeetings(workspaceId?: string | null) {
             end_time,
             created_at,
             project:projects (id, name),
+            client:clients (id, display_name, lead_status),
             creator:profiles!meetings_created_by_fkey (id, full_name, email),
             attendees:meeting_attendees (
                 id,
@@ -1004,6 +1300,7 @@ export async function getMeetings(workspaceId?: string | null) {
     return (meetings || []).map(meeting => ({
         ...meeting,
         project: Array.isArray(meeting.project) ? meeting.project[0] || null : meeting.project,
+        client: Array.isArray((meeting as any).client) ? (meeting as any).client[0] || null : (meeting as any).client,
         creator: Array.isArray(meeting.creator) ? meeting.creator[0] || null : meeting.creator,
         attendees: (meeting.attendees || []).map((a: { profile: unknown[] | unknown }) => ({
             ...a,
