@@ -339,6 +339,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
     const teamId = formData.get("team_id") as string | null;
     const targetDate = formData.get("target_date") as string | null;
     const workspaceId = formData.get("workspace_id") as string | null;
+    const projectGroup = formData.get("project_group") as string | null;
 
     if (!name?.trim()) {
         return { success: false, error: "Project name is required" };
@@ -346,6 +347,10 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
 
     if (!teamId) {
         return { success: false, error: "Team is required" };
+    }
+
+    if (!projectGroup) {
+        return { success: false, error: "Project group is required" };
     }
 
     // Get workspace ID from form or from user's default
@@ -368,6 +373,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
             lead_id: user.id,
             target_date: targetDate || null,
             workspace_id: wsId,
+            project_group: projectGroup,
         })
         .select()
         .single();

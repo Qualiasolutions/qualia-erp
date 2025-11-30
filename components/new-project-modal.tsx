@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Briefcase, User, CheckCircle, PauseCircle, Zap } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -22,8 +22,52 @@ import {
 } from "@/components/ui/select";
 import { createProject, getTeams } from "@/app/actions";
 import { useWorkspace } from "@/components/workspace-provider";
+import { cn } from "@/lib/utils";
 
 const PROJECT_STATUSES = ["Demos", "Active", "Launched", "Delayed", "Archived", "Canceled"];
+
+const PROJECT_GROUPS = [
+    {
+        id: 'salman_kuwait',
+        label: 'Salman - Kuwait',
+        icon: Briefcase,
+        color: 'text-amber-400',
+        bgColor: 'bg-amber-500/10',
+        borderColor: 'border-amber-500/30',
+    },
+    {
+        id: 'tasos_kyriakides',
+        label: 'Tasos Kyriakides',
+        icon: User,
+        color: 'text-blue-400',
+        bgColor: 'bg-blue-500/10',
+        borderColor: 'border-blue-500/30',
+    },
+    {
+        id: 'active',
+        label: 'Active Projects',
+        icon: Zap,
+        color: 'text-green-400',
+        bgColor: 'bg-green-500/10',
+        borderColor: 'border-green-500/30',
+    },
+    {
+        id: 'finished',
+        label: 'Finished Projects',
+        icon: CheckCircle,
+        color: 'text-qualia-400',
+        bgColor: 'bg-qualia-500/10',
+        borderColor: 'border-qualia-500/30',
+    },
+    {
+        id: 'inactive',
+        label: 'Inactive Projects',
+        icon: PauseCircle,
+        color: 'text-gray-400',
+        bgColor: 'bg-gray-500/10',
+        borderColor: 'border-gray-500/30',
+    },
+];
 
 interface Team {
     id: string;
@@ -36,12 +80,15 @@ export function NewProjectModal() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [teams, setTeams] = useState<Team[]>([]);
+    const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
     const { currentWorkspace } = useWorkspace();
 
     useEffect(() => {
         if (open && currentWorkspace) {
             // Fetch teams for current workspace
             getTeams(currentWorkspace.id).then(setTeams);
+            // Reset group selection when dialog opens
+            setSelectedGroup(null);
         }
     }, [open, currentWorkspace]);
 
@@ -49,10 +96,18 @@ export function NewProjectModal() {
         setLoading(true);
         setError(null);
 
-        // Add workspace_id to form data
+        // Validate project group is selected
+        if (!selectedGroup) {
+            setError("Please select a project group");
+            setLoading(false);
+            return;
+        }
+
+        // Add workspace_id and project_group to form data
         if (currentWorkspace) {
             formData.set("workspace_id", currentWorkspace.id);
         }
+        formData.set("project_group", selectedGroup);
 
         const result = await createProject(formData);
 
@@ -87,6 +142,33 @@ export function NewProjectModal() {
                             required
                             className="bg-background border-border"
                         />
+                    </div>
+
+                    {/* Project Group Selection */}
+                    <div className="space-y-2">
+                        <Label>Project Group *</Label>
+                        <div className="grid grid-cols-1 gap-2">
+                            {PROJECT_GROUPS.map((group) => {
+                                const Icon = group.icon;
+                                const isSelected = selectedGroup === group.id;
+                                return (
+                                    <button
+                                        key={group.id}
+                                        type="button"
+                                        onClick={() => setSelectedGroup(group.id)}
+                                        className={cn(
+                                            "flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition-all duration-200 border text-left",
+                                            isSelected
+                                                ? `${group.bgColor} ${group.color} ${group.borderColor}`
+                                                : "bg-background border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                                        )}
+                                    >
+                                        <Icon className="w-4 h-4" />
+                                        {group.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     <div className="space-y-2">

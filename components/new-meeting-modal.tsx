@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, CalendarIcon, Clock } from "lucide-react";
+import { format, setHours, setMinutes, addMinutes } from "date-fns";
 import {
     Dialog,
     DialogContent,
@@ -20,7 +21,35 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { createMeeting, getProjects, getClients } from "@/app/actions";
+
+// Time slots in 30-minute increments
+const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
+    const hour = Math.floor(i / 2);
+    const minute = (i % 2) * 30;
+    const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`;
+    const period = hour >= 12 ? "PM" : "AM";
+    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    const display = `${displayHour}:${minute.toString().padStart(2, "0")} ${period}`;
+    return { value: time, label: display };
+});
+
+// Common meeting durations
+const DURATION_OPTIONS = [
+    { value: 15, label: "15 min" },
+    { value: 30, label: "30 min" },
+    { value: 45, label: "45 min" },
+    { value: 60, label: "1 hour" },
+    { value: 90, label: "1.5 hours" },
+    { value: 120, label: "2 hours" },
+];
 
 interface Project {
     id: string;
@@ -41,21 +70,56 @@ export function NewMeetingModal() {
     const [clients, setClients] = useState<Client[]>([]);
     const [meetingType, setMeetingType] = useState<"internal" | "client">("internal");
 
+    // Modern time picker state
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+    const [selectedTime, setSelectedTime] = useState<string>("09:00");
+    const [duration, setDuration] = useState<number>(60);
+
     useEffect(() => {
         if (open) {
             getProjects().then(setProjects);
             getClients().then((data) => setClients(data as Client[]));
+            // Set default date to today
+            setSelectedDate(new Date());
         }
     }, [open]);
 
-    async function handleSubmit(formData: FormData) {
+    // Calculate start and end times for the form
+    const getStartDateTime = () => {
+        if (!selectedDate) return "";
+        const [hours, minutes] = selectedTime.split(":").map(Number);
+        const dateWithTime = setMinutes(setHours(selectedDate, hours), minutes);
+        return dateWithTime.toISOString();
+    };
+
+    const getEndDateTime = () => {
+        if (!selectedDate) return "";
+        const [hours, minutes] = selectedTime.split(":").map(Number);
+        const dateWithTime = setMinutes(setHours(selectedDate, hours), minutes);
+        const endTime = addMinutes(dateWithTime, duration);
+        return endTime.toISOString();
+    };
+
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
         setLoading(true);
         setError(null);
+
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+
+        // Add computed datetime values
+        formData.set("start_time", getStartDateTime());
+        formData.set("end_time", getEndDateTime());
 
         const result = await createMeeting(formData);
 
         if (result.success) {
             setOpen(false);
+            // Reset form state
+            setSelectedDate(new Date());
+            setSelectedTime("09:00");
+            setDuration(60);
         } else {
             setError(result.error || "Failed to create meeting");
         }
@@ -75,7 +139,7 @@ export function NewMeetingModal() {
                 <DialogHeader>
                     <DialogTitle>Schedule Meeting</DialogTitle>
                 </DialogHeader>
-                <form action={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="title">Title *</Label>
                         <Input
@@ -93,31 +157,100 @@ export function NewMeetingModal() {
                             id="description"
                             name="description"
                             placeholder="Meeting agenda..."
-                            className="bg-background border-border min-h-[100px]"
+                            className="bg-background border-border min-h-[80px]"
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="start_time">Start Time *</Label>
-                            <Input
-                                id="start_time"
-                                name="start_time"
-                                type="datetime-local"
-                                required
-                                className="bg-background border-border"
-                            />
-                        </div>
+                    {/* Modern Date & Time Selection */}
+                    <div className="space-y-3">
+                        <Label>When</Label>
+                        <div className="flex flex-col gap-3">
+                            {/* Date Picker */}
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className={cn(
+                                            "w-full justify-start text-left font-normal bg-background border-border",
+                                            !selectedDate && "text-muted-foreground"
+                                        )}
+                                    >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Pick a date"}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={setSelectedDate}
+                                        initialFocus
+                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                    />
+                                </PopoverContent>
+                            </Popover>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="end_time">End Time *</Label>
-                            <Input
-                                id="end_time"
-                                name="end_time"
-                                type="datetime-local"
-                                required
-                                className="bg-background border-border"
-                            />
+                            {/* Time & Duration Row */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Time Selector */}
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="justify-start text-left font-normal bg-background border-border"
+                                        >
+                                            <Clock className="mr-2 h-4 w-4" />
+                                            {TIME_SLOTS.find(t => t.value === selectedTime)?.label || selectedTime}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-48 p-0 bg-card border-border" align="start">
+                                        <div className="max-h-64 overflow-y-auto p-1">
+                                            {TIME_SLOTS.map((slot) => (
+                                                <button
+                                                    key={slot.value}
+                                                    type="button"
+                                                    onClick={() => setSelectedTime(slot.value)}
+                                                    className={cn(
+                                                        "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
+                                                        selectedTime === slot.value
+                                                            ? "bg-qualia-600 text-white"
+                                                            : "hover:bg-accent"
+                                                    )}
+                                                >
+                                                    {slot.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+
+                                {/* Duration Selector */}
+                                <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
+                                    <SelectTrigger className="bg-background border-border">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-card border-border">
+                                        {DURATION_OPTIONS.map((opt) => (
+                                            <SelectItem key={opt.value} value={opt.value.toString()}>
+                                                {opt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Time Summary */}
+                            {selectedDate && (
+                                <p className="text-xs text-muted-foreground pl-1">
+                                    {TIME_SLOTS.find(t => t.value === selectedTime)?.label} - {(() => {
+                                        const [hours, mins] = selectedTime.split(":").map(Number);
+                                        const endDate = addMinutes(setMinutes(setHours(new Date(), hours), mins), duration);
+                                        return format(endDate, "h:mm a");
+                                    })()}
+                                </p>
+                            )}
                         </div>
                     </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { List, CalendarDays } from 'lucide-react';
+import { List, CalendarDays, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ScheduleViewToggleProps {
@@ -20,6 +20,18 @@ export function ScheduleViewToggle({ currentView }: ScheduleViewToggleProps) {
 
     return (
         <div className="flex items-center gap-1 p-1 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+            <button
+                onClick={() => setView('day')}
+                className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200",
+                    currentView === 'day'
+                        ? "bg-qualia-500/20 text-qualia-400"
+                        : "text-muted-foreground hover:text-foreground hover:bg-white/[0.05]"
+                )}
+            >
+                <Clock className="w-4 h-4" />
+                <span>Day</span>
+            </button>
             <button
                 onClick={() => setView('list')}
                 className={cn(
@@ -42,7 +54,7 @@ export function ScheduleViewToggle({ currentView }: ScheduleViewToggleProps) {
                 )}
             >
                 <CalendarDays className="w-4 h-4" />
-                <span>Calendar</span>
+                <span>Month</span>
             </button>
         </div>
     );

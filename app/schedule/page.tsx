@@ -4,6 +4,7 @@ import { getMeetings } from "@/app/actions";
 import { MeetingList } from "@/components/meeting-list";
 import { NewMeetingModal } from "@/components/new-meeting-modal";
 import { CalendarView } from "@/components/calendar-view";
+import { DayScheduleView } from "@/components/day-schedule-view";
 import { ScheduleViewToggle } from "@/components/schedule-view-toggle";
 
 async function ScheduleLoader({ view }: { view: string }) {
@@ -14,7 +15,12 @@ async function ScheduleLoader({ view }: { view: string }) {
         return <CalendarView meetings={meetings} />;
     }
 
-    return <MeetingList meetings={meetings} />;
+    if (view === 'list') {
+        return <MeetingList meetings={meetings} />;
+    }
+
+    // Default to day view
+    return <DayScheduleView meetings={meetings} />;
 }
 
 function ScheduleSkeleton() {
@@ -45,7 +51,7 @@ export default async function SchedulePage({
     searchParams: Promise<{ view?: string }>;
 }) {
     const params = await searchParams;
-    const view = params.view || 'list';
+    const view = params.view || 'day';
 
     return (
         <div className="relative flex flex-col h-full">

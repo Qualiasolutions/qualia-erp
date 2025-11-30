@@ -22,6 +22,7 @@ export interface Project {
     name: string;
     status: string;
     target_date: string | null;
+    project_group?: string | null;
     lead?: {
         id: string;
         full_name: string | null;

@@ -3,12 +3,13 @@ import { connection } from "next/server";
 import { ProjectList, Project } from "@/components/project-list";
 import { createClient } from "@/lib/supabase/server";
 import { NewProjectModal } from "@/components/new-project-modal";
-import { getCurrentWorkspaceId, getTeams } from "@/app/actions";
-import { ProjectsFilter } from "@/components/projects-filter";
+import { getCurrentWorkspaceId } from "@/app/actions";
+import { ProjectGroupTabs } from "@/components/project-group-tabs";
+
+export type ProjectGroup = 'salman_kuwait' | 'tasos_kyriakides' | 'finished' | 'inactive' | 'active';
 
 interface FilterParams {
-    status?: string;
-    team?: string;
+    group?: ProjectGroup;
 }
 
 async function ProjectListLoader({ filters }: { filters: FilterParams }) {
@@ -30,6 +31,7 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
         name: p.name,
         status: p.status,
         target_date: p.target_date,
+        project_group: p.project_group,
         lead: p.lead_id ? {
             id: p.lead_id,
             full_name: p.lead_full_name,
@@ -41,24 +43,12 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
         }
     }));
 
-    // Apply client-side filtering (since RPC only filters by workspace)
-    // This is still more efficient than N+1 queries
-    if (filters.status) {
-        const statuses = filters.status.split(',');
-        projects = projects.filter(p => statuses.includes(p.status));
+    // Filter by project group
+    if (filters.group) {
+        projects = projects.filter(p => p.project_group === filters.group);
     }
-    
-    // Note: Team filtering would require adding team_id to the RPC or a separate client-side join. 
-    // For now, if strictly needed, we might need to adjust the RPC or fetch logic. 
-    // Assuming simple status filtering is the primary use case for this optimization request.
 
     return <ProjectList projects={projects} />;
-}
-
-async function FilterLoader() {
-    await connection();
-    const teams = await getTeams();
-    return <ProjectsFilter teams={teams} />;
 }
 
 function ProjectListSkeleton() {
@@ -123,7 +113,7 @@ export default async function ProjectsPage({
             <div className="fixed inset-0 bg-gradient-to-br from-neon-purple/5 via-transparent to-qualia-500/5 pointer-events-none" />
 
             {/* Header */}
-            <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-background/80 backdrop-blur-sm">
+            <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-border bg-background/80 backdrop-blur-sm">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-xl bg-neon-purple/10 border border-neon-purple/20">
@@ -138,12 +128,14 @@ export default async function ProjectsPage({
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <Suspense fallback={<div className="w-20 h-8" />}>
-                        <FilterLoader />
-                    </Suspense>
                     <NewProjectModal />
                 </div>
             </header>
+
+            {/* Group Tabs */}
+            <div className="relative z-10 px-6 py-4 border-b border-border bg-background/50">
+                <ProjectGroupTabs currentGroup={filters.group} />
+            </div>
 
             {/* Content */}
             <div className="relative z-10 flex-1 overflow-y-auto p-6">
