@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import {
     LayoutGrid,
     ListTodo,
-    Users,
     Settings,
     Bell,
     HelpCircle,
@@ -27,7 +26,6 @@ const navigation = [
     { name: 'Issues', href: '/issues', icon: ListTodo },
     { name: 'Projects', href: '/projects', icon: Folder },
     { name: 'Clients', href: '/clients', icon: Building2 },
-    { name: 'Teams', href: '/teams', icon: Users },
     { name: 'Schedule', href: '/schedule', icon: Calendar },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];

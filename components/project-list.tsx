@@ -294,6 +294,23 @@ function ProjectRow({ project }: { project: Project }) {
 export function ProjectList({ projects }: ProjectListProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
+    // Sort projects: 100% complete projects go to bottom
+    const sortedProjects = [...projects].sort((a, b) => {
+        const progressA = a.status === 'Launched' ? 100 : (a.issue_stats?.total
+            ? Math.round((a.issue_stats.done / a.issue_stats.total) * 100)
+            : 0);
+        const progressB = b.status === 'Launched' ? 100 : (b.issue_stats?.total
+            ? Math.round((b.issue_stats.done / b.issue_stats.total) * 100)
+            : 0);
+
+        // 100% projects go to bottom
+        if (progressA === 100 && progressB !== 100) return 1;
+        if (progressB === 100 && progressA !== 100) return -1;
+
+        // For non-100% projects, sort by progress descending (higher progress first)
+        return progressB - progressA;
+    });
+
     if (projects.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-64 text-center">
@@ -377,7 +394,7 @@ export function ProjectList({ projects }: ProjectListProps) {
             {/* Content */}
             {viewMode === 'grid' ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {projects.map((project, index) => (
+                    {sortedProjects.map((project, index) => (
                         <div
                             key={project.id}
                             className="animate-slide-in"
@@ -389,7 +406,7 @@ export function ProjectList({ projects }: ProjectListProps) {
                 </div>
             ) : (
                 <div className="space-y-1">
-                    {projects.map((project, index) => (
+                    {sortedProjects.map((project, index) => (
                         <div
                             key={project.id}
                             className="animate-slide-in"
