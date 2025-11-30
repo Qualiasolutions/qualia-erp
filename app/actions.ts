@@ -18,7 +18,8 @@ type ActivityType =
     | 'issue_completed'
     | 'comment_added'
     | 'team_created'
-    | 'member_added';
+    | 'member_added'
+    | 'meeting_created';
 
 // ============ WORKSPACE HELPERS ============
 
@@ -235,6 +236,7 @@ async function createActivity(
         issue_id?: string | null;
         team_id?: string | null;
         comment_id?: string | null;
+        meeting_id?: string | null;
         workspace_id?: string | null;
     },
     metadata?: Record<string, unknown>
@@ -247,6 +249,7 @@ async function createActivity(
             issue_id: refs.issue_id || null,
             team_id: refs.team_id || null,
             comment_id: refs.comment_id || null,
+            meeting_id: refs.meeting_id || null,
             workspace_id: refs.workspace_id || null,
             metadata: metadata || {},
         });
@@ -740,7 +743,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
     const description = formData.get("description") as string | null;
-    const status = formData.get("status") as string;
+    const projectGroup = formData.get("project_group") as string | null;
     const leadId = formData.get("lead_id") as string | null;
     const teamId = formData.get("team_id") as string | null;
     const targetDate = formData.get("target_date") as string | null;
@@ -758,7 +761,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
         .update({
             name: name.trim(),
             description: description?.trim() || null,
-            status,
+            project_group: projectGroup || null,
             lead_id: leadId || null,
             team_id: teamId || null,
             target_date: targetDate || null,
@@ -1238,7 +1241,21 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
         );
     }
 
+    // Record activity for dashboard feed
+    await createActivity(
+        supabase,
+        user.id,
+        'meeting_created',
+        {
+            meeting_id: data.id,
+            project_id: projectId,
+            workspace_id: wsId,
+        },
+        { title: title.trim(), start_time: startTime, end_time: endTime }
+    );
+
     revalidatePath("/schedule");
+    revalidatePath("/"); // Also revalidate dashboard to show new activity
     return { success: true, data };
 }
 
@@ -1331,6 +1348,7 @@ export type Activity = {
     project: { id: string; name: string } | null;
     issue: { id: string; title: string } | null;
     team: { id: string; name: string; key: string } | null;
+    meeting: { id: string; title: string; start_time: string } | null;
 };
 
 export async function getRecentActivities(limit: number = 20, workspaceId?: string | null): Promise<Activity[]> {
@@ -1352,7 +1370,8 @@ export async function getRecentActivities(limit: number = 20, workspaceId?: stri
             actor:profiles!activities_actor_id_fkey (id, full_name, email, avatar_url),
             project:projects (id, name),
             issue:issues (id, title),
-            team:teams (id, name, key)
+            team:teams (id, name, key),
+            meeting:meetings (id, title, start_time)
         `)
         .order("created_at", { ascending: false })
         .limit(limit);
@@ -1375,6 +1394,7 @@ export async function getRecentActivities(limit: number = 20, workspaceId?: stri
         project: Array.isArray(a.project) ? a.project[0] || null : a.project,
         issue: Array.isArray(a.issue) ? a.issue[0] || null : a.issue,
         team: Array.isArray(a.team) ? a.team[0] || null : a.team,
+        meeting: Array.isArray(a.meeting) ? a.meeting[0] || null : a.meeting,
     })) as Activity[];
 }
 

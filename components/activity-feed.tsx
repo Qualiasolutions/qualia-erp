@@ -10,68 +10,68 @@ import {
     CheckCircle,
     UserPlus,
     Edit,
+    Calendar,
+    Inbox,
 } from 'lucide-react';
 import type { Activity } from '@/app/actions';
 
 const activityConfig: Record<
     Activity['type'],
-    { icon: typeof FolderPlus; label: string; color: string; bgColor: string; borderColor: string }
+    { icon: typeof FolderPlus; label: string; color: string; bgColor: string }
 > = {
     project_created: {
         icon: FolderPlus,
         label: 'created a project',
-        color: 'text-qualia-400',
-        bgColor: 'bg-qualia-500/10',
-        borderColor: 'border-qualia-500/20',
+        color: 'text-primary',
+        bgColor: 'bg-primary/10',
     },
     project_updated: {
         icon: Edit,
         label: 'updated a project',
-        color: 'text-qualia-400',
-        bgColor: 'bg-qualia-500/10',
-        borderColor: 'border-qualia-500/20',
+        color: 'text-primary',
+        bgColor: 'bg-primary/10',
     },
     issue_created: {
         icon: ListPlus,
         label: 'created an issue',
-        color: 'text-neon-green',
-        bgColor: 'bg-neon-green/10',
-        borderColor: 'border-neon-green/20',
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bgColor: 'bg-emerald-500/10',
     },
     issue_updated: {
         icon: Edit,
         label: 'updated an issue',
-        color: 'text-amber-400',
+        color: 'text-amber-600 dark:text-amber-400',
         bgColor: 'bg-amber-500/10',
-        borderColor: 'border-amber-500/20',
     },
     issue_completed: {
         icon: CheckCircle,
         label: 'completed an issue',
-        color: 'text-neon-green',
-        bgColor: 'bg-neon-green/10',
-        borderColor: 'border-neon-green/20',
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bgColor: 'bg-emerald-500/10',
     },
     comment_added: {
         icon: MessageSquarePlus,
         label: 'commented on',
-        color: 'text-orange-400',
+        color: 'text-orange-600 dark:text-orange-400',
         bgColor: 'bg-orange-500/10',
-        borderColor: 'border-orange-500/20',
     },
     team_created: {
         icon: Users,
         label: 'created a team',
-        color: 'text-neon-purple',
-        bgColor: 'bg-neon-purple/10',
-        borderColor: 'border-neon-purple/20',
+        color: 'text-violet-600 dark:text-violet-400',
+        bgColor: 'bg-violet-500/10',
     },
     member_added: {
         icon: UserPlus,
         label: 'added a member to',
-        color: 'text-neon-pink',
-        bgColor: 'bg-neon-pink/10',
-        borderColor: 'border-neon-pink/20',
+        color: 'text-pink-600 dark:text-pink-400',
+        bgColor: 'bg-pink-500/10',
+    },
+    meeting_created: {
+        icon: Calendar,
+        label: 'scheduled a meeting',
+        color: 'text-sky-600 dark:text-sky-400',
+        bgColor: 'bg-sky-500/10',
     },
 };
 
@@ -92,7 +92,6 @@ function ActivityItem({ activity }: { activity: Activity }) {
         activity.actor?.email?.split('@')[0] ||
         'Someone';
 
-    // Determine the target entity and link
     let targetName = '';
     let targetLink = '';
 
@@ -112,12 +111,15 @@ function ActivityItem({ activity }: { activity: Activity }) {
     } else if (activity.type === 'team_created' || activity.type === 'member_added') {
         targetName = activity.team?.name || (activity.metadata?.name as string) || 'a team';
         targetLink = activity.team ? `/teams/${activity.team.id}` : '';
+    } else if (activity.type === 'meeting_created') {
+        targetName = activity.meeting?.title || (activity.metadata?.title as string) || 'a meeting';
+        targetLink = '/schedule';
     }
 
     return (
-        <div className="flex items-start gap-3 py-3 px-4 hover:bg-white/[0.03] rounded-xl transition-all duration-300 group">
-            <div className={`p-2.5 rounded-xl ${config.bgColor} border ${config.borderColor} ${config.color} transition-all duration-300 group-hover:scale-110`}>
-                <Icon className="w-4 h-4" />
+        <div className="flex items-start gap-3 py-2.5 px-3 hover:bg-secondary/50 rounded-lg transition-colors group">
+            <div className={`p-2 rounded-lg ${config.bgColor} ${config.color}`}>
+                <Icon className="w-3.5 h-3.5" />
             </div>
             <div className="flex-1 min-w-0">
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -126,7 +128,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
                     {targetLink ? (
                         <Link
                             href={targetLink}
-                            className="font-medium text-qualia-400 hover:text-qualia-300 transition-colors"
+                            className="font-medium text-primary hover:underline transition-colors"
                         >
                             {targetName}
                         </Link>
@@ -134,18 +136,18 @@ function ActivityItem({ activity }: { activity: Activity }) {
                         <span className="font-medium text-foreground">{targetName}</span>
                     )}
                     {activity.team && activity.type !== 'team_created' && activity.type !== 'member_added' && (
-                        <span className="text-muted-foreground/60">
+                        <span className="text-muted-foreground">
                             {' '}in{' '}
                             <Link
                                 href={`/teams/${activity.team.id}`}
-                                className="text-muted-foreground hover:text-foreground transition-colors"
+                                className="hover:text-foreground transition-colors"
                             >
                                 {activity.team.name}
                             </Link>
                         </span>
                     )}
                 </p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
+                <p className="text-xs text-muted-foreground mt-0.5">
                     {formatRelativeTime(activity.created_at)}
                 </p>
             </div>
@@ -156,23 +158,23 @@ function ActivityItem({ activity }: { activity: Activity }) {
 export function ActivityFeed({ activities }: { activities: Activity[] }) {
     if (activities.length === 0) {
         return (
-            <div className="text-center py-12">
-                <div className="inline-flex p-4 rounded-2xl bg-white/[0.03] border border-white/[0.06] mb-4">
-                    <FolderPlus className="w-6 h-6 text-muted-foreground/40" />
+            <div className="text-center py-10">
+                <div className="inline-flex p-3 rounded-xl bg-muted mb-3">
+                    <Inbox className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <p className="text-muted-foreground">No recent activity</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">Activity will appear here as your team works</p>
+                <p className="text-sm text-foreground font-medium">No recent activity</p>
+                <p className="text-xs text-muted-foreground mt-1">Activity will appear here as your team works</p>
             </div>
         );
     }
 
     return (
-        <div className="space-y-1">
+        <div className="space-y-0.5">
             {activities.map((activity, index) => (
                 <div
                     key={activity.id}
-                    className="animate-slide-in"
-                    style={{ animationDelay: `${index * 50}ms` }}
+                    className="slide-in"
+                    style={{ animationDelay: `${index * 30}ms` }}
                 >
                     <ActivityItem activity={activity} />
                 </div>

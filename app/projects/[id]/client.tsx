@@ -35,8 +35,9 @@ import {
     getTeams,
     getProfiles,
 } from "@/app/actions";
+import { PROJECT_GROUP_LABELS, type ProjectGroup } from "@/components/project-group-tabs";
 
-const STATUSES = ["Demos", "Active", "Launched", "Delayed", "Archived", "Canceled"];
+const PROJECT_GROUPS: ProjectGroup[] = ['salman_kuwait', 'tasos_kyriakides', 'active', 'finished', 'inactive'];
 
 interface Profile {
     id: string;
@@ -58,6 +59,7 @@ interface Project {
     name: string;
     description: string | null;
     status: string;
+    project_group: ProjectGroup | null;
     start_date: string | null;
     target_date: string | null;
     created_at: string;
@@ -72,19 +74,20 @@ interface Project {
     };
 }
 
-const StatusBadge = ({ status }: { status: string }) => {
-    const colors: Record<string, string> = {
-        'Active': 'bg-green-500/10 text-green-400 border-green-500/20',
-        'Demos': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-        'Launched': 'bg-qualia-500/10 text-qualia-400 border-qualia-500/20',
-        'Delayed': 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-        'Archived': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-        'Canceled': 'bg-red-500/10 text-red-400 border-red-500/20',
+const ProjectGroupBadge = ({ group }: { group: ProjectGroup | null }) => {
+    const colors: Record<ProjectGroup, string> = {
+        'salman_kuwait': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+        'tasos_kyriakides': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        'active': 'bg-green-500/10 text-green-400 border-green-500/20',
+        'finished': 'bg-qualia-500/10 text-qualia-400 border-qualia-500/20',
+        'inactive': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
     };
 
+    if (!group) return null;
+
     return (
-        <span className={`text-xs px-2 py-0.5 rounded border ${colors[status] || colors['Active']}`}>
-            {status}
+        <span className={`text-xs px-2 py-0.5 rounded border ${colors[group]}`}>
+            {PROJECT_GROUP_LABELS[group]}
         </span>
     );
 };
@@ -142,7 +145,7 @@ export function ProjectDetailClient() {
     // Form state
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const [status, setStatus] = useState("");
+    const [projectGroup, setProjectGroup] = useState<ProjectGroup | null>(null);
     const [leadId, setLeadId] = useState<string | null>(null);
     const [teamId, setTeamId] = useState<string | null>(null);
     const [targetDate, setTargetDate] = useState("");
@@ -164,7 +167,7 @@ export function ProjectDetailClient() {
                 setProject(projectData as Project);
                 setName(projectData.name);
                 setDescription(projectData.description || "");
-                setStatus(projectData.status);
+                setProjectGroup((projectData as Project).project_group || null);
                 setLeadId(projectData.lead?.id || null);
                 setTeamId(projectData.team?.id || null);
                 setTargetDate(projectData.target_date || "");
@@ -187,7 +190,7 @@ export function ProjectDetailClient() {
         formData.set("id", id);
         formData.set("name", name);
         formData.set("description", description);
-        formData.set("status", status);
+        if (projectGroup) formData.set("project_group", projectGroup);
         if (leadId) formData.set("lead_id", leadId);
         if (teamId) formData.set("team_id", teamId);
         if (targetDate) formData.set("target_date", targetDate);
@@ -261,7 +264,7 @@ export function ProjectDetailClient() {
                         <div className="w-8 h-8 rounded bg-muted flex items-center justify-center text-muted-foreground">
                             <Folder className="w-4 h-4" />
                         </div>
-                        <StatusBadge status={status} />
+                        <ProjectGroupBadge group={projectGroup} />
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -370,16 +373,17 @@ export function ProjectDetailClient() {
                         {/* Sidebar */}
                         <div className="space-y-4">
                             <div className="bg-card border border-border rounded-lg p-4 space-y-4">
-                                {/* Status */}
+                                {/* Project Group */}
                                 <div>
-                                    <label className="text-xs text-muted-foreground mb-2 block">Status</label>
-                                    <Select value={status} onValueChange={setStatus}>
+                                    <label className="text-xs text-muted-foreground mb-2 block">Category</label>
+                                    <Select value={projectGroup || "none"} onValueChange={(v) => setProjectGroup(v === "none" ? null : v as ProjectGroup)}>
                                         <SelectTrigger className="bg-background border-border">
-                                            <SelectValue />
+                                            <SelectValue placeholder="No category" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {STATUSES.map((s) => (
-                                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                            <SelectItem value="none">No category</SelectItem>
+                                            {PROJECT_GROUPS.map((g) => (
+                                                <SelectItem key={g} value={g}>{PROJECT_GROUP_LABELS[g]}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>

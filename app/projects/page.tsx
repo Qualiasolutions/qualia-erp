@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NewProjectModal } from "@/components/new-project-modal";
 import { getCurrentWorkspaceId } from "@/app/actions";
 import { ProjectGroupTabs } from "@/components/project-group-tabs";
+import { Folder } from "lucide-react";
 
 export type ProjectGroup = 'salman_kuwait' | 'tasos_kyriakides' | 'finished' | 'inactive' | 'active';
 
@@ -53,44 +54,43 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
 
 function ProjectListSkeleton() {
     return (
-        <div className="space-y-6">
+        <div className="space-y-5">
             {/* Stats skeleton */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-5">
                 <div className="flex items-center gap-2">
-                    <div className="w-10 h-8 bg-white/[0.05] rounded animate-pulse" />
-                    <div className="w-16 h-4 bg-white/[0.05] rounded animate-pulse" />
+                    <div className="w-8 h-7 bg-muted rounded animate-pulse" />
+                    <div className="w-16 h-4 bg-muted rounded animate-pulse" />
                 </div>
-                <div className="h-6 w-px bg-white/[0.06]" />
+                <div className="h-4 w-px bg-border" />
                 <div className="flex items-center gap-4">
-                    <div className="w-20 h-4 bg-white/[0.05] rounded animate-pulse" />
-                    <div className="w-24 h-4 bg-white/[0.05] rounded animate-pulse" />
+                    <div className="w-20 h-4 bg-muted rounded animate-pulse" />
+                    <div className="w-24 h-4 bg-muted rounded animate-pulse" />
                 </div>
             </div>
             {/* Grid skeleton */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                    <div key={i} className="glass-card rounded-2xl p-5 animate-pulse">
+                    <div key={i} className="surface rounded-xl p-5">
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-white/[0.05]" />
+                                <div className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
                                 <div>
-                                    <div className="w-28 h-4 bg-white/[0.05] rounded mb-2" />
-                                    <div className="w-16 h-4 bg-white/[0.05] rounded" />
+                                    <div className="w-28 h-4 bg-muted rounded mb-2 animate-pulse" />
+                                    <div className="w-16 h-3 bg-muted rounded animate-pulse" />
                                 </div>
                             </div>
-                            <div className="w-16 h-5 bg-white/[0.05] rounded" />
+                            <div className="w-14 h-5 bg-muted rounded animate-pulse" />
                         </div>
-                        <div className="space-y-2 mb-4">
+                        <div className="space-y-3">
                             <div className="flex justify-between">
-                                <div className="w-16 h-3 bg-white/[0.05] rounded" />
-                                <div className="w-20 h-3 bg-white/[0.05] rounded" />
+                                <div className="w-16 h-3 bg-muted rounded animate-pulse" />
+                                <div className="w-12 h-3 bg-muted rounded animate-pulse" />
                             </div>
-                            <div className="h-2 w-full bg-white/[0.05] rounded-full" />
-                            <div className="w-10 h-6 bg-white/[0.05] rounded" />
+                            <div className="h-1.5 w-full bg-muted rounded-full animate-pulse" />
                         </div>
-                        <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-                            <div className="w-20 h-3 bg-white/[0.05] rounded" />
-                            <div className="w-24 h-3 bg-white/[0.05] rounded" />
+                        <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+                            <div className="w-20 h-3 bg-muted rounded animate-pulse" />
+                            <div className="w-20 h-3 bg-muted rounded animate-pulse" />
                         </div>
                     </div>
                 ))}
@@ -107,38 +107,30 @@ export default async function ProjectsPage({
     const filters = await searchParams;
 
     return (
-        <div className="relative flex flex-col h-full">
-            {/* Background effects */}
-            <div className="fixed inset-0 bg-grid opacity-30 pointer-events-none" />
-            <div className="fixed inset-0 bg-gradient-to-br from-neon-purple/5 via-transparent to-qualia-500/5 pointer-events-none" />
-
+        <div className="flex flex-col h-full">
             {/* Header */}
-            <header className="relative z-10 flex items-center justify-between px-6 py-4 border-b border-border bg-background/80 backdrop-blur-sm">
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-neon-purple/10 border border-neon-purple/20">
-                            <svg className="w-5 h-5 text-neon-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-semibold text-foreground">Projects</h1>
-                            <p className="text-xs text-muted-foreground">Manage your projects and track progress</p>
-                        </div>
+            <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-violet-500/10">
+                        <Folder className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <div>
+                        <h1 className="text-base font-semibold text-foreground">Projects</h1>
+                        <p className="text-xs text-muted-foreground">Manage your projects and track progress</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <NewProjectModal />
                 </div>
             </header>
 
             {/* Group Tabs */}
-            <div className="relative z-10 px-6 py-4 border-b border-border bg-background/50">
+            <div className="px-6 py-3 border-b border-border bg-background">
                 <ProjectGroupTabs currentGroup={filters.group} />
             </div>
 
             {/* Content */}
-            <div className="relative z-10 flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6">
                 <Suspense fallback={<ProjectListSkeleton />}>
                     <ProjectListLoader filters={filters} />
                 </Suspense>

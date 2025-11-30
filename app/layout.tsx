@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { CommandMenu } from "@/components/command-menu";
@@ -9,8 +8,6 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { WorkspaceProvider } from "@/components/workspace-provider";
 import { SidebarProvider } from "@/components/sidebar-provider";
 
-const inter = Inter({ subsets: ["latin"] });
-
 export const metadata: Metadata = {
   title: "Qualia Internal Suite",
   description: "Project Planning & Management",
@@ -18,16 +15,20 @@ export const metadata: Metadata = {
 
 function SidebarSkeleton() {
   return (
-    <div className="flex flex-col h-screen w-64 bg-card border-r border-border transition-all duration-300">
-      <div className="p-4 border-b border-border">
-        <div className="h-6 w-32 bg-muted rounded animate-pulse" />
+    <div className="flex flex-col h-screen w-60 bg-card border-r border-border">
+      <div className="h-14 px-4 flex items-center border-b border-border">
+        <div className="h-7 w-7 bg-muted rounded-lg animate-pulse" />
+        <div className="ml-2.5 space-y-1.5">
+          <div className="h-3.5 w-16 bg-muted rounded animate-pulse" />
+          <div className="h-2.5 w-20 bg-muted rounded animate-pulse" />
+        </div>
       </div>
-      <div className="p-3">
-        <div className="h-8 bg-muted rounded animate-pulse" />
+      <div className="p-3 border-b border-border">
+        <div className="h-9 bg-muted rounded-lg animate-pulse" />
       </div>
-      <nav className="flex-1 px-3 py-2 space-y-1">
+      <nav className="flex-1 p-3 space-y-1">
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="h-10 bg-muted rounded-xl animate-pulse" />
+          <div key={i} className="h-9 bg-muted rounded-lg animate-pulse" />
         ))}
       </nav>
     </div>
@@ -41,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} bg-background text-foreground antialiased flex h-screen overflow-hidden`}>
+      <body className="bg-background text-foreground antialiased flex h-screen overflow-hidden">
         <ThemeProvider>
           <WorkspaceProvider>
             <SidebarProvider>
@@ -51,11 +52,11 @@ export default function RootLayout({
               <Suspense fallback={<SidebarSkeleton />}>
                 <Sidebar />
               </Suspense>
-              <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
-                <header className="flex items-center justify-end px-4 py-2 border-b border-border bg-background">
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <header className="flex items-center justify-end h-12 px-4 border-b border-border bg-card">
                   <ThemeSwitcher />
                 </header>
-                <main className="flex-1 overflow-y-auto bg-background">
+                <main className="flex-1 overflow-y-auto">
                   {children}
                 </main>
               </div>
