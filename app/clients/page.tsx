@@ -386,12 +386,6 @@ export default function ClientsPage() {
                   <h3 className="font-medium text-foreground truncate group-hover:text-qualia-400 transition-colors">
                     {client.display_name}
                   </h3>
-                  <Badge
-                    variant="outline"
-                    className={`mt-1 text-xs ${statusColors[client.lead_status]}`}
-                  >
-                    {statusLabels[client.lead_status]}
-                  </Badge>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>

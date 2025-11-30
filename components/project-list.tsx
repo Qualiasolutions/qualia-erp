@@ -9,7 +9,6 @@ import {
     LayoutGrid,
     List,
     TrendingUp,
-    CheckCircle2,
     Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -49,15 +48,20 @@ const GROUP_CONFIG: Record<string, { color: string; bgColor: string; icon: typeo
         bgColor: 'bg-blue-500/10',
         icon: TrendingUp,
     },
+    'other': {
+        color: 'text-violet-600 dark:text-violet-400',
+        bgColor: 'bg-violet-500/10',
+        icon: TrendingUp,
+    },
     'active': {
         color: 'text-emerald-600 dark:text-emerald-400',
         bgColor: 'bg-emerald-500/10',
         icon: TrendingUp,
     },
-    'finished': {
-        color: 'text-primary',
-        bgColor: 'bg-primary/10',
-        icon: CheckCircle2,
+    'demos': {
+        color: 'text-pink-600 dark:text-pink-400',
+        bgColor: 'bg-pink-500/10',
+        icon: Folder,
     },
     'inactive': {
         color: 'text-muted-foreground',

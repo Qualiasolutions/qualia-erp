@@ -7,7 +7,7 @@ import { getCurrentWorkspaceId } from "@/app/actions";
 import { ProjectGroupTabs } from "@/components/project-group-tabs";
 import { Folder } from "lucide-react";
 
-export type ProjectGroup = 'salman_kuwait' | 'tasos_kyriakides' | 'finished' | 'inactive' | 'active';
+export type ProjectGroup = 'salman_kuwait' | 'tasos_kyriakides' | 'inactive' | 'active' | 'demos' | 'other';
 
 interface FilterParams {
     group?: ProjectGroup;
@@ -44,9 +44,16 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
         }
     }));
 
-    // Filter by project group
-    if (filters.group) {
-        projects = projects.filter(p => p.project_group === filters.group);
+    // Filter by project group (default to 'active')
+    const group = filters.group || 'active';
+
+    if (group === 'other') {
+        // 'other' shows active projects that aren't salman or tasos
+        projects = projects.filter(p =>
+            p.project_group === 'active' || p.project_group === 'other'
+        );
+    } else {
+        projects = projects.filter(p => p.project_group === group);
     }
 
     return <ProjectList projects={projects} />;

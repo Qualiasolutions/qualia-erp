@@ -37,7 +37,7 @@ import {
 } from "@/app/actions";
 import { PROJECT_GROUP_LABELS, type ProjectGroup } from "@/components/project-group-tabs";
 
-const PROJECT_GROUPS: ProjectGroup[] = ['salman_kuwait', 'tasos_kyriakides', 'active', 'finished', 'inactive'];
+const PROJECT_GROUPS: ProjectGroup[] = ['salman_kuwait', 'tasos_kyriakides', 'other', 'active', 'demos', 'inactive'];
 
 interface Profile {
     id: string;
@@ -78,8 +78,9 @@ const ProjectGroupBadge = ({ group }: { group: ProjectGroup | null }) => {
     const colors: Record<ProjectGroup, string> = {
         'salman_kuwait': 'bg-amber-500/10 text-amber-400 border-amber-500/20',
         'tasos_kyriakides': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+        'other': 'bg-violet-500/10 text-violet-400 border-violet-500/20',
         'active': 'bg-green-500/10 text-green-400 border-green-500/20',
-        'finished': 'bg-qualia-500/10 text-qualia-400 border-qualia-500/20',
+        'demos': 'bg-pink-500/10 text-pink-400 border-pink-500/20',
         'inactive': 'bg-gray-500/10 text-gray-400 border-gray-500/20',
     };
 

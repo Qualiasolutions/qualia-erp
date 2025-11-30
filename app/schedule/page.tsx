@@ -4,7 +4,6 @@ import { getMeetings } from "@/app/actions";
 import { MeetingList } from "@/components/meeting-list";
 import { NewMeetingModal } from "@/components/new-meeting-modal";
 import { CalendarView } from "@/components/calendar-view";
-import { DayScheduleView } from "@/components/day-schedule-view";
 import { ScheduleViewToggle } from "@/components/schedule-view-toggle";
 import { Calendar } from "lucide-react";
 
@@ -16,12 +15,8 @@ async function ScheduleLoader({ view }: { view: string }) {
         return <CalendarView meetings={meetings} />;
     }
 
-    if (view === 'list') {
-        return <MeetingList meetings={meetings} />;
-    }
-
-    // Default to day view
-    return <DayScheduleView meetings={meetings} />;
+    // Default to list view
+    return <MeetingList meetings={meetings} />;
 }
 
 function ScheduleSkeleton() {
@@ -52,7 +47,7 @@ export default async function SchedulePage({
     searchParams: Promise<{ view?: string }>;
 }) {
     const params = await searchParams;
-    const view = params.view || 'day';
+    const view = params.view || 'list';
 
     return (
         <div className="flex flex-col h-full">
