@@ -105,26 +105,37 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
 
-    setCurrentWorkspaceState(workspace);
-
-    // Persist selection to database
+    // Persist selection to database FIRST before updating local state
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
       // Set all other workspaces as non-default
-      await supabase
+      const { error: clearError } = await supabase
         .from("workspace_members")
         .update({ is_default: false })
         .eq("profile_id", user.id);
 
+      if (clearError) {
+        console.error("Error clearing default workspace:", clearError);
+        return false;
+      }
+
       // Set selected workspace as default
-      await supabase
+      const { error: setError } = await supabase
         .from("workspace_members")
         .update({ is_default: true })
         .eq("workspace_id", workspace.id)
         .eq("profile_id", user.id);
+
+      if (setError) {
+        console.error("Error setting default workspace:", setError);
+        return false;
+      }
     }
+
+    // Update local state after DB is confirmed updated
+    setCurrentWorkspaceState(workspace);
 
     return true;
   };
