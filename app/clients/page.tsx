@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Building2, Phone, Globe, MapPin, MoreHorizontal, Trash2, Edit, Search } from "lucide-react";
+import { Plus, Building2, Phone, Globe, MapPin, MoreHorizontal, Trash2, Edit, Search, Users, Target, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,14 +30,14 @@ type Client = {
   assigned: { id: string; full_name: string | null; email: string | null } | null;
 };
 
-const tabs = [
-  { id: null, label: "All", icon: Building2 },
-  { id: "dropped" as LeadStatus, label: "Dropped Leads", color: "bg-gray-500" },
-  { id: "cold" as LeadStatus, label: "Cold Leads", color: "bg-blue-500" },
-  { id: "hot" as LeadStatus, label: "Hot Leads", color: "bg-orange-500" },
-  { id: "active_client" as LeadStatus, label: "Active Clients", color: "bg-green-500" },
-  { id: "inactive_client" as LeadStatus, label: "Inactive Clients", color: "bg-yellow-500" },
-];
+// Main category tabs
+type MainTab = "all" | "leads" | "clients";
+
+// Lead sub-tabs
+type LeadSubTab = "all_leads" | "hot" | "cold" | "dropped";
+
+// Client sub-tabs
+type ClientSubTab = "all_clients" | "active_client" | "inactive_client";
 
 const statusColors: Record<LeadStatus, string> = {
   dropped: "bg-gray-500/20 text-gray-400 border-gray-500/30",
@@ -58,7 +58,9 @@ const statusLabels: Record<LeadStatus, string> = {
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [filteredClients, setFilteredClients] = useState<Client[]>([]);
-  const [activeTab, setActiveTab] = useState<LeadStatus | null>(null);
+  const [mainTab, setMainTab] = useState<MainTab>("all");
+  const [leadSubTab, setLeadSubTab] = useState<LeadSubTab>("all_leads");
+  const [clientSubTab, setClientSubTab] = useState<ClientSubTab>("all_clients");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
@@ -70,7 +72,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     filterClients();
-  }, [clients, activeTab, searchQuery]);
+  }, [clients, mainTab, leadSubTab, clientSubTab, searchQuery]);
 
   async function loadClients() {
     setIsLoading(true);
@@ -82,9 +84,23 @@ export default function ClientsPage() {
   function filterClients() {
     let filtered = clients;
 
-    // Filter by tab
-    if (activeTab) {
-      filtered = filtered.filter((c) => c.lead_status === activeTab);
+    // Filter by main tab and sub-tabs
+    if (mainTab === "leads") {
+      // Filter to only leads (hot, cold, dropped)
+      filtered = filtered.filter((c) => ["hot", "cold", "dropped"].includes(c.lead_status));
+
+      // Apply lead sub-tab filter
+      if (leadSubTab !== "all_leads") {
+        filtered = filtered.filter((c) => c.lead_status === leadSubTab);
+      }
+    } else if (mainTab === "clients") {
+      // Filter to only clients (active, inactive)
+      filtered = filtered.filter((c) => ["active_client", "inactive_client"].includes(c.lead_status));
+
+      // Apply client sub-tab filter
+      if (clientSubTab !== "all_clients") {
+        filtered = filtered.filter((c) => c.lead_status === clientSubTab);
+      }
     }
 
     // Filter by search
@@ -119,6 +135,23 @@ export default function ClientsPage() {
     {} as Record<string, number>
   );
 
+  // Calculate group counts
+  const leadsCount = (statusCounts["hot"] || 0) + (statusCounts["cold"] || 0) + (statusCounts["dropped"] || 0);
+  const clientsCount = (statusCounts["active_client"] || 0) + (statusCounts["inactive_client"] || 0);
+
+  // Get current filter label for empty state
+  const getCurrentFilterLabel = () => {
+    if (mainTab === "leads") {
+      if (leadSubTab === "all_leads") return "leads";
+      return statusLabels[leadSubTab as LeadStatus];
+    }
+    if (mainTab === "clients") {
+      if (clientSubTab === "all_clients") return "clients";
+      return statusLabels[clientSubTab as LeadStatus];
+    }
+    return "";
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -138,32 +171,161 @@ export default function ClientsPage() {
         </Button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 mb-6 bg-muted/50 p-1 rounded-lg overflow-x-auto">
-        {tabs.map((tab) => (
+      {/* Main Tabs */}
+      <div className="flex items-center gap-1 mb-4 bg-muted/50 p-1 rounded-lg">
+        <button
+          onClick={() => setMainTab("all")}
+          className={`
+            flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors
+            ${mainTab === "all"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+            }
+          `}
+        >
+          <Building2 className="w-4 h-4" />
+          All
+          <span className="text-xs text-muted-foreground ml-1">({clients.length})</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab("leads")}
+          className={`
+            flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors
+            ${mainTab === "leads"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+            }
+          `}
+        >
+          <Target className="w-4 h-4" />
+          Leads
+          <span className="text-xs text-muted-foreground ml-1">({leadsCount})</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab("clients")}
+          className={`
+            flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium transition-colors
+            ${mainTab === "clients"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+            }
+          `}
+        >
+          <Users className="w-4 h-4" />
+          Clients
+          <span className="text-xs text-muted-foreground ml-1">({clientsCount})</span>
+        </button>
+      </div>
+
+      {/* Sub-tabs for Leads */}
+      {mainTab === "leads" && (
+        <div className="flex items-center gap-1 mb-4 pl-2">
           <button
-            key={tab.id || "all"}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => setLeadSubTab("all_leads")}
             className={`
-              flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap
-              ${
-                activeTab === tab.id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${leadSubTab === "all_leads"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
               }
             `}
           >
-            {tab.icon && <tab.icon className="w-4 h-4" />}
-            {tab.color && (
-              <span className={`w-2 h-2 rounded-full ${tab.color}`} />
-            )}
-            {tab.label}
-            <span className="text-xs text-muted-foreground ml-1">
-              ({tab.id ? statusCounts[tab.id] || 0 : clients.length})
-            </span>
+            All Leads
+            <span className="text-muted-foreground">({leadsCount})</span>
           </button>
-        ))}
-      </div>
+          <button
+            onClick={() => setLeadSubTab("hot")}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${leadSubTab === "hot"
+                ? "bg-orange-500/20 text-orange-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }
+            `}
+          >
+            <span className="w-2 h-2 rounded-full bg-orange-500" />
+            Hot
+            <span className="text-muted-foreground">({statusCounts["hot"] || 0})</span>
+          </button>
+          <button
+            onClick={() => setLeadSubTab("cold")}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${leadSubTab === "cold"
+                ? "bg-blue-500/20 text-blue-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }
+            `}
+          >
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            Cold
+            <span className="text-muted-foreground">({statusCounts["cold"] || 0})</span>
+          </button>
+          <button
+            onClick={() => setLeadSubTab("dropped")}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${leadSubTab === "dropped"
+                ? "bg-gray-500/20 text-gray-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }
+            `}
+          >
+            <span className="w-2 h-2 rounded-full bg-gray-500" />
+            Dropped
+            <span className="text-muted-foreground">({statusCounts["dropped"] || 0})</span>
+          </button>
+        </div>
+      )}
+
+      {/* Sub-tabs for Clients */}
+      {mainTab === "clients" && (
+        <div className="flex items-center gap-1 mb-4 pl-2">
+          <button
+            onClick={() => setClientSubTab("all_clients")}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${clientSubTab === "all_clients"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }
+            `}
+          >
+            All Clients
+            <span className="text-muted-foreground">({clientsCount})</span>
+          </button>
+          <button
+            onClick={() => setClientSubTab("active_client")}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${clientSubTab === "active_client"
+                ? "bg-green-500/20 text-green-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }
+            `}
+          >
+            <span className="w-2 h-2 rounded-full bg-green-500" />
+            Active
+            <span className="text-muted-foreground">({statusCounts["active_client"] || 0})</span>
+          </button>
+          <button
+            onClick={() => setClientSubTab("inactive_client")}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+              ${clientSubTab === "inactive_client"
+                ? "bg-yellow-500/20 text-yellow-400"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              }
+            `}
+          >
+            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+            Inactive
+            <span className="text-muted-foreground">({statusCounts["inactive_client"] || 0})</span>
+          </button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative mb-6">
@@ -195,13 +357,13 @@ export default function ClientsPage() {
           <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium text-foreground mb-2">No clients found</h3>
           <p className="text-muted-foreground text-sm mb-4">
-            {activeTab
-              ? `No clients with status "${statusLabels[activeTab]}"`
+            {mainTab !== "all"
+              ? `No ${getCurrentFilterLabel()} found`
               : searchQuery
               ? "Try a different search term"
               : "Get started by adding your first client"}
           </p>
-          {!searchQuery && !activeTab && (
+          {!searchQuery && mainTab === "all" && (
             <Button
               onClick={() => setIsNewClientModalOpen(true)}
               className="bg-qualia-600 hover:bg-qualia-700"
