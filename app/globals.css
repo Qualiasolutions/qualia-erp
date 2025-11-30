@@ -33,19 +33,19 @@
     --card-foreground: 0 0% 93%;
     --popover: 0 0% 6%;
     --popover-foreground: 0 0% 93%;
-    --primary: 166 100% 50%; /* Cyan #00FFD1 */
-    --primary-foreground: 0 0% 2%;
+    --primary: 183 100% 34%; /* Teal #00A4AC */
+    --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 10%; /* #1A1A1A */
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 10%;
     --muted-foreground: 0 0% 55%;
-    --accent: 166 100% 50%;
-    --accent-foreground: 0 0% 2%;
+    --accent: 183 100% 34%;
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 45%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 12%; /* Subtle borders */
     --input: 0 0% 12%;
-    --ring: 166 100% 50%;
+    --ring: 183 100% 34%;
   }
 }
 
@@ -75,23 +75,23 @@
 
   /* Glow effects */
   .glow-cyan {
-    box-shadow: 0 0 20px -5px rgba(0, 255, 209, 0.4),
-                0 0 40px -10px rgba(0, 255, 209, 0.2);
+    box-shadow: 0 0 20px -5px rgba(0, 164, 172, 0.4),
+                0 0 40px -10px rgba(0, 164, 172, 0.2);
   }
 
   .glow-cyan-sm {
-    box-shadow: 0 0 10px -3px rgba(0, 255, 209, 0.3);
+    box-shadow: 0 0 10px -3px rgba(0, 164, 172, 0.3);
   }
 
   .glow-cyan-hover:hover {
-    box-shadow: 0 0 25px -5px rgba(0, 255, 209, 0.5),
-                0 0 50px -10px rgba(0, 255, 209, 0.25);
+    box-shadow: 0 0 25px -5px rgba(0, 164, 172, 0.5),
+                0 0 50px -10px rgba(0, 164, 172, 0.25);
   }
 
   /* Text glow */
   .text-glow-cyan {
-    text-shadow: 0 0 20px rgba(0, 255, 209, 0.5),
-                 0 0 40px rgba(0, 255, 209, 0.3);
+    text-shadow: 0 0 20px rgba(0, 164, 172, 0.5),
+                 0 0 40px rgba(0, 164, 172, 0.3);
   }
 
   /* Gradient text */
@@ -116,14 +116,14 @@
 
   /* Radial gradient overlay */
   .bg-radial-glow {
-    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 255, 209, 0.15), transparent);
+    background: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0, 164, 172, 0.15), transparent);
   }
 
   /* Animated gradient border */
   .border-gradient {
     position: relative;
     background: linear-gradient(var(--background), var(--background)) padding-box,
-                linear-gradient(135deg, rgba(0, 255, 209, 0.5), rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.3)) border-box;
+                linear-gradient(135deg, rgba(0, 164, 172, 0.5), rgba(139, 92, 246, 0.5), rgba(236, 72, 153, 0.3)) border-box;
     border: 1px solid transparent;
   }
 
@@ -150,11 +150,11 @@
 
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 20px -5px rgba(0, 255, 209, 0.4);
+    box-shadow: 0 0 20px -5px rgba(0, 164, 172, 0.4);
     opacity: 1;
   }
   50% {
-    box-shadow: 0 0 30px -5px rgba(0, 255, 209, 0.6);
+    box-shadow: 0 0 30px -5px rgba(0, 164, 172, 0.6);
     opacity: 0.9;
   }
 }
@@ -190,12 +190,12 @@
 
 /* Focus styles */
 .dark *:focus-visible {
-  outline: 2px solid rgba(0, 255, 209, 0.5);
+  outline: 2px solid rgba(0, 164, 172, 0.5);
   outline-offset: 2px;
 }
 
 /* Selection styling */
 .dark ::selection {
-  background: rgba(0, 255, 209, 0.3);
+  background: rgba(0, 164, 172, 0.3);
   color: white;
 }

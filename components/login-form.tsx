@@ -31,10 +31,10 @@ export function LoginForm({
         password,
       });
       if (error) throw error;
-      router.push("/");
+      // Use window.location for a full page reload to ensure server state is refreshed
+      window.location.href = "/";
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
-    } finally {
       setIsLoading(false);
     }
   };
