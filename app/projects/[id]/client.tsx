@@ -36,6 +36,7 @@ import {
     getProfiles,
 } from "@/app/actions";
 import { PROJECT_GROUP_LABELS, type ProjectGroup } from "@/components/project-group-tabs";
+import { ProjectMilestones } from "@/components/project-milestones";
 
 const PROJECT_GROUPS: ProjectGroup[] = ['salman_kuwait', 'tasos_kyriakides', 'other', 'active', 'demos', 'inactive'];
 
@@ -338,6 +339,11 @@ export function ProjectDetailClient() {
                                     className="min-h-[100px] bg-card border-border text-foreground"
                                     placeholder="Add a description..."
                                 />
+                            </div>
+
+                            {/* Milestones */}
+                            <div className="border-t border-border pt-6">
+                                <ProjectMilestones projectId={id} />
                             </div>
 
                             {/* Issues List */}

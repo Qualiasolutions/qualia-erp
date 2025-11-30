@@ -1585,3 +1585,236 @@ export async function getIssueAssignees(issueId: string) {
         assigned_by_profile: Array.isArray(a.assigned_by_profile) ? a.assigned_by_profile[0] || null : a.assigned_by_profile,
     }));
 }
+
+// ============ MILESTONE MANAGEMENT ============
+
+// Get milestones for a project
+export async function getMilestones(projectId: string) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("milestones")
+        .select(`
+            *,
+            milestone_issues(
+                issue_id,
+                issues(
+                    id,
+                    title,
+                    status,
+                    priority
+                )
+            )
+        `)
+        .eq("project_id", projectId)
+        .order("display_order")
+        .order("target_date");
+
+    if (error) {
+        console.error("Error fetching milestones:", error);
+        return [];
+    }
+
+    return (data || []).map(milestone => ({
+        ...milestone,
+        issues: milestone.milestone_issues?.map((mi: any) => mi.issues) || []
+    }));
+}
+
+// Get single milestone
+export async function getMilestoneById(id: string) {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+        .from("milestones")
+        .select(`
+            *,
+            project:projects(
+                id,
+                name
+            ),
+            milestone_issues(
+                issue_id,
+                issues(
+                    id,
+                    title,
+                    status,
+                    priority,
+                    assignee:issue_assignees(
+                        profiles(
+                            id,
+                            full_name,
+                            email
+                        )
+                    )
+                )
+            )
+        `)
+        .eq("id", id)
+        .single();
+
+    if (error || !data) {
+        console.error("Error fetching milestone:", error);
+        return null;
+    }
+
+    return {
+        ...data,
+        project: Array.isArray(data.project) ? data.project[0] : data.project,
+        issues: data.milestone_issues?.map((mi: any) => ({
+            ...mi.issues,
+            assignee: mi.issues?.assignee?.[0]?.profiles || null
+        })) || []
+    };
+}
+
+// Create milestone
+export async function createMilestone(formData: FormData): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const projectId = formData.get("project_id") as string;
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string | null;
+    const targetDate = formData.get("target_date") as string;
+    const color = formData.get("color") as string || "#00A4AC";
+    const workspaceId = await getCurrentWorkspaceId();
+
+    if (!workspaceId) {
+        return { success: false, error: "No workspace found" };
+    }
+
+    const { data, error } = await supabase
+        .from("milestones")
+        .insert({
+            project_id: projectId,
+            name,
+            description,
+            target_date: targetDate,
+            color,
+            created_by: user.id,
+            workspace_id: workspaceId,
+            status: 'not_started'
+        })
+        .select()
+        .single();
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    // Create activity
+    await createActivity(
+        supabase,
+        user.id,
+        'project_updated',
+        {
+            project_id: projectId,
+            workspace_id: workspaceId
+        },
+        {
+            milestone_name: name,
+            action: 'milestone_created'
+        }
+    );
+
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true, data };
+}
+
+// Update milestone
+export async function updateMilestone(formData: FormData): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    const description = formData.get("description") as string | null;
+    const targetDate = formData.get("target_date") as string;
+    const status = formData.get("status") as string;
+    const color = formData.get("color") as string;
+
+    const { data, error } = await supabase
+        .from("milestones")
+        .update({
+            name,
+            description,
+            target_date: targetDate,
+            status,
+            color,
+            updated_at: new Date().toISOString()
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/projects`);
+    return { success: true, data };
+}
+
+// Delete milestone
+export async function deleteMilestone(id: string): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from("milestones")
+        .delete()
+        .eq("id", id);
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/projects`);
+    return { success: true };
+}
+
+// Add issue to milestone
+export async function addIssueToMilestone(milestoneId: string, issueId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("milestone_issues")
+        .insert({
+            milestone_id: milestoneId,
+            issue_id: issueId,
+            added_by: user.id
+        });
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/projects`);
+    return { success: true };
+}
+
+// Remove issue from milestone
+export async function removeIssueFromMilestone(milestoneId: string, issueId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { error } = await supabase
+        .from("milestone_issues")
+        .delete()
+        .eq("milestone_id", milestoneId)
+        .eq("issue_id", issueId);
+
+    if (error) {
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath(`/projects`);
+    return { success: true };
+}
