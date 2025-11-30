@@ -885,6 +885,105 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
     return { success: true, data };
 }
 
+// ============ MEETING ACTIONS ============
+
+export async function createMeeting(formData: FormData): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string | null;
+    const startTime = formData.get("start_time") as string;
+    const endTime = formData.get("end_time") as string;
+    const projectId = formData.get("project_id") as string | null;
+
+    if (!title?.trim()) {
+        return { success: false, error: "Title is required" };
+    }
+    if (!startTime) {
+        return { success: false, error: "Start time is required" };
+    }
+    if (!endTime) {
+        return { success: false, error: "End time is required" };
+    }
+
+    const { data, error } = await supabase
+        .from("meetings")
+        .insert({
+            title: title.trim(),
+            description: description?.trim() || null,
+            start_time: startTime,
+            end_time: endTime,
+            project_id: projectId || null,
+            created_by: user.id,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error creating meeting:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/schedule");
+    return { success: true, data };
+}
+
+export async function deleteMeeting(meetingId: string): Promise<ActionResult> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    const { error } = await supabase
+        .from("meetings")
+        .delete()
+        .eq("id", meetingId);
+
+    if (error) {
+        console.error("Error deleting meeting:", error);
+        return { success: false, error: error.message };
+    }
+
+    revalidatePath("/schedule");
+    return { success: true };
+}
+
+export async function getMeetings() {
+    const supabase = await createClient();
+    
+    const { data: meetings, error } = await supabase
+        .from("meetings")
+        .select(`
+            id,
+            title,
+            description,
+            start_time,
+            end_time,
+            created_at,
+            project:projects (id, name),
+            creator:profiles!meetings_created_by_fkey (id, full_name, email)
+        `)
+        .order("start_time", { ascending: true });
+
+    if (error) {
+        console.error("Error fetching meetings:", error);
+        return [];
+    }
+
+    return (meetings || []).map(meeting => ({
+        ...meeting,
+        project: Array.isArray(meeting.project) ? meeting.project[0] || null : meeting.project,
+        creator: Array.isArray(meeting.creator) ? meeting.creator[0] || null : meeting.creator,
+    }));
+}
+
 // ============ ACTIVITY ACTIONS ============
 
 export type Activity = {

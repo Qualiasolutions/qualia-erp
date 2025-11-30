@@ -137,9 +137,9 @@ function formatDate(dateString: string | null): string {
 function ProjectCard({ project }: { project: Project }) {
     const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG['Active'];
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
-    const progress = project.issue_stats?.total
+    const progress = project.status === 'Launched' ? 100 : (project.issue_stats?.total
         ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-        : 0;
+        : 0);
 
     return (
         <Link
@@ -224,9 +224,9 @@ function ProjectCard({ project }: { project: Project }) {
 function ProjectRow({ project }: { project: Project }) {
     const statusConfig = STATUS_CONFIG[project.status] || STATUS_CONFIG['Active'];
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
-    const progress = project.issue_stats?.total
+    const progress = project.status === 'Launched' ? 100 : (project.issue_stats?.total
         ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-        : 0;
+        : 0);
 
     return (
         <Link
