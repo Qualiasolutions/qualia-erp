@@ -1,40 +1,124 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getRecentActivities } from "@/app/actions";
+import { getRecentActivities, getCurrentWorkspaceId } from "@/app/actions";
 import { ActivityFeed } from "@/components/activity-feed";
-import Chat from "@/components/chat";
-import { Folder, ListTodo, CheckCircle2, ArrowUpRight, Circle } from "lucide-react";
+import Link from "next/link";
+import {
+  Folder,
+  ArrowUpRight,
+  Circle,
+  Users,
+  AlertTriangle,
+  Clock,
+  TrendingUp,
+  Calendar,
+  Briefcase,
+  User
+} from "lucide-react";
 
 interface DashboardStats {
   activeProjects: number;
   totalIssues: number;
   completed: number;
+  urgentIssues: number;
+  overdueProjects: number;
+  clientsActive: number;
+  meetingsThisWeek: number;
 }
 
 async function getStats(): Promise<DashboardStats> {
   await connection();
   const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
 
   const { count: activeProjects } = await supabase
     .from('projects')
     .select('*', { count: 'exact', head: true })
-    .eq('status', 'Active');
+    .eq('workspace_id', workspaceId)
+    .in('project_group', ['active', 'salman_kuwait', 'tasos_kyriakides', 'other']);
 
   const { count: totalIssues } = await supabase
     .from('issues')
-    .select('*', { count: 'exact', head: true });
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId);
 
   const { count: completed } = await supabase
     .from('issues')
     .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
     .eq('status', 'Done');
+
+  const { count: urgentIssues } = await supabase
+    .from('issues')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .eq('priority', 'Urgent')
+    .neq('status', 'Done');
+
+  // Get overdue projects (target_date in the past)
+  const today = new Date().toISOString().split('T')[0];
+  const { count: overdueProjects } = await supabase
+    .from('projects')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .lt('target_date', today)
+    .in('project_group', ['active', 'salman_kuwait', 'tasos_kyriakides', 'other']);
+
+  const { count: clientsActive } = await supabase
+    .from('clients')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .eq('lead_status', 'active_client');
+
+  // Meetings this week
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 7);
+
+  const { count: meetingsThisWeek } = await supabase
+    .from('meetings')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .gte('start_time', startOfWeek.toISOString())
+    .lt('start_time', endOfWeek.toISOString());
 
   return {
     activeProjects: activeProjects || 0,
     totalIssues: totalIssues || 0,
     completed: completed || 0,
+    urgentIssues: urgentIssues || 0,
+    overdueProjects: overdueProjects || 0,
+    clientsActive: clientsActive || 0,
+    meetingsThisWeek: meetingsThisWeek || 0,
   };
+}
+
+// Get projects that need attention
+async function getProjectsNeedingAttention() {
+  await connection();
+  const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
+
+  // Get projects with urgent issues or overdue
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: projects } = await supabase
+    .from('projects')
+    .select(`
+      id,
+      name,
+      target_date,
+      project_group,
+      client:clients(name)
+    `)
+    .eq('workspace_id', workspaceId)
+    .in('project_group', ['active', 'salman_kuwait', 'tasos_kyriakides', 'other'])
+    .or(`target_date.lt.${today}`)
+    .limit(5);
+
+  return projects || [];
 }
 
 async function StatsLoader() {
@@ -43,63 +127,129 @@ async function StatsLoader() {
     ? Math.round((stats.completed / stats.totalIssues) * 100)
     : 0;
 
-  const statItems = [
+  // Primary stats (top row)
+  const primaryStats = [
     {
       label: 'Active Projects',
       value: stats.activeProjects,
       icon: Folder,
       accent: 'primary',
-      trend: '+2 this week'
+      href: '/projects',
+      trend: 'Across all groups'
     },
     {
-      label: 'Total Issues',
-      value: stats.totalIssues,
-      icon: ListTodo,
+      label: 'Active Clients',
+      value: stats.clientsActive,
+      icon: Users,
+      accent: 'blue',
+      href: '/clients',
+      trend: 'Engaged clients'
+    },
+    {
+      label: 'This Week',
+      value: stats.meetingsThisWeek,
+      icon: Calendar,
       accent: 'violet',
-      trend: 'Across all projects'
-    },
-    {
-      label: 'Completed',
-      value: stats.completed,
-      icon: CheckCircle2,
-      accent: 'emerald',
-      trend: `${completionRate}% completion rate`
+      href: '/schedule',
+      trend: 'Scheduled meetings'
     },
   ];
 
+  // Alert stats (attention needed)
+  const alertStats = [
+    {
+      label: 'Urgent Issues',
+      value: stats.urgentIssues,
+      icon: AlertTriangle,
+      accent: 'amber',
+      href: '/issues?priority=Urgent',
+      isAlert: stats.urgentIssues > 0
+    },
+    {
+      label: 'Overdue',
+      value: stats.overdueProjects,
+      icon: Clock,
+      accent: 'red',
+      href: '/projects?overdue=true',
+      isAlert: stats.overdueProjects > 0
+    },
+    {
+      label: 'Completion',
+      value: `${completionRate}%`,
+      icon: TrendingUp,
+      accent: completionRate >= 70 ? 'emerald' : completionRate >= 40 ? 'amber' : 'red',
+      href: '/issues',
+      trend: `${stats.completed}/${stats.totalIssues} done`
+    },
+  ];
+
+  const getAccentClasses = (accent: string, isAlert?: boolean) => {
+    const base = {
+      primary: 'bg-primary/10 text-primary',
+      blue: 'bg-blue-500/10 text-blue-500',
+      violet: 'bg-violet-500/10 text-violet-500',
+      emerald: 'bg-emerald-500/10 text-emerald-500',
+      amber: isAlert ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-amber-500/10 text-amber-500',
+      red: isAlert ? 'bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-red-500/10 text-red-500',
+    };
+    return base[accent as keyof typeof base] || base.primary;
+  };
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {statItems.map((stat, index) => (
-        <div
-          key={stat.label}
-          className="group relative surface-elevated rounded-xl p-5 transition-all duration-300 hover:shadow-md slide-up"
-          style={{ animationDelay: `${index * 80}ms` }}
-        >
-          <div className="flex items-start justify-between">
-            <div className="space-y-3">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                {stat.label}
-              </p>
-              <p className="text-4xl font-semibold text-foreground tracking-tight tabular-nums">
-                {stat.value}
-              </p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <Circle className="w-1.5 h-1.5 fill-current" />
-                {stat.trend}
-              </p>
+    <div className="space-y-4">
+      {/* Primary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {primaryStats.map((stat, index) => (
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className="group relative surface-elevated rounded-xl p-5 transition-all duration-300 hover:shadow-md hover:border-primary/20 slide-up"
+            style={{ animationDelay: `${index * 80}ms` }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {stat.label}
+                </p>
+                <p className="text-3xl font-semibold text-foreground tracking-tight tabular-nums">
+                  {stat.value}
+                </p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Circle className="w-1.5 h-1.5 fill-current" />
+                  {stat.trend}
+                </p>
+              </div>
+              <div className={`p-2.5 rounded-lg transition-all duration-300 ${getAccentClasses(stat.accent)} group-hover:scale-110`}>
+                <stat.icon className="w-5 h-5" />
+              </div>
             </div>
-            <div className={`p-2.5 rounded-lg transition-all duration-300 ${
-              stat.accent === 'primary'
-                ? 'bg-primary/10 text-primary group-hover:bg-primary/15'
-                : stat.accent === 'violet'
-                ? 'bg-violet-500/10 text-violet-500 group-hover:bg-violet-500/15'
-                : 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/15'
-            }`}>
-              <stat.icon className="w-5 h-5" />
+          </Link>
+        ))}
+      </div>
+
+      {/* Alert Stats - Smaller, more compact */}
+      <div className="grid grid-cols-3 gap-3">
+        {alertStats.map((stat, index) => (
+          <Link
+            key={stat.label}
+            href={stat.href}
+            className={`group relative surface rounded-lg p-3 transition-all duration-300 hover:shadow-sm slide-up ${
+              stat.isAlert ? 'border-l-2 border-l-amber-500 dark:border-l-amber-400' : ''
+            }`}
+            style={{ animationDelay: `${(index + 3) * 80}ms` }}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-md ${getAccentClasses(stat.accent, stat.isAlert)}`}>
+                <stat.icon className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                <p className="text-lg font-semibold text-foreground tabular-nums">{stat.value}</p>
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
@@ -145,10 +295,58 @@ function ActivitySkeleton() {
   );
 }
 
+// Quick navigation for workload distribution
+function QuickNav() {
+  const navItems = [
+    {
+      label: "Salman's Projects",
+      href: '/projects?group=salman_kuwait',
+      icon: Briefcase,
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    },
+    {
+      label: "Tasos's Projects",
+      href: '/projects?group=tasos_kyriakides',
+      icon: User,
+      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    },
+    {
+      label: 'All Clients',
+      href: '/clients',
+      icon: Users,
+      color: 'bg-violet-500/10 text-violet-500',
+    },
+    {
+      label: 'Schedule',
+      href: '/schedule',
+      icon: Calendar,
+      color: 'bg-primary/10 text-primary',
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {navItems.map((item, index) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          className="group flex items-center gap-3 surface rounded-lg p-3 transition-all duration-200 hover:shadow-sm hover:border-primary/20 slide-up"
+          style={{ animationDelay: `${(index + 6) * 60}ms` }}
+        >
+          <div className={`p-2 rounded-md ${item.color} transition-transform group-hover:scale-110`}>
+            <item.icon className="w-4 h-4" />
+          </div>
+          <span className="text-sm font-medium text-foreground truncate">{item.label}</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen">
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
         {/* Header */}
         <header className="fade-in">
           <div className="flex items-start justify-between">
@@ -157,7 +355,7 @@ export default function Home() {
                 Dashboard
               </h1>
               <p className="text-sm text-muted-foreground">
-                Here&apos;s what&apos;s happening across your workspace
+                Overview of your projects, clients, and team workload
               </p>
             </div>
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
@@ -169,41 +367,40 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Stats & Activity Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Stats */}
-            <Suspense fallback={<StatsSkeleton />}>
-              <StatsLoader />
-            </Suspense>
+        {/* Stats */}
+        <Suspense fallback={<StatsSkeleton />}>
+          <StatsLoader />
+        </Suspense>
 
-            {/* Activity Feed */}
-            <div className="surface-elevated rounded-xl slide-up" style={{ animationDelay: '240ms' }}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-violet-500/10">
-                    <ArrowUpRight className="w-4 h-4 text-violet-500" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
-                    <p className="text-xs text-muted-foreground">Latest updates from your team</p>
-                  </div>
-                </div>
+        {/* Quick Navigation - Workload Distribution */}
+        <div className="pt-2">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Quick Access</h2>
+          <QuickNav />
+        </div>
+
+        {/* Activity Feed - Full Width */}
+        <div className="surface-elevated rounded-xl slide-up" style={{ animationDelay: '400ms' }}>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-violet-500/10">
+                <ArrowUpRight className="w-4 h-4 text-violet-500" />
               </div>
-              <div className="p-4 min-h-[360px]">
-                <Suspense fallback={<ActivitySkeleton />}>
-                  <ActivityLoader />
-                </Suspense>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Recent Activity</h2>
+                <p className="text-xs text-muted-foreground">Latest updates across all projects</p>
               </div>
             </div>
+            <Link
+              href="/issues"
+              className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              View all issues →
+            </Link>
           </div>
-
-          {/* AI Assistant Column */}
-          <div className="lg:col-span-1 slide-up" style={{ animationDelay: '320ms' }}>
-            <div className="sticky top-6">
-              <Chat />
-            </div>
+          <div className="p-4 max-h-[400px] overflow-y-auto">
+            <Suspense fallback={<ActivitySkeleton />}>
+              <ActivityLoader />
+            </Suspense>
           </div>
         </div>
       </div>
