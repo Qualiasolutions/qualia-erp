@@ -4,6 +4,7 @@ import { getMeetings } from "@/app/actions";
 import { MeetingList } from "@/components/meeting-list";
 import { NewMeetingModal } from "@/components/new-meeting-modal";
 import { CalendarView } from "@/components/calendar-view";
+import { WeeklyView } from "@/components/weekly-view";
 import { ScheduleViewToggle } from "@/components/schedule-view-toggle";
 import { Calendar } from "lucide-react";
 
@@ -13,6 +14,10 @@ async function ScheduleLoader({ view }: { view: string }) {
 
     if (view === 'calendar') {
         return <CalendarView meetings={meetings} />;
+    }
+
+    if (view === 'week') {
+        return <WeeklyView meetings={meetings} />;
     }
 
     // Default to list view

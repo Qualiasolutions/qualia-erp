@@ -11,7 +11,6 @@ import {
   Users,
   Calendar,
   Briefcase,
-  User
 } from "lucide-react";
 
 interface DashboardStats {
@@ -171,16 +170,10 @@ function ActivitySkeleton() {
 function QuickNav() {
   const navItems = [
     {
-      label: "Salman's Projects",
-      href: '/projects?group=salman_kuwait',
-      icon: Briefcase,
-      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    },
-    {
-      label: "Tasos's Projects",
-      href: '/projects?group=tasos_kyriakides',
-      icon: User,
-      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+      label: 'Active Projects',
+      href: '/projects?group=active',
+      icon: Folder,
+      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     },
     {
       label: 'All Clients',
@@ -193,6 +186,12 @@ function QuickNav() {
       href: '/schedule',
       icon: Calendar,
       color: 'bg-primary/10 text-primary',
+    },
+    {
+      label: 'Issues',
+      href: '/issues',
+      icon: Briefcase,
+      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
     },
   ];
 

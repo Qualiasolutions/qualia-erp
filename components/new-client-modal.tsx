@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +22,11 @@ import {
 } from "@/components/ui/select";
 import { createClientRecord, type LeadStatus } from "@/app/actions";
 import { useWorkspace } from "@/components/workspace-provider";
+import { useRouter } from "next/navigation";
 
 interface NewClientModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;
 }
 
@@ -36,9 +39,22 @@ const leadStatusOptions: { value: LeadStatus; label: string }[] = [
 ];
 
 export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currentWorkspace } = useWorkspace();
+  const router = useRouter();
+
+  // Support both controlled and uncontrolled modes
+  const isControlled = open !== undefined;
+  const isOpen = isControlled ? open : internalOpen;
+  const setIsOpen = (newOpen: boolean) => {
+    if (isControlled) {
+      onOpenChange?.(newOpen);
+    } else {
+      setInternalOpen(newOpen);
+    }
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -53,10 +69,14 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
     const result = await createClientRecord(formData);
 
     if (result.success) {
-      onOpenChange(false);
+      setIsOpen(false);
       onSuccess?.();
       // Reset form
       (e.target as HTMLFormElement).reset();
+      // Refresh page data if not controlled
+      if (!isControlled) {
+        router.refresh();
+      }
     } else {
       setError(result.error || "Failed to create client");
     }
@@ -64,8 +84,23 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
     setIsSubmitting(false);
   }
 
+  function handleOpenChange(newOpen: boolean) {
+    setIsOpen(newOpen);
+    if (!newOpen) {
+      setError(null);
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-700">
+            <Plus className="w-4 h-4" />
+            <span>Add Client</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
@@ -85,6 +120,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
               name="display_name"
               placeholder="Enter client or company name"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -95,6 +131,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
                 id="phone"
                 name="phone"
                 placeholder="+1 234 567 8900"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -104,6 +141,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
                 id="website"
                 name="website"
                 placeholder="www.example.com"
+                disabled={isSubmitting}
               />
             </div>
           </div>
@@ -114,12 +152,13 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
               id="billing_address"
               name="billing_address"
               placeholder="Full address"
+              disabled={isSubmitting}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="lead_status">Status</Label>
-            <Select name="lead_status" defaultValue="cold">
+            <Select name="lead_status" defaultValue="cold" disabled={isSubmitting}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
@@ -140,6 +179,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
               name="notes"
               placeholder="Any additional notes about this client..."
               rows={3}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -147,7 +187,8 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => setIsOpen(false)}
+              disabled={isSubmitting}
             >
               Cancel
             </Button>

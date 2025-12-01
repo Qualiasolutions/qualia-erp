@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, CalendarIcon, Clock } from "lucide-react";
+import { Plus, CalendarIcon, Clock, Users, Building2 } from "lucide-react";
 import { format, setHours, setMinutes, addMinutes } from "date-fns";
 import {
     Dialog,
@@ -11,9 +11,6 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
     Select,
     SelectContent,
@@ -28,9 +25,9 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { createMeeting, getProjects, getClients } from "@/app/actions";
+import { createMeeting, getClients } from "@/app/actions";
 
-// Time slots in 30-minute increments
+// Time slots in 30-minute increments (business hours focused)
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2);
     const minute = (i % 2) * 30;
@@ -51,38 +48,50 @@ const DURATION_OPTIONS = [
     { value: 120, label: "2 hours" },
 ];
 
-interface Project {
-    id: string;
-    name: string;
-}
-
 interface Client {
     id: string;
     display_name: string;
-    lead_status: string;
 }
 
 export function NewMeetingModal() {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [projects, setProjects] = useState<Project[]>([]);
     const [clients, setClients] = useState<Client[]>([]);
     const [meetingType, setMeetingType] = useState<"internal" | "client">("internal");
+    const [selectedClientId, setSelectedClientId] = useState<string>("");
+    const [title, setTitle] = useState("");
 
     // Modern time picker state
-    const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
     const [selectedTime, setSelectedTime] = useState<string>("09:00");
     const [duration, setDuration] = useState<number>(60);
 
     useEffect(() => {
         if (open) {
-            getProjects().then(setProjects);
             getClients().then((data) => setClients(data as Client[]));
-            // Set default date to today
+            // Reset form
             setSelectedDate(new Date());
+            setSelectedTime("09:00");
+            setDuration(60);
+            setMeetingType("internal");
+            setSelectedClientId("");
+            setTitle("");
+            setError(null);
         }
     }, [open]);
+
+    // Auto-generate title based on meeting type
+    useEffect(() => {
+        if (meetingType === "internal") {
+            setTitle("Internal Meeting");
+        } else if (selectedClientId) {
+            const client = clients.find(c => c.id === selectedClientId);
+            if (client) {
+                setTitle(`Meeting with ${client.display_name}`);
+            }
+        }
+    }, [meetingType, selectedClientId, clients]);
 
     // Calculate start and end times for the form
     const getStartDateTime = () => {
@@ -105,21 +114,19 @@ export function NewMeetingModal() {
         setLoading(true);
         setError(null);
 
-        const form = e.currentTarget;
-        const formData = new FormData(form);
-
-        // Add computed datetime values
+        const formData = new FormData();
+        formData.set("title", title);
         formData.set("start_time", getStartDateTime());
         formData.set("end_time", getEndDateTime());
+
+        if (meetingType === "client" && selectedClientId) {
+            formData.set("client_id", selectedClientId);
+        }
 
         const result = await createMeeting(formData);
 
         if (result.success) {
             setOpen(false);
-            // Reset form state
-            setSelectedDate(new Date());
-            setSelectedTime("09:00");
-            setDuration(60);
         } else {
             setError(result.error || "Failed to create meeting");
         }
@@ -130,204 +137,160 @@ export function NewMeetingModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
+                <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
                     <Plus className="w-4 h-4" />
                     <span>New Meeting</span>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-border text-foreground sm:max-w-[500px]">
+            <DialogContent className="bg-card border-border text-foreground sm:max-w-[420px]">
                 <DialogHeader>
-                    <DialogTitle>Schedule Meeting</DialogTitle>
+                    <DialogTitle className="text-lg">Quick Schedule</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Title *</Label>
-                        <Input
-                            id="title"
-                            name="title"
-                            placeholder="Sprint Planning"
-                            required
-                            className="bg-background border-border"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
-                            placeholder="Meeting agenda..."
-                            className="bg-background border-border min-h-[80px]"
-                        />
-                    </div>
-
-                    {/* Modern Date & Time Selection */}
-                    <div className="space-y-3">
-                        <Label>When</Label>
-                        <div className="flex flex-col gap-3">
-                            {/* Date Picker */}
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal bg-background border-border",
-                                            !selectedDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "Pick a date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={selectedDate}
-                                        onSelect={setSelectedDate}
-                                        initialFocus
-                                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-
-                            {/* Time & Duration Row */}
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* Time Selector */}
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="justify-start text-left font-normal bg-background border-border"
-                                        >
-                                            <Clock className="mr-2 h-4 w-4" />
-                                            {TIME_SLOTS.find(t => t.value === selectedTime)?.label || selectedTime}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-48 p-0 bg-card border-border" align="start">
-                                        <div className="max-h-64 overflow-y-auto p-1">
-                                            {TIME_SLOTS.map((slot) => (
-                                                <button
-                                                    key={slot.value}
-                                                    type="button"
-                                                    onClick={() => setSelectedTime(slot.value)}
-                                                    className={cn(
-                                                        "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
-                                                        selectedTime === slot.value
-                                                            ? "bg-qualia-600 text-white"
-                                                            : "hover:bg-accent"
-                                                    )}
-                                                >
-                                                    {slot.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-
-                                {/* Duration Selector */}
-                                <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
-                                    <SelectTrigger className="bg-background border-border">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-card border-border">
-                                        {DURATION_OPTIONS.map((opt) => (
-                                            <SelectItem key={opt.value} value={opt.value.toString()}>
-                                                {opt.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {/* Time Summary */}
-                            {selectedDate && (
-                                <p className="text-xs text-muted-foreground pl-1">
-                                    {TIME_SLOTS.find(t => t.value === selectedTime)?.label} - {(() => {
-                                        const [hours, mins] = selectedTime.split(":").map(Number);
-                                        const endDate = addMinutes(setMinutes(setHours(new Date(), hours), mins), duration);
-                                        return format(endDate, "h:mm a");
-                                    })()}
-                                </p>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {/* Meeting Type Toggle */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setMeetingType("internal")}
+                            className={cn(
+                                "flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
+                                meetingType === "internal"
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border hover:border-muted-foreground/50"
                             )}
-                        </div>
+                        >
+                            <Users className="w-4 h-4" />
+                            <span className="font-medium text-sm">Internal</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMeetingType("client")}
+                            className={cn(
+                                "flex items-center justify-center gap-2 p-3 rounded-lg border-2 transition-all",
+                                meetingType === "client"
+                                    ? "border-primary bg-primary/10 text-primary"
+                                    : "border-border hover:border-muted-foreground/50"
+                            )}
+                        >
+                            <Building2 className="w-4 h-4" />
+                            <span className="font-medium text-sm">Client</span>
+                        </button>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Meeting Type</Label>
-                        <Select
-                            value={meetingType}
-                            onValueChange={(v) => setMeetingType(v as "internal" | "client")}
-                        >
-                            <SelectTrigger className="bg-background border-border">
+                    {/* Client Selector (only for client meetings) */}
+                    {meetingType === "client" && (
+                        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                            <SelectTrigger className="bg-background border-border h-11">
+                                <SelectValue placeholder="Select client..." />
+                            </SelectTrigger>
+                            <SelectContent className="bg-card border-border max-h-[200px]">
+                                {clients.map((client) => (
+                                    <SelectItem key={client.id} value={client.id}>
+                                        {client.display_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+
+                    {/* Date Selection */}
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className={cn(
+                                    "w-full justify-start text-left font-normal h-11 bg-background border-border",
+                                    !selectedDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
+                                {selectedDate ? format(selectedDate, "EEE, MMM d, yyyy") : "Pick a date"}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={selectedDate}
+                                onSelect={setSelectedDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* Time & Duration */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Time */}
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="justify-start text-left font-normal h-11 bg-background border-border"
+                                >
+                                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                    {TIME_SLOTS.find(t => t.value === selectedTime)?.label}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-44 p-1 bg-card border-border" align="start">
+                                <div className="max-h-56 overflow-y-auto">
+                                    {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
+                                        <button
+                                            key={slot.value}
+                                            type="button"
+                                            onClick={() => setSelectedTime(slot.value)}
+                                            className={cn(
+                                                "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
+                                                selectedTime === slot.value
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "hover:bg-accent"
+                                            )}
+                                        >
+                                            {slot.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+
+                        {/* Duration */}
+                        <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
+                            <SelectTrigger className="bg-background border-border h-11">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="bg-card border-border">
-                                <SelectItem value="internal">Internal Meeting</SelectItem>
-                                <SelectItem value="client">Client Meeting</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {meetingType === "client" && (
-                        <div className="space-y-2">
-                            <Label>Client *</Label>
-                            <Select name="client_id">
-                                <SelectTrigger className="bg-background border-border">
-                                    <SelectValue placeholder="Select client" />
-                                </SelectTrigger>
-                                <SelectContent className="bg-card border-border">
-                                    {clients.map((client) => (
-                                        <SelectItem key={client.id} value={client.id}>
-                                            {client.display_name}
-                                            <span className="ml-2 text-xs text-muted-foreground">
-                                                ({client.lead_status.replace("_", " ")})
-                                            </span>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-
-                    <div className="space-y-2">
-                        <Label>Project (Optional)</Label>
-                        <Select name="project_id">
-                            <SelectTrigger className="bg-background border-border">
-                                <SelectValue placeholder="Select project" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-card border-border">
-                                {projects.map((project) => (
-                                    <SelectItem key={project.id} value={project.id}>
-                                        {project.name}
+                                {DURATION_OPTIONS.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value.toString()}>
+                                        {opt.label}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
 
+                    {/* Summary */}
+                    {selectedDate && (
+                        <div className="px-3 py-2.5 rounded-lg bg-secondary/50 text-sm">
+                            <span className="text-muted-foreground">Scheduling: </span>
+                            <span className="font-medium text-foreground">{title}</span>
+                            <div className="text-xs text-muted-foreground mt-1">
+                                {format(selectedDate, "EEEE, MMM d")} at {TIME_SLOTS.find(t => t.value === selectedTime)?.label}
+                                {" "}({DURATION_OPTIONS.find(d => d.value === duration)?.label})
+                            </div>
+                        </div>
+                    )}
+
                     {error && (
                         <p className="text-sm text-destructive">{error}</p>
                     )}
 
-                    <div className="flex justify-end gap-3 pt-4">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={() => setOpen(false)}
-                            className="text-muted-foreground hover:text-foreground"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={loading}
-                            className="bg-qualia-600 hover:bg-qualia-500"
-                        >
-                            {loading ? "Scheduling..." : "Schedule"}
-                        </Button>
-                    </div>
+                    <Button
+                        type="submit"
+                        disabled={loading || (meetingType === "client" && !selectedClientId)}
+                        className="w-full h-11 bg-primary hover:bg-primary/90 font-medium"
+                    >
+                        {loading ? "Scheduling..." : "Schedule Meeting"}
+                    </Button>
                 </form>
             </DialogContent>
         </Dialog>

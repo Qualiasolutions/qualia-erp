@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Check, Lock } from "lucide-react";
+import { ChevronDown, Check, Lock, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 export function WorkspaceSelector() {
   const { currentWorkspace, workspaces, setCurrentWorkspace, isLoading } = useWorkspace();
   const [accessDeniedWorkspace, setAccessDeniedWorkspace] = useState<WorkspaceWithAccess | null>(null);
+  const [isSwitching, setIsSwitching] = useState(false);
   const router = useRouter();
 
   const handleSelectWorkspace = async (workspace: WorkspaceWithAccess) => {
@@ -32,10 +33,17 @@ export function WorkspaceSelector() {
       return;
     }
 
+    if (workspace.id === currentWorkspace?.id) {
+      return; // Already selected
+    }
+
+    setIsSwitching(true);
     const success = await setCurrentWorkspace(workspace);
     if (success) {
       // Force full page reload to load data for the new workspace
       window.location.reload();
+    } else {
+      setIsSwitching(false);
     }
   };
 
@@ -48,8 +56,21 @@ export function WorkspaceSelector() {
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger className="w-full flex items-center gap-2 bg-muted hover:bg-accent text-foreground px-3 py-2 rounded-md text-sm transition-colors border border-border focus:outline-none focus:ring-2 focus:ring-qualia-400 focus:ring-offset-2 focus:ring-offset-background">
-          {currentWorkspace ? (
+        <DropdownMenuTrigger
+          disabled={isSwitching}
+          className={cn(
+            "w-full flex items-center gap-2 bg-muted hover:bg-accent text-foreground px-3 py-2 rounded-md text-sm transition-colors border border-border focus:outline-none focus:ring-2 focus:ring-qualia-400 focus:ring-offset-2 focus:ring-offset-background",
+            isSwitching && "opacity-70 cursor-wait"
+          )}
+        >
+          {isSwitching ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              <span className="flex-1 text-left truncate text-muted-foreground">
+                Switching...
+              </span>
+            </>
+          ) : currentWorkspace ? (
             <span className="flex-1 text-left truncate">
               {currentWorkspace.name}
             </span>
@@ -58,7 +79,7 @@ export function WorkspaceSelector() {
               Select workspace
             </span>
           )}
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          {!isSwitching && <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
           <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">

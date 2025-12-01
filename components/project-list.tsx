@@ -10,6 +10,8 @@ import {
     List,
     TrendingUp,
     Inbox,
+    Briefcase,
+    Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PROJECT_GROUP_LABELS, type ProjectGroup } from "@/components/project-group-tabs";
@@ -42,17 +44,17 @@ const GROUP_CONFIG: Record<string, { color: string; bgColor: string; icon: typeo
     'salman_kuwait': {
         color: 'text-amber-600 dark:text-amber-400',
         bgColor: 'bg-amber-500/10',
-        icon: TrendingUp,
+        icon: Briefcase,
     },
     'tasos_kyriakides': {
         color: 'text-blue-600 dark:text-blue-400',
         bgColor: 'bg-blue-500/10',
-        icon: TrendingUp,
+        icon: User,
     },
     'other': {
         color: 'text-violet-600 dark:text-violet-400',
         bgColor: 'bg-violet-500/10',
-        icon: TrendingUp,
+        icon: Users,
     },
     'active': {
         color: 'text-emerald-600 dark:text-emerald-400',
@@ -76,42 +78,15 @@ const GROUP_CONFIG: Record<string, { color: string; bgColor: string; icon: typeo
     },
 };
 
-function getHealthIndicator(project: Project): { label: string; color: string; bgColor: string } {
-    const progress = project.issue_stats?.total
-        ? (project.issue_stats.done / project.issue_stats.total) * 100
-        : 0;
-
-    if (project.target_date) {
-        const targetDate = new Date(project.target_date);
-        const now = new Date();
-        const daysUntilDue = Math.ceil((targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-        if (daysUntilDue < 0 && progress < 100) {
-            return { label: 'Off track', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-500/10' };
-        }
-
-        if (daysUntilDue <= 7 && progress < 70) {
-            return { label: 'At risk', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-500/10' };
-        }
-    }
-
-    if (progress >= 70 || project.status === 'Launched') {
-        return { label: 'On track', color: 'text-emerald-600 dark:text-emerald-400', bgColor: 'bg-emerald-500/10' };
-    }
-
-    return { label: 'In progress', color: 'text-amber-600 dark:text-amber-400', bgColor: 'bg-amber-500/10' };
-}
-
 function formatDate(dateString: string | null): string {
     if (!dateString) return 'No due date';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({ project, showGroupBadge = true }: { project: Project; showGroupBadge?: boolean }) {
     const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
-    // Use milestone_progress if available, otherwise fall back to issue-based progress
     const progress = project.project_group === 'finished' ? 100 : (
         project.milestone_progress !== undefined && project.milestone_progress > 0
             ? project.milestone_progress
@@ -120,7 +95,6 @@ function ProjectCard({ project }: { project: Project }) {
                 : 0)
     );
     const hasMilestones = project.milestone_progress !== undefined && project.milestone_progress > 0;
-    const groupLabel = project.project_group ? PROJECT_GROUP_LABELS[project.project_group as ProjectGroup] : null;
 
     return (
         <Link
@@ -142,15 +116,6 @@ function ProjectCard({ project }: { project: Project }) {
                         </h3>
                     </div>
                 </div>
-                {groupLabel && (
-                    <span className={cn(
-                        "text-[10px] px-2 py-1 rounded font-medium flex-shrink-0",
-                        groupConfig.bgColor,
-                        groupConfig.color
-                    )}>
-                        {groupLabel}
-                    </span>
-                )}
             </div>
 
             {/* Progress */}
@@ -204,7 +169,6 @@ function ProjectCard({ project }: { project: Project }) {
 function ProjectRow({ project }: { project: Project }) {
     const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
-    // Use milestone_progress if available, otherwise fall back to issue-based progress
     const progress = project.project_group === 'finished' ? 100 : (
         project.milestone_progress !== undefined && project.milestone_progress > 0
             ? project.milestone_progress
@@ -212,7 +176,6 @@ function ProjectRow({ project }: { project: Project }) {
                 ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
                 : 0)
     );
-    const groupLabel = project.project_group ? PROJECT_GROUP_LABELS[project.project_group as ProjectGroup] : null;
 
     return (
         <Link
@@ -259,24 +222,34 @@ function ProjectRow({ project }: { project: Project }) {
                     />
                 </div>
             </div>
-
-            {groupLabel && (
-                <span className={cn(
-                    "text-[10px] px-2 py-1 rounded font-medium flex-shrink-0",
-                    groupConfig.bgColor,
-                    groupConfig.color
-                )}>
-                    {groupLabel}
-                </span>
-            )}
         </Link>
+    );
+}
+
+// Section header for grouped projects
+function SectionHeader({ title, count, config }: { title: string; count: number; config: typeof GROUP_CONFIG[string] }) {
+    const Icon = config.icon;
+    return (
+        <div className="flex items-center gap-3 mb-4 mt-6 first:mt-0">
+            <div className={cn("p-2 rounded-lg", config.bgColor)}>
+                <Icon className={cn("w-4 h-4", config.color)} />
+            </div>
+            <div>
+                <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+                <p className="text-xs text-muted-foreground">{count} project{count !== 1 ? 's' : ''}</p>
+            </div>
+        </div>
     );
 }
 
 export function ProjectList({ projects }: ProjectListProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-    // Sort projects: 100% complete projects go to bottom
+    // Check if we're showing mixed active groups
+    const hasMultipleGroups = projects.some(p => p.project_group === 'salman_kuwait') ||
+                              projects.some(p => p.project_group === 'tasos_kyriakides');
+
+    // Sort projects: 100% complete projects go to bottom within each group
     const getProgress = (p: Project) => {
         if (p.project_group === 'finished') return 100;
         if (p.milestone_progress !== undefined && p.milestone_progress > 0) return p.milestone_progress;
@@ -284,14 +257,15 @@ export function ProjectList({ projects }: ProjectListProps) {
         return 0;
     };
 
-    const sortedProjects = [...projects].sort((a, b) => {
-        const progressA = getProgress(a);
-        const progressB = getProgress(b);
-
-        if (progressA === 100 && progressB !== 100) return 1;
-        if (progressB === 100 && progressA !== 100) return -1;
-        return progressB - progressA;
-    });
+    const sortProjects = (projectList: Project[]) => {
+        return [...projectList].sort((a, b) => {
+            const progressA = getProgress(a);
+            const progressB = getProgress(b);
+            if (progressA === 100 && progressB !== 100) return 1;
+            if (progressB === 100 && progressA !== 100) return -1;
+            return progressB - progressA;
+        });
+    };
 
     if (projects.length === 0) {
         return (
@@ -307,14 +281,43 @@ export function ProjectList({ projects }: ProjectListProps) {
         );
     }
 
-    // Stats by project group
+    // Group projects by owner for active view
+    const salmanProjects = sortProjects(projects.filter(p => p.project_group === 'salman_kuwait'));
+    const tasosProjects = sortProjects(projects.filter(p => p.project_group === 'tasos_kyriakides'));
+    const otherProjects = sortProjects(projects.filter(p => p.project_group === 'active' || p.project_group === 'other'));
+
+    // For non-grouped views (demos, inactive)
+    const sortedProjects = sortProjects(projects);
+
     const totalProjects = projects.length;
-    const activeProjects = projects.filter(p => p.project_group === 'active').length;
-    const finishedProjects = projects.filter(p => p.project_group === 'finished').length;
-    const atRiskProjects = projects.filter(p => {
-        const health = getHealthIndicator(p);
-        return health.label === 'At risk' || health.label === 'Off track';
-    }).length;
+
+    const renderGrid = (projectList: Project[]) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {projectList.map((project, index) => (
+                <div
+                    key={project.id}
+                    className="slide-in"
+                    style={{ animationDelay: `${index * 40}ms` }}
+                >
+                    <ProjectCard project={project} showGroupBadge={!hasMultipleGroups} />
+                </div>
+            ))}
+        </div>
+    );
+
+    const renderList = (projectList: Project[]) => (
+        <div className="space-y-0.5">
+            {projectList.map((project, index) => (
+                <div
+                    key={project.id}
+                    className="slide-in"
+                    style={{ animationDelay: `${index * 25}ms` }}
+                >
+                    <ProjectRow project={project} />
+                </div>
+            ))}
+        </div>
+    );
 
     return (
         <div className="space-y-5">
@@ -325,23 +328,31 @@ export function ProjectList({ projects }: ProjectListProps) {
                         <span className="text-xl font-semibold text-foreground tabular-nums">{totalProjects}</span>
                         <span className="text-sm text-muted-foreground">projects</span>
                     </div>
-                    <div className="h-4 w-px bg-border" />
-                    <div className="flex items-center gap-4 text-xs">
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span className="text-muted-foreground">{activeProjects} active</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            <span className="text-muted-foreground">{finishedProjects} finished</span>
-                        </div>
-                        {atRiskProjects > 0 && (
-                            <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                                <span className="text-orange-600 dark:text-orange-400">{atRiskProjects} at risk</span>
+                    {hasMultipleGroups && (
+                        <>
+                            <div className="h-4 w-px bg-border" />
+                            <div className="flex items-center gap-4 text-xs">
+                                {salmanProjects.length > 0 && (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                        <span className="text-muted-foreground">{salmanProjects.length} Salman</span>
+                                    </div>
+                                )}
+                                {tasosProjects.length > 0 && (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                        <span className="text-muted-foreground">{tasosProjects.length} Tasos</span>
+                                    </div>
+                                )}
+                                {otherProjects.length > 0 && (
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
+                                        <span className="text-muted-foreground">{otherProjects.length} Other</span>
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        </>
+                    )}
                 </div>
 
                 {/* View Toggle */}
@@ -373,31 +384,48 @@ export function ProjectList({ projects }: ProjectListProps) {
                 </div>
             </div>
 
-            {/* Content */}
-            {viewMode === 'grid' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {sortedProjects.map((project, index) => (
-                        <div
-                            key={project.id}
-                            className="slide-in"
-                            style={{ animationDelay: `${index * 40}ms` }}
-                        >
-                            <ProjectCard project={project} />
+            {/* Content - Grouped or Flat */}
+            {hasMultipleGroups ? (
+                <div className="space-y-8">
+                    {/* Salman's Projects */}
+                    {salmanProjects.length > 0 && (
+                        <div>
+                            <SectionHeader
+                                title="Salman's Projects"
+                                count={salmanProjects.length}
+                                config={GROUP_CONFIG['salman_kuwait']}
+                            />
+                            {viewMode === 'grid' ? renderGrid(salmanProjects) : renderList(salmanProjects)}
                         </div>
-                    ))}
+                    )}
+
+                    {/* Tasos's Projects */}
+                    {tasosProjects.length > 0 && (
+                        <div>
+                            <SectionHeader
+                                title="Tasos's Projects"
+                                count={tasosProjects.length}
+                                config={GROUP_CONFIG['tasos_kyriakides']}
+                            />
+                            {viewMode === 'grid' ? renderGrid(tasosProjects) : renderList(tasosProjects)}
+                        </div>
+                    )}
+
+                    {/* Other Projects */}
+                    {otherProjects.length > 0 && (
+                        <div>
+                            <SectionHeader
+                                title="Other Projects"
+                                count={otherProjects.length}
+                                config={GROUP_CONFIG['other']}
+                            />
+                            {viewMode === 'grid' ? renderGrid(otherProjects) : renderList(otherProjects)}
+                        </div>
+                    )}
                 </div>
             ) : (
-                <div className="space-y-0.5">
-                    {sortedProjects.map((project, index) => (
-                        <div
-                            key={project.id}
-                            className="slide-in"
-                            style={{ animationDelay: `${index * 25}ms` }}
-                        >
-                            <ProjectRow project={project} />
-                        </div>
-                    ))}
-                </div>
+                // Flat list for demos, inactive, etc.
+                viewMode === 'grid' ? renderGrid(sortedProjects) : renderList(sortedProjects)
             )}
         </div>
     );

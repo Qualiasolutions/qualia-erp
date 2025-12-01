@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { List, CalendarDays } from 'lucide-react';
+import { List, CalendarDays, CalendarRange } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ScheduleViewToggleProps {
@@ -31,6 +31,18 @@ export function ScheduleViewToggle({ currentView }: ScheduleViewToggleProps) {
             >
                 <List className="w-4 h-4" />
                 <span>List</span>
+            </button>
+            <button
+                onClick={() => setView('week')}
+                className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200",
+                    currentView === 'week'
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                )}
+            >
+                <CalendarRange className="w-4 h-4" />
+                <span>Week</span>
             </button>
             <button
                 onClick={() => setView('calendar')}

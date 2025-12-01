@@ -48,10 +48,13 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
     // Filter by project group (default to 'active')
     const group = filters.group || 'active';
 
-    if (group === 'other') {
-        // 'other' shows active projects that aren't salman or tasos
+    if (group === 'active') {
+        // 'active' shows all active projects including salman, tasos, other subgroups
         projects = projects.filter(p =>
-            p.project_group === 'active' || p.project_group === 'other'
+            p.project_group === 'active' ||
+            p.project_group === 'salman_kuwait' ||
+            p.project_group === 'tasos_kyriakides' ||
+            p.project_group === 'other'
         );
     } else {
         projects = projects.filter(p => p.project_group === group);
