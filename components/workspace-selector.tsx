@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Check, Building2, Lock } from "lucide-react";
+import { ChevronDown, Check, Lock } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,48 +45,18 @@ export function WorkspaceSelector() {
     );
   }
 
-  // Get workspace initial for avatar
-  const getWorkspaceInitial = (name: string) => {
-    return name.charAt(0).toUpperCase();
-  };
-
-  // Get workspace color based on name (consistent per workspace)
-  const getWorkspaceColor = (name: string) => {
-    const colors = [
-      "bg-qualia-600",
-      "bg-blue-600",
-      "bg-purple-600",
-      "bg-orange-600",
-      "bg-green-600",
-      "bg-pink-600",
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
-
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger className="w-full flex items-center gap-2 bg-muted hover:bg-accent text-foreground px-3 py-2 rounded-md text-sm transition-colors border border-border focus:outline-none focus:ring-2 focus:ring-qualia-400 focus:ring-offset-2 focus:ring-offset-background">
           {currentWorkspace ? (
-            <>
-              <div className={cn(
-                "w-5 h-5 rounded flex items-center justify-center text-xs text-white font-medium",
-                getWorkspaceColor(currentWorkspace.name)
-              )}>
-                {getWorkspaceInitial(currentWorkspace.name)}
-              </div>
-              <span className="flex-1 text-left truncate">
-                {currentWorkspace.name}
-              </span>
-            </>
+            <span className="flex-1 text-left truncate">
+              {currentWorkspace.name}
+            </span>
           ) : (
-            <>
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              <span className="flex-1 text-left truncate text-muted-foreground">
-                Select workspace
-              </span>
-            </>
+            <span className="flex-1 text-left truncate text-muted-foreground">
+              Select workspace
+            </span>
           )}
           <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </DropdownMenuTrigger>
@@ -105,12 +75,6 @@ export function WorkspaceSelector() {
                 !workspace.hasAccess && "opacity-60"
               )}
             >
-              <div className={cn(
-                "w-5 h-5 rounded flex items-center justify-center text-xs text-white font-medium",
-                getWorkspaceColor(workspace.name)
-              )}>
-                {getWorkspaceInitial(workspace.name)}
-              </div>
               <span className="flex-1 truncate">{workspace.name}</span>
               {!workspace.hasAccess && (
                 <Lock className="w-3 h-3 text-muted-foreground" />

@@ -2,7 +2,7 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Sparkles } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
 
 export default function Chat() {
@@ -44,24 +44,7 @@ export default function Chat() {
     };
 
     return (
-        <div className="flex flex-col h-[560px] w-full surface-elevated rounded-xl overflow-hidden">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-border flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                    <Bot className="w-4 h-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                    <h3 className="font-semibold text-foreground text-sm">Qualia AI</h3>
-                    <p className="text-[10px] text-muted-foreground">Always ready to help</p>
-                </div>
-                {isLoading && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10">
-                        <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                        <span className="text-[10px] font-medium text-primary">Thinking</span>
-                    </div>
-                )}
-            </div>
-
+        <div className="flex flex-col h-full w-full overflow-hidden">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 && (

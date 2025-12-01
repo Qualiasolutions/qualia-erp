@@ -50,6 +50,7 @@ Two Supabase clients for different contexts:
 `app/actions.ts` contains all server actions for data mutations:
 - **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
 - **CRUD operations**: `createIssue`, `createProject`, `createTeam`, `createMeeting`, `updateIssue`, `updateProject`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
+- **Milestones**: `createMilestone`, `updateMilestone`, `deleteMilestone`, `getMilestones` - Project milestone tracking with linked issues
 - **Fetch by ID**: `getIssueById`, `getProjectById`, `getTeamById` - Return fully hydrated entities with related data
 - **List queries**: `getTeams`, `getProjects`, `getProfiles`, `getMeetings` - Accept optional `workspaceId`
 - **Assignees/Attendees**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
@@ -72,14 +73,18 @@ Core entities in `supabase/migrations/`:
 - **profiles** - User profiles (extends auth.users via trigger on signup), has `role` field (`admin`/`employee`)
 - **workspaces** - Multi-tenant organizations
 - **workspace_members** - Junction table for workspace membership with roles and default workspace tracking
-- **clients** - Client organizations
+- **clients** - Client organizations with CRM fields: `lead_status` (dropped/cold/hot/active_client/inactive_client), contacts, billing
+- **client_contacts** - Multiple contacts per client with name, email, phone, position
+- **client_activities** - CRM activity log: calls, emails, meetings, notes, status changes
 - **teams** - Teams with unique keys (e.g., "ENG", "DES"), scoped to workspace
 - **team_members** - Junction table for team membership with roles
-- **projects** - Status enum: Demos, Active, Launched, Delayed, Archived, Canceled
-- **issues** - Status (Backlog, Todo, In Progress, Done, Canceled), priority (No Priority, Urgent, High, Medium, Low), supports parent/child hierarchy via `parent_id`
+- **projects** - `project_group` enum (salman_kuwait, tasos_kyriakides, active, demos, inactive, finished, other) for organizing by client. `project_type` enum (web_design, ai_agent, seo, ads). Status still exists but secondary to groups.
+- **milestones** - Project milestones with target_date, status (not_started/in_progress/completed/delayed), progress (0-100), color
+- **milestone_issues** - Links issues to milestones for progress tracking
+- **issues** - Status (Yet to Start, Todo, In Progress, Done, Canceled), priority (No Priority, Urgent, High, Medium, Low), supports parent/child hierarchy via `parent_id`
 - **issue_assignees** - Many-to-many for multiple assignees per issue
 - **comments** - Issue comments
-- **meetings** - Calendar meetings with start/end times, linked to projects
+- **meetings** - Calendar meetings with start/end times, linked to projects and clients
 - **meeting_attendees** - Junction table with RSVP status (pending/accepted/declined/tentative)
 - **activities** - Activity feed records with type enum and metadata JSON
 - **documents** - Knowledge base with vector embeddings (pgvector, 1536 dimensions)
@@ -127,8 +132,8 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 - `/` - Dashboard with stats and activity feed
 - `/issues` - Issue list with filters
 - `/issues/[id]` - Issue detail with comments and assignees
-- `/projects` - Project grid view
-- `/projects/[id]` - Project detail with issues list
+- `/projects` - Project grid with group tabs (Salman, Tasos, Active, Demos, Inactive)
+- `/projects/[id]` - Project detail with issues list and milestone timeline
 - `/teams` - Team management
 - `/teams/[id]` - Team detail with members and projects
 - `/schedule` - Calendar view with meetings (list/calendar toggle)

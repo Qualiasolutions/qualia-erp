@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useState } from 'react';
 import {
     LayoutGrid,
     ListTodo,
@@ -13,10 +14,12 @@ import {
     ChevronLeft,
     ChevronRight,
     Sparkles,
+    X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
 import { useSidebar } from '@/components/sidebar-provider';
+import Chat from '@/components/chat';
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutGrid },
@@ -33,8 +36,10 @@ const bottomNav = [
 export function Sidebar() {
     const pathname = usePathname();
     const { isCollapsed, toggleSidebar } = useSidebar();
+    const [isAiPanelOpen, setIsAiPanelOpen] = useState(false);
 
     return (
+        <>
         <aside
             className={cn(
                 "flex flex-col h-screen bg-card border-r border-border transition-all duration-300 ease-out",
@@ -43,23 +48,23 @@ export function Sidebar() {
         >
             {/* Logo */}
             <div className={cn(
-                "flex items-center h-14 border-b border-border",
-                isCollapsed ? "justify-center px-3" : "px-4"
+                "flex items-center border-b border-border",
+                isCollapsed ? "justify-center px-3 h-14" : "px-4 h-16"
             )}>
-                <Link href="/" className="flex items-center gap-2.5 group">
+                <Link href="/" className="flex items-center gap-3 group">
                     <div className="relative flex-shrink-0">
                         <Image
                             src="/logo.webp"
-                            alt="Qualia"
-                            width={28}
-                            height={28}
+                            alt="Qualia Solutions"
+                            width={isCollapsed ? 32 : 40}
+                            height={isCollapsed ? 32 : 40}
                             className="rounded-lg transition-transform duration-200 group-hover:scale-105"
                         />
                     </div>
                     {!isCollapsed && (
                         <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-foreground tracking-tight">
-                                Qualia
+                            <span className="text-sm font-bold text-foreground tracking-tight">
+                                Qualia Solutions
                             </span>
                             <span className="text-[10px] text-muted-foreground -mt-0.5">
                                 Internal Suite
@@ -116,7 +121,10 @@ export function Sidebar() {
             {/* AI Assistant Card */}
             {!isCollapsed && (
                 <div className="px-3 pb-2">
-                    <div className="rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-3">
+                    <button
+                        onClick={() => setIsAiPanelOpen(true)}
+                        className="w-full rounded-lg bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 p-3 transition-all hover:from-primary/15 hover:via-primary/10 hover:border-primary/30 cursor-pointer text-left"
+                    >
                         <div className="flex items-start gap-2.5">
                             <div className="p-1.5 rounded-md bg-primary/15">
                                 <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -128,7 +136,7 @@ export function Sidebar() {
                                 </p>
                             </div>
                         </div>
-                    </div>
+                    </button>
                 </div>
             )}
 
@@ -136,6 +144,7 @@ export function Sidebar() {
             {isCollapsed && (
                 <div className="px-2 pb-2 flex justify-center">
                     <button
+                        onClick={() => setIsAiPanelOpen(true)}
                         className="p-2.5 rounded-lg bg-primary/10 border border-primary/20 transition-colors hover:bg-primary/15"
                         title="AI Assistant"
                     >
@@ -202,5 +211,37 @@ export function Sidebar() {
                 </button>
             </div>
         </aside>
+
+        {/* AI Assistant Slide-out Panel */}
+        {isAiPanelOpen && (
+            <>
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0 bg-black/50 z-40 animate-in fade-in duration-200"
+                    onClick={() => setIsAiPanelOpen(false)}
+                />
+                {/* Panel */}
+                <div className="fixed left-60 top-0 h-screen w-[400px] bg-card border-r border-border z-50 animate-in slide-in-from-left duration-300 flex flex-col shadow-2xl">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 rounded-md bg-primary/15">
+                                <Sparkles className="w-4 h-4 text-primary" />
+                            </div>
+                            <span className="font-semibold text-foreground">AI Assistant</span>
+                        </div>
+                        <button
+                            onClick={() => setIsAiPanelOpen(false)}
+                            className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+                        >
+                            <X className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                        <Chat />
+                    </div>
+                </div>
+            </>
+        )}
+        </>
     );
 }

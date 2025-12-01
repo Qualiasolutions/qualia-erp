@@ -7,9 +7,10 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { WorkspaceProvider } from "@/components/workspace-provider";
 import { SidebarProvider } from "@/components/sidebar-provider";
+import { LogoSplash } from "@/components/logo-splash";
 
 export const metadata: Metadata = {
-  title: "Qualia Internal Suite",
+  title: "Qualia Solutions Internal Suite",
   description: "Project Planning & Management",
 };
 
@@ -44,6 +45,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="bg-background text-foreground antialiased flex h-screen overflow-hidden">
         <ThemeProvider>
+          <LogoSplash />
           <WorkspaceProvider>
             <SidebarProvider>
               <Suspense fallback={null}>
