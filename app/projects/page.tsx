@@ -41,7 +41,8 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
         issue_stats: {
             total: Number(p.total_issues),
             done: Number(p.done_issues)
-        }
+        },
+        milestone_progress: p.milestone_progress || 0
     }));
 
     // Filter by project group (default to 'active')

@@ -29,6 +29,7 @@ export interface Project {
         total: number;
         done: number;
     };
+    milestone_progress?: number;
 }
 
 interface ProjectListProps {
@@ -110,9 +111,15 @@ function formatDate(dateString: string | null): string {
 function ProjectCard({ project }: { project: Project }) {
     const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
-    const progress = project.project_group === 'finished' ? 100 : (project.issue_stats?.total
-        ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-        : 0);
+    // Use milestone_progress if available, otherwise fall back to issue-based progress
+    const progress = project.project_group === 'finished' ? 100 : (
+        project.milestone_progress !== undefined && project.milestone_progress > 0
+            ? project.milestone_progress
+            : (project.issue_stats?.total
+                ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
+                : 0)
+    );
+    const hasMilestones = project.milestone_progress !== undefined && project.milestone_progress > 0;
     const groupLabel = project.project_group ? PROJECT_GROUP_LABELS[project.project_group as ProjectGroup] : null;
 
     return (
@@ -149,10 +156,12 @@ function ProjectCard({ project }: { project: Project }) {
             {/* Progress */}
             <div className="space-y-2.5 mb-4">
                 <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium text-foreground tabular-nums">
-                        {project.issue_stats?.done || 0} / {project.issue_stats?.total || 0}
-                    </span>
+                    <span className="text-muted-foreground">{hasMilestones ? 'Milestones' : 'Progress'}</span>
+                    {!hasMilestones && (
+                        <span className="font-medium text-foreground tabular-nums">
+                            {project.issue_stats?.done || 0} / {project.issue_stats?.total || 0}
+                        </span>
+                    )}
                 </div>
                 <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                     <div
@@ -195,9 +204,14 @@ function ProjectCard({ project }: { project: Project }) {
 function ProjectRow({ project }: { project: Project }) {
     const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
     const leadName = project.lead?.full_name || project.lead?.email?.split('@')[0] || 'Unassigned';
-    const progress = project.project_group === 'finished' ? 100 : (project.issue_stats?.total
-        ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-        : 0);
+    // Use milestone_progress if available, otherwise fall back to issue-based progress
+    const progress = project.project_group === 'finished' ? 100 : (
+        project.milestone_progress !== undefined && project.milestone_progress > 0
+            ? project.milestone_progress
+            : (project.issue_stats?.total
+                ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
+                : 0)
+    );
     const groupLabel = project.project_group ? PROJECT_GROUP_LABELS[project.project_group as ProjectGroup] : null;
 
     return (
@@ -263,13 +277,16 @@ export function ProjectList({ projects }: ProjectListProps) {
     const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
     // Sort projects: 100% complete projects go to bottom
+    const getProgress = (p: Project) => {
+        if (p.project_group === 'finished') return 100;
+        if (p.milestone_progress !== undefined && p.milestone_progress > 0) return p.milestone_progress;
+        if (p.issue_stats?.total) return Math.round((p.issue_stats.done / p.issue_stats.total) * 100);
+        return 0;
+    };
+
     const sortedProjects = [...projects].sort((a, b) => {
-        const progressA = a.project_group === 'finished' ? 100 : (a.issue_stats?.total
-            ? Math.round((a.issue_stats.done / a.issue_stats.total) * 100)
-            : 0);
-        const progressB = b.project_group === 'finished' ? 100 : (b.issue_stats?.total
-            ? Math.round((b.issue_stats.done / b.issue_stats.total) * 100)
-            : 0);
+        const progressA = getProgress(a);
+        const progressB = getProgress(b);
 
         if (progressA === 100 && progressB !== 100) return 1;
         if (progressB === 100 && progressA !== 100) return -1;
