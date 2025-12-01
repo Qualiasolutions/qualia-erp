@@ -9,9 +9,6 @@ import {
   ArrowUpRight,
   Circle,
   Users,
-  AlertTriangle,
-  Clock,
-  TrendingUp,
   Calendar,
   Briefcase,
   User
@@ -19,10 +16,6 @@ import {
 
 interface DashboardStats {
   activeProjects: number;
-  totalIssues: number;
-  completed: number;
-  urgentIssues: number;
-  overdueProjects: number;
   clientsActive: number;
   meetingsThisWeek: number;
 }
@@ -36,33 +29,6 @@ async function getStats(): Promise<DashboardStats> {
     .from('projects')
     .select('*', { count: 'exact', head: true })
     .eq('workspace_id', workspaceId)
-    .in('project_group', ['active', 'salman_kuwait', 'tasos_kyriakides', 'other']);
-
-  const { count: totalIssues } = await supabase
-    .from('issues')
-    .select('*', { count: 'exact', head: true })
-    .eq('workspace_id', workspaceId);
-
-  const { count: completed } = await supabase
-    .from('issues')
-    .select('*', { count: 'exact', head: true })
-    .eq('workspace_id', workspaceId)
-    .eq('status', 'Done');
-
-  const { count: urgentIssues } = await supabase
-    .from('issues')
-    .select('*', { count: 'exact', head: true })
-    .eq('workspace_id', workspaceId)
-    .eq('priority', 'Urgent')
-    .neq('status', 'Done');
-
-  // Get overdue projects (target_date in the past)
-  const today = new Date().toISOString().split('T')[0];
-  const { count: overdueProjects } = await supabase
-    .from('projects')
-    .select('*', { count: 'exact', head: true })
-    .eq('workspace_id', workspaceId)
-    .lt('target_date', today)
     .in('project_group', ['active', 'salman_kuwait', 'tasos_kyriakides', 'other']);
 
   const { count: clientsActive } = await supabase
@@ -86,46 +52,13 @@ async function getStats(): Promise<DashboardStats> {
 
   return {
     activeProjects: activeProjects || 0,
-    totalIssues: totalIssues || 0,
-    completed: completed || 0,
-    urgentIssues: urgentIssues || 0,
-    overdueProjects: overdueProjects || 0,
     clientsActive: clientsActive || 0,
     meetingsThisWeek: meetingsThisWeek || 0,
   };
 }
 
-// Get projects that need attention
-async function getProjectsNeedingAttention() {
-  await connection();
-  const supabase = await createClient();
-  const workspaceId = await getCurrentWorkspaceId();
-
-  // Get projects with urgent issues or overdue
-  const today = new Date().toISOString().split('T')[0];
-
-  const { data: projects } = await supabase
-    .from('projects')
-    .select(`
-      id,
-      name,
-      target_date,
-      project_group,
-      client:clients(name)
-    `)
-    .eq('workspace_id', workspaceId)
-    .in('project_group', ['active', 'salman_kuwait', 'tasos_kyriakides', 'other'])
-    .or(`target_date.lt.${today}`)
-    .limit(5);
-
-  return projects || [];
-}
-
 async function StatsLoader() {
   const stats = await getStats();
-  const completionRate = stats.totalIssues > 0
-    ? Math.round((stats.completed / stats.totalIssues) * 100)
-    : 0;
 
   // Primary stats (top row)
   const primaryStats = [
@@ -155,101 +88,40 @@ async function StatsLoader() {
     },
   ];
 
-  // Alert stats (attention needed)
-  const alertStats = [
-    {
-      label: 'Urgent Issues',
-      value: stats.urgentIssues,
-      icon: AlertTriangle,
-      accent: 'amber',
-      href: '/issues?priority=Urgent',
-      isAlert: stats.urgentIssues > 0
-    },
-    {
-      label: 'Overdue',
-      value: stats.overdueProjects,
-      icon: Clock,
-      accent: 'red',
-      href: '/projects?overdue=true',
-      isAlert: stats.overdueProjects > 0
-    },
-    {
-      label: 'Completion',
-      value: `${completionRate}%`,
-      icon: TrendingUp,
-      accent: completionRate >= 70 ? 'emerald' : completionRate >= 40 ? 'amber' : 'red',
-      href: '/issues',
-      trend: `${stats.completed}/${stats.totalIssues} done`
-    },
-  ];
-
-  const getAccentClasses = (accent: string, isAlert?: boolean) => {
-    const base = {
-      primary: 'bg-primary/10 text-primary',
-      blue: 'bg-blue-500/10 text-blue-500',
-      violet: 'bg-violet-500/10 text-violet-500',
-      emerald: 'bg-emerald-500/10 text-emerald-500',
-      amber: isAlert ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' : 'bg-amber-500/10 text-amber-500',
-      red: isAlert ? 'bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-red-500/10 text-red-500',
-    };
-    return base[accent as keyof typeof base] || base.primary;
+  const accentClasses: Record<string, string> = {
+    primary: 'bg-primary/10 text-primary',
+    blue: 'bg-blue-500/10 text-blue-500',
+    violet: 'bg-violet-500/10 text-violet-500',
   };
 
   return (
-    <div className="space-y-4">
-      {/* Primary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {primaryStats.map((stat, index) => (
-          <Link
-            key={stat.label}
-            href={stat.href}
-            className="group relative surface-elevated rounded-xl p-5 transition-all duration-300 hover:shadow-md hover:border-primary/20 slide-up"
-            style={{ animationDelay: `${index * 80}ms` }}
-          >
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {stat.label}
-                </p>
-                <p className="text-3xl font-semibold text-foreground tracking-tight tabular-nums">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Circle className="w-1.5 h-1.5 fill-current" />
-                  {stat.trend}
-                </p>
-              </div>
-              <div className={`p-2.5 rounded-lg transition-all duration-300 ${getAccentClasses(stat.accent)} group-hover:scale-110`}>
-                <stat.icon className="w-5 h-5" />
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {primaryStats.map((stat, index) => (
+        <Link
+          key={stat.label}
+          href={stat.href}
+          className="group relative surface-elevated rounded-xl p-5 transition-all duration-300 hover:shadow-md hover:border-primary/20 slide-up"
+          style={{ animationDelay: `${index * 80}ms` }}
+        >
+          <div className="flex items-start justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {stat.label}
+              </p>
+              <p className="text-3xl font-semibold text-foreground tracking-tight tabular-nums">
+                {stat.value}
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Circle className="w-1.5 h-1.5 fill-current" />
+                {stat.trend}
+              </p>
             </div>
-          </Link>
-        ))}
-      </div>
-
-      {/* Alert Stats - Smaller, more compact */}
-      <div className="grid grid-cols-3 gap-3">
-        {alertStats.map((stat, index) => (
-          <Link
-            key={stat.label}
-            href={stat.href}
-            className={`group relative surface rounded-lg p-3 transition-all duration-300 hover:shadow-sm slide-up ${
-              stat.isAlert ? 'border-l-2 border-l-amber-500 dark:border-l-amber-400' : ''
-            }`}
-            style={{ animationDelay: `${(index + 3) * 80}ms` }}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-md ${getAccentClasses(stat.accent, stat.isAlert)}`}>
-                <stat.icon className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className="text-lg font-semibold text-foreground tabular-nums">{stat.value}</p>
-              </div>
+            <div className={`p-2.5 rounded-lg transition-all duration-300 ${accentClasses[stat.accent]} group-hover:scale-110`}>
+              <stat.icon className="w-5 h-5" />
             </div>
-          </Link>
-        ))}
-      </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }
