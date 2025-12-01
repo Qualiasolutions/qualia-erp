@@ -1177,6 +1177,55 @@ export async function logClientActivity(
     return { success: true, data };
 }
 
+export async function toggleClientStatus(
+    clientId: string,
+    newStatus: 'active_client' | 'inactive_client'
+): Promise<ActionResult> {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, error: "Not authenticated" };
+    }
+
+    // Get current status for activity log
+    const { data: currentClient } = await supabase
+        .from("clients")
+        .select("lead_status, display_name")
+        .eq("id", clientId)
+        .single();
+
+    if (!currentClient) {
+        return { success: false, error: "Client not found" };
+    }
+
+    const { error } = await supabase
+        .from("clients")
+        .update({
+            lead_status: newStatus,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", clientId);
+
+    if (error) {
+        console.error("Error updating client status:", error);
+        return { success: false, error: error.message };
+    }
+
+    // Log the status change
+    const statusLabel = newStatus === 'active_client' ? 'Active' : 'Inactive';
+    await logClientActivity(
+        clientId,
+        'status_change',
+        `Status changed to ${statusLabel}`,
+        { old_status: currentClient.lead_status, new_status: newStatus }
+    );
+
+    revalidatePath("/clients");
+    revalidatePath(`/clients/${clientId}`);
+    return { success: true };
+}
+
 // ============ MEETING ACTIONS ============
 
 export async function createMeeting(formData: FormData): Promise<ActionResult> {
@@ -1729,6 +1778,11 @@ export async function createMilestone(formData: FormData): Promise<ActionResult>
 // Update milestone
 export async function updateMilestone(formData: FormData): Promise<ActionResult> {
     const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        return { success: false, error: "Not authenticated" };
+    }
 
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
@@ -1762,6 +1816,11 @@ export async function updateMilestone(formData: FormData): Promise<ActionResult>
 // Delete milestone
 export async function deleteMilestone(id: string): Promise<ActionResult> {
     const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        return { success: false, error: "Not authenticated" };
+    }
 
     const { error } = await supabase
         .from("milestones")
@@ -1804,6 +1863,11 @@ export async function addIssueToMilestone(milestoneId: string, issueId: string):
 // Remove issue from milestone
 export async function removeIssueFromMilestone(milestoneId: string, issueId: string): Promise<ActionResult> {
     const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+        return { success: false, error: "Not authenticated" };
+    }
 
     const { error } = await supabase
         .from("milestone_issues")

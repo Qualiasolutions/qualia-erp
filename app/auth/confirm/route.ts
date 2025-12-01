@@ -3,11 +3,27 @@ import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
 
+/**
+ * Validates and sanitizes the redirect path to prevent open redirect attacks.
+ * Only allows internal paths (starting with /) and blocks protocol-relative URLs.
+ */
+function getSafeRedirectPath(next: string | null): string {
+  if (!next) return '/';
+  // Must start with / but not // (protocol-relative URL) or /\ (path traversal)
+  if (next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\')) {
+    // Additional check: ensure no protocol in the path
+    if (!next.includes('://')) {
+      return next;
+    }
+  }
+  return '/';
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = searchParams.get("next") ?? "/";
+  const next = getSafeRedirectPath(searchParams.get("next"));
 
   if (token_hash && type) {
     const supabase = await createClient();
