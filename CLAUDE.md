@@ -137,55 +137,45 @@ Migrations in `supabase/migrations/`. Core tables:
 
 ### Data Fetching Pattern
 
-Pages use the async Server Component pattern with Suspense:
-```tsx
-// Page component (e.g., app/issues/[id]/page.tsx)
-<Suspense fallback={<Skeleton />}>
-  <DetailClient />  // Client component that fetches via server actions
-</Suspense>
-```
+Detail pages (`/issues/[id]`, `/projects/[id]`, `/teams/[id]`, `/clients/[id]`) use a client component pattern:
+1. Extract `id` from `useParams()`
+2. Call server action (e.g., `getIssueById`) in `useEffect`
+3. Manage local loading/error state
 
-Detail pages (`/issues/[id]`, `/projects/[id]`, `/teams/[id]`) use a client component pattern that:
-1. Extracts `id` from `useParams()`
-2. Calls server action (e.g., `getIssueById`) in `useEffect`
-3. Manages local loading/error state
+Modal components fetch dropdown data on-demand when opened via `useEffect`.
 
-### Provider Hierarchy
+### Provider Hierarchy (`app/layout.tsx`)
 
-Root layout wraps the app in nested providers (`app/layout.tsx`):
 ```
 ThemeProvider → WorkspaceProvider → SidebarProvider
 ```
 
 ### AI Integration
 
-- Chat API: `app/api/chat/route.ts` using Vercel AI SDK with Google Gemini (`gemini-2.0-flash`)
-- **Tool calling**: AI has tools for `getDashboardStats`, `searchIssues`, `searchProjects`, `getTeams`, `getRecentActivity`
-- **Context-aware**: System prompt includes current user info (name, email, role)
-- Uses `convertToModelMessages()` to transform `UIMessage[]` format, `stepCountIs(5)` limits tool call depth
-- Chat component: `components/chat.tsx` - Client component using `useChat` hook
-- Documents table supports RAG with pgvector embeddings (not yet implemented)
+- **Chat API**: `app/api/chat/route.ts` - Vercel AI SDK with Google Gemini (`gemini-2.0-flash`)
+- **Tools**: `getDashboardStats`, `searchIssues`, `searchProjects`, `getTeams`, `getRecentActivity`
+- **Context**: System prompt includes current user info (name, email, role)
+- **Chat UI**: `components/chat.tsx` - Uses `useChat` hook, `convertToModelMessages()` for message format
+- **RAG**: Documents table with pgvector embeddings (not yet implemented)
 
-### Routing Structure
+### Routes
 
-- `/` - Dashboard with stats and activity feed
-- `/issues` - Issue list with filters
-- `/issues/[id]` - Issue detail with comments and assignees
-- `/projects` - Project grid with group tabs (Salman, Tasos, Active, Demos, Inactive)
-- `/projects/[id]` - Project detail with issues list and milestone timeline
-- `/clients` - Client/CRM list with lead status pipeline
-- `/clients/[id]` - Client detail with contacts and activity log
-- `/teams` - Team management
-- `/teams/[id]` - Team detail with members and projects
-- `/schedule` - Calendar view with meetings (list/calendar toggle)
-- `/settings` - User settings
-- `/auth/*` - Authentication flows
-- `/api/chat` - AI chat streaming endpoint
+| Route | Description |
+|-------|-------------|
+| `/` | Dashboard with stats and activity feed |
+| `/issues`, `/issues/[id]` | Issue list and detail with comments/assignees |
+| `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with milestones |
+| `/clients`, `/clients/[id]` | CRM list (lead pipeline) and detail with contacts |
+| `/teams`, `/teams/[id]` | Team management and detail with members |
+| `/schedule` | Calendar view (list/calendar toggle) |
+| `/settings` | User settings |
+| `/auth/*` | Authentication flows |
+| `/api/chat` | AI chat streaming endpoint |
 
 ## Styling
 
-- Light/dark theme support via `next-themes` (dark default), toggle in header
-- Custom dark palette: backgrounds #141414, #1C1C1C; borders #2C2C2C
-- Brand color: `qualia` (#00A4AC teal) - use `bg-qualia-600`, `text-qualia-400`, etc.
-- Tailwind CSS with tailwindcss-animate plugin
-- Inter font family
+- **Theme**: Light/dark via `next-themes` (dark default), toggle in header
+- **Dark palette**: Backgrounds #141414, #1C1C1C; borders #2C2C2C
+- **Brand color**: `qualia` (#00A4AC teal) - `bg-qualia-600`, `text-qualia-400`, etc.
+- **Stack**: Tailwind CSS + tailwindcss-animate, Inter font
+- **Path alias**: `@/*` maps to project root (see `tsconfig.json`)
