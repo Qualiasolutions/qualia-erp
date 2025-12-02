@@ -12,6 +12,13 @@ Qualia is a multi-tenant project management and issue tracking platform built wi
 npm run dev      # Start development server (http://localhost:3000)
 npm run build    # Production build
 npm run lint     # ESLint with Next.js + TypeScript rules
+npx tsc --noEmit # TypeScript type checking
+
+# Testing
+npm test                        # Run all tests
+npm run test:watch              # Watch mode for development
+npm run test:coverage           # Generate coverage report
+npm test -- path/to/file.test   # Run single test file
 
 # Add shadcn/ui components
 npx shadcn@latest add <component-name>
@@ -20,9 +27,32 @@ npx shadcn@latest add <component-name>
 npx supabase gen types typescript --project-id <project-id> > types/database.ts
 ```
 
+## Testing
+
+Jest with React Testing Library. Test files in `__tests__/` directory.
+
+**Test utilities** (`__tests__/utils/render.tsx`):
+
+- `render()` - Custom render with providers (ThemeProvider)
+- Factory functions: `createMockUser()`, `createMockProject()`, `createMockIssue()`, `createMockTeam()`, `createMockClient()`, `createMockMeeting()`, `createMockMilestone()`
+
+**Coverage thresholds**: 50% minimum for branches, functions, lines, statements.
+
+**Pre-commit hooks**: Husky runs lint-staged on commit (ESLint fix + Prettier for `.ts/.tsx`, Prettier for `.json/.md/.css`).
+
+## CI/CD
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR to master/main:
+
+1. **Lint** - ESLint
+2. **Type Check** - `tsc --noEmit`
+3. **Test** - Jest with coverage (uploads to Codecov)
+4. **Build** - Production build (runs after other jobs pass)
+
 ## Environment Variables
 
 Required in `.env.local`:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
@@ -35,17 +65,21 @@ GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 - **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth and database
 - **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
 - **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
-- **Validation**: Zod schemas in `lib/validation.ts`
+- **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
+- **Constants**: `lib/constants.ts` - Date formats, UI dimensions, status/priority colors, storage keys
+- **Utilities**: `lib/utils.ts` - `cn()` (Tailwind merge), date formatting (`formatDate`, `formatDateTime`, `formatRelativeTime`), `truncate`, `getInitials`, `pluralize`
 
 ## Architecture
 
 ### Multi-Tenant Workspaces
 
 The app supports multiple workspaces (tenants). Core workspace tables:
+
 - **workspaces** - Organizations/tenants with name, slug, logo
 - **workspace_members** - Junction table linking profiles to workspaces with roles (owner/admin/member) and `is_default` flag
 
 `WorkspaceProvider` (`components/workspace-provider.tsx`) provides React context for:
+
 - `currentWorkspace` - The active workspace
 - `setCurrentWorkspace()` - Switch workspaces (persists to DB)
 - All data-fetching actions accept optional `workspaceId` parameter, falling back to user's default
@@ -53,14 +87,16 @@ The app supports multiple workspaces (tenants). Core workspace tables:
 ### Supabase Integration
 
 Two Supabase clients for different contexts:
+
 - `lib/supabase/server.ts` - Server-side client using `@supabase/ssr` with cookie handling. **Create a new client per request** (important for Fluid compute).
 - `lib/supabase/client.ts` - Browser client for client components.
 
-**Auth & Route Protection**: Uses Next.js 16 `proxy.ts` pattern (not middleware.ts). The proxy handles session refresh and redirects unauthenticated users to `/auth/login`.
+**Auth & Route Protection**: Uses Next.js 15+ `proxy.ts` pattern (not middleware.ts). The proxy handles session refresh and redirects unauthenticated users to `/auth/login`.
 
 ### Type System (`types/database.ts`)
 
 Supabase-generated types with added helper utilities:
+
 - **Generic helpers**: `Tables<"table_name">`, `TablesInsert<>`, `TablesUpdate<>`, `Enums<>`
 - **Entity aliases**: `Profile`, `Project`, `Issue`, `Client`, `Meeting`, `Milestone`, `Team`, `Workspace`, etc.
 - **Enum types**: `IssueStatus`, `IssuePriority`, `ProjectGroup`, `ProjectType`, `ProjectStatus`, `LeadStatus`, `UserRole`
@@ -69,6 +105,7 @@ Supabase-generated types with added helper utilities:
 ### Validation (`lib/validation.ts`)
 
 Zod schemas for all entity mutations with consistent patterns:
+
 - **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createTeamSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`
 - **Update schemas**: `updateIssueSchema`, `updateProjectSchema`, `updateClientSchema`, `updateMilestoneSchema`
 - **Helper functions**:
@@ -79,12 +116,14 @@ Zod schemas for all entity mutations with consistent patterns:
 ### Server Actions (`app/actions.ts`)
 
 All data mutations are server actions that:
+
 - Accept validated input (via Zod schemas)
 - Return `ActionResult` type: `{ success: boolean; error?: string; data?: unknown }`
 - Call `revalidatePath()` to refresh relevant pages
 - Log activities via `createActivity()` helper
 
 **Action categories:**
+
 - **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
 - **CRUD**: `createIssue`, `createProject`, `createTeam`, `createMeeting`, `createClient`, `updateIssue`, `updateProject`, `updateClient`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
 - **Milestones**: `createMilestone`, `updateMilestone`, `deleteMilestone`, `getMilestones`
@@ -94,8 +133,9 @@ All data mutations are server actions that:
 - **Activity**: `getRecentActivities` - Fetches activity feed with actor/project/issue/team relations
 
 **Supabase FK normalization**: Foreign key joins may return arrays; normalize with:
+
 ```tsx
-assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee
+assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee;
 ```
 
 ### Database Schema & RLS
@@ -103,16 +143,19 @@ assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assi
 Migrations in `supabase/migrations/`. Core tables:
 
 **User & Workspace:**
+
 - `profiles` - Extends auth.users (trigger on signup), has `role` (admin/employee)
 - `workspaces` - Multi-tenant organizations with slug
 - `workspace_members` - Junction with roles (owner/admin/member) and `is_default` flag
 
 **CRM:**
+
 - `clients` - Lead tracking with `lead_status` enum (dropped/cold/hot/active_client/inactive_client)
 - `client_contacts` - Multiple contacts per client
 - `client_activities` - Activity log (calls, emails, meetings, notes)
 
 **Project Management:**
+
 - `teams` - Unique keys (e.g., "ENG"), scoped to workspace
 - `team_members` - Junction with roles
 - `projects` - `project_group` for organization, `project_type` (web_design/ai_agent/seo/ads), `status`
@@ -123,14 +166,17 @@ Migrations in `supabase/migrations/`. Core tables:
 - `comments` - Issue comments
 
 **Calendar & Activity:**
+
 - `meetings` - Start/end times, linked to projects/clients
 - `meeting_attendees` - RSVP status (pending/accepted/declined/tentative)
 - `activities` - Feed with type enum and metadata JSON
 
 **Knowledge Base:**
+
 - `documents` - Vector embeddings (pgvector, 1536 dimensions) for RAG
 
 **RBAC Functions:**
+
 - `is_admin()`, `is_system_admin()`, `is_team_member(team_uuid)`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
 - Admins: Full access; Employees: Access scoped to owned/assigned/team items
 - See `20240104000000_add_role_based_access_control.sql` for policies
@@ -138,11 +184,20 @@ Migrations in `supabase/migrations/`. Core tables:
 ### Data Fetching Pattern
 
 Detail pages (`/issues/[id]`, `/projects/[id]`, `/teams/[id]`, `/clients/[id]`) use a client component pattern:
+
 1. Extract `id` from `useParams()`
 2. Call server action (e.g., `getIssueById`) in `useEffect`
 3. Manage local loading/error state
 
 Modal components fetch dropdown data on-demand when opened via `useEffect`.
+
+### Error Handling
+
+- `app/global-error.tsx` - Root layout error boundary (full-page fallback with inline styles)
+- `components/error-boundary.tsx` - Reusable components:
+  - `ErrorBoundary` - Class component wrapper with retry
+  - `InlineError` - Inline error message with optional retry
+  - `PageError` - Full-page error display
 
 ### Provider Hierarchy (`app/layout.tsx`)
 
@@ -160,17 +215,17 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 
 ### Routes
 
-| Route | Description |
-|-------|-------------|
-| `/` | Dashboard with stats and activity feed |
-| `/issues`, `/issues/[id]` | Issue list and detail with comments/assignees |
+| Route                         | Description                                          |
+| ----------------------------- | ---------------------------------------------------- |
+| `/`                           | Dashboard with stats and activity feed               |
+| `/issues`, `/issues/[id]`     | Issue list and detail with comments/assignees        |
 | `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with milestones |
-| `/clients`, `/clients/[id]` | CRM list (lead pipeline) and detail with contacts |
-| `/teams`, `/teams/[id]` | Team management and detail with members |
-| `/schedule` | Calendar view (list/calendar toggle) |
-| `/settings` | User settings |
-| `/auth/*` | Authentication flows |
-| `/api/chat` | AI chat streaming endpoint |
+| `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and detail with contacts    |
+| `/teams`, `/teams/[id]`       | Team management and detail with members              |
+| `/schedule`                   | Calendar view (list/calendar toggle)                 |
+| `/settings`                   | User settings                                        |
+| `/auth/*`                     | Authentication flows                                 |
+| `/api/chat`                   | AI chat streaming endpoint                           |
 
 ## Styling
 

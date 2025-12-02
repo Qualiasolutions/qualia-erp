@@ -16,6 +16,7 @@ const config: Config = {
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
     '<rootDir>/.next/',
+    '<rootDir>/__tests__/utils/',
   ],
   collectCoverageFrom: [
     'lib/**/*.{ts,tsx}',

@@ -19,10 +19,7 @@ function AllProviders({ children }: { children: React.ReactNode }) {
 }
 
 // Custom render function
-function customRender(
-  ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) {
+function customRender(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
   return render(ui, { wrapper: AllProviders, ...options });
 }
 
@@ -107,18 +104,38 @@ export const createMockMeeting = (overrides = {}) => ({
   ...overrides,
 });
 
-export const createMockMilestone = (overrides = {}) => ({
-  id: 'test-milestone-id',
-  name: 'Test Milestone',
-  description: 'A test milestone',
+export const createMockPhase = (overrides = {}) => ({
+  id: 'test-phase-id',
+  name: 'Test Phase',
+  description: 'A test phase',
+  helper_text: 'Test helper text',
   project_id: 'test-project-id',
-  target_date: new Date(Date.now() + 86400000 * 30).toISOString().split('T')[0],
-  status: 'not_started' as const,
-  progress: 0,
-  color: '#00A4AC',
   workspace_id: 'test-workspace-id',
+  display_order: 0,
+  status: 'not_started' as const,
+  template_key: null,
+  is_custom: false,
   created_by: 'test-user-id',
   created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  ...overrides,
+});
+
+export const createMockPhaseItem = (overrides = {}) => ({
+  id: 'test-phase-item-id',
+  phase_id: 'test-phase-id',
+  title: 'Test Phase Item',
+  description: 'A test phase item',
+  helper_text: 'Test item helper text',
+  display_order: 0,
+  is_completed: false,
+  completed_at: null,
+  completed_by: null,
+  linked_issue_id: null,
+  template_key: null,
+  is_custom: false,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
   ...overrides,
 });
 

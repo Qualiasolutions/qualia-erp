@@ -2,13 +2,11 @@ import {
   createIssueSchema,
   updateIssueSchema,
   createProjectSchema,
-  updateProjectSchema,
   createTeamSchema,
   createClientSchema,
-  updateClientSchema,
   createMeetingSchema,
-  createMilestoneSchema,
-  updateMilestoneSchema,
+  createPhaseSchema,
+  createPhaseItemSchema,
   createCommentSchema,
   parseFormData,
   validateData,
@@ -39,7 +37,9 @@ describe('Validation Schemas', () => {
       const result = createIssueSchema.safeParse(invalidIssue);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].path).toContain('title');
+        // Zod errors are in result.error.issues
+        const titleError = result.error.issues?.find((e) => e.path.includes('title'));
+        expect(titleError).toBeDefined();
       }
     });
 
@@ -102,7 +102,7 @@ describe('Validation Schemas', () => {
       const validProject = {
         name: 'Test Project',
         description: 'This is a test project',
-        status: 'active',
+        status: 'Active',
         team_id: '123e4567-e89b-12d3-a456-426614174000',
         target_date: '2024-12-31',
         project_group: 'active',
@@ -248,39 +248,62 @@ describe('Validation Schemas', () => {
     });
   });
 
-  describe('createMilestoneSchema', () => {
-    it('validates a valid milestone', () => {
-      const validMilestone = {
+  describe('createPhaseSchema', () => {
+    it('validates a valid phase', () => {
+      const validPhase = {
         project_id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'MVP Launch',
-        description: 'Launch minimum viable product',
-        target_date: '2024-12-31',
-        color: '#00A4AC',
-        status: 'not_started',
         workspace_id: '123e4567-e89b-12d3-a456-426614174001',
+        name: 'Research & Planning',
+        description: 'Initial research phase',
+        helper_text: 'Start by defining your project goals',
+        status: 'not_started',
       };
 
-      const result = createMilestoneSchema.safeParse(validMilestone);
+      const result = createPhaseSchema.safeParse(validPhase);
       expect(result.success).toBe(true);
     });
 
-    it('requires project_id and name', () => {
-      const invalidMilestone = {
+    it('requires project_id, workspace_id, and name', () => {
+      const invalidPhase = {
         description: 'Missing required fields',
       };
 
-      const result = createMilestoneSchema.safeParse(invalidMilestone);
+      const result = createPhaseSchema.safeParse(invalidPhase);
       expect(result.success).toBe(false);
     });
 
     it('validates status enum', () => {
       const invalidStatus = {
         project_id: '123e4567-e89b-12d3-a456-426614174000',
-        name: 'Test Milestone',
+        workspace_id: '123e4567-e89b-12d3-a456-426614174001',
+        name: 'Test Phase',
         status: 'invalid_status',
       };
 
-      const result = createMilestoneSchema.safeParse(invalidStatus);
+      const result = createPhaseSchema.safeParse(invalidStatus);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('createPhaseItemSchema', () => {
+    it('validates a valid phase item', () => {
+      const validItem = {
+        phase_id: '123e4567-e89b-12d3-a456-426614174000',
+        title: 'Define project requirements',
+        description: 'Document all requirements',
+        helper_text: 'Be specific and measurable',
+      };
+
+      const result = createPhaseItemSchema.safeParse(validItem);
+      expect(result.success).toBe(true);
+    });
+
+    it('requires phase_id and title', () => {
+      const invalidItem = {
+        description: 'Missing required fields',
+      };
+
+      const result = createPhaseItemSchema.safeParse(invalidItem);
       expect(result.success).toBe(false);
     });
   });

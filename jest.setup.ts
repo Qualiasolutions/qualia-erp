@@ -14,12 +14,13 @@ jest.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock Next.js image
+// Mock Next.js image - use function syntax to avoid JSX parsing issues
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
-    return <img {...props} />;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: function MockImage(props: any) {
+    const { src, alt, ...rest } = props;
+    return Object.assign(document.createElement('img'), { src, alt, ...rest });
   },
 }));
 
