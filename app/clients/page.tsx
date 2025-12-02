@@ -18,6 +18,16 @@ async function ClientListLoader() {
 }
 
 function ClientListSkeleton() {
+    const CardSkeleton = () => (
+        <div className="surface rounded-lg px-3 py-2.5 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-md bg-muted animate-pulse" />
+            <div className="flex-1 space-y-1">
+                <div className="h-4 bg-muted rounded animate-pulse w-32" />
+                <div className="h-3 bg-muted rounded animate-pulse w-24" />
+            </div>
+        </div>
+    );
+
     return (
         <div className="space-y-5">
             {/* Stats skeleton */}
@@ -29,8 +39,8 @@ function ClientListSkeleton() {
                     </div>
                     <div className="h-4 w-px bg-border" />
                     <div className="flex items-center gap-4">
-                        <div className="w-20 h-4 bg-muted rounded animate-pulse" />
-                        <div className="w-24 h-4 bg-muted rounded animate-pulse" />
+                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
+                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
                     </div>
                 </div>
                 <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary">
@@ -45,53 +55,23 @@ function ClientListSkeleton() {
             {/* Columns skeleton */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Active column */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                     <div className="flex items-center gap-2 px-1">
                         <div className="w-2 h-2 rounded-full bg-emerald-500" />
                         <div className="w-12 h-4 bg-muted rounded animate-pulse" />
                     </div>
-                    <div className="space-y-3">
-                        {[...Array(3)].map((_, i) => (
-                            <div key={i} className="surface rounded-xl p-5">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
-                                        <div className="w-32 h-4 bg-muted rounded animate-pulse" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3.5 h-3.5 bg-muted rounded animate-pulse" />
-                                        <div className="w-24 h-3 bg-muted rounded animate-pulse" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="space-y-1.5">
+                        {[...Array(5)].map((_, i) => <CardSkeleton key={i} />)}
                     </div>
                 </div>
                 {/* Inactive column */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                     <div className="flex items-center gap-2 px-1">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
                         <div className="w-14 h-4 bg-muted rounded animate-pulse" />
                     </div>
-                    <div className="space-y-3">
-                        {[...Array(2)].map((_, i) => (
-                            <div key={i} className="surface rounded-xl p-5">
-                                <div className="flex items-start justify-between mb-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
-                                        <div className="w-32 h-4 bg-muted rounded animate-pulse" />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3.5 h-3.5 bg-muted rounded animate-pulse" />
-                                        <div className="w-24 h-3 bg-muted rounded animate-pulse" />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                    <div className="space-y-1.5">
+                        {[...Array(3)].map((_, i) => <CardSkeleton key={i} />)}
                     </div>
                 </div>
             </div>

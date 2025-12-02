@@ -66,101 +66,87 @@ function ClientCard({
         <Link
             href={`/clients/${client.id}`}
             className={cn(
-                "block surface rounded-xl p-5 hover:bg-secondary/50 transition-all duration-200 group",
+                "group flex items-center gap-3 surface rounded-lg px-3 py-2.5 hover:bg-secondary/50 transition-all duration-200",
                 isPending && "opacity-50 pointer-events-none"
             )}
         >
-            <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className={cn(
-                        "p-2.5 rounded-lg transition-colors",
-                        client.lead_status === "active_client"
-                            ? "bg-emerald-500/10"
-                            : "bg-yellow-500/10"
-                    )}>
-                        <Building2 className={cn(
-                            "w-4 h-4",
-                            client.lead_status === "active_client"
-                                ? "text-emerald-600 dark:text-emerald-400"
-                                : "text-yellow-600 dark:text-yellow-400"
-                        )} />
-                    </div>
-                    <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-                        {client.display_name}
-                    </h3>
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild>
-                            <Link href={`/clients/${client.id}`}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={(e) => {
-                                e.preventDefault();
-                                onToggleStatus(client);
-                            }}
-                        >
-                            {client.lead_status === "active_client" ? (
-                                <>
-                                    <UserMinus className="w-4 h-4 mr-2" />
-                                    Move to Inactive
-                                </>
-                            ) : (
-                                <>
-                                    <UserCheck className="w-4 h-4 mr-2" />
-                                    Move to Active
-                                </>
-                            )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={(e) => {
-                                e.preventDefault();
-                                onDelete(client.id);
-                            }}
-                            className="text-red-500"
-                        >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+            <div className={cn(
+                "p-1.5 rounded-md flex-shrink-0",
+                client.lead_status === "active_client"
+                    ? "bg-emerald-500/10"
+                    : "bg-amber-500/10"
+            )}>
+                <Building2 className={cn(
+                    "w-3.5 h-3.5",
+                    client.lead_status === "active_client"
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-amber-600 dark:text-amber-400"
+                )} />
             </div>
-
-            <div className="space-y-2 text-sm text-muted-foreground">
-                {client.phone && (
-                    <div className="flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5" />
-                        <span className="truncate">{client.phone}</span>
-                    </div>
-                )}
-                {client.website && (
-                    <div className="flex items-center gap-2">
-                        <Globe className="w-3.5 h-3.5" />
-                        <span className="truncate">{client.website}</span>
-                    </div>
-                )}
-                {client.billing_address && (
-                    <div className="flex items-center gap-2">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span className="truncate">{client.billing_address}</span>
+            <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                    {client.display_name}
+                </h3>
+                {(client.phone || client.website) && (
+                    <div className="flex items-center gap-3 mt-0.5 text-xs text-muted-foreground">
+                        {client.phone && (
+                            <span className="flex items-center gap-1 truncate">
+                                <Phone className="w-3 h-3 flex-shrink-0" />
+                                {client.phone}
+                            </span>
+                        )}
+                        {client.website && (
+                            <span className="flex items-center gap-1 truncate">
+                                <Globe className="w-3 h-3 flex-shrink-0" />
+                                {client.website.replace(/^https?:\/\//, '')}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>
-
-            {client.last_contacted_at && (
-                <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
-                    Last contacted:{" "}
-                    {new Date(client.last_contacted_at).toLocaleDateString()}
-                </div>
-            )}
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                        <MoreHorizontal className="w-4 h-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                        <Link href={`/clients/${client.id}`}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onToggleStatus(client);
+                        }}
+                    >
+                        {client.lead_status === "active_client" ? (
+                            <>
+                                <UserMinus className="w-4 h-4 mr-2" />
+                                Move to Inactive
+                            </>
+                        ) : (
+                            <>
+                                <UserCheck className="w-4 h-4 mr-2" />
+                                Move to Active
+                            </>
+                        )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onDelete(client.id);
+                        }}
+                        className="text-red-500"
+                    >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </Link>
     );
 }
@@ -356,7 +342,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
                             <span className="text-muted-foreground">{activeCount} Active</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                             <span className="text-muted-foreground">{inactiveCount} Inactive</span>
                         </div>
                     </div>
@@ -427,19 +413,19 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Active Clients Column */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         <div className="flex items-center gap-2 px-1">
                             <span className="w-2 h-2 rounded-full bg-emerald-500" />
                             <h3 className="text-sm font-medium text-foreground">Active</h3>
                             <span className="text-xs text-muted-foreground">({activeClients.length})</span>
                         </div>
                         {viewMode === 'grid' ? (
-                            <div className="space-y-3">
+                            <div className="space-y-1.5">
                                 {activeClients.map((client, index) => (
                                     <div
                                         key={client.id}
                                         className="slide-in"
-                                        style={{ animationDelay: `${index * 40}ms` }}
+                                        style={{ animationDelay: `${index * 30}ms` }}
                                     >
                                         <ClientCard
                                             client={client}
@@ -450,7 +436,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
                                     </div>
                                 ))}
                                 {activeClients.length === 0 && (
-                                    <div className="surface rounded-xl p-6 text-center text-sm text-muted-foreground">
+                                    <div className="surface rounded-lg p-4 text-center text-sm text-muted-foreground">
                                         No active clients
                                     </div>
                                 )}
@@ -481,19 +467,19 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
                     </div>
 
                     {/* Inactive Clients Column */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                         <div className="flex items-center gap-2 px-1">
-                            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
                             <h3 className="text-sm font-medium text-foreground">Inactive</h3>
                             <span className="text-xs text-muted-foreground">({inactiveClients.length})</span>
                         </div>
                         {viewMode === 'grid' ? (
-                            <div className="space-y-3">
+                            <div className="space-y-1.5">
                                 {inactiveClients.map((client, index) => (
                                     <div
                                         key={client.id}
                                         className="slide-in"
-                                        style={{ animationDelay: `${index * 40}ms` }}
+                                        style={{ animationDelay: `${index * 30}ms` }}
                                     >
                                         <ClientCard
                                             client={client}
@@ -504,7 +490,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
                                     </div>
                                 ))}
                                 {inactiveClients.length === 0 && (
-                                    <div className="surface rounded-xl p-6 text-center text-sm text-muted-foreground">
+                                    <div className="surface rounded-lg p-4 text-center text-sm text-muted-foreground">
                                         No inactive clients
                                     </div>
                                 )}
