@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
@@ -15,11 +16,21 @@ import {
     ChevronRight,
     Sparkles,
     X,
+    Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
 import { useSidebar } from '@/components/sidebar-provider';
-import Chat from '@/components/chat';
+
+// Lazy load Chat component - only loaded when AI panel is opened
+const Chat = dynamic(() => import('@/components/chat'), {
+    ssr: false,
+    loading: () => (
+        <div className="flex items-center justify-center h-full">
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+        </div>
+    ),
+});
 
 const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutGrid },

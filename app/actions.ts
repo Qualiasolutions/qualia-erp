@@ -2,6 +2,21 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import {
+    parseFormData,
+    validateData,
+    createIssueSchema,
+    updateIssueSchema,
+    createProjectSchema,
+    updateProjectSchema,
+    createTeamSchema,
+    createClientSchema,
+    updateClientSchema,
+    createMeetingSchema,
+    createMilestoneSchema,
+    updateMilestoneSchema,
+    createCommentSchema,
+} from "@/lib/validation";
 
 export type ActionResult = {
     success: boolean;
@@ -20,6 +35,58 @@ type ActivityType =
     | 'team_created'
     | 'member_added'
     | 'meeting_created';
+
+// ============ HELPER TYPES ============
+
+// Profile type for foreign key relations
+type ProfileRef = {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url?: string | null;
+} | null;
+
+// For Supabase responses where FK can be array or single object
+type FKResponse<T> = T | T[] | null;
+
+// Client activity from Supabase response
+type ClientActivityResponse = {
+    id: string;
+    type: string;
+    description: string | null;
+    metadata: Record<string, unknown>;
+    created_at: string;
+    created_by: FKResponse<ProfileRef>;
+};
+
+// Meeting response type for getMeetings
+type MeetingResponse = {
+    id: string;
+    title: string;
+    description: string | null;
+    start_time: string;
+    end_time: string;
+    created_at: string;
+    project: FKResponse<{ id: string; name: string }>;
+    client: FKResponse<{ id: string; display_name: string; lead_status: string | null }>;
+    creator: FKResponse<ProfileRef>;
+    attendees: Array<{
+        id: string;
+        profile: FKResponse<ProfileRef>;
+    }>;
+};
+
+// Milestone issue from Supabase response
+type MilestoneIssueResponse = {
+    issue_id: string;
+    issues: {
+        id: string;
+        title: string;
+        status: string;
+        priority: string;
+        assignee?: Array<{ profiles: ProfileRef }>;
+    } | null;
+};
 
 // ============ WORKSPACE HELPERS ============
 
@@ -267,20 +334,16 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string | null;
-    const status = formData.get("status") as string || "Yet to Start";
-    const priority = formData.get("priority") as string || "No Priority";
-    const teamId = formData.get("team_id") as string | null;
-    const projectId = formData.get("project_id") as string | null;
-    const workspaceId = formData.get("workspace_id") as string | null;
-
-    if (!title?.trim()) {
-        return { success: false, error: "Title is required" };
+    // Validate input
+    const validation = parseFormData(createIssueSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
+    const { title, description, status, priority, team_id, project_id, workspace_id } = validation.data;
+
     // Get workspace ID from form or from user's default
-    let wsId = workspaceId;
+    let wsId = workspace_id;
     if (!wsId) {
         wsId = await getCurrentWorkspaceId();
     }
@@ -296,8 +359,8 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
             description: description?.trim() || null,
             status,
             priority,
-            team_id: teamId || null,
-            project_id: projectId || null,
+            team_id: team_id || null,
+            project_id: project_id || null,
             creator_id: user.id,
             workspace_id: wsId,
         })
@@ -316,8 +379,8 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
         'issue_created',
         {
             issue_id: data.id,
-            team_id: teamId,
-            project_id: projectId,
+            team_id: team_id,
+            project_id: project_id,
             workspace_id: wsId,
         },
         { title: data.title, priority: data.priority }
@@ -336,28 +399,26 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string | null;
-    const status = formData.get("status") as string || "Active";
-    const teamId = formData.get("team_id") as string | null;
-    const targetDate = formData.get("target_date") as string | null;
-    const workspaceId = formData.get("workspace_id") as string | null;
-    const projectGroup = formData.get("project_group") as string | null;
-
-    if (!name?.trim()) {
-        return { success: false, error: "Project name is required" };
+    // Validate input
+    const validation = parseFormData(createProjectSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
-    if (!teamId) {
+    const { name, description, status, team_id, target_date, workspace_id, project_group } = validation.data;
+
+    // Business rule: team is required
+    if (!team_id) {
         return { success: false, error: "Team is required" };
     }
 
-    if (!projectGroup) {
+    // Business rule: project group is required
+    if (!project_group) {
         return { success: false, error: "Project group is required" };
     }
 
     // Get workspace ID from form or from user's default
-    let wsId = workspaceId;
+    let wsId = workspace_id;
     if (!wsId) {
         wsId = await getCurrentWorkspaceId();
     }
@@ -372,11 +433,11 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
             name: name.trim(),
             description: description?.trim() || null,
             status,
-            team_id: teamId,
+            team_id,
             lead_id: user.id,
-            target_date: targetDate || null,
+            target_date: target_date || null,
             workspace_id: wsId,
-            project_group: projectGroup,
+            project_group,
         })
         .select()
         .single();
@@ -393,7 +454,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
         'project_created',
         {
             project_id: data.id,
-            team_id: teamId,
+            team_id,
             workspace_id: wsId,
         },
         { name: data.name, status: data.status }
@@ -412,22 +473,17 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const name = formData.get("name") as string;
-    const key = formData.get("key") as string;
-    const description = formData.get("description") as string | null;
+    // Validate input
+    const validation = parseFormData(createTeamSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
+    }
+
+    const { name, key, description, workspace_id } = validation.data;
     const memberIds = formData.getAll("member_ids") as string[];
-    const workspaceId = formData.get("workspace_id") as string | null;
-
-    if (!name?.trim()) {
-        return { success: false, error: "Team name is required" };
-    }
-
-    if (!key?.trim()) {
-        return { success: false, error: "Team key is required" };
-    }
 
     // Get workspace ID from form or from user's default
-    let wsId = workspaceId;
+    let wsId = workspace_id;
     if (!wsId) {
         wsId = await getCurrentWorkspaceId();
     }
@@ -691,31 +747,23 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const id = formData.get("id") as string;
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string | null;
-    const status = formData.get("status") as string;
-    const priority = formData.get("priority") as string;
-    const teamId = formData.get("team_id") as string | null;
-    const projectId = formData.get("project_id") as string | null;
-
-    if (!id) {
-        return { success: false, error: "Issue ID is required" };
+    // Validate input
+    const validation = parseFormData(updateIssueSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
-    if (!title?.trim()) {
-        return { success: false, error: "Title is required" };
-    }
+    const { id, title, description, status, priority, team_id, project_id } = validation.data;
 
     const { data, error } = await supabase
         .from("issues")
         .update({
-            title: title.trim(),
-            description: description?.trim() || null,
-            status,
-            priority,
-            team_id: teamId || null,
-            project_id: projectId || null,
+            ...(title && { title: title.trim() }),
+            ...(description !== undefined && { description: description?.trim() || null }),
+            ...(status && { status }),
+            ...(priority && { priority }),
+            ...(team_id !== undefined && { team_id: team_id || null }),
+            ...(project_id !== undefined && { project_id: project_id || null }),
             updated_at: new Date().toISOString(),
         })
         .eq("id", id)
@@ -740,31 +788,23 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const id = formData.get("id") as string;
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string | null;
-    const projectGroup = formData.get("project_group") as string | null;
-    const leadId = formData.get("lead_id") as string | null;
-    const teamId = formData.get("team_id") as string | null;
-    const targetDate = formData.get("target_date") as string | null;
-
-    if (!id) {
-        return { success: false, error: "Project ID is required" };
+    // Validate input
+    const validation = parseFormData(updateProjectSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
-    if (!name?.trim()) {
-        return { success: false, error: "Project name is required" };
-    }
+    const { id, name, description, project_group, lead_id, team_id, target_date } = validation.data;
 
     const { data, error } = await supabase
         .from("projects")
         .update({
-            name: name.trim(),
-            description: description?.trim() || null,
-            project_group: projectGroup || null,
-            lead_id: leadId || null,
-            team_id: teamId || null,
-            target_date: targetDate || null,
+            ...(name && { name: name.trim() }),
+            ...(description !== undefined && { description: description?.trim() || null }),
+            ...(project_group !== undefined && { project_group: project_group || null }),
+            ...(lead_id !== undefined && { lead_id: lead_id || null }),
+            ...(team_id !== undefined && { team_id: team_id || null }),
+            ...(target_date !== undefined && { target_date: target_date || null }),
             updated_at: new Date().toISOString(),
         })
         .eq("id", id)
@@ -837,21 +877,18 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const issueId = formData.get("issue_id") as string;
-    const body = formData.get("body") as string;
-
-    if (!issueId) {
-        return { success: false, error: "Issue ID is required" };
+    // Validate input
+    const validation = parseFormData(createCommentSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
-    if (!body?.trim()) {
-        return { success: false, error: "Comment body is required" };
-    }
+    const { issue_id, body } = validation.data;
 
     const { data, error } = await supabase
         .from("comments")
         .insert({
-            issue_id: issueId,
+            issue_id,
             body: body.trim(),
             user_id: user.id,
         })
@@ -872,7 +909,7 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
     const { data: issue } = await supabase
         .from("issues")
         .select("team_id, project_id, title")
-        .eq("id", issueId)
+        .eq("id", issue_id)
         .single();
 
     // Record activity
@@ -882,14 +919,14 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
         'comment_added',
         {
             comment_id: data.id,
-            issue_id: issueId,
+            issue_id,
             team_id: issue?.team_id,
             project_id: issue?.project_id,
         },
         { issue_title: issue?.title }
     );
 
-    revalidatePath(`/issues/${issueId}`);
+    revalidatePath(`/issues/${issue_id}`);
     revalidatePath("/");
     return { success: true, data };
 }
@@ -906,20 +943,16 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
         return { success: false, error: "Not authenticated" };
     }
 
-    const displayName = formData.get("display_name") as string;
-    const phone = formData.get("phone") as string | null;
-    const website = formData.get("website") as string | null;
-    const billingAddress = formData.get("billing_address") as string | null;
-    const leadStatus = formData.get("lead_status") as LeadStatus || 'cold';
-    const notes = formData.get("notes") as string | null;
-    const workspaceId = formData.get("workspace_id") as string | null;
-
-    if (!displayName?.trim()) {
-        return { success: false, error: "Client name is required" };
+    // Validate input
+    const validation = parseFormData(createClientSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
+    const { display_name, phone, website, billing_address, lead_status, notes, workspace_id } = validation.data;
+
     // Get workspace ID from form or from user's default
-    let wsId = workspaceId;
+    let wsId = workspace_id;
     if (!wsId) {
         wsId = await getCurrentWorkspaceId();
     }
@@ -931,11 +964,11 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
     const { data, error } = await supabase
         .from("clients")
         .insert({
-            display_name: displayName.trim(),
+            display_name: display_name.trim(),
             phone: phone?.trim() || null,
             website: website?.trim() || null,
-            billing_address: billingAddress?.trim() || null,
-            lead_status: leadStatus,
+            billing_address: billing_address?.trim() || null,
+            lead_status,
             notes: notes?.trim() || null,
             workspace_id: wsId,
             created_by: user.id,
@@ -960,31 +993,30 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
         return { success: false, error: "Not authenticated" };
     }
 
-    const id = formData.get("id") as string;
-    const displayName = formData.get("display_name") as string;
-    const phone = formData.get("phone") as string | null;
-    const website = formData.get("website") as string | null;
-    const billingAddress = formData.get("billing_address") as string | null;
-    const leadStatus = formData.get("lead_status") as LeadStatus;
-    const notes = formData.get("notes") as string | null;
-
-    if (!id) {
-        return { success: false, error: "Client ID is required" };
+    // Validate input
+    const validation = parseFormData(updateClientSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
     }
 
-    if (!displayName?.trim()) {
-        return { success: false, error: "Client name is required" };
-    }
+    const { id, display_name, phone, website, billing_address, lead_status, notes } = validation.data;
+
+    // Get old status before update for activity logging
+    const { data: oldClient } = await supabase
+        .from("clients")
+        .select("lead_status")
+        .eq("id", id)
+        .single();
 
     const { data, error } = await supabase
         .from("clients")
         .update({
-            display_name: displayName.trim(),
-            phone: phone?.trim() || null,
-            website: website?.trim() || null,
-            billing_address: billingAddress?.trim() || null,
-            lead_status: leadStatus,
-            notes: notes?.trim() || null,
+            ...(display_name && { display_name: display_name.trim() }),
+            ...(phone !== undefined && { phone: phone?.trim() || null }),
+            ...(website !== undefined && { website: website?.trim() || null }),
+            ...(billing_address !== undefined && { billing_address: billing_address?.trim() || null }),
+            ...(lead_status !== undefined && { lead_status }),
+            ...(notes !== undefined && { notes: notes?.trim() || null }),
             updated_at: new Date().toISOString(),
         })
         .eq("id", id)
@@ -997,20 +1029,14 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
     }
 
     // Log status change activity if status changed
-    const { data: oldClient } = await supabase
-        .from("clients")
-        .select("lead_status")
-        .eq("id", id)
-        .single();
-
-    if (oldClient && oldClient.lead_status !== leadStatus) {
+    if (oldClient && lead_status && oldClient.lead_status !== lead_status) {
         await supabase
             .from("client_activities")
             .insert({
                 client_id: id,
                 type: 'status_change',
-                description: `Status changed from ${oldClient.lead_status} to ${leadStatus}`,
-                metadata: { old_status: oldClient.lead_status, new_status: leadStatus },
+                description: `Status changed from ${oldClient.lead_status} to ${lead_status}`,
+                metadata: { old_status: oldClient.lead_status, new_status: lead_status },
                 created_by: user.id,
             });
     }
@@ -1128,7 +1154,7 @@ export async function getClientById(id: string) {
         ...client,
         creator: Array.isArray(client.creator) ? client.creator[0] || null : client.creator,
         assigned: Array.isArray(client.assigned) ? client.assigned[0] || null : client.assigned,
-        activities: (client.activities || []).map((a: any) => ({
+        activities: (client.activities || []).map((a: ClientActivityResponse) => ({
             ...a,
             created_by: Array.isArray(a.created_by) ? a.created_by[0] || null : a.created_by,
         })),
@@ -1139,7 +1165,7 @@ export async function logClientActivity(
     clientId: string,
     type: 'call' | 'email' | 'meeting' | 'note' | 'status_change',
     description: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, unknown>
 ): Promise<ActionResult> {
     const supabase = await createClient();
 
@@ -1236,26 +1262,16 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
         return { success: false, error: "Not authenticated" };
     }
 
-    const title = formData.get("title") as string;
-    const description = formData.get("description") as string | null;
-    const startTime = formData.get("start_time") as string;
-    const endTime = formData.get("end_time") as string;
-    const projectId = formData.get("project_id") as string | null;
-    const clientId = formData.get("client_id") as string | null; // New field for client association
-    const workspaceId = formData.get("workspace_id") as string | null;
+    // Validate input
+    const validation = parseFormData(createMeetingSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
+    }
 
-    if (!title?.trim()) {
-        return { success: false, error: "Title is required" };
-    }
-    if (!startTime) {
-        return { success: false, error: "Start time is required" };
-    }
-    if (!endTime) {
-        return { success: false, error: "End time is required" };
-    }
+    const { title, description, start_time, end_time, project_id, client_id, workspace_id } = validation.data;
 
     // Get workspace ID from form or from user's default
-    let wsId = workspaceId;
+    let wsId = workspace_id;
     if (!wsId) {
         wsId = await getCurrentWorkspaceId();
     }
@@ -1265,10 +1281,10 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
         .insert({
             title: title.trim(),
             description: description?.trim() || null,
-            start_time: startTime,
-            end_time: endTime,
-            project_id: projectId || null,
-            client_id: clientId || null, // Include client_id in insert
+            start_time,
+            end_time,
+            project_id: project_id || null,
+            client_id: client_id || null,
             created_by: user.id,
             workspace_id: wsId,
         })
@@ -1281,12 +1297,12 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     }
 
     // Log client activity if meeting is with a client
-    if (clientId) {
+    if (client_id) {
         await logClientActivity(
-            clientId,
+            client_id,
             'meeting',
             `Meeting scheduled: ${title}`,
-            { meeting_id: data.id, start_time: startTime, end_time: endTime }
+            { meeting_id: data.id, start_time, end_time }
         );
     }
 
@@ -1297,10 +1313,10 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
         'meeting_created',
         {
             meeting_id: data.id,
-            project_id: projectId,
+            project_id: project_id,
             workspace_id: wsId,
         },
-        { title: title.trim(), start_time: startTime, end_time: endTime }
+        { title: title.trim(), start_time, end_time }
     );
 
     revalidatePath("/schedule");
@@ -1369,16 +1385,19 @@ export async function getMeetings(workspaceId?: string | null) {
         return [];
     }
 
-    return (meetings || []).map(meeting => ({
-        ...meeting,
-        project: Array.isArray(meeting.project) ? meeting.project[0] || null : meeting.project,
-        client: Array.isArray((meeting as any).client) ? (meeting as any).client[0] || null : (meeting as any).client,
-        creator: Array.isArray(meeting.creator) ? meeting.creator[0] || null : meeting.creator,
-        attendees: (meeting.attendees || []).map((a: { profile: unknown[] | unknown }) => ({
-            ...a,
-            profile: Array.isArray(a.profile) ? a.profile[0] || null : a.profile,
-        })),
-    }));
+    return (meetings || []).map((meeting) => {
+        const m = meeting as unknown as MeetingResponse;
+        return {
+            ...meeting,
+            project: Array.isArray(m.project) ? m.project[0] || null : m.project,
+            client: Array.isArray(m.client) ? m.client[0] || null : m.client,
+            creator: Array.isArray(m.creator) ? m.creator[0] || null : m.creator,
+            attendees: (m.attendees || []).map((a) => ({
+                ...a,
+                profile: Array.isArray(a.profile) ? a.profile[0] || null : a.profile,
+            })),
+        };
+    });
 }
 
 // ============ ACTIVITY ACTIONS ============
@@ -1666,7 +1685,7 @@ export async function getMilestones(projectId: string) {
 
     return (data || []).map(milestone => ({
         ...milestone,
-        issues: milestone.milestone_issues?.map((mi: any) => mi.issues) || []
+        issues: milestone.milestone_issues?.map((mi: MilestoneIssueResponse) => mi.issues) || []
     }));
 }
 
@@ -1710,7 +1729,7 @@ export async function getMilestoneById(id: string) {
     return {
         ...data,
         project: Array.isArray(data.project) ? data.project[0] : data.project,
-        issues: data.milestone_issues?.map((mi: any) => ({
+        issues: data.milestone_issues?.map((mi: MilestoneIssueResponse) => ({
             ...mi.issues,
             assignee: mi.issues?.assignee?.[0]?.profiles || null
         })) || []
@@ -1726,28 +1745,34 @@ export async function createMilestone(formData: FormData): Promise<ActionResult>
         return { success: false, error: "Not authenticated" };
     }
 
-    const projectId = formData.get("project_id") as string;
-    const name = formData.get("name") as string;
-    const description = formData.get("description") as string | null;
-    const targetDate = formData.get("target_date") as string;
-    const color = formData.get("color") as string || "#00A4AC";
+    // Get workspace first since it's required for validation
     const workspaceId = await getCurrentWorkspaceId();
-
     if (!workspaceId) {
         return { success: false, error: "No workspace found" };
     }
 
+    // Add workspace_id to form data for validation
+    formData.set("workspace_id", workspaceId);
+
+    // Validate input
+    const validation = parseFormData(createMilestoneSchema, formData);
+    if (!validation.success) {
+        return { success: false, error: validation.error };
+    }
+
+    const { project_id, name, description, target_date, color, status } = validation.data;
+
     const { data, error } = await supabase
         .from("milestones")
         .insert({
-            project_id: projectId,
+            project_id,
             name,
             description,
-            target_date: targetDate,
-            color,
+            target_date,
+            color: color || "#00A4AC",
             created_by: user.id,
             workspace_id: workspaceId,
-            status: 'not_started'
+            status: status || 'not_started'
         })
         .select()
         .single();
@@ -1762,7 +1787,7 @@ export async function createMilestone(formData: FormData): Promise<ActionResult>
         user.id,
         'project_updated',
         {
-            project_id: projectId,
+            project_id,
             workspace_id: workspaceId
         },
         {
@@ -1771,7 +1796,7 @@ export async function createMilestone(formData: FormData): Promise<ActionResult>
         }
     );
 
-    revalidatePath(`/projects/${projectId}`);
+    revalidatePath(`/projects/${project_id}`);
     return { success: true, data };
 }
 

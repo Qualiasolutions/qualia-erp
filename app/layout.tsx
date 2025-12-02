@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { Inter, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { CommandMenu } from "@/components/command-menu";
@@ -8,6 +9,27 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { WorkspaceProvider } from "@/components/workspace-provider";
 import { SidebarProvider } from "@/components/sidebar-provider";
 import { LogoSplash } from "@/components/logo-splash";
+
+// Optimized font loading with next/font
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-dm-sans",
+  weight: ["400", "500", "600", "700"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-jetbrains-mono",
+  weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
   title: "Qualia Solutions Internal Suite",
@@ -43,7 +65,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="bg-background text-foreground antialiased flex h-screen overflow-hidden">
+      <body className={`${inter.variable} ${dmSans.variable} ${jetbrainsMono.variable} bg-background text-foreground antialiased flex h-screen overflow-hidden`}>
         <ThemeProvider>
           <LogoSplash />
           <WorkspaceProvider>

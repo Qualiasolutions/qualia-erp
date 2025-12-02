@@ -12,31 +12,16 @@ const ISSUE_STATUSES = [
     { value: "Canceled", label: "Canceled" },
 ];
 
-const ISSUE_PRIORITIES = [
-    { value: "No Priority", label: "No Priority" },
-    { value: "Urgent", label: "Urgent" },
-    { value: "High", label: "High" },
-    { value: "Medium", label: "Medium" },
-    { value: "Low", label: "Low" },
-];
-
-interface Team {
-    id: string;
-    name: string;
-    key: string;
-}
-
 interface Project {
     id: string;
     name: string;
 }
 
 interface IssuesFilterProps {
-    teams: Team[];
     projects: Project[];
 }
 
-export function IssuesFilter({ teams, projects }: IssuesFilterProps) {
+export function IssuesFilter({ projects }: IssuesFilterProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -47,12 +32,6 @@ export function IssuesFilter({ teams, projects }: IssuesFilterProps) {
 
         const status = searchParams.get("status");
         if (status) filters.status = status.split(",");
-
-        const priority = searchParams.get("priority");
-        if (priority) filters.priority = priority.split(",");
-
-        const team = searchParams.get("team");
-        if (team) filters.team = team.split(",");
 
         const project = searchParams.get("project");
         if (project) filters.project = project.split(",");
@@ -73,16 +52,6 @@ export function IssuesFilter({ teams, projects }: IssuesFilterProps) {
             key: "status",
             label: "Status",
             options: ISSUE_STATUSES,
-        },
-        {
-            key: "priority",
-            label: "Priority",
-            options: ISSUE_PRIORITIES,
-        },
-        {
-            key: "team",
-            label: "Team",
-            options: teams.map((t) => ({ value: t.id, label: `${t.name} (${t.key})` })),
         },
         {
             key: "project",

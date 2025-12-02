@@ -3,14 +3,12 @@ import { connection } from "next/server";
 import { IssueList } from "@/components/issue-list";
 import { createClient } from "@/lib/supabase/server";
 import { NewIssueModal } from "@/components/new-issue-modal";
-import { getCurrentWorkspaceId, getTeams, getProjects } from "@/app/actions";
+import { getCurrentWorkspaceId, getProjects } from "@/app/actions";
 import { IssuesFilter } from "@/components/issues-filter";
 import { ListTodo } from "lucide-react";
 
 interface FilterParams {
     status?: string;
-    priority?: string;
-    team?: string;
     project?: string;
 }
 
@@ -39,16 +37,6 @@ async function IssueListLoader({ filters }: { filters: FilterParams }) {
         query = query.in('status', statuses);
     }
 
-    if (filters.priority) {
-        const priorities = filters.priority.split(',');
-        query = query.in('priority', priorities);
-    }
-
-    if (filters.team) {
-        const teams = filters.team.split(',');
-        query = query.in('team_id', teams);
-    }
-
     if (filters.project) {
         const projects = filters.project.split(',');
         query = query.in('project_id', projects);
@@ -65,12 +53,9 @@ async function IssueListLoader({ filters }: { filters: FilterParams }) {
 
 async function FilterLoader() {
     await connection();
-    const [teams, projects] = await Promise.all([
-        getTeams(),
-        getProjects(),
-    ]);
+    const projects = await getProjects();
 
-    return <IssuesFilter teams={teams} projects={projects} />;
+    return <IssuesFilter projects={projects} />;
 }
 
 function IssueListSkeleton() {

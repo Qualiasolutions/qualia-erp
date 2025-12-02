@@ -64,47 +64,68 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
 }
 
 function ProjectListSkeleton() {
+    const CardSkeleton = () => (
+        <div className="surface rounded-lg px-3 py-2.5 flex items-center gap-3">
+            <div className="w-7 h-7 rounded-md bg-muted animate-pulse" />
+            <div className="flex-1 h-4 bg-muted rounded animate-pulse" />
+            <div className="w-16 h-1 bg-muted rounded-full animate-pulse" />
+            <div className="w-8 h-3 bg-muted rounded animate-pulse" />
+        </div>
+    );
+
     return (
         <div className="space-y-5">
             {/* Stats skeleton */}
-            <div className="flex items-center gap-5">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-7 bg-muted rounded animate-pulse" />
-                    <div className="w-16 h-4 bg-muted rounded animate-pulse" />
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-7 bg-muted rounded animate-pulse" />
+                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="h-4 w-px bg-border" />
+                    <div className="flex items-center gap-4">
+                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
+                        <div className="w-16 h-4 bg-muted rounded animate-pulse" />
+                        <div className="w-14 h-4 bg-muted rounded animate-pulse" />
+                    </div>
                 </div>
-                <div className="h-4 w-px bg-border" />
-                <div className="flex items-center gap-4">
-                    <div className="w-20 h-4 bg-muted rounded animate-pulse" />
-                    <div className="w-24 h-4 bg-muted rounded animate-pulse" />
+                <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-secondary">
+                    <div className="w-8 h-8 bg-muted rounded animate-pulse" />
+                    <div className="w-8 h-8 bg-muted rounded animate-pulse" />
                 </div>
             </div>
-            {/* Grid skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[...Array(6)].map((_, i) => (
-                    <div key={i} className="surface rounded-xl p-5">
-                        <div className="flex items-start justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-muted animate-pulse" />
-                                <div>
-                                    <div className="w-28 h-4 bg-muted rounded mb-2 animate-pulse" />
-                                    <div className="w-16 h-3 bg-muted rounded animate-pulse" />
-                                </div>
-                            </div>
-                            <div className="w-14 h-5 bg-muted rounded animate-pulse" />
-                        </div>
-                        <div className="space-y-3">
-                            <div className="flex justify-between">
-                                <div className="w-16 h-3 bg-muted rounded animate-pulse" />
-                                <div className="w-12 h-3 bg-muted rounded animate-pulse" />
-                            </div>
-                            <div className="h-1.5 w-full bg-muted rounded-full animate-pulse" />
-                        </div>
-                        <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
-                            <div className="w-20 h-3 bg-muted rounded animate-pulse" />
-                            <div className="w-20 h-3 bg-muted rounded animate-pulse" />
-                        </div>
+            {/* Columns skeleton */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Active column */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="w-2 h-2 rounded-full bg-violet-500" />
+                        <div className="w-12 h-4 bg-muted rounded animate-pulse" />
                     </div>
-                ))}
+                    <div className="space-y-1.5">
+                        {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
+                    </div>
+                </div>
+                {/* Salman column */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                        <div className="w-14 h-4 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="space-y-1.5">
+                        {[...Array(5)].map((_, i) => <CardSkeleton key={i} />)}
+                    </div>
+                </div>
+                {/* Tasos column */}
+                <div className="space-y-2">
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <div className="w-12 h-4 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="space-y-1.5">
+                        {[...Array(4)].map((_, i) => <CardSkeleton key={i} />)}
+                    </div>
+                </div>
             </div>
         </div>
     );

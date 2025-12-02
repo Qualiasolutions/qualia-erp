@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Qualia is a multi-tenant project management and issue tracking platform built with Next.js 15 (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired UI with sidebar navigation, command palette (Cmd+K), workspace switching, and a context-aware AI assistant with tool calling.
+Qualia is a multi-tenant project management and issue tracking platform built with Next.js 15+ (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired UI with sidebar navigation, command palette (Cmd+K), workspace switching, and a context-aware AI assistant with tool calling.
 
 ## Development Commands
 
@@ -15,6 +15,9 @@ npm run lint     # ESLint with Next.js + TypeScript rules
 
 # Add shadcn/ui components
 npx shadcn@latest add <component-name>
+
+# Regenerate Supabase types after schema changes
+npx supabase gen types typescript --project-id <project-id> > types/database.ts
 ```
 
 ## Environment Variables
@@ -25,6 +28,14 @@ NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
 GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 ```
+
+## Key Dependencies
+
+- **Next.js**: `latest` (uses App Router with `proxy.ts` for auth instead of middleware)
+- **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth and database
+- **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
+- **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
+- **Validation**: Zod schemas in `lib/validation.ts`
 
 ## Architecture
 
@@ -45,56 +56,84 @@ Two Supabase clients for different contexts:
 - `lib/supabase/server.ts` - Server-side client using `@supabase/ssr` with cookie handling. **Create a new client per request** (important for Fluid compute).
 - `lib/supabase/client.ts` - Browser client for client components.
 
-### Server Actions Pattern
+**Auth & Route Protection**: Uses Next.js 16 `proxy.ts` pattern (not middleware.ts). The proxy handles session refresh and redirects unauthenticated users to `/auth/login`.
 
-`app/actions.ts` contains all server actions for data mutations:
+### Type System (`types/database.ts`)
+
+Supabase-generated types with added helper utilities:
+- **Generic helpers**: `Tables<"table_name">`, `TablesInsert<>`, `TablesUpdate<>`, `Enums<>`
+- **Entity aliases**: `Profile`, `Project`, `Issue`, `Client`, `Meeting`, `Milestone`, `Team`, `Workspace`, etc.
+- **Enum types**: `IssueStatus`, `IssuePriority`, `ProjectGroup`, `ProjectType`, `ProjectStatus`, `LeadStatus`, `UserRole`
+- **Constant arrays**: `ISSUE_STATUSES`, `ISSUE_PRIORITIES`, `PROJECT_GROUPS`, `PROJECT_TYPES`, etc.
+
+### Validation (`lib/validation.ts`)
+
+Zod schemas for all entity mutations with consistent patterns:
+- **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createTeamSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`
+- **Update schemas**: `updateIssueSchema`, `updateProjectSchema`, `updateClientSchema`, `updateMilestoneSchema`
+- **Helper functions**:
+  - `parseFormData(schema, formData)` - Parses FormData, converts empty strings to null
+  - `validateData(schema, data)` - Validates plain objects
+- **Type exports**: `CreateIssueInput`, `UpdateProjectInput`, etc. (inferred from schemas)
+
+### Server Actions (`app/actions.ts`)
+
+All data mutations are server actions that:
+- Accept validated input (via Zod schemas)
+- Return `ActionResult` type: `{ success: boolean; error?: string; data?: unknown }`
+- Call `revalidatePath()` to refresh relevant pages
+- Log activities via `createActivity()` helper
+
+**Action categories:**
 - **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
-- **CRUD operations**: `createIssue`, `createProject`, `createTeam`, `createMeeting`, `updateIssue`, `updateProject`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
-- **Milestones**: `createMilestone`, `updateMilestone`, `deleteMilestone`, `getMilestones` - Project milestone tracking with linked issues
-- **Fetch by ID**: `getIssueById`, `getProjectById`, `getTeamById` - Return fully hydrated entities with related data
-- **List queries**: `getTeams`, `getProjects`, `getProfiles`, `getMeetings` - Accept optional `workspaceId`
-- **Assignees/Attendees**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
+- **CRUD**: `createIssue`, `createProject`, `createTeam`, `createMeeting`, `createClient`, `updateIssue`, `updateProject`, `updateClient`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
+- **Milestones**: `createMilestone`, `updateMilestone`, `deleteMilestone`, `getMilestones`
+- **Fetch by ID**: `getIssueById`, `getProjectById`, `getTeamById`, `getClientById` - Return hydrated entities with relations
+- **List queries**: `getTeams`, `getProjects`, `getProfiles`, `getMeetings`, `getClients` - Accept optional `workspaceId`
+- **Junction tables**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
 - **Activity**: `getRecentActivities` - Fetches activity feed with actor/project/issue/team relations
-- All mutations call `revalidatePath()` to refresh relevant pages
-- Returns `ActionResult` type: `{ success: boolean; error?: string; data?: unknown }`
 
-**Important pattern for Supabase joins**: Foreign key relationships may return arrays. Actions normalize this:
+**Supabase FK normalization**: Foreign key joins may return arrays; normalize with:
 ```tsx
 assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee
 ```
 
-**Activity logging**: Mutations call `createActivity()` helper to record activities for the feed.
-
-Modal components (e.g., `NewIssueModal`) fetch dropdown data on-demand when opened via `useEffect`.
-
 ### Database Schema & RLS
 
-Core entities in `supabase/migrations/`:
-- **profiles** - User profiles (extends auth.users via trigger on signup), has `role` field (`admin`/`employee`)
-- **workspaces** - Multi-tenant organizations
-- **workspace_members** - Junction table for workspace membership with roles and default workspace tracking
-- **clients** - Client organizations with CRM fields: `lead_status` (dropped/cold/hot/active_client/inactive_client), contacts, billing
-- **client_contacts** - Multiple contacts per client with name, email, phone, position
-- **client_activities** - CRM activity log: calls, emails, meetings, notes, status changes
-- **teams** - Teams with unique keys (e.g., "ENG", "DES"), scoped to workspace
-- **team_members** - Junction table for team membership with roles
-- **projects** - `project_group` enum (salman_kuwait, tasos_kyriakides, active, demos, inactive, finished, other) for organizing by client. `project_type` enum (web_design, ai_agent, seo, ads). Status still exists but secondary to groups.
-- **milestones** - Project milestones with target_date, status (not_started/in_progress/completed/delayed), progress (0-100), color
-- **milestone_issues** - Links issues to milestones for progress tracking
-- **issues** - Status (Yet to Start, Todo, In Progress, Done, Canceled), priority (No Priority, Urgent, High, Medium, Low), supports parent/child hierarchy via `parent_id`
-- **issue_assignees** - Many-to-many for multiple assignees per issue
-- **comments** - Issue comments
-- **meetings** - Calendar meetings with start/end times, linked to projects and clients
-- **meeting_attendees** - Junction table with RSVP status (pending/accepted/declined/tentative)
-- **activities** - Activity feed records with type enum and metadata JSON
-- **documents** - Knowledge base with vector embeddings (pgvector, 1536 dimensions)
+Migrations in `supabase/migrations/`. Core tables:
 
-**Role-Based Access Control (RBAC)**:
-- Helper functions: `is_admin()`, `is_team_member(team_uuid)`
-- **Admins**: Full access to all records
-- **Employees**: Can only see/edit issues they created, are assigned to, or belong to their teams
-- Delete operations are admin-only for issues, projects, teams
-- See migration `20240104000000_add_role_based_access_control.sql` for complete policy definitions
+**User & Workspace:**
+- `profiles` - Extends auth.users (trigger on signup), has `role` (admin/employee)
+- `workspaces` - Multi-tenant organizations with slug
+- `workspace_members` - Junction with roles (owner/admin/member) and `is_default` flag
+
+**CRM:**
+- `clients` - Lead tracking with `lead_status` enum (dropped/cold/hot/active_client/inactive_client)
+- `client_contacts` - Multiple contacts per client
+- `client_activities` - Activity log (calls, emails, meetings, notes)
+
+**Project Management:**
+- `teams` - Unique keys (e.g., "ENG"), scoped to workspace
+- `team_members` - Junction with roles
+- `projects` - `project_group` for organization, `project_type` (web_design/ai_agent/seo/ads), `status`
+- `milestones` - Target dates, status (not_started/in_progress/completed/delayed), progress (0-100)
+- `milestone_issues` - Links issues to milestones
+- `issues` - Status, priority, parent/child hierarchy via `parent_id`
+- `issue_assignees` - Many-to-many assignees
+- `comments` - Issue comments
+
+**Calendar & Activity:**
+- `meetings` - Start/end times, linked to projects/clients
+- `meeting_attendees` - RSVP status (pending/accepted/declined/tentative)
+- `activities` - Feed with type enum and metadata JSON
+
+**Knowledge Base:**
+- `documents` - Vector embeddings (pgvector, 1536 dimensions) for RAG
+
+**RBAC Functions:**
+- `is_admin()`, `is_system_admin()`, `is_team_member(team_uuid)`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
+- Admins: Full access; Employees: Access scoped to owned/assigned/team items
+- See `20240104000000_add_role_based_access_control.sql` for policies
 
 ### Data Fetching Pattern
 
@@ -134,6 +173,8 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 - `/issues/[id]` - Issue detail with comments and assignees
 - `/projects` - Project grid with group tabs (Salman, Tasos, Active, Demos, Inactive)
 - `/projects/[id]` - Project detail with issues list and milestone timeline
+- `/clients` - Client/CRM list with lead status pipeline
+- `/clients/[id]` - Client detail with contacts and activity log
 - `/teams` - Team management
 - `/teams/[id]` - Team detail with members and projects
 - `/schedule` - Calendar view with meetings (list/calendar toggle)
