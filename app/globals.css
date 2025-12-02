@@ -4,32 +4,32 @@
 
 @layer base {
   :root {
-    /* Light mode - Soft, warm, easy on eyes */
-    --background: 40 20% 94%;
-    --foreground: 220 20% 20%;
-    --card: 40 15% 97%;
-    --card-foreground: 220 20% 18%;
-    --popover: 40 15% 97%;
-    --popover-foreground: 220 20% 18%;
-    --primary: 174 72% 38%;
+    /* Light mode - Clean, professional, high contrast */
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 174 72% 40%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 12% 90%;
-    --secondary-foreground: 220 20% 25%;
-    --muted: 40 12% 90%;
-    --muted-foreground: 220 10% 45%;
-    --accent: 174 45% 90%;
-    --accent-foreground: 174 72% 28%;
-    --destructive: 0 75% 55%;
+    --secondary: 214 20% 94%;
+    --secondary-foreground: 222 47% 20%;
+    --muted: 214 20% 94%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 174 50% 92%;
+    --accent-foreground: 174 72% 30%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 40 15% 85%;
-    --input: 40 15% 85%;
-    --ring: 174 72% 38%;
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 174 72% 40%;
     --radius: 0.5rem;
 
     /* Status colors - Light mode */
-    --success: 142 65% 40%;
-    --warning: 38 85% 48%;
-    --info: 199 80% 45%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
   }
 
   .dark {
