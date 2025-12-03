@@ -72,24 +72,44 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family:
+      var(--font-inter),
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      Roboto,
+      sans-serif;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
     letter-spacing: -0.011em;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-dm-sans), var(--font-inter), -apple-system, BlinkMacSystemFont, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family:
+      var(--font-dm-sans),
+      var(--font-inter),
+      -apple-system,
+      BlinkMacSystemFont,
+      sans-serif;
     letter-spacing: -0.02em;
     font-weight: 600;
   }
 
-  code, pre, .font-mono {
+  code,
+  pre,
+  .font-mono {
     font-family: var(--font-jetbrains-mono), 'Fira Code', monospace;
     font-feature-settings: 'liga', 'calt';
   }
 
   /* Improved text rendering */
-  p, span, div {
+  p,
+  span,
+  div {
     text-rendering: optimizeLegibility;
   }
 }
@@ -97,15 +117,47 @@
 @layer utilities {
   /* Elegant card surfaces */
   .surface {
-    @apply bg-card border border-border;
+    @apply border border-border bg-card;
   }
 
   .surface-elevated {
-    @apply bg-card border border-border shadow-sm;
+    @apply border border-border bg-card shadow-sm;
   }
 
   .surface-hover {
-    @apply hover:bg-secondary/50 transition-colors duration-200;
+    @apply transition-colors duration-200 hover:bg-secondary/50;
+  }
+
+  /* Glassmorphism effects */
+  .glass {
+    @apply border border-white/10 bg-card/80 backdrop-blur-md;
+  }
+
+  .glass-subtle {
+    @apply border border-white/5 bg-card/60 backdrop-blur-sm;
+  }
+
+  /* Admin highlight effects */
+  .admin-glow {
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.3),
+      0 0 20px -5px hsl(var(--primary) / 0.2);
+  }
+
+  .admin-badge {
+    @apply relative overflow-hidden;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.15), hsl(var(--primary) / 0.05));
+  }
+
+  .admin-badge::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.1), transparent);
+    animation: shimmer-subtle 3s ease-in-out infinite;
+  }
+
+  .admin-badge:hover::before {
+    @apply opacity-100;
   }
 
   /* Refined interactive states */
@@ -114,11 +166,11 @@
   }
 
   .interactive:hover {
-    @apply transform scale-[1.01];
+    @apply scale-[1.01] transform;
   }
 
   .interactive:active {
-    @apply transform scale-[0.99];
+    @apply scale-[0.99] transform;
   }
 
   /* Subtle depth effects */
@@ -148,8 +200,9 @@
 
   /* Accent highlights */
   .accent-glow {
-    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.2),
-                0 4px 12px hsl(var(--primary) / 0.15);
+    box-shadow:
+      0 0 0 1px hsl(var(--primary) / 0.2),
+      0 4px 12px hsl(var(--primary) / 0.15);
   }
 
   .accent-border {
@@ -158,7 +211,7 @@
 
   /* Status indicator dot */
   .status-dot {
-    @apply w-2 h-2 rounded-full;
+    @apply h-2 w-2 rounded-full;
   }
 
   .status-dot-pulse {
@@ -167,7 +220,7 @@
 
   .status-dot-pulse::after {
     content: '';
-    @apply absolute inset-0 rounded-full animate-ping opacity-75;
+    @apply absolute inset-0 animate-ping rounded-full opacity-75;
     background: inherit;
   }
 
@@ -177,7 +230,7 @@
   }
 
   .divider-vertical {
-    @apply w-px h-full bg-border;
+    @apply h-full w-px bg-border;
   }
 
   /* Text utilities */
@@ -186,7 +239,7 @@
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/70;
+    @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
   }
 
   /* Smooth fade animations */
@@ -203,16 +256,30 @@
   }
 
   /* Stagger animation support */
-  .stagger-1 { animation-delay: 50ms; }
-  .stagger-2 { animation-delay: 100ms; }
-  .stagger-3 { animation-delay: 150ms; }
-  .stagger-4 { animation-delay: 200ms; }
-  .stagger-5 { animation-delay: 250ms; }
+  .stagger-1 {
+    animation-delay: 50ms;
+  }
+  .stagger-2 {
+    animation-delay: 100ms;
+  }
+  .stagger-3 {
+    animation-delay: 150ms;
+  }
+  .stagger-4 {
+    animation-delay: 200ms;
+  }
+  .stagger-5 {
+    animation-delay: 250ms;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
@@ -238,8 +305,51 @@
 }
 
 @keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer-subtle {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes float-gentle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 3s ease-in-out infinite;
 }
 
 /* Logo splash animations */

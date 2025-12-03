@@ -68,6 +68,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 - **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
 - **Constants**: `lib/constants.ts` - Date formats, UI dimensions, status/priority colors, storage keys
 - **Utilities**: `lib/utils.ts` - `cn()` (Tailwind merge), date formatting (`formatDate`, `formatDateTime`, `formatRelativeTime`), `truncate`, `getInitials`, `pluralize`
+- **Timezone**: Uses `date-fns-tz` with `toZonedTime()` for Cyprus (Europe/Nicosia) and Jordan (Asia/Amman) timezone support in schedule views
 
 ## Architecture
 
@@ -126,7 +127,7 @@ All data mutations are server actions that:
 
 - **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
 - **CRUD**: `createIssue`, `createProject`, `createTeam`, `createMeeting`, `createClient`, `updateIssue`, `updateProject`, `updateClient`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
-- **Milestones**: `createMilestone`, `updateMilestone`, `deleteMilestone`, `getMilestones`
+- **Project Phases**: `createPhase`, `updatePhase`, `deletePhase`, `getProjectPhases`, `updatePhaseItem`, `initializeProjectRoadmap`
 - **Fetch by ID**: `getIssueById`, `getProjectById`, `getTeamById`, `getClientById` - Return hydrated entities with relations
 - **List queries**: `getTeams`, `getProjects`, `getProfiles`, `getMeetings`, `getClients` - Accept optional `workspaceId`
 - **Junction tables**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
@@ -159,11 +160,22 @@ Migrations in `supabase/migrations/`. Core tables:
 - `teams` - Unique keys (e.g., "ENG"), scoped to workspace
 - `team_members` - Junction with roles
 - `projects` - `project_group` for organization, `project_type` (web_design/ai_agent/seo/ads), `status`
-- `milestones` - Target dates, status (not_started/in_progress/completed/delayed), progress (0-100)
-- `milestone_issues` - Links issues to milestones
+- `project_phases` - Roadmap phases with status (not_started/in_progress/completed/skipped), template_key for pre-defined phases
+- `phase_items` - Checklist items within phases, with completion tracking and optional issue links
 - `issues` - Status, priority, parent/child hierarchy via `parent_id`
 - `issue_assignees` - Many-to-many assignees
 - `comments` - Issue comments
+
+**Phase Templates** (`lib/phase-templates.ts`):
+
+Pre-defined roadmap templates for each project type with phases and checklist items:
+
+- **AI Agent**: Research & Planning → Describe → Generate & Iterate → Integration → Deploy → Document & Share
+- **Website**: Discovery → Design → Vibe Code → Polish → Deploy → Handoff
+- **SEO**: Site Audit → Strategy → Technical Fixes → Content Optimization → Off-Page SEO → Report & Monitor
+- **Ads**: Research & Strategy → Account Setup → Creative Development → Campaign Launch → Optimization → Reporting
+
+Use `initializeProjectRoadmap(projectId, projectType)` to populate phases from templates.
 
 **Calendar & Activity:**
 
@@ -175,11 +187,13 @@ Migrations in `supabase/migrations/`. Core tables:
 
 - `documents` - Vector embeddings (pgvector, 1536 dimensions) for RAG
 
-**RBAC Functions:**
+**Database Functions:**
 
-- `is_admin()`, `is_system_admin()`, `is_team_member(team_uuid)`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
+- **RBAC**: `is_admin()`, `is_system_admin()`, `is_team_member(team_uuid)`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
+- **Stats**: `get_project_stats(workspace_id)` - Returns project stats with milestone progress, issue counts
+- **Phase Progress**: `calculate_phase_progress(phase_id)`, `calculate_roadmap_progress(project_id)` - Return 0-100 percentage
 - Admins: Full access; Employees: Access scoped to owned/assigned/team items
-- See `20240104000000_add_role_based_access_control.sql` for policies
+- See `20240104000000_add_role_based_access_control.sql` for RLS policies
 
 ### Data Fetching Pattern
 
@@ -215,17 +229,17 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 
 ### Routes
 
-| Route                         | Description                                          |
-| ----------------------------- | ---------------------------------------------------- |
-| `/`                           | Dashboard with stats and activity feed               |
-| `/issues`, `/issues/[id]`     | Issue list and detail with comments/assignees        |
-| `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with milestones |
-| `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and detail with contacts    |
-| `/teams`, `/teams/[id]`       | Team management and detail with members              |
-| `/schedule`                   | Calendar view (list/calendar toggle)                 |
-| `/settings`                   | User settings                                        |
-| `/auth/*`                     | Authentication flows                                 |
-| `/api/chat`                   | AI chat streaming endpoint                           |
+| Route                         | Description                                                           |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `/`                           | Dashboard with stats and activity feed                                |
+| `/issues`, `/issues/[id]`     | Issue list and detail with comments/assignees                         |
+| `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with roadmap                     |
+| `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and detail with contacts                     |
+| `/teams`, `/teams/[id]`       | Team management and detail with members                               |
+| `/schedule`                   | Schedule views (list/week/month) with timezone toggle (Cyprus/Jordan) |
+| `/settings`                   | User settings                                                         |
+| `/auth/*`                     | Authentication flows                                                  |
+| `/api/chat`                   | AI chat streaming endpoint                                            |
 
 ## Styling
 

@@ -1,18 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { Link2, ExternalLink, HelpCircle, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Link2, ExternalLink, HelpCircle, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { togglePhaseItem, deletePhaseItem } from '@/app/actions';
 import { LinkIssueDialog } from './link-issue-dialog';
+import { EditItemDialog } from './edit-item-dialog';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import type { PhaseItemData } from './project-roadmap';
@@ -26,6 +28,7 @@ interface PhaseItemProps {
 export function PhaseItem({ item, projectId, onUpdate }: PhaseItemProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   async function handleToggle() {
     setIsToggling(true);
@@ -115,10 +118,15 @@ export function PhaseItem({ item, projectId, onUpdate }: PhaseItemProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setShowLinkDialog(true)}>
                 <Link2 className="mr-2 h-4 w-4" />
                 {item.linked_issue ? 'Change Linked Issue' : 'Link Issue'}
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:text-red-500">
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
@@ -134,6 +142,13 @@ export function PhaseItem({ item, projectId, onUpdate }: PhaseItemProps) {
         itemId={item.id}
         projectId={projectId}
         currentIssueId={item.linked_issue_id}
+        onSuccess={onUpdate}
+      />
+
+      <EditItemDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        item={item}
         onSuccess={onUpdate}
       />
     </>

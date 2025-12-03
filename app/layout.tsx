@@ -8,8 +8,11 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
+import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
 import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
+import { AdminProvider } from '@/components/admin-provider';
+import { AdminBadge } from '@/components/admin-badge';
 
 // Optimized font loading with next/font
 const inter = Inter({
@@ -70,24 +73,29 @@ export default function RootLayout({
         className={`${inter.variable} ${dmSans.variable} ${jetbrainsMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
       >
         <ThemeProvider>
-          <LogoSplash />
-          <WorkspaceProvider>
-            <SidebarProvider>
-              <Suspense fallback={null}>
-                <CommandMenu />
-              </Suspense>
-              <Suspense fallback={<SidebarSkeleton />}>
-                <Sidebar />
-              </Suspense>
-              <div className="flex flex-1 flex-col overflow-hidden">
-                <header className="flex h-12 items-center justify-end border-b border-border bg-card px-4">
-                  <ThemeSwitcher />
-                </header>
-                <main className="flex-1 overflow-y-auto">{children}</main>
-              </div>
-              <WorkspaceChatWrapper />
-            </SidebarProvider>
-          </WorkspaceProvider>
+          <SWRProvider>
+            <AdminProvider>
+              <LogoSplash />
+              <WorkspaceProvider>
+                <SidebarProvider>
+                  <Suspense fallback={null}>
+                    <CommandMenu />
+                  </Suspense>
+                  <Suspense fallback={<SidebarSkeleton />}>
+                    <Sidebar />
+                  </Suspense>
+                  <div className="flex flex-1 flex-col overflow-hidden">
+                    <header className="flex h-12 items-center justify-end gap-3 border-b border-border bg-card px-4">
+                      <AdminBadge />
+                      <ThemeSwitcher />
+                    </header>
+                    <main className="flex-1 overflow-y-auto">{children}</main>
+                  </div>
+                  <WorkspaceChatWrapper />
+                </SidebarProvider>
+              </WorkspaceProvider>
+            </AdminProvider>
+          </SWRProvider>
         </ThemeProvider>
       </body>
     </html>

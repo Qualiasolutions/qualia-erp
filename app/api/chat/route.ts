@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { streamText, tool, stepCountIs, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
+import { chatRateLimiter } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 // Reference to prevent tree-shaking
@@ -11,7 +12,9 @@ export const maxDuration = 60;
 
 async function getUserInfo() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return null;
 
   const { data: profile } = await supabase
@@ -25,16 +28,39 @@ async function getUserInfo() {
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
     const supabase = await createClient();
 
     const user = await getUserInfo();
     if (!user) {
+      return new Response(JSON.stringify({ error: 'Please sign in to use the AI assistant' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Rate limiting: 20 requests per minute per user
+    const rateLimitResult = chatRateLimiter(user.id);
+    if (!rateLimitResult.success) {
+      const retryAfter = Math.ceil((rateLimitResult.reset - Date.now()) / 1000);
       return new Response(
-        JSON.stringify({ error: 'Please sign in to use the AI assistant' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          error: 'Rate limit exceeded. Please try again later.',
+          retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': rateLimitResult.reset.toString(),
+            'Retry-After': retryAfter.toString(),
+          },
+        }
       );
     }
+
+    const { messages } = await req.json();
 
     const userName = user.full_name || user.email?.split('@')[0] || 'User';
     const isAdmin = user.role === 'admin';
@@ -70,7 +96,7 @@ Guidelines:
 
             const byStatus: Record<string, number> = {};
             const byPriority: Record<string, number> = {};
-            issues.data?.forEach(i => {
+            issues.data?.forEach((i) => {
               byStatus[i.status] = (byStatus[i.status] || 0) + 1;
               byPriority[i.priority] = (byPriority[i.priority] || 0) + 1;
             });
@@ -94,9 +120,11 @@ Guidelines:
           execute: async ({ query, status, priority, limit = 10 }) => {
             let q = supabase
               .from('issues')
-              .select(`id, title, status, priority, created_at,
+              .select(
+                `id, title, status, priority, created_at,
                 creator:profiles!issues_creator_id_fkey(full_name),
-                project:projects(name), team:teams(name)`)
+                project:projects(name), team:teams(name)`
+              )
               .order('created_at', { ascending: false })
               .limit(limit);
 
@@ -109,15 +137,16 @@ Guidelines:
 
             return {
               count: data?.length || 0,
-              issues: data?.map(i => ({
-                id: i.id,
-                title: i.title,
-                status: i.status,
-                priority: i.priority,
-                creator: Array.isArray(i.creator) ? i.creator[0]?.full_name : null,
-                project: Array.isArray(i.project) ? i.project[0]?.name : null,
-                team: Array.isArray(i.team) ? i.team[0]?.name : null,
-              })) || [],
+              issues:
+                data?.map((i) => ({
+                  id: i.id,
+                  title: i.title,
+                  status: i.status,
+                  priority: i.priority,
+                  creator: Array.isArray(i.creator) ? i.creator[0]?.full_name : null,
+                  project: Array.isArray(i.project) ? i.project[0]?.name : null,
+                  team: Array.isArray(i.team) ? i.team[0]?.name : null,
+                })) || [],
             };
           },
         }),
@@ -132,9 +161,11 @@ Guidelines:
           execute: async ({ query, status, limit = 10 }) => {
             let q = supabase
               .from('projects')
-              .select(`id, name, status, target_date,
+              .select(
+                `id, name, status, target_date,
                 lead:profiles!projects_lead_id_fkey(full_name),
-                team:teams(name)`)
+                team:teams(name)`
+              )
               .order('created_at', { ascending: false })
               .limit(limit);
 
@@ -146,14 +177,15 @@ Guidelines:
 
             return {
               count: data?.length || 0,
-              projects: data?.map(p => ({
-                id: p.id,
-                name: p.name,
-                status: p.status,
-                target_date: p.target_date,
-                lead: Array.isArray(p.lead) ? p.lead[0]?.full_name : null,
-                team: Array.isArray(p.team) ? p.team[0]?.name : null,
-              })) || [],
+              projects:
+                data?.map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  status: p.status,
+                  target_date: p.target_date,
+                  lead: Array.isArray(p.lead) ? p.lead[0]?.full_name : null,
+                  team: Array.isArray(p.team) ? p.team[0]?.name : null,
+                })) || [],
             };
           },
         }),
@@ -182,23 +214,26 @@ Guidelines:
           execute: async ({ limit = 10 }) => {
             const { data, error } = await supabase
               .from('activities')
-              .select(`type, created_at, metadata,
+              .select(
+                `type, created_at, metadata,
                 actor:profiles!activities_actor_id_fkey(full_name),
-                project:projects(name), issue:issues(title), team:teams(name)`)
+                project:projects(name), issue:issues(title), team:teams(name)`
+              )
               .order('created_at', { ascending: false })
               .limit(limit);
 
             if (error) return { error: error.message };
 
             return {
-              activities: data?.map(a => ({
-                type: a.type,
-                actor: Array.isArray(a.actor) ? a.actor[0]?.full_name : null,
-                project: Array.isArray(a.project) ? a.project[0]?.name : null,
-                issue: Array.isArray(a.issue) ? a.issue[0]?.title : null,
-                team: Array.isArray(a.team) ? a.team[0]?.name : null,
-                created_at: a.created_at,
-              })) || [],
+              activities:
+                data?.map((a) => ({
+                  type: a.type,
+                  actor: Array.isArray(a.actor) ? a.actor[0]?.full_name : null,
+                  project: Array.isArray(a.project) ? a.project[0]?.name : null,
+                  issue: Array.isArray(a.issue) ? a.issue[0]?.title : null,
+                  team: Array.isArray(a.team) ? a.team[0]?.name : null,
+                  created_at: a.created_at,
+                })) || [],
             };
           },
         }),
@@ -209,9 +244,9 @@ Guidelines:
     return result.toUIMessageStreamResponse();
   } catch (error) {
     console.error('Chat API error:', error);
-    return new Response(
-      JSON.stringify({ error: 'Failed to process chat request' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    return new Response(JSON.stringify({ error: 'Failed to process chat request' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }

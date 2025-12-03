@@ -102,6 +102,105 @@ type PhaseItemResponse = {
   completed_by_profile?: ProfileRef;
 };
 
+// ============ AUTHORIZATION HELPERS ============
+
+// Check if user is an admin
+async function isUserAdmin(userId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+  return data?.role === 'admin';
+}
+
+// Check if user can delete an issue (creator or admin)
+async function canDeleteIssue(userId: string, issueId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data } = await supabase.from('issues').select('creator_id').eq('id', issueId).single();
+
+  return data?.creator_id === userId;
+}
+
+// Check if user can delete a project (lead or admin)
+async function canDeleteProject(userId: string, projectId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data } = await supabase.from('projects').select('lead_id').eq('id', projectId).single();
+
+  return data?.lead_id === userId;
+}
+
+// Check if user can delete a meeting (creator or admin)
+async function canDeleteMeeting(userId: string, meetingId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('meetings')
+    .select('created_by')
+    .eq('id', meetingId)
+    .single();
+
+  return data?.created_by === userId;
+}
+
+// Check if user can delete a client (admin or workspace admin)
+async function canDeleteClient(userId: string, clientId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data: client } = await supabase
+    .from('clients')
+    .select('workspace_id')
+    .eq('id', clientId)
+    .single();
+
+  if (!client?.workspace_id) return false;
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('workspace_id', client.workspace_id)
+    .eq('profile_id', userId)
+    .single();
+
+  return membership?.role === 'owner' || membership?.role === 'admin';
+}
+
+// Check if user can delete a project phase (project lead or admin)
+async function canDeletePhase(userId: string, phaseId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data: phase } = await supabase
+    .from('project_phases')
+    .select('project:projects(lead_id)')
+    .eq('id', phaseId)
+    .single();
+
+  const projectData = Array.isArray(phase?.project) ? phase.project[0] : phase?.project;
+  return (projectData as { lead_id: string } | null)?.lead_id === userId;
+}
+
+// Check if user can delete a phase item (project lead or admin)
+async function canDeletePhaseItem(userId: string, itemId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data: item } = await supabase
+    .from('phase_items')
+    .select('phase:project_phases(project:projects(lead_id))')
+    .eq('id', itemId)
+    .single();
+
+  // Handle nested FK array normalization
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const phaseData = Array.isArray(item?.phase) ? item.phase[0] : (item?.phase as any);
+  const projectData = Array.isArray(phaseData?.project) ? phaseData.project[0] : phaseData?.project;
+  return projectData?.lead_id === userId;
+}
+
 // ============ WORKSPACE HELPERS ============
 
 // Get current user's default workspace ID
@@ -862,6 +961,12 @@ export async function deleteIssue(id: string): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Authorization check: only creator or admin can delete
+  const canDelete = await canDeleteIssue(user.id, id);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this issue' };
+  }
+
   const { error } = await supabase.from('issues').delete().eq('id', id);
 
   if (error) {
@@ -881,6 +986,12 @@ export async function deleteProject(id: string): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Authorization check: only lead or admin can delete
+  const canDelete = await canDeleteProject(user.id, id);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this project' };
   }
 
   const { error } = await supabase.from('projects').delete().eq('id', id);
@@ -1088,6 +1199,12 @@ export async function deleteClientRecord(id: string): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Authorization check: only admin or workspace admin can delete
+  const canDelete = await canDeleteClient(user.id, id);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this client' };
   }
 
   const { error } = await supabase.from('clients').delete().eq('id', id);
@@ -1373,6 +1490,12 @@ export async function deleteMeeting(meetingId: string): Promise<ActionResult> {
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Authorization check: only creator or admin can delete
+  const canDelete = await canDeleteMeeting(user.id, meetingId);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this meeting' };
   }
 
   const { error } = await supabase.from('meetings').delete().eq('id', meetingId);
@@ -1946,6 +2069,12 @@ export async function deletePhase(phaseId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Authorization check: only project lead or admin can delete phases
+  const canDelete = await canDeletePhase(user.id, phaseId);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this phase' };
+  }
+
   // Get project_id before deleting
   const { data: phase } = await supabase
     .from('project_phases')
@@ -2104,6 +2233,12 @@ export async function deletePhaseItem(itemId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Authorization check: only project lead or admin can delete phase items
+  const canDelete = await canDeletePhaseItem(user.id, itemId);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this item' };
+  }
+
   // Get project_id before deleting
   const { data: item } = await supabase
     .from('phase_items')
@@ -2158,4 +2293,257 @@ export async function linkIssueToPhaseItem(
     revalidatePath(`/projects/${projectId}/roadmap`);
   }
   return { success: true };
+}
+
+// ============ ADMIN ACTIONS ============
+
+// Super admin email constant
+const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
+
+// Check if user is super admin
+async function isSuperAdmin(userId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('profiles').select('email').eq('id', userId).single();
+  return data?.email === SUPER_ADMIN_EMAIL;
+}
+
+// Get current user's admin status
+export async function getAdminStatus(): Promise<{
+  isAdmin: boolean;
+  isSuperAdmin: boolean;
+  userId: string | null;
+  email: string | null;
+}> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { isAdmin: false, isSuperAdmin: false, userId: null, email: null };
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role, email')
+    .eq('id', user.id)
+    .single();
+
+  const superAdmin = profile?.email === SUPER_ADMIN_EMAIL;
+  const admin = profile?.role === 'admin' || superAdmin;
+
+  return {
+    isAdmin: admin,
+    isSuperAdmin: superAdmin,
+    userId: user.id,
+    email: profile?.email || null,
+  };
+}
+
+// Move project to a different group (admin only)
+export async function moveProjectToGroup(
+  projectId: string,
+  newGroup: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Check if user is admin or super admin
+  const admin = await isUserAdmin(user.id);
+  const superAdmin = await isSuperAdmin(user.id);
+
+  if (!admin && !superAdmin) {
+    return { success: false, error: 'Only admins can move projects between groups' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      project_group: newGroup,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('Error moving project:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/projects');
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
+// Bulk move projects (admin only)
+export async function bulkMoveProjects(
+  projectIds: string[],
+  newGroup: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Check if user is admin or super admin
+  const admin = await isUserAdmin(user.id);
+  const superAdmin = await isSuperAdmin(user.id);
+
+  if (!admin && !superAdmin) {
+    return { success: false, error: 'Only admins can bulk move projects' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      project_group: newGroup,
+      updated_at: new Date().toISOString(),
+    })
+    .in('id', projectIds);
+
+  if (error) {
+    console.error('Error bulk moving projects:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/projects');
+  return { success: true };
+}
+
+// Bulk delete projects (admin only)
+export async function bulkDeleteProjects(projectIds: string[]): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Check if user is super admin
+  const superAdmin = await isSuperAdmin(user.id);
+
+  if (!superAdmin) {
+    return { success: false, error: 'Only super admin can bulk delete projects' };
+  }
+
+  const { error } = await supabase.from('projects').delete().in('id', projectIds);
+
+  if (error) {
+    console.error('Error bulk deleting projects:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/projects');
+  return { success: true };
+}
+
+// Update project status (admin only for any project)
+export async function updateProjectStatus(
+  projectId: string,
+  newStatus: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('Error updating project status:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/projects');
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
+// Delete team (admin only)
+export async function deleteTeam(teamId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Check if user is admin or super admin
+  const admin = await isUserAdmin(user.id);
+  const superAdmin = await isSuperAdmin(user.id);
+
+  if (!admin && !superAdmin) {
+    return { success: false, error: 'Only admins can delete teams' };
+  }
+
+  const { error } = await supabase.from('teams').delete().eq('id', teamId);
+
+  if (error) {
+    console.error('Error deleting team:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/teams');
+  return { success: true };
+}
+
+// Update team (admin only)
+export async function updateTeam(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const id = formData.get('id') as string;
+  const name = formData.get('name') as string;
+  const key = formData.get('key') as string;
+  const description = formData.get('description') as string | null;
+
+  const { data, error } = await supabase
+    .from('teams')
+    .update({
+      ...(name && { name: name.trim() }),
+      ...(key && { key: key.trim().toUpperCase() }),
+      ...(description !== undefined && { description: description?.trim() || null }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating team:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/teams');
+  revalidatePath(`/teams/${id}`);
+  return { success: true, data };
 }

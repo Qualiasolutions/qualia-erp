@@ -1,9 +1,22 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { Folder, LayoutGrid, List, Inbox } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { Folder, LayoutGrid, List, Inbox, MoreVertical, MoveRight, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAdminContext } from '@/components/admin-provider';
+import { moveProjectToGroup } from '@/app/actions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { PROJECT_GROUP_LABELS, type ProjectGroup } from '@/components/project-group-tabs';
 
 export interface Project {
   id: string;
@@ -60,7 +73,18 @@ const GROUP_CONFIG: Record<string, { color: string; bgColor: string }> = {
   },
 };
 
+const ALL_GROUPS: ProjectGroup[] = [
+  'active',
+  'salman_kuwait',
+  'tasos_kyriakides',
+  'other',
+  'demos',
+  'inactive',
+];
+
 function ProjectCard({ project }: { project: Project }) {
+  const { isAdmin, isSuperAdmin } = useAdminContext();
+  const [isPending, startTransition] = useTransition();
   const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
   const progress =
     project.project_group === 'finished'
@@ -71,43 +95,107 @@ function ProjectCard({ project }: { project: Project }) {
           ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
           : 0;
 
+  const handleMoveToGroup = (newGroup: string) => {
+    startTransition(async () => {
+      await moveProjectToGroup(project.id, newGroup);
+    });
+  };
+
+  const showAdminActions = isAdmin || isSuperAdmin;
+
   return (
-    <Link
-      href={`/projects/${project.id}`}
-      className="surface group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 hover:bg-secondary/50"
-    >
-      <div className={cn('flex-shrink-0 rounded-md p-1.5', groupConfig.bgColor)}>
-        <Folder className={cn('h-3.5 w-3.5', groupConfig.color)} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <h3 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-          {project.name}
-        </h3>
-      </div>
-      <div className="flex flex-shrink-0 items-center gap-2">
-        <div className="h-1 w-16 overflow-hidden rounded-full bg-secondary">
-          <div
-            className={cn(
-              'h-full rounded-full',
-              progress >= 70 ? 'bg-emerald-500' : progress >= 30 ? 'bg-amber-500' : 'bg-blue-500'
-            )}
-            style={{ width: `${progress}%` }}
-          />
+    <div className="surface group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 hover:bg-secondary/50">
+      <Link href={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <div className={cn('flex-shrink-0 rounded-md p-1.5', groupConfig.bgColor)}>
+          <Folder className={cn('h-3.5 w-3.5', groupConfig.color)} />
         </div>
-        <span
-          className={cn(
-            'w-8 text-xs font-medium tabular-nums',
-            progress >= 70
-              ? 'text-emerald-600 dark:text-emerald-400'
-              : progress >= 30
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-blue-600 dark:text-blue-400'
-          )}
-        >
-          {progress}%
-        </span>
-      </div>
-    </Link>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+            {project.name}
+          </h3>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <div className="h-1 w-16 overflow-hidden rounded-full bg-secondary">
+            <div
+              className={cn(
+                'h-full rounded-full',
+                progress >= 70 ? 'bg-emerald-500' : progress >= 30 ? 'bg-amber-500' : 'bg-blue-500'
+              )}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span
+            className={cn(
+              'w-8 text-xs font-medium tabular-nums',
+              progress >= 70
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : progress >= 30
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-blue-600 dark:text-blue-400'
+            )}
+          >
+            {progress}%
+          </span>
+        </div>
+      </Link>
+
+      {showAdminActions && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                'flex-shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
+                isPending && 'animate-pulse opacity-100'
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <MoveRight className="mr-2 h-4 w-4" />
+                Move to group
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {ALL_GROUPS.filter((g) => g !== project.project_group).map((group) => (
+                  <DropdownMenuItem key={group} onClick={() => handleMoveToGroup(group)}>
+                    <span
+                      className={cn(
+                        'mr-2 h-2 w-2 rounded-full',
+                        group === 'salman_kuwait' && 'bg-amber-500',
+                        group === 'tasos_kyriakides' && 'bg-blue-500',
+                        group === 'active' && 'bg-emerald-500',
+                        group === 'other' && 'bg-violet-500',
+                        group === 'demos' && 'bg-pink-500',
+                        group === 'inactive' && 'bg-gray-500'
+                      )}
+                    />
+                    {PROJECT_GROUP_LABELS[group]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                  onClick={() => {
+                    // Navigate to project detail for deletion
+                    window.location.href = `/projects/${project.id}`;
+                  }}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete project
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+    </div>
   );
 }
 

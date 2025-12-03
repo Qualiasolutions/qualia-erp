@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -29,8 +29,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getProjectById, updateProject, deleteProject, getTeams, getProfiles } from '@/app/actions';
+import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { PROJECT_GROUP_LABELS, type ProjectGroup } from '@/components/project-group-tabs';
+import { formatDate, formatTimeAgo } from '@/lib/utils';
 
 const PROJECT_GROUPS: ProjectGroup[] = [
   'salman_kuwait',
@@ -74,6 +75,18 @@ interface Project {
     total: number;
     done: number;
   };
+}
+
+interface Team {
+  id: string;
+  name: string;
+  key: string;
+}
+
+interface ProjectDetailViewProps {
+  project: Project;
+  teams: Team[];
+  profiles: Profile[];
 }
 
 const ProjectGroupBadge = ({ group }: { group: ProjectGroup | null }) => {
@@ -121,84 +134,34 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 };
 
-function formatDate(dateString: string | null): string {
-  if (!dateString) return 'Not set';
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return 'just now';
-  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  return date.toLocaleDateString();
-}
-
-export function ProjectDetailClient() {
-  const params = useParams();
+export function ProjectDetailView({
+  project: initialProject,
+  teams,
+  profiles,
+}: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const id = params.id as string;
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<Project>(initialProject);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [projectGroup, setProjectGroup] = useState<ProjectGroup | null>(null);
-  const [leadId, setLeadId] = useState<string | null>(null);
-  const [teamId, setTeamId] = useState<string | null>(null);
-  const [targetDate, setTargetDate] = useState('');
-
-  // Options for selects
-  const [teams, setTeams] = useState<{ id: string; name: string; key: string }[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      const [projectData, teamsData, profilesData] = await Promise.all([
-        getProjectById(id),
-        getTeams(),
-        getProfiles(),
-      ]);
-
-      if (projectData) {
-        setProject(projectData as Project);
-        setName(projectData.name);
-        setDescription(projectData.description || '');
-        setProjectGroup((projectData as Project).project_group || null);
-        setLeadId(projectData.lead?.id || null);
-        setTeamId(projectData.team?.id || null);
-        setTargetDate(projectData.target_date || '');
-      } else {
-        setError('Project not found');
-      }
-
-      setTeams(teamsData);
-      setProfiles(profilesData as Profile[]);
-      setLoading(false);
-    }
-    loadData();
-  }, [id]);
+  // Form state initialized from server-fetched data
+  const [name, setName] = useState(initialProject.name);
+  const [description, setDescription] = useState(initialProject.description || '');
+  const [projectGroup, setProjectGroup] = useState<ProjectGroup | null>(
+    initialProject.project_group || null
+  );
+  const [leadId, setLeadId] = useState<string | null>(initialProject.lead?.id || null);
+  const [teamId, setTeamId] = useState<string | null>(initialProject.team?.id || null);
+  const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
 
   const handleSave = async () => {
     setSaving(true);
     setError(null);
 
     const formData = new FormData();
-    formData.set('id', id);
+    formData.set('id', project.id);
     formData.set('name', name);
     formData.set('description', description);
     if (projectGroup) formData.set('project_group', projectGroup);
@@ -208,7 +171,7 @@ export function ProjectDetailClient() {
 
     const result = await updateProject(formData);
     if (result.success) {
-      const updatedProject = await getProjectById(id);
+      const updatedProject = await getProjectById(project.id);
       if (updatedProject) setProject(updatedProject as Project);
     } else {
       setError(result.error || 'Failed to update project');
@@ -226,7 +189,7 @@ export function ProjectDetailClient() {
       return;
 
     startTransition(async () => {
-      const result = await deleteProject(id);
+      const result = await deleteProject(project.id);
       if (result.success) {
         router.push('/projects');
       } else {
@@ -234,35 +197,6 @@ export function ProjectDetailClient() {
       }
     });
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-full flex-col">
-        <header className="flex items-center gap-4 border-b border-border bg-background px-6 py-4">
-          <div className="h-6 w-32 animate-pulse rounded bg-muted" />
-        </header>
-        <div className="flex-1 p-6">
-          <div className="max-w-4xl space-y-6">
-            <div className="h-8 w-1/2 animate-pulse rounded bg-muted" />
-            <div className="h-32 animate-pulse rounded bg-muted" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !project) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-        <p>{error}</p>
-        <Link href="/projects" className="mt-2 text-qualia-400 hover:underline">
-          Back to Projects
-        </Link>
-      </div>
-    );
-  }
-
-  if (!project) return null;
 
   const progress = project.issue_stats.total
     ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
@@ -358,7 +292,7 @@ export function ProjectDetailClient() {
               {/* Roadmap Link */}
               <div className="border-t border-border pt-6">
                 <Link
-                  href={`/projects/${id}/roadmap`}
+                  href={`/projects/${project.id}/roadmap`}
                   className="flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50"
                 >
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-qualia-500/10">
