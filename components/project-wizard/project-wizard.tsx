@@ -169,28 +169,29 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl gap-0 overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl">
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-[90vw] gap-0 overflow-hidden rounded-2xl border border-border/50 bg-card p-0 shadow-2xl sm:max-w-2xl md:max-w-3xl"
+      >
         <DialogTitle className="sr-only">Create New Project</DialogTitle>
 
         {/* Header */}
-        <div className="relative border-b border-border/50 bg-gradient-to-r from-qualia-600/5 via-transparent to-purple-600/5 px-8 pb-6 pt-8">
+        <div className="relative border-b border-border/50 bg-muted/30 px-6 pb-5 pt-6">
           {/* Close button */}
           <Button
             variant="ghost"
             size="icon"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="absolute right-4 top-4 h-8 w-8 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+            className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </Button>
 
           {/* Title */}
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Create New Project
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+          <div className="mb-5 pr-8">
+            <h2 className="text-xl font-semibold text-foreground">Create New Project</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
               Set up your project in a few simple steps
             </p>
           </div>
@@ -200,7 +201,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
         </div>
 
         {/* Step Content */}
-        <div className="max-h-[55vh] min-h-[420px] overflow-y-auto px-8 py-8">
+        <div className="max-h-[55vh] min-h-[380px] overflow-y-auto px-6 py-6">
           {error && (
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/10">
@@ -237,7 +238,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-8 py-5">
+        <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-6 py-4">
           <Button
             variant="ghost"
             onClick={handleBack}

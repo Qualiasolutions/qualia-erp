@@ -24,46 +24,39 @@ export function WizardProgress({ steps, currentStep }: WizardProgressProps) {
 
         return (
           <div key={step.id} className="flex flex-1 items-center">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Step indicator */}
               <div
                 className={cn(
-                  'relative flex h-10 w-10 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-300',
-                  isCompleted &&
-                    'bg-gradient-to-br from-qualia-500 to-qualia-600 text-white shadow-lg shadow-qualia-600/30',
-                  isCurrent && 'bg-qualia-600/10 text-qualia-500 ring-2 ring-qualia-500/50',
-                  !isCompleted && !isCurrent && 'bg-muted/50 text-muted-foreground'
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold transition-all',
+                  isCompleted && 'bg-qualia-500 text-white',
+                  isCurrent && 'bg-qualia-500/15 text-qualia-500 ring-2 ring-qualia-500/40',
+                  !isCompleted && !isCurrent && 'bg-muted text-muted-foreground'
                 )}
               >
-                {isCompleted ? <Check className="h-5 w-5" strokeWidth={2.5} /> : step.id}
-                {isCurrent && (
-                  <div className="absolute -inset-1 animate-pulse rounded-xl bg-qualia-500/20" />
-                )}
+                {isCompleted ? <Check className="h-4 w-4" strokeWidth={2.5} /> : step.id}
               </div>
 
-              {/* Step text */}
-              <div className="hidden min-w-0 sm:block">
-                <p
-                  className={cn(
-                    'text-sm font-medium transition-colors',
-                    isCompleted && 'text-qualia-500',
-                    isCurrent && 'text-foreground',
-                    !isCompleted && !isCurrent && 'text-muted-foreground'
-                  )}
-                >
-                  {step.name}
-                </p>
-                <p className="truncate text-xs text-muted-foreground/70">{step.description}</p>
-              </div>
+              {/* Step text - hidden on small screens */}
+              <p
+                className={cn(
+                  'hidden text-sm font-medium md:block',
+                  isCompleted && 'text-qualia-500',
+                  isCurrent && 'text-foreground',
+                  !isCompleted && !isCurrent && 'text-muted-foreground'
+                )}
+              >
+                {step.name}
+              </p>
             </div>
 
             {/* Connector line */}
             {!isLast && (
-              <div className="mx-3 flex flex-1 items-center">
+              <div className="mx-2 flex flex-1 items-center md:mx-3">
                 <div
                   className={cn(
-                    'h-0.5 w-full rounded-full transition-all duration-500',
-                    isCompleted ? 'bg-gradient-to-r from-qualia-500 to-qualia-400' : 'bg-muted/50'
+                    'h-0.5 w-full rounded-full transition-all',
+                    isCompleted ? 'bg-qualia-500' : 'bg-border'
                   )}
                 />
               </div>
