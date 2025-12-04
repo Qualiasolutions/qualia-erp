@@ -1,8 +1,9 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-  );
+  // Trim env vars to remove any trailing newlines that cause WebSocket connection issues
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim() || '';
+
+  return createBrowserClient(supabaseUrl, supabaseKey);
 }
