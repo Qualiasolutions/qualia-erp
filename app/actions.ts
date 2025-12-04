@@ -18,6 +18,8 @@ import {
   updatePhaseItemSchema,
   createCommentSchema,
   createMessageSchema,
+  createProjectWizardSchema,
+  type CreateProjectWizardInput,
 } from '@/lib/validation';
 import { getPhaseTemplates, type ProjectType } from '@/lib/phase-templates';
 
@@ -2776,4 +2778,149 @@ export async function getHubTasks(
     ...task,
     project: Array.isArray(task.project) ? task.project[0] || null : task.project,
   }));
+}
+
+// ============ PROJECT WIZARD ACTIONS ============
+
+/**
+ * Create a project with custom roadmap phases from the wizard
+ */
+export async function createProjectWithRoadmap(
+  input: CreateProjectWizardInput
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Validate input
+  const validation = createProjectWizardSchema.safeParse(input);
+  if (!validation.success) {
+    const firstError = validation.error.issues[0];
+    return { success: false, error: firstError?.message || 'Validation failed' };
+  }
+
+  const {
+    name,
+    description,
+    project_type,
+    deployment_platform,
+    client_id,
+    team_id,
+    workspace_id,
+    phases: customPhases,
+  } = validation.data;
+
+  // Get workspace ID from input or from user's default
+  let wsId = workspace_id;
+  if (!wsId) {
+    wsId = await getCurrentWorkspaceId();
+  }
+
+  if (!wsId) {
+    return { success: false, error: 'Workspace is required' };
+  }
+
+  // Create the project
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .insert({
+      name: name.trim(),
+      description: description?.trim() || null,
+      project_type,
+      deployment_platform,
+      client_id,
+      team_id,
+      lead_id: user.id,
+      workspace_id: wsId,
+      status: 'Active',
+      project_group: 'active', // Default to active group
+    })
+    .select()
+    .single();
+
+  if (projectError) {
+    console.error('Error creating project:', projectError);
+    return { success: false, error: projectError.message };
+  }
+
+  // Create phases and items
+  // If custom phases provided, use those; otherwise use templates
+  const phasesToCreate =
+    customPhases && customPhases.length > 0
+      ? customPhases
+      : getPhaseTemplates(project_type).map((t) => ({
+          name: t.name,
+          description: t.description || null,
+          template_key: t.templateKey,
+          items: t.items.map((item) => ({
+            title: item.title,
+            description: item.description || null,
+            template_key: item.templateKey,
+          })),
+        }));
+
+  for (let phaseIndex = 0; phaseIndex < phasesToCreate.length; phaseIndex++) {
+    const phase = phasesToCreate[phaseIndex];
+
+    const { data: createdPhase, error: phaseError } = await supabase
+      .from('project_phases')
+      .insert({
+        project_id: project.id,
+        workspace_id: wsId,
+        name: phase.name,
+        description: phase.description || null,
+        display_order: phaseIndex,
+        template_key: phase.template_key || null,
+        is_custom: !phase.template_key,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (phaseError || !createdPhase) {
+      console.error('Error creating phase:', phaseError);
+      continue;
+    }
+
+    // Create items for this phase
+    const items = phase.items || [];
+    if (items.length > 0) {
+      const itemsToInsert = items.map((item, itemIndex) => ({
+        phase_id: createdPhase.id,
+        title: item.title,
+        description: item.description || null,
+        display_order: itemIndex,
+        template_key: item.template_key || null,
+        is_custom: !item.template_key,
+      }));
+
+      const { error: itemsError } = await supabase.from('phase_items').insert(itemsToInsert);
+
+      if (itemsError) {
+        console.error('Error creating phase items:', itemsError);
+      }
+    }
+  }
+
+  // Record activity
+  await createActivity(
+    supabase,
+    user.id,
+    'project_created',
+    {
+      project_id: project.id,
+      team_id,
+      workspace_id: wsId,
+    },
+    { name: project.name, project_type, deployment_platform }
+  );
+
+  revalidatePath('/projects');
+  revalidatePath('/');
+  return { success: true, data: project };
 }

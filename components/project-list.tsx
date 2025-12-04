@@ -2,7 +2,23 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Folder, LayoutGrid, List, Inbox, MoreVertical, MoveRight, Trash2 } from 'lucide-react';
+import {
+  Folder,
+  LayoutGrid,
+  List,
+  Inbox,
+  MoreVertical,
+  MoveRight,
+  Trash2,
+  Bot,
+  Globe,
+  Search,
+  Megaphone,
+  Triangle,
+  Square,
+  Train,
+  Building,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
 import { moveProjectToGroup } from '@/app/actions';
@@ -16,7 +32,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { PROJECT_GROUP_LABELS, type ProjectGroup } from '@/components/project-group-tabs';
+import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
 export interface Project {
   id: string;
@@ -24,6 +40,10 @@ export interface Project {
   status: string;
   target_date: string | null;
   project_group?: string | null;
+  project_type?: ProjectType | null;
+  deployment_platform?: DeploymentPlatform | null;
+  client_id?: string | null;
+  client_name?: string | null;
   lead?: {
     id: string;
     full_name: string | null;
@@ -38,10 +58,50 @@ export interface Project {
 
 interface ProjectListProps {
   projects: Project[];
+  filterType?: ProjectType | 'all';
 }
 
 type ViewMode = 'grid' | 'list';
 
+// Project type configuration
+const PROJECT_TYPE_CONFIG: Record<
+  ProjectType,
+  { icon: typeof Globe; color: string; bgColor: string; label: string }
+> = {
+  web_design: {
+    icon: Globe,
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500/10',
+    label: 'Website',
+  },
+  ai_agent: {
+    icon: Bot,
+    color: 'text-purple-500',
+    bgColor: 'bg-purple-500/10',
+    label: 'AI Agent',
+  },
+  seo: {
+    icon: Search,
+    color: 'text-green-500',
+    bgColor: 'bg-green-500/10',
+    label: 'SEO',
+  },
+  ads: {
+    icon: Megaphone,
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500/10',
+    label: 'Ads',
+  },
+};
+
+// Platform configuration
+const PLATFORM_CONFIG: Record<DeploymentPlatform, { icon: typeof Triangle; label: string }> = {
+  vercel: { icon: Triangle, label: 'Vercel' },
+  squarespace: { icon: Square, label: 'Squarespace' },
+  railway: { icon: Train, label: 'Railway' },
+};
+
+// Legacy group config for backward compatibility
 const GROUP_CONFIG: Record<string, { color: string; bgColor: string }> = {
   salman_kuwait: {
     color: 'text-amber-600 dark:text-amber-400',
@@ -73,19 +133,28 @@ const GROUP_CONFIG: Record<string, { color: string; bgColor: string }> = {
   },
 };
 
-const ALL_GROUPS: ProjectGroup[] = [
-  'active',
-  'salman_kuwait',
-  'tasos_kyriakides',
-  'other',
-  'demos',
-  'inactive',
-];
+const PROJECT_GROUP_LABELS: Record<string, string> = {
+  active: 'Active',
+  salman_kuwait: 'Salman - Kuwait',
+  tasos_kyriakides: 'Tasos Kyriakides',
+  other: 'Other',
+  demos: 'Demos',
+  inactive: 'Inactive',
+};
+
+const ALL_GROUPS = ['active', 'salman_kuwait', 'tasos_kyriakides', 'other', 'demos', 'inactive'];
 
 function ProjectCard({ project }: { project: Project }) {
   const { isAdmin, isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
+
+  // Get type config
+  const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
+  const platformConfig = project.deployment_platform
+    ? PLATFORM_CONFIG[project.deployment_platform]
+    : null;
   const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
+
   const progress =
     project.project_group === 'finished'
       ? 100
@@ -102,40 +171,75 @@ function ProjectCard({ project }: { project: Project }) {
   };
 
   const showAdminActions = isAdmin || isSuperAdmin;
+  const TypeIcon = typeConfig?.icon || Folder;
+  const PlatformIcon = platformConfig?.icon;
 
   return (
-    <div className="surface group relative flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 hover:bg-secondary/50">
-      <Link href={`/projects/${project.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-        <div className={cn('flex-shrink-0 rounded-md p-1.5', groupConfig.bgColor)}>
-          <Folder className={cn('h-3.5 w-3.5', groupConfig.color)} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-            {project.name}
-          </h3>
-        </div>
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <div className="h-1 w-16 overflow-hidden rounded-full bg-secondary">
-            <div
-              className={cn(
-                'h-full rounded-full',
-                progress >= 70 ? 'bg-emerald-500' : progress >= 30 ? 'bg-amber-500' : 'bg-blue-500'
-              )}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span
+    <div className="surface group relative flex flex-col gap-2 rounded-lg p-3 transition-all duration-200 hover:bg-secondary/50">
+      <Link href={`/projects/${project.id}`} className="flex flex-col gap-2">
+        {/* Top row: Type icon + Name + Progress */}
+        <div className="flex items-center gap-3">
+          <div
             className={cn(
-              'w-8 text-xs font-medium tabular-nums',
-              progress >= 70
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : progress >= 30
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-blue-600 dark:text-blue-400'
+              'flex-shrink-0 rounded-md p-1.5',
+              typeConfig ? typeConfig.bgColor : groupConfig.bgColor
             )}
           >
-            {progress}%
-          </span>
+            <TypeIcon
+              className={cn('h-4 w-4', typeConfig ? typeConfig.color : groupConfig.color)}
+            />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+              {project.name}
+            </h3>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-2">
+            <div className="h-1 w-12 overflow-hidden rounded-full bg-secondary">
+              <div
+                className={cn(
+                  'h-full rounded-full',
+                  progress >= 70
+                    ? 'bg-emerald-500'
+                    : progress >= 30
+                      ? 'bg-amber-500'
+                      : 'bg-blue-500'
+                )}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span
+              className={cn(
+                'w-7 text-xs font-medium tabular-nums',
+                progress >= 70
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : progress >= 30
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-blue-600 dark:text-blue-400'
+              )}
+            >
+              {progress}%
+            </span>
+          </div>
+        </div>
+
+        {/* Bottom row: Client + Platform */}
+        <div className="flex items-center gap-3 pl-9">
+          {project.client_name && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Building className="h-3 w-3" />
+              <span className="max-w-[120px] truncate">{project.client_name}</span>
+            </div>
+          )}
+          {PlatformIcon && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <PlatformIcon className="h-3 w-3" />
+              <span>{platformConfig?.label}</span>
+            </div>
+          )}
+          {!project.client_name && !platformConfig && typeConfig && (
+            <span className="text-xs text-muted-foreground">{typeConfig.label}</span>
+          )}
         </div>
       </Link>
 
@@ -144,7 +248,7 @@ function ProjectCard({ project }: { project: Project }) {
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                'flex-shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
+                'absolute right-2 top-2 flex-shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
                 isPending && 'animate-pulse opacity-100'
               )}
               onClick={(e) => e.stopPropagation()}
@@ -183,7 +287,6 @@ function ProjectCard({ project }: { project: Project }) {
                 <DropdownMenuItem
                   className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
                   onClick={() => {
-                    // Navigate to project detail for deletion
                     window.location.href = `/projects/${project.id}`;
                   }}
                 >
@@ -199,15 +302,14 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-export function ProjectList({ projects }: ProjectListProps) {
+export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-  // Check if we're showing mixed active groups
-  const hasMultipleGroups =
-    projects.some((p) => p.project_group === 'salman_kuwait') ||
-    projects.some((p) => p.project_group === 'tasos_kyriakides');
+  // Filter by project type if specified
+  const filteredProjects =
+    filterType === 'all' ? projects : projects.filter((p) => p.project_type === filterType);
 
-  // Sort projects: 100% complete projects go to bottom within each group
+  // Sort projects: 100% complete projects go to bottom
   const getProgress = (p: Project) => {
     if (p.project_group === 'finished') return 100;
     if (p.roadmap_progress !== undefined && p.roadmap_progress > 0) return p.roadmap_progress;
@@ -215,17 +317,24 @@ export function ProjectList({ projects }: ProjectListProps) {
     return 0;
   };
 
-  const sortProjects = (projectList: Project[]) => {
-    return [...projectList].sort((a, b) => {
-      const progressA = getProgress(a);
-      const progressB = getProgress(b);
-      if (progressA === 100 && progressB !== 100) return 1;
-      if (progressB === 100 && progressA !== 100) return -1;
-      return progressB - progressA;
-    });
+  const sortedProjects = [...filteredProjects].sort((a, b) => {
+    const progressA = getProgress(a);
+    const progressB = getProgress(b);
+    if (progressA === 100 && progressB !== 100) return 1;
+    if (progressB === 100 && progressA !== 100) return -1;
+    return progressB - progressA;
+  });
+
+  // Count projects by type
+  const typeCounts = {
+    web_design: projects.filter((p) => p.project_type === 'web_design').length,
+    ai_agent: projects.filter((p) => p.project_type === 'ai_agent').length,
+    seo: projects.filter((p) => p.project_type === 'seo').length,
+    ads: projects.filter((p) => p.project_type === 'ads').length,
+    untyped: projects.filter((p) => !p.project_type).length,
   };
 
-  if (projects.length === 0) {
+  if (filteredProjects.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
         <div className="mb-4 rounded-xl bg-muted p-4">
@@ -233,29 +342,17 @@ export function ProjectList({ projects }: ProjectListProps) {
         </div>
         <p className="font-medium text-foreground">No projects found</p>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create your first project to get started
+          {filterType === 'all'
+            ? 'Create your first project to get started'
+            : `No ${PROJECT_TYPE_CONFIG[filterType]?.label || filterType} projects yet`}
         </p>
       </div>
     );
   }
 
-  // Group projects by owner for active view
-  const salmanProjects = sortProjects(projects.filter((p) => p.project_group === 'salman_kuwait'));
-  const tasosProjects = sortProjects(
-    projects.filter((p) => p.project_group === 'tasos_kyriakides')
-  );
-  const otherProjects = sortProjects(
-    projects.filter((p) => p.project_group === 'active' || p.project_group === 'other')
-  );
-
-  // For non-grouped views (demos, inactive)
-  const sortedProjects = sortProjects(projects);
-
-  const totalProjects = projects.length;
-
-  const renderGrid = (projectList: Project[]) => (
-    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
-      {projectList.map((project, index) => (
+  const renderGrid = () => (
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+      {sortedProjects.map((project, index) => (
         <div key={project.id} className="slide-in" style={{ animationDelay: `${index * 30}ms` }}>
           <ProjectCard project={project} />
         </div>
@@ -263,9 +360,9 @@ export function ProjectList({ projects }: ProjectListProps) {
     </div>
   );
 
-  const renderList = (projectList: Project[]) => (
-    <div className="space-y-1.5">
-      {projectList.map((project, index) => (
+  const renderList = () => (
+    <div className="space-y-2">
+      {sortedProjects.map((project, index) => (
         <div key={project.id} className="slide-in" style={{ animationDelay: `${index * 25}ms` }}>
           <ProjectCard project={project} />
         </div>
@@ -280,30 +377,40 @@ export function ProjectList({ projects }: ProjectListProps) {
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
             <span className="text-xl font-semibold tabular-nums text-foreground">
-              {totalProjects}
+              {filteredProjects.length}
             </span>
-            <span className="text-sm text-muted-foreground">projects</span>
+            <span className="text-sm text-muted-foreground">
+              project{filteredProjects.length !== 1 ? 's' : ''}
+            </span>
           </div>
-          {hasMultipleGroups && (
+
+          {/* Type breakdown */}
+          {filterType === 'all' && (
             <>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center gap-4 text-xs">
-                {otherProjects.length > 0 && (
+                {typeCounts.web_design > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-violet-500" />
-                    <span className="text-muted-foreground">{otherProjects.length} Active</span>
+                    <Globe className="h-3 w-3 text-blue-500" />
+                    <span className="text-muted-foreground">{typeCounts.web_design}</span>
                   </div>
                 )}
-                {salmanProjects.length > 0 && (
+                {typeCounts.ai_agent > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                    <span className="text-muted-foreground">{salmanProjects.length} Salman</span>
+                    <Bot className="h-3 w-3 text-purple-500" />
+                    <span className="text-muted-foreground">{typeCounts.ai_agent}</span>
                   </div>
                 )}
-                {tasosProjects.length > 0 && (
+                {typeCounts.seo > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                    <span className="text-muted-foreground">{tasosProjects.length} Tasos</span>
+                    <Search className="h-3 w-3 text-green-500" />
+                    <span className="text-muted-foreground">{typeCounts.seo}</span>
+                  </div>
+                )}
+                {typeCounts.ads > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Megaphone className="h-3 w-3 text-orange-500" />
+                    <span className="text-muted-foreground">{typeCounts.ads}</span>
                   </div>
                 )}
               </div>
@@ -340,90 +447,8 @@ export function ProjectList({ projects }: ProjectListProps) {
         </div>
       </div>
 
-      {/* Content - Grouped in Columns or Flat */}
-      {hasMultipleGroups ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* Active/Other Projects Column */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-1">
-              <span className="h-2 w-2 rounded-full bg-violet-500" />
-              <h3 className="text-sm font-medium text-foreground">Active</h3>
-              <span className="text-xs text-muted-foreground">({otherProjects.length})</span>
-            </div>
-            <div className="space-y-1.5">
-              {otherProjects.map((project, index) => (
-                <div
-                  key={project.id}
-                  className="slide-in"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <ProjectCard project={project} />
-                </div>
-              ))}
-              {otherProjects.length === 0 && (
-                <div className="surface rounded-lg p-4 text-center text-sm text-muted-foreground">
-                  No projects
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Salman's Projects Column */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-1">
-              <span className="h-2 w-2 rounded-full bg-amber-500" />
-              <h3 className="text-sm font-medium text-foreground">Salman</h3>
-              <span className="text-xs text-muted-foreground">({salmanProjects.length})</span>
-            </div>
-            <div className="space-y-1.5">
-              {salmanProjects.map((project, index) => (
-                <div
-                  key={project.id}
-                  className="slide-in"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <ProjectCard project={project} />
-                </div>
-              ))}
-              {salmanProjects.length === 0 && (
-                <div className="surface rounded-lg p-4 text-center text-sm text-muted-foreground">
-                  No projects
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Tasos's Projects Column */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-1">
-              <span className="h-2 w-2 rounded-full bg-blue-500" />
-              <h3 className="text-sm font-medium text-foreground">Tasos</h3>
-              <span className="text-xs text-muted-foreground">({tasosProjects.length})</span>
-            </div>
-            <div className="space-y-1.5">
-              {tasosProjects.map((project, index) => (
-                <div
-                  key={project.id}
-                  className="slide-in"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <ProjectCard project={project} />
-                </div>
-              ))}
-              {tasosProjects.length === 0 && (
-                <div className="surface rounded-lg p-4 text-center text-sm text-muted-foreground">
-                  No projects
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : // Flat list for demos, inactive, etc.
-      viewMode === 'grid' ? (
-        renderGrid(sortedProjects)
-      ) : (
-        renderList(sortedProjects)
-      )}
+      {/* Content */}
+      {viewMode === 'grid' ? renderGrid() : renderList()}
     </div>
   );
 }

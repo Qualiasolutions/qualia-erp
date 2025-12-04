@@ -54,12 +54,50 @@ export const createProjectSchema = z.object({
     .enum(['web_design', 'ai_agent', 'seo', 'ads'] as const)
     .optional()
     .nullable(),
+  deployment_platform: z
+    .enum(['vercel', 'squarespace', 'railway'] as const)
+    .optional()
+    .nullable(),
   team_id: z.string().uuid('Invalid team ID').optional().nullable(),
   client_id: z.string().uuid('Invalid client ID').optional().nullable(),
   lead_id: z.string().uuid('Invalid lead ID').optional().nullable(),
   start_date: z.string().optional().nullable(),
   target_date: z.string().optional().nullable(),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
+});
+
+// Schema for the project creation wizard (with required fields)
+export const createProjectWizardSchema = z.object({
+  name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
+  description: z.string().max(5000, 'Description too long').optional().nullable(),
+  project_type: z.enum(['web_design', 'ai_agent', 'seo', 'ads'] as const, {
+    message: 'Project type is required',
+  }),
+  deployment_platform: z.enum(['vercel', 'squarespace', 'railway'] as const, {
+    message: 'Deployment platform is required',
+  }),
+  client_id: z.string().uuid('Invalid client ID'),
+  team_id: z.string().uuid('Invalid team ID'),
+  workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
+  // Roadmap customization
+  phases: z
+    .array(
+      z.object({
+        name: z.string().min(1, 'Phase name is required').max(200),
+        description: z.string().max(2000).optional().nullable(),
+        template_key: z.string().max(100).optional().nullable(),
+        items: z
+          .array(
+            z.object({
+              title: z.string().min(1, 'Item title is required').max(500),
+              description: z.string().max(2000).optional().nullable(),
+              template_key: z.string().max(100).optional().nullable(),
+            })
+          )
+          .optional(),
+      })
+    )
+    .optional(),
 });
 
 export const updateProjectSchema = z.object({
@@ -83,6 +121,10 @@ export const updateProjectSchema = z.object({
     .nullable(),
   project_type: z
     .enum(['web_design', 'ai_agent', 'seo', 'ads'] as const)
+    .optional()
+    .nullable(),
+  deployment_platform: z
+    .enum(['vercel', 'squarespace', 'railway'] as const)
     .optional()
     .nullable(),
   team_id: z.string().uuid().optional().nullable(),
@@ -313,6 +355,7 @@ export function validateData<T>(
 export type CreateIssueInput = z.infer<typeof createIssueSchema>;
 export type UpdateIssueInput = z.infer<typeof updateIssueSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type CreateProjectWizardInput = z.infer<typeof createProjectWizardSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type CreateTeamInput = z.infer<typeof createTeamSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;

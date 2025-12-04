@@ -1,22 +1,17 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
-import { ProjectList, Project } from '@/components/project-list';
+import { ProjectList, type Project } from '@/components/project-list';
 import { createClient } from '@/lib/supabase/server';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { ProjectGroupTabs } from '@/components/project-group-tabs';
+import { ProjectTypeTabs } from '@/components/project-type-tabs';
 import { Folder } from 'lucide-react';
+import type { ProjectType } from '@/types/database';
 
-export type ProjectGroup =
-  | 'salman_kuwait'
-  | 'tasos_kyriakides'
-  | 'inactive'
-  | 'active'
-  | 'demos'
-  | 'other';
+type FilterType = ProjectType | 'all';
 
 interface FilterParams {
-  group?: ProjectGroup;
+  type?: FilterType;
 }
 
 async function ProjectListLoader({ filters }: { filters: FilterParams }) {
@@ -34,52 +29,49 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
   }
 
   // Map RPC result to Project interface
-  let projects: Project[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
-    id: p.id,
-    name: p.name,
-    status: p.status,
-    target_date: p.target_date,
-    project_group: p.project_group,
+  const projects: Project[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
+    id: p.id as string,
+    name: p.name as string,
+    status: p.status as string,
+    target_date: p.target_date as string | null,
+    project_group: p.project_group as string | null,
+    project_type: p.project_type as ProjectType | null,
+    deployment_platform: p.deployment_platform as string | null,
+    client_id: p.client_id as string | null,
+    client_name: p.client_name as string | null,
     lead: p.lead_id
       ? {
-          id: p.lead_id,
-          full_name: p.lead_full_name,
-          email: p.lead_email,
+          id: p.lead_id as string,
+          full_name: p.lead_full_name as string | null,
+          email: p.lead_email as string | null,
         }
       : null,
     issue_stats: {
       total: Number(p.total_issues),
       done: Number(p.done_issues),
     },
-    roadmap_progress: p.roadmap_progress || 0,
+    roadmap_progress: (p.roadmap_progress as number) || 0,
   }));
 
-  // Filter by project group (default to 'active')
-  const group = filters.group || 'active';
+  // Get the filter type (default to 'all')
+  const filterType = filters.type || 'all';
 
-  if (group === 'active') {
-    // 'active' shows all active projects including salman, tasos, other subgroups
-    projects = projects.filter(
-      (p) =>
-        p.project_group === 'active' ||
-        p.project_group === 'salman_kuwait' ||
-        p.project_group === 'tasos_kyriakides' ||
-        p.project_group === 'other'
-    );
-  } else {
-    projects = projects.filter((p) => p.project_group === group);
-  }
-
-  return <ProjectList projects={projects} />;
+  return <ProjectList projects={projects} filterType={filterType} />;
 }
 
 function ProjectListSkeleton() {
   const CardSkeleton = () => (
-    <div className="surface flex items-center gap-3 rounded-lg px-3 py-2.5">
-      <div className="h-7 w-7 animate-pulse rounded-md bg-muted" />
-      <div className="h-4 flex-1 animate-pulse rounded bg-muted" />
-      <div className="h-1 w-16 animate-pulse rounded-full bg-muted" />
-      <div className="h-3 w-8 animate-pulse rounded bg-muted" />
+    <div className="surface flex flex-col gap-2 rounded-lg p-3">
+      <div className="flex items-center gap-3">
+        <div className="h-7 w-7 animate-pulse rounded-md bg-muted" />
+        <div className="h-4 flex-1 animate-pulse rounded bg-muted" />
+        <div className="h-1 w-12 animate-pulse rounded-full bg-muted" />
+        <div className="h-3 w-7 animate-pulse rounded bg-muted" />
+      </div>
+      <div className="flex items-center gap-3 pl-9">
+        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+        <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+      </div>
     </div>
   );
 
@@ -94,9 +86,10 @@ function ProjectListSkeleton() {
           </div>
           <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-4">
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-14 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
           </div>
         </div>
         <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
@@ -104,44 +97,11 @@ function ProjectListSkeleton() {
           <div className="h-8 w-8 animate-pulse rounded bg-muted" />
         </div>
       </div>
-      {/* Columns skeleton */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Active column */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-2 w-2 rounded-full bg-violet-500" />
-            <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="space-y-1.5">
-            {[...Array(4)].map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-        {/* Salman column */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-2 w-2 rounded-full bg-amber-500" />
-            <div className="h-4 w-14 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="space-y-1.5">
-            {[...Array(5)].map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
-        {/* Tasos column */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-2 w-2 rounded-full bg-blue-500" />
-            <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="space-y-1.5">
-            {[...Array(4)].map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
+      {/* Grid skeleton */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(9)].map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
       </div>
     </div>
   );
@@ -172,9 +132,9 @@ export default async function ProjectsPage({
         </div>
       </header>
 
-      {/* Group Tabs */}
+      {/* Type Tabs */}
       <div className="border-b border-border bg-background px-6 py-3">
-        <ProjectGroupTabs currentGroup={filters.group} />
+        <ProjectTypeTabs currentType={filters.type} />
       </div>
 
       {/* Content */}
