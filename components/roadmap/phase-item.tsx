@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Link2, ExternalLink, HelpCircle, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
+import { Link2, HelpCircle, MoreHorizontal, Trash2, Pencil } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,6 @@ import { togglePhaseItem, deletePhaseItem } from '@/app/actions';
 import { LinkIssueDialog } from './link-issue-dialog';
 import { EditItemDialog } from './edit-item-dialog';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import type { PhaseItemData } from './project-roadmap';
 
 interface PhaseItemProps {
@@ -83,14 +82,13 @@ export function PhaseItem({ item, projectId, onUpdate }: PhaseItemProps) {
 
           {/* Linked Issue */}
           {item.linked_issue && (
-            <Link
-              href={`/issues/${item.linked_issue.id}`}
-              className="mt-1 inline-flex items-center gap-1 text-xs text-qualia-400 hover:underline"
-            >
+            <div className="mt-1 inline-flex items-center gap-1 text-xs text-qualia-400">
               <Link2 className="h-3 w-3" />
-              {item.linked_issue.title}
-              <ExternalLink className="h-3 w-3" />
-            </Link>
+              <span>{item.linked_issue.title}</span>
+              <span className="rounded bg-muted px-1 py-0.5 text-[10px]">
+                {item.linked_issue.status}
+              </span>
+            </div>
           )}
 
           {/* Completed by */}

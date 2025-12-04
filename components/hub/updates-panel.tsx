@@ -185,13 +185,10 @@ export function UpdatesPanel({ workspaceId }: UpdatesPanelProps) {
 
                 if (activity.issue) {
                   targetName = activity.issue.title;
-                  targetLink = `/issues/${activity.issue.id}`;
+                  targetLink = ''; // Tasks are shown in modal, no page link
                 } else if (activity.project) {
                   targetName = activity.project.name;
                   targetLink = `/projects/${activity.project.id}`;
-                } else if (activity.team) {
-                  targetName = activity.team.name;
-                  targetLink = `/teams/${activity.team.id}`;
                 } else if (activity.meeting) {
                   targetName = activity.meeting.title;
                   targetLink = '/schedule';

@@ -167,7 +167,7 @@ export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCard
       {/* Phase Items */}
       {isExpanded && (
         <div className="border-t border-border">
-          <div className="space-y-1 p-2">
+          <div className="grid grid-cols-1 gap-1 p-2 sm:grid-cols-2 lg:grid-cols-3">
             {phase.items?.map((item) => (
               <PhaseItem key={item.id} item={item} projectId={projectId} onUpdate={onUpdate} />
             ))}

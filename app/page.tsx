@@ -4,15 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getRecentActivities, getCurrentWorkspaceId } from '@/app/actions';
 import { ActivityFeed } from '@/components/activity-feed';
 import Link from 'next/link';
-import {
-  Folder,
-  ArrowUpRight,
-  Circle,
-  Users,
-  Calendar,
-  Briefcase,
-  MessageCircle,
-} from 'lucide-react';
+import { Folder, ArrowUpRight, Circle, Users, Calendar, MessageCircle } from 'lucide-react';
 import { DashboardActiveUsers } from '@/components/dashboard-active-users';
 
 interface DashboardStats {
@@ -192,9 +184,9 @@ function QuickNav() {
       color: 'bg-primary/10 text-primary',
     },
     {
-      label: 'Issues',
-      href: '/issues',
-      icon: Briefcase,
+      label: 'Hub',
+      href: '/hub',
+      icon: MessageCircle,
       color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
     },
   ];
@@ -275,10 +267,10 @@ export default function Home() {
                 </div>
               </div>
               <Link
-                href="/issues"
+                href="/hub"
                 className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
               >
-                View all issues →
+                Open Hub →
               </Link>
             </div>
             <div className="max-h-[400px] overflow-y-auto p-4">

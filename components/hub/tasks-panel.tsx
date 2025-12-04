@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { QuickTaskModal } from './quick-task-modal';
-import Link from 'next/link';
+import { IssueDetailModal } from './issue-detail-modal';
 
 interface TasksPanelProps {
   workspaceId: string;
@@ -50,6 +50,8 @@ export function TasksPanel({ workspaceId }: TasksPanelProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadTasks() {
@@ -159,11 +161,14 @@ export function TasksPanel({ workspaceId }: TasksPanelProps) {
               const StatusIcon = statusConfig.icon;
 
               return (
-                <Link
+                <button
                   key={task.id}
-                  href={`/issues/${task.id}`}
+                  onClick={() => {
+                    setSelectedTaskId(task.id);
+                    setIsDetailModalOpen(true);
+                  }}
                   className={cn(
-                    'group flex cursor-pointer items-start gap-3 rounded-lg p-3 transition-colors hover:bg-secondary/50',
+                    'group flex w-full cursor-pointer items-start gap-3 rounded-lg p-3 text-left transition-colors hover:bg-secondary/50',
                     'slide-in'
                   )}
                   style={{ animationDelay: `${index * 30}ms` }}
@@ -195,7 +200,7 @@ export function TasksPanel({ workspaceId }: TasksPanelProps) {
                       </span>
                     </div>
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -208,6 +213,15 @@ export function TasksPanel({ workspaceId }: TasksPanelProps) {
         onOpenChange={setIsModalOpen}
         workspaceId={workspaceId}
         onCreated={handleTaskCreated}
+      />
+
+      {/* Issue Detail Modal */}
+      <IssueDetailModal
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        issueId={selectedTaskId}
+        workspaceId={workspaceId}
+        onUpdate={handleTaskCreated}
       />
     </div>
   );
