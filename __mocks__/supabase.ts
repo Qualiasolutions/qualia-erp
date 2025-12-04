@@ -17,7 +17,8 @@ export const mockSupabaseClient = {
       data: { subscription: { unsubscribe: jest.fn() } },
     })),
   },
-  from: jest.fn((table: string) => ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  from: jest.fn((_table: string) => ({
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),

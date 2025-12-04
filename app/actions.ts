@@ -2761,7 +2761,20 @@ export async function getWorkspaceMembers(workspaceId: string) {
     return [];
   }
 
-  return members?.map((m: { profile: Profile }) => m.profile) || [];
+  return (
+    members
+      ?.map(
+        (m: {
+          profile: {
+            id: string;
+            full_name: string | null;
+            email: string | null;
+            avatar_url: string | null;
+          }[];
+        }) => (Array.isArray(m.profile) ? m.profile[0] : m.profile)
+      )
+      .filter(Boolean) || []
+  );
 }
 
 // Get tasks for hub (simplified issue list)
@@ -2808,7 +2821,12 @@ export async function getHubTasks(
   return (tasks || []).map((task) => ({
     ...task,
     project: Array.isArray(task.project) ? task.project[0] || null : task.project,
-    assignees: (task.assignees || []).map((a: { profile: Profile }) => a.profile),
+    assignees: (task.assignees || [])
+      .map(
+        (a: { profile: { id: string; full_name: string | null; avatar_url: string | null }[] }) =>
+          Array.isArray(a.profile) ? a.profile[0] : a.profile
+      )
+      .filter(Boolean),
   }));
 }
 

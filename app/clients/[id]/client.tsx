@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft,
   Building2,
@@ -16,34 +16,29 @@ import {
   PhoneCall,
   StickyNote,
   Clock,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+} from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   getClientById,
   updateClientRecord,
   deleteClientRecord,
   logClientActivity,
   type LeadStatus,
-} from "@/app/actions";
-import Link from "next/link";
-import { formatDistanceToNow } from "date-fns";
+} from '@/app/actions';
+import Link from 'next/link';
+import { formatDistanceToNow } from 'date-fns';
 
 type Client = {
   id: string;
@@ -69,29 +64,29 @@ type Client = {
     id: string;
     type: string;
     description: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     created_at: string;
     created_by: { id: string; full_name: string | null; email: string | null } | null;
   }>;
 };
 
 const statusColors: Record<LeadStatus, string> = {
-  dropped: "bg-gray-500/20 text-gray-400 border-gray-500/30",
-  cold: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  hot: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  active_client: "bg-green-500/20 text-green-400 border-green-500/30",
-  inactive_client: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+  dropped: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  cold: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  hot: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
+  active_client: 'bg-green-500/20 text-green-400 border-green-500/30',
+  inactive_client: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
 };
 
 const statusLabels: Record<LeadStatus, string> = {
-  dropped: "Dropped Lead",
-  cold: "Cold Lead",
-  hot: "Hot Lead",
-  active_client: "Active Client",
-  inactive_client: "Inactive Client",
+  dropped: 'Dropped Lead',
+  cold: 'Cold Lead',
+  hot: 'Hot Lead',
+  active_client: 'Active Client',
+  inactive_client: 'Inactive Client',
 };
 
-const activityIcons: Record<string, any> = {
+const activityIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   call: PhoneCall,
   email: Mail,
   meeting: Calendar,
@@ -106,29 +101,29 @@ export default function ClientDetailClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddingActivity, setIsAddingActivity] = useState(false);
-  const [activityType, setActivityType] = useState<"call" | "email" | "meeting" | "note">("note");
-  const [activityDescription, setActivityDescription] = useState("");
+  const [activityType, setActivityType] = useState<'call' | 'email' | 'meeting' | 'note'>('note');
+  const [activityDescription, setActivityDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const loadClient = useCallback(async () => {
+    setIsLoading(true);
+    const data = await getClientById(params.id as string);
+    setClient(data as Client);
+    setIsLoading(false);
+  }, [params.id]);
 
   useEffect(() => {
     if (params.id) {
       loadClient();
     }
-  }, [params.id]);
-
-  async function loadClient() {
-    setIsLoading(true);
-    const data = await getClientById(params.id as string);
-    setClient(data as Client);
-    setIsLoading(false);
-  }
+  }, [params.id, loadClient]);
 
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
-    formData.set("id", params.id as string);
+    formData.set('id', params.id as string);
 
     const result = await updateClientRecord(formData);
 
@@ -141,11 +136,11 @@ export default function ClientDetailClient() {
   }
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this client?")) return;
+    if (!confirm('Are you sure you want to delete this client?')) return;
 
     const result = await deleteClientRecord(params.id as string);
     if (result.success) {
-      router.push("/clients");
+      router.push('/clients');
     }
   }
 
@@ -153,15 +148,11 @@ export default function ClientDetailClient() {
     if (!activityDescription.trim()) return;
 
     setIsSubmitting(true);
-    const result = await logClientActivity(
-      params.id as string,
-      activityType,
-      activityDescription
-    );
+    const result = await logClientActivity(params.id as string, activityType, activityDescription);
 
     if (result.success) {
       setIsAddingActivity(false);
-      setActivityDescription("");
+      setActivityDescription('');
       loadClient();
     }
 
@@ -170,13 +161,13 @@ export default function ClientDetailClient() {
 
   if (isLoading) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="mx-auto max-w-4xl p-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-1/3 mb-4" />
-          <div className="h-4 bg-muted rounded w-1/4 mb-8" />
+          <div className="mb-4 h-8 w-1/3 rounded bg-muted" />
+          <div className="mb-8 h-4 w-1/4 rounded bg-muted" />
           <div className="space-y-4">
-            <div className="h-32 bg-muted rounded" />
-            <div className="h-48 bg-muted rounded" />
+            <div className="h-32 rounded bg-muted" />
+            <div className="h-48 rounded bg-muted" />
           </div>
         </div>
       </div>
@@ -185,11 +176,11 @@ export default function ClientDetailClient() {
 
   if (!client) {
     return (
-      <div className="p-6 max-w-4xl mx-auto text-center">
-        <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-        <h2 className="text-xl font-semibold mb-2">Client not found</h2>
-        <p className="text-muted-foreground mb-4">
-          The client you're looking for doesn't exist or has been deleted.
+      <div className="mx-auto max-w-4xl p-6 text-center">
+        <Building2 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+        <h2 className="mb-2 text-xl font-semibold">Client not found</h2>
+        <p className="mb-4 text-muted-foreground">
+          The client you&apos;re looking for doesn&apos;t exist or has been deleted.
         </p>
         <Button asChild>
           <Link href="/clients">Back to Clients</Link>
@@ -199,49 +190,51 @@ export default function ClientDetailClient() {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-4xl p-6">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="mb-6 flex items-center gap-4">
         <Button variant="ghost" size="icon" asChild>
           <Link href="/clients">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="h-5 w-5" />
           </Link>
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-foreground">
-              {client.display_name}
-            </h1>
+            <h1 className="text-2xl font-semibold text-foreground">{client.display_name}</h1>
             <Badge variant="outline" className={statusColors[client.lead_status]}>
               {statusLabels[client.lead_status]}
             </Badge>
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             Added {formatDistanceToNow(new Date(client.created_at))} ago
             {client.creator && ` by ${client.creator.full_name || client.creator.email}`}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsEditing(true)}>
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
-          <Button variant="outline" onClick={handleDelete} className="text-red-500 hover:text-red-600">
-            <Trash2 className="w-4 h-4" />
+          <Button
+            variant="outline"
+            onClick={handleDelete}
+            className="text-red-500 hover:text-red-600"
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main Info */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6 lg:col-span-2">
           {/* Contact Info Card */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="font-semibold mb-4">Contact Information</h2>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-4 font-semibold">Contact Information</h2>
             <div className="space-y-3">
               {client.phone && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <Phone className="h-4 w-4 text-muted-foreground" />
                   <a href={`tel:${client.phone}`} className="hover:text-qualia-400">
                     {client.phone}
                   </a>
@@ -249,9 +242,13 @@ export default function ClientDetailClient() {
               )}
               {client.website && (
                 <div className="flex items-center gap-3 text-sm">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
+                  <Globe className="h-4 w-4 text-muted-foreground" />
                   <a
-                    href={client.website.startsWith("http") ? client.website : `https://${client.website}`}
+                    href={
+                      client.website.startsWith('http')
+                        ? client.website
+                        : `https://${client.website}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-qualia-400"
@@ -262,38 +259,36 @@ export default function ClientDetailClient() {
               )}
               {client.billing_address && (
                 <div className="flex items-center gap-3 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
                   <span>{client.billing_address}</span>
                 </div>
               )}
               {!client.phone && !client.website && !client.billing_address && (
-                <p className="text-muted-foreground text-sm">No contact information available</p>
+                <p className="text-sm text-muted-foreground">No contact information available</p>
               )}
             </div>
           </div>
 
           {/* Notes Card */}
           {client.notes && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h2 className="font-semibold mb-3">Notes</h2>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {client.notes}
-              </p>
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h2 className="mb-3 font-semibold">Notes</h2>
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{client.notes}</p>
             </div>
           )}
 
           {/* Activity Timeline */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="font-semibold">Activity Timeline</h2>
               <Button size="sm" onClick={() => setIsAddingActivity(true)}>
-                <MessageSquare className="w-4 h-4 mr-2" />
+                <MessageSquare className="mr-2 h-4 w-4" />
                 Log Activity
               </Button>
             </div>
 
             {client.activities.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-6">
+              <p className="py-6 text-center text-sm text-muted-foreground">
                 No activity logged yet
               </p>
             ) : (
@@ -302,16 +297,14 @@ export default function ClientDetailClient() {
                   const Icon = activityIcons[activity.type] || MessageSquare;
                   return (
                     <div key={activity.id} className="flex gap-3">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-muted-foreground" />
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-muted">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm">{activity.description}</p>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {formatDistanceToNow(new Date(activity.created_at))} ago
-                          </span>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatDistanceToNow(new Date(activity.created_at))} ago</span>
                           {activity.created_by && (
                             <>
                               <span>by</span>
@@ -333,8 +326,8 @@ export default function ClientDetailClient() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Quick Stats */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="font-semibold mb-4">Quick Stats</h2>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-4 font-semibold">Quick Stats</h2>
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Status</span>
@@ -347,9 +340,7 @@ export default function ClientDetailClient() {
               {client.last_contacted_at && (
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Last Contact</span>
-                  <span>
-                    {formatDistanceToNow(new Date(client.last_contacted_at))} ago
-                  </span>
+                  <span>{formatDistanceToNow(new Date(client.last_contacted_at))} ago</span>
                 </div>
               )}
               {client.assigned && (
@@ -362,40 +353,40 @@ export default function ClientDetailClient() {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-card border border-border rounded-xl p-5">
-            <h2 className="font-semibold mb-4">Quick Actions</h2>
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h2 className="mb-4 font-semibold">Quick Actions</h2>
             <div className="space-y-2">
               <Button
                 variant="outline"
                 className="w-full justify-start"
                 onClick={() => {
-                  setActivityType("call");
+                  setActivityType('call');
                   setIsAddingActivity(true);
                 }}
               >
-                <PhoneCall className="w-4 h-4 mr-2" />
+                <PhoneCall className="mr-2 h-4 w-4" />
                 Log Call
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start"
                 onClick={() => {
-                  setActivityType("email");
+                  setActivityType('email');
                   setIsAddingActivity(true);
                 }}
               >
-                <Mail className="w-4 h-4 mr-2" />
+                <Mail className="mr-2 h-4 w-4" />
                 Log Email
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start"
                 onClick={() => {
-                  setActivityType("meeting");
+                  setActivityType('meeting');
                   setIsAddingActivity(true);
                 }}
               >
-                <Calendar className="w-4 h-4 mr-2" />
+                <Calendar className="mr-2 h-4 w-4" />
                 Log Meeting
               </Button>
             </div>
@@ -424,20 +415,12 @@ export default function ClientDetailClient() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_phone">Phone</Label>
-                <Input
-                  id="edit_phone"
-                  name="phone"
-                  defaultValue={client.phone || ""}
-                />
+                <Input id="edit_phone" name="phone" defaultValue={client.phone || ''} />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit_website">Website</Label>
-                <Input
-                  id="edit_website"
-                  name="website"
-                  defaultValue={client.website || ""}
-                />
+                <Input id="edit_website" name="website" defaultValue={client.website || ''} />
               </div>
             </div>
 
@@ -446,7 +429,7 @@ export default function ClientDetailClient() {
               <Input
                 id="edit_billing_address"
                 name="billing_address"
-                defaultValue={client.billing_address || ""}
+                defaultValue={client.billing_address || ''}
               />
             </div>
 
@@ -468,20 +451,11 @@ export default function ClientDetailClient() {
 
             <div className="space-y-2">
               <Label htmlFor="edit_notes">Notes</Label>
-              <Textarea
-                id="edit_notes"
-                name="notes"
-                defaultValue={client.notes || ""}
-                rows={3}
-              />
+              <Textarea id="edit_notes" name="notes" defaultValue={client.notes || ''} rows={3} />
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsEditing(false)}
-              >
+              <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
               <Button
@@ -489,7 +463,7 @@ export default function ClientDetailClient() {
                 disabled={isSubmitting}
                 className="bg-qualia-600 hover:bg-qualia-700"
               >
-                {isSubmitting ? "Saving..." : "Save Changes"}
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
           </form>
@@ -533,10 +507,7 @@ export default function ClientDetailClient() {
             </div>
 
             <div className="flex justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsAddingActivity(false)}
-              >
+              <Button variant="outline" onClick={() => setIsAddingActivity(false)}>
                 Cancel
               </Button>
               <Button
@@ -544,7 +515,7 @@ export default function ClientDetailClient() {
                 disabled={isSubmitting || !activityDescription.trim()}
                 className="bg-qualia-600 hover:bg-qualia-700"
               >
-                {isSubmitting ? "Logging..." : "Log Activity"}
+                {isSubmitting ? 'Logging...' : 'Log Activity'}
               </Button>
             </div>
           </div>

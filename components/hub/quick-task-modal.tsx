@@ -34,7 +34,8 @@ interface Project {
 interface Member {
   id: string;
   full_name: string | null;
-  email: string;
+  email: string | null;
+  avatar_url?: string | null;
 }
 
 export function QuickTaskModal({
@@ -123,7 +124,10 @@ export function QuickTaskModal({
 
           <div>
             <Combobox
-              options={members.map((m) => ({ value: m.id, label: m.full_name || m.email }))}
+              options={members.map((m) => ({
+                value: m.id,
+                label: m.full_name || m.email || 'Unknown',
+              }))}
               value={selectedAssignee ?? undefined}
               onSelect={setSelectedAssignee}
               placeholder="Assignee..."
