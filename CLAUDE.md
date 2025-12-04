@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Qualia is a multi-tenant project management and issue tracking platform built with Next.js 15+ (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired UI with sidebar navigation, command palette (Cmd+K), workspace switching, and a context-aware AI assistant with tool calling.
+Qualia is a multi-tenant project management and issue tracking platform built with Next.js 15+ (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired UI with sidebar navigation, command palette (Cmd+K), workspace switching, real-time collaboration hub, and a context-aware AI assistant with tool calling.
 
 ## Development Commands
 
@@ -62,7 +62,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 ## Key Dependencies
 
 - **Next.js**: `latest` (uses App Router with `proxy.ts` for auth instead of middleware)
-- **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth and database
+- **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth, database, and Realtime
 - **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
 - **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
 - **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
@@ -125,6 +125,23 @@ All data mutations are server actions that:
 - Call `revalidatePath()` to refresh relevant pages
 - Log activities via `createActivity()` helper
 
+**Action organization:**
+
+- `app/actions.ts` - Main file with all server actions
+- `app/actions/index.ts` - Re-exports for backward compatibility
+- `app/actions/shared.ts` - Shared types and authorization helpers
+
+**Authorization helpers** (`app/actions/shared.ts`):
+
+- `isUserAdmin(userId)` - Check if user has admin role
+- `canDeleteIssue(userId, issueId)` - Creator or admin check
+- `canDeleteProject(userId, projectId)` - Lead or admin check
+- `canDeleteMeeting(userId, meetingId)` - Creator or admin check
+- `canDeleteClient(userId, clientId)` - Admin or workspace admin check
+- `canDeletePhase(userId, phaseId)` - Project lead or admin check
+- `canDeletePhaseItem(userId, itemId)` - Project lead or admin check
+- `normalizeFKResponse<T>(response)` - Helper to normalize Supabase FK arrays
+
 **Action categories:**
 
 - **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
@@ -135,7 +152,7 @@ All data mutations are server actions that:
 - **Junction tables**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
 - **Activity**: `getRecentActivities` - Fetches activity feed with actor/project/issue/team relations
 
-**Supabase FK normalization**: Foreign key joins may return arrays; normalize with:
+**Supabase FK normalization**: Foreign key joins may return arrays; use `normalizeFKResponse()` helper or manually:
 
 ```tsx
 assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee;
@@ -229,11 +246,29 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 - **Chat UI**: `components/chat.tsx` - Uses `useChat` hook, `convertToModelMessages()` for message format
 - **RAG**: Documents table with pgvector embeddings (not yet implemented)
 
+### Realtime Features
+
+Custom hooks in `hooks/` for Supabase Realtime:
+
+- **`useRealtimeChat`** - Broadcast messaging with optimistic updates, room-based channels
+- **`useChatScroll`** - Auto-scroll to bottom on new messages
+- **`usePresence`** - Online presence tracking for users
+- **`useHubMessages`** - Hub-specific message handling with persistence
+
+### Hub (`/hub`)
+
+3-column collaboration hub (`components/hub/`) with:
+
+- **Tasks Panel** (left) - Quick task creation and tracking
+- **Chat Panel** (center) - Real-time workspace chat using Supabase broadcast
+- **Updates Panel** (right) - Activity feed and notifications
+
 ### Routes
 
 | Route                         | Description                                                           |
 | ----------------------------- | --------------------------------------------------------------------- |
 | `/`                           | Dashboard with stats and activity feed                                |
+| `/hub`                        | Real-time collaboration hub (tasks, chat, updates)                    |
 | `/issues`, `/issues/[id]`     | Issue list and detail with comments/assignees                         |
 | `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with roadmap                     |
 | `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and detail with contacts                     |
