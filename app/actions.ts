@@ -17,6 +17,7 @@ import {
   createPhaseItemSchema,
   updatePhaseItemSchema,
   createCommentSchema,
+  createMessageSchema,
 } from '@/lib/validation';
 import { getPhaseTemplates, type ProjectType } from '@/lib/phase-templates';
 
@@ -2546,4 +2547,233 @@ export async function updateTeam(formData: FormData): Promise<ActionResult> {
   revalidatePath('/teams');
   revalidatePath(`/teams/${id}`);
   return { success: true, data };
+}
+
+// ============ HUB MESSAGE ACTIONS ============
+
+export type HubMessage = {
+  id: string;
+  content: string;
+  channel_type: 'workspace' | 'project';
+  project_id: string | null;
+  linked_issue_id: string | null;
+  created_at: string;
+  author: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+  linked_issue?: {
+    id: string;
+    title: string;
+    status: string;
+  } | null;
+};
+
+// Get messages for hub chat
+export async function getHubMessages(
+  workspaceId: string,
+  options: {
+    channelType?: 'workspace' | 'project';
+    projectId?: string | null;
+    limit?: number;
+    before?: string; // cursor for pagination (message ID)
+  } = {}
+): Promise<HubMessage[]> {
+  const supabase = await createClient();
+  const { channelType = 'workspace', projectId, limit = 50, before } = options;
+
+  let query = supabase
+    .from('messages')
+    .select(
+      `
+      id,
+      content,
+      channel_type,
+      project_id,
+      linked_issue_id,
+      created_at,
+      author:profiles!messages_author_id_fkey (id, full_name, email, avatar_url),
+      linked_issue:issues (id, title, status)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .eq('channel_type', channelType)
+    .is('deleted_at', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (channelType === 'project' && projectId) {
+    query = query.eq('project_id', projectId);
+  }
+
+  if (before) {
+    // Get the timestamp of the cursor message for pagination
+    const { data: cursorMsg } = await supabase
+      .from('messages')
+      .select('created_at')
+      .eq('id', before)
+      .single();
+
+    if (cursorMsg) {
+      query = query.lt('created_at', cursorMsg.created_at);
+    }
+  }
+
+  const { data: messages, error } = await query;
+
+  if (error) {
+    console.error('Error fetching hub messages:', error);
+    return [];
+  }
+
+  return (messages || []).map((msg) => ({
+    ...msg,
+    author: Array.isArray(msg.author) ? msg.author[0] || null : msg.author,
+    linked_issue: Array.isArray(msg.linked_issue) ? msg.linked_issue[0] || null : msg.linked_issue,
+  })) as HubMessage[];
+}
+
+// Send a message in hub chat
+export async function sendHubMessage(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const validation = parseFormData(createMessageSchema, formData);
+  if (!validation.success) {
+    return { success: false, error: validation.error };
+  }
+
+  const { content, workspace_id, project_id, channel_type, linked_issue_id } = validation.data;
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      content: content.trim(),
+      workspace_id,
+      project_id: project_id || null,
+      channel_type,
+      linked_issue_id: linked_issue_id || null,
+      author_id: user.id,
+    })
+    .select(
+      `
+      id,
+      content,
+      channel_type,
+      project_id,
+      linked_issue_id,
+      created_at,
+      author:profiles!messages_author_id_fkey (id, full_name, email, avatar_url)
+    `
+    )
+    .single();
+
+  if (error) {
+    console.error('Error sending message:', error);
+    return { success: false, error: error.message };
+  }
+
+  // Normalize response
+  const normalizedData = {
+    ...data,
+    author: Array.isArray(data.author) ? data.author[0] || null : data.author,
+  };
+
+  // No need to revalidate - using realtime
+  return { success: true, data: normalizedData };
+}
+
+// Delete a message (soft delete)
+export async function deleteHubMessage(messageId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Verify ownership
+  const { data: message } = await supabase
+    .from('messages')
+    .select('author_id')
+    .eq('id', messageId)
+    .single();
+
+  if (!message) {
+    return { success: false, error: 'Message not found' };
+  }
+
+  if (message.author_id !== user.id) {
+    // Check if admin
+    const isAdmin = await isUserAdmin(user.id);
+    if (!isAdmin) {
+      return { success: false, error: 'You can only delete your own messages' };
+    }
+  }
+
+  const { error } = await supabase
+    .from('messages')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', messageId);
+
+  if (error) {
+    console.error('Error deleting message:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+// Get tasks for hub (simplified issue list)
+export async function getHubTasks(
+  workspaceId: string,
+  options: {
+    status?: string[];
+    limit?: number;
+  } = {}
+) {
+  const supabase = await createClient();
+  const { status, limit = 50 } = options;
+
+  let query = supabase
+    .from('issues')
+    .select(
+      `
+      id,
+      title,
+      status,
+      priority,
+      created_at,
+      project:projects (id, name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (status && status.length > 0) {
+    query = query.in('status', status);
+  }
+
+  const { data: tasks, error } = await query;
+
+  if (error) {
+    console.error('Error fetching hub tasks:', error);
+    return [];
+  }
+
+  return (tasks || []).map((task) => ({
+    ...task,
+    project: Array.isArray(task.project) ? task.project[0] || null : task.project,
+  }));
 }

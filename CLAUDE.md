@@ -34,7 +34,7 @@ Jest with React Testing Library. Test files in `__tests__/` directory.
 **Test utilities** (`__tests__/utils/render.tsx`):
 
 - `render()` - Custom render with providers (ThemeProvider)
-- Factory functions: `createMockUser()`, `createMockProject()`, `createMockIssue()`, `createMockTeam()`, `createMockClient()`, `createMockMeeting()`, `createMockMilestone()`
+- Factory functions: `createMockUser()`, `createMockProject()`, `createMockIssue()`, `createMockTeam()`, `createMockClient()`, `createMockMeeting()`, `createMockPhase()`, `createMockPhaseItem()`
 
 **Coverage thresholds**: 50% minimum for branches, functions, lines, statements.
 
@@ -69,6 +69,8 @@ GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 - **Constants**: `lib/constants.ts` - Date formats, UI dimensions, status/priority colors, storage keys
 - **Utilities**: `lib/utils.ts` - `cn()` (Tailwind merge), date formatting (`formatDate`, `formatDateTime`, `formatRelativeTime`), `truncate`, `getInitials`, `pluralize`
 - **Timezone**: Uses `date-fns-tz` with `toZonedTime()` for Cyprus (Europe/Nicosia) and Jordan (Asia/Amman) timezone support in schedule views
+- **SWR Hooks**: `lib/swr.ts` - Cached data fetching hooks (`useTeams`, `useProjects`, `useProfiles`, `useCurrentWorkspaceId`) with `invalidateCache()` and `invalidateAllCaches()` helpers
+- **Rate Limiting**: `lib/rate-limit.ts` - In-memory rate limiter with `chatRateLimiter` (20/min) and `apiRateLimiter` (100/min)
 
 ## Architecture
 

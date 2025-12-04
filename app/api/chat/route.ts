@@ -65,17 +65,41 @@ export async function POST(req: Request) {
     const userName = user.full_name || user.email?.split('@')[0] || 'User';
     const isAdmin = user.role === 'admin';
 
+    // Get user's default workspace
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('profile_id', user.id)
+      .eq('is_default', true)
+      .single();
+
+    const workspaceId = membership?.workspace_id;
+
     const systemPrompt = `You are Qualia AI, an intelligent assistant for the Qualia project management platform.
 
 Current User: ${userName} (${user.email}) - ${isAdmin ? 'Administrator' : 'Team Member'}
+Current Time: ${new Date().toISOString()}
 
-You have tools to query the database for real-time information. Always use them to get current data before answering questions about projects, issues, or teams.
+You have tools to both READ and WRITE data:
+
+READ Tools:
+- getDashboardStats: Get project/issue/team counts
+- searchIssues: Search and filter issues/tasks
+- searchProjects: Search and filter projects
+- getTeams: List all teams
+- getRecentActivity: Get activity feed
+
+WRITE Tools:
+- createTask: Create a new task/issue (use when user says "create task", "add todo", "remind me to", etc.)
+- updateTaskStatus: Mark tasks as done, in progress, etc. (use when user says "mark as done", "complete", "start working on")
+- addComment: Add a comment to an issue (use when user wants to note something on a task)
 
 Guidelines:
 - Use tools to get current data - don't guess
-- Be concise and helpful
-- Format lists clearly
-- Reference items by name when discussing them`;
+- When creating tasks, confirm what was created and provide the task details
+- Be proactive: if a user mentions they need to do something, offer to create a task
+- Reference items by name when discussing them
+- Be concise and helpful`;
 
     const result = streamText({
       model: google('gemini-2.0-flash'),
@@ -234,6 +258,155 @@ Guidelines:
                   team: Array.isArray(a.team) ? a.team[0]?.name : null,
                   created_at: a.created_at,
                 })) || [],
+            };
+          },
+        }),
+
+        // ============ WRITE TOOLS ============
+
+        createTask: tool({
+          description:
+            'Create a new task/issue. Use when user says "create task", "add issue", "remind me to", "add todo", etc.',
+          inputSchema: z.object({
+            title: z.string().describe('Task title (required)'),
+            description: z.string().optional().describe('Task description'),
+            priority: z
+              .enum(['Urgent', 'High', 'Medium', 'Low', 'No Priority'])
+              .optional()
+              .describe('Task priority'),
+            project_id: z.string().uuid().optional().describe('Project ID to assign to'),
+          }),
+          execute: async ({ title, description, priority, project_id }) => {
+            if (!workspaceId) {
+              return { error: 'No workspace found for user' };
+            }
+
+            const { data, error } = await supabase
+              .from('issues')
+              .insert({
+                title,
+                description: description || null,
+                priority: priority || 'No Priority',
+                status: 'Todo',
+                project_id: project_id || null,
+                creator_id: user.id,
+                workspace_id: workspaceId,
+              })
+              .select('id, title, status, priority')
+              .single();
+
+            if (error) return { error: error.message };
+
+            // Log activity
+            await supabase.from('activities').insert({
+              actor_id: user.id,
+              type: 'issue_created',
+              issue_id: data.id,
+              project_id: project_id || null,
+              workspace_id: workspaceId,
+              metadata: { title: data.title, priority: data.priority, created_by_ai: true },
+            });
+
+            return {
+              success: true,
+              task: {
+                id: data.id,
+                title: data.title,
+                status: data.status,
+                priority: data.priority,
+              },
+              message: `Created task: "${data.title}"`,
+            };
+          },
+        }),
+
+        updateTaskStatus: tool({
+          description:
+            'Update a task status. Use when user says "mark X as done", "complete task", "start working on", "cancel task"',
+          inputSchema: z.object({
+            issue_id: z.string().uuid().describe('The issue ID to update'),
+            status: z
+              .enum(['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'])
+              .describe('New status'),
+          }),
+          execute: async ({ issue_id, status }) => {
+            // Get current task info
+            const { data: currentTask } = await supabase
+              .from('issues')
+              .select('title, status')
+              .eq('id', issue_id)
+              .single();
+
+            if (!currentTask) {
+              return { error: 'Task not found' };
+            }
+
+            const { error } = await supabase
+              .from('issues')
+              .update({ status, updated_at: new Date().toISOString() })
+              .eq('id', issue_id);
+
+            if (error) return { error: error.message };
+
+            // Log activity if marked as done
+            if (status === 'Done') {
+              await supabase.from('activities').insert({
+                actor_id: user.id,
+                type: 'issue_completed',
+                issue_id,
+                workspace_id: workspaceId,
+                metadata: { title: currentTask.title, updated_by_ai: true },
+              });
+            }
+
+            return {
+              success: true,
+              message: `Updated "${currentTask.title}" from ${currentTask.status} to ${status}`,
+            };
+          },
+        }),
+
+        addComment: tool({
+          description:
+            'Add a comment to an issue. Use when user wants to note something on a task.',
+          inputSchema: z.object({
+            issue_id: z.string().uuid().describe('The issue to comment on'),
+            body: z.string().describe('The comment text'),
+          }),
+          execute: async ({ issue_id, body }) => {
+            // Get task title for confirmation
+            const { data: task } = await supabase
+              .from('issues')
+              .select('title, workspace_id')
+              .eq('id', issue_id)
+              .single();
+
+            if (!task) {
+              return { error: 'Task not found' };
+            }
+
+            const { data, error } = await supabase
+              .from('comments')
+              .insert({ issue_id, body, user_id: user.id })
+              .select('id')
+              .single();
+
+            if (error) return { error: error.message };
+
+            // Log activity
+            await supabase.from('activities').insert({
+              actor_id: user.id,
+              type: 'comment_added',
+              comment_id: data.id,
+              issue_id,
+              workspace_id: task.workspace_id,
+              metadata: { issue_title: task.title, added_by_ai: true },
+            });
+
+            return {
+              success: true,
+              message: `Added comment to "${task.title}"`,
+              commentId: data.id,
             };
           },
         }),

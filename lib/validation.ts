@@ -234,6 +234,17 @@ export const createCommentSchema = z.object({
 });
 
 // =====================
+// Hub Message Schemas
+// =====================
+export const createMessageSchema = z.object({
+  content: z.string().min(1, 'Message cannot be empty').max(5000, 'Message too long'),
+  workspace_id: z.string().uuid('Invalid workspace ID'),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  channel_type: z.enum(['workspace', 'project'] as const).default('workspace'),
+  linked_issue_id: z.string().uuid('Invalid issue ID').optional().nullable(),
+});
+
+// =====================
 // Workspace Schemas
 // =====================
 export const createWorkspaceSchema = z.object({
@@ -312,4 +323,5 @@ export type UpdatePhaseInput = z.infer<typeof updatePhaseSchema>;
 export type CreatePhaseItemInput = z.infer<typeof createPhaseItemSchema>;
 export type UpdatePhaseItemInput = z.infer<typeof updatePhaseItemSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
+export type CreateMessageInput = z.infer<typeof createMessageSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
