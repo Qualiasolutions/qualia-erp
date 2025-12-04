@@ -8,6 +8,7 @@ import { getProjectPhases, initializeProjectPhases } from '@/app/actions';
 import { PhaseCard } from './phase-card';
 import { InitRoadmapDialog } from './init-roadmap-dialog';
 import { AddPhaseDialog } from './add-phase-dialog';
+import { RoadmapKanban } from './roadmap-kanban';
 import type { ProjectType } from '@/lib/phase-templates';
 
 interface ProjectRoadmapProps {
@@ -84,6 +85,9 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
     setInitializing(false);
   }
 
+  // Flatten items for Kanban
+  const allItems = phases.flatMap((p) => p.items || []);
+
   // Calculate overall progress
   const totalItems = phases.reduce((sum, p) => sum + (p.items?.length || 0), 0);
   const completedItems = phases.reduce(
@@ -91,6 +95,8 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
     0
   );
   const overallProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+  const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
 
   if (loading) {
     return (
@@ -117,14 +123,34 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
             </p>
           </div>
         </div>
-        {phases.length > 0 && (
-          <AddPhaseDialog
-            projectId={projectId}
-            workspaceId={workspaceId}
-            onSuccess={loadPhases}
-            nextOrder={phases.length}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-lg bg-secondary p-0.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={viewMode === 'list' ? 'bg-background shadow-sm' : 'text-muted-foreground'}
+            >
+              List
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('board')}
+              className={viewMode === 'board' ? 'bg-background shadow-sm' : 'text-muted-foreground'}
+            >
+              Board
+            </Button>
+          </div>
+          {phases.length > 0 && (
+            <AddPhaseDialog
+              projectId={projectId}
+              workspaceId={workspaceId}
+              onSuccess={loadPhases}
+              nextOrder={phases.length}
+            />
+          )}
+        </div>
       </div>
 
       {/* Overall Progress */}
@@ -150,6 +176,10 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
             <Plus className="mr-2 h-4 w-4" />
             Initialize Roadmap
           </Button>
+        </div>
+      ) : viewMode === 'board' ? (
+        <div className="h-[600px]">
+          <RoadmapKanban items={allItems} onItemUpdate={loadPhases} />
         </div>
       ) : (
         <div className="space-y-4">

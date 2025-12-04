@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createIssue } from '@/app/actions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Loader2 } from 'lucide-react';
+import { getProjects, getWorkspaceMembers } from '@/app/actions';
 
 interface QuickTaskModalProps {
   open: boolean;
@@ -24,6 +26,17 @@ interface QuickTaskModalProps {
 
 const PRIORITIES = ['No Priority', 'Low', 'Medium', 'High', 'Urgent'] as const;
 
+interface Project {
+  id: string;
+  name: string;
+}
+
+interface Member {
+  id: string;
+  full_name: string | null;
+  email: string;
+}
+
 export function QuickTaskModal({
   open,
   onOpenChange,
@@ -32,6 +45,25 @@ export function QuickTaskModal({
 }: QuickTaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null);
+
+  // Load data when modal opens
+  useEffect(() => {
+    if (open) {
+      Promise.all([getProjects(workspaceId), getWorkspaceMembers(workspaceId)]).then(([p, m]) => {
+        setProjects(p);
+        setMembers(m);
+      });
+    } else {
+      // Reset selections when modal closes
+      setSelectedProject(null);
+      setSelectedAssignee(null);
+      setError(null);
+    }
+  }, [open, workspaceId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,6 +73,8 @@ export function QuickTaskModal({
     const formData = new FormData(e.currentTarget);
     formData.set('workspace_id', workspaceId);
     formData.set('status', 'Todo');
+    if (selectedProject) formData.set('project_id', selectedProject);
+    if (selectedAssignee) formData.set('assignee_id', selectedAssignee);
 
     const result = await createIssue(formData);
 
@@ -75,6 +109,25 @@ export function QuickTaskModal({
               name="description"
               placeholder="Description (optional)"
               className="h-20 resize-none bg-background"
+            />
+          </div>
+          <div>
+            <Combobox
+              options={projects.map((p) => ({ value: p.id, label: p.name }))}
+              value={selectedProject ?? undefined}
+              onSelect={setSelectedProject}
+              placeholder="Select Project..."
+              searchPlaceholder="Search projects..."
+            />
+          </div>
+
+          <div>
+            <Combobox
+              options={members.map((m) => ({ value: m.id, label: m.full_name || m.email }))}
+              value={selectedAssignee ?? undefined}
+              onSelect={setSelectedAssignee}
+              placeholder="Assignee..."
+              searchPlaceholder="Search members..."
             />
           </div>
 

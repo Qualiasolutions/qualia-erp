@@ -463,7 +463,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { title, description, status, priority, team_id, project_id, workspace_id } =
+  const { title, description, status, priority, team_id, project_id, workspace_id, assignee_id } =
     validation.data;
 
   // Get workspace ID from form or from user's default
@@ -494,6 +494,19 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
   if (error) {
     console.error('Error creating issue:', error);
     return { success: false, error: error.message };
+  }
+
+  // Assign user if provided
+  if (assignee_id) {
+    const { error: assignError } = await supabase.from('issue_assignees').insert({
+      issue_id: data.id,
+      profile_id: assignee_id,
+      assigned_by: user.id,
+    });
+
+    if (assignError) {
+      console.error('Error assigning issue:', assignError);
+    }
   }
 
   // Record activity
@@ -2736,6 +2749,21 @@ export async function deleteHubMessage(messageId: string): Promise<ActionResult>
   return { success: true };
 }
 
+export async function getWorkspaceMembers(workspaceId: string) {
+  const supabase = await createClient();
+  const { data: members, error } = await supabase
+    .from('workspace_members')
+    .select('profile:profiles(id, full_name, email, avatar_url)')
+    .eq('workspace_id', workspaceId);
+
+  if (error) {
+    console.error('Error fetching workspace members:', error);
+    return [];
+  }
+
+  return members?.map((m: { profile: Profile }) => m.profile) || [];
+}
+
 // Get tasks for hub (simplified issue list)
 export async function getHubTasks(
   workspaceId: string,
@@ -2756,7 +2784,10 @@ export async function getHubTasks(
       status,
       priority,
       created_at,
-      project:projects (id, name)
+      project:projects (id, name),
+      assignees:issue_assignees(
+        profile:profiles(id, full_name, avatar_url)
+      )
     `
     )
     .eq('workspace_id', workspaceId)
@@ -2777,6 +2808,7 @@ export async function getHubTasks(
   return (tasks || []).map((task) => ({
     ...task,
     project: Array.isArray(task.project) ? task.project[0] || null : task.project,
+    assignees: (task.assignees || []).map((a: { profile: Profile }) => a.profile),
   }));
 }
 

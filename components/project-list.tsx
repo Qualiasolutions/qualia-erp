@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import {
   Folder,
   LayoutGrid,
@@ -175,7 +175,7 @@ function ProjectCard({ project }: { project: Project }) {
   const PlatformIcon = platformConfig?.icon;
 
   return (
-    <div className="surface group relative flex flex-col gap-2 rounded-lg p-3 transition-all duration-200 hover:bg-secondary/50">
+    <div className="surface group relative flex flex-col gap-2 rounded-lg p-3 transition-all duration-200 hover:scale-[1.02] hover:bg-secondary/50 hover:shadow-md">
       <Link href={`/projects/${project.id}`} className="flex flex-col gap-2">
         {/* Top row: Type icon + Name + Progress */}
         <div className="flex items-center gap-3">
@@ -305,36 +305,44 @@ function ProjectCard({ project }: { project: Project }) {
 export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
-  // Filter by project type if specified
-  const filteredProjects =
-    filterType === 'all' ? projects : projects.filter((p) => p.project_type === filterType);
+  // Helper function for progress calculation - memoized
+  const getProgress = useMemo(
+    () => (p: Project) => {
+      if (p.project_group === 'finished') return 100;
+      if (p.roadmap_progress !== undefined && p.roadmap_progress > 0) return p.roadmap_progress;
+      if (p.issue_stats?.total) return Math.round((p.issue_stats.done / p.issue_stats.total) * 100);
+      return 0;
+    },
+    []
+  );
 
-  // Sort projects: 100% complete projects go to bottom
-  const getProgress = (p: Project) => {
-    if (p.project_group === 'finished') return 100;
-    if (p.roadmap_progress !== undefined && p.roadmap_progress > 0) return p.roadmap_progress;
-    if (p.issue_stats?.total) return Math.round((p.issue_stats.done / p.issue_stats.total) * 100);
-    return 0;
-  };
+  // Memoize filtered and sorted projects
+  const sortedProjects = useMemo(() => {
+    const filtered =
+      filterType === 'all' ? projects : projects.filter((p) => p.project_type === filterType);
 
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    const progressA = getProgress(a);
-    const progressB = getProgress(b);
-    if (progressA === 100 && progressB !== 100) return 1;
-    if (progressB === 100 && progressA !== 100) return -1;
-    return progressB - progressA;
-  });
+    return [...filtered].sort((a, b) => {
+      const progressA = getProgress(a);
+      const progressB = getProgress(b);
+      if (progressA === 100 && progressB !== 100) return 1;
+      if (progressB === 100 && progressA !== 100) return -1;
+      return progressB - progressA;
+    });
+  }, [projects, filterType, getProgress]);
 
-  // Count projects by type
-  const typeCounts = {
-    web_design: projects.filter((p) => p.project_type === 'web_design').length,
-    ai_agent: projects.filter((p) => p.project_type === 'ai_agent').length,
-    seo: projects.filter((p) => p.project_type === 'seo').length,
-    ads: projects.filter((p) => p.project_type === 'ads').length,
-    untyped: projects.filter((p) => !p.project_type).length,
-  };
+  // Memoize type counts
+  const typeCounts = useMemo(
+    () => ({
+      web_design: projects.filter((p) => p.project_type === 'web_design').length,
+      ai_agent: projects.filter((p) => p.project_type === 'ai_agent').length,
+      seo: projects.filter((p) => p.project_type === 'seo').length,
+      ads: projects.filter((p) => p.project_type === 'ads').length,
+      untyped: projects.filter((p) => !p.project_type).length,
+    }),
+    [projects]
+  );
 
-  if (filteredProjects.length === 0) {
+  if (sortedProjects.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
         <div className="mb-4 rounded-xl bg-muted p-4">
@@ -377,10 +385,10 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
         <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
             <span className="text-xl font-semibold tabular-nums text-foreground">
-              {filteredProjects.length}
+              {sortedProjects.length}
             </span>
             <span className="text-sm text-muted-foreground">
-              project{filteredProjects.length !== 1 ? 's' : ''}
+              project{sortedProjects.length !== 1 ? 's' : ''}
             </span>
           </div>
 

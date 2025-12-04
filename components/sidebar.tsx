@@ -19,6 +19,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+// import { ActiveUsers } from '@/components/active-users'; // Unused
 import { WorkspaceSelector } from '@/components/workspace-selector';
 import { useSidebar } from '@/components/sidebar-provider';
 
@@ -129,6 +130,7 @@ export function Sidebar() {
         {!isCollapsed && (
           <div className="px-3 pb-2">
             <button
+              type="button"
               onClick={() => setIsAiPanelOpen(true)}
               className="w-full cursor-pointer rounded-lg border border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-3 text-left transition-all hover:border-primary/30 hover:from-primary/15 hover:via-primary/10"
             >
@@ -151,6 +153,7 @@ export function Sidebar() {
         {isCollapsed && (
           <div className="flex justify-center px-2 pb-2">
             <button
+              type="button"
               onClick={() => setIsAiPanelOpen(true)}
               className="rounded-lg border border-primary/20 bg-primary/10 p-2.5 transition-colors hover:bg-primary/15"
               title="AI Assistant"
@@ -189,6 +192,7 @@ export function Sidebar() {
         {/* Collapse Toggle */}
         <div className={cn('border-t border-border py-2', isCollapsed ? 'px-2' : 'px-3')}>
           <button
+            type="button"
             onClick={toggleSidebar}
             className={cn(
               'flex items-center gap-2 rounded-lg text-[13px] font-medium text-muted-foreground transition-all duration-200 hover:bg-secondary/80 hover:text-foreground',
@@ -212,9 +216,11 @@ export function Sidebar() {
       {isAiPanelOpen && (
         <>
           {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-40 bg-black/50 duration-200 animate-in fade-in"
+          <button
+            type="button"
+            className="fixed inset-0 z-40 cursor-default bg-black/50 duration-200 animate-in fade-in"
             onClick={() => setIsAiPanelOpen(false)}
+            aria-label="Close AI Assistant"
           />
           {/* Panel */}
           <div className="fixed left-60 top-0 z-50 flex h-screen w-[400px] flex-col border-r border-border bg-card shadow-2xl duration-300 animate-in slide-in-from-left">
@@ -226,6 +232,7 @@ export function Sidebar() {
                 <span className="font-semibold text-foreground">AI Assistant</span>
               </div>
               <button
+                type="button"
                 onClick={() => setIsAiPanelOpen(false)}
                 className="rounded-md p-1.5 transition-colors hover:bg-secondary"
               >

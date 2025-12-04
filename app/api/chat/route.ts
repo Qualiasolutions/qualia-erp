@@ -99,7 +99,9 @@ Guidelines:
 - When creating tasks, confirm what was created and provide the task details
 - Be proactive: if a user mentions they need to do something, offer to create a task
 - Reference items by name when discussing them
-- Be concise and helpful`;
+- Be concise and helpful
+- You can now manage project roadmaps (add/delete items, update phases, clear roadmap). Use these tools when the user explicitly asks to modify the roadmap.
+- When deleting a roadmap, ALWAYS ask for confirmation first unless the user explicitly says "force delete" or "I am sure".`;
 
     const result = streamText({
       model: google('gemini-2.0-flash'),
@@ -408,6 +410,121 @@ Guidelines:
               message: `Added comment to "${task.title}"`,
               commentId: data.id,
             };
+          },
+        }),
+
+        // ============ ROADMAP TOOLS ============
+
+        updateRoadmap: tool({
+          description: 'Update a roadmap phase details (name, description, status)',
+          inputSchema: z.object({
+            phase_id: z.string().uuid().describe('The phase ID to update'),
+            name: z.string().optional(),
+            description: z.string().optional(),
+            status: z.enum(['not_started', 'in_progress', 'completed', 'skipped']).optional(),
+          }),
+          execute: async ({ phase_id, name, description, status }) => {
+            const updates: Record<string, string | number | boolean | null> = {};
+            if (name) updates.name = name;
+            if (description) updates.description = description;
+            if (status) updates.status = status;
+
+            if (Object.keys(updates).length === 0) return { error: 'No updates provided' };
+
+            const { error } = await supabase
+              .from('project_phases')
+              .update(updates)
+              .eq('id', phase_id);
+
+            if (error) return { error: error.message };
+            return { success: true, message: 'Roadmap phase updated' };
+          },
+        }),
+
+        deleteRoadmap: tool({
+          description:
+            'Delete an entire project roadmap (all phases and items). CAUTION: Irreversible.',
+          inputSchema: z.object({
+            project_id: z.string().uuid().describe('The project ID'),
+          }),
+          execute: async ({ project_id }) => {
+            // First get phase IDs for this project
+            const { data: phases, error: phasesQueryError } = await supabase
+              .from('project_phases')
+              .select('id')
+              .eq('project_id', project_id);
+
+            if (phasesQueryError) return { error: phasesQueryError.message };
+
+            if (phases && phases.length > 0) {
+              const phaseIds = phases.map((p) => p.id);
+
+              // Delete all items for these phases
+              const { error: itemsError } = await supabase
+                .from('phase_items')
+                .delete()
+                .in('phase_id', phaseIds);
+
+              if (itemsError) return { error: itemsError.message };
+            }
+
+            // Delete all phases for this project
+            const { error } = await supabase
+              .from('project_phases')
+              .delete()
+              .eq('project_id', project_id);
+
+            if (error) return { error: error.message };
+            return { success: true, message: 'Roadmap deleted successfully' };
+          },
+        }),
+
+        addRoadmapItem: tool({
+          description: 'Add an item to a roadmap phase',
+          inputSchema: z.object({
+            phase_id: z.string().uuid().describe('The phase ID'),
+            title: z.string().describe('Item title'),
+            description: z.string().optional(),
+          }),
+          execute: async ({ phase_id, title, description }) => {
+            // Get max order
+            const { data: maxOrder } = await supabase
+              .from('phase_items')
+              .select('display_order')
+              .eq('phase_id', phase_id)
+              .order('display_order', { ascending: false })
+              .limit(1)
+              .single();
+
+            const nextOrder = (maxOrder?.display_order || 0) + 1;
+
+            const { data, error } = await supabase
+              .from('phase_items')
+              .insert({
+                phase_id,
+                title,
+                description,
+                display_order: nextOrder,
+                is_completed: false,
+              })
+              .select()
+              .single();
+
+            if (error) return { error: error.message };
+            return { success: true, message: `Added item "${title}"`, item: data };
+          },
+        }),
+
+        deleteRoadmapItem: tool({
+          description: 'Delete a roadmap item',
+          inputSchema: z.object({
+            item_id: z.string().uuid().describe('The item ID'),
+          }),
+          execute: async ({ item_id }) => {
+            const { error } = await supabase.from('phase_items').delete().eq('id', item_id);
+
+            if (error) return { error: error.message };
+            return { success: true, message: 'Roadmap item deleted' };
           },
         }),
       },

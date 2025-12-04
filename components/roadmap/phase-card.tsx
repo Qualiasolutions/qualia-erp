@@ -11,6 +11,7 @@ import {
   Circle,
   Clock,
   SkipForward,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -22,6 +23,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PhaseItem } from './phase-item';
 import { AddItemDialog } from './add-item-dialog';
@@ -62,6 +71,7 @@ const STATUS_CONFIG = {
 export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCardProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const statusConfig = STATUS_CONFIG[phase.status] || STATUS_CONFIG.not_started;
   const StatusIcon = statusConfig.icon;
@@ -75,9 +85,9 @@ export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCard
   }
 
   async function handleDelete() {
-    if (!confirm('Delete this phase and all its items?')) return;
     setIsDeleting(true);
     await deletePhase(phase.id);
+    setShowDeleteDialog(false);
     onUpdate();
   }
 
@@ -88,7 +98,12 @@ export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCard
         className="flex cursor-pointer items-center gap-3 p-4 hover:bg-muted/50"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <button className="text-muted-foreground">
+        <button
+          type="button"
+          className="text-muted-foreground"
+          aria-label={isExpanded ? 'Collapse phase' : 'Expand phase'}
+          aria-expanded={isExpanded}
+        >
           {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </button>
 
@@ -133,7 +148,7 @@ export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCard
           {/* Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label="Phase actions">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -152,7 +167,7 @@ export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCard
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={handleDelete}
+                onClick={() => setShowDeleteDialog(true)}
                 className="text-red-500 focus:text-red-500"
                 disabled={isDeleting}
               >
@@ -163,6 +178,34 @@ export function PhaseCard({ phase, phaseNumber, projectId, onUpdate }: PhaseCard
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Delete Phase
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &ldquo;{phase.name}&rdquo;? This will also delete all{' '}
+              {phase.items?.length || 0} items in this phase. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? 'Deleting...' : 'Delete Phase'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Phase Items */}
       {isExpanded && (

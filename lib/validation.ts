@@ -16,6 +16,7 @@ export const createIssueSchema = z.object({
   project_id: z.string().uuid('Invalid project ID').optional().nullable(),
   parent_id: z.string().uuid('Invalid parent ID').optional().nullable(),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
+  assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
 });
 
 export const updateIssueSchema = z.object({
