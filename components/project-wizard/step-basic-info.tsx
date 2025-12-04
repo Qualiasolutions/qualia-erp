@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Folder, Users } from 'lucide-react';
 import type { WizardData } from './project-wizard';
 
 interface StepBasicInfoProps {
@@ -20,56 +21,81 @@ interface StepBasicInfoProps {
 
 export function StepBasicInfo({ data, teams, onChange }: StepBasicInfoProps) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-1 text-lg font-medium">Basic Information</h3>
-        <p className="text-sm text-muted-foreground">
-          Enter the project name and assign it to a team.
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-qualia-500/10">
+            <Folder className="h-5 w-5 text-qualia-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-foreground">Basic Information</h3>
+            <p className="text-sm text-muted-foreground">
+              Give your project a name and assign it to a team
+            </p>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">
-            Project Name <span className="text-destructive">*</span>
+      {/* Form fields */}
+      <div className="space-y-6">
+        {/* Project Name */}
+        <div className="space-y-3">
+          <Label htmlFor="name" className="text-sm font-medium">
+            Project Name <span className="text-qualia-500">*</span>
           </Label>
           <Input
             id="name"
             placeholder="e.g., Client Website Redesign"
             value={data.name}
             onChange={(e) => onChange({ name: e.target.value })}
+            className="h-12 rounded-xl border-border/50 bg-muted/30 px-4 text-base transition-all focus:border-qualia-500 focus:bg-background focus:ring-2 focus:ring-qualia-500/20"
             autoFocus
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
+        {/* Description */}
+        <div className="space-y-3">
+          <Label htmlFor="description" className="text-sm font-medium">
+            Description <span className="font-normal text-muted-foreground">(optional)</span>
+          </Label>
           <Textarea
             id="description"
             placeholder="Brief description of the project scope and goals..."
             value={data.description}
             onChange={(e) => onChange({ description: e.target.value })}
-            rows={3}
+            rows={4}
+            className="rounded-xl border-border/50 bg-muted/30 px-4 py-3 text-base transition-all focus:border-qualia-500 focus:bg-background focus:ring-2 focus:ring-qualia-500/20"
           />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="team">
-            Team <span className="text-destructive">*</span>
+        {/* Team Selection */}
+        <div className="space-y-3">
+          <Label htmlFor="team" className="text-sm font-medium">
+            Team <span className="text-qualia-500">*</span>
           </Label>
           <Select value={data.team_id} onValueChange={(value) => onChange({ team_id: value })}>
-            <SelectTrigger>
+            <SelectTrigger className="h-12 rounded-xl border-border/50 bg-muted/30 px-4 text-base transition-all focus:border-qualia-500 focus:ring-2 focus:ring-qualia-500/20 [&>span]:flex [&>span]:items-center [&>span]:gap-2">
               <SelectValue placeholder="Select a team" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl">
               {teams.map((team) => (
-                <SelectItem key={team.id} value={team.id}>
-                  {team.name}
+                <SelectItem
+                  key={team.id}
+                  value={team.id}
+                  className="rounded-lg py-3 focus:bg-qualia-500/10"
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    {team.name}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">The team responsible for this project</p>
+          <p className="text-xs text-muted-foreground">
+            The team that will be responsible for this project
+          </p>
         </div>
       </div>
     </div>

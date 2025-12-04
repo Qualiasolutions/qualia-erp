@@ -9,7 +9,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Bot, Globe, Search, Megaphone, Triangle, Square, Train } from 'lucide-react';
+import {
+  Bot,
+  Globe,
+  Search,
+  Megaphone,
+  Triangle,
+  Square,
+  Train,
+  Settings2,
+  Building,
+  Check,
+} from 'lucide-react';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 import type { WizardData } from './project-wizard';
 
@@ -26,34 +37,39 @@ const PROJECT_TYPES: Array<{
   description: string;
   icon: React.ReactNode;
   color: string;
+  gradient: string;
 }> = [
   {
     value: 'web_design',
     label: 'Website',
     description: 'Design and build websites',
     icon: <Globe className="h-6 w-6" />,
-    color: 'text-blue-500 bg-blue-500/10',
+    color: 'text-blue-500',
+    gradient: 'from-blue-500/20 to-blue-600/5',
   },
   {
     value: 'ai_agent',
     label: 'AI Agent',
     description: 'Build AI-powered agents',
     icon: <Bot className="h-6 w-6" />,
-    color: 'text-purple-500 bg-purple-500/10',
+    color: 'text-purple-500',
+    gradient: 'from-purple-500/20 to-purple-600/5',
   },
   {
     value: 'seo',
     label: 'SEO',
     description: 'Search optimization',
     icon: <Search className="h-6 w-6" />,
-    color: 'text-green-500 bg-green-500/10',
+    color: 'text-green-500',
+    gradient: 'from-green-500/20 to-green-600/5',
   },
   {
     value: 'ads',
     label: 'Ads',
     description: 'Paid advertising',
     icon: <Megaphone className="h-6 w-6" />,
-    color: 'text-orange-500 bg-orange-500/10',
+    color: 'text-orange-500',
+    gradient: 'from-orange-500/20 to-orange-600/5',
   },
 ];
 
@@ -86,89 +102,135 @@ export function StepConfiguration({
   onChange,
 }: StepConfigurationProps) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="mb-1 text-lg font-medium">Project Configuration</h3>
-        <p className="text-sm text-muted-foreground">
-          Choose the project type, deployment platform, and link it to a client.
-        </p>
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
+            <Settings2 className="h-5 w-5 text-purple-500" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-foreground">Project Configuration</h3>
+            <p className="text-sm text-muted-foreground">
+              Choose the project type, platform, and client
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Project Type Selection */}
-      <div className="space-y-3">
-        <Label>
-          Project Type <span className="text-destructive">*</span>
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">
+          Project Type <span className="text-qualia-500">*</span>
         </Label>
-        <div className="grid grid-cols-2 gap-3">
-          {PROJECT_TYPES.map((type) => (
-            <button
-              key={type.value}
-              type="button"
-              onClick={() => onProjectTypeChange(type.value)}
-              className={cn(
-                'flex items-center gap-3 rounded-lg border-2 p-4 text-left transition-all',
-                data.project_type === type.value
-                  ? 'border-qualia-600 bg-qualia-600/5'
-                  : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50'
-              )}
-            >
-              <div
-                className={cn('flex h-12 w-12 items-center justify-center rounded-lg', type.color)}
+        <div className="grid grid-cols-2 gap-4">
+          {PROJECT_TYPES.map((type) => {
+            const isSelected = data.project_type === type.value;
+            return (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => onProjectTypeChange(type.value)}
+                className={cn(
+                  'group relative flex items-center gap-4 rounded-2xl border-2 p-5 text-left transition-all duration-200',
+                  isSelected
+                    ? 'border-qualia-500 bg-gradient-to-br shadow-lg shadow-qualia-500/10'
+                    : 'border-border/50 bg-muted/20 hover:border-border hover:bg-muted/40',
+                  isSelected && type.gradient
+                )}
               >
-                {type.icon}
-              </div>
-              <div>
-                <p className="font-medium">{type.label}</p>
-                <p className="text-xs text-muted-foreground">{type.description}</p>
-              </div>
-            </button>
-          ))}
+                {/* Check indicator */}
+                {isSelected && (
+                  <div className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-qualia-500 shadow-lg">
+                    <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-all',
+                    isSelected ? 'bg-white/80 shadow-md' : 'bg-muted/50',
+                    type.color
+                  )}
+                >
+                  {type.icon}
+                </div>
+                <div>
+                  <p className={cn('font-semibold', isSelected && 'text-foreground')}>
+                    {type.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{type.description}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Deployment Platform */}
-      <div className="space-y-3">
-        <Label>
-          Deployment Platform <span className="text-destructive">*</span>
+      <div className="space-y-4">
+        <Label className="text-sm font-medium">
+          Deployment Platform <span className="text-qualia-500">*</span>
         </Label>
         <div className="flex gap-3">
-          {DEPLOYMENT_PLATFORMS.map((platform) => (
-            <button
-              key={platform.value}
-              type="button"
-              onClick={() => onChange({ deployment_platform: platform.value })}
-              className={cn(
-                'flex flex-1 items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
-                data.deployment_platform === platform.value
-                  ? 'border-qualia-600 bg-qualia-600/5'
-                  : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50'
-              )}
-            >
-              {platform.icon}
-              <span className="font-medium">{platform.label}</span>
-            </button>
-          ))}
+          {DEPLOYMENT_PLATFORMS.map((platform) => {
+            const isSelected = data.deployment_platform === platform.value;
+            return (
+              <button
+                key={platform.value}
+                type="button"
+                onClick={() => onChange({ deployment_platform: platform.value })}
+                className={cn(
+                  'group relative flex flex-1 flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-all duration-200',
+                  isSelected
+                    ? 'border-qualia-500 bg-qualia-500/5 shadow-lg shadow-qualia-500/10'
+                    : 'border-border/50 bg-muted/20 hover:border-border hover:bg-muted/40'
+                )}
+              >
+                {isSelected && (
+                  <div className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-qualia-500 shadow">
+                    <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                  </div>
+                )}
+                <div className={cn('transition-colors', isSelected && 'text-qualia-500')}>
+                  {platform.icon}
+                </div>
+                <span className={cn('text-sm font-medium', isSelected && 'text-foreground')}>
+                  {platform.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Client Selection */}
-      <div className="space-y-2">
-        <Label htmlFor="client">
-          Client <span className="text-destructive">*</span>
+      <div className="space-y-3">
+        <Label htmlFor="client" className="text-sm font-medium">
+          Client <span className="text-qualia-500">*</span>
         </Label>
         <Select value={data.client_id} onValueChange={(value) => onChange({ client_id: value })}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12 rounded-xl border-border/50 bg-muted/30 px-4 text-base transition-all focus:border-qualia-500 focus:ring-2 focus:ring-qualia-500/20">
             <SelectValue placeholder="Select a client" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             {clients.map((client) => (
-              <SelectItem key={client.id} value={client.id}>
-                {client.display_name || 'Unnamed Client'}
+              <SelectItem
+                key={client.id}
+                value={client.id}
+                className="rounded-lg py-3 focus:bg-qualia-500/10"
+              >
+                <div className="flex items-center gap-2">
+                  <Building className="h-4 w-4 text-muted-foreground" />
+                  {client.display_name || 'Unnamed Client'}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">The client this project is for</p>
+        <p className="text-xs text-muted-foreground">
+          The client this project is being created for
+        </p>
       </div>
     </div>
   );

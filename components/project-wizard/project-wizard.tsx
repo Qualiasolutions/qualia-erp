@@ -169,89 +169,127 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl gap-0 overflow-hidden p-0">
+      <DialogContent className="max-w-4xl gap-0 overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl">
         <DialogTitle className="sr-only">Create New Project</DialogTitle>
 
-        {/* Header with progress */}
-        <div className="border-b px-6 py-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Create New Project</h2>
-            <Button variant="ghost" size="icon" onClick={handleClose} disabled={isSubmitting}>
-              <X className="h-4 w-4" />
-            </Button>
+        {/* Header */}
+        <div className="relative border-b border-border/50 bg-gradient-to-r from-qualia-600/5 via-transparent to-purple-600/5 px-8 pb-6 pt-8">
+          {/* Close button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="absolute right-4 top-4 h-8 w-8 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+
+          {/* Title */}
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              Create New Project
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Set up your project in a few simple steps
+            </p>
           </div>
+
+          {/* Progress */}
           <WizardProgress steps={STEPS} currentStep={currentStep} />
         </div>
 
         {/* Step Content */}
-        <div className="max-h-[60vh] min-h-[400px] overflow-y-auto px-6 py-6">
+        <div className="max-h-[55vh] min-h-[420px] overflow-y-auto px-8 py-8">
           {error && (
-            <div className="mb-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                <X className="h-3.5 w-3.5" />
+              </div>
               {error}
             </div>
           )}
 
-          {currentStep === 1 && (
-            <StepBasicInfo data={wizardData} teams={teams} onChange={updateWizardData} />
-          )}
+          <div className="duration-300 animate-in fade-in-0 slide-in-from-right-4">
+            {currentStep === 1 && (
+              <StepBasicInfo data={wizardData} teams={teams} onChange={updateWizardData} />
+            )}
 
-          {currentStep === 2 && (
-            <StepConfiguration
-              data={wizardData}
-              clients={clients}
-              onProjectTypeChange={handleProjectTypeChange}
-              onChange={updateWizardData}
-            />
-          )}
+            {currentStep === 2 && (
+              <StepConfiguration
+                data={wizardData}
+                clients={clients}
+                onProjectTypeChange={handleProjectTypeChange}
+                onChange={updateWizardData}
+              />
+            )}
 
-          {currentStep === 3 && (
-            <StepRoadmapEditor
-              phases={wizardData.phases}
-              projectType={wizardData.project_type}
-              onChange={(phases) => updateWizardData({ phases })}
-            />
-          )}
+            {currentStep === 3 && (
+              <StepRoadmapEditor
+                phases={wizardData.phases}
+                projectType={wizardData.project_type}
+                onChange={(phases) => updateWizardData({ phases })}
+              />
+            )}
 
-          {currentStep === 4 && <StepReview data={wizardData} teams={teams} clients={clients} />}
+            {currentStep === 4 && <StepReview data={wizardData} teams={teams} clients={clients} />}
+          </div>
         </div>
 
-        {/* Footer with navigation */}
-        <div className="flex items-center justify-between border-t px-6 py-4">
+        {/* Footer */}
+        <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-8 py-5">
           <Button
             variant="ghost"
             onClick={handleBack}
             disabled={currentStep === 1 || isSubmitting}
-            className={cn(currentStep === 1 && 'invisible')}
+            className={cn(
+              'gap-2 rounded-xl px-4 text-muted-foreground hover:text-foreground',
+              currentStep === 1 && 'invisible'
+            )}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Step {currentStep} of {STEPS.length}
-            </span>
+          <div className="flex items-center gap-1.5">
+            {STEPS.map((step) => (
+              <div
+                key={step.id}
+                className={cn(
+                  'h-1.5 w-1.5 rounded-full transition-all duration-300',
+                  currentStep === step.id
+                    ? 'w-6 bg-qualia-500'
+                    : currentStep > step.id
+                      ? 'bg-qualia-500/50'
+                      : 'bg-muted-foreground/30'
+                )}
+              />
+            ))}
           </div>
 
           {currentStep < STEPS.length ? (
-            <Button onClick={handleNext} disabled={!canProceed}>
-              Next
-              <ArrowRight className="ml-2 h-4 w-4" />
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed}
+              className="gap-2 rounded-xl bg-qualia-600 px-6 shadow-lg shadow-qualia-600/20 transition-all hover:bg-qualia-500 hover:shadow-qualia-500/30 disabled:opacity-50 disabled:shadow-none"
+            >
+              Continue
+              <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting || !canProceed}
-              className="bg-qualia-600 hover:bg-qualia-700"
+              className="gap-2 rounded-xl bg-gradient-to-r from-qualia-600 to-qualia-500 px-6 shadow-lg shadow-qualia-600/25 transition-all hover:from-qualia-500 hover:to-qualia-400 hover:shadow-qualia-500/35 disabled:opacity-50 disabled:shadow-none"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Creating...
                 </>
               ) : (
                 <>
-                  <Check className="mr-2 h-4 w-4" />
+                  <Check className="h-4 w-4" />
                   Create Project
                 </>
               )}
