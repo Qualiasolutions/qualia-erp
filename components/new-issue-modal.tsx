@@ -98,7 +98,7 @@ export function NewIssueModal() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Status</Label>
               <Select name="status" defaultValue="Yet to Start">

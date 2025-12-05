@@ -524,6 +524,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
   );
 
   revalidatePath('/issues');
+  revalidatePath('/hub');
   revalidatePath('/');
   return { success: true, data };
 }

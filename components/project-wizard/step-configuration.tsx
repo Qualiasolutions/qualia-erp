@@ -123,7 +123,7 @@ export function StepConfiguration({
         <Label className="text-sm font-medium">
           Project Type <span className="text-qualia-500">*</span>
         </Label>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           {PROJECT_TYPES.map((type) => {
             const isSelected = data.project_type === type.value;
             return (
@@ -172,7 +172,7 @@ export function StepConfiguration({
         <Label className="text-sm font-medium">
           Deployment Platform <span className="text-qualia-500">*</span>
         </Label>
-        <div className="flex gap-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           {DEPLOYMENT_PLATFORMS.map((platform) => {
             const isSelected = data.deployment_platform === platform.value;
             return (
@@ -181,7 +181,7 @@ export function StepConfiguration({
                 type="button"
                 onClick={() => onChange({ deployment_platform: platform.value })}
                 className={cn(
-                  'group relative flex flex-1 flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-all duration-200',
+                  'group relative flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-3 transition-all duration-200 sm:px-4 sm:py-4',
                   isSelected
                     ? 'border-qualia-500 bg-qualia-500/5 shadow-lg shadow-qualia-500/10'
                     : 'border-border/50 bg-muted/20 hover:border-border hover:bg-muted/40'

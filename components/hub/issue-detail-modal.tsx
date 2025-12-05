@@ -278,7 +278,7 @@ export function IssueDetailModal({
             {/* Content */}
             <div className="max-h-[calc(85vh-80px)] overflow-y-auto">
               <div className="p-6">
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div className="flex flex-col-reverse gap-6 lg:grid lg:grid-cols-3">
                   {/* Main Content */}
                   <div className="space-y-5 lg:col-span-2">
                     {/* Title */}

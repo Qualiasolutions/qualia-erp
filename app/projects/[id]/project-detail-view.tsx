@@ -262,13 +262,11 @@ export function ProjectDetailView({
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content - Roadmap */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="mx-auto max-w-4xl">
-            <ProjectRoadmap
-              projectId={project.id}
-              projectType={project.project_type}
-              workspaceId={project.workspace_id}
-            />
-          </div>
+          <ProjectRoadmap
+            projectId={project.id}
+            projectType={project.project_type}
+            workspaceId={project.workspace_id}
+          />
         </div>
 
         {/* Side Panel - Project Details */}
