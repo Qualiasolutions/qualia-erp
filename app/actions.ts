@@ -17,7 +17,6 @@ import {
   createPhaseItemSchema,
   updatePhaseItemSchema,
   createCommentSchema,
-  createMessageSchema,
   createProjectWizardSchema,
   type CreateProjectWizardInput,
 } from '@/lib/validation';
@@ -223,6 +222,24 @@ export async function getCurrentWorkspaceId(): Promise<string | null> {
     .single();
 
   return data?.workspace_id || null;
+}
+
+// Get current user profile with role
+export async function getCurrentUserProfile() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, avatar_url, role')
+    .eq('id', user.id)
+    .single();
+
+  return profile;
 }
 
 // Get all workspaces (for admin management)
@@ -898,6 +915,13 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
 
   const { id, title, description, status, priority, team_id, project_id } = validation.data;
 
+  // Get the old issue data for status change detection
+  const { data: oldIssue } = await supabase
+    .from('issues')
+    .select('status, title, creator_id, workspace_id')
+    .eq('id', id)
+    .single();
+
   const { data, error } = await supabase
     .from('issues')
     .update({
@@ -918,8 +942,56 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
+  // Send notification when task is completed
+  if (status === 'Done' && oldIssue?.status !== 'Done' && oldIssue?.workspace_id) {
+    const issueTitle = title?.trim() || oldIssue?.title || 'Task';
+
+    // Get current user's name
+    const { data: currentUser } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single();
+
+    const completerName = currentUser?.full_name || currentUser?.email?.split('@')[0] || 'Someone';
+
+    // Notify the issue creator (if not the person completing it)
+    if (oldIssue.creator_id && oldIssue.creator_id !== user.id) {
+      await createNotification(
+        oldIssue.creator_id,
+        oldIssue.workspace_id,
+        'task_completed',
+        `Task completed: ${issueTitle}`,
+        `${completerName} marked this task as done`,
+        `/hub`
+      );
+    }
+
+    // Also notify all assignees except the person who completed it
+    const { data: assignees } = await supabase
+      .from('issue_assignees')
+      .select('profile_id')
+      .eq('issue_id', id);
+
+    if (assignees) {
+      for (const assignee of assignees) {
+        if (assignee.profile_id !== user.id && assignee.profile_id !== oldIssue.creator_id) {
+          await createNotification(
+            assignee.profile_id,
+            oldIssue.workspace_id,
+            'task_completed',
+            `Task completed: ${issueTitle}`,
+            `${completerName} marked this task as done`,
+            `/hub`
+          );
+        }
+      }
+    }
+  }
+
   revalidatePath(`/issues/${id}`);
   revalidatePath('/issues');
+  revalidatePath('/hub');
   return { success: true, data };
 }
 
@@ -1067,7 +1139,7 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
   // Get the issue to find its team/project for activity visibility
   const { data: issue } = await supabase
     .from('issues')
-    .select('team_id, project_id, title')
+    .select('team_id, project_id, title, creator_id, workspace_id')
     .eq('id', issue_id)
     .single();
 
@@ -1085,8 +1157,56 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
     { issue_title: issue?.title }
   );
 
+  // Send notifications for the comment
+  if (issue?.workspace_id && issue?.title) {
+    // Get current user's name
+    const { data: currentUser } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single();
+
+    const commenterName = currentUser?.full_name || currentUser?.email?.split('@')[0] || 'Someone';
+    const commentPreview = body.trim().substring(0, 80) + (body.length > 80 ? '...' : '');
+
+    // Collect users to notify (creator + assignees, excluding commenter)
+    const usersToNotify = new Set<string>();
+
+    // Add issue creator
+    if (issue.creator_id && issue.creator_id !== user.id) {
+      usersToNotify.add(issue.creator_id);
+    }
+
+    // Add all assignees
+    const { data: assignees } = await supabase
+      .from('issue_assignees')
+      .select('profile_id')
+      .eq('issue_id', issue_id);
+
+    if (assignees) {
+      for (const assignee of assignees) {
+        if (assignee.profile_id !== user.id) {
+          usersToNotify.add(assignee.profile_id);
+        }
+      }
+    }
+
+    // Send notifications
+    for (const userId of usersToNotify) {
+      await createNotification(
+        userId,
+        issue.workspace_id,
+        'comment_added',
+        `New comment on: ${issue.title}`,
+        `${commenterName}: "${commentPreview}"`,
+        `/hub`
+      );
+    }
+  }
+
   revalidatePath(`/issues/${issue_id}`);
   revalidatePath('/');
+  revalidatePath('/hub');
   return { success: true, data };
 }
 
@@ -1653,6 +1773,35 @@ export async function getRecentActivities(
   })) as Activity[];
 }
 
+// Delete an activity (admin only)
+export async function deleteActivity(activityId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Check if user is admin
+  const adminCheck = await isUserAdmin(user.id);
+  if (!adminCheck) {
+    return { success: false, error: 'Only admins can delete activities' };
+  }
+
+  const { error } = await supabase.from('activities').delete().eq('id', activityId);
+
+  if (error) {
+    console.error('Error deleting activity:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/hub');
+  revalidatePath('/');
+  return { success: true };
+}
+
 // ============ MEETING ATTENDEE ACTIONS ============
 
 export async function addMeetingAttendee(
@@ -1801,8 +1950,23 @@ export async function addIssueAssignee(issueId: string, profileId: string): Prom
     }
   );
 
+  // Get current user's name for notification
+  const { data: currentUser } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', user.id)
+    .single();
+
+  const assignerName = currentUser?.full_name || currentUser?.email?.split('@')[0] || 'Someone';
+
+  // Send notification to the assignee (but not to themselves)
+  if (profileId !== user.id && issue?.workspace_id && issue?.title) {
+    await notifyTaskAssigned(issueId, issue.title, [profileId], issue.workspace_id, assignerName);
+  }
+
   revalidatePath(`/issues/${issueId}`);
   revalidatePath('/issues');
+  revalidatePath('/hub');
   return { success: true, data };
 }
 
@@ -2565,190 +2729,7 @@ export async function updateTeam(formData: FormData): Promise<ActionResult> {
   return { success: true, data };
 }
 
-// ============ HUB MESSAGE ACTIONS ============
-
-export type HubMessage = {
-  id: string;
-  content: string;
-  channel_type: 'workspace' | 'project';
-  project_id: string | null;
-  linked_issue_id: string | null;
-  created_at: string;
-  author: {
-    id: string;
-    full_name: string | null;
-    email: string | null;
-    avatar_url: string | null;
-  } | null;
-  linked_issue?: {
-    id: string;
-    title: string;
-    status: string;
-  } | null;
-};
-
-// Get messages for hub chat
-export async function getHubMessages(
-  workspaceId: string,
-  options: {
-    channelType?: 'workspace' | 'project';
-    projectId?: string | null;
-    limit?: number;
-    before?: string; // cursor for pagination (message ID)
-  } = {}
-): Promise<HubMessage[]> {
-  const supabase = await createClient();
-  const { channelType = 'workspace', projectId, limit = 50, before } = options;
-
-  let query = supabase
-    .from('messages')
-    .select(
-      `
-      id,
-      content,
-      channel_type,
-      project_id,
-      linked_issue_id,
-      created_at,
-      author:profiles!messages_author_id_fkey (id, full_name, email, avatar_url),
-      linked_issue:issues (id, title, status)
-    `
-    )
-    .eq('workspace_id', workspaceId)
-    .eq('channel_type', channelType)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (channelType === 'project' && projectId) {
-    query = query.eq('project_id', projectId);
-  }
-
-  if (before) {
-    // Get the timestamp of the cursor message for pagination
-    const { data: cursorMsg } = await supabase
-      .from('messages')
-      .select('created_at')
-      .eq('id', before)
-      .single();
-
-    if (cursorMsg) {
-      query = query.lt('created_at', cursorMsg.created_at);
-    }
-  }
-
-  const { data: messages, error } = await query;
-
-  if (error) {
-    console.error('Error fetching hub messages:', error);
-    return [];
-  }
-
-  return (messages || []).map((msg) => ({
-    ...msg,
-    author: Array.isArray(msg.author) ? msg.author[0] || null : msg.author,
-    linked_issue: Array.isArray(msg.linked_issue) ? msg.linked_issue[0] || null : msg.linked_issue,
-  })) as HubMessage[];
-}
-
-// Send a message in hub chat
-export async function sendHubMessage(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  const validation = parseFormData(createMessageSchema, formData);
-  if (!validation.success) {
-    return { success: false, error: validation.error };
-  }
-
-  const { content, workspace_id, project_id, channel_type, linked_issue_id } = validation.data;
-
-  const { data, error } = await supabase
-    .from('messages')
-    .insert({
-      content: content.trim(),
-      workspace_id,
-      project_id: project_id || null,
-      channel_type,
-      linked_issue_id: linked_issue_id || null,
-      author_id: user.id,
-    })
-    .select(
-      `
-      id,
-      content,
-      channel_type,
-      project_id,
-      linked_issue_id,
-      created_at,
-      author:profiles!messages_author_id_fkey (id, full_name, email, avatar_url)
-    `
-    )
-    .single();
-
-  if (error) {
-    console.error('Error sending message:', error);
-    return { success: false, error: error.message };
-  }
-
-  // Normalize response
-  const normalizedData = {
-    ...data,
-    author: Array.isArray(data.author) ? data.author[0] || null : data.author,
-  };
-
-  // No need to revalidate - using realtime
-  return { success: true, data: normalizedData };
-}
-
-// Delete a message (soft delete)
-export async function deleteHubMessage(messageId: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  // Verify ownership
-  const { data: message } = await supabase
-    .from('messages')
-    .select('author_id')
-    .eq('id', messageId)
-    .single();
-
-  if (!message) {
-    return { success: false, error: 'Message not found' };
-  }
-
-  if (message.author_id !== user.id) {
-    // Check if admin
-    const isAdmin = await isUserAdmin(user.id);
-    if (!isAdmin) {
-      return { success: false, error: 'You can only delete your own messages' };
-    }
-  }
-
-  const { error } = await supabase
-    .from('messages')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', messageId);
-
-  if (error) {
-    console.error('Error deleting message:', error);
-    return { success: false, error: error.message };
-  }
-
-  return { success: true };
-}
+// ============ WORKSPACE MEMBER ACTIONS ============
 
 export async function getWorkspaceMembers(workspaceId: string) {
   const supabase = await createClient();
@@ -2974,4 +2955,208 @@ export async function createProjectWithRoadmap(
   revalidatePath('/projects');
   revalidatePath('/');
   return { success: true, data: project };
+}
+
+// ============ NOTIFICATION ACTIONS ============
+
+export type NotificationType =
+  | 'task_assigned'
+  | 'task_completed'
+  | 'task_updated'
+  | 'comment_added'
+  | 'mention'
+  | 'system';
+
+/**
+ * Create a notification for a user
+ */
+export async function createNotification(
+  userId: string,
+  workspaceId: string,
+  type: NotificationType,
+  title: string,
+  message?: string,
+  link?: string,
+  metadata?: Record<string, unknown>
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from('notifications').insert({
+    user_id: userId,
+    workspace_id: workspaceId,
+    type,
+    title,
+    message: message || null,
+    link: link || null,
+    metadata: metadata || {},
+  });
+
+  if (error) {
+    console.error('Error creating notification:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Get notifications for the current user
+ */
+export async function getNotifications(workspaceId: string, limit = 50) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Get unread notification count
+ */
+export async function getUnreadNotificationCount(workspaceId: string): Promise<number> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return 0;
+
+  const { count, error } = await supabase
+    .from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .eq('is_read', false);
+
+  if (error) {
+    console.error('Error counting notifications:', error);
+    return 0;
+  }
+
+  return count || 0;
+}
+
+/**
+ * Mark a notification as read
+ */
+export async function markNotificationAsRead(notificationId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true, read_at: new Date().toISOString() })
+    .eq('id', notificationId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error marking notification as read:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Mark all notifications as read for current user
+ */
+export async function markAllNotificationsAsRead(workspaceId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true, read_at: new Date().toISOString() })
+    .eq('workspace_id', workspaceId)
+    .eq('user_id', user.id)
+    .eq('is_read', false);
+
+  if (error) {
+    console.error('Error marking all notifications as read:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Delete a notification
+ */
+export async function deleteNotification(notificationId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', notificationId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error deleting notification:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
+}
+
+/**
+ * Notify assignees when a task is assigned
+ */
+export async function notifyTaskAssigned(
+  issueId: string,
+  issueTitle: string,
+  assigneeIds: string[],
+  workspaceId: string,
+  assignedByName: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  const notifications = assigneeIds.map((userId) => ({
+    user_id: userId,
+    workspace_id: workspaceId,
+    type: 'task_assigned' as NotificationType,
+    title: 'Task assigned to you',
+    message: `${assignedByName} assigned you to "${issueTitle}"`,
+    link: `/issues/${issueId}`,
+    metadata: { issue_id: issueId },
+  }));
+
+  if (notifications.length > 0) {
+    await supabase.from('notifications').insert(notifications);
+  }
 }

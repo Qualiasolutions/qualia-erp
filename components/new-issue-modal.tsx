@@ -22,9 +22,7 @@ import {
 } from '@/components/ui/select';
 import { createIssue, getProjects } from '@/app/actions';
 import { useWorkspace } from '@/components/workspace-provider';
-
-const ISSUE_STATUSES = ['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'];
-const ISSUE_PRIORITIES = ['No Priority', 'Urgent', 'High', 'Medium', 'Low'];
+import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '@/lib/constants/task-config';
 
 interface Project {
   id: string;
@@ -58,7 +56,7 @@ export function NewIssueModal() {
     if (result.success) {
       setOpen(false);
     } else {
-      setError(result.error || 'Failed to create issue');
+      setError(result.error || 'Failed to create task');
     }
 
     setLoading(false);
@@ -69,12 +67,12 @@ export function NewIssueModal() {
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
           <Plus className="h-4 w-4" />
-          <span>New Issue</span>
+          <span>New Task</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="border-border bg-card text-foreground">
         <DialogHeader>
-          <DialogTitle>Create New Issue</DialogTitle>
+          <DialogTitle>Create New Task</DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -82,7 +80,7 @@ export function NewIssueModal() {
             <Input
               id="title"
               name="title"
-              placeholder="Issue title"
+              placeholder="Task title"
               required
               className="border-border bg-background"
             />
@@ -93,7 +91,7 @@ export function NewIssueModal() {
             <Textarea
               id="description"
               name="description"
-              placeholder="Describe the issue..."
+              placeholder="Describe the task..."
               className="min-h-[100px] border-border bg-background"
             />
           </div>
@@ -106,7 +104,7 @@ export function NewIssueModal() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-card">
-                  {ISSUE_STATUSES.map((status) => (
+                  {STATUS_OPTIONS.filter((s) => s !== 'Canceled').map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
                     </SelectItem>
@@ -122,7 +120,7 @@ export function NewIssueModal() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-card">
-                  {ISSUE_PRIORITIES.map((priority) => (
+                  {PRIORITY_OPTIONS.map((priority) => (
                     <SelectItem key={priority} value={priority}>
                       {priority}
                     </SelectItem>
@@ -160,7 +158,7 @@ export function NewIssueModal() {
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="bg-qualia-600 hover:bg-qualia-500">
-              {loading ? 'Creating...' : 'Create Issue'}
+              {loading ? 'Creating...' : 'Create Task'}
             </Button>
           </div>
         </form>

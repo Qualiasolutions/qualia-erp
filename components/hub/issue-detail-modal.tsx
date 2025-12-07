@@ -31,9 +31,7 @@ import {
 } from '@/components/ui/select';
 import { updateIssue, deleteIssue, createComment, getIssueById, getProjects } from '@/app/actions';
 import { formatTimeAgo } from '@/lib/utils';
-
-const STATUSES = ['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'];
-const PRIORITIES = ['No Priority', 'Urgent', 'High', 'Medium', 'Low'];
+import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '@/lib/constants/task-config';
 
 interface Profile {
   id: string;
@@ -157,7 +155,7 @@ export function IssueDetailModal({
       }
       setProjects(projectsData as Project[]);
     } catch {
-      setError('Failed to load issue');
+      setError('Failed to load task');
     }
 
     setLoading(false);
@@ -182,7 +180,7 @@ export function IssueDetailModal({
       if (updatedIssue) setIssue(updatedIssue as Issue);
       onUpdate?.();
     } else {
-      setError(result.error || 'Failed to update issue');
+      setError(result.error || 'Failed to update task');
     }
 
     setSaving(false);
@@ -197,7 +195,7 @@ export function IssueDetailModal({
         onOpenChange(false);
         onUpdate?.();
       } else {
-        setError(result.error || 'Failed to delete issue');
+        setError(result.error || 'Failed to delete task');
       }
     });
   };
@@ -231,7 +229,7 @@ export function IssueDetailModal({
           </div>
         ) : !issue ? (
           <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
-            <p>Issue not found</p>
+            <p>Task not found</p>
           </div>
         ) : (
           <>
@@ -380,7 +378,7 @@ export function IssueDetailModal({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {STATUSES.map((s) => (
+                            {STATUS_OPTIONS.map((s) => (
                               <SelectItem key={s} value={s}>
                                 {s}
                               </SelectItem>
@@ -400,7 +398,7 @@ export function IssueDetailModal({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {PRIORITIES.map((p) => (
+                            {PRIORITY_OPTIONS.map((p) => (
                               <SelectItem key={p} value={p}>
                                 {p}
                               </SelectItem>

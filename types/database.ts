@@ -366,6 +366,189 @@ export type Database = {
         };
         Relationships: [];
       };
+      messages: {
+        Row: {
+          author_id: string;
+          channel_type: string;
+          content: string;
+          created_at: string | null;
+          deleted_at: string | null;
+          id: string;
+          linked_issue_id: string | null;
+          metadata: Json | null;
+          project_id: string | null;
+          updated_at: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          author_id: string;
+          channel_type?: string;
+          content: string;
+          created_at?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          linked_issue_id?: string | null;
+          metadata?: Json | null;
+          project_id?: string | null;
+          updated_at?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          author_id?: string;
+          channel_type?: string;
+          content?: string;
+          created_at?: string | null;
+          deleted_at?: string | null;
+          id?: string;
+          linked_issue_id?: string | null;
+          metadata?: Json | null;
+          project_id?: string | null;
+          updated_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
+      notifications: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          is_read: boolean | null;
+          link: string | null;
+          message: string | null;
+          metadata: Json | null;
+          read_at: string | null;
+          title: string;
+          type: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          is_read?: boolean | null;
+          link?: string | null;
+          message?: string | null;
+          metadata?: Json | null;
+          read_at?: string | null;
+          title: string;
+          type: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          is_read?: boolean | null;
+          link?: string | null;
+          message?: string | null;
+          metadata?: Json | null;
+          read_at?: string | null;
+          title?: string;
+          type?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
+      phase_items: {
+        Row: {
+          completed_at: string | null;
+          completed_by: string | null;
+          created_at: string | null;
+          description: string | null;
+          display_order: number;
+          helper_text: string | null;
+          id: string;
+          is_completed: boolean | null;
+          is_custom: boolean | null;
+          linked_issue_id: string | null;
+          phase_id: string;
+          template_key: string | null;
+          title: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          display_order?: number;
+          helper_text?: string | null;
+          id?: string;
+          is_completed?: boolean | null;
+          is_custom?: boolean | null;
+          linked_issue_id?: string | null;
+          phase_id: string;
+          template_key?: string | null;
+          title: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          display_order?: number;
+          helper_text?: string | null;
+          id?: string;
+          is_completed?: boolean | null;
+          is_custom?: boolean | null;
+          linked_issue_id?: string | null;
+          phase_id?: string;
+          template_key?: string | null;
+          title?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      project_phases: {
+        Row: {
+          created_at: string | null;
+          created_by: string | null;
+          description: string | null;
+          display_order: number;
+          helper_text: string | null;
+          id: string;
+          is_custom: boolean | null;
+          name: string;
+          project_id: string;
+          status: string;
+          template_key: string | null;
+          updated_at: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          display_order?: number;
+          helper_text?: string | null;
+          id?: string;
+          is_custom?: boolean | null;
+          name: string;
+          project_id: string;
+          status?: string;
+          template_key?: string | null;
+          updated_at?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          created_by?: string | null;
+          description?: string | null;
+          display_order?: number;
+          helper_text?: string | null;
+          id?: string;
+          is_custom?: boolean | null;
+          name?: string;
+          project_id?: string;
+          status?: string;
+          template_key?: string | null;
+          updated_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [];
+      };
       milestone_issues: {
         Row: {
           added_at: string | null;
@@ -737,6 +920,19 @@ export type Milestone = Tables<'milestones'>;
 export type MilestoneIssue = Tables<'milestone_issues'>;
 export type Activity = Tables<'activities'>;
 export type Document = Tables<'documents'>;
+export type Message = Tables<'messages'>;
+export type Notification = Tables<'notifications'>;
+export type ProjectPhase = Tables<'project_phases'>;
+export type PhaseItem = Tables<'phase_items'>;
+
+// Notification types
+export type NotificationType =
+  | 'task_assigned'
+  | 'task_completed'
+  | 'task_updated'
+  | 'comment_added'
+  | 'mention'
+  | 'system';
 
 // Enum types
 export type ActivityType = Enums<'activity_type'>;
