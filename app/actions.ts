@@ -2778,13 +2778,13 @@ export async function getBoardTasks(
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  console.log('[getBoardTasks] User:', user?.id, 'Workspace:', workspaceId);
 
   if (!user) {
     console.error('[getBoardTasks] No authenticated user');
     return [];
   }
 
+  // Simplified query - fetch tasks first, then relations separately if needed
   let query = supabase
     .from('issues')
     .select(
@@ -2797,10 +2797,8 @@ export async function getBoardTasks(
       created_at,
       updated_at,
       creator_id,
-      project:projects (id, name),
-      assignees:issue_assignees(
-        profile:profiles(id, full_name, avatar_url)
-      )
+      project_id,
+      projects!issues_project_id_fkey (id, name)
     `
     )
     .eq('workspace_id', workspaceId)
@@ -2813,22 +2811,48 @@ export async function getBoardTasks(
 
   const { data: tasks, error } = await query;
 
-  console.log('[getBoardTasks] Query result:', tasks?.length || 0, 'tasks, error:', error?.message);
-
   if (error) {
     console.error('[getBoardTasks] Error fetching board tasks:', error);
     return [];
   }
 
+  // Get assignees separately to avoid join issues
+  const taskIds = (tasks || []).map((t) => t.id);
+  const assigneesMap: Record<
+    string,
+    Array<{ id: string; full_name: string | null; avatar_url: string | null }>
+  > = {};
+
+  if (taskIds.length > 0) {
+    const { data: assigneesData } = await supabase
+      .from('issue_assignees')
+      .select('issue_id, profiles!issue_assignees_profile_id_fkey (id, full_name, avatar_url)')
+      .in('issue_id', taskIds);
+
+    if (assigneesData) {
+      assigneesData.forEach((a) => {
+        if (!assigneesMap[a.issue_id]) {
+          assigneesMap[a.issue_id] = [];
+        }
+        const profile = Array.isArray(a.profiles) ? a.profiles[0] : a.profiles;
+        if (profile) {
+          assigneesMap[a.issue_id].push(profile);
+        }
+      });
+    }
+  }
+
   return (tasks || []).map((task) => ({
-    ...task,
-    project: Array.isArray(task.project) ? task.project[0] || null : task.project,
-    assignees: (task.assignees || [])
-      .map(
-        (a: { profile: { id: string; full_name: string | null; avatar_url: string | null }[] }) =>
-          Array.isArray(a.profile) ? a.profile[0] : a.profile
-      )
-      .filter(Boolean),
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    priority: task.priority,
+    created_at: task.created_at,
+    updated_at: task.updated_at,
+    creator_id: task.creator_id,
+    project: Array.isArray(task.projects) ? task.projects[0] || null : task.projects,
+    assignees: assigneesMap[task.id] || [],
   }));
 }
 
