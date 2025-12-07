@@ -75,10 +75,12 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
       else setIsLoading(true);
 
       try {
+        console.log('[Board] Loading tasks for workspace:', workspaceId);
         const data = await getBoardTasks(workspaceId);
+        console.log('[Board] Loaded tasks:', data?.length || 0, 'tasks');
         setTasks(data as BoardTask[]);
       } catch (error) {
-        console.error('Failed to load tasks:', error);
+        console.error('[Board] Failed to load tasks:', error);
       }
 
       setIsLoading(false);
@@ -87,10 +89,13 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
     [workspaceId]
   );
 
-  // Set up real-time subscription
+  // Initial load
   useEffect(() => {
     loadTasks();
+  }, [loadTasks]);
 
+  // Set up real-time subscription
+  useEffect(() => {
     const supabase = createClient();
     const realtimeChannel = supabase
       .channel(`board:${workspaceId}`)
@@ -103,6 +108,7 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
           filter: `workspace_id=eq.${workspaceId}`,
         },
         (payload) => {
+          console.log('[Board] Realtime event:', payload.eventType);
           if (payload.eventType === 'INSERT') {
             loadTasks(true);
           } else if (payload.eventType === 'UPDATE') {

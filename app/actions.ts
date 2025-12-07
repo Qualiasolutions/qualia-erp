@@ -2774,6 +2774,17 @@ export async function getBoardTasks(
   const supabase = await createClient();
   const { status, limit = 100 } = options;
 
+  // First check auth
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  console.log('[getBoardTasks] User:', user?.id, 'Workspace:', workspaceId);
+
+  if (!user) {
+    console.error('[getBoardTasks] No authenticated user');
+    return [];
+  }
+
   let query = supabase
     .from('issues')
     .select(
@@ -2802,8 +2813,10 @@ export async function getBoardTasks(
 
   const { data: tasks, error } = await query;
 
+  console.log('[getBoardTasks] Query result:', tasks?.length || 0, 'tasks, error:', error?.message);
+
   if (error) {
-    console.error('Error fetching board tasks:', error);
+    console.error('[getBoardTasks] Error fetching board tasks:', error);
     return [];
   }
 
