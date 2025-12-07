@@ -17,7 +17,13 @@ import {
   AlertCircle,
   Minus,
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -236,6 +242,7 @@ export function TaskDetailModal({
           <>
             {/* Header */}
             <DialogHeader className="border-b border-border px-6 py-4">
+              <DialogDescription className="sr-only">View and edit task details</DialogDescription>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <StatusIcon status={status} />
