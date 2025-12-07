@@ -19,7 +19,6 @@ export type ActivityConfigItem = {
 
 /**
  * Configuration for activity feed items
- * Used by both dashboard and hub activity feeds
  */
 export const ACTIVITY_CONFIG: Record<string, ActivityConfigItem> = {
   project_created: {

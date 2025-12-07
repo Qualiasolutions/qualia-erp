@@ -2759,8 +2759,8 @@ export async function getWorkspaceMembers(workspaceId: string) {
   );
 }
 
-// Get tasks for hub (simplified issue list)
-export async function getHubTasks(
+// Get tasks for board (enhanced issue list with all fields)
+export async function getBoardTasks(
   workspaceId: string,
   options: {
     status?: string[];
@@ -2768,7 +2768,7 @@ export async function getHubTasks(
   } = {}
 ) {
   const supabase = await createClient();
-  const { status, limit = 50 } = options;
+  const { status, limit = 100 } = options;
 
   let query = supabase
     .from('issues')
@@ -2776,9 +2776,12 @@ export async function getHubTasks(
       `
       id,
       title,
+      description,
       status,
       priority,
       created_at,
+      updated_at,
+      creator_id,
       project:projects (id, name),
       assignees:issue_assignees(
         profile:profiles(id, full_name, avatar_url)
@@ -2786,7 +2789,7 @@ export async function getHubTasks(
     `
     )
     .eq('workspace_id', workspaceId)
-    .order('created_at', { ascending: false })
+    .order('updated_at', { ascending: false })
     .limit(limit);
 
   if (status && status.length > 0) {
@@ -2796,7 +2799,7 @@ export async function getHubTasks(
   const { data: tasks, error } = await query;
 
   if (error) {
-    console.error('Error fetching hub tasks:', error);
+    console.error('Error fetching board tasks:', error);
     return [];
   }
 

@@ -10,7 +10,7 @@ import {
   Folder,
   Building2,
   Calendar,
-  MessageSquare,
+  Kanban,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -64,11 +64,11 @@ export function CommandMenu() {
               <span>Dashboard</span>
             </Command.Item>
             <Command.Item
-              onSelect={() => runCommand(() => router.push('/hub'))}
+              onSelect={() => runCommand(() => router.push('/board'))}
               className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
             >
-              <MessageSquare className="mr-2 h-4 w-4" />
-              <span>Hub</span>
+              <Kanban className="mr-2 h-4 w-4" />
+              <span>Board</span>
             </Command.Item>
             <Command.Item
               onSelect={() => runCommand(() => router.push('/projects'))}

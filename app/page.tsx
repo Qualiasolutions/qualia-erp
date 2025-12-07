@@ -7,7 +7,7 @@ import {
   Folder,
   Users,
   Calendar,
-  MessageCircle,
+  Kanban,
   ArrowRight,
   Clock,
   Activity,
@@ -315,7 +315,7 @@ async function TasksCard() {
           </div>
           <span className="font-semibold text-foreground">Open Tasks</span>
         </div>
-        <Link href="/hub" className="text-xs font-medium text-primary hover:text-primary/80">
+        <Link href="/board" className="text-xs font-medium text-primary hover:text-primary/80">
           View all
         </Link>
       </div>
@@ -325,7 +325,7 @@ async function TasksCard() {
           <div className="py-6 text-center">
             <p className="text-sm text-muted-foreground">No open tasks</p>
             <Link
-              href="/hub"
+              href="/board"
               className="mt-2 inline-block text-xs font-medium text-primary hover:underline"
             >
               Create one
@@ -412,10 +412,10 @@ function QuickNav() {
       color: 'bg-violet-500/10 text-violet-500',
     },
     {
-      label: 'Hub',
-      description: 'Tasks & collaboration',
-      href: '/hub',
-      icon: MessageCircle,
+      label: 'Board',
+      description: 'Task board',
+      href: '/board',
+      icon: Kanban,
       color: 'bg-rose-500/10 text-rose-500',
     },
   ];

@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import {
   LayoutGrid,
-  MessageSquare,
+  Kanban,
   Settings,
   Folder,
   Calendar,
@@ -35,7 +35,7 @@ const Chat = dynamic(() => import('@/components/chat'), {
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutGrid },
-  { name: 'Hub', href: '/hub', icon: MessageSquare },
+  { name: 'Board', href: '/board', icon: Kanban },
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },

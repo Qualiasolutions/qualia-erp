@@ -9,9 +9,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragStartEvent,
-  DragEndEvent,
-  DragOverEvent,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
@@ -26,51 +26,46 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { KanbanColumn } from './kanban-column';
-import { KanbanCard, type KanbanTask } from './kanban-card';
-import { QuickTaskModal } from './quick-task-modal';
-import { IssueDetailModal } from './issue-detail-modal';
-import { getHubTasks, updateIssue } from '@/app/actions';
+import { BoardColumn } from './board-column';
+import { BoardCard, type BoardTask } from './board-card';
+import { CreateTaskModal } from './create-task-modal';
+import { TaskDetailModal } from './task-detail-modal';
+import { OnlineUsers } from './online-users';
+import { getBoardTasks, updateIssue } from '@/app/actions';
 import { createClient } from '@/lib/supabase/client';
-import { STATUS_COLUMNS, PRIORITY_OPTIONS } from '@/lib/constants/task-config';
 
-interface KanbanBoardProps {
+const PRIORITY_OPTIONS = ['Urgent', 'High', 'Medium', 'Low', 'No Priority'] as const;
+
+const STATUS_COLUMNS = [
+  { id: 'Yet to Start', title: 'Backlog', color: 'bg-slate-500' },
+  { id: 'Todo', title: 'To Do', color: 'bg-blue-500' },
+  { id: 'In Progress', title: 'In Progress', color: 'bg-amber-500' },
+  { id: 'Done', title: 'Done', color: 'bg-emerald-500' },
+] as const;
+
+interface BoardContentProps {
   workspaceId: string;
+  userId: string;
 }
 
-export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
-  const [tasks, setTasks] = useState<KanbanTask[]>([]);
+export function BoardContent({ workspaceId, userId }: BoardContentProps) {
+  const [tasks, setTasks] = useState<BoardTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [activeTask, setActiveTask] = useState<KanbanTask | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTask, setActiveTask] = useState<BoardTask | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [overId, setOverId] = useState<string | null>(null);
 
-  // Filter state
+  // Filters
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Get current user ID
-  useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id || null);
-    });
-  }, []);
-
-  // Sensors for drag and drop
+  // DnD sensors
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   // Load tasks
@@ -80,8 +75,8 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
       else setIsLoading(true);
 
       try {
-        const data = await getHubTasks(workspaceId, { limit: 100 });
-        setTasks(data as KanbanTask[]);
+        const data = await getBoardTasks(workspaceId);
+        setTasks(data as BoardTask[]);
       } catch (error) {
         console.error('Failed to load tasks:', error);
       }
@@ -92,37 +87,64 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
     [workspaceId]
   );
 
+  // Set up real-time subscription
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
 
-  // Filter tasks based on active filters
+    const supabase = createClient();
+    const realtimeChannel = supabase
+      .channel(`board:${workspaceId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues',
+          filter: `workspace_id=eq.${workspaceId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            loadTasks(true);
+          } else if (payload.eventType === 'UPDATE') {
+            setTasks((prev) =>
+              prev.map((t) => (t.id === payload.new.id ? { ...t, ...payload.new } : t))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setTasks((prev) => prev.filter((t) => t.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(realtimeChannel);
+    };
+  }, [workspaceId, loadTasks]);
+
+  // Filter tasks
   const filteredTasks = useMemo(() => {
     let result = tasks;
 
-    // Filter by "My Tasks" - tasks assigned to current user
-    if (showMyTasks && currentUserId) {
-      result = result.filter((task) => task.assignees?.some((a) => a.id === currentUserId));
+    if (showMyTasks) {
+      result = result.filter(
+        (task) => task.assignees?.some((a) => a.id === userId) || task.creator_id === userId
+      );
     }
 
-    // Filter by selected priorities
     if (selectedPriorities.length > 0) {
       result = result.filter((task) => selectedPriorities.includes(task.priority));
     }
 
     return result;
-  }, [tasks, showMyTasks, currentUserId, selectedPriorities]);
+  }, [tasks, showMyTasks, userId, selectedPriorities]);
 
-  // Check if any filters are active
   const hasActiveFilters = showMyTasks || selectedPriorities.length > 0;
 
-  // Clear all filters
   const clearFilters = useCallback(() => {
     setShowMyTasks(false);
     setSelectedPriorities([]);
   }, []);
 
-  // Toggle priority filter
   const togglePriority = useCallback((priority: string) => {
     setSelectedPriorities((prev) =>
       prev.includes(priority) ? prev.filter((p) => p !== priority) : [...prev, priority]
@@ -131,9 +153,11 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
 
   // Group tasks by status
   const tasksByStatus = useMemo(() => {
-    const grouped: Record<string, KanbanTask[]> = {};
+    const grouped: Record<string, BoardTask[]> = {};
     STATUS_COLUMNS.forEach((col) => {
-      grouped[col.id] = filteredTasks.filter((t) => t.status === col.id);
+      grouped[col.id] = filteredTasks
+        .filter((t) => t.status === col.id)
+        .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     });
     return grouped;
   }, [filteredTasks]);
@@ -148,8 +172,7 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
   );
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
-    const { over } = event;
-    setOverId(over?.id as string | null);
+    setOverId((event.over?.id as string) || null);
   }, []);
 
   const handleDragEnd = useCallback(
@@ -164,22 +187,15 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
       const task = tasks.find((t) => t.id === taskId);
       if (!task) return;
 
-      // Determine target status
       let targetStatus: string | null = null;
 
-      // Check if dropped on a column
       if (STATUS_COLUMNS.some((col) => col.id === over.id)) {
         targetStatus = over.id as string;
-      }
-      // Check if dropped on a task - get its column
-      else {
+      } else {
         const targetTask = tasks.find((t) => t.id === over.id);
-        if (targetTask) {
-          targetStatus = targetTask.status;
-        }
+        if (targetTask) targetStatus = targetTask.status;
       }
 
-      // If no status change, return
       if (!targetStatus || targetStatus === task.status) return;
 
       // Optimistic update
@@ -187,16 +203,15 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
         prev.map((t) => (t.id === taskId ? { ...t, status: targetStatus as string } : t))
       );
 
-      // Persist change
+      // Persist
       const formData = new FormData();
-      formData.append('id', taskId);
-      formData.append('status', targetStatus);
+      formData.set('id', taskId);
+      formData.set('status', targetStatus);
 
       const result = await updateIssue(formData);
       if (!result.success) {
-        // Revert on failure
         loadTasks();
-        console.error('Failed to update task status:', result.error);
+        console.error('Failed to update task:', result.error);
       }
     },
     [tasks, loadTasks]
@@ -208,7 +223,7 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
   }, []);
 
   const handleTaskCreated = useCallback(() => {
-    setIsModalOpen(false);
+    setIsCreateModalOpen(false);
     loadTasks(true);
   }, [loadTasks]);
 
@@ -221,68 +236,66 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-qualia-500" />
-          <p className="text-sm text-muted-foreground">Loading tasks...</p>
+          <p className="text-sm text-muted-foreground">Loading board...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Board Header */}
-      <div className="flex items-center justify-between border-b border-border bg-card/50 px-4 py-3">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold">Task Board</h2>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {filteredTasks.length}
-            {hasActiveFilters ? ` of ${tasks.length}` : ''} tasks
-          </span>
+    <div className="flex h-full flex-col bg-background">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-xl font-semibold">Board</h1>
+            <p className="text-sm text-muted-foreground">
+              {filteredTasks.length}
+              {hasActiveFilters ? ` of ${tasks.length}` : ''} tasks
+            </p>
+          </div>
           {hasActiveFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-              onClick={clearFilters}
-            >
+            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={clearFilters}>
               <X className="h-3 w-3" />
               Clear filters
             </Button>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 gap-1.5 text-muted-foreground"
-            onClick={() => loadTasks(true)}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
-            Refresh
+
+        <div className="flex items-center gap-3">
+          {/* Online Users */}
+          <OnlineUsers workspaceId={workspaceId} currentUserId={userId} />
+
+          <div className="h-6 w-px bg-border" />
+
+          {/* Refresh */}
+          <Button variant="ghost" size="sm" onClick={() => loadTasks(true)} disabled={isRefreshing}>
+            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
           </Button>
+
+          {/* My Tasks Filter */}
           <Button
             variant={showMyTasks ? 'secondary' : 'ghost'}
             size="sm"
-            className={cn('h-8 gap-1.5', showMyTasks ? 'text-qualia-500' : 'text-muted-foreground')}
             onClick={() => setShowMyTasks(!showMyTasks)}
+            className={cn(showMyTasks && 'text-qualia-500')}
           >
-            <User className="h-3.5 w-3.5" />
+            <User className="mr-1.5 h-4 w-4" />
             My Tasks
           </Button>
+
+          {/* Priority Filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant={selectedPriorities.length > 0 ? 'secondary' : 'ghost'}
                 size="sm"
-                className={cn(
-                  'h-8 gap-1.5',
-                  selectedPriorities.length > 0 ? 'text-qualia-500' : 'text-muted-foreground'
-                )}
+                className={cn(selectedPriorities.length > 0 && 'text-qualia-500')}
               >
-                <Filter className="h-3.5 w-3.5" />
+                <Filter className="mr-1.5 h-4 w-4" />
                 Priority
                 {selectedPriorities.length > 0 && (
-                  <span className="ml-1 rounded-full bg-qualia-500/20 px-1.5 text-[10px] font-medium">
+                  <span className="ml-1.5 rounded-full bg-qualia-500/20 px-1.5 text-[10px] font-semibold">
                     {selectedPriorities.length}
                   </span>
                 )}
@@ -302,18 +315,21 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <div className="h-6 w-px bg-border" />
+
+          {/* Create Task */}
           <Button
-            size="sm"
-            className="h-8 gap-1.5 bg-qualia-600 hover:bg-qualia-500"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-qualia-600 hover:bg-qualia-500"
           >
-            <Plus className="h-3.5 w-3.5" />
-            Add Task
+            <Plus className="mr-1.5 h-4 w-4" />
+            New Task
           </Button>
         </div>
-      </div>
+      </header>
 
-      {/* Kanban Columns */}
+      {/* Kanban Board */}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
@@ -321,14 +337,13 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex flex-1 gap-4 overflow-x-auto p-4">
+        <div className="flex flex-1 gap-4 overflow-x-auto p-6">
           {STATUS_COLUMNS.map((column) => (
-            <KanbanColumn
+            <BoardColumn
               key={column.id}
               id={column.id}
               title={column.title}
               color={column.color}
-              lightColor={column.lightColor}
               tasks={tasksByStatus[column.id] || []}
               onTaskClick={handleTaskClick}
               isOver={overId === column.id}
@@ -336,7 +351,6 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
           ))}
         </div>
 
-        {/* Drag Overlay */}
         {typeof document !== 'undefined' &&
           createPortal(
             <DragOverlay
@@ -345,25 +359,24 @@ export function KanbanBoard({ workspaceId }: KanbanBoardProps) {
                 easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
               }}
             >
-              {activeTask ? <KanbanCard task={activeTask} onClick={() => {}} isOverlay /> : null}
+              {activeTask && <BoardCard task={activeTask} onClick={() => {}} isOverlay />}
             </DragOverlay>,
             document.body
           )}
       </DndContext>
 
-      {/* Quick Task Modal */}
-      <QuickTaskModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+      {/* Modals */}
+      <CreateTaskModal
+        open={isCreateModalOpen}
+        onOpenChange={setIsCreateModalOpen}
         workspaceId={workspaceId}
         onCreated={handleTaskCreated}
       />
 
-      {/* Issue Detail Modal */}
-      <IssueDetailModal
+      <TaskDetailModal
         open={isDetailModalOpen}
         onOpenChange={setIsDetailModalOpen}
-        issueId={selectedTaskId}
+        taskId={selectedTaskId}
         workspaceId={workspaceId}
         onUpdate={handleTaskUpdated}
       />
