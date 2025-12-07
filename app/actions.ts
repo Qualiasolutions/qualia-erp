@@ -542,6 +542,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/issues');
   revalidatePath('/hub');
+  revalidatePath('/board');
   revalidatePath('/');
   return { success: true, data };
 }
@@ -992,6 +993,7 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
   revalidatePath(`/issues/${id}`);
   revalidatePath('/issues');
   revalidatePath('/hub');
+  revalidatePath('/board');
   return { success: true, data };
 }
 
@@ -1064,6 +1066,8 @@ export async function deleteIssue(id: string): Promise<ActionResult> {
   }
 
   revalidatePath('/issues');
+  revalidatePath('/board');
+  revalidatePath('/hub');
   return { success: true };
 }
 
