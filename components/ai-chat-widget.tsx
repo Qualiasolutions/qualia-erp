@@ -93,6 +93,20 @@ export function AIChatWidget() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen]);
 
+  // Listen for openAIChat event from dashboard input
+  useEffect(() => {
+    const handleOpenAIChat = (e: CustomEvent<{ query: string }>) => {
+      setIsOpen(true);
+      if (e.detail.query) {
+        // Send the query directly
+        sendMessage({ text: e.detail.query });
+      }
+    };
+
+    window.addEventListener('openAIChat', handleOpenAIChat as EventListener);
+    return () => window.removeEventListener('openAIChat', handleOpenAIChat as EventListener);
+  }, [sendMessage]);
+
   return (
     <>
       {/* Floating Button */}
