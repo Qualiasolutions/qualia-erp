@@ -2,281 +2,182 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
-import { X, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { X, Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Vapi from '@vapi-ai/web';
 
 interface QualiaVoiceProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking';
-
-// Type for the speech recognition instance
-type SpeechRecognitionInstance = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult:
-    | ((event: {
-        resultIndex: number;
-        results: {
-          length: number;
-          [index: number]: { isFinal: boolean; [index: number]: { transcript: string } };
-        };
-      }) => void)
-    | null;
-  onerror: ((event: { error: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
+type CallState = 'idle' | 'connecting' | 'connected' | 'speaking' | 'listening';
 
 export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
-  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
-  const [transcript, setTranscript] = useState('');
-  const [response, setResponse] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [callState, setCallState] = useState<CallState>('idle');
   const [isMuted, setIsMuted] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [assistantMessage, setAssistantMessage] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [volumeLevel, setVolumeLevel] = useState(0);
 
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
-  const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const vapiRef = useRef<Vapi | null>(null);
 
-  // Initialize speech recognition
-  const initRecognition = useCallback((): SpeechRecognitionInstance | null => {
-    if (typeof window === 'undefined') return null;
-
-    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognitionAPI) {
-      setError('Speech recognition is not supported in your browser');
-      return null;
-    }
-
-    const recognition = new SpeechRecognitionAPI() as SpeechRecognitionInstance;
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      const current = event.resultIndex;
-      const result = event.results[current];
-      const transcriptText = result[0].transcript;
-      setTranscript(transcriptText);
-
-      if (result.isFinal) {
-        handleUserSpeech(transcriptText);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error !== 'aborted') {
-        setError(`Recognition error: ${event.error}`);
-      }
-      setVoiceState('idle');
-    };
-
-    recognition.onend = () => {
-      if (voiceState === 'listening') {
-        setVoiceState('idle');
-      }
-    };
-
-    return recognition;
-  }, [voiceState]);
-
-  // Send user speech to AI and get response
-  const handleUserSpeech = async (text: string) => {
-    if (!text.trim()) return;
-
-    setVoiceState('processing');
-    setError(null);
-
-    try {
-      abortControllerRef.current = new AbortController();
-
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: text }],
-        }),
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to get response');
-      }
-
-      // Handle streaming response
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error('No response body');
-
-      let fullResponse = '';
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        // Parse SSE format
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.startsWith('0:')) {
-            // Text content
-            const content = line.slice(2).trim();
-            if (content.startsWith('"') && content.endsWith('"')) {
-              fullResponse += JSON.parse(content);
-            }
-          }
-        }
-      }
-
-      setResponse(fullResponse);
-      if (!isMuted && fullResponse) {
-        speakResponse(fullResponse);
-      } else {
-        setVoiceState('idle');
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        setError(err.message);
-        setVoiceState('idle');
-      }
-    }
-  };
-
-  // Text-to-speech for Qualia's response
-  const speakResponse = (text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      setError('Speech synthesis is not supported');
-      setVoiceState('idle');
+  // Initialize VAPI
+  useEffect(() => {
+    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+    if (!publicKey) {
+      setError('VAPI not configured');
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
+    const vapi = new Vapi(publicKey);
+    vapiRef.current = vapi;
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.0;
-    utterance.volume = 1.0;
+    // Event listeners
+    vapi.on('call-start', () => {
+      setCallState('connected');
+      setError(null);
+    });
 
-    // Try to find a good voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(
-      (v) => v.name.includes('Samantha') || v.name.includes('Google') || v.name.includes('Female')
-    );
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+    vapi.on('call-end', () => {
+      setCallState('idle');
+      setTranscript('');
+      setAssistantMessage('');
+    });
+
+    vapi.on('speech-start', () => {
+      setCallState('speaking');
+    });
+
+    vapi.on('speech-end', () => {
+      setCallState('listening');
+    });
+
+    vapi.on('volume-level', (volume: number) => {
+      setVolumeLevel(volume);
+    });
+
+    vapi.on('message', (message: { type: string; role?: string; transcript?: string }) => {
+      if (message.type === 'transcript') {
+        if (message.role === 'user') {
+          setTranscript(message.transcript || '');
+        } else if (message.role === 'assistant') {
+          setAssistantMessage(message.transcript || '');
+        }
+      }
+    });
+
+    vapi.on('error', (e: Error) => {
+      console.error('VAPI error:', e);
+      setError(e.message || 'Call error');
+      setCallState('idle');
+    });
+
+    return () => {
+      vapi.stop();
+    };
+  }, []);
+
+  // Start call
+  const startCall = useCallback(async () => {
+    if (!vapiRef.current) {
+      setError('VAPI not initialized');
+      return;
     }
 
-    utterance.onstart = () => setVoiceState('speaking');
-    utterance.onend = () => setVoiceState('idle');
-    utterance.onerror = () => {
-      setError('Speech synthesis error');
-      setVoiceState('idle');
-    };
-
-    synthRef.current = utterance;
-    window.speechSynthesis.speak(utterance);
-  };
-
-  // Start listening
-  const startListening = () => {
+    setCallState('connecting');
     setError(null);
     setTranscript('');
+    setAssistantMessage('');
 
-    if (!recognitionRef.current) {
-      recognitionRef.current = initRecognition();
-    }
+    try {
+      // Start with inline assistant config or use assistant ID
+      const assistantId = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID;
 
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.start();
-        setVoiceState('listening');
-      } catch (err) {
-        console.error('Failed to start recognition:', err);
+      if (assistantId) {
+        await vapiRef.current.start(assistantId);
+      } else {
+        // Inline assistant configuration
+        await vapiRef.current.start({
+          model: {
+            provider: 'openai',
+            model: 'gpt-4o-mini',
+            messages: [
+              {
+                role: 'system',
+                content: `You are Qualia, an AI assistant for Qualia Solutions - a software development and digital marketing agency. You help team members with:
+- Project management and task tracking
+- Client relationship management
+- Schedule and meeting coordination
+- General questions about ongoing work
+
+Be helpful, concise, and professional. Keep responses brief for voice conversation.`,
+              },
+            ],
+          },
+          voice: {
+            provider: '11labs',
+            voiceId: 'EXAVITQu4vr4xnSDxMaL', // Sarah - professional female voice
+          },
+          firstMessage: "Hey! I'm Qualia, how can I help you today?",
+          transcriber: {
+            provider: 'deepgram',
+            model: 'nova-2',
+            language: 'en',
+          },
+        });
       }
-    }
-  };
-
-  // Stop listening
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setVoiceState('idle');
-  };
-
-  // Stop speaking
-  const stopSpeaking = () => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
-    setVoiceState('idle');
-  };
-
-  // Toggle mute
-  const toggleMute = () => {
-    if (!isMuted && voiceState === 'speaking') {
-      stopSpeaking();
-    }
-    setIsMuted(!isMuted);
-  };
-
-  // Handle mic button click
-  const handleMicClick = () => {
-    if (voiceState === 'listening') {
-      stopListening();
-    } else if (voiceState === 'speaking') {
-      stopSpeaking();
-      startListening();
-    } else if (voiceState === 'idle') {
-      startListening();
-    }
-  };
-
-  // Cleanup on close
-  useEffect(() => {
-    if (!isOpen) {
-      stopListening();
-      stopSpeaking();
-      abortControllerRef.current?.abort();
-      setTranscript('');
-      setResponse('');
-      setError(null);
-      setVoiceState('idle');
-    }
-  }, [isOpen]);
-
-  // Load voices
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.getVoices();
+    } catch (err) {
+      console.error('Failed to start call:', err);
+      setError('Failed to start call');
+      setCallState('idle');
     }
   }, []);
+
+  // End call
+  const endCall = useCallback(() => {
+    if (vapiRef.current) {
+      vapiRef.current.stop();
+    }
+    setCallState('idle');
+  }, []);
+
+  // Toggle mute
+  const toggleMute = useCallback(() => {
+    if (vapiRef.current) {
+      const newMuted = !isMuted;
+      vapiRef.current.setMuted(newMuted);
+      setIsMuted(newMuted);
+    }
+  }, [isMuted]);
+
+  // Handle close
+  const handleClose = useCallback(() => {
+    endCall();
+    onClose();
+  }, [endCall, onClose]);
 
   // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        handleClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleClose]);
 
   if (!isOpen) return null;
+
+  const isInCall = callState !== 'idle' && callState !== 'connecting';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm">
       {/* Close button */}
       <button
-        onClick={onClose}
+        onClick={handleClose}
         className="absolute right-6 top-6 flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
       >
         <X className="h-5 w-5" />
@@ -286,31 +187,51 @@ export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
       <div className="flex flex-col items-center">
         {/* Qualia avatar with state indicator */}
         <div className="relative mb-8">
-          {/* Pulse rings for different states */}
-          <div
-            className={cn(
-              'absolute -inset-4 rounded-full transition-all duration-500',
-              voiceState === 'listening' && 'animate-ping bg-primary/20',
-              voiceState === 'processing' && 'animate-pulse bg-amber-500/20',
-              voiceState === 'speaking' && 'animate-pulse bg-emerald-500/20'
-            )}
-          />
-          <div
-            className={cn(
-              'absolute -inset-8 rounded-full transition-all duration-700',
-              voiceState === 'listening' && 'animate-ping bg-primary/10 [animation-delay:150ms]',
-              voiceState === 'speaking' && 'animate-pulse bg-emerald-500/10 [animation-delay:150ms]'
-            )}
-          />
+          {/* Volume/pulse rings */}
+          {isInCall && (
+            <>
+              <div
+                className={cn(
+                  'absolute -inset-4 rounded-full transition-all duration-300',
+                  callState === 'speaking' && 'bg-emerald-500/20',
+                  callState === 'listening' && 'bg-primary/20'
+                )}
+                style={{
+                  transform: `scale(${1 + volumeLevel * 0.3})`,
+                  opacity: 0.5 + volumeLevel * 0.5,
+                }}
+              />
+              <div
+                className={cn(
+                  'absolute -inset-8 rounded-full transition-all duration-500',
+                  callState === 'speaking' && 'bg-emerald-500/10',
+                  callState === 'listening' && 'bg-primary/10'
+                )}
+                style={{
+                  transform: `scale(${1 + volumeLevel * 0.2})`,
+                  opacity: 0.3 + volumeLevel * 0.3,
+                }}
+              />
+            </>
+          )}
+
+          {/* Connecting animation */}
+          {callState === 'connecting' && (
+            <>
+              <div className="absolute -inset-4 animate-ping rounded-full bg-amber-500/20" />
+              <div className="absolute -inset-8 animate-ping rounded-full bg-amber-500/10 [animation-delay:150ms]" />
+            </>
+          )}
 
           {/* Avatar */}
           <div
             className={cn(
               'relative flex h-32 w-32 items-center justify-center rounded-full border-2 transition-all duration-300',
-              voiceState === 'idle' && 'border-border bg-card',
-              voiceState === 'listening' && 'border-primary bg-primary/10',
-              voiceState === 'processing' && 'border-amber-500 bg-amber-500/10',
-              voiceState === 'speaking' && 'border-emerald-500 bg-emerald-500/10'
+              callState === 'idle' && 'border-border bg-card',
+              callState === 'connecting' && 'border-amber-500 bg-amber-500/10',
+              callState === 'connected' && 'border-primary bg-primary/10',
+              callState === 'listening' && 'border-primary bg-primary/10',
+              callState === 'speaking' && 'border-emerald-500 bg-emerald-500/10'
             )}
           >
             <Image src="/logo.webp" alt="Qualia" width={80} height={80} className="rounded-2xl" />
@@ -320,67 +241,81 @@ export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
         {/* Status text */}
         <div className="mb-8 text-center">
           <h2 className="mb-2 text-xl font-semibold text-foreground">
-            {voiceState === 'idle' && 'Qualia'}
-            {voiceState === 'listening' && 'Listening...'}
-            {voiceState === 'processing' && 'Thinking...'}
-            {voiceState === 'speaking' && 'Speaking...'}
+            {callState === 'idle' && 'Qualia'}
+            {callState === 'connecting' && 'Connecting...'}
+            {callState === 'connected' && 'Connected'}
+            {callState === 'listening' && 'Listening...'}
+            {callState === 'speaking' && 'Speaking...'}
           </h2>
 
-          {/* Transcript or response */}
-          <p className="max-w-md text-sm text-muted-foreground">
-            {voiceState === 'listening' && transcript && `"${transcript}"`}
-            {voiceState === 'idle' && !error && 'Tap the mic to start talking'}
-            {voiceState === 'processing' && transcript && `"${transcript}"`}
-            {voiceState === 'speaking' &&
-              response &&
-              response.slice(0, 100) + (response.length > 100 ? '...' : '')}
-            {error && <span className="text-red-500">{error}</span>}
-          </p>
+          {/* Transcript / Response */}
+          <div className="max-w-md space-y-2">
+            {transcript && (
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">You:</span> &ldquo;{transcript}&rdquo;
+              </p>
+            )}
+            {assistantMessage && (
+              <p className="text-sm text-primary">
+                <span className="font-medium">Qualia:</span> &ldquo;
+                {assistantMessage.slice(0, 150)}
+                {assistantMessage.length > 150 ? '...' : ''}&rdquo;
+              </p>
+            )}
+            {callState === 'idle' && !error && (
+              <p className="text-sm text-muted-foreground">Tap to start a voice call with Qualia</p>
+            )}
+            {error && <p className="text-sm text-red-500">{error}</p>}
+          </div>
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-4">
-          {/* Mute button */}
-          <button
-            onClick={toggleMute}
-            className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-full transition-all',
-              isMuted
-                ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
-            )}
-            title={isMuted ? 'Unmute Qualia' : 'Mute Qualia'}
-          >
-            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-          </button>
+          {/* Mute button - only show during call */}
+          {isInCall && (
+            <button
+              onClick={toggleMute}
+              className={cn(
+                'flex h-12 w-12 items-center justify-center rounded-full transition-all',
+                isMuted
+                  ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20'
+                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+              )}
+              title={isMuted ? 'Unmute' : 'Mute'}
+            >
+              {isMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </button>
+          )}
 
-          {/* Main mic button */}
+          {/* Main call button */}
           <button
-            onClick={handleMicClick}
-            disabled={voiceState === 'processing'}
+            onClick={isInCall ? endCall : startCall}
+            disabled={callState === 'connecting'}
             className={cn(
               'flex h-16 w-16 items-center justify-center rounded-full transition-all',
-              voiceState === 'idle' && 'bg-primary text-primary-foreground hover:bg-primary/90',
-              voiceState === 'listening' && 'bg-red-500 text-white hover:bg-red-600',
-              voiceState === 'processing' && 'cursor-not-allowed bg-amber-500 text-white',
-              voiceState === 'speaking' && 'bg-emerald-500 text-white hover:bg-emerald-600'
+              callState === 'idle' && 'bg-emerald-500 text-white hover:bg-emerald-600',
+              callState === 'connecting' && 'cursor-not-allowed bg-amber-500 text-white',
+              isInCall && 'bg-red-500 text-white hover:bg-red-600'
             )}
           >
-            {voiceState === 'listening' ? (
-              <MicOff className="h-6 w-6" />
-            ) : (
-              <Mic className="h-6 w-6" />
-            )}
+            {isInCall ? <PhoneOff className="h-6 w-6" /> : <Phone className="h-6 w-6" />}
           </button>
 
-          {/* Placeholder for symmetry */}
-          <div className="h-12 w-12" />
+          {/* Placeholder for symmetry when not in call */}
+          {!isInCall && <div className="h-12 w-12" />}
         </div>
 
-        {/* Keyboard hint */}
+        {/* Call duration or hint */}
         <p className="mt-8 text-xs text-muted-foreground">
-          Press <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5">Esc</kbd>{' '}
-          to close
+          {isInCall ? (
+            'Tap the red button to end the call'
+          ) : (
+            <>
+              Press{' '}
+              <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5">Esc</kbd> to
+              close
+            </>
+          )}
         </p>
       </div>
     </div>
