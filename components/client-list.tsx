@@ -1,17 +1,13 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
-import Link from 'next/link';
 import {
   Building2,
   Phone,
   Globe,
   MoreHorizontal,
   Trash2,
-  Edit,
   Search,
-  UserCheck,
-  UserMinus,
   Plus,
   Inbox,
   LayoutGrid,
@@ -19,6 +15,10 @@ import {
   Folder,
   Calendar,
   ArrowUpDown,
+  MapPin,
+  FileText,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,19 +88,18 @@ function ClientCard({
   const isActive = client.lead_status === 'active_client';
 
   return (
-    <Link
-      href={`/clients/${client.id}`}
+    <div
       className={cn(
-        'surface group relative flex flex-col gap-3 rounded-xl p-4 transition-all duration-200 hover:border-primary/30 hover:shadow-md',
+        'surface group relative flex flex-col gap-3 rounded-xl p-4 transition-all duration-200',
         isPending && 'pointer-events-none opacity-50'
       )}
     >
-      {/* Header: Avatar + Name + Status */}
+      {/* Header: Avatar + Name + Toggle */}
       <div className="flex items-start gap-3">
         <div className="relative">
           <div
             className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br transition-transform group-hover:scale-105',
+              'flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br',
               isActive ? 'from-emerald-500/20 to-emerald-500/5' : 'from-amber-500/20 to-amber-500/5'
             )}
           >
@@ -113,19 +112,10 @@ function ClientCard({
               )}
             />
           </div>
-          {/* Status dot */}
-          <span
-            className={cn(
-              'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card',
-              isActive ? 'bg-emerald-500' : 'bg-amber-500'
-            )}
-          />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
-            {client.display_name}
-          </h3>
+          <h3 className="truncate text-sm font-semibold text-foreground">{client.display_name}</h3>
           {client.assigned && (
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Avatar className="h-4 w-4">
@@ -138,70 +128,84 @@ function ClientCard({
           )}
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-7 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link href={`/clients/${client.id}`}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-                onToggleStatus(client);
-              }}
-            >
-              {isActive ? (
-                <>
-                  <UserMinus className="mr-2 h-4 w-4" />
-                  Move to Inactive
-                </>
-              ) : (
-                <>
-                  <UserCheck className="mr-2 h-4 w-4" />
-                  Move to Active
-                </>
-              )}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-                onDelete(client.id);
-              }}
-              className="text-red-500"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          {/* Toggle Button */}
+          <button
+            onClick={() => onToggleStatus(client)}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-all',
+              isActive
+                ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400'
+                : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400'
+            )}
+          >
+            {isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+            {isActive ? 'Active' : 'Inactive'}
+          </button>
+
+          {/* Delete */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-500">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Contact Info */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <div className="space-y-1.5 text-xs text-muted-foreground">
         {client.phone && (
-          <span className="flex items-center gap-1.5">
-            <Phone className="h-3 w-3" />
-            {client.phone}
-          </span>
+          <div className="flex items-center gap-2">
+            <Phone className="h-3.5 w-3.5 text-muted-foreground/70" />
+            <a href={`tel:${client.phone}`} className="transition-colors hover:text-foreground">
+              {client.phone}
+            </a>
+          </div>
         )}
         {client.website && (
-          <span className="flex items-center gap-1.5 truncate">
-            <Globe className="h-3 w-3 flex-shrink-0" />
-            {client.website.replace(/^https?:\/\//, '').split('/')[0]}
-          </span>
+          <div className="flex items-center gap-2">
+            <Globe className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
+            <a
+              href={
+                client.website.startsWith('http') ? client.website : `https://${client.website}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate transition-colors hover:text-foreground"
+            >
+              {client.website.replace(/^https?:\/\//, '').split('/')[0]}
+            </a>
+          </div>
+        )}
+        {client.billing_address && (
+          <div className="flex items-center gap-2">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
+            <span className="truncate">{client.billing_address}</span>
+          </div>
         )}
       </div>
+
+      {/* Notes */}
+      {client.notes && (
+        <div className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
+          <div className="flex items-start gap-2">
+            <FileText className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            <p className="line-clamp-2">{client.notes}</p>
+          </div>
+        </div>
+      )}
 
       {/* Footer Stats */}
       <div className="flex items-center gap-4 border-t border-border/50 pt-3 text-xs">
@@ -220,18 +224,8 @@ function ClientCard({
             </span>
           </div>
         )}
-        <span
-          className={cn(
-            'ml-auto rounded-full px-2 py-0.5 text-[10px] font-medium',
-            isActive
-              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-          )}
-        >
-          {isActive ? 'Active' : 'Inactive'}
-        </span>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -250,8 +244,7 @@ function ClientRow({
   const isActive = client.lead_status === 'active_client';
 
   return (
-    <Link
-      href={`/clients/${client.id}`}
+    <div
       className={cn(
         'group flex items-center gap-4 rounded-lg px-4 py-3 transition-colors duration-200 hover:bg-secondary/50',
         isPending && 'pointer-events-none opacity-50'
@@ -273,24 +266,34 @@ function ClientRow({
             )}
           />
         </div>
-        <span
-          className={cn(
-            'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-card',
-            isActive ? 'bg-emerald-500' : 'bg-amber-500'
-          )}
-        />
       </div>
 
       <div className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
+        <span className="block truncate text-sm font-medium text-foreground">
           {client.display_name}
         </span>
         <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
           {client.phone && (
-            <span className="flex items-center gap-1">
+            <a
+              href={`tel:${client.phone}`}
+              className="flex items-center gap-1 transition-colors hover:text-foreground"
+            >
               <Phone className="h-3 w-3" />
               {client.phone}
-            </span>
+            </a>
+          )}
+          {client.website && (
+            <a
+              href={
+                client.website.startsWith('http') ? client.website : `https://${client.website}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 transition-colors hover:text-foreground"
+            >
+              <Globe className="h-3 w-3" />
+              {client.website.replace(/^https?:\/\//, '').split('/')[0]}
+            </a>
           )}
           {client.assigned && (
             <span className="flex items-center gap-1">
@@ -312,19 +315,22 @@ function ClientRow({
         </div>
       )}
 
-      <span
+      {/* Toggle Button */}
+      <button
+        onClick={() => onToggleStatus(client)}
         className={cn(
-          'rounded-full px-2 py-1 text-xs font-medium',
+          'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all',
           isActive
-            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+            ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400'
+            : 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 dark:text-amber-400'
         )}
       >
+        {isActive ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
         {isActive ? 'Active' : 'Inactive'}
-      </span>
+      </button>
 
       <DropdownMenu>
-        <DropdownMenuTrigger asChild onClick={(e) => e.preventDefault()}>
+        <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
@@ -334,43 +340,13 @@ function ClientRow({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem asChild>
-            <Link href={`/clients/${client.id}`}>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.preventDefault();
-              onToggleStatus(client);
-            }}
-          >
-            {isActive ? (
-              <>
-                <UserMinus className="mr-2 h-4 w-4" />
-                Move to Inactive
-              </>
-            ) : (
-              <>
-                <UserCheck className="mr-2 h-4 w-4" />
-                Move to Active
-              </>
-            )}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.preventDefault();
-              onDelete(client.id);
-            }}
-            className="text-red-500"
-          >
+          <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-500">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </Link>
+    </div>
   );
 }
 

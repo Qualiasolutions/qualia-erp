@@ -15,9 +15,10 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { createPortal } from 'react-dom';
-import { Plus, Loader2, Filter, RefreshCw, User, X } from 'lucide-react';
+import { Plus, Loader2, Filter, RefreshCw, User, X, Search, LayoutGrid } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,10 +38,10 @@ import { createClient } from '@/lib/supabase/client';
 const PRIORITY_OPTIONS = ['Urgent', 'High', 'Medium', 'Low', 'No Priority'] as const;
 
 const STATUS_COLUMNS = [
-  { id: 'Yet to Start', title: 'Backlog', color: 'bg-slate-500' },
-  { id: 'Todo', title: 'To Do', color: 'bg-blue-500' },
-  { id: 'In Progress', title: 'In Progress', color: 'bg-amber-500' },
-  { id: 'Done', title: 'Done', color: 'bg-emerald-500' },
+  { id: 'Yet to Start', title: 'Backlog', color: 'bg-slate-500', gradient: 'from-slate-500/20' },
+  { id: 'Todo', title: 'To Do', color: 'bg-blue-500', gradient: 'from-blue-500/20' },
+  { id: 'In Progress', title: 'In Progress', color: 'bg-amber-500', gradient: 'from-amber-500/20' },
+  { id: 'Done', title: 'Done', color: 'bg-emerald-500', gradient: 'from-emerald-500/20' },
 ] as const;
 
 interface BoardContentProps {
@@ -61,6 +62,7 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
   // Filters
   const [showMyTasks, setShowMyTasks] = useState(false);
   const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // DnD sensors
   const sensors = useSensors(
@@ -131,6 +133,16 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
   const filteredTasks = useMemo(() => {
     let result = tasks;
 
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(query) ||
+          task.description?.toLowerCase().includes(query) ||
+          task.project?.name.toLowerCase().includes(query)
+      );
+    }
+
     if (showMyTasks) {
       result = result.filter(
         (task) => task.assignees?.some((a) => a.id === userId) || task.creator_id === userId
@@ -142,13 +154,25 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
     }
 
     return result;
-  }, [tasks, showMyTasks, userId, selectedPriorities]);
+  }, [tasks, showMyTasks, userId, selectedPriorities, searchQuery]);
 
-  const hasActiveFilters = showMyTasks || selectedPriorities.length > 0;
+  const hasActiveFilters =
+    showMyTasks || selectedPriorities.length > 0 || searchQuery.trim().length > 0;
+
+  // Priority stats
+  const priorityStats = useMemo(() => {
+    return {
+      urgent: tasks.filter((t) => t.priority === 'Urgent').length,
+      high: tasks.filter((t) => t.priority === 'High').length,
+      medium: tasks.filter((t) => t.priority === 'Medium').length,
+      low: tasks.filter((t) => t.priority === 'Low').length,
+    };
+  }, [tasks]);
 
   const clearFilters = useCallback(() => {
     setShowMyTasks(false);
     setSelectedPriorities([]);
+    setSearchQuery('');
   }, []);
 
   const togglePriority = useCallback((priority: string) => {
@@ -251,87 +275,130 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-xl font-semibold">Board</h1>
-            <p className="text-sm text-muted-foreground">
-              {filteredTasks.length}
-              {hasActiveFilters ? ` of ${tasks.length}` : ''} tasks
-            </p>
-          </div>
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs" onClick={clearFilters}>
-              <X className="h-3 w-3" />
-              Clear filters
-            </Button>
-          )}
-        </div>
+      <header className="border-b border-border bg-card px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-qualia-500/20 to-qualia-600/10">
+                <LayoutGrid className="h-5 w-5 text-qualia-500" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold">Board</h1>
+                <p className="text-sm text-muted-foreground">
+                  {filteredTasks.length}
+                  {hasActiveFilters ? ` of ${tasks.length}` : ''} tasks
+                </p>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-3">
-          {/* Online Users */}
-          <OnlineUsers workspaceId={workspaceId} currentUserId={userId} />
+            {/* Priority Stats */}
+            <div className="ml-4 hidden items-center gap-2 lg:flex">
+              {priorityStats.urgent > 0 && (
+                <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
+                  {priorityStats.urgent} urgent
+                </span>
+              )}
+              {priorityStats.high > 0 && (
+                <span className="flex items-center gap-1 rounded-full bg-orange-500/10 px-2 py-0.5 text-xs font-medium text-orange-500">
+                  {priorityStats.high} high
+                </span>
+              )}
+            </div>
 
-          <div className="h-6 w-px bg-border" />
-
-          {/* Refresh */}
-          <Button variant="ghost" size="sm" onClick={() => loadTasks(true)} disabled={isRefreshing}>
-            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-          </Button>
-
-          {/* My Tasks Filter */}
-          <Button
-            variant={showMyTasks ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setShowMyTasks(!showMyTasks)}
-            className={cn(showMyTasks && 'text-qualia-500')}
-          >
-            <User className="mr-1.5 h-4 w-4" />
-            My Tasks
-          </Button>
-
-          {/* Priority Filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            {hasActiveFilters && (
               <Button
-                variant={selectedPriorities.length > 0 ? 'secondary' : 'ghost'}
+                variant="ghost"
                 size="sm"
-                className={cn(selectedPriorities.length > 0 && 'text-qualia-500')}
+                className="h-7 gap-1 text-xs"
+                onClick={clearFilters}
               >
-                <Filter className="mr-1.5 h-4 w-4" />
-                Priority
-                {selectedPriorities.length > 0 && (
-                  <span className="ml-1.5 rounded-full bg-qualia-500/20 px-1.5 text-[10px] font-semibold">
-                    {selectedPriorities.length}
-                  </span>
-                )}
+                <X className="h-3 w-3" />
+                Clear filters
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Filter by Priority</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {PRIORITY_OPTIONS.map((priority) => (
-                <DropdownMenuCheckboxItem
-                  key={priority}
-                  checked={selectedPriorities.includes(priority)}
-                  onCheckedChange={() => togglePriority(priority)}
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Online Users */}
+            <OnlineUsers workspaceId={workspaceId} currentUserId={userId} />
+
+            <div className="h-6 w-px bg-border" />
+
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 w-48 pl-9 text-sm"
+              />
+            </div>
+
+            {/* Refresh */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => loadTasks(true)}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            </Button>
+
+            {/* My Tasks Filter */}
+            <Button
+              variant={showMyTasks ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setShowMyTasks(!showMyTasks)}
+              className={cn(showMyTasks && 'text-qualia-500')}
+            >
+              <User className="mr-1.5 h-4 w-4" />
+              My Tasks
+            </Button>
+
+            {/* Priority Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={selectedPriorities.length > 0 ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className={cn(selectedPriorities.length > 0 && 'text-qualia-500')}
                 >
-                  {priority}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  <Filter className="mr-1.5 h-4 w-4" />
+                  Priority
+                  {selectedPriorities.length > 0 && (
+                    <span className="ml-1.5 rounded-full bg-qualia-500/20 px-1.5 text-[10px] font-semibold">
+                      {selectedPriorities.length}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel>Filter by Priority</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {PRIORITY_OPTIONS.map((priority) => (
+                  <DropdownMenuCheckboxItem
+                    key={priority}
+                    checked={selectedPriorities.includes(priority)}
+                    onCheckedChange={() => togglePriority(priority)}
+                  >
+                    {priority}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          <div className="h-6 w-px bg-border" />
+            <div className="h-6 w-px bg-border" />
 
-          {/* Create Task */}
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-qualia-600 hover:bg-qualia-500"
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            New Task
-          </Button>
+            {/* Create Task */}
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-qualia-600 hover:bg-qualia-500"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              New Task
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -350,6 +417,7 @@ export function BoardContent({ workspaceId, userId }: BoardContentProps) {
               id={column.id}
               title={column.title}
               color={column.color}
+              gradient={column.gradient}
               tasks={tasksByStatus[column.id] || []}
               onTaskClick={handleTaskClick}
               isOver={overId === column.id}

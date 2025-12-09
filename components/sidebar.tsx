@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   LayoutGrid,
-  Settings,
   Folder,
   Calendar,
   Building2,
@@ -24,8 +23,6 @@ const navigation = [
   { name: 'Schedule', href: '/schedule', icon: Calendar },
 ];
 
-const bottomNav = [{ name: 'Settings', href: '/settings', icon: Settings }];
-
 export function Sidebar() {
   const pathname = usePathname();
   const { isCollapsed, toggleSidebar } = useSidebar();
@@ -33,7 +30,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'flex h-screen flex-col border-r border-border bg-card transition-all duration-200 ease-out',
+        'relative flex h-screen flex-col border-r border-border bg-card transition-all duration-200 ease-out',
         isCollapsed ? 'w-[60px]' : 'w-56'
       )}
     >
@@ -115,56 +112,15 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* Bottom Navigation */}
-      <div className={cn('border-t border-border py-2', isCollapsed ? 'px-2' : 'px-2')}>
-        {bottomNav.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              title={isCollapsed ? item.name : undefined}
-              className={cn(
-                'group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
-                isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 px-2.5',
-                isActive
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-              )}
-            >
-              <item.icon
-                className={cn(
-                  'flex-shrink-0 transition-colors duration-150',
-                  isCollapsed ? 'h-[17px] w-[17px]' : 'h-4 w-4'
-                )}
-              />
-              {!isCollapsed && <span>{item.name}</span>}
-            </Link>
-          );
-        })}
-      </div>
-
-      {/* Collapse Toggle */}
-      <div className={cn('border-t border-border py-2', isCollapsed ? 'px-2' : 'px-2')}>
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          className={cn(
-            'group flex items-center gap-2 rounded-lg text-[13px] font-medium text-muted-foreground transition-all duration-150 hover:bg-secondary hover:text-foreground',
-            isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 w-full px-2.5'
-          )}
-          title={isCollapsed ? 'Expand' : 'Collapse'}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <>
-              <ChevronLeft className="h-4 w-4" />
-              <span>Collapse</span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Collapse Toggle - Right Edge Middle */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        className="absolute right-0 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-secondary hover:text-foreground"
+        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+      </button>
     </aside>
   );
 }

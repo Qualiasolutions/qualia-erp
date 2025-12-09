@@ -6,15 +6,13 @@ import './globals.css';
 import { Sidebar } from '@/components/sidebar';
 import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
-import { ThemeSwitcher } from '@/components/theme-switcher';
 import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
 import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
-import { AdminBadge } from '@/components/admin-badge';
-import { AIChatWidget } from '@/components/ai-chat-widget';
+import { HeaderActions } from '@/components/header-actions';
 
 export const metadata: Metadata = {
   title: 'Qualia Solutions Internal Suite',
@@ -35,7 +33,7 @@ function SidebarSkeleton() {
         <div className="h-9 animate-pulse rounded-lg bg-muted" />
       </div>
       <nav className="flex-1 space-y-1 p-3">
-        {[...Array(5)].map((_, i) => (
+        {[...Array(4)].map((_, i) => (
           <div key={i} className="h-9 animate-pulse rounded-lg bg-muted" />
         ))}
       </nav>
@@ -66,14 +64,12 @@ export default function RootLayout({
                     <Sidebar />
                   </Suspense>
                   <div className="flex flex-1 flex-col overflow-hidden">
-                    <header className="flex h-12 items-center justify-end gap-3 border-b border-border bg-card px-4">
-                      <AdminBadge />
-                      <ThemeSwitcher />
+                    <header className="flex h-12 items-center justify-end gap-2 border-b border-border bg-card px-4">
+                      <HeaderActions />
                     </header>
                     <main className="flex-1 overflow-y-auto">{children}</main>
                   </div>
                   <WorkspaceChatWrapper />
-                  <AIChatWidget />
                 </SidebarProvider>
               </WorkspaceProvider>
             </AdminProvider>

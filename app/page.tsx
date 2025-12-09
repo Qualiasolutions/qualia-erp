@@ -2,40 +2,38 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 import { format } from 'date-fns';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
+import { QualiaVoice } from '@/components/qualia-voice';
 
 export default function Home() {
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const now = new Date();
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-
-  const openQualia = () => {
-    const event = new CustomEvent('openAIChat', { detail: { query: '' } });
-    window.dispatchEvent(event);
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-12">
         {/* Qualia Logo - Click to talk */}
         <button
-          onClick={openQualia}
-          className="group mx-auto mb-6 flex flex-col items-center gap-3 rounded-2xl p-4 transition-all hover:bg-primary/5"
+          onClick={() => setIsVoiceOpen(true)}
+          className="group mx-auto mb-6 rounded-3xl p-2 transition-all hover:bg-primary/5"
         >
           <div className="relative">
-            <div className="absolute -inset-2 rounded-full bg-primary/20 opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
+            <div className="absolute -inset-3 rounded-full bg-primary/20 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
             <Image
               src="/logo.webp"
-              alt="Qualia"
-              width={64}
-              height={64}
-              className="relative rounded-2xl transition-transform duration-300 group-hover:scale-110"
+              alt="Talk to Qualia"
+              width={80}
+              height={80}
+              className="relative rounded-2xl transition-transform duration-300 group-hover:scale-105"
             />
           </div>
-          <span className="text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
+          <p className="mt-2 text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
             Talk to Qualia
-          </span>
+          </p>
         </button>
 
         {/* Date and Greeting */}
@@ -145,6 +143,9 @@ export default function Home() {
           </Link>
         </nav>
       </div>
+
+      {/* Qualia Voice Modal */}
+      <QualiaVoice isOpen={isVoiceOpen} onClose={() => setIsVoiceOpen(false)} />
     </div>
   );
 }
