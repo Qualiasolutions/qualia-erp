@@ -65,6 +65,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 - **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth, database, and Realtime
 - **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
 - **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
+- **DnD**: `@dnd-kit/core` + `@dnd-kit/sortable` for Board drag-and-drop
 - **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
 - **Constants**: `lib/constants.ts` - Date formats, UI dimensions, status/priority colors, storage keys
 - **Utilities**: `lib/utils.ts` - `cn()` (Tailwind merge), date formatting (`formatDate`, `formatDateTime`, `formatRelativeTime`), `truncate`, `getInitials`, `pluralize`
@@ -248,27 +249,28 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 
 ### Realtime Features
 
-Custom hooks in `hooks/` for Supabase Realtime:
+Custom hooks for Supabase Realtime:
 
-- **`useRealtimeChat`** - Broadcast messaging with optimistic updates, room-based channels
-- **`useChatScroll`** - Auto-scroll to bottom on new messages
-- **`usePresence`** - Online presence tracking for users
-- **`useHubMessages`** - Hub-specific message handling with persistence
+- **`usePresence`** (`hooks/use-presence.tsx`) - Online presence tracking with channel subscriptions, status updates (online/away/busy)
 
-### Hub (`/hub`)
+### Board (`/board`)
 
-3-column collaboration hub (`components/hub/`) with:
+Kanban-style task board (`components/board/`) with drag-and-drop:
 
-- **Tasks Panel** (left) - Quick task creation and tracking
-- **Chat Panel** (center) - Real-time workspace chat using Supabase broadcast
-- **Updates Panel** (right) - Activity feed and notifications
+- **BoardContent** - Main container with DnD context (@dnd-kit/core)
+- **BoardColumn** - Status columns (Backlog → To Do → In Progress → Done)
+- **BoardCard** - Draggable task cards with priority badges
+- **OnlineUsers** - Real-time presence indicators via `usePresence` hook
+- **CreateTaskModal** / **TaskDetailModal** - Task CRUD modals
+
+Uses `getBoardTasks()` action for workspace-scoped task fetching with Supabase Realtime subscriptions for live updates.
 
 ### Routes
 
 | Route                         | Description                                                           |
 | ----------------------------- | --------------------------------------------------------------------- |
 | `/`                           | Dashboard with stats and activity feed                                |
-| `/hub`                        | Real-time collaboration hub (tasks, chat, updates)                    |
+| `/board`                      | Kanban board with drag-and-drop, real-time presence                   |
 | `/issues`, `/issues/[id]`     | Issue list and detail with comments/assignees                         |
 | `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with roadmap                     |
 | `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and detail with contacts                     |

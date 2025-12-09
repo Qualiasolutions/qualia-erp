@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Map, Plus } from 'lucide-react';
+import { Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { getProjectPhases, initializeProjectPhases } from '@/app/actions';
@@ -69,10 +69,7 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
     setPhases(data as PhaseData[]);
     setLoading(false);
 
-    // Show init dialog if no phases exist
-    if (data.length === 0) {
-      setShowInit(true);
-    }
+    // Don't auto-show dialog - let users choose
   }
 
   async function handleInitialize(type: ProjectType) {
@@ -168,14 +165,22 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
       {phases.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border py-12 text-center">
           <Map className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-          <h3 className="mb-2 text-lg font-medium">No roadmap yet</h3>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Start with a template based on your project type
+          <h3 className="mb-2 text-lg font-medium">Start your roadmap</h3>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Build your project roadmap from scratch or use a template
           </p>
-          <Button onClick={() => setShowInit(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Initialize Roadmap
-          </Button>
+          <div className="flex justify-center gap-3">
+            <AddPhaseDialog
+              projectId={projectId}
+              workspaceId={workspaceId}
+              onSuccess={loadPhases}
+              nextOrder={0}
+              variant="primary"
+            />
+            <Button variant="outline" onClick={() => setShowInit(true)}>
+              Use Template
+            </Button>
+          </div>
         </div>
       ) : viewMode === 'board' ? (
         <div className="h-[600px]">

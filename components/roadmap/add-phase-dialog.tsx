@@ -21,6 +21,7 @@ interface AddPhaseDialogProps {
   workspaceId: string;
   onSuccess: () => void;
   nextOrder: number;
+  variant?: 'default' | 'primary';
 }
 
 export function AddPhaseDialog({
@@ -28,6 +29,7 @@ export function AddPhaseDialog({
   workspaceId,
   onSuccess,
   nextOrder,
+  variant = 'default',
 }: AddPhaseDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ export function AddPhaseDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button variant={variant === 'primary' ? 'default' : 'outline'} size="sm">
           <Plus className="mr-2 h-4 w-4" />
           Add Phase
         </Button>

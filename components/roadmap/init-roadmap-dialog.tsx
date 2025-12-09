@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Globe, Search, Megaphone, Loader2 } from 'lucide-react';
+import { Bot, Globe, Search, Megaphone, Loader2, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -55,6 +55,21 @@ export function InitRoadmapDialog({
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 py-4">
+          {/* Start Blank option */}
+          <button
+            onClick={() => onOpenChange(false)}
+            className="flex flex-col items-start gap-2 rounded-lg border border-border p-4 text-left transition-colors hover:border-muted-foreground/50 hover:bg-muted/50"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+              <Plus className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="font-medium">Start Blank</h3>
+              <p className="text-xs text-muted-foreground">Create your own phases</p>
+            </div>
+          </button>
+
+          {/* Template options */}
           {projectTypes.map((config) => {
             const Icon = TYPE_ICONS[config.projectType];
             const itemCount = countTemplateItems(config.phases);

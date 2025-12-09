@@ -80,27 +80,39 @@ export async function POST(req: Request) {
 Current User: ${userName} (${user.email}) - ${isAdmin ? 'Administrator' : 'Team Member'}
 Current Time: ${new Date().toISOString()}
 
-You have tools to both READ and WRITE data:
+You have comprehensive tools for managing projects, tasks, clients, and meetings:
 
 READ Tools:
-- getDashboardStats: Get project/issue/team counts
-- searchIssues: Search and filter issues/tasks
-- searchProjects: Search and filter projects
-- getTeams: List all teams
-- getRecentActivity: Get activity feed
+- getDashboardStats: Overview counts
+- searchIssues: Find tasks with filters
+- searchProjects: Find projects
+- searchClients: Find clients by name or status
+- getTeams: List teams
+- getRecentActivity: Activity feed
+- getUpcomingMeetings: Scheduled meetings
+- getProjectDetails: Full project info with roadmap progress
+- getWorkspaceStats: Comprehensive workspace statistics
 
 WRITE Tools:
-- createTask: Create a new task/issue (use when user says "create task", "add todo", "remind me to", etc.)
-- updateTaskStatus: Mark tasks as done, in progress, etc. (use when user says "mark as done", "complete", "start working on")
-- addComment: Add a comment to an issue (use when user wants to note something on a task)
+- createTask: Create new tasks (use when user says "create task", "add todo", "remind me to", etc.)
+- updateTaskStatus: Change task status (use when user says "mark as done", "complete", "start working on")
+- addComment: Comment on tasks
+- createClient: Add new clients (use when user wants to add a client or lead)
+- createMeeting: Schedule meetings (use when user wants to schedule or book a meeting)
+
+ROADMAP Tools:
+- updateRoadmap: Modify phase details
+- addRoadmapItem: Add items to phases
+- deleteRoadmapItem: Remove items
+- deleteRoadmap: Clear entire roadmap
 
 Guidelines:
-- Use tools to get current data - don't guess
-- When creating tasks, confirm what was created and provide the task details
-- Be proactive: if a user mentions they need to do something, offer to create a task
-- Reference items by name when discussing them
+- Use tools to get real-time data - don't guess
+- Be proactive: offer to create tasks, meetings, or clients based on conversation
+- Confirm actions and provide details
+- For scheduling, ask for date/time if not specified
+- Reference items by name for clarity
 - Be concise and helpful
-- You can now manage project roadmaps (add/delete items, update phases, clear roadmap). Use these tools when the user explicitly asks to modify the roadmap.
 - When deleting a roadmap, ALWAYS ask for confirmation first unless the user explicitly says "force delete" or "I am sure".`;
 
     const result = streamText({
@@ -264,6 +276,196 @@ Guidelines:
           },
         }),
 
+        searchClients: tool({
+          description:
+            'Search clients by name, phone, or status. Use when user asks about clients.',
+          inputSchema: z.object({
+            query: z.string().optional().describe('Search in display name'),
+            leadStatus: z
+              .enum(['active_client', 'inactive_client', 'hot', 'cold', 'dropped'])
+              .optional(),
+            limit: z.number().optional().describe('Max results (default 10)'),
+          }),
+          execute: async ({ query, leadStatus, limit = 10 }) => {
+            let q = supabase
+              .from('clients')
+              .select(
+                `id, display_name, phone, website, lead_status, last_contacted_at,
+                assigned:profiles!clients_assigned_to_fkey(full_name)`
+              )
+              .eq('workspace_id', workspaceId)
+              .order('display_name')
+              .limit(limit);
+
+            if (query) q = q.ilike('display_name', `%${query}%`);
+            if (leadStatus) q = q.eq('lead_status', leadStatus);
+
+            const { data, error } = await q;
+            if (error) return { error: error.message };
+
+            return {
+              count: data?.length || 0,
+              clients:
+                data?.map((c) => ({
+                  id: c.id,
+                  name: c.display_name,
+                  phone: c.phone,
+                  status: c.lead_status,
+                  lastContacted: c.last_contacted_at,
+                  assignedTo: Array.isArray(c.assigned) ? c.assigned[0]?.full_name : null,
+                })) || [],
+            };
+          },
+        }),
+
+        getUpcomingMeetings: tool({
+          description: 'Get upcoming meetings. Use when user asks about schedule or meetings.',
+          inputSchema: z.object({
+            days: z.number().optional().describe('Number of days ahead (default 7)'),
+            limit: z.number().optional().describe('Max results (default 10)'),
+          }),
+          execute: async ({ days = 7, limit = 10 }) => {
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + days);
+
+            const { data, error } = await supabase
+              .from('meetings')
+              .select(
+                `id, title, start_time, end_time,
+                client:clients(display_name),
+                project:projects(name)`
+              )
+              .eq('workspace_id', workspaceId)
+              .gte('start_time', new Date().toISOString())
+              .lte('start_time', endDate.toISOString())
+              .order('start_time')
+              .limit(limit);
+
+            if (error) return { error: error.message };
+
+            return {
+              count: data?.length || 0,
+              meetings:
+                data?.map((m) => ({
+                  id: m.id,
+                  title: m.title,
+                  startTime: m.start_time,
+                  endTime: m.end_time,
+                  client: Array.isArray(m.client) ? m.client[0]?.display_name : null,
+                  project: Array.isArray(m.project) ? m.project[0]?.name : null,
+                })) || [],
+            };
+          },
+        }),
+
+        getProjectDetails: tool({
+          description:
+            'Get detailed project info including roadmap progress. Use when user asks about a specific project.',
+          inputSchema: z.object({
+            project_id: z.string().uuid().describe('Project ID'),
+          }),
+          execute: async ({ project_id }) => {
+            const { data: project, error } = await supabase
+              .from('projects')
+              .select(
+                `id, name, status, description, target_date, project_type,
+                lead:profiles!projects_lead_id_fkey(full_name),
+                client:clients(display_name),
+                team:teams(name)`
+              )
+              .eq('id', project_id)
+              .single();
+
+            if (error) return { error: error.message };
+
+            // Get roadmap progress
+            const { data: phases } = await supabase
+              .from('project_phases')
+              .select('id, name, status, phase_items(is_completed)')
+              .eq('project_id', project_id);
+
+            let totalItems = 0;
+            let completedItems = 0;
+            phases?.forEach((p) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (p.phase_items as any[])?.forEach((item: { is_completed: boolean }) => {
+                totalItems++;
+                if (item.is_completed) completedItems++;
+              });
+            });
+
+            return {
+              project: {
+                id: project.id,
+                name: project.name,
+                status: project.status,
+                description: project.description,
+                targetDate: project.target_date,
+                type: project.project_type,
+                lead: Array.isArray(project.lead) ? project.lead[0]?.full_name : null,
+                client: Array.isArray(project.client) ? project.client[0]?.display_name : null,
+                team: Array.isArray(project.team) ? project.team[0]?.name : null,
+              },
+              roadmap: {
+                progress: totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0,
+                phasesCount: phases?.length || 0,
+                completedItems,
+                totalItems,
+              },
+            };
+          },
+        }),
+
+        getWorkspaceStats: tool({
+          description:
+            'Get comprehensive workspace statistics. Use when user asks for overview or summary.',
+          inputSchema: z.object({
+            _placeholder: z.string().optional(),
+          }),
+          execute: async () => {
+            const [projects, issues, clients, meetings] = await Promise.all([
+              supabase.from('projects').select('status').eq('workspace_id', workspaceId),
+              supabase.from('issues').select('status, priority').eq('workspace_id', workspaceId),
+              supabase.from('clients').select('lead_status').eq('workspace_id', workspaceId),
+              supabase
+                .from('meetings')
+                .select('id')
+                .eq('workspace_id', workspaceId)
+                .gte('start_time', new Date().toISOString()),
+            ]);
+
+            const projectsByStatus: Record<string, number> = {};
+            projects.data?.forEach((p) => {
+              projectsByStatus[p.status] = (projectsByStatus[p.status] || 0) + 1;
+            });
+
+            const issuesByStatus: Record<string, number> = {};
+            issues.data?.forEach((i) => {
+              issuesByStatus[i.status] = (issuesByStatus[i.status] || 0) + 1;
+            });
+
+            const activeClients =
+              clients.data?.filter((c) => c.lead_status === 'active_client').length || 0;
+
+            return {
+              projects: {
+                total: projects.data?.length || 0,
+                byStatus: projectsByStatus,
+              },
+              issues: {
+                total: issues.data?.length || 0,
+                byStatus: issuesByStatus,
+                open: (issuesByStatus['Todo'] || 0) + (issuesByStatus['In Progress'] || 0),
+              },
+              clients: {
+                total: clients.data?.length || 0,
+                active: activeClients,
+              },
+              upcomingMeetings: meetings.data?.length || 0,
+            };
+          },
+        }),
+
         // ============ WRITE TOOLS ============
 
         createTask: tool({
@@ -409,6 +611,92 @@ Guidelines:
               success: true,
               message: `Added comment to "${task.title}"`,
               commentId: data.id,
+            };
+          },
+        }),
+
+        createClient: tool({
+          description: 'Create a new client. Use when user wants to add a new client or lead.',
+          inputSchema: z.object({
+            display_name: z.string().describe('Client/company name (required)'),
+            phone: z.string().optional(),
+            website: z.string().optional(),
+            lead_status: z.enum(['active_client', 'inactive_client', 'hot', 'cold']).optional(),
+            notes: z.string().optional(),
+          }),
+          execute: async ({ display_name, phone, website, lead_status, notes }) => {
+            if (!workspaceId) {
+              return { error: 'No workspace found for user' };
+            }
+
+            const { data, error } = await supabase
+              .from('clients')
+              .insert({
+                display_name,
+                phone: phone || null,
+                website: website || null,
+                lead_status: lead_status || 'hot',
+                notes: notes || null,
+                created_by: user.id,
+                workspace_id: workspaceId,
+              })
+              .select('id, display_name, lead_status')
+              .single();
+
+            if (error) return { error: error.message };
+
+            return {
+              success: true,
+              client: data,
+              message: `Created client: "${data.display_name}"`,
+            };
+          },
+        }),
+
+        createMeeting: tool({
+          description:
+            'Schedule a new meeting. Use when user wants to create or schedule a meeting.',
+          inputSchema: z.object({
+            title: z.string().describe('Meeting title (required)'),
+            start_time: z
+              .string()
+              .describe('ISO datetime string for start (e.g., 2025-01-15T10:00:00Z)'),
+            end_time: z.string().optional().describe('ISO datetime string for end'),
+            description: z.string().optional(),
+            client_id: z.string().uuid().optional(),
+            project_id: z.string().uuid().optional(),
+          }),
+          execute: async ({ title, start_time, end_time, description, client_id, project_id }) => {
+            if (!workspaceId) {
+              return { error: 'No workspace found for user' };
+            }
+
+            // Default end time to 1 hour after start
+            const startDate = new Date(start_time);
+            const defaultEnd =
+              end_time || new Date(startDate.getTime() + 60 * 60 * 1000).toISOString();
+
+            const { data, error } = await supabase
+              .from('meetings')
+              .insert({
+                title,
+                start_time,
+                end_time: defaultEnd,
+                description: description || null,
+                client_id: client_id || null,
+                project_id: project_id || null,
+                created_by: user.id,
+                workspace_id: workspaceId,
+              })
+              .select('id, title, start_time')
+              .single();
+
+            if (error) return { error: error.message };
+
+            return {
+              success: true,
+              meeting: data,
+              message: `Scheduled meeting: "${data.title}" for ${new Date(data.start_time).toLocaleString()}`,
             };
           },
         }),

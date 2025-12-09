@@ -21,8 +21,8 @@ export function BoardColumn({ id, title, color, tasks, onTaskClick, isOver }: Bo
   return (
     <div
       className={cn(
-        'flex h-full w-80 min-w-[320px] flex-col rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm transition-all duration-200',
-        showDropIndicator && 'border-qualia-500/50 bg-qualia-500/5 ring-2 ring-qualia-500/20'
+        'flex h-full w-80 min-w-[320px] flex-col rounded-xl border border-border bg-card/50 transition-all duration-200',
+        showDropIndicator && 'border-primary/50 bg-primary/5 ring-2 ring-primary/20'
       )}
     >
       {/* Header */}
@@ -47,7 +47,7 @@ export function BoardColumn({ id, title, color, tasks, onTaskClick, isOver }: Bo
         ref={setNodeRef}
         className={cn(
           'flex-1 space-y-3 overflow-y-auto p-3 transition-colors',
-          showDropIndicator && 'bg-qualia-500/5'
+          showDropIndicator && 'bg-primary/5'
         )}
       >
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -61,7 +61,7 @@ export function BoardColumn({ id, title, color, tasks, onTaskClick, isOver }: Bo
           <div
             className={cn(
               'flex h-24 items-center justify-center rounded-lg border-2 border-dashed transition-colors',
-              showDropIndicator ? 'border-qualia-500/30 bg-qualia-500/5' : 'border-border/50'
+              showDropIndicator ? 'border-primary/30 bg-primary/5' : 'border-border/50'
             )}
           >
             <p className="text-sm text-muted-foreground">
@@ -72,8 +72,8 @@ export function BoardColumn({ id, title, color, tasks, onTaskClick, isOver }: Bo
 
         {/* Drop Zone */}
         {tasks.length > 0 && showDropIndicator && (
-          <div className="flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-qualia-500/30 bg-qualia-500/5">
-            <p className="text-sm text-qualia-500">Drop here</p>
+          <div className="flex h-16 items-center justify-center rounded-lg border-2 border-dashed border-primary/30 bg-primary/5">
+            <p className="text-sm text-primary">Drop here</p>
           </div>
         )}
       </div>

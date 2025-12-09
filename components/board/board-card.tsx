@@ -63,10 +63,10 @@ function BoardCardInner({ task, onClick, isOverlay }: BoardCardProps) {
       style={style}
       onClick={() => onClick(task.id)}
       className={cn(
-        'group relative cursor-pointer rounded-xl border bg-card p-4 shadow-sm transition-all duration-200',
-        'hover:border-qualia-500/30 hover:shadow-md',
+        'group relative cursor-pointer rounded-xl border border-border bg-card p-4 transition-all duration-200',
+        'hover:border-primary/30 hover:shadow-sm',
         isDragging && 'opacity-40',
-        isOverlay && 'z-50 rotate-1 scale-105 cursor-grabbing shadow-2xl ring-2 ring-qualia-500'
+        isOverlay && 'z-50 rotate-1 scale-105 cursor-grabbing shadow-2xl ring-2 ring-primary'
       )}
     >
       {/* Drag Handle */}

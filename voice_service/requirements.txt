@@ -1,0 +1,8 @@
+# Modal VibeVoice TTS Service Dependencies
+modal>=0.62.0
+torch>=2.0.0
+torchaudio>=2.0.0
+transformers>=4.36.0
+soundfile>=0.12.0
+numpy>=1.24.0
+datasets>=2.14.0

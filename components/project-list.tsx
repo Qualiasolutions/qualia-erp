@@ -18,6 +18,7 @@ import {
   Square,
   Train,
   Building,
+  GanttChart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -38,6 +39,7 @@ export interface Project {
   id: string;
   name: string;
   status: string;
+  start_date?: string | null;
   target_date: string | null;
   project_group?: string | null;
   project_type?: ProjectType | null;
@@ -61,7 +63,9 @@ interface ProjectListProps {
   filterType?: ProjectType | 'all';
 }
 
-type ViewMode = 'grid' | 'list';
+import { ProjectTimeline } from '@/components/project-timeline';
+
+type ViewMode = 'grid' | 'list' | 'timeline';
 
 // Project type configuration
 const PROJECT_TYPE_CONFIG: Record<
@@ -175,7 +179,7 @@ function ProjectCard({ project }: { project: Project }) {
   const PlatformIcon = platformConfig?.icon;
 
   return (
-    <div className="surface group relative flex flex-col gap-2 rounded-lg p-3 transition-all duration-200 hover:scale-[1.02] hover:bg-secondary/50 hover:shadow-md">
+    <div className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5 transition-all duration-200 hover:border-primary/30 hover:shadow-sm">
       <Link href={`/projects/${project.id}`} className="flex flex-col gap-2">
         {/* Top row: Type icon + Name + Progress */}
         <div className="flex items-center gap-3">
@@ -452,11 +456,25 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
           >
             <List className="h-4 w-4" />
           </button>
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={cn(
+              'rounded-md p-1.5 transition-all duration-200',
+              viewMode === 'timeline'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            title="Timeline view"
+          >
+            <GanttChart className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
       {/* Content */}
-      {viewMode === 'grid' ? renderGrid() : renderList()}
+      {viewMode === 'grid' && renderGrid()}
+      {viewMode === 'list' && renderList()}
+      {viewMode === 'timeline' && <ProjectTimeline projects={sortedProjects} />}
     </div>
   );
 }

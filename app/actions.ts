@@ -1382,7 +1382,8 @@ export async function getClients(workspaceId?: string | null, leadStatus?: LeadS
             last_contacted_at,
             created_at,
             creator:profiles!clients_created_by_fkey (id, full_name, email),
-            assigned:profiles!clients_assigned_to_fkey (id, full_name, email)
+            assigned:profiles!clients_assigned_to_fkey (id, full_name, email),
+            projects:projects!projects_client_id_fkey (id)
         `
     )
     .order('created_at', { ascending: false });

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { Inter, JetBrains_Mono } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import { Sidebar } from '@/components/sidebar';
 import { CommandMenu } from '@/components/command-menu';
@@ -13,20 +14,7 @@ import { LogoSplash } from '@/components/logo-splash';
 import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
 import { AdminBadge } from '@/components/admin-badge';
-
-// Optimized font loading with next/font
-const inter = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-jetbrains-mono',
-  weight: ['400', '500'],
-});
+import { AIChatWidget } from '@/components/ai-chat-widget';
 
 export const metadata: Metadata = {
   title: 'Qualia Solutions Internal Suite',
@@ -63,7 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
       >
         <ThemeProvider>
           <SWRProvider>
@@ -85,6 +73,7 @@ export default function RootLayout({
                     <main className="flex-1 overflow-y-auto">{children}</main>
                   </div>
                   <WorkspaceChatWrapper />
+                  <AIChatWidget />
                 </SidebarProvider>
               </WorkspaceProvider>
             </AdminProvider>

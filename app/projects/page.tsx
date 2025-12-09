@@ -33,6 +33,7 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
     id: p.id as string,
     name: p.name as string,
     status: p.status as string,
+    start_date: p.start_date as string | null,
     target_date: p.target_date as string | null,
     project_group: p.project_group as string | null,
     project_type: p.project_type as ProjectType | null,
@@ -115,25 +116,23 @@ export default async function ProjectsPage({
   const filters = await searchParams;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+      <header className="flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-violet-500/10 p-2">
-            <Folder className="h-4 w-4 text-violet-500" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <Folder className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-foreground">Projects</h1>
-            <p className="text-xs text-muted-foreground">Manage your projects and track progress</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">Projects</h1>
+            <p className="text-xs text-muted-foreground">Track progress and manage deliverables</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <NewProjectModal />
-        </div>
+        <NewProjectModal />
       </header>
 
       {/* Type Tabs */}
-      <div className="border-b border-border bg-background px-6 py-3">
+      <div className="border-b border-border px-6 py-2.5">
         <ProjectTypeTabs currentType={filters.type} />
       </div>
 
