@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(), microphone=(self), geolocation=()',
           },
           {
             key: 'X-DNS-Prefetch-Control',
@@ -35,7 +35,8 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://api.vapi.ai wss://*.vapi.ai https://*.vapi.ai https://*.deepgram.com wss://*.deepgram.com https://*.daily.co wss://*.daily.co",
+              "media-src 'self' blob: https://*.vapi.ai https://*.daily.co",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
