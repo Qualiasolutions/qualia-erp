@@ -12,6 +12,26 @@ interface QualiaVoiceProps {
 
 type VoiceState = 'idle' | 'listening' | 'processing' | 'speaking';
 
+// Type for the speech recognition instance
+type SpeechRecognitionInstance = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult:
+    | ((event: {
+        resultIndex: number;
+        results: {
+          length: number;
+          [index: number]: { isFinal: boolean; [index: number]: { transcript: string } };
+        };
+      }) => void)
+    | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
 export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [transcript, setTranscript] = useState('');
@@ -19,21 +39,21 @@ export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const synthRef = useRef<SpeechSynthesisUtterance | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Initialize speech recognition
-  const initRecognition = useCallback(() => {
+  const initRecognition = useCallback((): SpeechRecognitionInstance | null => {
     if (typeof window === 'undefined') return null;
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
       setError('Speech recognition is not supported in your browser');
       return null;
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionAPI() as SpeechRecognitionInstance;
     recognition.continuous = false;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
