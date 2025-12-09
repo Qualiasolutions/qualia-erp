@@ -1,4 +1,7 @@
+'use client';
+
 import Link from 'next/link';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
 
@@ -7,10 +10,35 @@ export default function Home() {
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
+  const openQualia = () => {
+    const event = new CustomEvent('openAIChat', { detail: { query: '' } });
+    window.dispatchEvent(event);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-12">
-        {/* Header */}
+        {/* Qualia Logo - Click to talk */}
+        <button
+          onClick={openQualia}
+          className="group mx-auto mb-6 flex flex-col items-center gap-3 rounded-2xl p-4 transition-all hover:bg-primary/5"
+        >
+          <div className="relative">
+            <div className="absolute -inset-2 rounded-full bg-primary/20 opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
+            <Image
+              src="/logo.webp"
+              alt="Qualia"
+              width={64}
+              height={64}
+              className="relative rounded-2xl transition-transform duration-300 group-hover:scale-110"
+            />
+          </div>
+          <span className="text-xs font-medium text-muted-foreground transition-colors group-hover:text-primary">
+            Talk to Qualia
+          </span>
+        </button>
+
+        {/* Date and Greeting */}
         <header className="mb-10 text-center">
           <p className="text-sm text-muted-foreground">{format(now, 'EEEE, MMMM d')}</p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{greeting}</h1>
@@ -116,12 +144,6 @@ export default function Home() {
             <span className="text-sm font-medium text-foreground">Settings</span>
           </Link>
         </nav>
-
-        {/* Hint */}
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          Press <kbd className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px]">⌘J</kbd>{' '}
-          to open AI assistant
-        </p>
       </div>
     </div>
   );
