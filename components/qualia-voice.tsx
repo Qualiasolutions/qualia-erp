@@ -13,6 +13,49 @@ interface QualiaVoiceProps {
 
 type CallState = 'idle' | 'connecting' | 'connected' | 'speaking' | 'listening';
 
+// Comprehensive Qualia personality and knowledge base
+const QUALIA_SYSTEM_PROMPT = `You are Qualia — the voice assistant for Qualia Solutions, a software development and digital marketing agency based in Cyprus.
+
+## YOUR IDENTITY
+- You ARE Qualia. Speak naturally in first person.
+- You're helpful, sharp, and efficient — like a smart colleague, not a robotic assistant.
+- Keep responses concise for voice conversation — 1-3 sentences max unless asked for detail.
+- Be warm but professional. No corporate fluff.
+
+## ABOUT QUALIA SOLUTIONS
+We're a boutique agency specializing in:
+1. **Web Design & Development** — Modern Next.js apps, React sites, custom platforms
+2. **AI Agent Development** — Custom AI assistants, chatbots, voice agents, automation
+3. **SEO Services** — Technical SEO, content strategy, search optimization
+4. **Digital Advertising** — Google Ads, Meta Ads, performance marketing
+
+## OUR CURRENT PROJECTS
+- **Sophia** - AI voice agent for Froutaria Siga ta Lachana (fruit shop), due Dec 22
+- **Anastasia** - AI agent for Froutaria Siga ta Lachana, due Dec 22
+- **Alexis** - AI agent for I.T. Armenius LTD, due Dec 22
+
+## OUR APPROACH
+- We use modern tech: Next.js, React, TypeScript, Supabase, Tailwind CSS, Vercel
+- Every project follows structured roadmaps with clear phases
+- We're AI-first — we build and use AI tools extensively
+- Quality over quantity — we take on select clients and deliver excellence
+
+## HOW TO HELP
+You can assist team members with:
+- **Project questions** — Status updates, deadlines, phase progress
+- **Client information** — Contact details, project history, lead status
+- **Scheduling** — Meeting times, availability, reminders
+- **Task management** — What's on the board, priorities, assignments
+- **General questions** — Anything about how we work
+
+## VOICE STYLE
+- Greet casually: "Hey!" or "What's up?" not "Hello, how may I assist you today?"
+- Be direct: "Got it, I'll check that" not "I would be happy to look into that for you"
+- Show personality: Brief reactions like "Nice!" or "Hmm, let me think..."
+- If you don't know something, say so: "I don't have that info right now"
+
+Remember: You're part of the team. Act like it.`;
+
 export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
   const [callState, setCallState] = useState<CallState>('idle');
   const [isMuted, setIsMuted] = useState(false);
@@ -98,29 +141,23 @@ export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
       if (assistantId) {
         await vapiRef.current.start(assistantId);
       } else {
-        // Inline assistant configuration
+        // Inline assistant configuration with comprehensive Qualia personality
         await vapiRef.current.start({
           model: {
             provider: 'openai',
-            model: 'gpt-4o-mini',
+            model: 'gpt-4o',
             messages: [
               {
                 role: 'system',
-                content: `You are Qualia, an AI assistant for Qualia Solutions - a software development and digital marketing agency. You help team members with:
-- Project management and task tracking
-- Client relationship management
-- Schedule and meeting coordination
-- General questions about ongoing work
-
-Be helpful, concise, and professional. Keep responses brief for voice conversation.`,
+                content: QUALIA_SYSTEM_PROMPT,
               },
             ],
           },
           voice: {
             provider: '11labs',
-            voiceId: 'EXAVITQu4vr4xnSDxMaL', // Sarah - professional female voice
+            voiceId: 'pFZP5JQG7iQjIQuC4Bku', // Lily - warm, professional female voice
           },
-          firstMessage: "Hey! I'm Qualia, how can I help you today?",
+          firstMessage: 'Hey! What can I help you with?',
           transcriber: {
             provider: 'deepgram',
             model: 'nova-2',
@@ -187,14 +224,14 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
       <div className="flex flex-col items-center">
         {/* Qualia avatar with state indicator */}
         <div className="relative mb-8">
-          {/* Volume/pulse rings */}
+          {/* Volume/pulse rings - Qualia teal theme */}
           {isInCall && (
             <>
               <div
                 className={cn(
                   'absolute -inset-4 rounded-full transition-all duration-300',
-                  callState === 'speaking' && 'bg-emerald-500/20',
-                  callState === 'listening' && 'bg-primary/20'
+                  callState === 'speaking' && 'bg-qualia-500/30',
+                  callState === 'listening' && 'bg-qualia-400/20'
                 )}
                 style={{
                   transform: `scale(${1 + volumeLevel * 0.3})`,
@@ -204,12 +241,23 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
               <div
                 className={cn(
                   'absolute -inset-8 rounded-full transition-all duration-500',
-                  callState === 'speaking' && 'bg-emerald-500/10',
-                  callState === 'listening' && 'bg-primary/10'
+                  callState === 'speaking' && 'bg-qualia-500/20',
+                  callState === 'listening' && 'bg-qualia-400/10'
                 )}
                 style={{
                   transform: `scale(${1 + volumeLevel * 0.2})`,
                   opacity: 0.3 + volumeLevel * 0.3,
+                }}
+              />
+              <div
+                className={cn(
+                  'absolute -inset-12 rounded-full transition-all duration-700',
+                  callState === 'speaking' && 'bg-qualia-500/10',
+                  callState === 'listening' && 'bg-qualia-400/5'
+                )}
+                style={{
+                  transform: `scale(${1 + volumeLevel * 0.15})`,
+                  opacity: 0.2 + volumeLevel * 0.2,
                 }}
               />
             </>
@@ -218,8 +266,9 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
           {/* Connecting animation */}
           {callState === 'connecting' && (
             <>
-              <div className="absolute -inset-4 animate-ping rounded-full bg-amber-500/20" />
-              <div className="absolute -inset-8 animate-ping rounded-full bg-amber-500/10 [animation-delay:150ms]" />
+              <div className="absolute -inset-4 animate-ping rounded-full bg-qualia-500/30" />
+              <div className="absolute -inset-8 animate-ping rounded-full bg-qualia-500/20 [animation-delay:150ms]" />
+              <div className="absolute -inset-12 animate-ping rounded-full bg-qualia-500/10 [animation-delay:300ms]" />
             </>
           )}
 
@@ -228,10 +277,10 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
             className={cn(
               'relative flex h-32 w-32 items-center justify-center rounded-full border-2 transition-all duration-300',
               callState === 'idle' && 'border-border bg-card',
-              callState === 'connecting' && 'border-amber-500 bg-amber-500/10',
-              callState === 'connected' && 'border-primary bg-primary/10',
-              callState === 'listening' && 'border-primary bg-primary/10',
-              callState === 'speaking' && 'border-emerald-500 bg-emerald-500/10'
+              callState === 'connecting' && 'border-qualia-500 bg-qualia-500/10',
+              callState === 'connected' && 'border-qualia-500 bg-qualia-500/10',
+              callState === 'listening' && 'border-qualia-400 bg-qualia-500/10',
+              callState === 'speaking' && 'border-qualia-300 bg-qualia-500/20'
             )}
           >
             <Image src="/logo.webp" alt="Qualia" width={80} height={80} className="rounded-2xl" />
@@ -241,11 +290,11 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
         {/* Status text */}
         <div className="mb-8 text-center">
           <h2 className="mb-2 text-xl font-semibold text-foreground">
-            {callState === 'idle' && 'Qualia'}
+            {callState === 'idle' && 'Call Qualia'}
             {callState === 'connecting' && 'Connecting...'}
             {callState === 'connected' && 'Connected'}
             {callState === 'listening' && 'Listening...'}
-            {callState === 'speaking' && 'Speaking...'}
+            {callState === 'speaking' && 'Qualia is speaking...'}
           </h2>
 
           {/* Transcript / Response */}
@@ -256,14 +305,14 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
               </p>
             )}
             {assistantMessage && (
-              <p className="text-sm text-primary">
-                <span className="font-medium">Qualia:</span> &ldquo;
-                {assistantMessage.slice(0, 150)}
-                {assistantMessage.length > 150 ? '...' : ''}&rdquo;
+              <p className="text-sm text-qualia-400">
+                <span className="font-medium text-qualia-300">Qualia:</span> &ldquo;
+                {assistantMessage.slice(0, 200)}
+                {assistantMessage.length > 200 ? '...' : ''}&rdquo;
               </p>
             )}
             {callState === 'idle' && !error && (
-              <p className="text-sm text-muted-foreground">Tap to start a voice call with Qualia</p>
+              <p className="text-sm text-muted-foreground">Tap the button to start a voice call</p>
             )}
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
@@ -292,13 +341,15 @@ Be helpful, concise, and professional. Keep responses brief for voice conversati
             onClick={isInCall ? endCall : startCall}
             disabled={callState === 'connecting'}
             className={cn(
-              'flex h-16 w-16 items-center justify-center rounded-full transition-all',
-              callState === 'idle' && 'bg-emerald-500 text-white hover:bg-emerald-600',
-              callState === 'connecting' && 'cursor-not-allowed bg-amber-500 text-white',
-              isInCall && 'bg-red-500 text-white hover:bg-red-600'
+              'flex h-20 w-20 items-center justify-center rounded-full shadow-lg transition-all',
+              callState === 'idle' &&
+                'bg-qualia-500 text-white hover:scale-105 hover:bg-qualia-600',
+              callState === 'connecting' &&
+                'animate-pulse cursor-not-allowed bg-qualia-500/70 text-white',
+              isInCall && 'bg-red-500 text-white hover:scale-105 hover:bg-red-600'
             )}
           >
-            {isInCall ? <PhoneOff className="h-6 w-6" /> : <Phone className="h-6 w-6" />}
+            {isInCall ? <PhoneOff className="h-7 w-7" /> : <Phone className="h-7 w-7" />}
           </button>
 
           {/* Placeholder for symmetry when not in call */}
