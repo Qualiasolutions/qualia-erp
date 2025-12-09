@@ -1216,7 +1216,13 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
 
 // ============ CLIENT ACTIONS ============
 
-export type LeadStatus = 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client';
+export type LeadStatus =
+  | 'dropped'
+  | 'cold'
+  | 'hot'
+  | 'active_client'
+  | 'inactive_client'
+  | 'dead_lead';
 
 export async function createClientRecord(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
@@ -1503,7 +1509,7 @@ export async function logClientActivity(
 
 export async function toggleClientStatus(
   clientId: string,
-  newStatus: 'active_client' | 'inactive_client'
+  newStatus: 'active_client' | 'inactive_client' | 'dead_lead'
 ): Promise<ActionResult> {
   const supabase = await createClient();
 

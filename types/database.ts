@@ -873,7 +873,7 @@ export type Database = {
       deployment_platform: 'vercel' | 'squarespace' | 'railway';
       issue_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       issue_status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
-      lead_status: 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client';
+      lead_status: 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';
       project_group:
         | 'salman_kuwait'
         | 'tasos_kyriakides'
@@ -961,6 +961,7 @@ export const LEAD_STATUSES: LeadStatus[] = [
   'hot',
   'active_client',
   'inactive_client',
+  'dead_lead',
 ];
 export const PROJECT_GROUPS: ProjectGroup[] = [
   'salman_kuwait',
