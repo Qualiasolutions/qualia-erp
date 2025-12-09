@@ -1,28 +1,28 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { createClientRecord, type LeadStatus } from "@/app/actions";
-import { useWorkspace } from "@/components/workspace-provider";
-import { useRouter } from "next/navigation";
+} from '@/components/ui/select';
+import { createClientRecord, type LeadStatus } from '@/app/actions';
+import { useWorkspace } from '@/components/workspace-provider';
+import { useRouter } from 'next/navigation';
 
 interface NewClientModalProps {
   open?: boolean;
@@ -31,11 +31,12 @@ interface NewClientModalProps {
 }
 
 const leadStatusOptions: { value: LeadStatus; label: string }[] = [
-  { value: "cold", label: "Cold Lead" },
-  { value: "hot", label: "Hot Lead" },
-  { value: "active_client", label: "Active Client" },
-  { value: "inactive_client", label: "Inactive Client" },
-  { value: "dropped", label: "Dropped Lead" },
+  { value: 'cold', label: 'Cold Lead' },
+  { value: 'hot', label: 'Hot Lead' },
+  { value: 'active_client', label: 'Active Client' },
+  { value: 'inactive_client', label: 'Inactive Client' },
+  { value: 'dropped', label: 'Dropped Lead' },
+  { value: 'dead_lead', label: 'Dead Lead' },
 ];
 
 export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModalProps) {
@@ -63,7 +64,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
 
     const formData = new FormData(e.currentTarget);
     if (currentWorkspace) {
-      formData.set("workspace_id", currentWorkspace.id);
+      formData.set('workspace_id', currentWorkspace.id);
     }
 
     const result = await createClientRecord(formData);
@@ -78,7 +79,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
         router.refresh();
       }
     } else {
-      setError(result.error || "Failed to create client");
+      setError(result.error || 'Failed to create client');
     }
 
     setIsSubmitting(false);
@@ -96,7 +97,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
       {!isControlled && (
         <DialogTrigger asChild>
           <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-700">
-            <Plus className="w-4 h-4" />
+            <Plus className="h-4 w-4" />
             <span>Add Client</span>
           </Button>
         </DialogTrigger>
@@ -108,7 +109,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-500 text-sm p-3 rounded-lg">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-500">
               {error}
             </div>
           )}
@@ -197,7 +198,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
               disabled={isSubmitting}
               className="bg-qualia-600 hover:bg-qualia-700"
             >
-              {isSubmitting ? "Creating..." : "Create Client"}
+              {isSubmitting ? 'Creating...' : 'Create Client'}
             </Button>
           </div>
         </form>

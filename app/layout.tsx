@@ -13,6 +13,7 @@ import { LogoSplash } from '@/components/logo-splash';
 import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
 import { HeaderActions } from '@/components/header-actions';
+import { AIChatWidget } from '@/components/ai-chat-widget';
 
 export const metadata: Metadata = {
   title: 'Qualia Solutions Internal Suite',
@@ -70,6 +71,7 @@ export default function RootLayout({
                     <main className="flex-1 overflow-y-auto">{children}</main>
                   </div>
                   <WorkspaceChatWrapper />
+                  <AIChatWidget />
                 </SidebarProvider>
               </WorkspaceProvider>
             </AdminProvider>

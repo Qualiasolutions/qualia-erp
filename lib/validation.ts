@@ -163,7 +163,7 @@ export const createClientSchema = z.object({
   phone: z.string().max(50).optional().nullable(),
   billing_address: z.string().max(500).optional().nullable(),
   lead_status: z
-    .enum(['dropped', 'cold', 'hot', 'active_client', 'inactive_client'] as const)
+    .enum(['dropped', 'cold', 'hot', 'active_client', 'inactive_client', 'dead_lead'] as const)
     .default('cold'),
   notes: z.string().max(5000).optional().nullable(),
   assigned_to: z.string().uuid('Invalid user ID').optional().nullable(),
@@ -178,7 +178,7 @@ export const updateClientSchema = z.object({
   phone: z.string().max(50).optional().nullable(),
   billing_address: z.string().max(500).optional().nullable(),
   lead_status: z
-    .enum(['dropped', 'cold', 'hot', 'active_client', 'inactive_client'] as const)
+    .enum(['dropped', 'cold', 'hot', 'active_client', 'inactive_client', 'dead_lead'] as const)
     .optional()
     .nullable(),
   notes: z.string().max(5000).optional().nullable(),
