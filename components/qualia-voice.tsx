@@ -155,7 +155,7 @@ export function QualiaVoice({ isOpen, onClose }: QualiaVoiceProps) {
           },
           voice: {
             provider: '11labs',
-            voiceId: 'pFZP5JQG7iQjIQuC4Bku', // Lily - warm, professional female voice
+            voiceId: '4wf10lgibMnboGJGCLrP', // Custom Qualia voice
           },
           firstMessage: 'Hey! What can I help you with?',
           transcriber: {
