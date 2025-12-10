@@ -556,8 +556,12 @@ export function QualiaVoiceInline({ user }: QualiaVoiceInlineProps) {
 
     try {
       const assistantId = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID;
+      // Check if assistantId is a valid UUID (not empty, not placeholder)
+      const isValidUUID =
+        assistantId &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assistantId);
 
-      if (assistantId) {
+      if (isValidUUID) {
         // Pass user context as metadata when using assistant ID
         await vapiRef.current.start(assistantId, {
           metadata: user
