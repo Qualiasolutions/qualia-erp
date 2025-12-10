@@ -883,7 +883,7 @@ export type Database = {
         | 'demos'
         | 'other';
       project_status: 'Demos' | 'Active' | 'Launched' | 'Delayed' | 'Archived' | 'Canceled';
-      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads';
+      project_type: 'web_design' | 'ai_agent' | 'voice_agent' | 'seo' | 'ads';
       user_role: 'admin' | 'employee';
     };
     CompositeTypes: {
@@ -980,4 +980,4 @@ export const PROJECT_STATUSES: ProjectStatus[] = [
   'Archived',
   'Canceled',
 ];
-export const PROJECT_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'seo', 'ads'];
+export const PROJECT_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'];

@@ -57,6 +57,11 @@ Required in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
 GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
+
+# VAPI Voice Assistant (optional)
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=<vapi-public-key>
+NEXT_PUBLIC_VAPI_ASSISTANT_ID=<vapi-assistant-id>  # Optional, uses inline config if not set
+NEXT_PUBLIC_APP_URL=<app-url>  # For VAPI webhook (e.g., https://qualia.app)
 ```
 
 ## Key Dependencies
@@ -72,6 +77,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
 - **Timezone**: Uses `date-fns-tz` with `toZonedTime()` for Cyprus (Europe/Nicosia) and Jordan (Asia/Amman) timezone support in schedule views
 - **SWR Hooks**: `lib/swr.ts` - Cached data fetching hooks (`useTeams`, `useProjects`, `useProfiles`, `useCurrentWorkspaceId`) with `invalidateCache()` and `invalidateAllCaches()` helpers
 - **Rate Limiting**: `lib/rate-limit.ts` - In-memory rate limiter with `chatRateLimiter` (20/min) and `apiRateLimiter` (100/min)
+- **VAPI**: `@vapi-ai/web` for voice assistant with ElevenLabs TTS and Deepgram transcription
 
 ## Architecture
 
@@ -95,7 +101,7 @@ Two Supabase clients for different contexts:
 - `lib/supabase/server.ts` - Server-side client using `@supabase/ssr` with cookie handling. **Create a new client per request** (important for Fluid compute).
 - `lib/supabase/client.ts` - Browser client for client components.
 
-**Auth & Route Protection**: Uses Next.js 15+ `proxy.ts` pattern (not middleware.ts). The proxy handles session refresh and redirects unauthenticated users to `/auth/login`.
+**Auth & Route Protection**: Uses Next.js middleware (`middleware.ts`) for session refresh and route protection. The middleware redirects unauthenticated users to `/auth/login` and authenticated users away from `/auth/login`.
 
 ### Type System (`types/database.ts`)
 
@@ -212,6 +218,7 @@ Use `initializeProjectRoadmap(projectId, projectType)` to populate phases from t
 - **RBAC**: `is_admin()`, `is_system_admin()`, `is_team_member(team_uuid)`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
 - **Stats**: `get_project_stats(workspace_id)` - Returns project stats with milestone progress, issue counts
 - **Phase Progress**: `calculate_phase_progress(phase_id)`, `calculate_roadmap_progress(project_id)` - Return 0-100 percentage
+- **Vector Search**: `match_documents(query_embedding, match_threshold, match_count, filter_workspace_id)` - Cosine similarity search for RAG knowledge base with IVFFlat index
 - Admins: Full access; Employees: Access scoped to owned/assigned/team items
 - See `20240104000000_add_role_based_access_control.sql` for RLS policies
 
@@ -247,6 +254,59 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 - **Chat UI**: `components/chat.tsx` - Uses `useChat` hook, `convertToModelMessages()` for message format
 - **RAG**: Documents table with pgvector embeddings (not yet implemented)
 
+### Voice Assistant (VAPI)
+
+Qualia voice assistant with bilingual support (Jordanian Arabic + English):
+
+- **Components**: `components/qualia-voice.tsx` (full-screen modal), `components/qualia-voice-inline.tsx` (compact inline)
+- **Webhook**: `app/api/vapi/webhook/route.ts` - Handles tool execution for voice commands
+- **Voice**: ElevenLabs multilingual v2 with custom Qualia voice (`4wf10lgibMnboGJGCLrP`)
+- **Transcription**: Deepgram Nova-2 with multi-language support and Arabic/English keyword boosting
+- **Model**: GPT-4o for voice conversation with comprehensive Jordanian Arabic system prompt
+
+**Voice Tools (11 total):**
+
+| Tool                    | Description                                              |
+| ----------------------- | -------------------------------------------------------- |
+| `get_projects`          | Retrieve projects with status/type filtering             |
+| `get_issues`            | Get tasks with status/priority filtering                 |
+| `create_issue`          | Create new tasks                                         |
+| `update_issue`          | Update task status/priority/assignee                     |
+| `get_team_members`      | Team information                                         |
+| `get_schedule`          | Meetings and calendar (today/tomorrow/this week)         |
+| `create_meeting`        | Schedule new meetings with natural language time parsing |
+| `search_knowledge_base` | Company documents and built-in knowledge                 |
+| `get_client_info`       | CRM/lead information                                     |
+| `send_notification`     | Send messages to team members (logged as activities)     |
+| `web_search`            | DuckDuckGo instant answers for external info             |
+
+**Personalized Context:**
+
+- **Fawzi** (founder): Technical assistant mode - direct, efficient, deadline-focused
+- **Moayad** (co-founder): Learning-friendly explanations - simplified technical concepts, encouragement
+
+**Built-in Knowledge Base:**
+The webhook includes a comprehensive knowledge base with 10 categories: company info, team, services, AI agents, development process, pricing, tech stack, contact info, industries served, and value propositions.
+
+**Voice Configuration:**
+
+```typescript
+voice: {
+  provider: '11labs',
+  voiceId: '4wf10lgibMnboGJGCLrP',
+  model: 'eleven_multilingual_v2',
+  stability: 0.6,
+  similarityBoost: 0.8,
+  speed: 0.9,
+}
+transcriber: {
+  provider: 'deepgram',
+  model: 'nova-2',
+  language: 'multi',
+  keywords: ['Qualia:5', 'Fawzi:5', 'Moayad:5', 'كواليا:5', 'فوزي:5', 'مؤيد:5', ...]
+}
+```
+
 ### Realtime Features
 
 Custom hooks for Supabase Realtime:
@@ -279,6 +339,7 @@ Uses `getBoardTasks()` action for workspace-scoped task fetching with Supabase R
 | `/settings`                   | User settings                                                         |
 | `/auth/*`                     | Authentication flows                                                  |
 | `/api/chat`                   | AI chat streaming endpoint                                            |
+| `/api/vapi/webhook`           | VAPI voice assistant tool execution webhook                           |
 
 ## Styling
 

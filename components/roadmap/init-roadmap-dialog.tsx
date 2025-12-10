@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bot, Globe, Search, Megaphone, Loader2, Plus } from 'lucide-react';
+import { Bot, Globe, Search, Megaphone, Loader2, Plus, Phone } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ interface InitRoadmapDialogProps {
 
 const TYPE_ICONS: Record<ProjectType, typeof Bot> = {
   ai_agent: Bot,
+  voice_agent: Phone,
   web_design: Globe,
   seo: Search,
   ads: Megaphone,

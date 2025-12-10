@@ -12,6 +12,7 @@ import {
   Inbox,
   LayoutGrid,
   List,
+  Columns3,
   Folder,
   Calendar,
   ArrowUpDown,
@@ -61,8 +62,8 @@ export type Client = {
   projects?: { id: string }[];
 };
 
-type ViewMode = 'grid' | 'list';
-type SortBy = 'name' | 'recent' | 'contacted' | 'projects';
+type ViewMode = 'grid' | 'list' | 'columns';
+type SortBy = 'status' | 'name' | 'recent' | 'contacted' | 'projects';
 
 interface ClientListProps {
   clients: Client[];
@@ -565,8 +566,8 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState<SortBy>('name');
+  const [viewMode, setViewMode] = useState<ViewMode>('columns');
+  const [sortBy, setSortBy] = useState<SortBy>('status');
   const [isNewClientModalOpen, setIsNewClientModalOpen] = useState(false);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -585,10 +586,31 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     );
   }, [initialClients, searchQuery]);
 
+  // Status priority for sorting (active first, then inactive, then dead)
+  const statusPriority: Record<LeadStatus, number> = {
+    active_client: 0,
+    inactive_client: 1,
+    dead_lead: 2,
+    // These are filtered out but needed for type safety
+    dropped: 3,
+    cold: 4,
+    hot: 5,
+  };
+
   // Sort clients
   const sortedClients = useMemo(() => {
     const sorted = [...searchFiltered];
     switch (sortBy) {
+      case 'status':
+        sorted.sort((a, b) => {
+          const statusDiff = statusPriority[a.lead_status] - statusPriority[b.lead_status];
+          if (statusDiff !== 0) return statusDiff;
+          // Within same status, sort by project count (most first), then name
+          const projectDiff = (b.projects?.length || 0) - (a.projects?.length || 0);
+          if (projectDiff !== 0) return projectDiff;
+          return a.display_name.localeCompare(b.display_name);
+        });
+        break;
       case 'name':
         sorted.sort((a, b) => a.display_name.localeCompare(b.display_name));
         break;
@@ -609,10 +631,31 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     return sorted;
   }, [searchFiltered, sortBy]);
 
+  // Group clients by status for column view
+  const groupedClients = useMemo(() => {
+    const active = searchFiltered.filter((c) => c.lead_status === 'active_client');
+    const inactive = searchFiltered.filter((c) => c.lead_status === 'inactive_client');
+    const dead = searchFiltered.filter((c) => c.lead_status === 'dead_lead');
+
+    // Sort each group by project count, then name
+    const sortGroup = (clients: Client[]) =>
+      clients.sort((a, b) => {
+        const projectDiff = (b.projects?.length || 0) - (a.projects?.length || 0);
+        if (projectDiff !== 0) return projectDiff;
+        return a.display_name.localeCompare(b.display_name);
+      });
+
+    return {
+      active: sortGroup(active),
+      inactive: sortGroup(inactive),
+      dead: sortGroup(dead),
+    };
+  }, [searchFiltered]);
+
   // Count clients by status
-  const activeCount = initialClients.filter((c) => c.lead_status === 'active_client').length;
-  const inactiveCount = initialClients.filter((c) => c.lead_status === 'inactive_client').length;
-  const deadLeadCount = initialClients.filter((c) => c.lead_status === 'dead_lead').length;
+  const activeCount = groupedClients.active.length;
+  const inactiveCount = groupedClients.inactive.length;
+  const deadLeadCount = groupedClients.dead.length;
 
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this client?')) return;
@@ -685,22 +728,37 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Sort Dropdown */}
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
-            <SelectTrigger className="h-9 w-[140px] text-xs">
-              <ArrowUpDown className="mr-2 h-3.5 w-3.5" />
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="name">Name A-Z</SelectItem>
-              <SelectItem value="recent">Recently Added</SelectItem>
-              <SelectItem value="contacted">Last Contacted</SelectItem>
-              <SelectItem value="projects">Most Projects</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Sort Dropdown - only show when not in columns view */}
+          {viewMode !== 'columns' && (
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
+              <SelectTrigger className="h-9 w-[140px] text-xs">
+                <ArrowUpDown className="mr-2 h-3.5 w-3.5" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="status">By Status</SelectItem>
+                <SelectItem value="name">Name A-Z</SelectItem>
+                <SelectItem value="recent">Recently Added</SelectItem>
+                <SelectItem value="contacted">Last Contacted</SelectItem>
+                <SelectItem value="projects">Most Projects</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
 
           {/* View Toggle */}
           <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
+            <button
+              onClick={() => setViewMode('columns')}
+              className={cn(
+                'rounded-md p-1.5 transition-all duration-200',
+                viewMode === 'columns'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+              title="Columns view"
+            >
+              <Columns3 className="h-4 w-4" />
+            </button>
             <button
               onClick={() => setViewMode('grid')}
               className={cn(
@@ -761,6 +819,116 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
               Add Client
             </Button>
           )}
+        </div>
+      ) : viewMode === 'columns' ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Active Column */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10">
+                <UserCheck className="h-3.5 w-3.5 text-emerald-500" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Active</span>
+              <span className="ml-auto rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-500">
+                {groupedClients.active.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {groupedClients.active.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+                  <p className="text-xs text-muted-foreground">No active clients</p>
+                </div>
+              ) : (
+                groupedClients.active.map((client, index) => (
+                  <div
+                    key={client.id}
+                    className="slide-in"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <ClientCard
+                      client={client}
+                      onDelete={handleDelete}
+                      onChangeStatus={handleChangeStatus}
+                      onOpenDetail={handleOpenDetail}
+                      isPending={pendingId === client.id}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Inactive Column */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-500/10">
+                <UserMinus className="h-3.5 w-3.5 text-amber-500" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Inactive</span>
+              <span className="ml-auto rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-500">
+                {groupedClients.inactive.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {groupedClients.inactive.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+                  <p className="text-xs text-muted-foreground">No inactive clients</p>
+                </div>
+              ) : (
+                groupedClients.inactive.map((client, index) => (
+                  <div
+                    key={client.id}
+                    className="slide-in"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <ClientCard
+                      client={client}
+                      onDelete={handleDelete}
+                      onChangeStatus={handleChangeStatus}
+                      onOpenDetail={handleOpenDetail}
+                      isPending={pendingId === client.id}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Dead Leads Column */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500/10">
+                <Skull className="h-3.5 w-3.5 text-red-500" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Dead Leads</span>
+              <span className="ml-auto rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
+                {groupedClients.dead.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {groupedClients.dead.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+                  <p className="text-xs text-muted-foreground">No dead leads</p>
+                </div>
+              ) : (
+                groupedClients.dead.map((client, index) => (
+                  <div
+                    key={client.id}
+                    className="slide-in"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <ClientCard
+                      client={client}
+                      onDelete={handleDelete}
+                      onChangeStatus={handleChangeStatus}
+                      onOpenDetail={handleOpenDetail}
+                      isPending={pendingId === client.id}
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

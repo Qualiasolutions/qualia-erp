@@ -11,6 +11,7 @@ import {
   Building,
   Users,
   FileText,
+  Phone,
 } from 'lucide-react';
 import type { WizardData } from './project-wizard';
 
@@ -23,6 +24,7 @@ interface StepReviewProps {
 const PROJECT_TYPE_CONFIG = {
   web_design: { label: 'Website', icon: Globe, color: 'text-blue-500 bg-blue-500/10' },
   ai_agent: { label: 'AI Agent', icon: Bot, color: 'text-purple-500 bg-purple-500/10' },
+  voice_agent: { label: 'Voice Agent', icon: Phone, color: 'text-pink-500 bg-pink-500/10' },
   seo: { label: 'SEO', icon: Search, color: 'text-green-500 bg-green-500/10' },
   ads: { label: 'Ads', icon: Megaphone, color: 'text-orange-500 bg-orange-500/10' },
 };

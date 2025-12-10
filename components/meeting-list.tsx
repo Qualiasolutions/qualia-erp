@@ -1,8 +1,18 @@
 'use client';
 
-import { format, startOfDay, isBefore, parseISO } from 'date-fns';
+import { format, startOfDay, isBefore, parseISO, isWithinInterval } from 'date-fns';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
-import { Clock, User, Folder, Trash2, Inbox, Globe } from 'lucide-react';
+import {
+  Clock,
+  User,
+  Folder,
+  Trash2,
+  Globe,
+  CalendarDays,
+  Video,
+  ChevronRight,
+  Sparkles,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
 import { useTransition, useMemo, useState, useEffect } from 'react';
@@ -60,6 +70,34 @@ function useTimezone() {
   return { timezone, setTimezone: setAndStoreTimezone };
 }
 
+// Calculate duration in minutes
+function getDurationMinutes(start: Date, end: Date): number {
+  return Math.round((end.getTime() - start.getTime()) / 60000);
+}
+
+// Format duration
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
+
+// Get time until meeting
+function getTimeUntil(now: Date, start: Date): string {
+  const diffMs = start.getTime() - now.getTime();
+  const diffMins = Math.round(diffMs / 60000);
+
+  if (diffMins < 0) return 'Started';
+  if (diffMins === 0) return 'Starting now';
+  if (diffMins < 60) return `in ${diffMins}m`;
+  const hours = Math.floor(diffMins / 60);
+  const mins = diffMins % 60;
+  if (hours < 24) return mins > 0 ? `in ${hours}h ${mins}m` : `in ${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `in ${days}d`;
+}
+
 export function MeetingList({ meetings }: { meetings: Meeting[] }) {
   const [isPending, startTransition] = useTransition();
   const { timezone, setTimezone } = useTimezone();
@@ -88,170 +126,464 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
   }, [currentTime, timezone]);
 
   // Filter and group meetings - show today and future only
-  const { groupedMeetings, sortedDates } = useMemo(() => {
-    // Filter to today and future meetings
+  const { todayMeetings, upcomingMeetings, currentMeeting, nextMeeting } = useMemo<{
+    todayMeetings: Meeting[];
+    upcomingMeetings: Meeting[];
+    currentMeeting: Meeting | undefined;
+    nextMeeting: Meeting | undefined;
+  }>(() => {
     const todayStart = startOfDay(toZonedTime(currentTime, timezone));
+    const zonedNow = toZonedTime(currentTime, timezone);
 
-    const filteredMeetings = meetings.filter((meeting) => {
-      const meetingDate = toZonedTime(parseISO(meeting.start_time), timezone);
-      // Show meetings from today onwards (including past meetings from today)
-      return !isBefore(startOfDay(meetingDate), todayStart);
+    const filteredMeetings = meetings
+      .filter((meeting) => {
+        const meetingDate = toZonedTime(parseISO(meeting.start_time), timezone);
+        return !isBefore(startOfDay(meetingDate), todayStart);
+      })
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+    const today: Meeting[] = [];
+    const upcoming: Meeting[] = [];
+    let current: Meeting | undefined = undefined;
+    let next: Meeting | undefined = undefined;
+
+    filteredMeetings.forEach((meeting) => {
+      const meetingInTz = toZonedTime(parseISO(meeting.start_time), timezone);
+      const endInTz = toZonedTime(parseISO(meeting.end_time), timezone);
+      const date = format(meetingInTz, 'yyyy-MM-dd');
+
+      // Check if currently happening
+      if (
+        isWithinInterval(zonedNow, { start: meetingInTz, end: endInTz }) ||
+        (isBefore(meetingInTz, zonedNow) && isBefore(zonedNow, endInTz))
+      ) {
+        current = meeting;
+      }
+
+      // Find next upcoming meeting
+      if (!next && !isBefore(meetingInTz, zonedNow) && meeting !== current) {
+        next = meeting;
+      }
+
+      if (date === todayInTz) {
+        today.push(meeting);
+      } else {
+        upcoming.push(meeting);
+      }
     });
 
-    // Group by date in the selected timezone
-    const grouped = filteredMeetings.reduce(
-      (groups, meeting) => {
-        const meetingInTz = toZonedTime(parseISO(meeting.start_time), timezone);
-        const date = format(meetingInTz, 'yyyy-MM-dd');
-        if (!groups[date]) {
-          groups[date] = [];
-        }
-        groups[date].push(meeting);
-        return groups;
-      },
-      {} as Record<string, Meeting[]>
-    );
+    return {
+      todayMeetings: today,
+      upcomingMeetings: upcoming,
+      currentMeeting: current,
+      nextMeeting: next,
+    };
+  }, [meetings, currentTime, timezone, todayInTz]);
 
-    // Sort dates, ensuring today comes first
-    const dates = Object.keys(grouped).sort();
+  const zonedNow = toZonedTime(currentTime, timezone);
 
-    return { groupedMeetings: grouped, sortedDates: dates };
-  }, [meetings, currentTime, timezone]);
-
-  if (sortedDates.length === 0) {
+  if (todayMeetings.length === 0 && upcomingMeetings.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center text-center">
-        <div className="mb-4 rounded-xl bg-muted p-4">
-          <Inbox className="h-8 w-8 text-muted-foreground" />
+      <div className="space-y-6">
+        {/* Hero empty state */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent p-8 text-center">
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl" />
+          <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
+          <div className="relative">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10">
+              <CalendarDays className="h-8 w-8 text-violet-500" />
+            </div>
+            <h2 className="text-xl font-semibold text-foreground">Your day is clear</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              No meetings scheduled. Enjoy your focus time!
+            </p>
+            <div className="mt-4">
+              <TimezoneSelector timezone={timezone} setTimezone={setTimezone} compact />
+            </div>
+          </div>
         </div>
-        <p className="font-medium text-foreground">No upcoming meetings</p>
-        <p className="mt-1 text-sm text-muted-foreground">Schedule a new meeting to get started</p>
-        <TimezoneSelector timezone={timezone} setTimezone={setTimezone} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Timezone selector and current date display */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">
-            {formatInTimeZone(currentTime, timezone, 'EEEE, MMMM d, yyyy')}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            ({formatInTimeZone(currentTime, timezone, 'h:mm a')})
-          </span>
+    <div className="space-y-8">
+      {/* Today's Hero Section */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent p-6">
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl" />
+        <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
+
+        <div className="relative">
+          {/* Date and timezone */}
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">
+                {formatInTimeZone(currentTime, timezone, 'EEEE')}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {formatInTimeZone(currentTime, timezone, 'MMMM d, yyyy')} &middot;{' '}
+                {formatInTimeZone(currentTime, timezone, 'h:mm a')}
+              </p>
+            </div>
+            <TimezoneSelector timezone={timezone} setTimezone={setTimezone} compact />
+          </div>
+
+          {/* Current or Next Meeting Highlight */}
+          {(currentMeeting || nextMeeting) && (
+            <div className="mb-4">
+              {currentMeeting ? (
+                <CurrentMeetingCard
+                  meeting={currentMeeting}
+                  timezone={timezone}
+                  now={zonedNow}
+                  onDelete={handleDelete}
+                  isPending={isPending}
+                />
+              ) : nextMeeting ? (
+                <NextMeetingCard
+                  meeting={nextMeeting}
+                  timezone={timezone}
+                  now={zonedNow}
+                  onDelete={handleDelete}
+                  isPending={isPending}
+                />
+              ) : null}
+            </div>
+          )}
+
+          {/* Today's summary */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="font-medium text-foreground">
+              {todayMeetings.length} meeting{todayMeetings.length !== 1 ? 's' : ''} today
+            </span>
+            {todayMeetings.length > 0 && (
+              <>
+                <span className="text-muted-foreground">&middot;</span>
+                <span className="text-muted-foreground">
+                  {formatDuration(
+                    todayMeetings.reduce((acc, m) => {
+                      const start = toZonedTime(parseISO(m.start_time), timezone);
+                      const end = toZonedTime(parseISO(m.end_time), timezone);
+                      return acc + getDurationMinutes(start, end);
+                    }, 0)
+                  )}{' '}
+                  total
+                </span>
+              </>
+            )}
+          </div>
         </div>
-        <TimezoneSelector timezone={timezone} setTimezone={setTimezone} />
       </div>
 
-      {sortedDates.map((date) => {
-        const isToday = date === todayInTz;
-        const dayMeetings = groupedMeetings[date];
-        // Parse the date string and format it in the timezone
-        const dateForDisplay = toZonedTime(parseISO(date + 'T12:00:00'), timezone);
+      {/* Today's Meetings Timeline */}
+      {todayMeetings.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-violet-500" />
+            <h3 className="text-sm font-semibold text-foreground">Today&apos;s Schedule</h3>
+          </div>
 
-        return (
-          <div key={date}>
-            {/* Date Header */}
-            <div className="mb-3 flex items-center gap-3">
-              <div
-                className={cn(
-                  'text-sm font-medium',
-                  isToday ? 'text-primary' : 'text-muted-foreground'
-                )}
-              >
-                {isToday ? 'Today' : format(dateForDisplay, 'EEEE, MMM d')}
-              </div>
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs text-muted-foreground">
-                {dayMeetings.length} meeting{dayMeetings.length !== 1 ? 's' : ''}
-              </span>
-            </div>
+          <div className="relative space-y-3">
+            {/* Timeline line */}
+            <div className="absolute bottom-2 left-[23px] top-2 w-px bg-gradient-to-b from-violet-500/50 via-violet-500/20 to-transparent" />
 
-            {/* Meetings for this date */}
-            <div className="space-y-2">
-              {dayMeetings.map((meeting, index) => {
-                const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
-                const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
-                const zonedNow = toZonedTime(currentTime, timezone);
-                const isPast = isBefore(endDate, zonedNow);
+            {todayMeetings.map((meeting, index) => {
+              const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
+              const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
+              const isPast = isBefore(endDate, zonedNow);
+              const isCurrent = currentMeeting?.id === meeting.id;
+              const duration = getDurationMinutes(startDate, endDate);
 
-                return (
+              return (
+                <div
+                  key={meeting.id}
+                  className={cn(
+                    'group relative flex gap-4 transition-all duration-200',
+                    isPast && 'opacity-50'
+                  )}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  {/* Timeline dot */}
                   <div
-                    key={meeting.id}
                     className={cn(
-                      'surface slide-in group relative rounded-lg p-4 transition-all duration-200 hover:bg-secondary/50',
-                      isPast && 'opacity-50'
+                      'relative z-10 mt-1.5 h-3 w-3 rounded-full ring-4 ring-background transition-all',
+                      isCurrent
+                        ? 'bg-violet-500 ring-violet-500/20'
+                        : isPast
+                          ? 'bg-muted-foreground/30'
+                          : 'bg-violet-500/50'
                     )}
-                    style={{ animationDelay: `${index * 30}ms` }}
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-4">
-                        {/* Time Box */}
-                        <div
-                          className={cn(
-                            'flex h-14 w-14 flex-col items-center justify-center rounded-lg',
-                            isPast ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary'
-                          )}
-                        >
-                          <span className="text-lg font-semibold">{format(startDate, 'h:mm')}</span>
-                          <span className="text-[10px] font-medium uppercase">
-                            {format(startDate, 'a')}
+                    {isCurrent && (
+                      <span className="absolute inset-0 animate-ping rounded-full bg-violet-500 opacity-75" />
+                    )}
+                  </div>
+
+                  {/* Meeting card */}
+                  <div
+                    className={cn(
+                      'flex-1 rounded-xl border bg-card p-4 transition-all duration-200',
+                      isCurrent
+                        ? 'border-violet-500/50 bg-violet-500/5 shadow-lg shadow-violet-500/10'
+                        : 'border-border hover:border-violet-500/30 hover:bg-secondary/50'
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        {/* Time and status */}
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="text-xs font-semibold text-violet-500">
+                            {format(startDate, 'h:mm a')}
                           </span>
+                          <span className="text-xs text-muted-foreground">
+                            &middot; {formatDuration(duration)}
+                          </span>
+                          {isCurrent && (
+                            <span className="rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
+                              Now
+                            </span>
+                          )}
+                          {!isCurrent && !isPast && (
+                            <span className="text-xs text-muted-foreground">
+                              {getTimeUntil(zonedNow, startDate)}
+                            </span>
+                          )}
                         </div>
 
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
-                            {meeting.title}
-                          </h3>
-                          {meeting.description && (
-                            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-                              {meeting.description}
-                            </p>
-                          )}
+                        {/* Title */}
+                        <h4 className="text-sm font-semibold text-foreground transition-colors group-hover:text-violet-500">
+                          {meeting.title}
+                        </h4>
 
-                          <div className="mt-2 flex items-center gap-3 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>
-                                {format(startDate, 'h:mm a')} - {format(endDate, 'h:mm a')}
-                              </span>
-                            </div>
-                            {meeting.project && (
-                              <div className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5">
-                                <Folder className="h-3 w-3" />
-                                <span>{meeting.project.name}</span>
-                              </div>
-                            )}
-                            {meeting.creator && (
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                <span>{meeting.creator.full_name || meeting.creator.email}</span>
-                              </div>
-                            )}
-                          </div>
+                        {/* Description */}
+                        {meeting.description && (
+                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                            {meeting.description}
+                          </p>
+                        )}
+
+                        {/* Meta */}
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          {meeting.project && (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                              <Folder className="h-3 w-3" />
+                              {meeting.project.name}
+                            </span>
+                          )}
+                          {meeting.creator && (
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              {meeting.creator.full_name || meeting.creator.email}
+                            </span>
+                          )}
                         </div>
                       </div>
 
-                      {/* Delete Button */}
+                      {/* Actions */}
                       <button
                         onClick={() => handleDelete(meeting.id)}
                         disabled={isPending}
-                        className="rounded-lg p-2 text-muted-foreground opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
+                        className="rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
                         title="Delete meeting"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        </div>
+      )}
+
+      {/* Upcoming Meetings */}
+      {upcomingMeetings.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold text-foreground">Coming Up</h3>
+            <span className="text-xs text-muted-foreground">
+              {upcomingMeetings.length} meeting{upcomingMeetings.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            {upcomingMeetings.slice(0, 6).map((meeting, index) => {
+              const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
+              const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
+              const duration = getDurationMinutes(startDate, endDate);
+
+              return (
+                <div
+                  key={meeting.id}
+                  className="group rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-violet-500/30 hover:bg-secondary/50"
+                  style={{ animationDelay: `${index * 30}ms` }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      {/* Date */}
+                      <div className="mb-2 flex items-center gap-2">
+                        <CalendarDays className="h-3.5 w-3.5 text-violet-500" />
+                        <span className="text-xs font-medium text-violet-500">
+                          {format(startDate, 'EEE, MMM d')}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {format(startDate, 'h:mm a')}
+                        </span>
+                      </div>
+
+                      {/* Title */}
+                      <h4 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-violet-500">
+                        {meeting.title}
+                      </h4>
+
+                      {/* Meta */}
+                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{formatDuration(duration)}</span>
+                        {meeting.project && (
+                          <>
+                            <span>&middot;</span>
+                            <span className="truncate">{meeting.project.name}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleDelete(meeting.id)}
+                      disabled={isPending}
+                      className="rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
+                      title="Delete meeting"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {upcomingMeetings.length > 6 && (
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              +{upcomingMeetings.length - 6} more meetings
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Current meeting highlight card
+function CurrentMeetingCard({
+  meeting,
+  timezone,
+  now,
+  onDelete,
+  isPending,
+}: {
+  meeting: Meeting;
+  timezone: string;
+  now: Date;
+  onDelete: (id: string) => void;
+  isPending: boolean;
+}) {
+  const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
+  const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
+  const duration = getDurationMinutes(startDate, endDate);
+  const elapsed = getDurationMinutes(startDate, now);
+  const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
+
+  return (
+    <div className="rounded-xl border border-violet-500/50 bg-violet-500/10 p-4 shadow-lg shadow-violet-500/10">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500">
+            <Video className="h-5 w-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                In Progress
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {formatDuration(duration - elapsed)} remaining
+              </span>
+            </div>
+            <h3 className="mt-1 text-base font-semibold text-foreground">{meeting.title}</h3>
+            <p className="text-xs text-muted-foreground">
+              {format(startDate, 'h:mm a')} - {format(endDate, 'h:mm a')}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onDelete(meeting.id)}
+          disabled={isPending}
+          className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-red-500/10 hover:text-red-500"
+          title="Delete meeting"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Progress bar */}
+      <div className="mt-3 h-1.5 rounded-full bg-violet-500/20">
+        <div
+          className="h-full rounded-full bg-violet-500 transition-all duration-1000"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// Next meeting card
+function NextMeetingCard({
+  meeting,
+  timezone,
+  now,
+  onDelete,
+  isPending,
+}: {
+  meeting: Meeting;
+  timezone: string;
+  now: Date;
+  onDelete: (id: string) => void;
+  isPending: boolean;
+}) {
+  const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
+  const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
+  const duration = getDurationMinutes(startDate, endDate);
+  const timeUntil = getTimeUntil(now, startDate);
+
+  return (
+    <div className="rounded-xl border border-border bg-card/50 p-4 backdrop-blur">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+            <Clock className="h-5 w-5 text-violet-500" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-violet-500">Up Next</span>
+              <span className="text-xs text-muted-foreground">{timeUntil}</span>
+            </div>
+            <h3 className="mt-1 text-base font-semibold text-foreground">{meeting.title}</h3>
+            <p className="text-xs text-muted-foreground">
+              {format(startDate, 'h:mm a')} &middot; {formatDuration(duration)}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => onDelete(meeting.id)}
+          disabled={isPending}
+          className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-red-500/10 hover:text-red-500"
+          title="Delete meeting"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -260,10 +592,28 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
 function TimezoneSelector({
   timezone,
   setTimezone,
+  compact = false,
 }: {
   timezone: string;
   setTimezone: (tz: string) => void;
+  compact?: boolean;
 }) {
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-lg bg-secondary/50 px-2 py-1">
+        <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+        <select
+          value={timezone}
+          onChange={(e) => setTimezone(e.target.value)}
+          className="cursor-pointer bg-transparent text-xs text-muted-foreground hover:text-foreground focus:outline-none"
+        >
+          <option value={TIMEZONE_CYPRUS}>Cyprus</option>
+          <option value={TIMEZONE_JORDAN}>Jordan</option>
+        </select>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4 flex items-center gap-2">
       <Globe className="h-3.5 w-3.5 text-muted-foreground" />

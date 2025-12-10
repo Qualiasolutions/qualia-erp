@@ -752,13 +752,13 @@ async function handleCreateIssue(
     metadata: { title: issue.title, priority: issue.priority, created_by_voice: true },
   });
 
-  const priorityArabic =
-    {
-      Urgent: 'عاجل 🔴',
-      High: 'مهم',
-      Medium: 'عادي',
-      Low: 'مش مستعجل',
-    }[issue.priority] || issue.priority;
+  const priorityMap: Record<string, string> = {
+    Urgent: 'عاجل 🔴',
+    High: 'مهم',
+    Medium: 'عادي',
+    Low: 'مش مستعجل',
+  };
+  const priorityArabic = priorityMap[issue.priority as string] || issue.priority;
 
   return `تم ✅ أضفت "${issue.title}" - ${priorityArabic}`;
 }

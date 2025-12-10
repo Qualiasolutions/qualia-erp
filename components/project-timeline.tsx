@@ -20,7 +20,7 @@ import {
   isAfter,
   isToday,
 } from 'date-fns';
-import { Bot, Globe, Search, Megaphone, Folder, Calendar } from 'lucide-react';
+import { Bot, Globe, Search, Megaphone, Folder, Calendar, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/components/project-list';
 import type { ProjectType } from '@/types/database';
@@ -44,6 +44,12 @@ const PROJECT_TYPE_CONFIG: Record<
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
     barColor: 'bg-gradient-to-r from-purple-500 to-purple-400',
+  },
+  voice_agent: {
+    icon: Phone,
+    color: 'text-pink-500',
+    bgColor: 'bg-pink-500/10',
+    barColor: 'bg-gradient-to-r from-pink-500 to-pink-400',
   },
   seo: {
     icon: Search,

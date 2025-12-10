@@ -1,8 +1,19 @@
 {
   "mcpServers": {
     "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=vbpzaiqovffpsroxaulv"
+      "command": "npx",
+      "args": ["-y", "supabase-mcp"],
+      "env": {
+        "SUPABASE_PROJECT_REF": "sbp_49d5d71b7585bf4fbaa57ef8a3cc09119bf0bb06",
+        "SUPABASE_ACCESS_TOKEN": "sbp_49d5d71b7585bf4fbaa57ef8a3cc09119bf0bb06"
+      }
+    },
+    "vapi": {
+      "command": "npx",
+      "args": ["-y", "@vapi-ai/mcp-server"],
+      "env": {
+        "VAPI_TOKEN": "6dde1069-6920-4493-a5e3-2a6c2a78bc20"
+      }
     }
   }
 }

@@ -20,6 +20,7 @@ import {
   Settings2,
   Building,
   Check,
+  Phone,
 } from 'lucide-react';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 import type { WizardData } from './project-wizard';
@@ -50,10 +51,18 @@ const PROJECT_TYPES: Array<{
   {
     value: 'ai_agent',
     label: 'AI Agent',
-    description: 'Build AI-powered agents',
+    description: 'Chatbots & automation',
     icon: <Bot className="h-6 w-6" />,
     color: 'text-purple-500',
     gradient: 'from-purple-500/20 to-purple-600/5',
+  },
+  {
+    value: 'voice_agent',
+    label: 'Voice Agent',
+    description: 'Phone bots & voice AI',
+    icon: <Phone className="h-6 w-6" />,
+    color: 'text-pink-500',
+    gradient: 'from-pink-500/20 to-pink-600/5',
   },
   {
     value: 'seo',

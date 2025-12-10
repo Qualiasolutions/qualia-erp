@@ -40,8 +40,12 @@ export async function middleware(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
-  // Protect all routes except /auth/*
-  if (!user && !request.nextUrl.pathname.startsWith('/auth')) {
+  // Protect all routes except /auth/* and /api/*
+  if (
+    !user &&
+    !request.nextUrl.pathname.startsWith('/auth') &&
+    !request.nextUrl.pathname.startsWith('/api')
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/login';
     return NextResponse.redirect(url);

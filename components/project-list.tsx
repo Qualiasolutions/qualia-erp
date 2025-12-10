@@ -6,19 +6,23 @@ import {
   Folder,
   LayoutGrid,
   List,
+  Columns3,
   Inbox,
   MoreVertical,
   MoveRight,
   Trash2,
   Bot,
   Globe,
-  Search,
   Megaphone,
   Triangle,
   Square,
   Train,
   Building,
   GanttChart,
+  Sparkles,
+  TrendingUp,
+  ExternalLink,
+  Phone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -65,36 +69,71 @@ interface ProjectListProps {
 
 import { ProjectTimeline } from '@/components/project-timeline';
 
-type ViewMode = 'grid' | 'list' | 'timeline';
+type ViewMode = 'columns' | 'grid' | 'list' | 'timeline';
 
-// Project type configuration
+// Project type configuration with enhanced styling
 const PROJECT_TYPE_CONFIG: Record<
   ProjectType,
-  { icon: typeof Globe; color: string; bgColor: string; label: string }
+  {
+    icon: typeof Globe;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    gradientFrom: string;
+    gradientTo: string;
+    label: string;
+    description: string;
+  }
 > = {
-  web_design: {
-    icon: Globe,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    label: 'Website',
-  },
   ai_agent: {
     icon: Bot,
-    color: 'text-purple-500',
-    bgColor: 'bg-purple-500/10',
-    label: 'AI Agent',
+    color: 'text-violet-400',
+    bgColor: 'bg-violet-500/10',
+    borderColor: 'border-violet-500/20',
+    gradientFrom: 'from-violet-500/20',
+    gradientTo: 'to-violet-500/5',
+    label: 'AI Agents',
+    description: 'Intelligent automation',
+  },
+  voice_agent: {
+    icon: Phone,
+    color: 'text-pink-400',
+    bgColor: 'bg-pink-500/10',
+    borderColor: 'border-pink-500/20',
+    gradientFrom: 'from-pink-500/20',
+    gradientTo: 'to-pink-500/5',
+    label: 'Voice Agents',
+    description: 'Phone bots & voice AI',
+  },
+  web_design: {
+    icon: Globe,
+    color: 'text-sky-400',
+    bgColor: 'bg-sky-500/10',
+    borderColor: 'border-sky-500/20',
+    gradientFrom: 'from-sky-500/20',
+    gradientTo: 'to-sky-500/5',
+    label: 'Websites',
+    description: 'Digital experiences',
   },
   seo: {
-    icon: Search,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
+    icon: TrendingUp,
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+    borderColor: 'border-emerald-500/20',
+    gradientFrom: 'from-emerald-500/20',
+    gradientTo: 'to-emerald-500/5',
     label: 'SEO',
+    description: 'Search optimization',
   },
   ads: {
     icon: Megaphone,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/20',
+    gradientFrom: 'from-amber-500/20',
+    gradientTo: 'to-amber-500/5',
     label: 'Ads',
+    description: 'Paid campaigns',
   },
 };
 
@@ -177,137 +216,176 @@ function ProjectCard({ project }: { project: Project }) {
   const showAdminActions = isAdmin || isSuperAdmin;
   const TypeIcon = typeConfig?.icon || Folder;
   const PlatformIcon = platformConfig?.icon;
+  const isComplete = progress === 100;
 
   return (
-    <div className="group relative flex flex-col gap-2.5 rounded-xl border border-border bg-card p-3.5 transition-all duration-200 hover:border-primary/30 hover:shadow-sm">
-      <Link href={`/projects/${project.id}`} className="flex flex-col gap-2">
-        {/* Top row: Type icon + Name + Progress */}
-        <div className="flex items-center gap-3">
-          <div
-            className={cn(
-              'flex-shrink-0 rounded-md p-1.5',
-              typeConfig ? typeConfig.bgColor : groupConfig.bgColor
-            )}
-          >
-            <TypeIcon
-              className={cn('h-4 w-4', typeConfig ? typeConfig.color : groupConfig.color)}
-            />
+    <div
+      className={cn(
+        'group relative overflow-hidden rounded-xl border transition-all duration-300',
+        typeConfig ? typeConfig.borderColor : 'border-border',
+        isComplete ? 'opacity-60' : 'opacity-100',
+        'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
+        'hover:-translate-y-0.5'
+      )}
+    >
+      {/* Gradient background overlay */}
+      <div
+        className={cn(
+          'absolute inset-0 bg-gradient-to-br opacity-50',
+          typeConfig
+            ? `${typeConfig.gradientFrom} ${typeConfig.gradientTo}`
+            : 'from-muted/50 to-transparent'
+        )}
+      />
+
+      {/* Card content */}
+      <div className="relative bg-card/80 backdrop-blur-sm">
+        <Link href={`/projects/${project.id}`} className="block p-4">
+          {/* Header: Icon + Name + External link hint */}
+          <div className="flex items-start gap-3">
+            <div
+              className={cn(
+                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110',
+                typeConfig ? typeConfig.bgColor : groupConfig.bgColor
+              )}
+            >
+              <TypeIcon
+                className={cn('h-5 w-5', typeConfig ? typeConfig.color : groupConfig.color)}
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                  {project.name}
+                </h3>
+                <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground/0 transition-all group-hover:text-muted-foreground/60" />
+              </div>
+
+              {/* Meta info */}
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                {project.client_name && (
+                  <span className="flex items-center gap-1">
+                    <Building className="h-3 w-3" />
+                    <span className="max-w-[100px] truncate">{project.client_name}</span>
+                  </span>
+                )}
+                {PlatformIcon && (
+                  <span className="flex items-center gap-1 rounded bg-secondary/50 px-1.5 py-0.5">
+                    <PlatformIcon className="h-3 w-3" />
+                    <span>{platformConfig?.label}</span>
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-medium text-foreground transition-colors group-hover:text-primary">
-              {project.name}
-            </h3>
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-2">
-            <div className="h-1 w-12 overflow-hidden rounded-full bg-secondary">
+
+          {/* Progress section */}
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Progress</span>
+              <span
+                className={cn(
+                  'font-semibold tabular-nums',
+                  isComplete
+                    ? 'text-emerald-500'
+                    : progress >= 50
+                      ? 'text-amber-500'
+                      : typeConfig?.color || 'text-primary'
+                )}
+              >
+                {progress}%
+              </span>
+            </div>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary/50">
               <div
                 className={cn(
-                  'h-full rounded-full',
-                  progress >= 70
-                    ? 'bg-emerald-500'
-                    : progress >= 30
-                      ? 'bg-amber-500'
-                      : 'bg-blue-500'
+                  'h-full rounded-full transition-all duration-500',
+                  isComplete
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                    : progress >= 50
+                      ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+                      : typeConfig
+                        ? `bg-gradient-to-r ${typeConfig.gradientFrom.replace('/20', '')} ${typeConfig.gradientTo.replace('/5', '')}`
+                        : 'bg-primary'
                 )}
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span
-              className={cn(
-                'w-7 text-xs font-medium tabular-nums',
-                progress >= 70
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : progress >= 30
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-blue-600 dark:text-blue-400'
-              )}
-            >
-              {progress}%
-            </span>
           </div>
-        </div>
 
-        {/* Bottom row: Client + Platform */}
-        <div className="flex items-center gap-3 pl-9">
-          {project.client_name && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Building className="h-3 w-3" />
-              <span className="max-w-[120px] truncate">{project.client_name}</span>
+          {/* Completion badge */}
+          {isComplete && (
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-500">
+              <Sparkles className="h-3 w-3" />
+              <span className="font-medium">Completed</span>
             </div>
           )}
-          {PlatformIcon && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <PlatformIcon className="h-3 w-3" />
-              <span>{platformConfig?.label}</span>
-            </div>
-          )}
-          {!project.client_name && !platformConfig && typeConfig && (
-            <span className="text-xs text-muted-foreground">{typeConfig.label}</span>
-          )}
-        </div>
-      </Link>
+        </Link>
 
-      {showAdminActions && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                'absolute right-2 top-2 flex-shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
-                isPending && 'animate-pulse opacity-100'
-              )}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger>
-                <MoveRight className="mr-2 h-4 w-4" />
-                Move to group
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {ALL_GROUPS.filter((g) => g !== project.project_group).map((group) => (
-                  <DropdownMenuItem key={group} onClick={() => handleMoveToGroup(group)}>
-                    <span
-                      className={cn(
-                        'mr-2 h-2 w-2 rounded-full',
-                        group === 'salman_kuwait' && 'bg-amber-500',
-                        group === 'tasos_kyriakides' && 'bg-blue-500',
-                        group === 'active' && 'bg-emerald-500',
-                        group === 'other' && 'bg-violet-500',
-                        group === 'demos' && 'bg-pink-500',
-                        group === 'inactive' && 'bg-gray-500'
-                      )}
-                    />
-                    {PROJECT_GROUP_LABELS[group]}
+        {/* Admin actions */}
+        {showAdminActions && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
+                  isPending && 'animate-pulse opacity-100'
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <MoveRight className="mr-2 h-4 w-4" />
+                  Move to group
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {ALL_GROUPS.filter((g) => g !== project.project_group).map((group) => (
+                    <DropdownMenuItem key={group} onClick={() => handleMoveToGroup(group)}>
+                      <span
+                        className={cn(
+                          'mr-2 h-2 w-2 rounded-full',
+                          group === 'salman_kuwait' && 'bg-amber-500',
+                          group === 'tasos_kyriakides' && 'bg-blue-500',
+                          group === 'active' && 'bg-emerald-500',
+                          group === 'other' && 'bg-violet-500',
+                          group === 'demos' && 'bg-pink-500',
+                          group === 'inactive' && 'bg-gray-500'
+                        )}
+                      />
+                      {PROJECT_GROUP_LABELS[group]}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              {isSuperAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                    onClick={() => {
+                      window.location.href = `/projects/${project.id}`;
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete project
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
-            {isSuperAdmin && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                  onClick={() => {
-                    window.location.href = `/projects/${project.id}`;
-                  }}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete project
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
     </div>
   );
 }
 
 export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [viewMode, setViewMode] = useState<ViewMode>('columns');
 
   // Helper function for progress calculation - memoized
   const getProgress = useMemo(
@@ -337,14 +415,37 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
   // Memoize type counts
   const typeCounts = useMemo(
     () => ({
-      web_design: projects.filter((p) => p.project_type === 'web_design').length,
       ai_agent: projects.filter((p) => p.project_type === 'ai_agent').length,
+      voice_agent: projects.filter((p) => p.project_type === 'voice_agent').length,
+      web_design: projects.filter((p) => p.project_type === 'web_design').length,
       seo: projects.filter((p) => p.project_type === 'seo').length,
       ads: projects.filter((p) => p.project_type === 'ads').length,
       untyped: projects.filter((p) => !p.project_type).length,
     }),
     [projects]
   );
+
+  // Group projects by type for columns view
+  const groupedByType = useMemo(() => {
+    const sortByProgress = (list: Project[]) =>
+      [...list].sort((a, b) => {
+        const progressA = getProgress(a);
+        const progressB = getProgress(b);
+        // Completed projects go to bottom
+        if (progressA === 100 && progressB !== 100) return 1;
+        if (progressB === 100 && progressA !== 100) return -1;
+        // Sort by progress descending
+        return progressB - progressA;
+      });
+
+    return {
+      ai_agent: sortByProgress(projects.filter((p) => p.project_type === 'ai_agent')),
+      voice_agent: sortByProgress(projects.filter((p) => p.project_type === 'voice_agent')),
+      web_design: sortByProgress(projects.filter((p) => p.project_type === 'web_design')),
+      seo: sortByProgress(projects.filter((p) => p.project_type === 'seo')),
+      ads: sortByProgress(projects.filter((p) => p.project_type === 'ads')),
+    };
+  }, [projects, getProgress]);
 
   if (sortedProjects.length === 0) {
     return (
@@ -382,47 +483,156 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
     </div>
   );
 
+  const renderColumns = () => {
+    const columns: { type: ProjectType; projects: Project[] }[] = [
+      { type: 'ai_agent', projects: groupedByType.ai_agent },
+      { type: 'web_design', projects: groupedByType.web_design },
+      { type: 'seo', projects: groupedByType.seo },
+      { type: 'ads', projects: groupedByType.ads },
+    ];
+
+    return (
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {columns.map(({ type, projects: typeProjects }, columnIndex) => {
+          const config = PROJECT_TYPE_CONFIG[type];
+          const TypeIcon = config.icon;
+          const activeCount = typeProjects.filter((p) => {
+            const prog = getProgress(p);
+            return prog < 100;
+          }).length;
+
+          return (
+            <div
+              key={type}
+              className="slide-up space-y-4"
+              style={{ animationDelay: `${columnIndex * 75}ms` }}
+            >
+              {/* Column Header - Enhanced */}
+              <div
+                className={cn(
+                  'relative overflow-hidden rounded-xl border p-4',
+                  config.borderColor,
+                  'bg-gradient-to-br',
+                  config.gradientFrom,
+                  config.gradientTo
+                )}
+              >
+                {/* Decorative background pattern */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-current" />
+                  <div className="absolute -bottom-2 -left-2 h-16 w-16 rounded-full bg-current" />
+                </div>
+
+                <div className="relative flex items-center gap-3">
+                  <div
+                    className={cn(
+                      'flex h-12 w-12 items-center justify-center rounded-xl',
+                      config.bgColor
+                    )}
+                  >
+                    <TypeIcon className={cn('h-6 w-6', config.color)} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-base font-bold text-foreground">{config.label}</h3>
+                    <p className="text-xs text-muted-foreground">{config.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className={cn('text-2xl font-bold tabular-nums', config.color)}>
+                      {typeProjects.length}
+                    </div>
+                    {activeCount > 0 && activeCount !== typeProjects.length && (
+                      <div className="text-xs text-muted-foreground">{activeCount} active</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Projects List */}
+              <div className="space-y-3">
+                {typeProjects.length === 0 ? (
+                  <div
+                    className={cn(
+                      'flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center',
+                      config.borderColor
+                    )}
+                  >
+                    <div className={cn('mb-3 rounded-xl p-3', config.bgColor)}>
+                      <TypeIcon className={cn('h-6 w-6', config.color)} />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">
+                      No {config.label.toLowerCase()}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">Projects will appear here</p>
+                  </div>
+                ) : (
+                  typeProjects.map((project, index) => (
+                    <div
+                      key={project.id}
+                      className="slide-up"
+                      style={{ animationDelay: `${columnIndex * 75 + index * 50}ms` }}
+                    >
+                      <ProjectCard project={project} />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
-    <div className="space-y-5">
-      {/* Stats Bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-semibold tabular-nums text-foreground">
+    <div className="space-y-6">
+      {/* Stats Bar - Enhanced */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-6">
+          {/* Total count */}
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
               {sortedProjects.length}
             </span>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm font-medium text-muted-foreground">
               project{sortedProjects.length !== 1 ? 's' : ''}
             </span>
           </div>
 
-          {/* Type breakdown */}
+          {/* Type breakdown - compact pills */}
           {filterType === 'all' && (
             <>
-              <div className="h-4 w-px bg-border" />
-              <div className="flex items-center gap-4 text-xs">
-                {typeCounts.web_design > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Globe className="h-3 w-3 text-blue-500" />
-                    <span className="text-muted-foreground">{typeCounts.web_design}</span>
+              <div className="hidden h-8 w-px bg-border sm:block" />
+              <div className="hidden flex-wrap items-center gap-2 sm:flex">
+                {typeCounts.ai_agent > 0 && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1">
+                    <Bot className="h-3.5 w-3.5 text-violet-400" />
+                    <span className="text-xs font-semibold tabular-nums text-violet-400">
+                      {typeCounts.ai_agent}
+                    </span>
                   </div>
                 )}
-                {typeCounts.ai_agent > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Bot className="h-3 w-3 text-purple-500" />
-                    <span className="text-muted-foreground">{typeCounts.ai_agent}</span>
+                {typeCounts.web_design > 0 && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-sky-500/10 px-2.5 py-1">
+                    <Globe className="h-3.5 w-3.5 text-sky-400" />
+                    <span className="text-xs font-semibold tabular-nums text-sky-400">
+                      {typeCounts.web_design}
+                    </span>
                   </div>
                 )}
                 {typeCounts.seo > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Search className="h-3 w-3 text-green-500" />
-                    <span className="text-muted-foreground">{typeCounts.seo}</span>
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
+                    <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-xs font-semibold tabular-nums text-emerald-400">
+                      {typeCounts.seo}
+                    </span>
                   </div>
                 )}
                 {typeCounts.ads > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <Megaphone className="h-3 w-3 text-orange-500" />
-                    <span className="text-muted-foreground">{typeCounts.ads}</span>
+                  <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1">
+                    <Megaphone className="h-3.5 w-3.5 text-amber-400" />
+                    <span className="text-xs font-semibold tabular-nums text-amber-400">
+                      {typeCounts.ads}
+                    </span>
                   </div>
                 )}
               </div>
@@ -430,12 +640,25 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
           )}
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
+        {/* View Toggle - Enhanced */}
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-secondary/50 p-1">
+          <button
+            onClick={() => setViewMode('columns')}
+            className={cn(
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
+              viewMode === 'columns'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+            title="Columns view"
+          >
+            <Columns3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Columns</span>
+          </button>
           <button
             onClick={() => setViewMode('grid')}
             className={cn(
-              'rounded-md p-1.5 transition-all duration-200',
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
               viewMode === 'grid'
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -443,11 +666,12 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
             title="Grid view"
           >
             <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Grid</span>
           </button>
           <button
             onClick={() => setViewMode('list')}
             className={cn(
-              'rounded-md p-1.5 transition-all duration-200',
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
               viewMode === 'list'
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -455,11 +679,12 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
             title="List view"
           >
             <List className="h-4 w-4" />
+            <span className="hidden sm:inline">List</span>
           </button>
           <button
             onClick={() => setViewMode('timeline')}
             className={cn(
-              'rounded-md p-1.5 transition-all duration-200',
+              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
               viewMode === 'timeline'
                 ? 'bg-card text-foreground shadow-sm'
                 : 'text-muted-foreground hover:text-foreground'
@@ -467,11 +692,13 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
             title="Timeline view"
           >
             <GanttChart className="h-4 w-4" />
+            <span className="hidden sm:inline">Timeline</span>
           </button>
         </div>
       </div>
 
       {/* Content */}
+      {viewMode === 'columns' && renderColumns()}
       {viewMode === 'grid' && renderGrid()}
       {viewMode === 'list' && renderList()}
       {viewMode === 'timeline' && <ProjectTimeline projects={sortedProjects} />}

@@ -52,7 +52,7 @@ export const createProjectSchema = z.object({
     .optional()
     .nullable(),
   project_type: z
-    .enum(['web_design', 'ai_agent', 'seo', 'ads'] as const)
+    .enum(['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'] as const)
     .optional()
     .nullable(),
   deployment_platform: z
@@ -71,7 +71,7 @@ export const createProjectSchema = z.object({
 export const createProjectWizardSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
   description: z.string().max(5000, 'Description too long').optional().nullable(),
-  project_type: z.enum(['web_design', 'ai_agent', 'seo', 'ads'] as const, {
+  project_type: z.enum(['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'] as const, {
     message: 'Project type is required',
   }),
   deployment_platform: z.enum(['vercel', 'squarespace', 'railway'] as const, {
@@ -121,7 +121,7 @@ export const updateProjectSchema = z.object({
     .optional()
     .nullable(),
   project_type: z
-    .enum(['web_design', 'ai_agent', 'seo', 'ads'] as const)
+    .enum(['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'] as const)
     .optional()
     .nullable(),
   deployment_platform: z
