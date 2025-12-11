@@ -171,23 +171,6 @@ export function DashboardClient({
           />
         </div>
 
-        {/* Auto-greeting prompt */}
-        {user &&
-          !hasAutoGreeted &&
-          greetingData?.stats &&
-          (greetingData.stats.todayMeetingsCount > 0 ||
-            greetingData.stats.overdueTasksCount > 0 ||
-            greetingData.stats.urgentTasksCount > 0) && (
-            <div className="mb-4 rounded-lg border border-qualia-500/20 bg-qualia-500/5 p-3">
-              <p className="text-center text-sm text-qualia-400">
-                🔊 Voice assistant will greet you with personalized reminders
-              </p>
-              <p className="mt-1 text-center text-xs text-muted-foreground">
-                Click anywhere on the page to activate
-              </p>
-            </div>
-          )}
-
         {/* Date and Greeting */}
         <header className="mb-10 text-center">
           <p className="text-sm text-muted-foreground">{dateString}</p>

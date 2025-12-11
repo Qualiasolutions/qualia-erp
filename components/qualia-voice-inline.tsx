@@ -741,7 +741,7 @@ export function QualiaVoiceInline({
 
   const isInCall = callState !== 'idle' && callState !== 'connecting';
 
-  // Handle auto-greeting with user interaction requirement
+  // Handle auto-greeting automatically after page load
   useEffect(() => {
     if (autoGreet && !hasAutoGreeted && vapiRef.current && autoGreetingMessage) {
       // Clear any existing timeout
@@ -750,16 +750,8 @@ export function QualiaVoiceInline({
         clearTimeout(currentTimeout);
       }
 
-      // Wait for user interaction before starting auto-greeting
-      const handleUserInteraction = async () => {
-        // Remove event listener after first interaction
-        document.removeEventListener('click', handleUserInteraction);
-        document.removeEventListener('keydown', handleUserInteraction);
-        document.removeEventListener('touchstart', handleUserInteraction);
-
-        // Small delay to ensure VAPI is ready
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
+      // Start the call automatically after a short delay
+      autoGreetTimeoutRef.current = setTimeout(async () => {
         try {
           setHasAutoGreeted(true);
           await startCall(autoGreetingMessage);
@@ -775,19 +767,11 @@ export function QualiaVoiceInline({
           console.error('Auto-greeting failed:', error);
           // Don't show error to user for auto-greeting failures
         }
-      };
-
-      // Add event listeners for user interaction
-      document.addEventListener('click', handleUserInteraction, { once: true });
-      document.addEventListener('keydown', handleUserInteraction, { once: true });
-      document.addEventListener('touchstart', handleUserInteraction, { once: true });
+      }, 2000); // 2 second delay to ensure page is fully loaded
 
       return () => {
-        document.removeEventListener('click', handleUserInteraction);
-        document.removeEventListener('keydown', handleUserInteraction);
-        document.removeEventListener('touchstart', handleUserInteraction);
-        if (currentTimeout) {
-          clearTimeout(currentTimeout);
+        if (autoGreetTimeoutRef.current) {
+          clearTimeout(autoGreetTimeoutRef.current);
         }
       };
     }
@@ -934,13 +918,6 @@ export function QualiaVoiceInline({
         >
           {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
         </button>
-      )}
-
-      {/* Permission hint for auto-greeting */}
-      {autoGreet && !hasAutoGreeted && !isInCall && (
-        <p className="mt-2 text-center text-xs text-muted-foreground">
-          Click anywhere to activate voice assistant
-        </p>
       )}
     </div>
   );
