@@ -21,7 +21,6 @@ export interface WizardData {
   // Step 1: Basic Info
   name: string;
   description: string;
-  team_id: string;
   // Step 2: Configuration
   project_type: ProjectType | null;
   deployment_platform: DeploymentPlatform | null;
@@ -33,18 +32,17 @@ export interface WizardData {
 interface ProjectWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  teams: Array<{ id: string; name: string }>;
   clients: Array<{ id: string; display_name: string | null }>;
 }
 
 const STEPS = [
-  { id: 1, name: 'Basic Info', description: 'Name and team' },
+  { id: 1, name: 'Basic Info', description: 'Name and description' },
   { id: 2, name: 'Configuration', description: 'Type, platform, client' },
   { id: 3, name: 'Roadmap', description: 'Customize phases' },
   { id: 4, name: 'Review', description: 'Confirm and create' },
 ];
 
-export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWizardProps) {
+export function ProjectWizard({ open, onOpenChange, clients }: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +51,6 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
   const [wizardData, setWizardData] = useState<WizardData>({
     name: '',
     description: '',
-    team_id: '',
     project_type: null,
     deployment_platform: null,
     client_id: '',
@@ -122,7 +119,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
         project_type: wizardData.project_type!,
         deployment_platform: wizardData.deployment_platform!,
         client_id: wizardData.client_id,
-        team_id: wizardData.team_id || null,
+        team_id: null,
         phases: wizardData.phases.map((phase) => ({
           name: phase.name,
           description: phase.description || null,
@@ -156,7 +153,6 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
       setWizardData({
         name: '',
         description: '',
-        team_id: '',
         project_type: null,
         deployment_platform: null,
         client_id: '',
@@ -231,7 +227,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
               />
             )}
 
-            {currentStep === 4 && <StepReview data={wizardData} teams={teams} clients={clients} />}
+            {currentStep === 4 && <StepReview data={wizardData} clients={clients} />}
           </div>
         </div>
 

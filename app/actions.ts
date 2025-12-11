@@ -1013,7 +1013,8 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, name, description, project_group, lead_id, team_id, target_date } = validation.data;
+  const { id, name, description, project_group, project_type, lead_id, target_date } =
+    validation.data;
 
   const { data, error } = await supabase
     .from('projects')
@@ -1021,8 +1022,8 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
       ...(name && { name: name.trim() }),
       ...(description !== undefined && { description: description?.trim() || null }),
       ...(project_group !== undefined && { project_group: project_group || null }),
+      ...(project_type !== undefined && { project_type: project_type || null }),
       ...(lead_id !== undefined && { lead_id: lead_id || null }),
-      ...(team_id !== undefined && { team_id: team_id || null }),
       ...(target_date !== undefined && { target_date: target_date || null }),
       updated_at: new Date().toISOString(),
     })

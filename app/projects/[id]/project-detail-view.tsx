@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Folder,
-  Users,
   Calendar,
   Trash2,
   Save,
@@ -20,6 +19,11 @@ import {
   PanelRightClose,
   PanelRightOpen,
   ListTodo,
+  Bot,
+  Globe,
+  Phone,
+  TrendingUp,
+  Megaphone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,6 +48,14 @@ const PROJECT_GROUPS: ProjectGroup[] = [
   'active',
   'demos',
   'inactive',
+];
+
+const PROJECT_TYPES: { value: ProjectType; label: string; icon: typeof Globe }[] = [
+  { value: 'web_design', label: 'Website', icon: Globe },
+  { value: 'ai_agent', label: 'AI Agent', icon: Bot },
+  { value: 'voice_agent', label: 'Voice Agent', icon: Phone },
+  { value: 'seo', label: 'SEO', icon: TrendingUp },
+  { value: 'ads', label: 'Ads', icon: Megaphone },
 ];
 
 interface Profile {
@@ -83,15 +95,8 @@ interface Project {
   };
 }
 
-interface Team {
-  id: string;
-  name: string;
-  key: string;
-}
-
 interface ProjectDetailViewProps {
   project: Project;
-  teams: Team[];
   profiles: Profile[];
 }
 
@@ -140,11 +145,7 @@ const StatusIcon = ({ status }: { status: string }) => {
   }
 };
 
-export function ProjectDetailView({
-  project: initialProject,
-  teams,
-  profiles,
-}: ProjectDetailViewProps) {
+export function ProjectDetailView({ project: initialProject, profiles }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -159,8 +160,10 @@ export function ProjectDetailView({
   const [projectGroup, setProjectGroup] = useState<ProjectGroup | null>(
     initialProject.project_group || null
   );
+  const [projectType, setProjectType] = useState<ProjectType | null>(
+    initialProject.project_type || null
+  );
   const [leadId, setLeadId] = useState<string | null>(initialProject.lead?.id || null);
-  const [teamId, setTeamId] = useState<string | null>(initialProject.team?.id || null);
   const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
 
   const handleSave = async () => {
@@ -172,8 +175,8 @@ export function ProjectDetailView({
     formData.set('name', name);
     formData.set('description', description);
     if (projectGroup) formData.set('project_group', projectGroup);
+    if (projectType) formData.set('project_type', projectType);
     if (leadId) formData.set('lead_id', leadId);
-    if (teamId) formData.set('team_id', teamId);
     if (targetDate) formData.set('target_date', targetDate);
 
     const result = await updateProject(formData);
@@ -316,6 +319,33 @@ export function ProjectDetailView({
                 </Select>
               </div>
 
+              {/* Project Type */}
+              <div>
+                <label className="mb-2 block flex items-center gap-1 text-xs text-muted-foreground">
+                  <Folder className="h-3 w-3" />
+                  Project Type
+                </label>
+                <Select
+                  value={projectType || 'none'}
+                  onValueChange={(v) => setProjectType(v === 'none' ? null : (v as ProjectType))}
+                >
+                  <SelectTrigger className="border-border bg-background">
+                    <SelectValue placeholder="No type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No type</SelectItem>
+                    {PROJECT_TYPES.map((t) => (
+                      <SelectItem key={t.value} value={t.value}>
+                        <div className="flex items-center gap-2">
+                          <t.icon className="h-4 w-4" />
+                          {t.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Lead */}
               <div>
                 <label className="mb-2 block flex items-center gap-1 text-xs text-muted-foreground">
@@ -334,30 +364,6 @@ export function ProjectDetailView({
                     {profiles.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.full_name || p.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Team */}
-              <div>
-                <label className="mb-2 block flex items-center gap-1 text-xs text-muted-foreground">
-                  <Users className="h-3 w-3" />
-                  Team
-                </label>
-                <Select
-                  value={teamId || 'none'}
-                  onValueChange={(v) => setTeamId(v === 'none' ? null : v)}
-                >
-                  <SelectTrigger className="border-border bg-background">
-                    <SelectValue placeholder="No team" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No team</SelectItem>
-                    {teams.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name} ({t.key})
                       </SelectItem>
                     ))}
                   </SelectContent>

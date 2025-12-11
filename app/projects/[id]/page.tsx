@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { getProjectById, getTeams, getProfiles } from '@/app/actions';
+import { getProjectById, getProfiles } from '@/app/actions';
 import { ProjectDetailView } from './project-detail-view';
 
 function ProjectDetailSkeleton() {
@@ -28,17 +28,13 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   await connection();
 
   // Fetch all data in parallel on the server
-  const [project, teams, profiles] = await Promise.all([
-    getProjectById(id),
-    getTeams(),
-    getProfiles(),
-  ]);
+  const [project, profiles] = await Promise.all([getProjectById(id), getProfiles()]);
 
   if (!project) {
     notFound();
   }
 
-  return <ProjectDetailView project={project} teams={teams} profiles={profiles} />;
+  return <ProjectDetailView project={project} profiles={profiles} />;
 }
 
 interface PageProps {

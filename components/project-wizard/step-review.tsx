@@ -9,7 +9,6 @@ import {
   Square,
   Train,
   Building,
-  Users,
   FileText,
   Phone,
   Facebook,
@@ -22,7 +21,6 @@ import type { WizardData } from './project-wizard';
 
 interface StepReviewProps {
   data: WizardData;
-  teams: Array<{ id: string; name: string }>;
   clients: Array<{ id: string; display_name: string | null }>;
 }
 
@@ -46,8 +44,7 @@ const PLATFORM_CONFIG = {
   none: { label: 'N/A', icon: Ban },
 };
 
-export function StepReview({ data, teams, clients }: StepReviewProps) {
-  const team = teams.find((t) => t.id === data.team_id);
+export function StepReview({ data, clients }: StepReviewProps) {
   const client = clients.find((c) => c.id === data.client_id);
   const typeConfig = data.project_type ? PROJECT_TYPE_CONFIG[data.project_type] : null;
   const platformConfig = data.deployment_platform
@@ -85,7 +82,7 @@ export function StepReview({ data, teams, clients }: StepReviewProps) {
         </div>
 
         {/* Details Grid */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {/* Project Type */}
           <div className="flex items-center gap-3 rounded-lg bg-muted/30 p-3">
             <FileText className="h-5 w-5 text-muted-foreground" />
@@ -110,15 +107,6 @@ export function StepReview({ data, teams, clients }: StepReviewProps) {
             <div>
               <p className="text-xs text-muted-foreground">Client</p>
               <p className="font-medium">{client?.display_name || 'Not selected'}</p>
-            </div>
-          </div>
-
-          {/* Team */}
-          <div className="flex items-center gap-3 rounded-lg bg-muted/30 p-3">
-            <Users className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <p className="text-xs text-muted-foreground">Team</p>
-              <p className="font-medium">{team?.name || 'Not selected'}</p>
             </div>
           </div>
         </div>
