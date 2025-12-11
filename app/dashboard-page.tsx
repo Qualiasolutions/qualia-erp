@@ -67,6 +67,23 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
   // Extract the issues from the join result
   const userTasks = assignedIssues?.map((item) => item.issue).filter(Boolean) || [];
 
+  // Type assertions for better TypeScript support
+  interface TaskType {
+    id: string;
+    title: string;
+    priority: string;
+    status: string;
+    due_date: string | null;
+  }
+
+  const typedUserTasks = userTasks.map((task: TaskType) => ({
+    id: task.id,
+    title: task.title,
+    priority: task.priority,
+    status: task.status,
+    due_date: task.due_date,
+  }));
+
   // Get recently completed tasks (for motivation)
   const lastWeek = new Date(today);
   lastWeek.setDate(lastWeek.getDate() - 7);
@@ -85,7 +102,7 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
   return {
     meetings: meetings || [],
     highPriorityTasks: highPriorityTasks || [],
-    userTasks: userTasks,
+    userTasks: typedUserTasks,
     completedTasksCount: count || 0,
     importantDates,
   };
