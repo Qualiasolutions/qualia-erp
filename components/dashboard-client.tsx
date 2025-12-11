@@ -167,20 +167,26 @@ export function DashboardClient({
             autoGreet={shouldAutoGreet && !hasAutoGreeted}
             autoGreetingMessage={buildAutoGreetingMessage()}
             onAutoGreetComplete={handleAutoGreetComplete}
-            greetingContext={greetingData}
+            greetingContext={greetingData || undefined}
           />
         </div>
 
-        {/* Show greeting context if available (for debugging - can be removed later) */}
-        {greetingData && process.env.NODE_ENV === 'development' && (
-          <div className="mb-6 rounded-lg border border-border/50 bg-card/50 p-4 text-xs text-muted-foreground">
-            <div className="mb-2 font-semibold">Dashboard Context:</div>
-            <div>Meetings today: {greetingData.stats.todayMeetingsCount}</div>
-            <div>Urgent tasks: {greetingData.stats.urgentTasksCount}</div>
-            <div>Overdue tasks: {greetingData.stats.overdueTasksCount}</div>
-            <div>Completed this week: {greetingData.stats.completedTasksCount}</div>
-          </div>
-        )}
+        {/* Auto-greeting prompt */}
+        {user &&
+          !hasAutoGreeted &&
+          greetingData?.stats &&
+          (greetingData.stats.todayMeetingsCount > 0 ||
+            greetingData.stats.overdueTasksCount > 0 ||
+            greetingData.stats.urgentTasksCount > 0) && (
+            <div className="mb-4 rounded-lg border border-qualia-500/20 bg-qualia-500/5 p-3">
+              <p className="text-center text-sm text-qualia-400">
+                🔊 Voice assistant will greet you with personalized reminders
+              </p>
+              <p className="mt-1 text-center text-xs text-muted-foreground">
+                Click anywhere on the page to activate
+              </p>
+            </div>
+          )}
 
         {/* Date and Greeting */}
         <header className="mb-10 text-center">

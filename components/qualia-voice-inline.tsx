@@ -18,7 +18,28 @@ interface QualiaVoiceInlineProps {
   autoGreet?: boolean;
   autoGreetingMessage?: string | null;
   onAutoGreetComplete?: () => void;
-  greetingContext?: Record<string, unknown>; // Additional context for the voice assistant
+  greetingContext?:
+    | {
+        reminders: Array<{
+          type: string;
+          priority: 'critical' | 'high' | 'medium' | 'low';
+          message: string;
+          details?: Record<string, unknown>;
+          count?: number;
+        }>;
+        motivationalMessages: string[];
+        specialOccasions: Array<{
+          type: string;
+          message: string;
+        }>;
+        stats: {
+          todayMeetingsCount: number;
+          urgentTasksCount: number;
+          overdueTasksCount: number;
+          completedTasksCount: number;
+        };
+      }
+    | undefined; // Additional context for the voice assistant
 }
 
 type CallState = 'idle' | 'connecting' | 'connected' | 'speaking' | 'listening';
@@ -544,9 +565,22 @@ export function QualiaVoiceInline({
       }
     });
 
-    vapi.on('error', (e: Error) => {
+    vapi.on('error', (e: { type?: string; message?: string }) => {
       console.error('VAPI error:', e);
-      setError(e.message || 'Call error');
+
+      // Handle specific errors
+      if (e.type === 'device-error') {
+        setError('Microphone not found. Please check your microphone permissions.');
+      } else if (e.type === 'permission-error') {
+        setError('Microphone permission denied. Please allow microphone access.');
+      } else if (e.type === 'daily-error' || e.message?.includes('Meeting has ended')) {
+        // Don't show error for daily meeting errors (normal cleanup)
+        setCallState('idle');
+        return;
+      } else {
+        setError(e.message || 'Call error');
+      }
+
       setCallState('idle');
     });
 
@@ -561,6 +595,22 @@ export function QualiaVoiceInline({
       if (!vapiRef.current) {
         setError('VAPI not initialized');
         return;
+      }
+
+      // Try to request microphone permissions first (only for manual calls, not auto-greeting)
+      if (!customMessage) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach((track) => track.stop());
+        } catch (error: { name: string }) {
+          if (error.name === 'NotAllowedError') {
+            setError('Microphone permission denied. Please allow microphone access.');
+            return;
+          } else if (error.name === 'NotFoundError') {
+            setError('No microphone found. Please connect a microphone.');
+            return;
+          }
+        }
       }
 
       setCallState('connecting');
@@ -690,31 +740,53 @@ export function QualiaVoiceInline({
 
   const isInCall = callState !== 'idle' && callState !== 'connecting';
 
-  // Handle auto-greeting
+  // Handle auto-greeting with user interaction requirement
   useEffect(() => {
     if (autoGreet && !hasAutoGreeted && vapiRef.current && autoGreetingMessage) {
       // Clear any existing timeout
-      if (autoGreetTimeoutRef.current) {
-        clearTimeout(autoGreetTimeoutRef.current);
+      const currentTimeout = autoGreetTimeoutRef.current;
+      if (currentTimeout) {
+        clearTimeout(currentTimeout);
       }
 
-      // Start the call with custom message after a short delay
-      autoGreetTimeoutRef.current = setTimeout(async () => {
-        setHasAutoGreeted(true);
-        await startCall(autoGreetingMessage);
+      // Wait for user interaction before starting auto-greeting
+      const handleUserInteraction = async () => {
+        // Remove event listener after first interaction
+        document.removeEventListener('click', handleUserInteraction);
+        document.removeEventListener('keydown', handleUserInteraction);
+        document.removeEventListener('touchstart', handleUserInteraction);
 
-        // Auto-end the call after the message is spoken (estimate ~15 seconds)
-        setTimeout(() => {
-          endCall();
-          if (onAutoGreetComplete) {
-            onAutoGreetComplete();
-          }
-        }, 15000);
-      }, 500); // Small delay to ensure VAPI is ready
+        // Small delay to ensure VAPI is ready
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        try {
+          setHasAutoGreeted(true);
+          await startCall(autoGreetingMessage);
+
+          // Auto-end the call after the message is spoken
+          setTimeout(() => {
+            endCall();
+            if (onAutoGreetComplete) {
+              onAutoGreetComplete();
+            }
+          }, 15000);
+        } catch (error) {
+          console.error('Auto-greeting failed:', error);
+          // Don't show error to user for auto-greeting failures
+        }
+      };
+
+      // Add event listeners for user interaction
+      document.addEventListener('click', handleUserInteraction, { once: true });
+      document.addEventListener('keydown', handleUserInteraction, { once: true });
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
 
       return () => {
-        if (autoGreetTimeoutRef.current) {
-          clearTimeout(autoGreetTimeoutRef.current);
+        document.removeEventListener('click', handleUserInteraction);
+        document.removeEventListener('keydown', handleUserInteraction);
+        document.removeEventListener('touchstart', handleUserInteraction);
+        if (currentTimeout) {
+          clearTimeout(currentTimeout);
         }
       };
     }
@@ -840,6 +912,13 @@ export function QualiaVoiceInline({
         </div>
       )}
 
+      {/* Error message */}
+      {error && !isInCall && (
+        <div className="mt-4 max-w-xs rounded-lg bg-red-500/10 px-3 py-2 text-center">
+          <p className="text-xs text-red-500">{error}</p>
+        </div>
+      )}
+
       {/* Mute button when in call */}
       {isInCall && (
         <button
@@ -854,6 +933,13 @@ export function QualiaVoiceInline({
         >
           {isMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
         </button>
+      )}
+
+      {/* Permission hint for auto-greeting */}
+      {autoGreet && !hasAutoGreeted && !isInCall && (
+        <p className="mt-2 text-center text-xs text-muted-foreground">
+          Click anywhere to activate voice assistant
+        </p>
       )}
     </div>
   );
