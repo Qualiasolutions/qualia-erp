@@ -52,6 +52,7 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
       done: Number(p.done_issues),
     },
     roadmap_progress: (p.roadmap_progress as number) || 0,
+    metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
   // Get the filter type (default to 'all')

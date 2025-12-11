@@ -65,6 +65,10 @@ export interface Project {
     done: number;
   };
   roadmap_progress?: number;
+  metadata?: {
+    is_partnership?: boolean;
+    partner_name?: string;
+  } | null;
 }
 
 interface ProjectListProps {
@@ -228,12 +232,18 @@ function ProjectCard({ project }: { project: Project }) {
   const TypeIcon = typeConfig?.icon || Folder;
   const PlatformIcon = platformConfig?.icon;
   const isComplete = progress === 100;
+  const isPartnership = project.metadata?.is_partnership;
+  const partnerName = project.metadata?.partner_name;
 
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl border transition-all duration-300',
-        typeConfig ? typeConfig.borderColor : 'border-border',
+        'group relative overflow-hidden rounded-xl border-2 transition-all duration-300',
+        isPartnership
+          ? 'border-orange-500 ring-2 ring-orange-500/20'
+          : typeConfig
+            ? typeConfig.borderColor
+            : 'border-border',
         isComplete ? 'opacity-60' : 'opacity-100',
         'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
         'hover:-translate-y-0.5'
@@ -330,6 +340,13 @@ function ProjectCard({ project }: { project: Project }) {
             <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-500">
               <Sparkles className="h-3 w-3" />
               <span className="font-medium">Completed</span>
+            </div>
+          )}
+
+          {/* Partnership badge */}
+          {isPartnership && (
+            <div className="mt-3 flex items-center gap-1.5 rounded-md bg-orange-500/10 px-2 py-1 text-xs text-orange-500">
+              <span className="font-medium">🤝 Partnership with {partnerName}</span>
             </div>
           )}
         </Link>

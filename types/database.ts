@@ -666,6 +666,7 @@ export type Database = {
           id: string;
           lead_id: string | null;
           logo_url: string | null;
+          metadata: Json | null;
           name: string;
           project_group: Database['public']['Enums']['project_group'] | null;
           project_type: Database['public']['Enums']['project_type'] | null;
@@ -684,6 +685,7 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           logo_url?: string | null;
+          metadata?: Json | null;
           name: string;
           project_group?: Database['public']['Enums']['project_group'] | null;
           project_type?: Database['public']['Enums']['project_type'] | null;
@@ -702,6 +704,7 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           logo_url?: string | null;
+          metadata?: Json | null;
           name?: string;
           project_group?: Database['public']['Enums']['project_group'] | null;
           project_type?: Database['public']['Enums']['project_type'] | null;
