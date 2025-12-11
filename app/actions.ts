@@ -2125,8 +2125,12 @@ export async function initializeProjectPhases(
 
   // Get templates
   const templates = getPhaseTemplates(projectType);
+  console.log(
+    `[initializeProjectPhases] Project type: ${projectType}, Templates found: ${templates.length}`
+  );
   if (templates.length === 0) {
-    return { success: false, error: 'No templates found for this project type' };
+    console.error(`[initializeProjectPhases] No templates for project type: ${projectType}`);
+    return { success: false, error: `No templates found for project type: ${projectType}` };
   }
 
   // Create phases and items
@@ -2150,8 +2154,14 @@ export async function initializeProjectPhases(
       .single();
 
     if (phaseError || !phase) {
-      console.error('Error creating phase:', phaseError);
-      continue;
+      console.error(
+        `[initializeProjectPhases] Error creating phase "${template.name}":`,
+        phaseError
+      );
+      return {
+        success: false,
+        error: `Failed to create phase: ${phaseError?.message || 'Unknown error'}`,
+      };
     }
 
     // Create items for this phase
@@ -2168,15 +2178,30 @@ export async function initializeProjectPhases(
     const { error: itemsError } = await supabase.from('phase_items').insert(itemsToInsert);
 
     if (itemsError) {
-      console.error('Error creating phase items:', itemsError);
+      console.error(
+        `[initializeProjectPhases] Error creating items for phase "${template.name}":`,
+        itemsError
+      );
+      return { success: false, error: `Failed to create phase items: ${itemsError.message}` };
     }
   }
 
   // Update project type if not set
   if (projectType) {
-    await supabase.from('projects').update({ project_type: projectType }).eq('id', projectId);
+    const { error: updateError } = await supabase
+      .from('projects')
+      .update({ project_type: projectType })
+      .eq('id', projectId);
+
+    if (updateError) {
+      console.error(`[initializeProjectPhases] Error updating project type:`, updateError);
+      // Don't fail the whole operation, phases were created successfully
+    }
   }
 
+  console.log(
+    `[initializeProjectPhases] Successfully initialized ${templates.length} phases for project ${projectId}`
+  );
   revalidatePath(`/projects/${projectId}`);
   revalidatePath(`/projects/${projectId}/roadmap`);
   return { success: true };

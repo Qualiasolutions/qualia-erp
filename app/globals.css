@@ -127,7 +127,7 @@
   code,
   pre,
   .font-mono {
-    font-family: var(--font-geist-mono), 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Consolas', monospace;
     font-feature-settings:
       'liga' 1,
       'calt' 1;

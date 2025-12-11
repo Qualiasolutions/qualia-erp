@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Map } from 'lucide-react';
+import { Map, AlertCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getProjectPhases, initializeProjectPhases } from '@/app/actions';
 import { PhaseCard } from './phase-card';
 import { InitRoadmapDialog } from './init-roadmap-dialog';
@@ -57,6 +58,7 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
   const [loading, setLoading] = useState(true);
   const [showInit, setShowInit] = useState(false);
   const [initializing, setInitializing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPhases();
@@ -74,10 +76,20 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
 
   async function handleInitialize(type: ProjectType) {
     setInitializing(true);
-    const result = await initializeProjectPhases(projectId, type);
-    if (result.success) {
-      await loadPhases();
-      setShowInit(false);
+    setError(null);
+    try {
+      const result = await initializeProjectPhases(projectId, type);
+      if (result.success) {
+        await loadPhases();
+        setShowInit(false);
+      } else {
+        setError(result.error || 'Failed to initialize roadmap');
+        console.error('Roadmap initialization failed:', result.error);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setError(errorMessage);
+      console.error('Roadmap initialization error:', err);
     }
     setInitializing(false);
   }
@@ -107,6 +119,20 @@ export function ProjectRoadmap({ projectId, projectType, workspaceId }: ProjectR
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {error && (
+        <Alert variant="destructive" className="relative">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+          <button
+            onClick={() => setError(null)}
+            className="absolute right-2 top-2 rounded-md p-1 hover:bg-destructive/20"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </Alert>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
