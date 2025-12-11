@@ -1,12 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useTransition, useMemo } from 'react';
+import { useTransition, useMemo } from 'react';
 import {
   Folder,
-  LayoutGrid,
-  List,
-  Columns3,
   Inbox,
   MoreVertical,
   MoveRight,
@@ -18,7 +15,6 @@ import {
   Square,
   Train,
   Building,
-  GanttChart,
   Sparkles,
   TrendingUp,
   ExternalLink,
@@ -71,14 +67,15 @@ export interface Project {
   } | null;
 }
 
+type ViewMode = 'columns' | 'grid' | 'list' | 'timeline';
+
 interface ProjectListProps {
   projects: Project[];
   filterType?: ProjectType | 'all';
+  viewMode?: ViewMode;
 }
 
 import { ProjectTimeline } from '@/components/project-timeline';
-
-type ViewMode = 'columns' | 'grid' | 'list' | 'timeline';
 
 // Project type configuration with enhanced styling
 const PROJECT_TYPE_CONFIG: Record<
@@ -412,9 +409,11 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
-export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('columns');
-
+export function ProjectList({
+  projects,
+  filterType = 'all',
+  viewMode = 'columns',
+}: ProjectListProps) {
   // Helper function for progress calculation - memoized
   const getProgress = useMemo(
     () => (p: Project) => {
@@ -439,19 +438,6 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
       return progressB - progressA;
     });
   }, [projects, filterType, getProgress]);
-
-  // Memoize type counts
-  const typeCounts = useMemo(
-    () => ({
-      ai_agent: projects.filter((p) => p.project_type === 'ai_agent').length,
-      voice_agent: projects.filter((p) => p.project_type === 'voice_agent').length,
-      web_design: projects.filter((p) => p.project_type === 'web_design').length,
-      seo: projects.filter((p) => p.project_type === 'seo').length,
-      ads: projects.filter((p) => p.project_type === 'ads').length,
-      untyped: projects.filter((p) => !p.project_type).length,
-    }),
-    [projects]
-  );
 
   // Group projects by type for columns view
   const groupedByType = useMemo(() => {
@@ -613,127 +599,7 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
   };
 
   return (
-    <div className="space-y-6">
-      {/* Stats Bar - Enhanced */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
-          {/* Total count */}
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
-              {sortedProjects.length}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground">
-              project{sortedProjects.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {/* Type breakdown - compact pills */}
-          {filterType === 'all' && (
-            <>
-              <div className="hidden h-8 w-px bg-border sm:block" />
-              <div className="hidden flex-wrap items-center gap-2 sm:flex">
-                {typeCounts.ai_agent > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1">
-                    <Bot className="h-3.5 w-3.5 text-violet-400" />
-                    <span className="text-xs font-semibold tabular-nums text-violet-400">
-                      {typeCounts.ai_agent}
-                    </span>
-                  </div>
-                )}
-                {typeCounts.voice_agent > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-pink-500/10 px-2.5 py-1">
-                    <Phone className="h-3.5 w-3.5 text-pink-400" />
-                    <span className="text-xs font-semibold tabular-nums text-pink-400">
-                      {typeCounts.voice_agent}
-                    </span>
-                  </div>
-                )}
-                {typeCounts.web_design > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-sky-500/10 px-2.5 py-1">
-                    <Globe className="h-3.5 w-3.5 text-sky-400" />
-                    <span className="text-xs font-semibold tabular-nums text-sky-400">
-                      {typeCounts.web_design}
-                    </span>
-                  </div>
-                )}
-                {typeCounts.seo > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
-                    <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-xs font-semibold tabular-nums text-emerald-400">
-                      {typeCounts.seo}
-                    </span>
-                  </div>
-                )}
-                {typeCounts.ads > 0 && (
-                  <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1">
-                    <Megaphone className="h-3.5 w-3.5 text-amber-400" />
-                    <span className="text-xs font-semibold tabular-nums text-amber-400">
-                      {typeCounts.ads}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* View Toggle - Enhanced */}
-        <div className="flex items-center gap-1 rounded-xl border border-border bg-secondary/50 p-1">
-          <button
-            onClick={() => setViewMode('columns')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              viewMode === 'columns'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="Columns view"
-          >
-            <Columns3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Columns</span>
-          </button>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              viewMode === 'grid'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="Grid view"
-          >
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Grid</span>
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              viewMode === 'list'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="List view"
-          >
-            <List className="h-4 w-4" />
-            <span className="hidden sm:inline">List</span>
-          </button>
-          <button
-            onClick={() => setViewMode('timeline')}
-            className={cn(
-              'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all duration-200',
-              viewMode === 'timeline'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-            title="Timeline view"
-          >
-            <GanttChart className="h-4 w-4" />
-            <span className="hidden sm:inline">Timeline</span>
-          </button>
-        </div>
-      </div>
-
+    <div>
       {/* Content */}
       {viewMode === 'columns' && renderColumns()}
       {viewMode === 'grid' && renderGrid()}

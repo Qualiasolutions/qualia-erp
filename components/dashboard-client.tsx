@@ -146,46 +146,32 @@ export function DashboardClient({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-12">
-        {/* Qualia Voice - with auto-greeting support */}
-        <div className="mb-6">
-          <QualiaVoiceInline
-            user={user}
-            autoGreet={shouldAutoGreet && !hasAutoGreeted}
-            autoGreetingMessage={buildAutoGreetingMessage()}
-            onAutoGreetComplete={handleAutoGreetComplete}
-            greetingContext={greetingData || undefined}
-          />
-        </div>
-
-        {/* Date and Greeting */}
-        <header className="mb-10 text-center">
-          <p className="text-sm text-muted-foreground">{dateString}</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">{greeting}</h1>
-        </header>
-
-        {/* AI Command Input */}
-        <section className="mb-12">
-          <DashboardAIInput />
-        </section>
-
-        {/* Lead Follow-ups Widget */}
-        {leadFollowUps.length > 0 && (
-          <section className="mb-8">
-            <LeadsFollowUpWidget followUps={leadFollowUps} />
-          </section>
-        )}
-
-        {/* Navigation Grid */}
-        <nav className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Link
-            href="/projects"
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:bg-card/80"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-6 py-4">
+        {/* Top Row: Voice + Greeting + Date */}
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <QualiaVoiceInline
+              user={user}
+              autoGreet={shouldAutoGreet && !hasAutoGreeted}
+              autoGreetingMessage={buildAutoGreetingMessage()}
+              onAutoGreetComplete={handleAutoGreetComplete}
+              greetingContext={greetingData || undefined}
+            />
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">{greeting}</h1>
+              <p className="text-xs text-muted-foreground">{dateString}</p>
+            </div>
+          </div>
+          {/* Navigation Icons - compact */}
+          <nav className="flex items-center gap-2">
+            <Link
+              href="/projects"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+              title="Projects"
+            >
               <svg
-                className="h-5 w-5 text-primary"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -197,17 +183,14 @@ export function DashboardClient({
                   d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
                 />
               </svg>
-            </div>
-            <span className="text-sm font-medium text-foreground">Projects</span>
-          </Link>
-
-          <Link
-            href="/clients"
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:bg-card/80"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 transition-colors group-hover:bg-emerald-500/20">
+            </Link>
+            <Link
+              href="/clients"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 transition-colors hover:bg-emerald-500/20"
+              title="Clients"
+            >
               <svg
-                className="h-5 w-5 text-emerald-500"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -219,17 +202,14 @@ export function DashboardClient({
                   d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
                 />
               </svg>
-            </div>
-            <span className="text-sm font-medium text-foreground">Clients</span>
-          </Link>
-
-          <Link
-            href="/schedule"
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:bg-card/80"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 transition-colors group-hover:bg-violet-500/20">
+            </Link>
+            <Link
+              href="/schedule"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500 transition-colors hover:bg-violet-500/20"
+              title="Schedule"
+            >
               <svg
-                className="h-5 w-5 text-violet-500"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -241,17 +221,14 @@ export function DashboardClient({
                   d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
                 />
               </svg>
-            </div>
-            <span className="text-sm font-medium text-foreground">Schedule</span>
-          </Link>
-
-          <Link
-            href="/settings"
-            className="group flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:bg-card/80"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-500/10 transition-colors group-hover:bg-gray-500/20">
+            </Link>
+            <Link
+              href="/settings"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-500/10 text-gray-500 transition-colors hover:bg-gray-500/20"
+              title="Settings"
+            >
               <svg
-                className="h-5 w-5 text-gray-500"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -268,10 +245,23 @@ export function DashboardClient({
                   d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
                 />
               </svg>
-            </div>
-            <span className="text-sm font-medium text-foreground">Settings</span>
-          </Link>
-        </nav>
+            </Link>
+          </nav>
+        </header>
+
+        {/* AI Command Input - centered */}
+        <section className="my-4 flex justify-center">
+          <div className="w-full max-w-xl">
+            <DashboardAIInput />
+          </div>
+        </section>
+
+        {/* Main Content Area - Lead Follow-ups */}
+        {leadFollowUps.length > 0 && (
+          <section className="flex-1 overflow-auto">
+            <LeadsFollowUpWidget followUps={leadFollowUps} />
+          </section>
+        )}
       </div>
     </div>
   );

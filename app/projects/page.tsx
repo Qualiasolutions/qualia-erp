@@ -5,13 +5,16 @@ import { createClient } from '@/lib/supabase/server';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { ProjectTypeTabs } from '@/components/project-type-tabs';
+import { ProjectViewToggle } from '@/components/project-view-toggle';
 import { Folder } from 'lucide-react';
 import type { ProjectType } from '@/types/database';
 
 type FilterType = ProjectType | 'all';
+type ViewMode = 'columns' | 'grid' | 'list' | 'timeline';
 
 interface FilterParams {
   type?: FilterType;
+  view?: ViewMode;
 }
 
 async function ProjectListLoader({ filters }: { filters: FilterParams }) {
@@ -55,10 +58,11 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Get the filter type (default to 'all')
+  // Get the filter type (default to 'all') and view mode
   const filterType = filters.type || 'all';
+  const viewMode = filters.view || 'columns';
 
-  return <ProjectList projects={projects} filterType={filterType} />;
+  return <ProjectList projects={projects} filterType={filterType} viewMode={viewMode} />;
 }
 
 function ProjectListSkeleton() {
@@ -132,9 +136,10 @@ export default async function ProjectsPage({
         <NewProjectModal />
       </header>
 
-      {/* Type Tabs */}
-      <div className="border-b border-border px-6 py-2.5">
+      {/* Type Tabs + View Toggle */}
+      <div className="flex items-center justify-between border-b border-border px-6 py-2.5">
         <ProjectTypeTabs currentType={filters.type} />
+        <ProjectViewToggle currentView={filters.view} currentType={filters.type} />
       </div>
 
       {/* Content */}
