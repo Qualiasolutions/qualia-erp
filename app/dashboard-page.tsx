@@ -64,15 +64,18 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
     .in('issues.status', ['backlog', 'todo', 'in_progress'])
     .limit(5);
 
-  // Extract the issues from the join result
-  // The data structure comes as an array of arrays due to Supabase joins
-  const userTasks: Array<{
+  // Define the task type
+  type TaskType = {
     id: string;
     title: string;
     priority: string;
     status: string;
     due_date: string | null;
-  }> = [];
+  };
+
+  // Extract the issues from the join result
+  // The data structure comes as an array of arrays due to Supabase joins
+  const userTasks: Array<TaskType> = [];
 
   assignedIssues?.forEach((item: { issue: TaskType | TaskType[] | null }) => {
     // Handle both array and single object cases for nested data

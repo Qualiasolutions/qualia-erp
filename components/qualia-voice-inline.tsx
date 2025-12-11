@@ -602,11 +602,12 @@ export function QualiaVoiceInline({
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           stream.getTracks().forEach((track) => track.stop());
-        } catch (error: { name: string }) {
-          if (error.name === 'NotAllowedError') {
+        } catch (error: unknown) {
+          const err = error as { name?: string };
+          if (err.name === 'NotAllowedError') {
             setError('Microphone permission denied. Please allow microphone access.');
             return;
-          } else if (error.name === 'NotFoundError') {
+          } else if (err.name === 'NotFoundError') {
             setError('No microphone found. Please connect a microphone.');
             return;
           }
