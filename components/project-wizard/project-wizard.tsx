@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,7 @@ interface ProjectWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   clients: Array<{ id: string; display_name: string | null }>;
+  defaultType?: ProjectType | null;
 }
 
 const STEPS = [
@@ -42,7 +43,12 @@ const STEPS = [
   { id: 4, name: 'Review', description: 'Confirm and create' },
 ];
 
-export function ProjectWizard({ open, onOpenChange, clients }: ProjectWizardProps) {
+export function ProjectWizard({
+  open,
+  onOpenChange,
+  clients,
+  defaultType = null,
+}: ProjectWizardProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,6 +62,17 @@ export function ProjectWizard({ open, onOpenChange, clients }: ProjectWizardProp
     client_id: '',
     phases: [],
   });
+
+  // Set default type when wizard opens with a defaultType
+  useEffect(() => {
+    if (open && defaultType) {
+      setWizardData((prev) => ({
+        ...prev,
+        project_type: defaultType,
+        phases: getPhaseTemplates(defaultType),
+      }));
+    }
+  }, [open, defaultType]);
 
   const updateWizardData = useCallback((updates: Partial<WizardData>) => {
     setWizardData((prev) => ({ ...prev, ...updates }));

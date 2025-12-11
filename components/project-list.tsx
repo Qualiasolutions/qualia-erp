@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTransition, useMemo } from 'react';
+import { useTransition, useMemo, useState, useEffect } from 'react';
 import {
   Folder,
   Inbox,
@@ -24,10 +24,11 @@ import {
   Linkedin,
   CircleDot,
   Ban,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
-import { moveProjectToGroup } from '@/app/actions';
+import { moveProjectToGroup, getClients } from '@/app/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ProjectWizard } from '@/components/project-wizard';
+import { useWorkspace } from '@/components/workspace-provider';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
 export interface Project {
@@ -409,11 +412,36 @@ function ProjectCard({ project }: { project: Project }) {
   );
 }
 
+interface Client {
+  id: string;
+  display_name: string | null;
+}
+
 export function ProjectList({
   projects,
   filterType = 'all',
   viewMode = 'columns',
 }: ProjectListProps) {
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardDefaultType, setWizardDefaultType] = useState<ProjectType | null>(null);
+  const [clients, setClients] = useState<Client[]>([]);
+  const { currentWorkspace } = useWorkspace();
+
+  useEffect(() => {
+    if (wizardOpen && currentWorkspace) {
+      getClients(currentWorkspace.id).then((result) => {
+        if (Array.isArray(result)) {
+          setClients(result);
+        }
+      });
+    }
+  }, [wizardOpen, currentWorkspace]);
+
+  const handleOpenWizard = (type: ProjectType) => {
+    setWizardDefaultType(type);
+    setWizardOpen(true);
+  };
+
   // Helper function for progress calculation - memoized
   const getProgress = useMemo(
     () => (p: Project) => {
@@ -525,7 +553,7 @@ export function ProjectList({
               {/* Column Header - Enhanced */}
               <div
                 className={cn(
-                  'relative overflow-hidden rounded-xl border p-4',
+                  'group/header relative overflow-hidden rounded-xl border p-4',
                   config.borderColor,
                   'bg-gradient-to-br',
                   config.gradientFrom,
@@ -551,13 +579,28 @@ export function ProjectList({
                     <h3 className="text-base font-bold text-foreground">{config.label}</h3>
                     <p className="text-xs text-muted-foreground">{config.description}</p>
                   </div>
-                  <div className="text-right">
-                    <div className={cn('text-2xl font-bold tabular-nums', config.color)}>
-                      {typeProjects.length}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpenWizard(type)}
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200',
+                        'opacity-0 group-hover/header:opacity-100',
+                        'hover:scale-110',
+                        config.bgColor,
+                        config.color
+                      )}
+                      title={`Create new ${config.label.toLowerCase().replace(/s$/, '')}`}
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    <div className="text-right">
+                      <div className={cn('text-2xl font-bold tabular-nums', config.color)}>
+                        {typeProjects.length}
+                      </div>
+                      {activeCount > 0 && activeCount !== typeProjects.length && (
+                        <div className="text-xs text-muted-foreground">{activeCount} active</div>
+                      )}
                     </div>
-                    {activeCount > 0 && activeCount !== typeProjects.length && (
-                      <div className="text-xs text-muted-foreground">{activeCount} active</div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -599,12 +642,22 @@ export function ProjectList({
   };
 
   return (
-    <div>
-      {/* Content */}
-      {viewMode === 'columns' && renderColumns()}
-      {viewMode === 'grid' && renderGrid()}
-      {viewMode === 'list' && renderList()}
-      {viewMode === 'timeline' && <ProjectTimeline projects={sortedProjects} />}
-    </div>
+    <>
+      <div>
+        {/* Content */}
+        {viewMode === 'columns' && renderColumns()}
+        {viewMode === 'grid' && renderGrid()}
+        {viewMode === 'list' && renderList()}
+        {viewMode === 'timeline' && <ProjectTimeline projects={sortedProjects} />}
+      </div>
+
+      {/* Project Creation Wizard */}
+      <ProjectWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        clients={clients}
+        defaultType={wizardDefaultType}
+      />
+    </>
   );
 }

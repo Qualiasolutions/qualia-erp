@@ -2,7 +2,6 @@ import { Suspense } from 'react';
 import { connection } from 'next/server';
 import { ProjectList, type Project } from '@/components/project-list';
 import { createClient } from '@/lib/supabase/server';
-import { NewProjectModal } from '@/components/new-project-modal';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { ProjectTypeTabs } from '@/components/project-type-tabs';
 import { ProjectViewToggle } from '@/components/project-view-toggle';
@@ -123,7 +122,7 @@ export default async function ProjectsPage({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border px-6 py-4">
+      <header className="flex items-center border-b border-border px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
             <Folder className="h-4 w-4 text-primary" />
@@ -133,7 +132,6 @@ export default async function ProjectsPage({
             <p className="text-xs text-muted-foreground">Track progress and manage deliverables</p>
           </div>
         </div>
-        <NewProjectModal />
       </header>
 
       {/* Type Tabs + View Toggle */}
