@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Globe, Bot, LayoutGrid } from 'lucide-react';
+import { Globe, Bot, LayoutGrid, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectType } from '@/types/database';
 
@@ -19,6 +19,7 @@ const TABS: Array<{
   { key: 'all', label: 'All', icon: LayoutGrid, color: 'text-muted-foreground' },
   { key: 'web_design', label: 'Websites', icon: Globe, color: 'text-blue-500' },
   { key: 'ai_agent', label: 'AI Agents', icon: Bot, color: 'text-purple-500' },
+  { key: 'voice_agent', label: 'Voice Agents', icon: Phone, color: 'text-green-500' },
   // SEO and Ads tabs hidden for now
   // { key: 'seo', label: 'SEO', icon: Search, color: 'text-green-500' },
   // { key: 'ads', label: 'Ads', icon: Megaphone, color: 'text-orange-500' },

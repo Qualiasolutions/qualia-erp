@@ -14,6 +14,11 @@ interface QualiaVoiceInlineProps {
     email: string;
     workspaceId?: string;
   };
+  // Auto-greeting support
+  autoGreet?: boolean;
+  autoGreetingMessage?: string | null;
+  onAutoGreetComplete?: () => void;
+  greetingContext?: Record<string, unknown>; // Additional context for the voice assistant
 }
 
 type CallState = 'idle' | 'connecting' | 'connected' | 'speaking' | 'listening';
@@ -477,15 +482,23 @@ const QUALIA_TOOLS: any[] = [
   },
 ];
 
-export function QualiaVoiceInline({ user }: QualiaVoiceInlineProps) {
+export function QualiaVoiceInline({
+  user,
+  autoGreet,
+  autoGreetingMessage,
+  onAutoGreetComplete,
+  greetingContext,
+}: QualiaVoiceInlineProps) {
   const [callState, setCallState] = useState<CallState>('idle');
   const [isMuted, setIsMuted] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [assistantMessage, setAssistantMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [volumeLevel, setVolumeLevel] = useState(0);
+  const [hasAutoGreeted, setHasAutoGreeted] = useState(false);
 
   const vapiRef = useRef<Vapi | null>(null);
+  const autoGreetTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize VAPI
   useEffect(() => {
@@ -543,118 +556,122 @@ export function QualiaVoiceInline({ user }: QualiaVoiceInlineProps) {
   }, []);
 
   // Start call immediately
-  const startCall = useCallback(async () => {
-    if (!vapiRef.current) {
-      setError('VAPI not initialized');
-      return;
-    }
-
-    setCallState('connecting');
-    setError(null);
-    setTranscript('');
-    setAssistantMessage('');
-
-    try {
-      const assistantId = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID;
-      // Check if assistantId is a valid UUID (not empty, not placeholder)
-      const isValidUUID =
-        assistantId &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assistantId);
-
-      if (isValidUUID) {
-        // Pass user context as metadata when using assistant ID
-        await vapiRef.current.start(assistantId, {
-          metadata: user
-            ? {
-                userId: user.id,
-                userName: user.name,
-                workspaceId: user.workspaceId,
-              }
-            : undefined,
-        });
-      } else {
-        // Personalized greeting based on user
-        const firstName = user?.name?.split(' ')[0];
-        const firstMessage = firstName
-          ? `أهلين ${firstName}! شو بقدر أساعدك؟`
-          : 'أهلين! شو بقدر أساعدك؟';
-
-        await vapiRef.current.start({
-          name: 'Qualia Voice Assistant',
-          model: {
-            provider: 'openai',
-            model: 'gpt-4o',
-            messages: [
-              {
-                role: 'system',
-                content: getSystemPrompt(user?.name),
-              },
-            ],
-            tools: QUALIA_TOOLS,
-          },
-          voice: {
-            provider: '11labs',
-            voiceId: '4wf10lgibMnboGJGCLrP', // Custom Qualia voice
-            model: 'eleven_multilingual_v2', // Multilingual model for Arabic support
-            stability: 0.6, // Slightly higher for clearer speech
-            similarityBoost: 0.8, // Keep voice characteristics
-            speed: 0.9, // Slightly slower for clarity
-          },
-          firstMessage,
-          firstMessageMode: 'assistant-speaks-first',
-          transcriber: {
-            provider: 'deepgram',
-            model: 'nova-2',
-            language: 'multi', // Multi-language for Arabic + English
-            smartFormat: true,
-            keywords: [
-              // Company & Team (English)
-              'Qualia:5',
-              'Fawzi:5',
-              'Moayad:5',
-              // Company & Team (Arabic)
-              'كواليا:5',
-              'فوزي:5',
-              'مؤيد:5',
-              // Tech terms
-              'Supabase:4',
-              'Vercel:4',
-              'Next.js:4',
-              'project:4',
-              'deadline:4',
-              'issue:4',
-              'meeting:4',
-              // Arabic common words
-              'مشروع:4',
-              'مهمة:4',
-              'اجتماع:4',
-              'عميل:4',
-              'فريق:4',
-            ],
-          },
-          // Server configuration for tool execution
-          server: process.env.NEXT_PUBLIC_APP_URL
-            ? {
-                url: `${process.env.NEXT_PUBLIC_APP_URL}/api/vapi/webhook`,
-                timeoutSeconds: 20,
-              }
-            : undefined,
-          // Pass user metadata for the webhook
-          metadata: user
-            ? {
-                userId: user.id,
-                userName: user.name,
-                workspaceId: user.workspaceId,
-              }
-            : undefined,
-        });
+  const startCall = useCallback(
+    async (customMessage?: string | null) => {
+      if (!vapiRef.current) {
+        setError('VAPI not initialized');
+        return;
       }
-    } catch (err) {
-      console.error('Failed to start call:', err);
-      setError('Failed to start call');
-      setCallState('idle');
-    }
-  }, [user]);
+
+      setCallState('connecting');
+      setError(null);
+      setTranscript('');
+      setAssistantMessage('');
+
+      try {
+        const assistantId = process.env.NEXT_PUBLIC_VAPI_ASSISTANT_ID;
+        // Check if assistantId is a valid UUID (not empty, not placeholder)
+        const isValidUUID =
+          assistantId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assistantId);
+
+        if (isValidUUID) {
+          // Pass user context as metadata when using assistant ID
+          await vapiRef.current.start(assistantId, {
+            metadata: user
+              ? {
+                  userId: user.id,
+                  userName: user.name,
+                  workspaceId: user.workspaceId,
+                  greetingContext: greetingContext,
+                }
+              : undefined,
+          });
+        } else {
+          // Personalized greeting based on user or custom message
+          const firstName = user?.name?.split(' ')[0];
+          const firstMessage =
+            customMessage ||
+            (firstName ? `أهلين ${firstName}! شو بقدر أساعدك؟` : 'أهلين! شو بقدر أساعدك؟');
+
+          await vapiRef.current.start({
+            name: 'Qualia Voice Assistant',
+            model: {
+              provider: 'openai',
+              model: 'gpt-4o',
+              messages: [
+                {
+                  role: 'system',
+                  content: getSystemPrompt(user?.name),
+                },
+              ],
+              tools: QUALIA_TOOLS,
+            },
+            voice: {
+              provider: '11labs',
+              voiceId: '4wf10lgibMnboGJGCLrP', // Custom Qualia voice
+              model: 'eleven_multilingual_v2', // Multilingual model for Arabic support
+              stability: 0.6, // Slightly higher for clearer speech
+              similarityBoost: 0.8, // Keep voice characteristics
+              speed: 0.9, // Slightly slower for clarity
+            },
+            firstMessage,
+            firstMessageMode: 'assistant-speaks-first',
+            transcriber: {
+              provider: 'deepgram',
+              model: 'nova-2',
+              language: 'multi', // Multi-language for Arabic + English
+              smartFormat: true,
+              keywords: [
+                // Company & Team (English)
+                'Qualia:5',
+                'Fawzi:5',
+                'Moayad:5',
+                // Company & Team (Arabic)
+                'كواليا:5',
+                'فوزي:5',
+                'مؤيد:5',
+                // Tech terms
+                'Supabase:4',
+                'Vercel:4',
+                'Nextjs:4',
+                'project:4',
+                'deadline:4',
+                'issue:4',
+                'meeting:4',
+                // Arabic common words
+                'مشروع:4',
+                'مهمة:4',
+                'اجتماع:4',
+                'عميل:4',
+                'فريق:4',
+              ],
+            },
+            // Server configuration for tool execution
+            server: process.env.NEXT_PUBLIC_APP_URL
+              ? {
+                  url: `${process.env.NEXT_PUBLIC_APP_URL.replace(/\s+/g, '')}/api/vapi/webhook`,
+                  timeoutSeconds: 20,
+                }
+              : undefined,
+            // Pass user metadata for the webhook
+            metadata: user
+              ? {
+                  userId: user.id,
+                  userName: user.name,
+                  workspaceId: user.workspaceId,
+                }
+              : undefined,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to start call:', err);
+        setError('Failed to start call');
+        setCallState('idle');
+      }
+    },
+    [user, greetingContext]
+  );
 
   const endCall = useCallback(() => {
     if (vapiRef.current) {
@@ -672,6 +689,36 @@ export function QualiaVoiceInline({ user }: QualiaVoiceInlineProps) {
   }, [isMuted]);
 
   const isInCall = callState !== 'idle' && callState !== 'connecting';
+
+  // Handle auto-greeting
+  useEffect(() => {
+    if (autoGreet && !hasAutoGreeted && vapiRef.current && autoGreetingMessage) {
+      // Clear any existing timeout
+      if (autoGreetTimeoutRef.current) {
+        clearTimeout(autoGreetTimeoutRef.current);
+      }
+
+      // Start the call with custom message after a short delay
+      autoGreetTimeoutRef.current = setTimeout(async () => {
+        setHasAutoGreeted(true);
+        await startCall(autoGreetingMessage);
+
+        // Auto-end the call after the message is spoken (estimate ~15 seconds)
+        setTimeout(() => {
+          endCall();
+          if (onAutoGreetComplete) {
+            onAutoGreetComplete();
+          }
+        }, 15000);
+      }, 500); // Small delay to ensure VAPI is ready
+
+      return () => {
+        if (autoGreetTimeoutRef.current) {
+          clearTimeout(autoGreetTimeoutRef.current);
+        }
+      };
+    }
+  }, [autoGreet, hasAutoGreeted, autoGreetingMessage, startCall, endCall, onAutoGreetComplete]);
 
   return (
     <div className="flex flex-col items-center">
@@ -715,7 +762,7 @@ export function QualiaVoiceInline({ user }: QualiaVoiceInlineProps) {
 
         {/* Main button - Logo that starts/ends call */}
         <button
-          onClick={isInCall ? endCall : startCall}
+          onClick={isInCall ? endCall : () => startCall()}
           disabled={callState === 'connecting'}
           className={cn(
             'group relative rounded-3xl p-2 transition-all',

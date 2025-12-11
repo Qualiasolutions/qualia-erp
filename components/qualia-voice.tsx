@@ -625,7 +625,7 @@ export function QualiaVoice({ isOpen, onClose, user }: QualiaVoiceProps) {
               // Tech terms
               'Supabase:4',
               'Vercel:4',
-              'Next.js:4',
+              'Nextjs:4',
               'project:4',
               'deadline:4',
               'issue:4',
@@ -641,7 +641,7 @@ export function QualiaVoice({ isOpen, onClose, user }: QualiaVoiceProps) {
           // Server configuration for tool execution with user context
           server: process.env.NEXT_PUBLIC_APP_URL
             ? {
-                url: `${process.env.NEXT_PUBLIC_APP_URL}/api/vapi/webhook`,
+                url: `${process.env.NEXT_PUBLIC_APP_URL.replace(/\s+/g, '')}/api/vapi/webhook`,
                 timeoutSeconds: 20,
               }
             : undefined,

@@ -486,13 +486,14 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
   const renderColumns = () => {
     const columns: { type: ProjectType; projects: Project[] }[] = [
       { type: 'ai_agent', projects: groupedByType.ai_agent },
+      { type: 'voice_agent', projects: groupedByType.voice_agent },
       { type: 'web_design', projects: groupedByType.web_design },
       { type: 'seo', projects: groupedByType.seo },
       { type: 'ads', projects: groupedByType.ads },
     ];
 
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {columns.map(({ type, projects: typeProjects }, columnIndex) => {
           const config = PROJECT_TYPE_CONFIG[type];
           const TypeIcon = config.icon;
@@ -608,6 +609,14 @@ export function ProjectList({ projects, filterType = 'all' }: ProjectListProps) 
                     <Bot className="h-3.5 w-3.5 text-violet-400" />
                     <span className="text-xs font-semibold tabular-nums text-violet-400">
                       {typeCounts.ai_agent}
+                    </span>
+                  </div>
+                )}
+                {typeCounts.voice_agent > 0 && (
+                  <div className="flex items-center gap-1.5 rounded-full bg-pink-500/10 px-2.5 py-1">
+                    <Phone className="h-3.5 w-3.5 text-pink-400" />
+                    <span className="text-xs font-semibold tabular-nums text-pink-400">
+                      {typeCounts.voice_agent}
                     </span>
                   </div>
                 )}
