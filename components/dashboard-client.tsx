@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
 import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
+import { LeadsFollowUpWidget, type LeadFollowUp } from '@/components/leads-follow-up-widget';
 import { useEffect, useState } from 'react';
 
 export interface DashboardUser {
@@ -38,6 +39,7 @@ interface DashboardClientProps {
   dateString: string;
   user?: DashboardUser;
   greetingData?: GreetingData | null;
+  leadFollowUps?: LeadFollowUp[];
 }
 
 export function DashboardClient({
@@ -45,6 +47,7 @@ export function DashboardClient({
   dateString,
   user,
   greetingData,
+  leadFollowUps = [],
 }: DashboardClientProps) {
   const [hasAutoGreeted, setHasAutoGreeted] = useState(false);
   const [shouldAutoGreet, setShouldAutoGreet] = useState(false);
@@ -166,6 +169,13 @@ export function DashboardClient({
         <section className="mb-12">
           <DashboardAIInput />
         </section>
+
+        {/* Lead Follow-ups Widget */}
+        {leadFollowUps.length > 0 && (
+          <section className="mb-8">
+            <LeadsFollowUpWidget followUps={leadFollowUps} />
+          </section>
+        )}
 
         {/* Navigation Grid */}
         <nav className="grid grid-cols-2 gap-3 sm:grid-cols-4">

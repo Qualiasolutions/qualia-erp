@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { format } from 'date-fns';
 import { DashboardClient } from '@/components/dashboard-client';
 import { getCurrentUserProfile } from './actions';
+import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
 
 // Helper function to get user's upcoming meetings and tasks
 async function getUserDashboardData(userId: string, workspaceId?: string) {
@@ -113,6 +114,57 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
     completedTasksCount: count || 0,
     importantDates,
   };
+}
+
+// Helper function to get lead follow-ups
+async function getLeadFollowUps(workspaceId?: string): Promise<LeadFollowUp[]> {
+  if (!workspaceId) return [];
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('lead_follow_ups')
+    .select(
+      `
+      id,
+      client_id,
+      title,
+      notes,
+      follow_up_date,
+      status,
+      priority,
+      client:clients(display_name, notes, lead_status)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'pending')
+    .order('follow_up_date', { ascending: true })
+    .limit(10);
+
+  if (error) {
+    console.error('Error fetching lead follow-ups:', error);
+    return [];
+  }
+
+  return (data || []).map((item) => {
+    const client = Array.isArray(item.client) ? item.client[0] : item.client;
+    // Extract contact name from notes (format: "Contact: Name")
+    const contactMatch = client?.notes?.match(/Contact:\s*(.+)/i);
+    const contactName = contactMatch ? contactMatch[1].trim() : 'Unknown';
+
+    return {
+      id: item.id,
+      client_id: item.client_id,
+      client_name: client?.display_name || 'Unknown',
+      contact_name: contactName,
+      title: item.title,
+      notes: item.notes,
+      follow_up_date: item.follow_up_date,
+      status: item.status as 'pending' | 'completed' | 'cancelled',
+      priority: item.priority as 'low' | 'medium' | 'high' | 'urgent',
+      lead_status: client?.lead_status || 'cold',
+    };
+  });
 }
 
 // Helper function for special dates and occasions
@@ -260,9 +312,17 @@ export default async function DashboardPage() {
   // Fetch dashboard data if user is logged in
   let dashboardData = null;
   let greetingData = null;
+  let leadFollowUps: LeadFollowUp[] = [];
 
   if (profile?.id) {
-    dashboardData = await getUserDashboardData(profile.id, workspaceId || undefined);
+    // Fetch in parallel
+    const [dashData, followUps] = await Promise.all([
+      getUserDashboardData(profile.id, workspaceId || undefined),
+      getLeadFollowUps(workspaceId || undefined),
+    ]);
+
+    dashboardData = dashData;
+    leadFollowUps = followUps;
     greetingData = generatePersonalizedGreeting(
       profile.full_name || profile.email || '',
       dashboardData
@@ -288,6 +348,7 @@ export default async function DashboardPage() {
           : undefined
       }
       greetingData={greetingData}
+      leadFollowUps={leadFollowUps}
     />
   );
 }
