@@ -21,6 +21,11 @@ import {
   Building,
   Check,
   Phone,
+  Facebook,
+  Instagram,
+  Linkedin,
+  CircleDot,
+  Ban,
 } from 'lucide-react';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 import type { WizardData } from './project-wizard';
@@ -82,11 +87,14 @@ const PROJECT_TYPES: Array<{
   },
 ];
 
-const DEPLOYMENT_PLATFORMS: Array<{
+interface PlatformOption {
   value: DeploymentPlatform;
   label: string;
   icon: React.ReactNode;
-}> = [
+}
+
+// Development/hosting platforms (for websites, AI agents, voice agents)
+const DEV_PLATFORMS: PlatformOption[] = [
   {
     value: 'vercel',
     label: 'Vercel',
@@ -103,6 +111,48 @@ const DEPLOYMENT_PLATFORMS: Array<{
     icon: <Train className="h-5 w-5" />,
   },
 ];
+
+// Ad/social platforms (for SEO and Ads projects)
+const AD_PLATFORMS: PlatformOption[] = [
+  {
+    value: 'meta',
+    label: 'Meta',
+    icon: <Facebook className="h-5 w-5" />,
+  },
+  {
+    value: 'instagram',
+    label: 'Instagram',
+    icon: <Instagram className="h-5 w-5" />,
+  },
+  {
+    value: 'google_ads',
+    label: 'Google Ads',
+    icon: <CircleDot className="h-5 w-5" />,
+  },
+  {
+    value: 'tiktok',
+    label: 'TikTok',
+    icon: <CircleDot className="h-5 w-5" />,
+  },
+  {
+    value: 'linkedin',
+    label: 'LinkedIn',
+    icon: <Linkedin className="h-5 w-5" />,
+  },
+  {
+    value: 'none',
+    label: 'N/A',
+    icon: <Ban className="h-5 w-5" />,
+  },
+];
+
+// Helper to get platforms based on project type
+function getPlatformsForType(projectType: ProjectType | null): PlatformOption[] {
+  if (projectType === 'seo' || projectType === 'ads') {
+    return AD_PLATFORMS;
+  }
+  return DEV_PLATFORMS;
+}
 
 export function StepConfiguration({
   data,
@@ -179,10 +229,13 @@ export function StepConfiguration({
       {/* Deployment Platform */}
       <div className="space-y-4">
         <Label className="text-sm font-medium">
-          Deployment Platform <span className="text-qualia-500">*</span>
+          {data.project_type === 'seo' || data.project_type === 'ads'
+            ? 'Platform'
+            : 'Deployment Platform'}{' '}
+          <span className="text-qualia-500">*</span>
         </Label>
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          {DEPLOYMENT_PLATFORMS.map((platform) => {
+          {getPlatformsForType(data.project_type).map((platform) => {
             const isSelected = data.deployment_platform === platform.value;
             return (
               <button

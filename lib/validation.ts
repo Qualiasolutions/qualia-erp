@@ -56,7 +56,17 @@ export const createProjectSchema = z.object({
     .optional()
     .nullable(),
   deployment_platform: z
-    .enum(['vercel', 'squarespace', 'railway'] as const)
+    .enum([
+      'vercel',
+      'squarespace',
+      'railway',
+      'meta',
+      'instagram',
+      'google_ads',
+      'tiktok',
+      'linkedin',
+      'none',
+    ] as const)
     .optional()
     .nullable(),
   team_id: z.string().uuid('Invalid team ID').optional().nullable(),
@@ -74,11 +84,24 @@ export const createProjectWizardSchema = z.object({
   project_type: z.enum(['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'] as const, {
     message: 'Project type is required',
   }),
-  deployment_platform: z.enum(['vercel', 'squarespace', 'railway'] as const, {
-    message: 'Deployment platform is required',
-  }),
+  deployment_platform: z.enum(
+    [
+      'vercel',
+      'squarespace',
+      'railway',
+      'meta',
+      'instagram',
+      'google_ads',
+      'tiktok',
+      'linkedin',
+      'none',
+    ] as const,
+    {
+      message: 'Platform is required',
+    }
+  ),
   client_id: z.string().uuid('Invalid client ID'),
-  team_id: z.string().uuid('Invalid team ID'),
+  team_id: z.string().uuid('Invalid team ID').optional().nullable(),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   // Roadmap customization
   phases: z
@@ -125,7 +148,17 @@ export const updateProjectSchema = z.object({
     .optional()
     .nullable(),
   deployment_platform: z
-    .enum(['vercel', 'squarespace', 'railway'] as const)
+    .enum([
+      'vercel',
+      'squarespace',
+      'railway',
+      'meta',
+      'instagram',
+      'google_ads',
+      'tiktok',
+      'linkedin',
+      'none',
+    ] as const)
     .optional()
     .nullable(),
   team_id: z.string().uuid().optional().nullable(),

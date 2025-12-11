@@ -79,7 +79,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
-        return wizardData.name.trim().length > 0 && wizardData.team_id.length > 0;
+        return wizardData.name.trim().length > 0;
       case 2:
         return (
           wizardData.project_type !== null &&
@@ -122,7 +122,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
         project_type: wizardData.project_type!,
         deployment_platform: wizardData.deployment_platform!,
         client_id: wizardData.client_id,
-        team_id: wizardData.team_id,
+        team_id: wizardData.team_id || null,
         phases: wizardData.phases.map((phase) => ({
           name: phase.name,
           description: phase.description || null,
@@ -212,9 +212,7 @@ export function ProjectWizard({ open, onOpenChange, teams, clients }: ProjectWiz
           )}
 
           <div className="duration-300 animate-in fade-in-0 slide-in-from-right-4">
-            {currentStep === 1 && (
-              <StepBasicInfo data={wizardData} teams={teams} onChange={updateWizardData} />
-            )}
+            {currentStep === 1 && <StepBasicInfo data={wizardData} onChange={updateWizardData} />}
 
             {currentStep === 2 && (
               <StepConfiguration

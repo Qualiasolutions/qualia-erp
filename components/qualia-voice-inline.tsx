@@ -741,33 +741,32 @@ export function QualiaVoiceInline({
 
   const isInCall = callState !== 'idle' && callState !== 'connecting';
 
-  // Handle auto-greeting automatically after page load
+  // Handle auto-greeting - starts automatically without user interaction
   useEffect(() => {
     if (autoGreet && !hasAutoGreeted && vapiRef.current && autoGreetingMessage) {
       // Clear any existing timeout
-      const currentTimeout = autoGreetTimeoutRef.current;
-      if (currentTimeout) {
-        clearTimeout(currentTimeout);
+      if (autoGreetTimeoutRef.current) {
+        clearTimeout(autoGreetTimeoutRef.current);
       }
 
-      // Start the call automatically after a short delay
+      // Start the greeting automatically after a short delay
       autoGreetTimeoutRef.current = setTimeout(async () => {
         try {
           setHasAutoGreeted(true);
           await startCall(autoGreetingMessage);
 
-          // Auto-end the call after the message is spoken
+          // Automatically end the call after a reasonable duration
           setTimeout(() => {
             endCall();
             if (onAutoGreetComplete) {
               onAutoGreetComplete();
             }
-          }, 15000);
+          }, 20000); // 20-second duration for the greeting
         } catch (error) {
           console.error('Auto-greeting failed:', error);
-          // Don't show error to user for auto-greeting failures
+          // Silent failure - don't show error for auto-greetings
         }
-      }, 2000); // 2 second delay to ensure page is fully loaded
+      }, 1000); // 1 second delay to ensure VAPI is ready
 
       return () => {
         if (autoGreetTimeoutRef.current) {

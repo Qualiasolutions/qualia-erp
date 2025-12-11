@@ -870,7 +870,16 @@ export type Database = {
         | 'team_created'
         | 'member_added'
         | 'meeting_created';
-      deployment_platform: 'vercel' | 'squarespace' | 'railway';
+      deployment_platform:
+        | 'vercel'
+        | 'squarespace'
+        | 'railway'
+        | 'meta'
+        | 'instagram'
+        | 'google_ads'
+        | 'tiktok'
+        | 'linkedin'
+        | 'none';
       issue_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       issue_status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
       lead_status: 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';
@@ -946,7 +955,17 @@ export type ProjectType = Enums<'project_type'>;
 export type UserRole = Enums<'user_role'>;
 
 // Constants for enum values
-export const DEPLOYMENT_PLATFORMS: DeploymentPlatform[] = ['vercel', 'squarespace', 'railway'];
+export const DEPLOYMENT_PLATFORMS: DeploymentPlatform[] = [
+  'vercel',
+  'squarespace',
+  'railway',
+  'meta',
+  'instagram',
+  'google_ads',
+  'tiktok',
+  'linkedin',
+  'none',
+];
 export const ISSUE_PRIORITIES: IssuePriority[] = ['No Priority', 'Urgent', 'High', 'Medium', 'Low'];
 export const ISSUE_STATUSES: IssueStatus[] = [
   'Yet to Start',

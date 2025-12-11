@@ -23,6 +23,11 @@ import {
   TrendingUp,
   ExternalLink,
   Phone,
+  Facebook,
+  Instagram,
+  Linkedin,
+  CircleDot,
+  Ban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -142,6 +147,12 @@ const PLATFORM_CONFIG: Record<DeploymentPlatform, { icon: typeof Triangle; label
   vercel: { icon: Triangle, label: 'Vercel' },
   squarespace: { icon: Square, label: 'Squarespace' },
   railway: { icon: Train, label: 'Railway' },
+  meta: { icon: Facebook, label: 'Meta' },
+  instagram: { icon: Instagram, label: 'Instagram' },
+  google_ads: { icon: CircleDot, label: 'Google Ads' },
+  tiktok: { icon: CircleDot, label: 'TikTok' },
+  linkedin: { icon: Linkedin, label: 'LinkedIn' },
+  none: { icon: Ban, label: 'N/A' },
 };
 
 // Legacy group config for backward compatibility

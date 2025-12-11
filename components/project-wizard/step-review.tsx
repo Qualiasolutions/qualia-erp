@@ -12,6 +12,11 @@ import {
   Users,
   FileText,
   Phone,
+  Facebook,
+  Instagram,
+  Linkedin,
+  CircleDot,
+  Ban,
 } from 'lucide-react';
 import type { WizardData } from './project-wizard';
 
@@ -33,6 +38,12 @@ const PLATFORM_CONFIG = {
   vercel: { label: 'Vercel', icon: Triangle },
   squarespace: { label: 'Squarespace', icon: Square },
   railway: { label: 'Railway', icon: Train },
+  meta: { label: 'Meta', icon: Facebook },
+  instagram: { label: 'Instagram', icon: Instagram },
+  google_ads: { label: 'Google Ads', icon: CircleDot },
+  tiktok: { label: 'TikTok', icon: CircleDot },
+  linkedin: { label: 'LinkedIn', icon: Linkedin },
+  none: { label: 'N/A', icon: Ban },
 };
 
 export function StepReview({ data, teams, clients }: StepReviewProps) {

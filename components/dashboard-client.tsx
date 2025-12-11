@@ -50,36 +50,21 @@ export function DashboardClient({
   const [shouldAutoGreet, setShouldAutoGreet] = useState(false);
 
   useEffect(() => {
-    // Check if we should auto-greet
-    if (!user || !greetingData) return;
+    // Check if we should auto-greet - simplified for Fawzi and Moayad
+    if (!user) return;
 
-    // Check if we've already greeted today (using localStorage)
-    const today = new Date().toDateString();
-    const lastGreetingDate = localStorage.getItem('lastAutoGreeting');
-
-    if (lastGreetingDate === today) {
-      // Already greeted today
-      return;
-    }
-
-    // Check if there are important reminders to announce
-    const hasUrgentItems =
-      greetingData.stats.overdueTasksCount > 0 ||
-      greetingData.stats.urgentTasksCount > 0 ||
-      greetingData.stats.todayMeetingsCount > 0;
-
-    // Check if it's a special user (Fawzi or Moayad)
+    // Check if it's a special user (Fawzi or Moayad) - always greet them
     const firstName = user.name.split(' ')[0].toLowerCase();
     const isSpecialUser = firstName === 'fawzi' || firstName === 'moayad';
 
-    // Decide whether to auto-greet
-    if (isSpecialUser || hasUrgentItems) {
-      // Set a small delay to let the page load
+    // For special users, always auto-greet (no localStorage check)
+    if (isSpecialUser) {
+      // Set a delay to let the page and VAPI initialize
       setTimeout(() => {
         setShouldAutoGreet(true);
-      }, 1500);
+      }, 2500);
     }
-  }, [user, greetingData]);
+  }, [user]);
 
   const handleAutoGreetComplete = () => {
     // Mark that we've greeted today
