@@ -67,14 +67,12 @@ const PROJECT_TYPE_CONFIG: Record<
 
 const DEFAULT_BAR_COLOR = 'bg-gradient-to-r from-violet-500 to-violet-400';
 
-type ZoomLevel = 'days' | 'weeks' | 'months' | 'quarters' | 'years';
+type ZoomLevel = 'days' | 'weeks' | 'months';
 
 const ZOOM_CONFIG: Record<ZoomLevel, { dayWidth: number; label: string }> = {
   days: { dayWidth: 40, label: 'Day' },
   weeks: { dayWidth: 12, label: 'Week' },
   months: { dayWidth: 4, label: 'Month' },
-  quarters: { dayWidth: 2, label: 'Quarter' },
-  years: { dayWidth: 1, label: 'Year' },
 };
 
 export function ProjectTimeline({ projects }: ProjectTimelineProps) {
@@ -211,7 +209,7 @@ export function ProjectTimeline({ projects }: ProjectTimelineProps) {
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground">Zoom:</span>
           <div className="flex items-center gap-1 rounded-lg bg-secondary p-1">
-            {(['years', 'quarters', 'months', 'weeks', 'days'] as ZoomLevel[]).map((level) => (
+            {(['months', 'weeks', 'days'] as ZoomLevel[]).map((level) => (
               <button
                 key={level}
                 onClick={() => setZoomLevel(level)}
@@ -304,8 +302,8 @@ export function ProjectTimeline({ projects }: ProjectTimelineProps) {
                     })}
                   </div>
                 )}
-                {/* Months/Quarters/Years header */}
-                {(zoomLevel === 'months' || zoomLevel === 'quarters' || zoomLevel === 'years') && (
+                {/* Months header */}
+                {zoomLevel === 'months' && (
                   <div className="flex">
                     {timeUnits.map((month, i) => {
                       const monthStart = startOfMonth(month);
@@ -319,7 +317,7 @@ export function ProjectTimeline({ projects }: ProjectTimelineProps) {
                           style={{ width }}
                         >
                           <span className="text-xs font-medium text-foreground">
-                            {format(month, zoomLevel === 'years' ? 'MMM' : 'MMM yyyy')}
+                            {format(month, 'MMM yyyy')}
                           </span>
                         </div>
                       );
@@ -406,9 +404,7 @@ export function ProjectTimeline({ projects }: ProjectTimelineProps) {
                               style={{ width: 7 * dayWidth }}
                             />
                           ))}
-                        {(zoomLevel === 'months' ||
-                          zoomLevel === 'quarters' ||
-                          zoomLevel === 'years') &&
+                        {zoomLevel === 'months' &&
                           timeUnits.map((month, i) => {
                             const daysInMonth =
                               differenceInDays(endOfMonth(month), startOfMonth(month)) + 1;

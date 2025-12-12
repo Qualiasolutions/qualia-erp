@@ -1,10 +1,29 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
 import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
-import { LeadsFollowUpWidget, type LeadFollowUp } from '@/components/leads-follow-up-widget';
+import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
 import { useEffect, useState } from 'react';
+import { isPast, isToday, isTomorrow } from 'date-fns';
+import {
+  Phone,
+  Calendar,
+  Flame,
+  ChevronRight,
+  Folder,
+  Users,
+  Settings,
+  MessageCircle,
+  Sparkles,
+  Zap,
+  Rocket,
+  Target,
+  Lightbulb,
+  TrendingUp,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface DashboardUser {
   id: string;
@@ -42,6 +61,99 @@ interface DashboardClientProps {
   leadFollowUps?: LeadFollowUp[];
 }
 
+// AI Agent Action Button
+interface AIActionButtonProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  gradient: string;
+}
+
+function AIActionButton({ title, description, icon, href, gradient }: AIActionButtonProps) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'group relative overflow-hidden rounded-xl p-4 transition-all duration-300',
+        'hover:scale-105 hover:shadow-lg',
+        gradient,
+        'text-white'
+      )}
+    >
+      <div className="relative z-10">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
+            {icon}
+          </div>
+          <h3 className="text-sm font-semibold">{title}</h3>
+        </div>
+        <p className="text-xs opacity-90">{description}</p>
+      </div>
+      <div className="absolute -right-2 -top-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
+      <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
+    </Link>
+  );
+}
+
+// Minimal lead card for the compact widget
+function CompactLeadCard({ followUp }: { followUp: LeadFollowUp }) {
+  const date = new Date(followUp.follow_up_date);
+  const isOverdue = isPast(date) && !isToday(date);
+  const isTodayDate = isToday(date);
+  const isTomorrowDate = isTomorrow(date);
+
+  const dateLabel = isOverdue
+    ? 'Overdue'
+    : isTodayDate
+      ? 'Today'
+      : isTomorrowDate
+        ? 'Tomorrow'
+        : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  return (
+    <Link
+      href={`/clients/${followUp.client_id}`}
+      className={cn(
+        'group flex items-center gap-2 rounded-md px-2 py-1.5 transition-all',
+        'hover:bg-card/60',
+        isOverdue && 'bg-orange-500/5'
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs',
+          followUp.priority === 'urgent' || followUp.priority === 'high'
+            ? 'bg-orange-500/10 text-orange-500'
+            : 'bg-muted/50 text-muted-foreground'
+        )}
+      >
+        {followUp.lead_status === 'hot' ? (
+          <Flame className="h-3 w-3" />
+        ) : (
+          <Phone className="h-3 w-3" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-medium text-foreground">{followUp.contact_name}</p>
+        <p className="truncate text-[10px] text-muted-foreground">{followUp.client_name}</p>
+      </div>
+      <span
+        className={cn(
+          'rounded px-1.5 py-0.5 text-[10px] font-medium',
+          isOverdue
+            ? 'bg-orange-500/10 text-orange-500'
+            : isTodayDate
+              ? 'bg-emerald-500/10 text-emerald-500'
+              : 'bg-muted/50 text-muted-foreground'
+        )}
+      >
+        {dateLabel}
+      </span>
+    </Link>
+  );
+}
+
 export function DashboardClient({
   greeting,
   dateString,
@@ -53,39 +165,27 @@ export function DashboardClient({
   const [shouldAutoGreet, setShouldAutoGreet] = useState(false);
 
   useEffect(() => {
-    // Check if we should auto-greet - simplified for Fawzi and Moayad
     if (!user) return;
-
-    // Check if it's a special user (Fawzi or Moayad) - always greet them
     const firstName = user.name.split(' ')[0].toLowerCase();
     const isSpecialUser = firstName === 'fawzi' || firstName === 'moayad';
-
-    // For special users, always auto-greet (no localStorage check)
     if (isSpecialUser) {
-      // Set a delay to let the page and VAPI initialize
-      setTimeout(() => {
-        setShouldAutoGreet(true);
-      }, 2500);
+      setTimeout(() => setShouldAutoGreet(true), 2500);
     }
   }, [user]);
 
   const handleAutoGreetComplete = () => {
-    // Mark that we've greeted today
     const today = new Date().toDateString();
     localStorage.setItem('lastAutoGreeting', today);
     setHasAutoGreeted(true);
     setShouldAutoGreet(false);
   };
 
-  // Build auto-greeting message for the voice assistant
   const buildAutoGreetingMessage = () => {
     if (!user || !greetingData) return null;
-
     const firstName = user.name.split(' ')[0];
     const messages = [];
-
-    // Personalized greeting
     const hour = new Date().getHours();
+
     if (hour < 12) {
       messages.push(`صباح الخير يا ${firstName}! إن شاء الله يومك يكون مليان إنجازات`);
     } else if (hour < 18) {
@@ -94,32 +194,21 @@ export function DashboardClient({
       messages.push(`مساء الخير يا ${firstName}! يعطيك العافية على شغل اليوم`);
     }
 
-    // Add reminders
     if (greetingData.reminders.length > 0) {
-      // Priority reminders first
       const criticalReminders = greetingData.reminders.filter((r) => r.priority === 'critical');
       const highReminders = greetingData.reminders.filter((r) => r.priority === 'high');
-
-      if (criticalReminders.length > 0) {
-        messages.push('انتبه! ' + criticalReminders[0].message);
-      }
-
-      if (highReminders.length > 0 && messages.length < 3) {
-        messages.push(highReminders[0].message);
-      }
+      if (criticalReminders.length > 0) messages.push('انتبه! ' + criticalReminders[0].message);
+      if (highReminders.length > 0 && messages.length < 3) messages.push(highReminders[0].message);
     }
 
-    // Add motivational message
     if (greetingData.motivationalMessages.length > 0 && messages.length < 4) {
       messages.push(greetingData.motivationalMessages[0]);
     }
 
-    // Add special occasions
     if (greetingData.specialOccasions.length > 0) {
       messages.push(greetingData.specialOccasions[0].message);
     }
 
-    // Personalized tips for Fawzi and Moayad
     const isFawzi = firstName.toLowerCase() === 'fawzi';
     const isMoayad = firstName.toLowerCase() === 'moayad';
 
@@ -136,7 +225,6 @@ export function DashboardClient({
       messages.push(tips[Math.floor(Math.random() * tips.length)]);
     }
 
-    // End with encouragement
     if (messages.length < 5) {
       const endings = ['الله يوفقك!', 'بالتوفيق!', 'يلا نشتغل!', 'خلينا نخلص الشغل اليوم'];
       messages.push(endings[Math.floor(Math.random() * endings.length)]);
@@ -145,12 +233,122 @@ export function DashboardClient({
     return messages.join('. ');
   };
 
+  // Sort follow-ups: overdue first, then by date
+  const sortedFollowUps = [...leadFollowUps]
+    .filter((f) => f.status === 'pending')
+    .sort((a, b) => {
+      const aDate = new Date(a.follow_up_date);
+      const bDate = new Date(b.follow_up_date);
+      const aOverdue = isPast(aDate) && !isToday(aDate);
+      const bOverdue = isPast(bDate) && !isToday(bDate);
+      if (aOverdue && !bOverdue) return -1;
+      if (!aOverdue && bOverdue) return 1;
+      return aDate.getTime() - bDate.getTime();
+    })
+    .slice(0, 5);
+
+  const overdueCount = leadFollowUps.filter((f) => {
+    const date = new Date(f.follow_up_date);
+    return f.status === 'pending' && isPast(date) && !isToday(date);
+  }).length;
+
+  // AI Agent Actions
+  const aiActions = [
+    {
+      title: 'AI Agent Builder',
+      description: 'Create custom AI assistants',
+      icon: <Sparkles className="h-4 w-4" />,
+      href: '/projects/new?project_type=ai_agent',
+      gradient: 'bg-gradient-to-br from-purple-600 to-pink-600',
+    },
+    {
+      title: 'Website Creator',
+      description: 'Build modern websites',
+      icon: <Zap className="h-4 w-4" />,
+      href: '/projects/new?project_type=web_design',
+      gradient: 'bg-gradient-to-br from-cyan-600 to-blue-600',
+    },
+    {
+      title: 'SEO Optimizer',
+      description: 'Rank higher on Google',
+      icon: <Target className="h-4 w-4" />,
+      href: '/projects/new?project_type=seo',
+      gradient: 'bg-gradient-to-br from-emerald-600 to-teal-600',
+    },
+    {
+      title: 'Ad Campaign',
+      description: 'Launch targeted ads',
+      icon: <Rocket className="h-4 w-4" />,
+      href: '/projects/new?project_type=ads',
+      gradient: 'bg-gradient-to-br from-orange-600 to-red-600',
+    },
+    {
+      title: 'Smart Analytics',
+      description: 'Data-driven insights',
+      icon: <TrendingUp className="h-4 w-4" />,
+      href: '/dashboard',
+      gradient: 'bg-gradient-to-br from-indigo-600 to-purple-600',
+    },
+    {
+      title: 'Innovation Lab',
+      description: 'Experiment with AI',
+      icon: <Lightbulb className="h-4 w-4" />,
+      href: '/projects',
+      gradient: 'bg-gradient-to-br from-yellow-600 to-orange-600',
+    },
+  ];
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <div className="mx-auto flex h-full w-full max-w-6xl flex-col px-6 py-4">
-        {/* Top Row: Voice + Greeting + Date */}
-        <header className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      {/* Subtle gradient background */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.02] blur-3xl" />
+        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.02] blur-3xl" />
+      </div>
+
+      <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col px-6">
+        {/* Top navigation bar */}
+        <nav className="flex items-center justify-between py-4">
+          <Link href="/" className="flex items-center gap-2">
+            <Image src="/logo.webp" alt="Qualia" width={32} height={32} className="rounded-lg" />
+            <span className="text-sm font-semibold text-foreground">Qualia</span>
+          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/projects"
+              className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+            >
+              <Folder className="h-4 w-4" />
+              <span className="hidden sm:inline">Projects</span>
+            </Link>
+            <Link
+              href="/clients"
+              className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+            >
+              <Users className="h-4 w-4" />
+              <span className="hidden sm:inline">Clients</span>
+            </Link>
+            <Link
+              href="/schedule"
+              className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+            >
+              <Calendar className="h-4 w-4" />
+              <span className="hidden sm:inline">Schedule</span>
+            </Link>
+            <div className="mx-2 h-4 w-px bg-border" />
+            <Link
+              href="/settings"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+            >
+              <Settings className="h-4 w-4" />
+            </Link>
+          </div>
+        </nav>
+
+        {/* Main content - centered hero section */}
+        <main className="flex flex-1 flex-col items-center justify-center pb-6">
+          {/* Voice assistant - hero element */}
+          <div className="mb-8">
             <QualiaVoiceInline
               user={user}
               autoGreet={shouldAutoGreet && !hasAutoGreeted}
@@ -158,110 +356,92 @@ export function DashboardClient({
               onAutoGreetComplete={handleAutoGreetComplete}
               greetingContext={greetingData || undefined}
             />
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight text-foreground">{greeting}</h1>
-              <p className="text-xs text-muted-foreground">{dateString}</p>
-            </div>
           </div>
-          {/* Navigation Icons - compact */}
-          <nav className="flex items-center gap-2">
-            <Link
-              href="/projects"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/20"
-              title="Projects"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"
-                />
-              </svg>
-            </Link>
-            <Link
-              href="/clients"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 transition-colors hover:bg-emerald-500/20"
-              title="Clients"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z"
-                />
-              </svg>
-            </Link>
-            <Link
-              href="/schedule"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500 transition-colors hover:bg-violet-500/20"
-              title="Schedule"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
-                />
-              </svg>
-            </Link>
-            <Link
-              href="/settings"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-500/10 text-gray-500 transition-colors hover:bg-gray-500/20"
-              title="Settings"
-            >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={1.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                />
-              </svg>
-            </Link>
-          </nav>
-        </header>
 
-        {/* AI Command Input - centered */}
-        <section className="my-4 flex justify-center">
-          <div className="w-full max-w-xl">
+          {/* Greeting text */}
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+              {greeting}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">{dateString}</p>
+          </div>
+
+          {/* AI Input - prominent centered */}
+          <div className="mb-8 w-full max-w-lg">
             <DashboardAIInput />
           </div>
-        </section>
 
-        {/* Main Content Area - Lead Follow-ups */}
-        {leadFollowUps.length > 0 && (
-          <section className="flex-1 overflow-auto">
-            <LeadsFollowUpWidget followUps={leadFollowUps} />
-          </section>
-        )}
+          {/* AI Agent Actions Grid */}
+          <div className="mb-8 w-full max-w-4xl">
+            <div className="mb-4 text-center">
+              <h2 className="text-lg font-semibold text-foreground">Create with Qualia AI</h2>
+              <p className="text-sm text-muted-foreground">
+                Launch your next project with our intelligent tools
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              {aiActions.map((action, index) => (
+                <AIActionButton key={index} {...action} />
+              ))}
+            </div>
+          </div>
+        </main>
+
+        {/* Bottom section - compact lead follow-ups + send message */}
+        <footer className="space-y-4 border-t border-border/50 py-4">
+          {/* Send Message Section */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10">
+                <MessageCircle className="h-4 w-4 text-qualia-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-foreground">Quick Message</h3>
+                <p className="text-xs text-muted-foreground">Send a message to your team</p>
+              </div>
+            </div>
+            <Link
+              href="/board"
+              className="flex items-center gap-1 rounded-lg bg-qualia-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-qualia-600"
+            >
+              Send Message
+              <MessageCircle className="h-3 w-3" />
+            </Link>
+          </div>
+
+          {/* Compact Leads Widget */}
+          {sortedFollowUps.length > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10">
+                  <Phone className="h-3 w-3 text-orange-500" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-medium text-foreground">Follow-ups</h3>
+                  <p className="text-[10px] text-muted-foreground">
+                    {leadFollowUps.filter((f) => f.status === 'pending').length} pending
+                    {overdueCount > 0 && (
+                      <span className="text-orange-500"> · {overdueCount} overdue</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex max-w-md items-center gap-2 overflow-hidden">
+                {sortedFollowUps.slice(0, 3).map((followUp) => (
+                  <CompactLeadCard key={followUp.id} followUp={followUp} />
+                ))}
+                {sortedFollowUps.length > 3 && (
+                  <Link
+                    href="/clients"
+                    className="flex items-center justify-center rounded-md px-2 py-1.5 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+                  >
+                    +{sortedFollowUps.length - 3} more
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+        </footer>
       </div>
     </div>
   );

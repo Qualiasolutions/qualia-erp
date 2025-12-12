@@ -505,26 +505,6 @@ export function ProjectList({
     );
   }
 
-  const renderGrid = () => (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-      {sortedProjects.map((project, index) => (
-        <div key={project.id} className="slide-in" style={{ animationDelay: `${index * 30}ms` }}>
-          <ProjectCard project={project} />
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderList = () => (
-    <div className="space-y-2">
-      {sortedProjects.map((project, index) => (
-        <div key={project.id} className="slide-in" style={{ animationDelay: `${index * 25}ms` }}>
-          <ProjectCard project={project} />
-        </div>
-      ))}
-    </div>
-  );
-
   const renderColumns = () => {
     const columns: { type: ProjectType; projects: Project[] }[] = [
       { type: 'ai_agent', projects: groupedByType.ai_agent },
@@ -646,8 +626,6 @@ export function ProjectList({
       <div>
         {/* Content */}
         {viewMode === 'columns' && renderColumns()}
-        {viewMode === 'grid' && renderGrid()}
-        {viewMode === 'list' && renderList()}
         {viewMode === 'timeline' && <ProjectTimeline projects={sortedProjects} />}
       </div>
 

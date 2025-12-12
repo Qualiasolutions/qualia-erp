@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Columns3, LayoutGrid, List, GanttChart } from 'lucide-react';
+import { Columns3, GanttChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ProjectType } from '@/types/database';
 
@@ -18,8 +18,6 @@ const VIEWS: Array<{
   icon: typeof Columns3;
 }> = [
   { key: 'columns', label: 'Columns', icon: Columns3 },
-  { key: 'grid', label: 'Grid', icon: LayoutGrid },
-  { key: 'list', label: 'List', icon: List },
   { key: 'timeline', label: 'Timeline', icon: GanttChart },
 ];
 

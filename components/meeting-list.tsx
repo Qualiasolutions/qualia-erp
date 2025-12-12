@@ -2,17 +2,7 @@
 
 import { format, startOfDay, isBefore, parseISO, isWithinInterval } from 'date-fns';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
-import {
-  Clock,
-  User,
-  Folder,
-  Trash2,
-  Globe,
-  CalendarDays,
-  Video,
-  ChevronRight,
-  Sparkles,
-} from 'lucide-react';
+import { Clock, Trash2, Globe, CalendarDays, Video, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
 import { useTransition, useMemo, useState, useEffect } from 'react';
@@ -275,75 +265,63 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
         </div>
       </div>
 
-      {/* Today's Meetings Timeline */}
-      {todayMeetings.length > 0 && (
-        <div>
-          <div className="mb-4 flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-violet-500" />
-            <h3 className="text-sm font-semibold text-foreground">Today&apos;s Schedule</h3>
-          </div>
+      {/* All Meetings - Combined Today + Upcoming */}
+      {(() => {
+        // Combine today's remaining meetings (excluding highlighted one) with upcoming
+        const highlightedId = currentMeeting?.id || nextMeeting?.id;
+        const remainingTodayMeetings = todayMeetings.filter((m) => m.id !== highlightedId);
+        const allUpcoming = [...remainingTodayMeetings, ...upcomingMeetings];
 
-          <div className="relative space-y-3">
-            {/* Timeline line */}
-            <div className="absolute bottom-2 left-[23px] top-2 w-px bg-gradient-to-b from-violet-500/50 via-violet-500/20 to-transparent" />
+        if (allUpcoming.length === 0) return null;
 
-            {todayMeetings.map((meeting, index) => {
-              const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
-              const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
-              const isPast = isBefore(endDate, zonedNow);
-              const isCurrent = currentMeeting?.id === meeting.id;
-              const duration = getDurationMinutes(startDate, endDate);
+        return (
+          <div>
+            <div className="mb-4 flex items-center gap-2">
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground">Coming Up</h3>
+              <span className="text-xs text-muted-foreground">
+                {allUpcoming.length} meeting{allUpcoming.length !== 1 ? 's' : ''}
+              </span>
+            </div>
 
-              return (
-                <div
-                  key={meeting.id}
-                  className={cn(
-                    'group relative flex gap-4 transition-all duration-200',
-                    isPast && 'opacity-50'
-                  )}
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  {/* Timeline dot */}
+            <div className="grid gap-3 sm:grid-cols-2">
+              {allUpcoming.slice(0, 8).map((meeting, index) => {
+                const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
+                const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
+                const duration = getDurationMinutes(startDate, endDate);
+                const isPast = isBefore(endDate, zonedNow);
+                const isToday = format(startDate, 'yyyy-MM-dd') === todayInTz;
+
+                return (
                   <div
+                    key={meeting.id}
                     className={cn(
-                      'relative z-10 mt-1.5 h-3 w-3 rounded-full ring-4 ring-background transition-all',
-                      isCurrent
-                        ? 'bg-violet-500 ring-violet-500/20'
-                        : isPast
-                          ? 'bg-muted-foreground/30'
-                          : 'bg-violet-500/50'
+                      'group rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-violet-500/30 hover:bg-secondary/50',
+                      isPast && 'opacity-50'
                     )}
+                    style={{ animationDelay: `${index * 30}ms` }}
                   >
-                    {isCurrent && (
-                      <span className="absolute inset-0 animate-ping rounded-full bg-violet-500 opacity-75" />
-                    )}
-                  </div>
-
-                  {/* Meeting card */}
-                  <div
-                    className={cn(
-                      'flex-1 rounded-xl border bg-card p-4 transition-all duration-200',
-                      isCurrent
-                        ? 'border-violet-500/50 bg-violet-500/5 shadow-lg shadow-violet-500/10'
-                        : 'border-border hover:border-violet-500/30 hover:bg-secondary/50'
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        {/* Time and status */}
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="text-xs font-semibold text-violet-500">
+                        {/* Date */}
+                        <div className="mb-2 flex items-center gap-2">
+                          {isToday ? (
+                            <>
+                              <Clock className="h-3.5 w-3.5 text-violet-500" />
+                              <span className="text-xs font-medium text-violet-500">Today</span>
+                            </>
+                          ) : (
+                            <>
+                              <CalendarDays className="h-3.5 w-3.5 text-violet-500" />
+                              <span className="text-xs font-medium text-violet-500">
+                                {format(startDate, 'EEE, MMM d')}
+                              </span>
+                            </>
+                          )}
+                          <span className="text-xs text-muted-foreground">
                             {format(startDate, 'h:mm a')}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            &middot; {formatDuration(duration)}
-                          </span>
-                          {isCurrent && (
-                            <span className="rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-semibold uppercase text-white">
-                              Now
-                            </span>
-                          )}
-                          {!isCurrent && !isPast && (
+                          {!isPast && isToday && (
                             <span className="text-xs text-muted-foreground">
                               {getTimeUntil(zonedNow, startDate)}
                             </span>
@@ -351,126 +329,44 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
                         </div>
 
                         {/* Title */}
-                        <h4 className="text-sm font-semibold text-foreground transition-colors group-hover:text-violet-500">
+                        <h4 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-violet-500">
                           {meeting.title}
                         </h4>
 
-                        {/* Description */}
-                        {meeting.description && (
-                          <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                            {meeting.description}
-                          </p>
-                        )}
-
                         {/* Meta */}
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{formatDuration(duration)}</span>
                           {meeting.project && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-                              <Folder className="h-3 w-3" />
-                              {meeting.project.name}
-                            </span>
-                          )}
-                          {meeting.creator && (
-                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              {meeting.creator.full_name || meeting.creator.email}
-                            </span>
+                            <>
+                              <span>&middot;</span>
+                              <span className="truncate">{meeting.project.name}</span>
+                            </>
                           )}
                         </div>
                       </div>
 
-                      {/* Actions */}
                       <button
                         onClick={() => handleDelete(meeting.id)}
                         disabled={isPending}
-                        className="rounded-lg p-2 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
+                        className="rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
                         title="Delete meeting"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {allUpcoming.length > 8 && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                +{allUpcoming.length - 8} more meetings
+              </p>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* Upcoming Meetings */}
-      {upcomingMeetings.length > 0 && (
-        <div>
-          <div className="mb-4 flex items-center gap-2">
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <h3 className="text-sm font-semibold text-foreground">Coming Up</h3>
-            <span className="text-xs text-muted-foreground">
-              {upcomingMeetings.length} meeting{upcomingMeetings.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            {upcomingMeetings.slice(0, 6).map((meeting, index) => {
-              const startDate = toZonedTime(parseISO(meeting.start_time), timezone);
-              const endDate = toZonedTime(parseISO(meeting.end_time), timezone);
-              const duration = getDurationMinutes(startDate, endDate);
-
-              return (
-                <div
-                  key={meeting.id}
-                  className="group rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-violet-500/30 hover:bg-secondary/50"
-                  style={{ animationDelay: `${index * 30}ms` }}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      {/* Date */}
-                      <div className="mb-2 flex items-center gap-2">
-                        <CalendarDays className="h-3.5 w-3.5 text-violet-500" />
-                        <span className="text-xs font-medium text-violet-500">
-                          {format(startDate, 'EEE, MMM d')}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(startDate, 'h:mm a')}
-                        </span>
-                      </div>
-
-                      {/* Title */}
-                      <h4 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-violet-500">
-                        {meeting.title}
-                      </h4>
-
-                      {/* Meta */}
-                      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{formatDuration(duration)}</span>
-                        {meeting.project && (
-                          <>
-                            <span>&middot;</span>
-                            <span className="truncate">{meeting.project.name}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleDelete(meeting.id)}
-                      disabled={isPending}
-                      className="rounded-lg p-1.5 text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
-                      title="Delete meeting"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {upcomingMeetings.length > 6 && (
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              +{upcomingMeetings.length - 6} more meetings
-            </p>
-          )}
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
