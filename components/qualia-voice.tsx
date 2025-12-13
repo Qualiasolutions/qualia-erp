@@ -5,6 +5,11 @@ import Image from 'next/image';
 import { X, Phone, PhoneOff, Mic, MicOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Vapi from '@vapi-ai/web';
+import {
+  generateGreeting,
+  generateEnhancedSystemPrompt,
+  type UserContext,
+} from '@/lib/voice-assistant-intelligence';
 
 interface QualiaVoiceProps {
   isOpen: boolean;
@@ -22,40 +27,23 @@ type CallState = 'idle' | 'connecting' | 'connected' | 'speaking' | 'listening';
 
 // Generate personalized system prompt based on user context
 function getSystemPrompt(userName?: string) {
-  const firstName = userName?.split(' ')[0];
-  const isFawzi = firstName?.toLowerCase() === 'fawzi';
-  const isMoayad = firstName?.toLowerCase() === 'moayad';
+  // Create user context for enhanced intelligence
+  const userContext: UserContext = {
+    name: userName,
+    location: 'jordan', // Default to Jordan, can be made dynamic
+    preferences: {
+      language: 'arabic',
+      formality: 'casual',
+    },
+  };
 
-  // Personalized greeting based on who is calling
-  let personalizedGreeting = '';
-  let personalizedContext = '';
+  // Use the enhanced system prompt generator
+  const enhancedPrompt = generateEnhancedSystemPrompt(userContext);
 
-  if (isFawzi) {
-    personalizedGreeting = `لما تسلم، قول "أهلا فوزي! شو الأخبار؟" أو "هلا فوزي!"`;
-    personalizedContext = `
-## سياق خاص لفوزي
-فوزي هو المؤسس والمطور الرئيسي. كوني مساعدة تقنية فعالة:
-- ساعديه يتابع المشاريع والمهام التقنية بسرعة
-- لما يسأل عن شي تقني، كوني مباشرة ودقيقة
-- ذكريه بالـ deadlines والاجتماعات المهمة
-- ساعديه يتواصل مع مؤيد والفريق
-- إذا في مشاكل urgent، خبريه فوراً`;
-  } else if (isMoayad) {
-    personalizedGreeting = `لما تسلم، قول "أهلا مؤيد! شو الأخبار؟" أو "هلا مؤيد!"`;
-    personalizedContext = `
-## سياق خاص لمؤيد
-مؤيد هو الشريك المؤسس ومسؤول العمليات، وعم يتعلم الـ AI والأتمتة على المنصة:
-- ساعديه يفهم التقنيات والأدوات بشكل بسيط
-- اشرحيله الـ AI concepts بطريقة عملية
-- ساعديه يتابع العملاء والمشاريع
-- لما يسأل عن شي تقني، اشرحي بطريقة واضحة بدون تعقيد
-- شجعيه على التجريب والتعلم
-- ساعديه يتواصل مع فوزي بخصوص المتطلبات التقنية`;
-  } else if (firstName) {
-    personalizedGreeting = `لما تسلم، قول "أهلين ${firstName}!" أو "هلا ${firstName}!"`;
-  }
+  // Add the base system prompt with tools and company info
+  return `${enhancedPrompt}
 
-  return `إنتي كواليا — المساعد الصوتي الذكي ومركز المعرفة لشركة كواليا سولوشنز.
+إنتي كواليا — المساعد الصوتي الذكي ومركز المعرفة لشركة كواليا سولوشنز.
 
 ## هويتك ولغتك
 - إنتي كواليا. أردنية الأصل، تحكي عربي أردني بطلاقة وإنجليزي كمان.
@@ -64,8 +52,6 @@ function getSystemPrompt(userName?: string) {
 - خليكي ذكية وسريعة — زي زميلة شاطرة بالشغل، مش روبوت.
 - الردود لازم تكون قصيرة للصوت — جملة لـ 3 جمل بس إلا إذا طلبوا تفاصيل.
 - كوني ودودة ومهنية. بدون كلام فاضي.
-${personalizedGreeting}
-${personalizedContext}
 
 ## YOUR IDENTITY & LANGUAGE (English fallback)
 - You ARE Qualia. A native Jordanian Arabic speaker who is also fluent in English.
@@ -577,11 +563,16 @@ export function QualiaVoice({ isOpen, onClose, user }: QualiaVoiceProps) {
             : undefined,
         });
       } else {
-        // Personalized greeting based on user
-        const firstName = user?.name?.split(' ')[0];
-        const firstMessage = firstName
-          ? `أهلين ${firstName}! شو بقدر أساعدك؟`
-          : 'أهلين! شو بقدر أساعدك؟';
+        // Generate intelligent, time-aware greeting
+        const userContext: UserContext = {
+          name: user?.name,
+          location: 'jordan',
+          preferences: {
+            language: 'arabic',
+            formality: 'casual',
+          },
+        };
+        const firstMessage = generateGreeting(userContext);
 
         // Inline assistant configuration with comprehensive Qualia personality
         await vapiRef.current.start({

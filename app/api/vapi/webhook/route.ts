@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { type UserContext } from '@/lib/voice-assistant-intelligence';
+import {
+  handleGetProjectsIntelligently,
+  handleCreateIssueIntelligently,
+  handleGetTeamMembersIntelligently,
+  handleGetScheduleIntelligently,
+  handleSearchKnowledgeBaseIntelligently,
+  handleGetClientInfoIntelligently,
+} from '@/lib/vapi-webhook-handlers';
 
 // VAPI webhook types
 interface VapiToolCallPayload {
@@ -417,12 +426,23 @@ export async function POST(request: NextRequest) {
         const { name, arguments: args } = toolCall.function;
         let result: string;
 
+        // Create UserContext for intelligent responses
+        const intelligentContext: UserContext = {
+          name: userContext?.userName,
+          location: 'jordan',
+          preferences: {
+            language: 'arabic',
+            formality: 'casual',
+          },
+        };
+
         try {
           switch (name) {
             case 'get_projects':
-              result = await handleGetProjects(
+              result = await handleGetProjectsIntelligently(
                 args as { status?: string },
-                userContext?.workspaceId
+                userContext?.workspaceId,
+                intelligentContext
               );
               break;
             case 'get_issues':
@@ -432,7 +452,7 @@ export async function POST(request: NextRequest) {
               );
               break;
             case 'create_issue':
-              result = await handleCreateIssue(
+              result = await handleCreateIssueIntelligently(
                 args as {
                   title: string;
                   description?: string;
@@ -440,25 +460,35 @@ export async function POST(request: NextRequest) {
                   projectId?: string;
                 },
                 userContext?.userId,
-                userContext?.workspaceId
+                userContext?.workspaceId,
+                intelligentContext
               );
               break;
             case 'get_team_members':
-              result = await handleGetTeamMembers(userContext?.workspaceId);
+              result = await handleGetTeamMembersIntelligently(
+                userContext?.workspaceId,
+                intelligentContext
+              );
               break;
             case 'get_schedule':
-              result = await handleGetSchedule(args as { date?: string }, userContext?.workspaceId);
+              result = await handleGetScheduleIntelligently(
+                args as { date?: string },
+                userContext?.workspaceId,
+                intelligentContext
+              );
               break;
             case 'search_knowledge_base':
-              result = await handleSearchKnowledgeBase(
+              result = await handleSearchKnowledgeBaseIntelligently(
                 args as { query: string },
-                userContext?.workspaceId
+                userContext?.workspaceId,
+                intelligentContext
               );
               break;
             case 'get_client_info':
-              result = await handleGetClientInfo(
+              result = await handleGetClientInfoIntelligently(
                 args as { query?: string; status?: string },
-                userContext?.workspaceId
+                userContext?.workspaceId,
+                intelligentContext
               );
               break;
             case 'web_search':
@@ -524,7 +554,9 @@ export async function POST(request: NextRequest) {
 }
 
 // Tool handlers
+// NOTE: Some functions replaced by intelligent versions from lib/vapi-webhook-handlers.ts
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetProjects(args: { status?: string }, workspaceId?: string): Promise<string> {
   const supabase = await createClient();
 
@@ -708,6 +740,7 @@ async function handleGetIssues(
   return response;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleCreateIssue(
   args: {
     title: string;
@@ -763,6 +796,7 @@ async function handleCreateIssue(
   return `تم ✅ أضفت "${issue.title}" - ${priorityArabic}`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetTeamMembers(workspaceId?: string): Promise<string> {
   const supabase = await createClient();
 
@@ -808,6 +842,7 @@ async function handleGetTeamMembers(workspaceId?: string): Promise<string> {
   return `الفريق (${members.length}): ${memberNames.join(', ')}`;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetSchedule(args: { date?: string }, workspaceId?: string): Promise<string> {
   const supabase = await createClient();
 
@@ -917,6 +952,7 @@ async function handleGetSchedule(args: { date?: string }, workspaceId?: string):
  * Search the knowledge base
  * Tries database text search first, then falls back to built-in knowledge base
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleSearchKnowledgeBase(
   args: { query: string },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -998,6 +1034,7 @@ async function handleWebSearch(args: { query: string }): Promise<string> {
 /**
  * Get client/lead information
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function handleGetClientInfo(
   args: { query?: string; status?: string },
   workspaceId?: string

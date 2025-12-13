@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Qualia is a multi-tenant project management and issue tracking platform built with Next.js 15+ (App Router), Supabase, and the Vercel AI SDK. It features a Linear-inspired UI with sidebar navigation, command palette (Cmd+K), workspace switching, real-time collaboration hub, and a context-aware AI assistant with tool calling.
+Qualia is a multi-tenant project management platform for a digital agency, built with Next.js 16+ (App Router), Supabase, and the Vercel AI SDK. Features include CRM with lead pipeline, project roadmaps with phase templates, meeting scheduling with timezone support, command palette (Cmd+K), workspace switching, and a bilingual voice assistant (Arabic/English).
 
 ## Development Commands
 
@@ -39,7 +39,7 @@ Jest with React Testing Library. Test files in `__tests__/` directory.
 **Test utilities** (`__tests__/utils/render.tsx`):
 
 - `render()` - Custom render with providers (ThemeProvider)
-- Factory functions: `createMockUser()`, `createMockProject()`, `createMockIssue()`, `createMockTeam()`, `createMockClient()`, `createMockMeeting()`, `createMockPhase()`, `createMockPhaseItem()`
+- Factory functions: `createMockUser()`, `createMockProject()`, `createMockIssue()`, `createMockClient()`, `createMockMeeting()`, `createMockPhase()`, `createMockPhaseItem()`
 
 **Coverage thresholds**: 50% minimum for branches, functions, lines, statements.
 
@@ -75,12 +75,12 @@ NEXT_PUBLIC_APP_URL=<app-url>  # For VAPI webhook (e.g., https://qualia.app)
 - **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth, database, and Realtime
 - **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
 - **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
-- **DnD**: `@dnd-kit/core` + `@dnd-kit/sortable` for Board drag-and-drop
+- **DnD**: `@dnd-kit/core` + `@dnd-kit/sortable` for drag-and-drop
 - **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
 - **Constants**: `lib/constants.ts` - Date formats, UI dimensions, status/priority colors, storage keys
 - **Utilities**: `lib/utils.ts` - `cn()` (Tailwind merge), date formatting (`formatDate`, `formatDateTime`, `formatRelativeTime`), `truncate`, `getInitials`, `pluralize`
 - **Timezone**: Uses `date-fns-tz` with `toZonedTime()` for Cyprus (Europe/Nicosia) and Jordan (Asia/Amman) timezone support in schedule views
-- **SWR Hooks**: `lib/swr.ts` - Cached data fetching hooks (`useTeams`, `useProjects`, `useProfiles`, `useCurrentWorkspaceId`) with `invalidateCache()` and `invalidateAllCaches()` helpers
+- **SWR Hooks**: `lib/swr.ts` - Cached data fetching hooks (`useProjects`, `useProfiles`, `useCurrentWorkspaceId`) with `invalidateCache()` and `invalidateAllCaches()` helpers
 - **Rate Limiting**: `lib/rate-limit.ts` - In-memory rate limiter with `chatRateLimiter` (20/min) and `apiRateLimiter` (100/min)
 - **VAPI**: `@vapi-ai/web` for voice assistant with ElevenLabs TTS and Deepgram transcription
 
@@ -113,7 +113,7 @@ Two Supabase clients for different contexts:
 Supabase-generated types with added helper utilities:
 
 - **Generic helpers**: `Tables<"table_name">`, `TablesInsert<>`, `TablesUpdate<>`, `Enums<>`
-- **Entity aliases**: `Profile`, `Project`, `Issue`, `Client`, `Meeting`, `Milestone`, `Team`, `Workspace`, etc.
+- **Entity aliases**: `Profile`, `Project`, `Issue`, `Client`, `Meeting`, `Milestone`, `Workspace`, `ProjectPhase`, `PhaseItem`, etc.
 - **Enum types**: `IssueStatus`, `IssuePriority`, `ProjectGroup`, `ProjectType`, `ProjectStatus`, `LeadStatus`, `UserRole`
 - **Constant arrays**: `ISSUE_STATUSES`, `ISSUE_PRIORITIES`, `PROJECT_GROUPS`, `PROJECT_TYPES`, etc.
 
@@ -121,7 +121,7 @@ Supabase-generated types with added helper utilities:
 
 Zod schemas for all entity mutations with consistent patterns:
 
-- **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createTeamSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`, `createProjectWizardSchema` (combines project creation + auto-roadmap initialization)
+- **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`, `createProjectWizardSchema` (combines project creation + auto-roadmap initialization)
 - **Update schemas**: `updateIssueSchema`, `updateProjectSchema`, `updateClientSchema`, `updateMilestoneSchema`
 - **Helper functions**:
   - `parseFormData(schema, formData)` - Parses FormData, converts empty strings to null
@@ -157,12 +157,12 @@ All data mutations are server actions that:
 **Action categories:**
 
 - **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
-- **CRUD**: `createIssue`, `createProject`, `createTeam`, `createMeeting`, `createClient`, `updateIssue`, `updateProject`, `updateClient`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
+- **CRUD**: `createIssue`, `createProject`, `createMeeting`, `createClient`, `updateIssue`, `updateProject`, `updateClient`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
 - **Project Phases**: `createPhase`, `updatePhase`, `deletePhase`, `getProjectPhases`, `updatePhaseItem`, `initializeProjectRoadmap`
-- **Fetch by ID**: `getIssueById`, `getProjectById`, `getTeamById`, `getClientById` - Return hydrated entities with relations
-- **List queries**: `getTeams`, `getProjects`, `getProfiles`, `getMeetings`, `getClients` - Accept optional `workspaceId`
+- **Fetch by ID**: `getIssueById`, `getProjectById`, `getClientById` - Return hydrated entities with relations
+- **List queries**: `getProjects`, `getProfiles`, `getMeetings`, `getClients` - Accept optional `workspaceId`
 - **Junction tables**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
-- **Activity**: `getRecentActivities` - Fetches activity feed with actor/project/issue/team relations
+- **Activity**: `getRecentActivities` - Fetches activity feed with actor/project/issue relations
 
 **Supabase FK normalization**: Foreign key joins may return arrays; use `normalizeFKResponse()` helper or manually:
 
@@ -182,24 +182,23 @@ Migrations in `supabase/migrations/`. Core tables:
 
 **CRM:**
 
-- `clients` - Lead tracking with `lead_status` enum (dropped/cold/hot/active_client/inactive_client)
+- `clients` - Lead tracking with `lead_status` enum (dropped/cold/hot/active_client/inactive_client/dead_lead)
 - `client_contacts` - Multiple contacts per client
 - `client_activities` - Activity log (calls, emails, meetings, notes)
 
 **Project Management:**
 
-- `teams` - Unique keys (e.g., "ENG"), scoped to workspace
-- `team_members` - Junction with roles
-- `projects` - `project_group` for organization, `project_type` (web_design/ai_agent/seo/ads), `status`
+- `projects` - `project_group` for organization, `project_type` (web_design/ai_agent/voice_agent/seo/ads), `status`, `deployment_platform`
 - `project_phases` - Roadmap phases with status (not_started/in_progress/completed/skipped), template_key for pre-defined phases
 - `phase_items` - Checklist items within phases, with completion tracking and optional issue links
 - `issues` - Status, priority, parent/child hierarchy via `parent_id`
 - `issue_assignees` - Many-to-many assignees
 - `comments` - Issue comments
+- `milestones` - Project milestones with target dates and progress tracking
 
 **Phase Templates** (`lib/phase-templates.ts`):
 
-Pre-defined roadmap templates for each project type (ai_agent, web_design, seo, ads). Use `initializeProjectRoadmap(projectId, projectType)` server action to populate phases from templates.
+Pre-defined roadmap templates for each project type (ai_agent, voice_agent, web_design, seo, ads). Use `initializeProjectRoadmap(projectId, projectType)` server action to populate phases from templates.
 
 **Calendar & Activity:**
 
@@ -213,19 +212,18 @@ Pre-defined roadmap templates for each project type (ai_agent, web_design, seo, 
 
 **Database Functions:**
 
-- **RBAC**: `is_admin()`, `is_system_admin()`, `is_team_member(team_uuid)`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
+- **RBAC**: `is_admin()`, `is_system_admin()`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
 - **Stats**: `get_project_stats(workspace_id)` - Returns project stats with milestone progress, issue counts
-- **Phase Progress**: `calculate_phase_progress(phase_id)`, `calculate_roadmap_progress(project_id)` - Return 0-100 percentage
 - **Vector Search**: `match_documents(query_embedding, match_threshold, match_count, filter_workspace_id)` - Cosine similarity search for RAG knowledge base with IVFFlat index
-- Admins: Full access; Employees: Access scoped to owned/assigned/team items
+- Admins: Full access; Employees: Access scoped to owned/assigned items
 - See `20240104000000_add_role_based_access_control.sql` for RLS policies
 
 ### Data Fetching Pattern
 
-Detail pages (`/issues/[id]`, `/projects/[id]`, `/teams/[id]`, `/clients/[id]`) use a client component pattern:
+Detail pages (`/projects/[id]`, `/clients/[id]`) use a client component pattern:
 
 1. Extract `id` from `useParams()`
-2. Call server action (e.g., `getIssueById`) in `useEffect`
+2. Call server action (e.g., `getProjectById`) in `useEffect`
 3. Manage local loading/error state
 
 Modal components fetch dropdown data on-demand when opened via `useEffect`.
@@ -241,13 +239,13 @@ Modal components fetch dropdown data on-demand when opened via `useEffect`.
 ### Provider Hierarchy (`app/layout.tsx`)
 
 ```
-ThemeProvider → WorkspaceProvider → SidebarProvider
+ThemeProvider → SWRProvider → AdminProvider → WorkspaceProvider → SidebarProvider
 ```
 
 ### AI Integration
 
 - **Chat API**: `app/api/chat/route.ts` - Vercel AI SDK with Google Gemini (`gemini-2.0-flash`)
-- **Tools**: `getDashboardStats`, `searchIssues`, `searchProjects`, `getTeams`, `getRecentActivity`
+- **Tools**: `getDashboardStats`, `searchIssues`, `searchProjects`, `getRecentActivity`
 - **Context**: System prompt includes current user info (name, email, role)
 - **Chat UI**: `components/chat.tsx` - Uses `useChat` hook, `convertToModelMessages()` for message format
 - **RAG**: Documents table with pgvector embeddings (not yet implemented)
@@ -265,29 +263,16 @@ Bilingual voice assistant (Jordanian Arabic + English) using VAPI with ElevenLab
 Custom hooks for Supabase Realtime:
 
 - **`usePresence`** (`hooks/use-presence.tsx`) - Online presence tracking with channel subscriptions, status updates (online/away/busy)
-
-### Board (`/board`)
-
-Kanban-style task board (`components/board/`) with drag-and-drop:
-
-- **BoardContent** - Main container with DnD context (@dnd-kit/core)
-- **BoardColumn** - Status columns (Backlog → To Do → In Progress → Done)
-- **BoardCard** - Draggable task cards with priority badges
-- **OnlineUsers** - Real-time presence indicators via `usePresence` hook
-- **CreateTaskModal** / **TaskDetailModal** - Task CRUD modals
-
-Uses `getBoardTasks()` action for workspace-scoped task fetching with Supabase Realtime subscriptions for live updates.
+- Used by `components/active-users.tsx` for showing online team members
 
 ### Routes
 
 | Route                         | Description                                                           |
 | ----------------------------- | --------------------------------------------------------------------- |
-| `/`                           | Dashboard with stats and activity feed                                |
-| `/board`                      | Kanban board with drag-and-drop, real-time presence                   |
-| `/issues`, `/issues/[id]`     | Issue list and detail with comments/assignees                         |
-| `/projects`, `/projects/[id]` | Project grid (group tabs) and detail with roadmap                     |
-| `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and detail with contacts                     |
-| `/teams`, `/teams/[id]`       | Team management and detail with members                               |
+| `/`                           | Dashboard with leads widget and activity feed                         |
+| `/projects`, `/projects/[id]` | Project grid (type tabs) and detail view                              |
+| `/projects/[id]/roadmap`      | Project roadmap with phases and checklist items                       |
+| `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and client detail with contacts/activities   |
 | `/schedule`                   | Schedule views (list/week/month) with timezone toggle (Cyprus/Jordan) |
 | `/settings`                   | User settings                                                         |
 | `/auth/*`                     | Authentication flows                                                  |
