@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Check, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
+import { useWorkspace } from '@/components/workspace-provider';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 import type { PhaseTemplate } from '@/lib/phase-templates';
 import { getPhaseTemplates } from '@/lib/phase-templates';
@@ -50,6 +51,7 @@ export function ProjectWizard({
   defaultType = null,
 }: ProjectWizardProps) {
   const router = useRouter();
+  const { currentWorkspace } = useWorkspace();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,6 +139,7 @@ export function ProjectWizard({
         deployment_platform: wizardData.deployment_platform!,
         client_id: wizardData.client_id,
         team_id: null,
+        workspace_id: currentWorkspace?.id,
         phases: wizardData.phases.map((phase) => ({
           name: phase.name,
           description: phase.description || null,
