@@ -23,7 +23,7 @@ interface ClientDetailViewProps {
 }
 
 export function ClientDetailView({ client }: ClientDetailViewProps) {
-  const status = statusConfig[client.lead_status] || statusConfig.cold;
+  const status = statusConfig[client.lead_status || 'cold'] || statusConfig.cold;
 
   return (
     <div className="p-6">
