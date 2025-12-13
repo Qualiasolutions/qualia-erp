@@ -25,6 +25,11 @@ npx shadcn@latest add <component-name>
 
 # Regenerate Supabase types after schema changes
 npx supabase gen types typescript --project-id <project-id> > types/database.ts
+
+# Local Supabase development (optional)
+npx supabase start    # Start local Supabase
+npx supabase stop     # Stop local Supabase
+npx supabase db reset # Reset local DB with migrations
 ```
 
 ## Testing
@@ -66,7 +71,7 @@ NEXT_PUBLIC_APP_URL=<app-url>  # For VAPI webhook (e.g., https://qualia.app)
 
 ## Key Dependencies
 
-- **Next.js**: `latest` (uses App Router with `proxy.ts` for auth instead of middleware)
+- **Next.js**: `^16.0.7` (App Router with `middleware.ts` for auth session refresh and route protection)
 - **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth, database, and Realtime
 - **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
 - **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
@@ -101,7 +106,7 @@ Two Supabase clients for different contexts:
 - `lib/supabase/server.ts` - Server-side client using `@supabase/ssr` with cookie handling. **Create a new client per request** (important for Fluid compute).
 - `lib/supabase/client.ts` - Browser client for client components.
 
-**Auth & Route Protection**: Uses Next.js middleware (`middleware.ts`) for session refresh and route protection. The middleware redirects unauthenticated users to `/auth/login` and authenticated users away from `/auth/login`.
+**Auth & Route Protection**: Uses Next.js middleware (`middleware.ts`) for session refresh and route protection. The middleware uses `supabase.auth.getClaims()` to check authentication, redirects unauthenticated users to `/auth/login`, and authenticated users away from `/auth/login`.
 
 ### Type System (`types/database.ts`)
 
@@ -116,7 +121,7 @@ Supabase-generated types with added helper utilities:
 
 Zod schemas for all entity mutations with consistent patterns:
 
-- **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createTeamSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`
+- **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createTeamSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`, `createProjectWizardSchema` (combines project creation + auto-roadmap initialization)
 - **Update schemas**: `updateIssueSchema`, `updateProjectSchema`, `updateClientSchema`, `updateMilestoneSchema`
 - **Helper functions**:
   - `parseFormData(schema, formData)` - Parses FormData, converts empty strings to null
@@ -194,14 +199,7 @@ Migrations in `supabase/migrations/`. Core tables:
 
 **Phase Templates** (`lib/phase-templates.ts`):
 
-Pre-defined roadmap templates for each project type with phases and checklist items:
-
-- **AI Agent**: Research & Planning → Describe → Generate & Iterate → Integration → Deploy → Document & Share
-- **Website**: Discovery → Design → Vibe Code → Polish → Deploy → Handoff
-- **SEO**: Site Audit → Strategy → Technical Fixes → Content Optimization → Off-Page SEO → Report & Monitor
-- **Ads**: Research & Strategy → Account Setup → Creative Development → Campaign Launch → Optimization → Reporting
-
-Use `initializeProjectRoadmap(projectId, projectType)` to populate phases from templates.
+Pre-defined roadmap templates for each project type (ai_agent, web_design, seo, ads). Use `initializeProjectRoadmap(projectId, projectType)` server action to populate phases from templates.
 
 **Calendar & Activity:**
 
@@ -256,56 +254,11 @@ ThemeProvider → WorkspaceProvider → SidebarProvider
 
 ### Voice Assistant (VAPI)
 
-Qualia voice assistant with bilingual support (Jordanian Arabic + English):
+Bilingual voice assistant (Jordanian Arabic + English) using VAPI with ElevenLabs TTS and Deepgram transcription:
 
-- **Components**: `components/qualia-voice.tsx` (full-screen modal), `components/qualia-voice-inline.tsx` (compact inline)
-- **Webhook**: `app/api/vapi/webhook/route.ts` - Handles tool execution for voice commands
-- **Voice**: ElevenLabs multilingual v2 with custom Qualia voice (`4wf10lgibMnboGJGCLrP`)
-- **Transcription**: Deepgram Nova-2 with multi-language support and Arabic/English keyword boosting
-- **Model**: GPT-4o for voice conversation with comprehensive Jordanian Arabic system prompt
-
-**Voice Tools (11 total):**
-
-| Tool                    | Description                                              |
-| ----------------------- | -------------------------------------------------------- |
-| `get_projects`          | Retrieve projects with status/type filtering             |
-| `get_issues`            | Get tasks with status/priority filtering                 |
-| `create_issue`          | Create new tasks                                         |
-| `update_issue`          | Update task status/priority/assignee                     |
-| `get_team_members`      | Team information                                         |
-| `get_schedule`          | Meetings and calendar (today/tomorrow/this week)         |
-| `create_meeting`        | Schedule new meetings with natural language time parsing |
-| `search_knowledge_base` | Company documents and built-in knowledge                 |
-| `get_client_info`       | CRM/lead information                                     |
-| `send_notification`     | Send messages to team members (logged as activities)     |
-| `web_search`            | DuckDuckGo instant answers for external info             |
-
-**Personalized Context:**
-
-- **Fawzi** (founder): Technical assistant mode - direct, efficient, deadline-focused
-- **Moayad** (co-founder): Learning-friendly explanations - simplified technical concepts, encouragement
-
-**Built-in Knowledge Base:**
-The webhook includes a comprehensive knowledge base with 10 categories: company info, team, services, AI agents, development process, pricing, tech stack, contact info, industries served, and value propositions.
-
-**Voice Configuration:**
-
-```typescript
-voice: {
-  provider: '11labs',
-  voiceId: '4wf10lgibMnboGJGCLrP',
-  model: 'eleven_multilingual_v2',
-  stability: 0.6,
-  similarityBoost: 0.8,
-  speed: 0.9,
-}
-transcriber: {
-  provider: 'deepgram',
-  model: 'nova-2',
-  language: 'multi',
-  keywords: ['Qualia:5', 'Fawzi:5', 'Moayad:5', 'كواليا:5', 'فوزي:5', 'مؤيد:5', ...]
-}
-```
+- **Components**: `components/qualia-voice.tsx` (full-screen), `components/qualia-voice-inline.tsx` (compact)
+- **Webhook**: `app/api/vapi/webhook/route.ts` - Handles 11 voice tools: `get_projects`, `get_issues`, `create_issue`, `update_issue`, `get_team_members`, `get_schedule`, `create_meeting`, `search_knowledge_base`, `get_client_info`, `send_notification`, `web_search`
+- **Personalized modes** for Fawzi (technical/direct) and Moayad (learning-friendly)
 
 ### Realtime Features
 

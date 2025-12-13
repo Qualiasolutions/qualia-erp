@@ -7,22 +7,7 @@ import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
 import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
 import { useEffect, useState } from 'react';
 import { isPast, isToday, isTomorrow } from 'date-fns';
-import {
-  Phone,
-  Calendar,
-  Flame,
-  ChevronRight,
-  Folder,
-  Users,
-  Settings,
-  MessageCircle,
-  Sparkles,
-  Zap,
-  Rocket,
-  Target,
-  Lightbulb,
-  TrendingUp,
-} from 'lucide-react';
+import { Phone, Calendar, Flame, Folder, Users, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface DashboardUser {
@@ -59,41 +44,6 @@ interface DashboardClientProps {
   user?: DashboardUser;
   greetingData?: GreetingData | null;
   leadFollowUps?: LeadFollowUp[];
-}
-
-// AI Agent Action Button
-interface AIActionButtonProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  href: string;
-  gradient: string;
-}
-
-function AIActionButton({ title, description, icon, href, gradient }: AIActionButtonProps) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'group relative overflow-hidden rounded-xl p-4 transition-all duration-300',
-        'hover:scale-105 hover:shadow-lg',
-        gradient,
-        'text-white'
-      )}
-    >
-      <div className="relative z-10">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
-            {icon}
-          </div>
-          <h3 className="text-sm font-semibold">{title}</h3>
-        </div>
-        <p className="text-xs opacity-90">{description}</p>
-      </div>
-      <div className="absolute -right-2 -top-2 h-16 w-16 rounded-full bg-white/10 blur-xl" />
-      <ChevronRight className="absolute bottom-4 right-4 h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
-    </Link>
-  );
 }
 
 // Minimal lead card for the compact widget
@@ -252,52 +202,6 @@ export function DashboardClient({
     return f.status === 'pending' && isPast(date) && !isToday(date);
   }).length;
 
-  // AI Agent Actions
-  const aiActions = [
-    {
-      title: 'AI Agent Builder',
-      description: 'Create custom AI assistants',
-      icon: <Sparkles className="h-4 w-4" />,
-      href: '/projects/new?project_type=ai_agent',
-      gradient: 'bg-gradient-to-br from-purple-600 to-pink-600',
-    },
-    {
-      title: 'Website Creator',
-      description: 'Build modern websites',
-      icon: <Zap className="h-4 w-4" />,
-      href: '/projects/new?project_type=web_design',
-      gradient: 'bg-gradient-to-br from-cyan-600 to-blue-600',
-    },
-    {
-      title: 'SEO Optimizer',
-      description: 'Rank higher on Google',
-      icon: <Target className="h-4 w-4" />,
-      href: '/projects/new?project_type=seo',
-      gradient: 'bg-gradient-to-br from-emerald-600 to-teal-600',
-    },
-    {
-      title: 'Ad Campaign',
-      description: 'Launch targeted ads',
-      icon: <Rocket className="h-4 w-4" />,
-      href: '/projects/new?project_type=ads',
-      gradient: 'bg-gradient-to-br from-orange-600 to-red-600',
-    },
-    {
-      title: 'Smart Analytics',
-      description: 'Data-driven insights',
-      icon: <TrendingUp className="h-4 w-4" />,
-      href: '/dashboard',
-      gradient: 'bg-gradient-to-br from-indigo-600 to-purple-600',
-    },
-    {
-      title: 'Innovation Lab',
-      description: 'Experiment with AI',
-      icon: <Lightbulb className="h-4 w-4" />,
-      href: '/projects',
-      gradient: 'bg-gradient-to-br from-yellow-600 to-orange-600',
-    },
-  ];
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Subtle gradient background */}
@@ -370,47 +274,11 @@ export function DashboardClient({
           <div className="mb-8 w-full max-w-lg">
             <DashboardAIInput />
           </div>
-
-          {/* AI Agent Actions Grid */}
-          <div className="mb-8 w-full max-w-4xl">
-            <div className="mb-4 text-center">
-              <h2 className="text-lg font-semibold text-foreground">Create with Qualia AI</h2>
-              <p className="text-sm text-muted-foreground">
-                Launch your next project with our intelligent tools
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {aiActions.map((action, index) => (
-                <AIActionButton key={index} {...action} />
-              ))}
-            </div>
-          </div>
         </main>
 
-        {/* Bottom section - compact lead follow-ups + send message */}
-        <footer className="space-y-4 border-t border-border/50 py-4">
-          {/* Send Message Section */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10">
-                <MessageCircle className="h-4 w-4 text-qualia-500" />
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-foreground">Quick Message</h3>
-                <p className="text-xs text-muted-foreground">Send a message to your team</p>
-              </div>
-            </div>
-            <Link
-              href="/board"
-              className="flex items-center gap-1 rounded-lg bg-qualia-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-qualia-600"
-            >
-              Send Message
-              <MessageCircle className="h-3 w-3" />
-            </Link>
-          </div>
-
-          {/* Compact Leads Widget */}
-          {sortedFollowUps.length > 0 && (
+        {/* Bottom section - compact lead follow-ups */}
+        {sortedFollowUps.length > 0 && (
+          <footer className="border-t border-border/50 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-orange-500/10">
@@ -440,8 +308,8 @@ export function DashboardClient({
                 )}
               </div>
             </div>
-          )}
-        </footer>
+          </footer>
+        )}
       </div>
     </div>
   );
