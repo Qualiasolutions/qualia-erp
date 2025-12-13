@@ -33,7 +33,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -461,6 +467,7 @@ function ClientDetailModal({
             </div>
             <div>
               <DialogTitle className="text-lg">{client.display_name}</DialogTitle>
+              <DialogDescription>Client details and contact information</DialogDescription>
               <span
                 className={cn(
                   'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium',
@@ -629,7 +636,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
         break;
     }
     return sorted;
-  }, [searchFiltered, sortBy]);
+  }, [searchFiltered, sortBy, statusPriority]);
 
   // Group clients by status for column view
   const groupedClients = useMemo(() => {

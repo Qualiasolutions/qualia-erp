@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -105,6 +106,9 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add New Client</DialogTitle>
+          <DialogDescription>
+            Fill in the details to add a new client to your workspace
+          </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
