@@ -10,15 +10,8 @@ import {
   Trash2,
   Save,
   User,
-  Circle,
-  CheckCircle2,
-  SignalHigh,
-  SignalMedium,
-  SignalLow,
-  MoreHorizontal,
   PanelRightClose,
   PanelRightOpen,
-  ListTodo,
   Bot,
   Globe,
   Phone,
@@ -36,19 +29,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
-import { PROJECT_GROUP_LABELS, type ProjectGroup } from '@/components/project-group-tabs';
 import { formatDate, formatTimeAgo } from '@/lib/utils';
-import { ProjectRoadmap } from '@/components/roadmap/project-roadmap';
-import type { ProjectType } from '@/lib/phase-templates';
-
-const PROJECT_GROUPS: ProjectGroup[] = [
-  'salman_kuwait',
-  'tasos_kyriakides',
-  'other',
-  'active',
-  'demos',
-  'inactive',
-];
+import { ProjectRoadmap } from '@/components/project-roadmap';
+import type { ProjectType } from '@/types/database';
 
 const PROJECT_TYPES: { value: ProjectType; label: string; icon: typeof Globe }[] = [
   { value: 'web_design', label: 'Website', icon: Globe },
@@ -78,7 +61,6 @@ interface Project {
   name: string;
   description: string | null;
   status: string;
-  project_group: ProjectGroup | null;
   project_type: ProjectType | null;
   workspace_id: string;
   start_date: string | null;
@@ -100,51 +82,6 @@ interface ProjectDetailViewProps {
   profiles: Profile[];
 }
 
-const ProjectGroupBadge = ({ group }: { group: ProjectGroup | null }) => {
-  const colors: Record<ProjectGroup, string> = {
-    salman_kuwait: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    tasos_kyriakides: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    other: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-    active: 'bg-green-500/10 text-green-400 border-green-500/20',
-    demos: 'bg-pink-500/10 text-pink-400 border-pink-500/20',
-    inactive: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
-  };
-
-  if (!group) return null;
-
-  return (
-    <span className={`rounded border px-2 py-0.5 text-xs ${colors[group]}`}>
-      {PROJECT_GROUP_LABELS[group]}
-    </span>
-  );
-};
-
-const PriorityIcon = ({ priority }: { priority: string }) => {
-  switch (priority) {
-    case 'Urgent':
-      return <SignalHigh className="h-4 w-4 text-red-500" />;
-    case 'High':
-      return <SignalHigh className="h-4 w-4 text-orange-500" />;
-    case 'Medium':
-      return <SignalMedium className="h-4 w-4 text-yellow-500" />;
-    case 'Low':
-      return <SignalLow className="h-4 w-4 text-gray-500" />;
-    default:
-      return <MoreHorizontal className="h-4 w-4 text-gray-600" />;
-  }
-};
-
-const StatusIcon = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'Done':
-      return <CheckCircle2 className="h-4 w-4 text-qualia-500" />;
-    case 'In Progress':
-      return <Circle className="h-4 w-4 fill-yellow-500/20 text-yellow-500" />;
-    default:
-      return <Circle className="h-4 w-4 text-gray-500" />;
-  }
-};
-
 export function ProjectDetailView({ project: initialProject, profiles }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -157,9 +94,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
   // Form state initialized from server-fetched data
   const [name, setName] = useState(initialProject.name);
   const [description, setDescription] = useState(initialProject.description || '');
-  const [projectGroup, setProjectGroup] = useState<ProjectGroup | null>(
-    initialProject.project_group || null
-  );
   const [projectType, setProjectType] = useState<ProjectType | null>(
     initialProject.project_type || null
   );
@@ -174,7 +108,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
     formData.set('id', project.id);
     formData.set('name', name);
     formData.set('description', description);
-    if (projectGroup) formData.set('project_group', projectGroup);
     if (projectType) formData.set('project_type', projectType);
     if (leadId) formData.set('lead_id', leadId);
     if (targetDate) formData.set('target_date', targetDate);
@@ -223,7 +156,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
             <div>
               <h1 className="text-base font-semibold">{project.name}</h1>
               <div className="flex items-center gap-2">
-                <ProjectGroupBadge group={projectGroup} />
                 {project.lead && (
                   <span className="text-xs text-muted-foreground">
                     Lead: {project.lead.full_name || project.lead.email}
@@ -265,11 +197,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content - Roadmap */}
         <div className="flex-1 overflow-y-auto p-6">
-          <ProjectRoadmap
-            projectId={project.id}
-            projectType={project.project_type}
-            workspaceId={project.workspace_id}
-          />
+          <ProjectRoadmap projectId={project.id} workspaceId={project.workspace_id} />
         </div>
 
         {/* Side Panel - Project Details */}
@@ -296,27 +224,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                   className="min-h-[80px] border-border bg-background"
                   placeholder="Add a description..."
                 />
-              </div>
-
-              {/* Project Group */}
-              <div>
-                <label className="mb-2 block text-xs text-muted-foreground">Category</label>
-                <Select
-                  value={projectGroup || 'none'}
-                  onValueChange={(v) => setProjectGroup(v === 'none' ? null : (v as ProjectGroup))}
-                >
-                  <SelectTrigger className="border-border bg-background">
-                    <SelectValue placeholder="No category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No category</SelectItem>
-                    {PROJECT_GROUPS.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {PROJECT_GROUP_LABELS[g]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
 
               {/* Project Type */}
@@ -423,31 +330,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                   </div>
                 )}
               </div>
-
-              {/* Issues List */}
-              {project.issues.length > 0 && (
-                <div className="border-t border-border pt-4">
-                  <h3 className="mb-3 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    <ListTodo className="h-3 w-3" />
-                    Issues ({project.issues.length})
-                  </h3>
-                  <div className="max-h-[300px] space-y-1 overflow-y-auto">
-                    {project.issues.map((issue) => (
-                      <Link
-                        key={issue.id}
-                        href={`/issues/${issue.id}`}
-                        className="group flex items-center gap-2 rounded px-2 py-1.5 transition-colors hover:bg-muted"
-                      >
-                        <StatusIcon status={issue.status} />
-                        <PriorityIcon priority={issue.priority} />
-                        <span className="flex-1 truncate text-xs text-foreground">
-                          {issue.title}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )}
