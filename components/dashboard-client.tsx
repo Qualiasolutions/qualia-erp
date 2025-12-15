@@ -206,11 +206,11 @@ export function DashboardClient({
   }).length;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background/95">
+    <div className="flex h-screen flex-col overflow-hidden bg-background/85">
       {/* Subtle gradient background - reduced opacity */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.01] blur-3xl" />
-        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.01] blur-3xl" />
+        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.005] blur-3xl" />
+        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.005] blur-3xl" />
       </div>
 
       <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col px-6">
@@ -254,17 +254,17 @@ export function DashboardClient({
 
         {/* Main content - centered hero section */}
         <main className="flex flex-1 flex-col items-center justify-center pb-6">
-          {/* Techmoths Award Image - centered and larger */}
-          <div className="mb-8 flex items-center justify-center">
+          {/* Techmoths Award Image - centered and larger (black landscape container) */}
+          <div className="mb-8 flex w-full items-center justify-center">
             <div className="relative">
               <Image
                 src="/techmoths-award.png"
                 alt="Techmoths Award"
-                width={500}
-                height={500}
-                className="mx-auto max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+                width={800}
+                height={300}
+                className="mx-auto max-w-[85vw] rounded-lg object-contain"
                 priority
-                style={{ width: 'auto', height: 'auto' }}
+                style={{ width: 'auto', height: 'auto', maxHeight: '400px' }}
               />
             </div>
           </div>
