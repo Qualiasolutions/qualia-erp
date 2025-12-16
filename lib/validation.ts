@@ -42,7 +42,7 @@ export const createTaskSchema = z.object({
   priority: z
     .enum(['No Priority', 'Urgent', 'High', 'Medium', 'Low'] as const)
     .default('No Priority'),
-  workspace_id: z.string().uuid('Invalid workspace ID'),
+  workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   due_date: z.string().optional().nullable(),
 });
 
