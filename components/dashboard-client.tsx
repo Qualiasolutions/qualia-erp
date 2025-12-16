@@ -254,21 +254,6 @@ export function DashboardClient({
 
         {/* Main content - centered hero section */}
         <main className="flex flex-1 flex-col items-center justify-center px-4 pb-4 sm:px-6 sm:pb-6">
-          {/* Techmoths Award Image - centered and larger (black landscape container) */}
-          <div className="mb-6 flex w-full items-center justify-center sm:mb-8">
-            <div className="relative">
-              <Image
-                src="/techmoths-award.png"
-                alt="Techmoths Award"
-                width={800}
-                height={300}
-                className="mx-auto max-w-[90vw] rounded-lg object-contain sm:max-w-[85vw]"
-                priority
-                style={{ width: 'auto', height: 'auto', maxHeight: '400px' }}
-              />
-            </div>
-          </div>
-
           {/* Voice assistant - hero element */}
           <div className="mb-6 w-full sm:mb-8">
             <QualiaVoiceInline
@@ -286,11 +271,6 @@ export function DashboardClient({
               {greeting}
             </h1>
             <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{dateString}</p>
-          </div>
-
-          {/* AI Input - prominent centered */}
-          <div className="mb-6 w-full max-w-lg sm:mb-8">
-            <DashboardAIInput />
           </div>
         </main>
 
@@ -358,6 +338,11 @@ export function DashboardClient({
               </CardContent>
             </Card>
           </div>
+        </div>
+
+        {/* Send Message Container - moved below Notes and Follow-ups */}
+        <div className="mx-auto mt-4 w-full max-w-lg px-4 pb-4 sm:px-6 sm:pb-6">
+          <DashboardAIInput />
         </div>
       </div>
     </div>
