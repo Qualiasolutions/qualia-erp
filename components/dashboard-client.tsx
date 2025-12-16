@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
 import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
 import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
 import { useEffect, useState } from 'react';
 import { isPast, isToday, isTomorrow } from 'date-fns';
-import { Phone, Calendar, Flame, Folder, Users, Settings } from 'lucide-react';
+import { Phone, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DashboardNotes } from './dashboard-notes';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -214,44 +213,6 @@ export function DashboardClient({
       </div>
 
       <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col px-6">
-        {/* Top navigation bar */}
-        <nav className="flex items-center justify-between py-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo.webp" alt="Qualia" width={32} height={32} className="rounded-lg" />
-            <span className="text-sm font-semibold text-foreground">Qualia</span>
-          </Link>
-          <div className="flex items-center gap-1">
-            <Link
-              href="/projects"
-              className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-            >
-              <Folder className="h-4 w-4" />
-              <span className="hidden sm:inline">Projects</span>
-            </Link>
-            <Link
-              href="/clients"
-              className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-            >
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Clients</span>
-            </Link>
-            <Link
-              href="/schedule"
-              className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-sm text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Schedule</span>
-            </Link>
-            <div className="mx-2 h-4 w-px bg-border" />
-            <Link
-              href="/settings"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
-            >
-              <Settings className="h-4 w-4" />
-            </Link>
-          </div>
-        </nav>
-
         {/* Main content - centered hero section */}
         <main className="flex flex-1 flex-col items-center justify-center px-4 pb-4 sm:px-6 sm:pb-6">
           {/* Voice assistant - hero element */}

@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Command,
-  Activity,
   Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,11 +20,10 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutGrid },
+  { name: 'Inbox', href: '/inbox', icon: Inbox },
   { name: 'Projects', href: '/projects', icon: Folder },
-  { name: 'Health', href: '/health', icon: Activity },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
-  { name: 'Inbox', href: '/inbox', icon: Inbox },
 ];
 
 function SidebarContent({
