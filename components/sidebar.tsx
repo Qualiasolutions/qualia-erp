@@ -11,29 +11,32 @@ import {
   ChevronLeft,
   ChevronRight,
   Command,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
 import { useSidebar } from '@/components/sidebar-provider';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutGrid },
   { name: 'Projects', href: '/projects', icon: Folder },
+  { name: 'Health', href: '/health', icon: Activity },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
 ];
 
-export function Sidebar() {
+function SidebarContent({
+  isCollapsed,
+  onLinkClick,
+}: {
+  isCollapsed: boolean;
+  onLinkClick?: () => void;
+}) {
   const pathname = usePathname();
-  const { isCollapsed, toggleSidebar } = useSidebar();
 
   return (
-    <aside
-      className={cn(
-        'relative flex h-screen flex-col border-r border-border bg-card transition-all duration-200 ease-out',
-        isCollapsed ? 'w-[60px]' : 'w-56'
-      )}
-    >
+    <>
       {/* Logo */}
       <div
         className={cn(
@@ -41,7 +44,7 @@ export function Sidebar() {
           isCollapsed ? 'h-14 justify-center' : 'h-14 px-4'
         )}
       >
-        <Link href="/" className="group flex items-center gap-2.5">
+        <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative flex-shrink-0">
             <Image
               src="/logo.webp"
@@ -89,6 +92,7 @@ export function Sidebar() {
                 key={item.name}
                 href={item.href}
                 title={isCollapsed ? item.name : undefined}
+                onClick={onLinkClick}
                 className={cn(
                   'group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
                   isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 px-2.5',
@@ -111,16 +115,49 @@ export function Sidebar() {
           })}
         </div>
       </nav>
+    </>
+  );
+}
 
-      {/* Collapse Toggle - Right Edge Middle */}
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        className="absolute right-0 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-secondary hover:text-foreground"
-        title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+export function Sidebar() {
+  const { isCollapsed, toggleSidebar, isMobileOpen, toggleMobile } = useSidebar();
+
+  const handleLinkClick = () => {
+    // Close mobile sidebar when a link is clicked
+    if (isMobileOpen) {
+      toggleMobile();
+    }
+  };
+
+  return (
+    <>
+      {/* Desktop Sidebar - Hidden on mobile */}
+      <aside
+        className={cn(
+          'relative hidden h-screen flex-col border-r border-border bg-card transition-all duration-200 ease-out md:flex',
+          isCollapsed ? 'w-[60px]' : 'w-56'
+        )}
       >
-        {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
-      </button>
-    </aside>
+        <SidebarContent isCollapsed={isCollapsed} />
+        {/* Collapse Toggle - Right Edge Middle */}
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="absolute right-0 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-secondary hover:text-foreground"
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+        </button>
+      </aside>
+
+      {/* Mobile Sidebar - Sheet/Drawer */}
+      <Sheet open={isMobileOpen} onOpenChange={toggleMobile}>
+        <SheetContent side="left" className="w-64 p-0 sm:w-72">
+          <div className="flex h-full flex-col">
+            <SidebarContent isCollapsed={false} onLinkClick={handleLinkClick} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

@@ -122,26 +122,30 @@ export default async function ProjectsPage({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+      <header className="flex items-center border-b border-border px-4 py-3 sm:px-6 sm:py-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 sm:h-9 sm:w-9">
             <Folder className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">Projects</h1>
-            <p className="text-xs text-muted-foreground">Track progress and manage deliverables</p>
+            <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+              Projects
+            </h1>
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              Track progress and manage deliverables
+            </p>
           </div>
         </div>
       </header>
 
       {/* Type Tabs + View Toggle */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-2.5">
+      <div className="flex flex-col gap-2 border-b border-border px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:px-6">
         <ProjectTypeTabs currentType={filters.type} />
         <ProjectViewToggle currentView={filters.view} currentType={filters.type} />
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Suspense fallback={<ProjectListSkeleton />}>
           <ProjectListLoader filters={filters} />
         </Suspense>

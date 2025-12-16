@@ -253,16 +253,16 @@ export function DashboardClient({
         </nav>
 
         {/* Main content - centered hero section */}
-        <main className="flex flex-1 flex-col items-center justify-center pb-6">
+        <main className="flex flex-1 flex-col items-center justify-center px-4 pb-4 sm:px-6 sm:pb-6">
           {/* Techmoths Award Image - centered and larger (black landscape container) */}
-          <div className="mb-8 flex w-full items-center justify-center">
+          <div className="mb-6 flex w-full items-center justify-center sm:mb-8">
             <div className="relative">
               <Image
                 src="/techmoths-award.png"
                 alt="Techmoths Award"
                 width={800}
                 height={300}
-                className="mx-auto max-w-[85vw] rounded-lg object-contain"
+                className="mx-auto max-w-[90vw] rounded-lg object-contain sm:max-w-[85vw]"
                 priority
                 style={{ width: 'auto', height: 'auto', maxHeight: '400px' }}
               />
@@ -270,7 +270,7 @@ export function DashboardClient({
           </div>
 
           {/* Voice assistant - hero element */}
-          <div className="mb-8">
+          <div className="mb-6 w-full sm:mb-8">
             <QualiaVoiceInline
               user={user}
               autoGreet={shouldAutoGreet && !hasAutoGreeted}
@@ -281,21 +281,21 @@ export function DashboardClient({
           </div>
 
           {/* Greeting text */}
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <div className="mb-6 text-center sm:mb-8">
+            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl md:text-3xl">
               {greeting}
             </h1>
-            <p className="mt-1 text-sm text-muted-foreground">{dateString}</p>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{dateString}</p>
           </div>
 
           {/* AI Input - prominent centered */}
-          <div className="mb-8 w-full max-w-lg">
+          <div className="mb-6 w-full max-w-lg sm:mb-8">
             <DashboardAIInput />
           </div>
         </main>
 
         {/* Bottom section - Two columns */}
-        <div className="mt-auto grid gap-6 border-t border-border/50 py-6 md:grid-cols-2">
+        <div className="mt-auto grid gap-4 border-t border-border/50 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6 md:grid-cols-2">
           {/* Notes Widget */}
           <div className="h-[300px]">
             <DashboardNotes workspaceId={user?.workspaceId} />
