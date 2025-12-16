@@ -2,7 +2,10 @@
   "mcpServers": {
     "vapi": {
       "command": "npx",
-      "args": ["-y", "@vapi-ai/mcp-server"],
+      "args": [
+        "-y",
+        "@vapi-ai/mcp-server"
+      ],
       "env": {
         "VAPI_TOKEN": "6dde1069-6920-4493-a5e3-2a6c2a78bc20"
       }

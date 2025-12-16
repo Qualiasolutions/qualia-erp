@@ -47,8 +47,8 @@ interface DashboardClientProps {
   leadFollowUps?: LeadFollowUp[];
 }
 
-// Minimal lead card for the compact widget
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// Minimal lead card for the compact widget (currently unused, kept for future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 function CompactLeadCard({ followUp }: { followUp: LeadFollowUp }) {
   const date = new Date(followUp.follow_up_date);
   const isOverdue = isPast(date) && !isToday(date);
@@ -206,10 +206,11 @@ export function DashboardClient({
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background/85">
-      {/* Subtle gradient background - reduced opacity */}
+      {/* Enhanced gradient background with more depth */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.005] blur-3xl" />
-        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.005] blur-3xl" />
+        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.03] blur-3xl animate-pulse-subtle" />
+        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.02] blur-3xl animate-pulse-subtle" style={{ animationDelay: '1s' }} />
+        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.01] blur-3xl" />
       </div>
 
       <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col px-6">
@@ -227,30 +228,32 @@ export function DashboardClient({
           </div>
 
           {/* Greeting text */}
-          <div className="mb-6 text-center sm:mb-8">
-            <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl md:text-3xl">
+          <div className="mb-6 text-center sm:mb-8 space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text">
               {greeting}
             </h1>
-            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{dateString}</p>
+            <p className="text-sm text-muted-foreground sm:text-base font-medium">{dateString}</p>
           </div>
         </main>
 
         {/* Bottom section - Two columns */}
-        <div className="mt-auto grid gap-4 border-t border-border/50 px-4 py-4 sm:gap-6 sm:px-6 sm:py-6 md:grid-cols-2">
+        <div className="mt-auto grid gap-6 border-t border-border/40 bg-background/40 backdrop-blur-sm px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 md:grid-cols-2">
           {/* Notes Widget */}
-          <div className="h-[300px]">
+          <div className="h-[320px]">
             <DashboardNotes workspaceId={user?.workspaceId} />
           </div>
 
           {/* Follow-ups Widget */}
-          <div className="h-[300px]">
-            <Card className="flex h-full flex-col">
-              <CardHeader className="border-b pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Phone className="h-4 w-4" />
+          <div className="h-[320px]">
+            <Card className="flex h-full flex-col shadow-lg border-border/60 hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="border-b border-border/60 pb-4">
+                <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10 text-qualia-500">
+                    <Phone className="h-4 w-4" />
+                  </div>
                   <span>Follow-ups</span>
                   {overdueCount > 0 && (
-                    <span className="ml-auto text-xs font-normal text-destructive">
+                    <span className="ml-auto rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500">
                       {overdueCount} overdue
                     </span>
                   )}
@@ -258,34 +261,38 @@ export function DashboardClient({
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto p-0">
                 {sortedFollowUps.length > 0 ? (
-                  <div className="divide-y divide-border">
-                    {sortedFollowUps.map((followUp) => (
-                      <div key={followUp.id} className="p-3 transition-colors hover:bg-muted/50">
-                        <div className="mb-1 flex items-center justify-between">
-                          <span className="text-sm font-medium">{followUp.contact_name}</span>
+                  <div className="divide-y divide-border/60">
+                    {sortedFollowUps.map((followUp, index) => (
+                      <div 
+                        key={followUp.id} 
+                        className="group p-4 transition-all duration-200 hover:bg-qualia-500/5"
+                        style={{ animationDelay: `${index * 50}ms` }}
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-sm font-semibold text-foreground">{followUp.contact_name}</span>
                           <span
                             className={cn(
-                              'rounded px-1.5 py-0.5 text-[10px] capitalize',
+                              'rounded-full px-2 py-0.5 text-[10px] font-medium capitalize',
                               followUp.priority === 'urgent'
-                                ? 'bg-red-500/10 text-red-500'
+                                ? 'bg-red-500/10 text-red-500 ring-1 ring-red-500/20'
                                 : followUp.priority === 'high'
-                                  ? 'bg-orange-500/10 text-orange-500'
-                                  : 'bg-muted text-muted-foreground'
+                                  ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/20'
+                                  : 'bg-muted/80 text-muted-foreground'
                             )}
                           >
                             {followUp.priority}
                           </span>
                         </div>
-                        <p className="mb-2 text-xs text-muted-foreground">{followUp.client_name}</p>
+                        <p className="mb-3 text-xs text-muted-foreground font-medium">{followUp.client_name}</p>
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-[10px] font-medium text-muted-foreground">
                             {new Date(followUp.follow_up_date).toLocaleDateString()}
                           </span>
                           <Link
                             href={`/clients/${followUp.client_id}`}
-                            className="text-[10px] text-primary hover:underline"
+                            className="text-[10px] font-medium text-qualia-500 hover:text-qualia-600 dark:hover:text-qualia-400 transition-colors hover:underline"
                           >
-                            View Client
+                            View Client →
                           </Link>
                         </div>
                       </div>
@@ -293,7 +300,10 @@ export function DashboardClient({
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    No pending follow-ups
+                    <div className="text-center space-y-2">
+                      <Phone className="h-8 w-8 mx-auto opacity-20" />
+                      <p>No pending follow-ups</p>
+                    </div>
                   </div>
                 )}
               </CardContent>

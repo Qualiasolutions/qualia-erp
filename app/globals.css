@@ -167,35 +167,50 @@
 
   .dark .surface-interactive:hover {
     box-shadow: 0 4px 12px -2px hsl(var(--primary) / 0.15);
+    transform: translateY(-1px);
   }
 
   /* Modern card style */
   .card-modern {
-    @apply relative overflow-hidden rounded-xl border border-border bg-card p-5;
-    transition: all 0.2s ease;
+    @apply relative overflow-hidden rounded-xl border border-border/60 bg-card p-5;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
   }
 
   .card-modern:hover {
-    @apply border-primary/25;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.1);
+    @apply border-primary/30;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -8px hsl(var(--primary) / 0.15), 0 4px 16px -4px hsl(var(--primary) / 0.1);
   }
 
   .dark .card-modern:hover {
-    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.2);
+    box-shadow: 0 12px 32px -8px hsl(var(--primary) / 0.25), 0 4px 16px -4px hsl(var(--primary) / 0.15);
   }
 
   /* Highlight card (for hero elements) */
   .card-highlight {
     @apply relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent p-6;
-    transition: all 0.25s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 16px -4px hsl(var(--primary) / 0.1);
   }
 
   .card-highlight:hover {
     @apply border-primary/40;
+    transform: translateY(-2px);
     box-shadow:
-      0 0 0 1px hsl(var(--primary) / 0.1),
-      0 8px 32px -8px hsl(var(--primary) / 0.15);
+      0 0 0 1px hsl(var(--primary) / 0.15),
+      0 12px 40px -8px hsl(var(--primary) / 0.2),
+      0 4px 20px -4px hsl(var(--primary) / 0.1);
+  }
+
+  .card-highlight::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.1), transparent 70%);
+  }
+
+  .card-highlight:hover::before {
+    @apply opacity-100;
   }
 }
 
@@ -466,6 +481,27 @@
   }
 }
 
+@keyframes shimmer-slow {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-8px) translateX(4px);
+  }
+  66% {
+    transform: translateY(4px) translateX(-4px);
+  }
+}
+
 @layer utilities {
   .fade-in {
     animation: fade-in 0.3s ease-out forwards;
@@ -485,6 +521,21 @@
 
   .animate-pulse-subtle {
     animation: pulse-subtle 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer-slow {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer-slow 3s ease-in-out infinite;
+  }
+
+  .animate-float-gentle {
+    animation: float-gentle 8s ease-in-out infinite;
   }
 
   /* Stagger animation support */

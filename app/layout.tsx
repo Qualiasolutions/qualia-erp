@@ -136,7 +136,7 @@ export default function RootLayout({
                     <Sidebar />
                   </Suspense>
                   <div className="flex flex-1 flex-col overflow-hidden">
-                    <header className="flex h-12 items-center justify-between gap-2 border-b border-border bg-card px-3 sm:justify-end sm:px-4">
+                    <header className="flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-card/80 backdrop-blur-sm px-3 sm:justify-end sm:px-4 shadow-sm">
                       <HeaderActions />
                     </header>
                     <main className="flex-1 overflow-y-auto">{children}</main>

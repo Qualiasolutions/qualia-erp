@@ -40,23 +40,26 @@ function SidebarContent({
       {/* Logo */}
       <div
         className={cn(
-          'flex items-center border-b border-border',
+          'flex items-center border-b border-border/60 bg-gradient-to-b from-card to-card/95',
           isCollapsed ? 'h-14 justify-center' : 'h-14 px-4'
         )}
       >
         <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative flex-shrink-0">
+            <div className="absolute -inset-1 rounded-lg bg-qualia-500/20 opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-100" />
             <Image
               src="/logo.webp"
               alt="Qualia"
               width={28}
               height={28}
-              className="rounded-lg transition-transform duration-150 group-hover:scale-105"
+              className="relative rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
             />
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold tracking-tight text-foreground">Qualia</span>
+              <span className="text-sm font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+                Qualia
+              </span>
               <span className="text-[10px] font-medium text-muted-foreground">Solutions</span>
             </div>
           )}
@@ -73,9 +76,9 @@ function SidebarContent({
       {/* Command hint */}
       {!isCollapsed && (
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 px-2.5 py-1.5 text-xs text-muted-foreground">
-            <Command className="h-3 w-3" />
-            <span>K to search</span>
+          <div className="flex items-center gap-2 rounded-lg bg-qualia-500/5 border border-qualia-500/10 px-2.5 py-1.5 text-xs text-muted-foreground transition-all duration-200 hover:bg-qualia-500/10 hover:border-qualia-500/20">
+            <Command className="h-3 w-3 text-qualia-500" />
+            <span className="font-medium">K to search</span>
           </div>
         </div>
       )}
@@ -94,19 +97,21 @@ function SidebarContent({
                 title={isCollapsed ? item.name : undefined}
                 onClick={onLinkClick}
                 className={cn(
-                  'group flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-150',
+                  'group relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-200',
                   isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 px-2.5',
                   isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                    ? 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400 shadow-sm'
+                    : 'text-muted-foreground hover:bg-qualia-500/5 hover:text-foreground'
                 )}
                 style={{ animationDelay: `${index * 25}ms` }}
               >
                 <item.icon
                   className={cn(
-                    'flex-shrink-0 transition-colors duration-150',
+                    'flex-shrink-0 transition-all duration-200',
                     isCollapsed ? 'h-[17px] w-[17px]' : 'h-4 w-4',
-                    isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
+                    isActive 
+                      ? 'text-qualia-600 dark:text-qualia-400' 
+                      : 'text-muted-foreground group-hover:text-qualia-500 group-hover:scale-110'
                   )}
                 />
                 {!isCollapsed && <span>{item.name}</span>}
@@ -143,10 +148,10 @@ export function Sidebar() {
         <button
           type="button"
           onClick={toggleSidebar}
-          className="absolute right-0 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition-all hover:bg-secondary hover:text-foreground"
+          className="absolute right-0 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground shadow-md transition-all duration-200 hover:bg-qualia-500/10 hover:border-qualia-500/30 hover:text-qualia-600 dark:hover:text-qualia-400 hover:scale-110"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
         </button>
       </aside>
 

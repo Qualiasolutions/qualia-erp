@@ -184,17 +184,33 @@ export async function updatePhaseItem(formData: FormData): Promise<ActionResult>
   }
 
   const id = formData.get('id') as string;
-  const is_completed = formData.get('is_completed') === 'true';
+  const is_completed = formData.get('is_completed');
+  const phase_id = formData.get('phase_id') as string;
+  const display_order = formData.get('display_order');
 
   if (!id) {
     return { success: false, error: 'Missing task ID' };
   }
 
-  const updateData: Record<string, unknown> = {
-    is_completed,
-    completed_at: is_completed ? new Date().toISOString() : null,
-    completed_by: is_completed ? user.id : null,
-  };
+  const updateData: Record<string, unknown> = {};
+
+  // Handle completion status
+  if (is_completed !== null) {
+    const completed = is_completed === 'true';
+    updateData.is_completed = completed;
+    updateData.completed_at = completed ? new Date().toISOString() : null;
+    updateData.completed_by = completed ? user.id : null;
+  }
+
+  // Allow updating phase_id (moving between phases)
+  if (phase_id) {
+    updateData.phase_id = phase_id;
+  }
+
+  // Allow updating display_order (reordering)
+  if (display_order !== null) {
+    updateData.display_order = parseInt(display_order as string);
+  }
 
   // Allow updating title and description if provided
   const title = formData.get('title') as string;
@@ -219,6 +235,58 @@ export async function updatePhaseItem(formData: FormData): Promise<ActionResult>
   if (projectId) {
     revalidatePath(`/projects/${projectId}`);
   }
+  return { success: true };
+}
+
+// Reorder phase items (batch update for drag and drop)
+export async function reorderPhaseItems(
+  taskOrders: Array<{ id: string; phase_id: string; display_order: number }>
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  if (!taskOrders || taskOrders.length === 0) {
+    return { success: false, error: 'No tasks to reorder' };
+  }
+
+  // Get project_id from first task to revalidate path
+  const { data: firstTask } = await supabase
+    .from('phase_items')
+    .select('phase:project_phases(project_id)')
+    .eq('id', taskOrders[0].id)
+    .single();
+
+  // Update all tasks in a transaction-like manner
+  const updates = taskOrders.map((task) =>
+    supabase
+      .from('phase_items')
+      .update({
+        phase_id: task.phase_id,
+        display_order: task.display_order,
+      })
+      .eq('id', task.id)
+  );
+
+  const results = await Promise.all(updates);
+  const errors = results.filter((r) => r.error);
+
+  if (errors.length > 0) {
+    console.error('Error reordering phase items:', errors);
+    return { success: false, error: errors[0].error?.message || 'Failed to reorder tasks' };
+  }
+
+  const phaseData = Array.isArray(firstTask?.phase) ? firstTask.phase[0] : firstTask?.phase;
+  const projectId = (phaseData as { project_id: string } | null)?.project_id;
+  if (projectId) {
+    revalidatePath(`/projects/${projectId}`);
+  }
+
   return { success: true };
 }
 

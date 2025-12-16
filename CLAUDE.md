@@ -61,7 +61,7 @@ Required in `.env.local`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
-GOOGLE_GENERATIVE_AI_API_KEY=<google-api-key>  # For AI chat (Gemini 2.0)
+GROQ_API_KEY=<groq-api-key>  # For AI chat (Llama 3.1 8B Instant)
 
 # VAPI Voice Assistant (optional)
 NEXT_PUBLIC_VAPI_PUBLIC_KEY=<vapi-public-key>
@@ -73,7 +73,7 @@ NEXT_PUBLIC_APP_URL=<app-url>  # For VAPI webhook (e.g., https://qualia.app)
 
 - **Next.js**: `^16.0.7` (App Router with `middleware.ts` for auth session refresh and route protection)
 - **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth, database, and Realtime
-- **AI**: Vercel AI SDK (`ai`) with Google provider (`@ai-sdk/google`)
+- **AI**: Vercel AI SDK (`ai`) with Groq provider (`@ai-sdk/groq`)
 - **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
 - **DnD**: `@dnd-kit/core` + `@dnd-kit/sortable` for drag-and-drop
 - **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
@@ -242,9 +242,11 @@ Modal components fetch dropdown data on-demand when opened via `useEffect`.
 ThemeProvider → SWRProvider → AdminProvider → WorkspaceProvider → SidebarProvider
 ```
 
+Additional layout components: `LogoSplash` (loading screen), `CommandMenu` (Cmd+K), `AIChatWidget` (floating AI assistant), `WorkspaceChatWrapper` (voice assistant)
+
 ### AI Integration
 
-- **Chat API**: `app/api/chat/route.ts` - Vercel AI SDK with Google Gemini (`gemini-2.0-flash`)
+- **Chat API**: `app/api/chat/route.ts` - Vercel AI SDK with Groq Llama 3.1 8B Instant (`llama-3.1-8b-instant`)
 - **Tools**: `getDashboardStats`, `searchIssues`, `searchProjects`, `getRecentActivity`
 - **Context**: System prompt includes current user info (name, email, role)
 - **Chat UI**: `components/chat.tsx` - Uses `useChat` hook, `convertToModelMessages()` for message format
