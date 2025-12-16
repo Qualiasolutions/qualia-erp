@@ -2,19 +2,16 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Check, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
 import { useWorkspace } from '@/components/workspace-provider';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
-import type { PhaseTemplate } from '@/lib/phase-templates';
-import { getPhaseTemplates } from '@/lib/phase-templates';
 
 import { StepBasicInfo } from './step-basic-info';
 import { StepConfiguration } from './step-configuration';
-import { StepRoadmapEditor } from './step-roadmap-editor';
 import { StepReview } from './step-review';
 import { WizardProgress } from './wizard-progress';
 
@@ -26,8 +23,6 @@ export interface WizardData {
   project_type: ProjectType | null;
   deployment_platform: DeploymentPlatform | null;
   client_id: string;
-  // Step 3: Roadmap (customized phases)
-  phases: PhaseTemplate[];
 }
 
 interface ProjectWizardProps {
@@ -40,8 +35,7 @@ interface ProjectWizardProps {
 const STEPS = [
   { id: 1, name: 'Basic Info', description: 'Name and description' },
   { id: 2, name: 'Configuration', description: 'Type, platform, client' },
-  { id: 3, name: 'Roadmap', description: 'Customize phases' },
-  { id: 4, name: 'Review', description: 'Confirm and create' },
+  { id: 3, name: 'Review', description: 'Confirm and create' },
 ];
 
 export function ProjectWizard({
@@ -62,7 +56,6 @@ export function ProjectWizard({
     project_type: null,
     deployment_platform: null,
     client_id: '',
-    phases: [],
   });
 
   // Set default type when wizard opens with a defaultType
@@ -71,7 +64,6 @@ export function ProjectWizard({
       setWizardData((prev) => ({
         ...prev,
         project_type: defaultType,
-        phases: getPhaseTemplates(defaultType),
       }));
     }
   }, [open, defaultType]);
@@ -79,17 +71,6 @@ export function ProjectWizard({
   const updateWizardData = useCallback((updates: Partial<WizardData>) => {
     setWizardData((prev) => ({ ...prev, ...updates }));
   }, []);
-
-  // When project type changes, load default phases
-  const handleProjectTypeChange = useCallback(
-    (type: ProjectType | null) => {
-      updateWizardData({
-        project_type: type,
-        phases: type ? getPhaseTemplates(type) : [],
-      });
-    },
-    [updateWizardData]
-  );
 
   // Validation for each step
   const isStepValid = (step: number): boolean => {
@@ -103,8 +84,6 @@ export function ProjectWizard({
           wizardData.client_id.length > 0
         );
       case 3:
-        return wizardData.phases.length > 0;
-      case 4:
         return true;
       default:
         return false;
@@ -140,16 +119,6 @@ export function ProjectWizard({
         client_id: wizardData.client_id,
         team_id: null,
         workspace_id: currentWorkspace?.id,
-        phases: wizardData.phases.map((phase) => ({
-          name: phase.name,
-          description: phase.description || null,
-          template_key: phase.templateKey || null,
-          items: phase.items.map((item) => ({
-            title: item.title,
-            description: item.description || null,
-            template_key: item.templateKey || null,
-          })),
-        })),
       });
 
       if (result.success) {
@@ -176,7 +145,6 @@ export function ProjectWizard({
         project_type: null,
         deployment_platform: null,
         client_id: '',
-        phases: [],
       });
       setError(null);
       onOpenChange(false);
@@ -190,6 +158,9 @@ export function ProjectWizard({
         className="w-full max-w-[90vw] gap-0 overflow-hidden rounded-2xl border border-border/50 bg-card p-0 shadow-2xl sm:max-w-2xl md:max-w-3xl"
       >
         <DialogTitle className="sr-only">Create New Project</DialogTitle>
+        <DialogDescription className="sr-only">
+          Create a new project by filling out the project details in the wizard steps
+        </DialogDescription>
 
         {/* Header */}
         <div className="relative border-b border-border/50 bg-muted/30 px-6 pb-5 pt-6">
@@ -234,20 +205,11 @@ export function ProjectWizard({
               <StepConfiguration
                 data={wizardData}
                 clients={clients}
-                onProjectTypeChange={handleProjectTypeChange}
                 onChange={updateWizardData}
               />
             )}
 
-            {currentStep === 3 && (
-              <StepRoadmapEditor
-                phases={wizardData.phases}
-                projectType={wizardData.project_type}
-                onChange={(phases) => updateWizardData({ phases })}
-              />
-            )}
-
-            {currentStep === 4 && <StepReview data={wizardData} clients={clients} />}
+            {currentStep === 3 && <StepReview data={wizardData} clients={clients} />}
           </div>
         </div>
 

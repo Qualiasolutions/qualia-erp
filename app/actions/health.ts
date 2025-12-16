@@ -1,0 +1,351 @@
+'use server';
+
+import { createClient } from '@/lib/supabase/server';
+import { getCurrentWorkspaceId } from './index';
+import type { ActionResult } from './shared';
+
+export interface HealthMetrics {
+  overall_health_score: number;
+  schedule_health: number;
+  velocity_health: number;
+  quality_health: number;
+  communication_health: number;
+  metrics_data: {
+    schedule?: {
+      days_until_deadline?: number;
+      roadmap_progress?: number;
+    };
+    velocity?: {
+      items_completed_7d?: number;
+    };
+    quality?: {
+      stale_phases?: number;
+    };
+    communication?: {
+      days_since_meeting?: number;
+    };
+  };
+}
+
+export interface ProjectHealthData {
+  project_id: string;
+  project_name: string;
+  project_status: string;
+  project_type: string | null;
+  overall_health_score: number | null;
+  schedule_health: number | null;
+  velocity_health: number | null;
+  quality_health: number | null;
+  communication_health: number | null;
+  metrics_data: any;
+  last_measured_at: string | null;
+  lead_name: string | null;
+  client_name: string | null;
+  active_insights_count: number;
+  critical_insights_count: number;
+  health_trend: 'improving' | 'declining' | 'stable' | null;
+}
+
+export interface HealthInsight {
+  id: string;
+  project_id: string;
+  insight_type: string;
+  severity: 'info' | 'warning' | 'critical';
+  title: string;
+  description: string;
+  recommendations: Array<{
+    action: string;
+    priority: string;
+    estimated_impact: string;
+  }>;
+  status: string;
+  created_at: string;
+}
+
+// Get current health for all projects in workspace
+export async function getWorkspaceHealthDashboard(
+  workspaceId?: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const wsId = workspaceId || (await getCurrentWorkspaceId());
+    if (!wsId) {
+      return { success: false, error: 'No workspace selected' };
+    }
+
+    // First, refresh the materialized view
+    await supabase.rpc('refresh_project_health_view');
+
+    // Query materialized view for fast results
+    const { data: projects, error } = await supabase
+      .from('project_health_current')
+      .select('*')
+      .eq('workspace_id', wsId)
+      .order('overall_health_score', { ascending: true, nullsFirst: false }); // Worst first
+
+    if (error) throw error;
+
+    return { success: true, data: projects as ProjectHealthData[] };
+  } catch (error) {
+    console.error('Error fetching workspace health:', error);
+    return { success: false, error: 'Failed to load health dashboard' };
+  }
+}
+
+// Get detailed health for a specific project
+export async function getProjectHealthDetails(
+  projectId: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Calculate fresh health metrics
+    const { data: health, error: healthError } = await supabase.rpc(
+      'calculate_project_health',
+      { p_project_id: projectId }
+    );
+
+    if (healthError) throw healthError;
+
+    // Get active insights
+    const { data: insights, error: insightsError } = await supabase
+      .from('project_health_insights')
+      .select('*')
+      .eq('project_id', projectId)
+      .eq('status', 'active')
+      .order('severity', { ascending: false })
+      .order('created_at', { ascending: false });
+
+    if (insightsError) throw insightsError;
+
+    // Get historical trend (last 30 days)
+    const { data: history, error: historyError } = await supabase
+      .from('project_health_metrics')
+      .select(
+        'measured_at, overall_health_score, schedule_health, velocity_health, quality_health, communication_health'
+      )
+      .eq('project_id', projectId)
+      .gte(
+        'measured_at',
+        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      )
+      .order('measured_at', { ascending: true });
+
+    if (historyError) throw historyError;
+
+    return {
+      success: true,
+      data: {
+        current: health as HealthMetrics,
+        insights: insights as HealthInsight[],
+        history,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching project health details:', error);
+    return { success: false, error: 'Failed to load project health' };
+  }
+}
+
+// Record new health snapshot
+export async function recordProjectHealth(
+  projectId: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    // Get project workspace
+    const { data: project } = await supabase
+      .from('projects')
+      .select('workspace_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Calculate health
+    const { data: health, error: calcError } = await supabase.rpc(
+      'calculate_project_health',
+      { p_project_id: projectId }
+    );
+
+    if (calcError) throw calcError;
+
+    // Insert health record
+    const { error: insertError } = await supabase
+      .from('project_health_metrics')
+      .insert({
+        project_id: projectId,
+        workspace_id: project.workspace_id,
+        overall_health_score: health.overall_health_score,
+        schedule_health: health.schedule_health,
+        velocity_health: health.velocity_health,
+        quality_health: health.quality_health,
+        communication_health: health.communication_health,
+        metrics_data: health.metrics_data,
+        created_by: user.id,
+      });
+
+    if (insertError) throw insertError;
+
+    // Generate insights
+    await supabase.rpc('generate_project_insights', { p_project_id: projectId });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error recording project health:', error);
+    return { success: false, error: 'Failed to record health metrics' };
+  }
+}
+
+// Record health for all projects in workspace
+export async function recordAllProjectsHealth(
+  workspaceId?: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const wsId = workspaceId || (await getCurrentWorkspaceId());
+    if (!wsId) {
+      return { success: false, error: 'No workspace selected' };
+    }
+
+    // Get all active projects
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('workspace_id', wsId)
+      .not('status', 'in', '("archived","canceled")');
+
+    if (projectsError) throw projectsError;
+
+    // Record health for each project
+    const results = [];
+    for (const project of projects || []) {
+      const result = await recordProjectHealth(project.id);
+      results.push({ project_id: project.id, success: result.success });
+    }
+
+    // Refresh materialized view
+    await supabase.rpc('refresh_project_health_view');
+
+    return {
+      success: true,
+      data: {
+        total: projects?.length || 0,
+        successful: results.filter((r) => r.success).length,
+        failed: results.filter((r) => !r.success).length,
+      },
+    };
+  } catch (error) {
+    console.error('Error recording all projects health:', error);
+    return { success: false, error: 'Failed to record health metrics' };
+  }
+}
+
+// Acknowledge an insight
+export async function acknowledgeInsight(insightId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const { error } = await supabase
+      .from('project_health_insights')
+      .update({
+        status: 'acknowledged',
+        acknowledged_at: new Date().toISOString(),
+        acknowledged_by: user.id,
+      })
+      .eq('id', insightId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error acknowledging insight:', error);
+    return { success: false, error: 'Failed to acknowledge insight' };
+  }
+}
+
+// Resolve an insight
+export async function resolveInsight(insightId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const { error } = await supabase
+      .from('project_health_insights')
+      .update({
+        status: 'resolved',
+        resolved_at: new Date().toISOString(),
+        resolved_by: user.id,
+      })
+      .eq('id', insightId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error resolving insight:', error);
+    return { success: false, error: 'Failed to resolve insight' };
+  }
+}
+
+// Dismiss an insight
+export async function dismissInsight(insightId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' };
+    }
+
+    const { error } = await supabase
+      .from('project_health_insights')
+      .update({
+        status: 'dismissed',
+        resolved_at: new Date().toISOString(),
+        resolved_by: user.id,
+      })
+      .eq('id', insightId);
+
+    if (error) throw error;
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error dismissing insight:', error);
+    return { success: false, error: 'Failed to dismiss insight' };
+  }
+}

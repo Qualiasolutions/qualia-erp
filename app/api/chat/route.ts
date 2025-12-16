@@ -117,6 +117,25 @@ Your personality:
 - For scheduling, ask for date/time if not specified
 - You're part of the team, act like it`;
 
+    // Check for API key in multiple possible environment variable names
+    const apiKey =
+      process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
+      process.env.GEMINI_API_KEY ||
+      process.env.GOOGLE_API_KEY;
+    
+    if (!apiKey) {
+      console.error(
+        'Google API key not found. Checked: GOOGLE_GENERATIVE_AI_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY'
+      );
+      return new Response(
+        JSON.stringify({ error: 'AI service is not configured. Please contact support.' }),
+        {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const result = streamText({
       model: google('gemini-2.0-flash'),
       messages: convertToModelMessages(messages),

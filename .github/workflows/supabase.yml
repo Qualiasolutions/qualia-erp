@@ -1,0 +1,314 @@
+name: Supabase Pipeline
+
+on:
+  push:
+    paths:
+      - 'supabase/**'
+      - 'types/database.ts'
+    branches: [master, main, develop]
+  pull_request:
+    paths:
+      - 'supabase/**'
+      - 'types/database.ts'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - validate
+          - migrate
+          - generate-types
+          - backup
+
+env:
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+jobs:
+  # Validate migrations
+  validate:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check migration files
+        run: |
+          echo "Checking migration files..."
+          for file in supabase/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              echo "Validating: $file"
+              # Check for common SQL issues
+              grep -E "(DROP TABLE|DROP DATABASE|TRUNCATE)" "$file" && echo "⚠️  Warning: Destructive operation found in $file" || true
+
+              # Validate SQL syntax (basic check)
+              if ! grep -q ";" "$file"; then
+                echo "❌ Error: No SQL statements found in $file"
+                exit 1
+              fi
+            fi
+          done
+
+      - name: Lint SQL files
+        run: |
+          npm install -g sql-lint
+          for file in supabase/migrations/*.sql; do
+            if [ -f "$file" ]; then
+              sql-lint -f "$file" || true
+            fi
+          done
+        continue-on-error: true
+
+  # Database migrations
+  migrate:
+    name: Apply Migrations
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link Supabase project
+        run: |
+          supabase link --project-ref $PROJECT_REF
+
+      - name: Check migration status
+        run: |
+          supabase db remote list
+
+      - name: Run migrations
+        run: |
+          supabase db push --include-all
+
+      - name: Verify migrations
+        run: |
+          echo "Verifying migrations..."
+          supabase db remote list
+
+  # Generate TypeScript types
+  generate-types:
+    name: Generate TypeScript Types
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Generate types
+        run: |
+          npx supabase gen types typescript --project-id $PROJECT_REF > types/database.generated.ts
+
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain types/database.generated.ts)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.changes == 'true' && github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add types/database.generated.ts
+          git commit -m "chore: update database types [skip ci]"
+          git push
+
+  # Database backup
+  backup:
+    name: Database Backup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'backup'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="backup_${TIMESTAMP}.sql"
+
+          pg_dump ${{ secrets.DATABASE_URL }} > $BACKUP_FILE
+
+          echo "Backup created: $BACKUP_FILE"
+          echo "backup_file=$BACKUP_FILE" >> $GITHUB_ENV
+
+      - name: Compress backup
+        run: |
+          gzip ${{ env.backup_file }}
+          echo "compressed_file=${{ env.backup_file }}.gz" >> $GITHUB_ENV
+
+      - name: Upload backup to artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-${{ github.run_id }}
+          path: ${{ env.compressed_file }}
+          retention-days: 30
+
+      - name: Upload to S3 (optional)
+        if: env.AWS_ACCESS_KEY_ID != ''
+        run: |
+          aws s3 cp ${{ env.compressed_file }} s3://${{ secrets.BACKUP_BUCKET }}/database-backups/
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        continue-on-error: true
+
+  # Test database functions and RLS
+  test-database:
+    name: Test Database
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local
+        run: |
+          supabase start
+
+      - name: Run database tests
+        run: |
+          # Test RLS policies
+          npm run test:db:rls || true
+
+          # Test database functions
+          npm run test:db:functions || true
+
+      - name: Stop Supabase local
+        if: always()
+        run: supabase stop
+
+  # Monitor database performance
+  monitor-performance:
+    name: Database Performance Check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          npm install pg dotenv
+
+      - name: Check database performance
+        run: |
+          node << 'EOF'
+          const { Client } = require('pg');
+          require('dotenv').config();
+
+          const client = new Client({
+            connectionString: process.env.DATABASE_URL
+          });
+
+          async function checkPerformance() {
+            try {
+              await client.connect();
+
+              // Check slow queries
+              const slowQueries = await client.query(`
+                SELECT query, calls, mean_exec_time, max_exec_time
+                FROM pg_stat_statements
+                WHERE mean_exec_time > 100
+                ORDER BY mean_exec_time DESC
+                LIMIT 10
+              `);
+
+              if (slowQueries.rows.length > 0) {
+                console.log('⚠️  Slow queries detected:');
+                console.table(slowQueries.rows);
+              }
+
+              // Check index usage
+              const indexUsage = await client.query(`
+                SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read
+                FROM pg_stat_user_indexes
+                WHERE idx_scan = 0
+                AND schemaname NOT IN ('pg_catalog', 'information_schema')
+              `);
+
+              if (indexUsage.rows.length > 0) {
+                console.log('⚠️  Unused indexes:');
+                console.table(indexUsage.rows);
+              }
+
+              // Check table bloat
+              const tableBloat = await client.query(`
+                SELECT schemaname, tablename,
+                       pg_size_pretty(pg_relation_size(schemaname||'.'||tablename)) as size,
+                       n_dead_tup, n_live_tup,
+                       round(n_dead_tup::numeric / NULLIF(n_live_tup + n_dead_tup, 0) * 100, 2) as dead_percentage
+                FROM pg_stat_user_tables
+                WHERE n_dead_tup > 1000
+                ORDER BY n_dead_tup DESC
+                LIMIT 10
+              `);
+
+              if (tableBloat.rows.length > 0) {
+                console.log('⚠️  Tables with high dead tuple count:');
+                console.table(tableBloat.rows);
+              }
+
+            } catch (error) {
+              console.error('Error checking performance:', error);
+            } finally {
+              await client.end();
+            }
+          }
+
+          checkPerformance();
+          EOF
+        continue-on-error: true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

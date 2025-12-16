@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { connection } from 'next/server';
 import { getClientById } from '@/app/actions';
 import { ClientDetailView } from './client-detail-view';
 import { ArrowLeft } from 'lucide-react';
@@ -28,7 +27,6 @@ interface ClientLoaderProps {
 }
 
 async function ClientLoader({ id }: ClientLoaderProps) {
-  await connection();
 
   // Fetch client data on the server
   const client = await getClientById(id);

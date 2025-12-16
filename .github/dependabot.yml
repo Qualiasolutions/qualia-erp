@@ -1,0 +1,106 @@
+# Dependabot configuration for automated dependency updates
+version: 2
+updates:
+  # JavaScript dependencies (npm)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "javascript"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@supabase/supabase-js"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group related dependencies together
+      supabase:
+        patterns:
+          - "@supabase/*"
+        update-types:
+          - "minor"
+          - "patch"
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - "minor"
+          - "patch"
+      ai-sdk:
+        patterns:
+          - "@ai-sdk/*"
+          - "ai"
+        update-types:
+          - "minor"
+          - "patch"
+      testing:
+        patterns:
+          - "@testing-library/*"
+          - "jest*"
+          - "@types/jest"
+        update-types:
+          - "minor"
+          - "patch"
+      linting:
+        patterns:
+          - "eslint*"
+          - "prettier*"
+          - "@typescript-eslint/*"
+        update-types:
+          - "minor"
+          - "patch"
+      types:
+        patterns:
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+
+  # Docker dependencies (if using Docker)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    ignore:
+      # Ignore specific base images if needed
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]

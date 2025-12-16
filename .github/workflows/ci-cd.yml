@@ -1,0 +1,402 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main]
+  release:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '20'
+  NEXT_TELEMETRY_DISABLED: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Security scan
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --production
+        continue-on-error: true
+
+      - name: Run Snyk security scan
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: GitLeaks secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Code quality checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript
+        run: npx tsc --noEmit
+
+      - name: Check formatting
+        run: npx prettier --check "**/*.{ts,tsx,js,jsx,json,md}"
+
+      - name: License check
+        run: npx license-checker --production --onlyAllow 'MIT;Apache-2.0;BSD-3-Clause;BSD-2-Clause;ISC;0BSD'
+        continue-on-error: true
+
+  # Testing with coverage
+  test:
+    name: Test Suite (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        node: [20]
+        include:
+          - os: windows-latest
+            node: 20
+          - os: macos-latest
+            node: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test -- --coverage --ci --maxWorkers=2
+
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: unittests
+          name: codecov-qualia
+          fail_ci_if_error: false
+
+      - name: Generate test report
+        if: always()
+        run: npm test -- --json --outputFile=test-results.json
+        continue-on-error: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}-${{ matrix.node }}
+          path: test-results.json
+
+  # Build application
+  build:
+    name: Build Application
+    needs: [security, quality, test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [development, staging, production]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create .env file
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}" >> .env.production
+          echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_VAPI_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_VAPI_PUBLIC_KEY }}" >> .env.production
+          echo "NEXT_PUBLIC_VAPI_ASSISTANT_ID=${{ secrets.NEXT_PUBLIC_VAPI_ASSISTANT_ID }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}" >> .env.production
+
+      - name: Build application
+        run: npm run build
+        env:
+          NODE_ENV: ${{ matrix.environment }}
+          BUILD_ID: ${{ github.sha }}
+
+      - name: Generate build info
+        run: |
+          echo '{
+            "buildId": "${{ github.sha }}",
+            "buildNumber": "${{ github.run_number }}",
+            "timestamp": "'$(date -u +'%Y-%m-%dT%H:%M:%SZ')'",
+            "branch": "${{ github.ref_name }}",
+            "environment": "${{ matrix.environment }}"
+          }' > .next/build-info.json
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.environment }}-${{ github.sha }}
+          path: |
+            .next
+            public
+            package.json
+            package-lock.json
+          retention-days: 7
+
+  # Lighthouse CI
+  lighthouse:
+    name: Lighthouse CI
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-production-${{ github.sha }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli
+          lhci autorun --upload.target=temporary-public-storage || true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+  # Deploy to Vercel
+  deploy-vercel:
+    name: Deploy to Vercel (${{ matrix.environment }})
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.action == 'opened' || github.event.action == 'synchronize'
+    strategy:
+      matrix:
+        environment: [staging, production]
+        exclude:
+          - environment: production
+            branches: [develop]
+    environment:
+      name: ${{ matrix.environment }}
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ matrix.environment }}-${{ github.sha }}
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=${{ matrix.environment }} --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel
+        id: deploy
+        run: |
+          if [ "${{ matrix.environment }}" = "production" ]; then
+            url=$(vercel --prod --token=${{ secrets.VERCEL_TOKEN }})
+          else
+            url=$(vercel --token=${{ secrets.VERCEL_TOKEN }})
+          fi
+          echo "url=$url" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const environment = '${{ matrix.environment }}';
+            const comment = `🚀 Deployed to ${environment}: ${url}`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  # Run E2E tests
+  e2e:
+    name: E2E Tests
+    needs: [deploy-vercel]
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ needs.deploy-vercel.outputs.url }}
+          CI: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+  # Post-deployment verification
+  verify:
+    name: Verify Deployment
+    needs: [deploy-vercel]
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Health check
+        run: |
+          for i in {1..5}; do
+            response=$(curl -s -o /dev/null -w "%{http_code}" ${{ needs.deploy-vercel.outputs.url }}/api/health)
+            if [ "$response" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying..."
+            sleep 10
+          done
+          echo "Health check failed"
+          exit 1
+
+      - name: Run smoke tests
+        run: |
+          npm ci
+          npm run test:smoke -- --url ${{ needs.deploy-vercel.outputs.url }}
+        continue-on-error: true
+
+  # Notify deployment
+  notify:
+    name: Notify Deployment
+    needs: [deploy-vercel, verify]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Slack notification
+        if: github.event_name != 'pull_request'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            Deployment to ${{ github.event_name == 'release' && 'production' || 'staging' }} ${{ job.status }}
+            Commit: ${{ github.event.head_commit.message }}
+            Author: ${{ github.actor }}
+            URL: ${{ needs.deploy-vercel.outputs.url }}
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Create GitHub deployment
+        if: success() && github.event_name != 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              environment: '${{ github.event_name == 'release' && 'production' || 'staging' }}',
+              required_contexts: [],
+              auto_merge: false
+            });
+
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              environment_url: '${{ needs.deploy-vercel.outputs.url }}',
+              description: 'Deployment completed successfully'
+            });

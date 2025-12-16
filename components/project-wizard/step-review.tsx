@@ -51,7 +51,6 @@ export function StepReview({ data, clients }: StepReviewProps) {
     ? PLATFORM_CONFIG[data.deployment_platform]
     : null;
 
-  const totalItems = data.phases.reduce((sum, phase) => sum + phase.items.length, 0);
 
   return (
     <div className="space-y-6">
@@ -111,33 +110,12 @@ export function StepReview({ data, clients }: StepReviewProps) {
           </div>
         </div>
 
-        {/* Roadmap Summary */}
-        <div className="border-t pt-4">
-          <h5 className="mb-3 font-medium">Roadmap Summary</h5>
-          <div className="mb-3 flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{data.phases.length} phases</span>
-            <span>|</span>
-            <span>{totalItems} total items</span>
-          </div>
-
-          <div className="space-y-2">
-            {data.phases.map((phase, index) => (
-              <div key={phase.templateKey} className="flex items-center gap-3 text-sm">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-qualia-500/10 text-xs font-medium text-qualia-400">
-                  {index + 1}
-                </div>
-                <span className="flex-1">{phase.name}</span>
-                <span className="text-muted-foreground">{phase.items.length} items</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Final confirmation message */}
       <div className="rounded-lg border border-qualia-600/20 bg-qualia-600/5 p-4">
         <p className="text-center text-sm">
-          Click <strong>Create Project</strong> to create the project and initialize the roadmap.
+          Click <strong>Create Project</strong> to create the project.
         </p>
       </div>
     </div>

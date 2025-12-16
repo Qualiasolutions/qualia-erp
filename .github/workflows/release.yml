@@ -1,0 +1,206 @@
+name: Release Management
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.0.0)'
+        required: false
+      prerelease:
+        description: 'Pre-release'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  # Semantic release
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip release]')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Run semantic release
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npx semantic-release --dry-run | tee release.log
+
+          # Extract version from dry run
+          VERSION=$(grep -oP 'The next release version is \K[0-9]+\.[0-9]+\.[0-9]+' release.log || echo "")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Run actual release if version found
+          if [ -n "$VERSION" ]; then
+            npx semantic-release
+            echo "released=true" >> $GITHUB_OUTPUT
+          else
+            echo "No release needed"
+            echo "released=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        if: steps.semantic.outputs.released == 'true'
+        run: |
+          npm install -g conventional-changelog-cli
+          conventional-changelog -p angular -i CHANGELOG.md -s -r 0
+
+      - name: Update documentation
+        if: steps.semantic.outputs.released == 'true'
+        run: |
+          # Update version in documentation
+          sed -i "s/Version: .*/Version: ${{ steps.semantic.outputs.version }}/" README.md || true
+
+          # Generate API documentation
+          npm run docs:api || true
+
+          git add CHANGELOG.md README.md docs/
+          git commit -m "docs: update documentation for v${{ steps.semantic.outputs.version }} [skip ci]" || true
+          git push origin main
+
+  # Manual release
+  manual-release:
+    name: Manual Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            # Get current version from package.json
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            # Increment patch version
+            VERSION=$(echo $CURRENT_VERSION | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update version
+        run: |
+          npm version ${{ steps.version.outputs.version }} --no-git-tag-version
+
+          # Update version in other files
+          sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.version.outputs.version }}\"/" package.json
+          sed -i "s/Version: .*/Version: ${{ steps.version.outputs.version }}/" README.md || true
+
+      - name: Build application
+        run: npm run build
+
+      - name: Create release commit
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git commit -m "chore(release): ${{ steps.version.outputs.version }}"
+          git tag v${{ steps.version.outputs.version }}
+          git push origin main --tags
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          NOTES=$(git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 HEAD^)..HEAD)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          release_name: Release v${{ steps.version.outputs.version }}
+          body: |
+            ## Changes in this release
+
+            ${{ steps.notes.outputs.notes }}
+
+            ## Full Changelog
+            https://github.com/${{ github.repository }}/compare/$(git describe --tags --abbrev=0 HEAD^)...v${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease }}
+
+  # Deploy release
+  deploy-release:
+    name: Deploy Release
+    needs: [release]
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
+    environment:
+      name: production
+      url: https://qualia.app
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Deploy to production
+        run: |
+          vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Notify deployment
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            🚀 New release deployed to production
+            Version: ${{ needs.release.outputs.version }}
+            URL: https://qualia.app
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        if: always()

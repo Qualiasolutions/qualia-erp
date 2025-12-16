@@ -55,7 +55,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 export type Client = {
   id: string;
-  display_name: string;
+  display_name: string | null;
   phone: string | null;
   website: string | null;
   billing_address: string | null;
@@ -166,7 +166,7 @@ function ClientCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-foreground">{client.display_name}</h3>
+          <h3 className="truncate text-sm font-semibold text-foreground">{client.display_name || 'Unnamed Client'}</h3>
           {client.assigned && (
             <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
               <Avatar className="h-4 w-4">
@@ -335,7 +335,7 @@ function ClientRow({
 
       <div className="min-w-0 flex-1">
         <span className="block truncate text-sm font-medium text-foreground">
-          {client.display_name}
+          {client.display_name || 'Unnamed Client'}
         </span>
         <div
           className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground"
@@ -466,7 +466,7 @@ function ClientDetailModal({
               <Building2 className={cn('h-6 w-6', statusConfig.color)} />
             </div>
             <div>
-              <DialogTitle className="text-lg">{client.display_name}</DialogTitle>
+              <DialogTitle className="text-lg">{client.display_name || 'Unnamed Client'}</DialogTitle>
               <DialogDescription>Client details and contact information</DialogDescription>
               <span
                 className={cn(
@@ -615,11 +615,17 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
           // Within same status, sort by project count (most first), then name
           const projectDiff = (b.projects?.length || 0) - (a.projects?.length || 0);
           if (projectDiff !== 0) return projectDiff;
-          return a.display_name.localeCompare(b.display_name);
+          const aName = a.display_name || '';
+          const bName = b.display_name || '';
+          return aName.localeCompare(bName);
         });
         break;
       case 'name':
-        sorted.sort((a, b) => a.display_name.localeCompare(b.display_name));
+        sorted.sort((a, b) => {
+          const aName = a.display_name || '';
+          const bName = b.display_name || '';
+          return aName.localeCompare(bName);
+        });
         break;
       case 'recent':
         sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -649,7 +655,9 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
       clients.sort((a, b) => {
         const projectDiff = (b.projects?.length || 0) - (a.projects?.length || 0);
         if (projectDiff !== 0) return projectDiff;
-        return a.display_name.localeCompare(b.display_name);
+        const aName = a.display_name || '';
+        const bName = b.display_name || '';
+        return aName.localeCompare(bName);
       });
 
     return {

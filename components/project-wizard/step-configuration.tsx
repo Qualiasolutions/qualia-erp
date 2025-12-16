@@ -33,7 +33,6 @@ import type { WizardData } from './project-wizard';
 interface StepConfigurationProps {
   data: WizardData;
   clients: Array<{ id: string; display_name: string | null }>;
-  onProjectTypeChange: (type: ProjectType | null) => void;
   onChange: (updates: Partial<WizardData>) => void;
 }
 
@@ -157,7 +156,6 @@ function getPlatformsForType(projectType: ProjectType | null): PlatformOption[] 
 export function StepConfiguration({
   data,
   clients,
-  onProjectTypeChange,
   onChange,
 }: StepConfigurationProps) {
   return (
@@ -189,7 +187,7 @@ export function StepConfiguration({
               <button
                 key={type.value}
                 type="button"
-                onClick={() => onProjectTypeChange(type.value)}
+                onClick={() => onChange({ project_type: type.value })}
                 className={cn(
                   'group relative flex items-center gap-4 rounded-2xl border-2 p-5 text-left transition-all duration-200',
                   isSelected

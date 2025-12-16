@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { normalizeFKResponse } from '@/lib/server-utils';
 
 export type ActionResult = {
   success: boolean;
@@ -27,17 +28,6 @@ export type ProfileRef = {
   email: string | null;
   avatar_url?: string | null;
 } | null;
-
-// For Supabase responses where FK can be array or single object
-export type FKResponse<T> = T | T[] | null;
-
-// Normalize FK response (Supabase can return array or single object)
-export function normalizeFKResponse<T>(response: FKResponse<T>): T | null {
-  if (Array.isArray(response)) {
-    return response[0] || null;
-  }
-  return response;
-}
 
 // ============ AUTHORIZATION HELPERS ============
 
@@ -116,7 +106,7 @@ export async function canDeletePhase(userId: string, phaseId: string): Promise<b
     .eq('id', phaseId)
     .single();
 
-  const projectData = Array.isArray(phase?.project) ? phase.project[0] : phase?.project;
+  const projectData = normalizeFKResponse(phase?.project as any);
   return (projectData as { lead_id: string } | null)?.lead_id === userId;
 }
 
@@ -133,7 +123,7 @@ export async function canDeletePhaseItem(userId: string, itemId: string): Promis
 
   // Handle nested FK array normalization
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const phaseData = Array.isArray(item?.phase) ? item.phase[0] : (item?.phase as any);
-  const projectData = Array.isArray(phaseData?.project) ? phaseData.project[0] : phaseData?.project;
+  const phaseData = normalizeFKResponse(item?.phase as any);
+  const projectData = normalizeFKResponse(phaseData?.project as any);
   return projectData?.lead_id === userId;
 }

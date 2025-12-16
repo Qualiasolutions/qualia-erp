@@ -31,7 +31,7 @@ import {
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { formatDate, formatTimeAgo } from '@/lib/utils';
 import { ProjectRoadmap } from '@/components/project-roadmap';
-import type { ProjectType } from '@/types/database';
+import type { ProjectType, ProjectGroup } from '@/types/database';
 
 const PROJECT_TYPES: { value: ProjectType; label: string; icon: typeof Globe }[] = [
   { value: 'web_design', label: 'Website', icon: Globe },
@@ -61,6 +61,7 @@ interface Project {
   name: string;
   description: string | null;
   status: string;
+  project_group: ProjectGroup | null;
   project_type: ProjectType | null;
   workspace_id: string;
   start_date: string | null;

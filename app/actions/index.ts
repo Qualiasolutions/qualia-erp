@@ -19,9 +19,8 @@
 export * from '../actions';
 
 // Export shared types and helpers
-export type { ActionResult, ActivityType, ProfileRef, FKResponse } from './shared';
+export type { ActionResult, ActivityType, ProfileRef } from './shared';
 export {
-  normalizeFKResponse,
   isUserAdmin,
   canDeleteIssue,
   canDeleteProject,
@@ -30,3 +29,19 @@ export {
   canDeletePhase,
   canDeletePhaseItem,
 } from './shared';
+
+// Export utility types and functions from server-utils
+export type { FKResponse } from '@/lib/server-utils';
+export { normalizeFKResponse } from '@/lib/server-utils';
+
+// Export health monitoring actions
+export {
+  getWorkspaceHealthDashboard,
+  getProjectHealthDetails,
+  recordProjectHealth,
+  recordAllProjectsHealth,
+  acknowledgeInsight,
+  resolveInsight,
+  dismissInsight,
+} from './health';
+export type { HealthMetrics, ProjectHealthData, HealthInsight } from './health';

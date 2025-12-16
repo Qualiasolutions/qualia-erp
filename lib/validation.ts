@@ -31,6 +31,32 @@ export const updateIssueSchema = z.object({
 });
 
 // =====================
+// Task Schemas (Inbox)
+// =====================
+export const createTaskSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(500, 'Title must be less than 500 characters'),
+  description: z.string().max(10000, 'Description too long').optional().nullable(),
+  status: z
+    .enum(['Todo', 'In Progress', 'Done', 'Canceled'] as const)
+    .default('Todo'),
+  priority: z
+    .enum(['No Priority', 'Urgent', 'High', 'Medium', 'Low'] as const)
+    .default('No Priority'),
+  workspace_id: z.string().uuid('Invalid workspace ID'),
+  due_date: z.string().optional().nullable(),
+});
+
+export const updateTaskSchema = z.object({
+  id: z.string().uuid('Invalid task ID'),
+  title: z.string().min(1, 'Title is required').max(500).optional(),
+  description: z.string().max(10000).optional().nullable(),
+  status: z.enum(['Todo', 'In Progress', 'Done', 'Canceled'] as const).optional(),
+  priority: z.enum(['No Priority', 'Urgent', 'High', 'Medium', 'Low'] as const).optional(),
+  due_date: z.string().optional().nullable(),
+  sort_order: z.number().optional(),
+});
+
+// =====================
 // Project Schemas
 // =====================
 export const createProjectSchema = z.object({
@@ -103,25 +129,6 @@ export const createProjectWizardSchema = z.object({
   client_id: z.string().uuid('Invalid client ID'),
   team_id: z.string().uuid('Invalid team ID').optional().nullable(),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
-  // Roadmap customization
-  phases: z
-    .array(
-      z.object({
-        name: z.string().min(1, 'Phase name is required').max(200),
-        description: z.string().max(2000).optional().nullable(),
-        template_key: z.string().max(100).optional().nullable(),
-        items: z
-          .array(
-            z.object({
-              title: z.string().min(1, 'Item title is required').max(500),
-              description: z.string().max(2000).optional().nullable(),
-              template_key: z.string().max(100).optional().nullable(),
-            })
-          )
-          .optional(),
-      })
-    )
-    .optional(),
 });
 
 export const updateProjectSchema = z.object({
@@ -247,59 +254,6 @@ export const createMeetingSchema = z
     }
   );
 
-// =====================
-// Phase Schemas (Roadmap)
-// =====================
-export const PHASE_STATUSES = ['not_started', 'in_progress', 'completed', 'skipped'] as const;
-export type PhaseStatus = (typeof PHASE_STATUSES)[number];
-
-export const createPhaseSchema = z.object({
-  project_id: z.string().uuid('Invalid project ID'),
-  workspace_id: z.string().uuid('Invalid workspace ID'),
-  name: z
-    .string()
-    .min(1, 'Phase name is required')
-    .max(200, 'Name must be less than 200 characters'),
-  description: z.string().max(2000, 'Description too long').optional().nullable(),
-  helper_text: z.string().max(500, 'Helper text too long').optional().nullable(),
-  display_order: z.coerce.number().int().min(0).default(0),
-  status: z.enum(PHASE_STATUSES).default('not_started'),
-  template_key: z.string().max(100).optional().nullable(),
-  is_custom: z.coerce.boolean().default(false),
-});
-
-export const updatePhaseSchema = z.object({
-  id: z.string().uuid('Invalid phase ID'),
-  name: z.string().min(1).max(200).optional(),
-  description: z.string().max(2000).optional().nullable(),
-  helper_text: z.string().max(500).optional().nullable(),
-  display_order: z.coerce.number().int().min(0).optional(),
-  status: z.enum(PHASE_STATUSES).optional(),
-});
-
-export const createPhaseItemSchema = z.object({
-  phase_id: z.string().uuid('Invalid phase ID'),
-  title: z
-    .string()
-    .min(1, 'Item title is required')
-    .max(500, 'Title must be less than 500 characters'),
-  description: z.string().max(2000, 'Description too long').optional().nullable(),
-  helper_text: z.string().max(500, 'Helper text too long').optional().nullable(),
-  display_order: z.coerce.number().int().min(0).default(0),
-  linked_issue_id: z.string().uuid('Invalid issue ID').optional().nullable(),
-  template_key: z.string().max(100).optional().nullable(),
-  is_custom: z.coerce.boolean().default(false),
-});
-
-export const updatePhaseItemSchema = z.object({
-  id: z.string().uuid('Invalid item ID'),
-  title: z.string().min(1).max(500).optional(),
-  description: z.string().max(2000).optional().nullable(),
-  helper_text: z.string().max(500).optional().nullable(),
-  display_order: z.coerce.number().int().min(0).optional(),
-  is_completed: z.coerce.boolean().optional(),
-  linked_issue_id: z.string().uuid().optional().nullable(),
-});
 
 // =====================
 // Comment Schemas
@@ -377,6 +331,8 @@ export function validateData<T>(
 // Type exports for use in components
 export type CreateIssueInput = z.infer<typeof createIssueSchema>;
 export type UpdateIssueInput = z.infer<typeof updateIssueSchema>;
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;
+export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type CreateProjectWizardInput = z.infer<typeof createProjectWizardSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
@@ -384,9 +340,5 @@ export type CreateTeamInput = z.infer<typeof createTeamSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
-export type CreatePhaseInput = z.infer<typeof createPhaseSchema>;
-export type UpdatePhaseInput = z.infer<typeof updatePhaseSchema>;
-export type CreatePhaseItemInput = z.infer<typeof createPhaseItemSchema>;
-export type UpdatePhaseItemInput = z.infer<typeof updatePhaseItemSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;

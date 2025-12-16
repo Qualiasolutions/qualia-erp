@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Building2, Phone, Globe, MapPin, Folder, User } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { WorkShowcase } from '@/components/work-showcase';
 
 const statusConfig = {
   dropped: { label: 'Dropped', bg: 'bg-gray-100', color: 'text-gray-600' },
@@ -18,16 +19,59 @@ const statusConfig = {
   dead_lead: { label: 'Dead Lead', bg: 'bg-gray-100', color: 'text-gray-600' },
 } as const;
 
+interface ExtendedClient extends Client {
+  assigned?: { full_name: string | null; email: string | null } | null;
+  projects?: { id: string; name: string; project_type: string | null; status: string }[];
+}
+
 interface ClientDetailViewProps {
-  client: Client;
+  client: ExtendedClient;
+}
+
+// Work items mapping for clients
+function getClientWorkItems(clientName: string | null): Array<{
+  id: string;
+  title: string;
+  type: 'image' | 'video';
+  src: string;
+  device: 'mobile' | 'desktop';
+  description?: string;
+}> {
+  const normalizedName = clientName?.toLowerCase().trim().replace(/\s+/g, '') || '';
+  
+  // Match InrVo (case-insensitive, allows variations)
+  if (normalizedName.includes('inrvo')) {
+    return [
+      {
+        id: 'inrvo-mobile',
+        title: 'InrVo Mobile App',
+        type: 'image',
+        src: '/work/inrvo-mobile.jpeg',
+        device: 'mobile',
+        description: 'Mobile interface showcasing audio generation',
+      },
+      {
+        id: 'inrvo-desktop',
+        title: 'InrVo Web Platform',
+        type: 'image',
+        src: '/work/inrvo-desktop.jpeg',
+        device: 'desktop',
+        description: 'Desktop interface for audio generation platform',
+      },
+    ];
+  }
+  
+  // Add more client work items here as needed
+  return [];
 }
 
 export function ClientDetailView({ client }: ClientDetailViewProps) {
   const status = statusConfig[client.lead_status || 'cold'] || statusConfig.cold;
+  const workItems = getClientWorkItems(client.display_name);
 
   return (
     <div className="p-6">
-      <div className="max-w-4xl space-y-6">
+      <div className="max-w-6xl space-y-6">
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-center gap-4">
@@ -120,7 +164,7 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
               <div className="flex items-center gap-3 rounded-lg border border-border p-3">
                 <User className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm">
-                  Client since {new Date(client.created_at).toLocaleDateString()}
+                  Client since {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
             </CardContent>
@@ -167,6 +211,15 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Work Showcase */}
+        {workItems.length > 0 && (
+          <Card>
+            <CardContent className="pt-6">
+              <WorkShowcase clientName={client.display_name || 'Client'} workItems={workItems} />
             </CardContent>
           </Card>
         )}

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Command,
   Activity,
+  Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
@@ -24,6 +25,7 @@ const navigation = [
   { name: 'Health', href: '/health', icon: Activity },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Inbox', href: '/inbox', icon: Inbox },
 ];
 
 function SidebarContent({

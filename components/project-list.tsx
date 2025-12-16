@@ -301,39 +301,41 @@ function ProjectCard({ project }: { project: Project }) {
             </div>
           </div>
 
-          {/* Progress section */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">Progress</span>
-              <span
-                className={cn(
-                  'font-semibold tabular-nums',
-                  isComplete
-                    ? 'text-emerald-500'
-                    : progress >= 50
-                      ? 'text-amber-500'
-                      : typeConfig?.color || 'text-primary'
-                )}
-              >
-                {progress}%
-              </span>
+          {/* Progress section - hidden for SEO and ADS projects */}
+          {project.project_type !== 'seo' && project.project_type !== 'ads' && (
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Progress</span>
+                <span
+                  className={cn(
+                    'font-semibold tabular-nums',
+                    isComplete
+                      ? 'text-emerald-500'
+                      : progress >= 50
+                        ? 'text-amber-500'
+                        : typeConfig?.color || 'text-primary'
+                  )}
+                >
+                  {progress}%
+                </span>
+              </div>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary/50">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all duration-500',
+                    isComplete
+                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                      : progress >= 50
+                        ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+                        : typeConfig
+                          ? `bg-gradient-to-r ${typeConfig.gradientFrom.replace('/20', '')} ${typeConfig.gradientTo.replace('/5', '')}`
+                          : 'bg-primary'
+                  )}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
             </div>
-            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary/50">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-500',
-                  isComplete
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                    : progress >= 50
-                      ? 'bg-gradient-to-r from-amber-500 to-amber-400'
-                      : typeConfig
-                        ? `bg-gradient-to-r ${typeConfig.gradientFrom.replace('/20', '')} ${typeConfig.gradientTo.replace('/5', '')}`
-                        : 'bg-primary'
-                )}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
+          )}
 
           {/* Completion badge */}
           {isComplete && (

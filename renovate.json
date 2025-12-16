@@ -1,0 +1,126 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":automergeDigest",
+    ":automergePatch",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "schedule": ["after 10pm every weekday", "before 5am every weekday", "every weekend"],
+  "timezone": "America/New_York",
+  "labels": ["dependencies", "renovate"],
+  "commitMessagePrefix": "chore(deps):",
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
+  "prConcurrentLimit": 5,
+  "prCreation": "not-pending",
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
+  "rangeStrategy": "auto",
+  "postUpdateOptions": ["npmDedupe"],
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "automerge": true,
+    "assignees": ["@fawzi", "@moayad"]
+  },
+  "packageRules": [
+    {
+      "description": "Automatically merge minor and patch updates",
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Automatically merge dev dependencies",
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Group Supabase packages",
+      "matchPackagePatterns": ["^@supabase/"],
+      "groupName": "supabase packages",
+      "groupSlug": "supabase"
+    },
+    {
+      "description": "Group Radix UI packages",
+      "matchPackagePatterns": ["^@radix-ui/"],
+      "groupName": "radix-ui packages",
+      "groupSlug": "radix-ui"
+    },
+    {
+      "description": "Group AI SDK packages",
+      "matchPackagePatterns": ["^@ai-sdk/", "^ai$"],
+      "groupName": "AI SDK packages",
+      "groupSlug": "ai-sdk"
+    },
+    {
+      "description": "Group testing packages",
+      "matchPackagePatterns": ["^@testing-library/", "^jest", "@types/jest"],
+      "groupName": "testing packages",
+      "groupSlug": "testing"
+    },
+    {
+      "description": "Group ESLint packages",
+      "matchPackagePatterns": ["^eslint"],
+      "groupName": "eslint packages",
+      "groupSlug": "eslint"
+    },
+    {
+      "description": "Group TypeScript type packages",
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "type definitions",
+      "groupSlug": "types",
+      "automerge": true
+    },
+    {
+      "description": "Disable major updates for critical packages",
+      "matchPackageNames": ["next", "react", "react-dom"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Pin Node.js version",
+      "matchPackageNames": ["node"],
+      "enabled": false
+    },
+    {
+      "description": "Security updates",
+      "matchDatasources": ["npm"],
+      "matchUpdateTypes": ["patch"],
+      "prPriority": 10,
+      "labels": ["security"],
+      "automerge": true
+    },
+    {
+      "description": "Group GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    }
+  ],
+  "ignoreDeps": [],
+  "prBodyTemplate": "{{{header}}}{{{table}}}{{{warnings}}}{{{notes}}}{{{changelogs}}}{{{configDescription}}}{{{controls}}}{{{footer}}}",
+  "prTitle": "{{{commitMessagePrefix}}} {{{commitMessageAction}}} {{{commitMessageTopic}}} {{{commitMessageExtra}}}",
+  "enabledManagers": ["npm", "github-actions", "dockerfile", "docker-compose"],
+  "npm": {
+    "fileMatch": ["package\\.json$"],
+    "rangeStrategy": "bump",
+    "packageRules": [
+      {
+        "matchDepTypes": ["dependencies"],
+        "rangeStrategy": "pin"
+      },
+      {
+        "matchDepTypes": ["devDependencies"],
+        "rangeStrategy": "bump"
+      }
+    ]
+  }
+}
