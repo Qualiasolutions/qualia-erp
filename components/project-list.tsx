@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useTransition, useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Folder,
   Inbox,
@@ -28,7 +29,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
-import { moveProjectToGroup, getClients } from '@/app/actions';
+import { moveProjectToGroup, getClients, deleteProject } from '@/app/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -205,6 +206,7 @@ const ALL_GROUPS = ['active', 'salman_kuwait', 'tasos_kyriakides', 'other', 'dem
 function ProjectCard({ project }: { project: Project }) {
   const { isAdmin, isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   // Get type config
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
@@ -225,6 +227,28 @@ function ProjectCard({ project }: { project: Project }) {
   const handleMoveToGroup = (newGroup: string) => {
     startTransition(async () => {
       await moveProjectToGroup(project.id, newGroup);
+    });
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (
+      !confirm(
+        'Are you sure you want to delete this project? This will also delete all issues in this project. This action cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await deleteProject(project.id);
+      if (result.success) {
+        router.refresh();
+      } else {
+        alert(result.error || 'Failed to delete project');
+      }
     });
   };
 
@@ -358,6 +382,7 @@ function ProjectCard({ project }: { project: Project }) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
+                type="button"
                 className={cn(
                   'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
                   isPending && 'animate-pulse opacity-100'
@@ -397,9 +422,7 @@ function ProjectCard({ project }: { project: Project }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                    onClick={() => {
-                      window.location.href = `/projects/${project.id}`;
-                    }}
+                    onClick={handleDelete}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete project
@@ -563,6 +586,7 @@ export function ProjectList({
                   </div>
                   <div className="flex items-center gap-2">
                     <button
+                      type="button"
                       onClick={() => handleOpenWizard(type)}
                       className={cn(
                         'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200',
