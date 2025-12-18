@@ -10,6 +10,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
@@ -65,6 +66,10 @@ function DroppableColumn({
   tasks: Task[];
   onDelete: (id: string) => void;
 }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+  });
+
   return (
     <div className="flex h-full flex-col">
       <div className={cn('rounded-t-lg border-b-2 bg-card px-3 py-2', column.color)}>
@@ -74,7 +79,13 @@ function DroppableColumn({
         </h3>
       </div>
       <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
-        <div className="min-h-[200px] flex-1 space-y-3 overflow-y-auto rounded-b-lg bg-muted/30 p-3">
+        <div
+          ref={setNodeRef}
+          className={cn(
+            'min-h-[200px] flex-1 space-y-3 overflow-y-auto rounded-b-lg bg-muted/30 p-3 transition-colors',
+            isOver && 'bg-primary/10 ring-2 ring-primary/50'
+          )}
+        >
           {tasks.length === 0 ? (
             <div className="py-8 text-center text-sm text-muted-foreground">Drop tasks here</div>
           ) : (
@@ -181,84 +192,87 @@ export function InboxKanbanView({ tasks: initialTasks }: InboxKanbanViewProps) {
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeTask = findTaskById(activeId);
-    if (!activeTask) return;
+    const draggedTask = findTaskById(activeId);
+    if (!draggedTask) return;
 
     // Determine the target column
-    let targetColumn: StatusId = activeTask.status as StatusId;
+    let targetColumn: StatusId;
 
-    // Check if dropping on a column directly
-    const overColumnDirect = statusColumns.find((c) => c.id === overId);
-    if (overColumnDirect) {
-      targetColumn = overColumnDirect.id;
+    // Check if dropping on a column directly (column IDs are 'Todo', 'In Progress', 'Done')
+    const isColumnDrop = statusColumns.some((c) => c.id === overId);
+    if (isColumnDrop) {
+      targetColumn = overId as StatusId;
     } else {
       // Dropping on a task - use that task's column
       const overTask = findTaskById(overId);
       if (overTask) {
         targetColumn = overTask.status as StatusId;
+      } else {
+        // Fallback to current status
+        targetColumn = draggedTask.status as StatusId;
       }
     }
 
-    // Calculate new positions
-    const updatedTasks = tasks.map((t) => {
-      if (t.id === activeId) {
-        return { ...t, status: targetColumn as Task['status'] };
-      }
-      return t;
-    });
+    // Check if status actually changed or if we're just reordering
+    const statusChanged = draggedTask.status !== targetColumn;
 
-    // Calculate sort orders for the target column
-    const targetColumnTasks = updatedTasks
-      .filter((t) => t.status === targetColumn)
-      .sort((a, b) => {
-        if (a.id === activeId) return -1; // Put active task at desired position
-        if (b.id === activeId) return 1;
-        return a.sort_order - b.sort_order;
-      });
-
-    // If dropping on a specific task, reorder
-    const overTaskIndex = targetColumnTasks.findIndex((t) => t.id === overId);
-    if (overTaskIndex !== -1 && overId !== activeId) {
-      const activeIndex = targetColumnTasks.findIndex((t) => t.id === activeId);
-      if (activeIndex !== -1) {
-        const [removed] = targetColumnTasks.splice(activeIndex, 1);
-        const newIndex = overId === activeId ? overTaskIndex : overTaskIndex;
-        targetColumnTasks.splice(newIndex, 0, removed);
-      }
-    }
-
-    // Assign new sort orders
-    const taskUpdates: Array<{ id: string; sort_order: number; status?: string }> = [];
-    targetColumnTasks.forEach((t, index) => {
-      const originalTask = tasks.find((ot) => ot.id === t.id);
-      if (originalTask) {
-        if (originalTask.sort_order !== index || originalTask.status !== targetColumn) {
-          taskUpdates.push({
-            id: t.id,
-            sort_order: index,
-            status: t.id === activeId ? targetColumn : undefined,
-          });
-        }
-      }
-    });
-
-    // Update local state
-    setTasks((prev) =>
-      prev.map((t) => {
-        const update = taskUpdates.find((u) => u.id === t.id);
-        if (update) {
-          return {
-            ...t,
-            sort_order: update.sort_order,
-            status: update.status ? (update.status as Task['status']) : t.status,
-          };
-        }
-        return t;
+    // Get current tasks in the target column (excluding the dragged task if it's moving between columns)
+    const targetColumnTasks = tasks
+      .filter((t) => {
+        if (t.id === activeId) return false; // Exclude dragged task initially
+        return t.status === targetColumn;
       })
-    );
+      .sort((a, b) => a.sort_order - b.sort_order);
 
-    // Persist to database
+    // Determine where to insert the dragged task
+    let insertIndex = targetColumnTasks.length; // Default to end
+    if (!isColumnDrop) {
+      const overTaskIndex = targetColumnTasks.findIndex((t) => t.id === overId);
+      if (overTaskIndex !== -1) {
+        insertIndex = overTaskIndex;
+      }
+    }
+
+    // Insert the dragged task at the correct position
+    const reorderedTasks = [...targetColumnTasks];
+    reorderedTasks.splice(insertIndex, 0, { ...draggedTask, status: targetColumn });
+
+    // Build task updates
+    const taskUpdates: Array<{ id: string; sort_order: number; status?: string }> = [];
+
+    reorderedTasks.forEach((t, index) => {
+      const originalTask = tasks.find((ot) => ot.id === t.id);
+      const needsUpdate =
+        t.id === activeId
+          ? statusChanged || originalTask?.sort_order !== index
+          : originalTask?.sort_order !== index;
+
+      if (needsUpdate) {
+        taskUpdates.push({
+          id: t.id,
+          sort_order: index,
+          status: t.id === activeId ? targetColumn : undefined,
+        });
+      }
+    });
+
+    // Update local state immediately for responsive UI
     if (taskUpdates.length > 0) {
+      setTasks((prev) =>
+        prev.map((t) => {
+          const update = taskUpdates.find((u) => u.id === t.id);
+          if (update) {
+            return {
+              ...t,
+              sort_order: update.sort_order,
+              status: update.status ? (update.status as Task['status']) : t.status,
+            };
+          }
+          return t;
+        })
+      );
+
+      // Persist to database
       startTransition(async () => {
         await reorderTasks(taskUpdates);
         router.refresh();
