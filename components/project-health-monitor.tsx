@@ -133,9 +133,11 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
     }
   };
 
-  const calculateProjectHealth = async (
-    project: Record<string, unknown>
-  ): Promise<ProjectHealth> => {
+  const calculateProjectHealth = async (project: {
+    id: string;
+    name: string;
+    [key: string]: unknown;
+  }): Promise<ProjectHealth> => {
     const supabase = createClient();
 
     // Get metrics data

@@ -42,7 +42,7 @@ export async function getProjectPhases(projectId: string) {
     return {
       ...phase,
       progress,
-      tasks: items.map((item: Record<string, unknown>) => ({
+      tasks: items.map((item: { completed_by_profile?: unknown; [key: string]: unknown }) => ({
         ...item,
         completed_by_profile: Array.isArray(item.completed_by_profile)
           ? item.completed_by_profile[0] || null
