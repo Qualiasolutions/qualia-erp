@@ -5,22 +5,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Heart,
   Activity,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Trophy,
   Star,
   Shield,
   Zap,
   Target,
-  Award,
   GitCommit,
   Users,
-  Calendar
+  Calendar,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -66,29 +62,29 @@ const ACHIEVEMENTS: Achievement[] = [
     name: 'First Steps',
     description: 'Complete your first task',
     icon: <Star className="h-4 w-4" />,
-    rarity: 'common'
+    rarity: 'common',
   },
   {
     id: 'week_streak',
     name: 'Consistent',
     description: '7-day activity streak',
     icon: <Trophy className="h-4 w-4" />,
-    rarity: 'rare'
+    rarity: 'rare',
   },
   {
     id: 'perfect_week',
     name: 'Perfect Week',
     description: 'Complete all tasks on time for a week',
     icon: <Shield className="h-4 w-4" />,
-    rarity: 'epic'
+    rarity: 'epic',
   },
   {
     id: 'milestone_master',
     name: 'Milestone Master',
     description: 'Complete 10 project milestones',
     icon: <Target className="h-4 w-4" />,
-    rarity: 'legendary'
-  }
+    rarity: 'legendary',
+  },
 ];
 
 export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
@@ -101,11 +97,14 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
   useEffect(() => {
     loadProjectHealth();
     subscribeToUpdates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const loadProjectHealth = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Get projects
@@ -134,7 +133,9 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
     }
   };
 
-  const calculateProjectHealth = async (project: any): Promise<ProjectHealth> => {
+  const calculateProjectHealth = async (
+    project: Record<string, unknown>
+  ): Promise<ProjectHealth> => {
     const supabase = createClient();
 
     // Get metrics data
@@ -148,7 +149,7 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
       .eq('project_id', project.id)
       .gte('created_at', weekAgo.toISOString());
 
-    const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0;
+    const completedTasks = tasks?.filter((t) => t.status === 'completed').length || 0;
     const totalTasks = tasks?.length || 1;
     const taskCompletion = (completedTasks / totalTasks) * 100;
 
@@ -156,27 +157,24 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
     const deadlineAdherence = 75 + Math.random() * 25;
 
     // Team activity
-    const { data: activities } = await supabase
+    const { data: activityCount } = await supabase
       .from('activities')
       .select('id')
       .eq('project_id', project.id)
       .gte('created_at', weekAgo.toISOString());
 
-    const teamActivity = Math.min(100, (activities?.length || 0) * 10);
+    const teamActivity = Math.min(100, (activityCount?.length || 0) * 10);
 
     // Commit frequency (mock for now)
     const commitFrequency = 60 + Math.random() * 40;
 
     // Calculate overall score
     const score = Math.round(
-      (taskCompletion * 0.3) +
-      (deadlineAdherence * 0.3) +
-      (teamActivity * 0.2) +
-      (commitFrequency * 0.2)
+      taskCompletion * 0.3 + deadlineAdherence * 0.3 + teamActivity * 0.2 + commitFrequency * 0.2
     );
 
     // Calculate XP and level
-    const totalXp = completedTasks * 100 + activities?.length * 10;
+    const totalXp = completedTasks * 100 + (activityCount?.length || 0) * 10;
     const level = Math.floor(totalXp / 1000) + 1;
     const xpInCurrentLevel = totalXp % 1000;
     const nextLevelXp = 1000;
@@ -194,16 +192,16 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
       .order('created_at', { ascending: false })
       .limit(5);
 
-    const activities: Activity[] = (recentActivities || []).map(a => ({
+    const recentActivityList: Activity[] = (recentActivities || []).map((a) => ({
       id: a.id,
       type: a.type,
       message: a.description || '',
       timestamp: new Date(a.created_at),
-      points: 10
+      points: 10,
     }));
 
     // Check achievements
-    const achievements = checkAchievements(completedTasks, activities.length, level);
+    const achievements = checkAchievements(completedTasks, recentActivityList.length, level);
 
     return {
       id: project.id,
@@ -217,10 +215,10 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
         taskCompletion: Math.round(taskCompletion),
         deadlineAdherence: Math.round(deadlineAdherence),
         teamActivity: Math.round(teamActivity),
-        commitFrequency: Math.round(commitFrequency)
+        commitFrequency: Math.round(commitFrequency),
       },
       achievements,
-      recentActivity: activities
+      recentActivity: recentActivityList,
     };
   };
 
@@ -228,21 +226,21 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
     const unlocked: Achievement[] = [];
 
     if (tasks > 0) {
-      const firstTask = ACHIEVEMENTS.find(a => a.id === 'first_task');
+      const firstTask = ACHIEVEMENTS.find((a) => a.id === 'first_task');
       if (firstTask) {
         unlocked.push({ ...firstTask, unlockedAt: new Date() });
       }
     }
 
     if (activities >= 7) {
-      const weekStreak = ACHIEVEMENTS.find(a => a.id === 'week_streak');
+      const weekStreak = ACHIEVEMENTS.find((a) => a.id === 'week_streak');
       if (weekStreak) {
         unlocked.push({ ...weekStreak, unlockedAt: new Date() });
       }
     }
 
     if (level >= 5) {
-      const perfectWeek = ACHIEVEMENTS.find(a => a.id === 'perfect_week');
+      const perfectWeek = ACHIEVEMENTS.find((a) => a.id === 'perfect_week');
       if (perfectWeek) {
         unlocked.push({ ...perfectWeek, unlockedAt: new Date() });
       }
@@ -259,7 +257,7 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
         {
           event: '*',
           schema: 'public',
-          table: 'issues'
+          table: 'issues',
         },
         (payload) => {
           if (payload.eventType === 'UPDATE' && payload.new.status === 'completed') {
@@ -276,9 +274,9 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
   };
 
   const animateXpGain = (projectId: string, xp: number) => {
-    setAnimatingXp(prev => ({ ...prev, [projectId]: xp }));
+    setAnimatingXp((prev) => ({ ...prev, [projectId]: xp }));
     setTimeout(() => {
-      setAnimatingXp(prev => {
+      setAnimatingXp((prev) => {
         const next = { ...prev };
         delete next[projectId];
         return next;
@@ -323,11 +321,8 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
+      <div className="flex h-96 items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}>
           <Heart className="h-8 w-8 text-primary" />
         </motion.div>
       </div>
@@ -337,18 +332,18 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
   return (
     <div className="space-y-6">
       {/* Project Health Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
           <Card
             key={project.id}
             className={cn(
-              'p-6 cursor-pointer transition-all hover:shadow-lg',
+              'cursor-pointer p-6 transition-all hover:shadow-lg',
               selectedProject === project.id && 'ring-2 ring-primary'
             )}
             onClick={() => setSelectedProject(project.id)}
           >
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {getHealthIcon(project.status)}
                 <h3 className="font-semibold">{project.name}</h3>
@@ -358,11 +353,11 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
 
             {/* Health Score */}
             <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Health Score</span>
                 <span className="text-2xl font-bold">{project.score}%</span>
               </div>
-              <div className="relative h-4 bg-secondary rounded-full overflow-hidden">
+              <div className="relative h-4 overflow-hidden rounded-full bg-secondary">
                 <motion.div
                   className={cn('h-full', getHealthColor(project.score))}
                   initial={{ width: 0 }}
@@ -374,16 +369,13 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
 
             {/* XP Progress */}
             <div className="mb-4">
-              <div className="flex items-center justify-between mb-1">
+              <div className="mb-1 flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">XP Progress</span>
                 <span className="text-xs font-medium">
                   {project.xp} / {project.nextLevelXp} XP
                 </span>
               </div>
-              <Progress
-                value={(project.xp / project.nextLevelXp) * 100}
-                className="h-2"
-              />
+              <Progress value={(project.xp / project.nextLevelXp) * 100} className="h-2" />
             </div>
 
             {/* XP Animation */}
@@ -393,7 +385,7 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
                   initial={{ opacity: 0, y: 0 }}
                   animate={{ opacity: 1, y: -20 }}
                   exit={{ opacity: 0, y: -40 }}
-                  className="absolute top-4 right-4 text-green-500 font-bold"
+                  className="absolute right-4 top-4 font-bold text-green-500"
                 >
                   +{animatingXp[project.id]} XP
                 </motion.div>
@@ -431,14 +423,14 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
           transition={{ duration: 0.3 }}
         >
           {(() => {
-            const project = projects.find(p => p.id === selectedProject);
+            const project = projects.find((p) => p.id === selectedProject);
             if (!project) return null;
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 {/* Achievements */}
                 <Card className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="mb-4 flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     <h3 className="text-lg font-semibold">Achievements</h3>
                   </div>
@@ -448,11 +440,11 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
                         key={achievement.id}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+                        className="flex items-center gap-3 rounded-lg border bg-card p-3"
                       >
                         <div
                           className={cn(
-                            'p-2 rounded-full',
+                            'rounded-full p-2',
                             getRarityColor(achievement.rarity),
                             'bg-opacity-20'
                           )}
@@ -461,9 +453,7 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
                         </div>
                         <div className="flex-1">
                           <p className="font-medium">{achievement.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {achievement.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{achievement.description}</p>
                         </div>
                         <Badge
                           variant="outline"
@@ -482,7 +472,7 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
 
                 {/* Recent Activity */}
                 <Card className="p-6">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="mb-4 flex items-center gap-2">
                     <Zap className="h-5 w-5 text-blue-500" />
                     <h3 className="text-lg font-semibold">Recent Activity</h3>
                   </div>
@@ -493,7 +483,7 @@ export function ProjectHealthMonitor({ projectId }: { projectId?: string }) {
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.1 }}
-                        className="flex items-center justify-between p-2 rounded-lg hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between rounded-lg p-2 transition-colors hover:bg-accent/50"
                       >
                         <div className="flex-1">
                           <p className="text-sm">{activity.message}</p>

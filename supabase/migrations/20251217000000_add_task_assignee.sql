@@ -14,3 +14,4 @@ CREATE INDEX IF NOT EXISTS idx_tasks_assignee_id ON tasks(assignee_id);
 
 -- Add comment
 COMMENT ON COLUMN tasks.assignee_id IS 'User assigned to this task';
+

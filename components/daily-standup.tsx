@@ -6,18 +6,8 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Sparkles,
-  TrendingUp,
-  Target,
-  Zap,
-  Calendar,
-  CheckCircle2,
-  Flame,
-  Award
-} from 'lucide-react';
+import { Sparkles, TrendingUp, Target, Zap, CheckCircle2, Flame, Award } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { format } from 'date-fns';
 
 interface DailyInsights {
   greeting: string;
@@ -53,12 +43,15 @@ export function DailyStandup() {
 
   useEffect(() => {
     loadDailyInsights();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadDailyInsights = async () => {
     try {
       // Get user data
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Calculate greeting based on time
@@ -91,12 +84,12 @@ export function DailyStandup() {
       const motivation = await generateMotivation(completedTasks?.length || 0, streak);
 
       // Transform suggestions to quick wins
-      const quickWins: QuickWin[] = (suggestions || []).map(task => ({
+      const quickWins: QuickWin[] = (suggestions || []).map((task) => ({
         id: task.id,
         title: task.title,
         points: calculatePoints(task.priority),
         estimatedTime: '15-30 min',
-        impact: task.priority === 'urgent' ? 'high' : task.priority === 'high' ? 'medium' : 'low'
+        impact: task.priority === 'urgent' ? 'high' : task.priority === 'high' ? 'medium' : 'low',
       }));
 
       setInsights({
@@ -104,10 +97,10 @@ export function DailyStandup() {
         motivation,
         quickWins,
         streak,
-        todaysFocus: determineFocus(suggestions),
+        todaysFocus: determineFocus(suggestions || []),
         completedYesterday: completedTasks?.length || 0,
         productivity: calculateProductivity(completedTasks?.length || 0),
-        achievements: await checkAchievements(user.id)
+        achievements: await checkAchievements(user.id),
       });
     } catch (error) {
       console.error('Error loading insights:', error);
@@ -124,6 +117,7 @@ export function DailyStandup() {
     return `🌃 Working late, ${name}?`;
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const calculateStreak = async (userId: string): Promise<number> => {
     // This would check consecutive days with activity
     // For now, returning a mock value
@@ -136,7 +130,7 @@ export function DailyStandup() {
       `Yesterday's ${completedCount} completions show you're crushing it! 💪`,
       `Every small step forward is progress. You've got this! ⭐`,
       `Your consistency is paying off. ${streak} days of awesome! 🎯`,
-      `Focus on progress, not perfection. You're doing great! 🌟`
+      `Focus on progress, not perfection. You're doing great! 🌟`,
     ];
     return motivations[Math.floor(Math.random() * motivations.length)];
   };
@@ -146,9 +140,9 @@ export function DailyStandup() {
     return points[priority as keyof typeof points] || 10;
   };
 
-  const determineFocus = (tasks: any[]): string => {
+  const determineFocus = (tasks: { priority: string }[]): string => {
     if (!tasks || tasks.length === 0) return 'Starting fresh today!';
-    const priorities = tasks.map(t => t.priority);
+    const priorities = tasks.map((t) => t.priority);
     if (priorities.includes('urgent')) return '🔴 Urgent tasks need attention';
     if (priorities.includes('high')) return '🟡 High-priority items to tackle';
     return '🟢 Steady progress on current tasks';
@@ -158,22 +152,20 @@ export function DailyStandup() {
     return Math.min(100, completed * 20);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const checkAchievements = async (userId: string): Promise<Achievement[]> => {
     // Mock achievements for now
     return [
       { id: '1', title: 'Early Bird', icon: '🌅' },
       { id: '2', title: 'Task Master', icon: '🎯' },
-      { id: '3', title: 'Streak Champion', icon: '🔥' }
+      { id: '3', title: 'Streak Champion', icon: '🔥' },
     ];
   };
 
   const completeQuickWin = async (winId: string) => {
     setSelectedWin(winId);
     // Mark task as completed
-    await supabase
-      .from('issues')
-      .update({ status: 'completed' })
-      .eq('id', winId);
+    await supabase.from('issues').update({ status: 'completed' }).eq('id', winId);
 
     // Reload insights
     loadDailyInsights();
@@ -181,11 +173,8 @@ export function DailyStandup() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
+      <div className="flex h-96 items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity }}>
           <Sparkles className="h-8 w-8 text-primary" />
         </motion.div>
       </div>
@@ -203,28 +192,28 @@ export function DailyStandup() {
         className="relative overflow-hidden rounded-lg bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-8 text-white"
       >
         <div className="relative z-10">
-          <h1 className="text-4xl font-bold mb-2">{insights.greeting}</h1>
+          <h1 className="mb-2 text-4xl font-bold">{insights.greeting}</h1>
           <p className="text-xl opacity-90">{insights.motivation}</p>
         </div>
 
         {/* Animated background elements */}
         <motion.div
-          className="absolute top-0 right-0 -mt-10 -mr-10 h-40 w-40 rounded-full bg-white opacity-10"
+          className="absolute right-0 top-0 -mr-10 -mt-10 h-40 w-40 rounded-full bg-white opacity-10"
           animate={{
             scale: [1, 1.2, 1],
-            rotate: [0, 90, 0]
+            rotate: [0, 90, 0],
           }}
           transition={{ duration: 10, repeat: Infinity }}
         />
       </motion.div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Streak</p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="mt-1 flex items-center gap-2">
                 <Flame className="h-5 w-5 text-orange-500" />
                 <span className="text-2xl font-bold">{insights.streak}</span>
               </div>
@@ -237,7 +226,7 @@ export function DailyStandup() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Yesterday</p>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="mt-1 flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
                 <span className="text-2xl font-bold">{insights.completedYesterday}</span>
               </div>
@@ -262,8 +251,8 @@ export function DailyStandup() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Today's Focus</p>
-              <p className="text-sm font-medium mt-1">{insights.todaysFocus}</p>
+              <p className="text-sm text-muted-foreground">Today&apos;s Focus</p>
+              <p className="mt-1 text-sm font-medium">{insights.todaysFocus}</p>
             </div>
             <Target className="h-8 w-8 text-purple-500" />
           </div>
@@ -272,7 +261,7 @@ export function DailyStandup() {
 
       {/* Quick Wins */}
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-yellow-500" />
             <h2 className="text-xl font-semibold">Quick Wins for Today</h2>
@@ -289,19 +278,25 @@ export function DailyStandup() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                className="flex items-center justify-between rounded-lg border bg-card p-4 transition-colors hover:bg-accent/50"
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium">{win.title}</h3>
                     <Badge
-                      variant={win.impact === 'high' ? 'destructive' : win.impact === 'medium' ? 'default' : 'secondary'}
+                      variant={
+                        win.impact === 'high'
+                          ? 'destructive'
+                          : win.impact === 'medium'
+                            ? 'default'
+                            : 'secondary'
+                      }
                       className="text-xs"
                     >
                       {win.impact}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
+                  <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
                     <span>⏱️ {win.estimatedTime}</span>
                     <span>⚡ {win.points} XP</span>
                   </div>
@@ -322,7 +317,7 @@ export function DailyStandup() {
 
       {/* Achievements */}
       <Card className="p-6">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 flex items-center gap-2">
           <Award className="h-5 w-5 text-yellow-500" />
           <h2 className="text-xl font-semibold">Recent Achievements</h2>
         </div>
@@ -332,7 +327,7 @@ export function DailyStandup() {
             <motion.div
               key={achievement.id}
               whileHover={{ scale: 1.1 }}
-              className="flex flex-col items-center gap-2 p-4 rounded-lg border bg-card"
+              className="flex flex-col items-center gap-2 rounded-lg border bg-card p-4"
             >
               <div className="text-3xl">{achievement.icon}</div>
               <span className="text-sm font-medium">{achievement.title}</span>

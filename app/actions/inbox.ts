@@ -2,11 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import {
-  parseFormData,
-  createTaskSchema,
-  updateTaskSchema,
-} from '@/lib/validation';
+import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from '@/app/actions';
 
 export type ActionResult = {
@@ -20,9 +16,10 @@ export type Task = {
   id: string;
   workspace_id: string;
   creator_id: string | null;
+  assignee_id: string | null;
   title: string;
   description: string | null;
-  status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+  status: 'Todo' | 'In Progress' | 'Done';
   priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
   sort_order: number;
   due_date: string | null;
@@ -30,6 +27,12 @@ export type Task = {
   created_at: string;
   updated_at: string;
   creator?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+  assignee?: {
     id: string;
     full_name: string | null;
     email: string | null;
@@ -77,6 +80,7 @@ export async function getTasks(
       id,
       workspace_id,
       creator_id,
+      assignee_id,
       title,
       description,
       status,
@@ -86,7 +90,8 @@ export async function getTasks(
       completed_at,
       created_at,
       updated_at,
-      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url)
+      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url)
     `
     )
     .eq('workspace_id', wsId)
@@ -111,10 +116,12 @@ export async function getTasks(
   return (tasks || []).map((task) => {
     const t = task as unknown as {
       creator: Task['creator'] | Task['creator'][] | null;
+      assignee: Task['assignee'] | Task['assignee'][] | null;
     };
     return {
       ...task,
       creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
+      assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
     } as Task;
   });
 }
@@ -138,7 +145,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { title, description, status, priority, workspace_id, due_date } = validation.data;
+  const { title, description, status, priority, workspace_id, due_date, assignee_id } =
+    validation.data;
 
   // Get workspace ID from form or from user's default
   let wsId: string | null | undefined = workspace_id;
@@ -171,6 +179,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       priority,
       workspace_id: wsId,
       creator_id: user.id,
+      assignee_id: assignee_id || null,
       due_date: due_date || null,
       sort_order: nextSortOrder,
     })
@@ -205,7 +214,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, title, description, status, priority, due_date, sort_order } = validation.data;
+  const { id, title, description, status, priority, due_date, sort_order, assignee_id } =
+    validation.data;
 
   if (!id) {
     return { success: false, error: 'Task ID is required' };
@@ -220,6 +230,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (priority !== undefined) updateData.priority = priority;
   if (due_date !== undefined) updateData.due_date = due_date || null;
   if (sort_order !== undefined) updateData.sort_order = sort_order;
+  if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -255,7 +266,11 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
   }
 
   // Check if task exists and user can delete it (creator or admin via RLS)
-  const { data: task } = await supabase.from('tasks').select('id, creator_id').eq('id', taskId).single();
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('id, creator_id')
+    .eq('id', taskId)
+    .single();
 
   if (!task) {
     return { success: false, error: 'Task not found' };
@@ -304,10 +319,7 @@ export async function reorderTasks(
       }
     }
 
-    return supabase
-      .from('tasks')
-      .update(updateData)
-      .eq('id', id);
+    return supabase.from('tasks').update(updateData).eq('id', id);
   });
 
   const results = await Promise.all(updates);

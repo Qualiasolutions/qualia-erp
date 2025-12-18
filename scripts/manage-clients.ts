@@ -15,7 +15,8 @@ import { WEBSITE_PHASES } from '../lib/phase-templates';
 dotenv.config({ path: resolve(process.cwd(), '.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing required environment variables:');
@@ -34,7 +35,12 @@ async function initializeProjectRoadmap(projectId: string) {
   console.log('   Initializing roadmap phases...');
 
   const phases = WEBSITE_PHASES;
-  const allItems: { phase_id: string; title: string; description: string; display_order: number }[] = [];
+  const allItems: {
+    phase_id: string;
+    title: string;
+    description: string;
+    display_order: number;
+  }[] = [];
 
   for (let i = 0; i < phases.length; i++) {
     const phase = phases[i];
@@ -73,9 +79,7 @@ async function initializeProjectRoadmap(projectId: string) {
 
   // Insert all items
   if (allItems.length > 0) {
-    const { error: itemsError } = await supabase
-      .from('phase_items')
-      .insert(allItems);
+    const { error: itemsError } = await supabase.from('phase_items').insert(allItems);
 
     if (itemsError) {
       console.error('   Error creating phase items:', itemsError);
@@ -101,7 +105,7 @@ async function setProjectProgress(projectId: string, targetProgress: number) {
     return false;
   }
 
-  const phaseIds = phases.map(p => p.id);
+  const phaseIds = phases.map((p) => p.id);
 
   // Get all phase items for this project
   const { data: items, error: itemsError } = await supabase
@@ -121,7 +125,7 @@ async function setProjectProgress(projectId: string, targetProgress: number) {
   console.log(`   Found ${totalItems} items, marking ${targetCompleted} as completed`);
 
   // Mark the first N items as completed
-  const itemsToComplete = items.slice(0, targetCompleted).map(i => i.id);
+  const itemsToComplete = items.slice(0, targetCompleted).map((i) => i.id);
 
   if (itemsToComplete.length > 0) {
     const { error: completeError } = await supabase
@@ -139,10 +143,7 @@ async function setProjectProgress(projectId: string, targetProgress: number) {
 
   // Update first phase status to in_progress if we have progress
   if (targetCompleted > 0 && phases.length > 0) {
-    await supabase
-      .from('project_phases')
-      .update({ status: 'in_progress' })
-      .eq('id', phases[0].id);
+    await supabase.from('project_phases').update({ status: 'in_progress' }).eq('id', phases[0].id);
   }
 
   return true;
@@ -152,11 +153,7 @@ async function main() {
   console.log('Managing InrVo client and project...\n');
 
   // Get the first workspace
-  const { data: workspace } = await supabase
-    .from('workspaces')
-    .select('id')
-    .limit(1)
-    .single();
+  const { data: workspace } = await supabase.from('workspaces').select('id').limit(1).single();
 
   if (!workspace) {
     console.error('Error: No workspace found');
@@ -267,11 +264,3 @@ main()
     console.error('Fatal error:', error);
     process.exit(1);
   });
-
-
-
-
-
-
-
-

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CalendarIcon } from 'lucide-react';
+import { Plus, CalendarIcon, User } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -18,28 +18,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn, getInitials } from '@/lib/utils';
 import { createTask } from '@/app/actions/inbox';
+import { useProfiles } from '@/lib/swr';
 import { useRouter } from 'next/navigation';
 
 export function NewTaskModal() {
   const router = useRouter();
+  const { profiles } = useProfiles();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<'Todo' | 'In Progress' | 'Done' | 'Canceled'>('Todo');
-  const [priority, setPriority] = useState<'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low'>('No Priority');
+  const [status, setStatus] = useState<'Todo' | 'In Progress' | 'Done'>('Todo');
+  const [priority, setPriority] = useState<'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low'>(
+    'No Priority'
+  );
+  const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
@@ -49,6 +51,7 @@ export function NewTaskModal() {
       setDescription('');
       setStatus('Todo');
       setPriority('No Priority');
+      setAssigneeId(null);
       setDueDate(undefined);
       setError(null);
     }
@@ -64,6 +67,9 @@ export function NewTaskModal() {
     if (description) formData.set('description', description);
     formData.set('status', status);
     formData.set('priority', priority);
+    if (assigneeId) {
+      formData.set('assignee_id', assigneeId);
+    }
     if (dueDate) {
       formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
     }
@@ -84,11 +90,11 @@ export function NewTaskModal() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           <span>New Task</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-card border-border text-foreground sm:max-w-[500px]">
+      <DialogContent className="border-border bg-card text-foreground sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-lg">Create New Task</DialogTitle>
         </DialogHeader>
@@ -101,7 +107,7 @@ export function NewTaskModal() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task title"
               required
-              className="bg-background border-border"
+              className="border-border bg-background"
             />
           </div>
 
@@ -113,7 +119,7 @@ export function NewTaskModal() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Task description (optional)"
               rows={3}
-              className="bg-background border-border resize-none"
+              className="resize-none border-border bg-background"
             />
           </div>
 
@@ -121,14 +127,13 @@ export function NewTaskModal() {
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
               <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-                <SelectTrigger id="status" className="bg-background border-border">
+                <SelectTrigger id="status" className="border-border bg-background">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="border-border bg-card">
                   <SelectItem value="Todo">Todo</SelectItem>
                   <SelectItem value="In Progress">In Progress</SelectItem>
                   <SelectItem value="Done">Done</SelectItem>
-                  <SelectItem value="Canceled">Canceled</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -136,10 +141,10 @@ export function NewTaskModal() {
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
-                <SelectTrigger id="priority" className="bg-background border-border">
+                <SelectTrigger id="priority" className="border-border bg-background">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="border-border bg-card">
                   <SelectItem value="No Priority">No Priority</SelectItem>
                   <SelectItem value="Low">Low</SelectItem>
                   <SelectItem value="Medium">Medium</SelectItem>
@@ -151,6 +156,45 @@ export function NewTaskModal() {
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="assignee">Assignee</Label>
+            <Select
+              value={assigneeId || 'unassigned'}
+              onValueChange={(v) => setAssigneeId(v === 'unassigned' ? null : v)}
+            >
+              <SelectTrigger id="assignee" className="border-border bg-background">
+                <SelectValue placeholder="Select assignee" />
+              </SelectTrigger>
+              <SelectContent className="border-border bg-card">
+                <SelectItem value="unassigned">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-5 w-5">
+                      <AvatarFallback className="text-[10px]">
+                        <User className="h-3 w-3" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>Unassigned</span>
+                  </div>
+                </SelectItem>
+                {profiles.map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        {profile.avatar_url ? (
+                          <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
+                        ) : null}
+                        <AvatarFallback className="bg-qualia-600 text-[10px] text-white">
+                          {getInitials(profile.full_name || profile.email || 'U')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>{profile.full_name || profile.email}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="due_date">Due Date</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -158,7 +202,7 @@ export function NewTaskModal() {
                   type="button"
                   variant="outline"
                   className={cn(
-                    'w-full justify-start text-left font-normal bg-background border-border',
+                    'w-full justify-start border-border bg-background text-left font-normal',
                     !dueDate && 'text-muted-foreground'
                   )}
                 >
@@ -166,13 +210,8 @@ export function NewTaskModal() {
                   {dueDate ? format(dueDate, 'PPP') : 'Pick a date (optional)'}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                <Calendar
-                  mode="single"
-                  selected={dueDate}
-                  onSelect={setDueDate}
-                  initialFocus
-                />
+              <PopoverContent className="w-auto border-border bg-card p-0" align="start">
+                <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
               </PopoverContent>
             </Popover>
           </div>
@@ -182,7 +221,7 @@ export function NewTaskModal() {
           <Button
             type="submit"
             disabled={loading || !title.trim()}
-            className="w-full bg-primary hover:bg-primary/90 font-medium"
+            className="w-full bg-primary font-medium hover:bg-primary/90"
           >
             {loading ? 'Creating...' : 'Create Task'}
           </Button>

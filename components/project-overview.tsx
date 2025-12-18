@@ -45,9 +45,10 @@ const StatusIcon = ({ status }: { status: string }) => {
 };
 
 export function ProjectOverview({ project }: ProjectOverviewProps) {
-  const progress = project.issue_stats.total > 0 
-    ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-    : 0;
+  const progress =
+    project.issue_stats.total > 0
+      ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
+      : 0;
 
   return (
     <div className="space-y-6">
@@ -154,13 +155,3 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,6 @@ import {
   Coffee,
   Brain,
   Target,
-  Music
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
@@ -52,7 +51,7 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
     soundEnabled: true,
     ambientEnabled: true,
     autoStartBreaks: false,
-    autoStartWork: false
+    autoStartWork: false,
   });
 
   const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
@@ -71,12 +70,13 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
   useEffect(() => {
     loadSettings();
     loadTodaysSessions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (isRunning && timeLeft > 0) {
       intervalRef.current = setInterval(() => {
-        setTimeLeft(prev => {
+        setTimeLeft((prev) => {
           if (prev <= 1) {
             handleTimerComplete();
             return 0;
@@ -93,6 +93,7 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
         clearInterval(intervalRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning, timeLeft]);
 
   const loadSettings = async () => {
@@ -109,7 +110,9 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
   };
 
   const loadTodaysSessions = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     const today = new Date();
@@ -123,7 +126,9 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
   const startTimer = async () => {
     setIsRunning(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     const session: SessionData = {
@@ -132,7 +137,7 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
       duration: timeLeft,
       startTime: new Date(),
       projectId,
-      taskId
+      taskId,
     };
 
     setCurrentSession(session);
@@ -144,11 +149,12 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
 
   const resetTimer = () => {
     setIsRunning(false);
-    const duration = mode === 'work'
-      ? settings.workDuration
-      : mode === 'shortBreak'
-      ? settings.shortBreak
-      : settings.longBreak;
+    const duration =
+      mode === 'work'
+        ? settings.workDuration
+        : mode === 'shortBreak'
+          ? settings.shortBreak
+          : settings.longBreak;
     setTimeLeft(duration * 60);
   };
 
@@ -164,7 +170,7 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
     if (currentSession) {
       const completedSession = {
         ...currentSession,
-        endTime: new Date()
+        endTime: new Date(),
       };
 
       // Save to database here
@@ -175,7 +181,7 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
     if (mode === 'work') {
       const newCount = sessionCount + 1;
       setSessionCount(newCount);
-      setTodaysSessions(prev => prev + 1);
+      setTodaysSessions((prev) => prev + 1);
 
       // Determine next mode
       if (newCount % settings.sessionsUntilLongBreak === 0) {
@@ -201,11 +207,12 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
 
   const switchMode = (newMode: 'work' | 'shortBreak' | 'longBreak') => {
     setMode(newMode);
-    const duration = newMode === 'work'
-      ? settings.workDuration
-      : newMode === 'shortBreak'
-      ? settings.shortBreak
-      : settings.longBreak;
+    const duration =
+      newMode === 'work'
+        ? settings.workDuration
+        : newMode === 'shortBreak'
+          ? settings.shortBreak
+          : settings.longBreak;
     setTimeLeft(duration * 60);
   };
 
@@ -233,11 +240,12 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
   };
 
   const getProgressPercentage = (): number => {
-    const totalDuration = mode === 'work'
-      ? settings.workDuration * 60
-      : mode === 'shortBreak'
-      ? settings.shortBreak * 60
-      : settings.longBreak * 60;
+    const totalDuration =
+      mode === 'work'
+        ? settings.workDuration * 60
+        : mode === 'shortBreak'
+          ? settings.shortBreak * 60
+          : settings.longBreak * 60;
     return ((totalDuration - timeLeft) / totalDuration) * 100;
   };
 
@@ -267,45 +275,45 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
     <>
       {/* Ambient Background */}
       {settings.ambientEnabled && isRunning && (
-        <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="pointer-events-none fixed inset-0 z-0">
           <motion.div
-            className={cn(
-              'absolute inset-0 opacity-20 bg-gradient-to-br',
-              getModeColor()
-            )}
+            className={cn('absolute inset-0 bg-gradient-to-br opacity-20', getModeColor())}
             animate={{
               scale: [1, 1.2, 1],
-              opacity: [0.1, 0.3, 0.1]
+              opacity: [0.1, 0.3, 0.1],
             }}
             transition={{
               duration: 10,
               repeat: Infinity,
-              ease: 'easeInOut'
+              ease: 'easeInOut',
             }}
           />
           <AmbientParticles color={mode === 'work' ? '#ef4444' : '#10b981'} />
         </div>
       )}
 
-      <Card className={cn(
-        'relative p-8 transition-all duration-500',
-        isFullscreen && 'fixed inset-0 z-50 rounded-none h-screen flex items-center justify-center'
-      )}>
-        <div className="max-w-2xl mx-auto">
+      <Card
+        className={cn(
+          'relative p-8 transition-all duration-500',
+          isFullscreen &&
+            'fixed inset-0 z-50 flex h-screen items-center justify-center rounded-none'
+        )}
+      >
+        <div className="mx-auto max-w-2xl">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="mb-8 flex items-center justify-between">
             <div className="flex items-center gap-3">
               {getModeIcon()}
               <h2 className="text-2xl font-bold capitalize">
-                {mode === 'shortBreak' ? 'Short Break' : mode === 'longBreak' ? 'Long Break' : 'Focus Time'}
+                {mode === 'shortBreak'
+                  ? 'Short Break'
+                  : mode === 'longBreak'
+                    ? 'Long Break'
+                    : 'Focus Time'}
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => setShowSettings(!showSettings)}
-              >
+              <Button size="icon" variant="ghost" onClick={() => setShowSettings(!showSettings)}>
                 <Settings className="h-5 w-5" />
               </Button>
               <Button
@@ -319,29 +327,21 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
                   <VolumeX className="h-5 w-5" />
                 )}
               </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={toggleFullscreen}
-              >
-                {isFullscreen ? (
-                  <Minimize className="h-5 w-5" />
-                ) : (
-                  <Maximize className="h-5 w-5" />
-                )}
+              <Button size="icon" variant="ghost" onClick={toggleFullscreen}>
+                {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
               </Button>
             </div>
           </div>
 
           {/* Timer Display */}
-          <div className="text-center mb-8">
+          <div className="mb-8 text-center">
             <motion.div
               className="relative inline-block"
               animate={{ scale: isRunning ? 1 : 0.95 }}
               transition={{ duration: 0.3 }}
             >
               {/* Progress Ring */}
-              <svg className="w-64 h-64">
+              <svg className="h-64 w-64">
                 <circle
                   cx="128"
                   cy="128"
@@ -374,46 +374,36 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
 
               {/* Time Display */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-6xl font-bold font-mono">
-                  {formatTime(timeLeft)}
-                </div>
+                <div className="font-mono text-6xl font-bold">{formatTime(timeLeft)}</div>
               </div>
             </motion.div>
           </div>
 
           {/* Controls */}
-          <div className="flex items-center justify-center gap-4 mb-8">
+          <div className="mb-8 flex items-center justify-center gap-4">
             {!isRunning ? (
               <Button
                 size="lg"
                 className={cn('bg-gradient-to-r', getModeColor())}
                 onClick={startTimer}
               >
-                <Play className="h-5 w-5 mr-2" />
+                <Play className="mr-2 h-5 w-5" />
                 Start
               </Button>
             ) : (
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={pauseTimer}
-              >
-                <Pause className="h-5 w-5 mr-2" />
+              <Button size="lg" variant="secondary" onClick={pauseTimer}>
+                <Pause className="mr-2 h-5 w-5" />
                 Pause
               </Button>
             )}
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={resetTimer}
-            >
-              <RotateCcw className="h-5 w-5 mr-2" />
+            <Button size="lg" variant="outline" onClick={resetTimer}>
+              <RotateCcw className="mr-2 h-5 w-5" />
               Reset
             </Button>
           </div>
 
           {/* Mode Switcher */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="mb-8 flex items-center justify-center gap-2">
             <Button
               variant={mode === 'work' ? 'default' : 'outline'}
               size="sm"
@@ -459,15 +449,19 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-8 p-6 rounded-lg border bg-card"
+                className="mt-8 rounded-lg border bg-card p-6"
               >
-                <h3 className="font-semibold mb-4">Timer Settings</h3>
+                <h3 className="mb-4 font-semibold">Timer Settings</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium">Work Duration: {settings.workDuration} min</label>
+                    <label className="text-sm font-medium">
+                      Work Duration: {settings.workDuration} min
+                    </label>
                     <Slider
                       value={[settings.workDuration]}
-                      onValueChange={(value) => saveSettings({ ...settings, workDuration: value[0] })}
+                      onValueChange={(value: number[]) =>
+                        saveSettings({ ...settings, workDuration: value[0] })
+                      }
                       min={15}
                       max={60}
                       step={5}
@@ -475,10 +469,14 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Short Break: {settings.shortBreak} min</label>
+                    <label className="text-sm font-medium">
+                      Short Break: {settings.shortBreak} min
+                    </label>
                     <Slider
                       value={[settings.shortBreak]}
-                      onValueChange={(value) => saveSettings({ ...settings, shortBreak: value[0] })}
+                      onValueChange={(value: number[]) =>
+                        saveSettings({ ...settings, shortBreak: value[0] })
+                      }
                       min={3}
                       max={15}
                       step={1}
@@ -486,10 +484,14 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Long Break: {settings.longBreak} min</label>
+                    <label className="text-sm font-medium">
+                      Long Break: {settings.longBreak} min
+                    </label>
                     <Slider
                       value={[settings.longBreak]}
-                      onValueChange={(value) => saveSettings({ ...settings, longBreak: value[0] })}
+                      onValueChange={(value: number[]) =>
+                        saveSettings({ ...settings, longBreak: value[0] })
+                      }
                       min={10}
                       max={30}
                       step={5}
@@ -509,7 +511,7 @@ export function FocusTimer({ projectId, taskId }: { projectId?: string; taskId?:
 // Ambient Particles Component
 function AmbientParticles({ color }: { color: string }) {
   return (
-    <svg className="absolute inset-0 w-full h-full">
+    <svg className="absolute inset-0 h-full w-full">
       {Array.from({ length: 20 }).map((_, i) => (
         <motion.circle
           key={i}
@@ -520,12 +522,12 @@ function AmbientParticles({ color }: { color: string }) {
           opacity={0.1}
           animate={{
             y: [0, -100, 0],
-            opacity: [0.1, 0.3, 0.1]
+            opacity: [0.1, 0.3, 0.1],
           }}
           transition={{
             duration: Math.random() * 10 + 10,
             repeat: Infinity,
-            delay: Math.random() * 5
+            delay: Math.random() * 5,
           }}
         />
       ))}

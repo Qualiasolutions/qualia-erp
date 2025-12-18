@@ -33,17 +33,44 @@ interface InboxListViewProps {
 
 const priorityConfig = {
   'No Priority': { color: 'text-muted-foreground', bg: 'bg-muted', label: 'None' },
-  Low: { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'Low' },
-  Medium: { color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30', label: 'Medium' },
-  High: { color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30', label: 'High' },
-  Urgent: { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Urgent' },
+  Low: {
+    color: 'text-blue-600 dark:text-blue-400',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    label: 'Low',
+  },
+  Medium: {
+    color: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-100 dark:bg-amber-900/30',
+    label: 'Medium',
+  },
+  High: {
+    color: 'text-orange-600 dark:text-orange-400',
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    label: 'High',
+  },
+  Urgent: {
+    color: 'text-red-600 dark:text-red-400',
+    bg: 'bg-red-100 dark:bg-red-900/30',
+    label: 'Urgent',
+  },
 };
 
 const statusConfig = {
-  Todo: { color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-100 dark:bg-slate-900/30', label: 'Todo' },
-  'In Progress': { color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30', label: 'In Progress' },
-  Done: { color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30', label: 'Done' },
-  Canceled: { color: 'text-red-600 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-900/30', label: 'Canceled' },
+  Todo: {
+    color: 'text-slate-600 dark:text-slate-400',
+    bg: 'bg-slate-100 dark:bg-slate-900/30',
+    label: 'Todo',
+  },
+  'In Progress': {
+    color: 'text-blue-600 dark:text-blue-400',
+    bg: 'bg-blue-100 dark:bg-blue-900/30',
+    label: 'In Progress',
+  },
+  Done: {
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+    label: 'Done',
+  },
 };
 
 function SortableTaskRow({
@@ -74,24 +101,24 @@ function SortableTaskRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex items-center gap-4 rounded-lg border border-border bg-card p-4 hover:shadow-sm transition-all',
+        'group flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-all hover:shadow-sm',
         isDragging && 'shadow-lg'
       )}
     >
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
+        className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
       >
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 mb-1">
-          <h3 className="font-semibold text-sm text-foreground truncate">{task.title}</h3>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center gap-3">
+          <h3 className="truncate text-sm font-semibold text-foreground">{task.title}</h3>
           <span
             className={cn(
-              'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+              'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
               status.color,
               status.bg
             )}
@@ -101,7 +128,7 @@ function SortableTaskRow({
           {task.priority !== 'No Priority' && (
             <span
               className={cn(
-                'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+                'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
                 priority.color,
                 priority.bg
               )}
@@ -111,14 +138,16 @@ function SortableTaskRow({
           )}
         </div>
         {task.description && (
-          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">{task.description}</p>
+          <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">{task.description}</p>
         )}
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {task.due_date && (
-            <div className={cn(
-              'flex items-center gap-1',
-              isOverdue && 'text-red-600 dark:text-red-400'
-            )}>
+            <div
+              className={cn(
+                'flex items-center gap-1',
+                isOverdue && 'text-red-600 dark:text-red-400'
+              )}
+            >
               <Calendar className="h-3 w-3" />
               <span>{format(new Date(task.due_date), 'MMM d, yyyy')}</span>
               {isOverdue && <AlertCircle className="h-3 w-3" />}
@@ -127,7 +156,7 @@ function SortableTaskRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
         <Button
           variant="ghost"
           size="icon"
@@ -218,7 +247,7 @@ export function InboxListView({ tasks }: InboxListViewProps) {
 
     try {
       await reorderTasks(updates);
-      
+
       // Update local state
       const updatedTasks = localTasks.map((task) => {
         const update = updates.find((u) => u.id === task.id);
@@ -228,7 +257,7 @@ export function InboxListView({ tasks }: InboxListViewProps) {
         return task;
       });
       setLocalTasks(updatedTasks);
-      
+
       router.refresh();
     } catch (error) {
       console.error('Error reordering tasks:', error);
@@ -257,12 +286,14 @@ export function InboxListView({ tasks }: InboxListViewProps) {
     return (
       <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-border text-center">
         <p className="text-sm text-muted-foreground">No tasks yet</p>
-        <p className="mt-1 text-xs text-muted-foreground/70">Create your first task to get started</p>
+        <p className="mt-1 text-xs text-muted-foreground/70">
+          Create your first task to get started
+        </p>
       </div>
     );
   }
 
-  const statusOrder: Task['status'][] = ['Todo', 'In Progress', 'Done', 'Canceled'];
+  const statusOrder: Task['status'][] = ['Todo', 'In Progress', 'Done'];
 
   return (
     <>
@@ -280,12 +311,17 @@ export function InboxListView({ tasks }: InboxListViewProps) {
             return (
               <div key={status} className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-sm text-foreground">{statusConfig[status].label}</h3>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                  <h3 className="text-sm font-semibold text-foreground">
+                    {statusConfig[status].label}
+                  </h3>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                     {statusTasks.length}
                   </span>
                 </div>
-                <SortableContext items={statusTasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+                <SortableContext
+                  items={statusTasks.map((t) => t.id)}
+                  strategy={verticalListSortingStrategy}
+                >
                   <div className="space-y-2">
                     {statusTasks.map((task) => (
                       <SortableTaskRow
@@ -303,9 +339,9 @@ export function InboxListView({ tasks }: InboxListViewProps) {
         </div>
         <DragOverlay>
           {activeTask ? (
-            <div className="opacity-90 rotate-1">
+            <div className="rotate-1 opacity-90">
               <div className="rounded-lg border border-border bg-card p-4 shadow-lg">
-                <div className="font-semibold text-sm">{activeTask.title}</div>
+                <div className="text-sm font-semibold">{activeTask.title}</div>
               </div>
             </div>
           ) : null}

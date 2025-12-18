@@ -410,10 +410,53 @@ async function getUserContext(payload: VapiToolCallPayload) {
 }
 
 /**
+ * Verify VAPI webhook request authenticity
+ * Uses a shared secret token for authentication
+ */
+function verifyVapiWebhook(request: NextRequest): boolean {
+  const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
+
+  // If no secret is configured, allow requests (development mode)
+  // In production, VAPI_WEBHOOK_SECRET should be set
+  if (!webhookSecret) {
+    console.warn('VAPI_WEBHOOK_SECRET not configured - webhook authentication disabled');
+    return true;
+  }
+
+  // Check for the secret in the Authorization header or custom header
+  const authHeader = request.headers.get('authorization');
+  const vapiSecret = request.headers.get('x-vapi-secret');
+
+  // VAPI sends the secret in various ways depending on configuration
+  if (authHeader === `Bearer ${webhookSecret}`) {
+    return true;
+  }
+
+  if (vapiSecret === webhookSecret) {
+    return true;
+  }
+
+  // Also check query parameter for flexibility
+  const url = new URL(request.url);
+  const querySecret = url.searchParams.get('secret');
+  if (querySecret === webhookSecret) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * VAPI Webhook Handler
  * Handles tool calls from the Qualia voice assistant
  */
 export async function POST(request: NextRequest) {
+  // Verify webhook authenticity
+  if (!verifyVapiWebhook(request)) {
+    console.error('VAPI webhook authentication failed');
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const payload = (await request.json()) as VapiToolCallPayload;
 

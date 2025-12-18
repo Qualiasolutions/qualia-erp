@@ -79,3 +79,4 @@ USING (
 -- Add comment
 COMMENT ON TABLE tasks IS 'Workspace-scoped tasks for inbox/personal task management';
 COMMENT ON COLUMN tasks.sort_order IS 'Manual ordering for drag-and-drop within status groups';
+

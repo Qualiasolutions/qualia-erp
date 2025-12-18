@@ -144,9 +144,9 @@ function TaskCard({
       style={style}
       className={cn(
         'group relative rounded-xl border bg-card p-4 shadow-sm transition-all duration-200',
-        'hover:shadow-md hover:border-primary/30',
-        dragging && 'opacity-60 scale-95 rotate-1 shadow-xl z-50',
-        task.is_completed && 'bg-emerald-500/5 border-emerald-500/20'
+        'hover:border-primary/30 hover:shadow-md',
+        dragging && 'z-50 rotate-1 scale-95 opacity-60 shadow-xl',
+        task.is_completed && 'border-emerald-500/20 bg-emerald-500/5'
       )}
     >
       {/* Drag Handle */}
@@ -154,8 +154,8 @@ function TaskCard({
         {...attributes}
         {...listeners}
         className={cn(
-          'absolute left-2 top-2 cursor-grab active:cursor-grabbing text-muted-foreground/50',
-          'opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-foreground'
+          'absolute left-2 top-2 cursor-grab text-muted-foreground/50 active:cursor-grabbing',
+          'p-1 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100'
         )}
       >
         <GripVertical className="h-4 w-4" />
@@ -170,28 +170,28 @@ function TaskCard({
           {task.is_completed ? (
             <CheckCircle2 className="h-5 w-5 text-emerald-500" />
           ) : (
-            <Circle className="h-5 w-5 text-muted-foreground hover:text-primary transition-colors" />
+            <Circle className="h-5 w-5 text-muted-foreground transition-colors hover:text-primary" />
           )}
         </button>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1">
           <div
             className={cn(
-              'text-sm font-medium mb-1.5',
-              task.is_completed && 'line-through text-muted-foreground'
+              'mb-1.5 text-sm font-medium',
+              task.is_completed && 'text-muted-foreground line-through'
             )}
           >
             {task.title}
           </div>
           {task.description && (
-            <div className="text-xs text-muted-foreground line-clamp-2 mb-2">
+            <div className="mb-2 line-clamp-2 text-xs text-muted-foreground">
               {task.description}
             </div>
           )}
           {task.is_completed && task.completed_by_profile && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="mt-2 flex items-center gap-2">
               <Avatar className="h-5 w-5">
                 <AvatarImage src={task.completed_by_profile.avatar_url || undefined} />
-                <AvatarFallback className="text-[10px] bg-emerald-500/20 text-emerald-400">
+                <AvatarFallback className="bg-emerald-500/20 text-[10px] text-emerald-400">
                   {task.completed_by_profile.full_name
                     ?.split(' ')
                     .map((n) => n[0])
@@ -210,7 +210,7 @@ function TaskCard({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex-shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:text-foreground"
+              className="flex-shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
             >
               <MoreVertical className="h-4 w-4" />
             </button>
@@ -272,25 +272,25 @@ function PhaseColumn({
         'flex h-full min-w-[320px] max-w-[320px] flex-col rounded-xl border transition-all duration-200',
         colors.border,
         colors.bg,
-        isOver && 'ring-2 ring-primary/50 shadow-lg scale-[1.02]'
+        isOver && 'scale-[1.02] shadow-lg ring-2 ring-primary/50'
       )}
     >
       {/* Column Header */}
       <div
         className={cn(
-          'flex items-start justify-between rounded-t-xl px-4 py-3 border-b',
+          'flex items-start justify-between rounded-t-xl border-b px-4 py-3',
           colors.headerBg,
           colors.border
         )}
       >
-        <div className="flex-1 min-w-0">
-          <h3 className="truncate font-semibold text-sm mb-1.5">{phase.name}</h3>
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <h3 className="mb-1.5 truncate text-sm font-semibold">{phase.name}</h3>
+          <div className="flex flex-wrap items-center gap-2">
             <span className={cn('text-xs font-medium', colors.text)}>
               {completedCount} / {totalCount}
             </span>
             <div className="flex items-center gap-1.5">
-              <div className={cn('h-1.5 w-16 rounded-full bg-background/20 overflow-hidden')}>
+              <div className={cn('h-1.5 w-16 overflow-hidden rounded-full bg-background/20')}>
                 <div
                   className={cn('h-full rounded-full transition-all duration-300', colors.accent)}
                   style={{ width: `${phase.progress}%` }}
@@ -328,7 +328,7 @@ function PhaseColumn({
       </div>
 
       {/* Tasks List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 min-h-[200px]">
+      <div className="min-h-[200px] flex-1 space-y-2 overflow-y-auto p-3">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
             <TaskCard
@@ -342,12 +342,12 @@ function PhaseColumn({
 
         {/* Add Task Form */}
         {isAddingTask ? (
-          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-3 space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="space-y-2 rounded-xl border-2 border-primary/30 bg-primary/5 p-3 duration-200 animate-in fade-in slide-in-from-top-2">
             <Input
               placeholder="Task title"
               value={newTaskTitle}
               onChange={(e) => onNewTaskTitleChange(e.target.value)}
-              className="h-9 text-sm border-primary/30 bg-background focus:border-primary"
+              className="h-9 border-primary/30 bg-background text-sm focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -363,7 +363,7 @@ function PhaseColumn({
               placeholder="Description (optional)"
               value={newTaskDescription}
               onChange={(e) => onNewTaskDescriptionChange(e.target.value)}
-              className="min-h-[70px] text-sm border-primary/30 bg-background focus:border-primary resize-none"
+              className="min-h-[70px] resize-none border-primary/30 bg-background text-sm focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') {
                   onCancelAddTask();
@@ -380,12 +380,7 @@ function PhaseColumn({
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add Task
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={onCancelAddTask}
-                className="h-8"
-              >
+              <Button size="sm" variant="ghost" onClick={onCancelAddTask} className="h-8">
                 Cancel
               </Button>
             </div>
@@ -395,7 +390,7 @@ function PhaseColumn({
             variant="outline"
             size="sm"
             onClick={onAddTask}
-            className="w-full h-9 border-dashed hover:border-primary/50 hover:bg-primary/5 text-xs font-medium transition-all"
+            className="h-9 w-full border-dashed text-xs font-medium transition-all hover:border-primary/50 hover:bg-primary/5"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add Task
@@ -646,7 +641,11 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
       const newIndex = sourceTasks.findIndex((t) => t.id === overId);
 
       if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const reordered = arrayMove(sourcePhase.tasks, oldIndex, newIndex >= oldIndex ? newIndex + 1 : newIndex);
+        const reordered = arrayMove(
+          sourcePhase.tasks,
+          oldIndex,
+          newIndex >= oldIndex ? newIndex + 1 : newIndex
+        );
         const taskOrders = reordered.map((task, idx) => ({
           id: task.id,
           phase_id: task.phase_id,
@@ -696,7 +695,7 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
         <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1">
-              <p className="font-semibold mb-1">Error</p>
+              <p className="mb-1 font-semibold">Error</p>
               <p className="text-red-400/80">{error}</p>
             </div>
             <button
@@ -713,16 +712,16 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold mb-2">Project Roadmap</h2>
+          <h2 className="mb-2 text-2xl font-bold">Project Roadmap</h2>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span>
               {completedTasks} of {totalTasks} tasks completed
             </span>
             <span>•</span>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-24 rounded-full bg-muted overflow-hidden">
+              <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-gradient-to-r from-qualia-500 to-qualia-600 rounded-full transition-all duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-qualia-500 to-qualia-600 transition-all duration-500"
                   style={{ width: `${overallProgress}%` }}
                 />
               </div>
@@ -740,7 +739,7 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+        <div className="scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent flex gap-4 overflow-x-auto pb-4">
           {sortedPhases.map((phase) => {
             const colors = getStatusColor(phase.status, phase.progress);
             const sortedTasks = [...phase.tasks].sort((a, b) => a.display_order - b.display_order);
@@ -773,7 +772,7 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
 
           {/* Add Phase Column */}
           <div className="flex h-full min-w-[320px] max-w-[320px] flex-shrink-0 flex-col">
-            <div className="rounded-xl border-2 border-dashed border-border p-6 bg-muted/30 hover:bg-muted/50 transition-colors">
+            <div className="rounded-xl border-2 border-dashed border-border bg-muted/30 p-6 transition-colors hover:bg-muted/50">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                   <Plus className="h-5 w-5 text-primary" />
@@ -809,18 +808,18 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
 
         <DragOverlay>
           {activeTask ? (
-            <div className="rounded-xl border bg-card p-4 shadow-2xl opacity-95 rotate-2 scale-105 w-[300px]">
+            <div className="w-[300px] rotate-2 scale-105 rounded-xl border bg-card p-4 opacity-95 shadow-2xl">
               <div className="flex items-start gap-3">
                 <CheckCircle2
                   className={cn(
-                    'h-5 w-5 mt-0.5 flex-shrink-0',
+                    'mt-0.5 h-5 w-5 flex-shrink-0',
                     activeTask.is_completed ? 'text-emerald-500' : 'text-muted-foreground'
                   )}
                 />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium mb-1">{activeTask.title}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 text-sm font-medium">{activeTask.title}</div>
                   {activeTask.description && (
-                    <div className="text-xs text-muted-foreground line-clamp-2">
+                    <div className="line-clamp-2 text-xs text-muted-foreground">
                       {activeTask.description}
                     </div>
                   )}
@@ -833,14 +832,14 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
 
       {/* Empty State */}
       {phases.length === 0 && (
-        <div className="rounded-2xl border-2 border-dashed border-border py-20 text-center bg-muted/20">
+        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/20 py-20 text-center">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-qualia-500/10">
             <MapIcon className="h-10 w-10 text-qualia-500" />
           </div>
           <h3 className="mb-2 text-xl font-semibold">No roadmap yet</h3>
           <p className="mx-auto mb-8 max-w-md text-sm text-muted-foreground">
-            Create your first phase to get started with the kanban board. Organize your project
-            into phases and track progress with drag-and-drop tasks.
+            Create your first phase to get started with the kanban board. Organize your project into
+            phases and track progress with drag-and-drop tasks.
           </p>
           <div className="mx-auto flex max-w-md flex-col gap-3">
             <Input
@@ -852,12 +851,12 @@ export function ProjectRoadmap({ projectId, workspaceId }: ProjectRoadmapProps) 
                   handleCreatePhase();
                 }
               }}
-              className="text-center h-11"
+              className="h-11 text-center"
             />
             <Button
               onClick={handleCreatePhase}
               disabled={!newPhaseName.trim()}
-              className="bg-qualia-600 hover:bg-qualia-500 h-11"
+              className="h-11 bg-qualia-600 hover:bg-qualia-500"
             >
               <Plus className="mr-2 h-4 w-4" />
               Create First Phase

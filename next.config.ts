@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
   // Security headers
@@ -28,14 +29,18 @@ const nextConfig: NextConfig = {
             value: 'on',
           },
           {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.sentry.io",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.vapi.ai wss://*.vapi.ai https://*.vapi.ai https://*.deepgram.com wss://*.deepgram.com https://*.daily.co wss://*.daily.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.vapi.ai wss://*.vapi.ai https://*.vapi.ai https://*.deepgram.com wss://*.deepgram.com https://*.daily.co wss://*.daily.co https://*.sentry.io",
               "media-src 'self' blob: https://*.vapi.ai https://*.daily.co",
               "worker-src 'self' blob:",
               "frame-ancestors 'none'",
@@ -64,11 +69,22 @@ const nextConfig: NextConfig = {
     // optimizePackageImports handles lucide-react automatically
     optimizePackageImports: ['lucide-react', 'date-fns', '@radix-ui/react-icons'],
   },
-
-  // TypeScript: ignore errors during build (pre-existing errors not related to responsive design changes)
-  typescript: {
-    ignoreBuildErrors: true,
-  },
 };
 
-export default nextConfig;
+// Sentry configuration
+export default withSentryConfig(nextConfig, {
+  // For all available options, see:
+  // https://github.com/getsentry/sentry-webpack-plugin#options
+
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Only print logs for uploading source maps in CI
+  silent: !process.env.CI,
+
+  // Upload source maps for better stack traces
+  widenClientFileUpload: true,
+
+  // Disable Sentry telemetry
+  telemetry: false,
+});

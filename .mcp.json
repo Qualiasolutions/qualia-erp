@@ -7,7 +7,7 @@
         "@vapi-ai/mcp-server"
       ],
       "env": {
-        "VAPI_TOKEN": "6dde1069-6920-4493-a5e3-2a6c2a78bc20"
+        "VAPI_TOKEN": "${VAPI_TOKEN}"
       }
     },
     "supabase": {
