@@ -1,5 +1,6 @@
 import { groq } from '@ai-sdk/groq';
-import { streamText, tool, stepCountIs, convertToModelMessages } from 'ai';
+import { openai } from '@ai-sdk/openai';
+import { streamText, tool, stepCountIs, convertToModelMessages, embed } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { chatRateLimiter } from '@/lib/rate-limit';
 import { z } from 'zod';
@@ -95,6 +96,7 @@ READ:
 - getUpcomingMeetings: Scheduled meetings
 - getProjectDetails: Project info with roadmap
 - getWorkspaceStats: Workspace statistics
+- searchKnowledgeBase: Semantic search through company documents and knowledge base
 
 WRITE:
 - createTask: Create tasks ("create task", "add todo", "remind me to")
@@ -481,6 +483,77 @@ Your personality:
               },
               upcomingMeetings: meetings.data?.length || 0,
             };
+          },
+        }),
+
+        searchKnowledgeBase: tool({
+          description:
+            'Search the company knowledge base using semantic similarity. Use when user asks about documentation, procedures, policies, or wants to find information from stored documents.',
+          inputSchema: z.object({
+            query: z.string().describe('The search query - what the user is looking for'),
+            limit: z.number().optional().describe('Max results to return (default 5)'),
+          }),
+          execute: async ({ query, limit = 5 }) => {
+            // Check if OpenAI API key is available
+            if (!process.env.OPENAI_API_KEY) {
+              return {
+                error: 'Knowledge base search is not configured',
+                results: [],
+              };
+            }
+
+            try {
+              // Generate embedding for the query
+              const { embedding } = await embed({
+                model: openai.embedding('text-embedding-3-small'),
+                value: query,
+              });
+
+              // Search using match_documents function
+              const { data: documents, error } = await supabase.rpc('match_documents', {
+                query_embedding: embedding,
+                match_threshold: 0.7,
+                match_count: limit,
+                filter_workspace_id: workspaceId,
+              });
+
+              if (error) {
+                console.error('Knowledge base search error:', error);
+                return { error: 'Search failed', results: [] };
+              }
+
+              if (!documents || documents.length === 0) {
+                return {
+                  message: 'No relevant documents found',
+                  results: [],
+                  query,
+                };
+              }
+
+              return {
+                query,
+                count: documents.length,
+                results: documents.map(
+                  (doc: {
+                    id: string;
+                    title: string;
+                    content: string;
+                    url: string | null;
+                    similarity: number;
+                  }) => ({
+                    id: doc.id,
+                    title: doc.title,
+                    content:
+                      doc.content.length > 500 ? doc.content.slice(0, 500) + '...' : doc.content,
+                    url: doc.url,
+                    relevance: Math.round(doc.similarity * 100) + '%',
+                  })
+                ),
+              };
+            } catch (err) {
+              console.error('Knowledge base search error:', err);
+              return { error: 'Search failed', results: [] };
+            }
           },
         }),
 
