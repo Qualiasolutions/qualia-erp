@@ -1,5 +1,4 @@
 import { groq } from '@ai-sdk/groq';
-import { google } from '@ai-sdk/google';
 import { streamText, tool, stepCountIs, convertToModelMessages, embed } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { chatRateLimiter } from '@/lib/rate-limit';
@@ -503,6 +502,9 @@ Your personality:
             }
 
             try {
+              // Dynamic import to avoid loading Google SDK when not needed
+              const { google } = await import('@ai-sdk/google');
+
               // Generate embedding for the query using Google's model
               const { embedding } = await embed({
                 model: google.textEmbeddingModel('text-embedding-004'),
