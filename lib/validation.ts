@@ -240,6 +240,7 @@ export const createMeetingSchema = z
     project_id: z.string().uuid('Invalid project ID').optional().nullable(),
     client_id: z.string().uuid('Invalid client ID').optional().nullable(),
     workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
+    meeting_link: z.string().url('Invalid meeting link').optional().nullable(),
   })
   .refine(
     (data) => {

@@ -1508,8 +1508,16 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { title, description, start_time, end_time, project_id, client_id, workspace_id } =
-    validation.data;
+  const {
+    title,
+    description,
+    start_time,
+    end_time,
+    project_id,
+    client_id,
+    workspace_id,
+    meeting_link,
+  } = validation.data;
 
   // Get workspace ID from form or from user's default
   let wsId = workspace_id;
@@ -1528,6 +1536,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
       client_id: client_id || null,
       created_by: user.id,
       workspace_id: wsId,
+      meeting_link: meeting_link || null,
     })
     .select()
     .single();
@@ -1609,6 +1618,7 @@ export async function getMeetings(workspaceId?: string | null) {
             description,
             start_time,
             end_time,
+            meeting_link,
             created_at,
             project:projects (id, name),
             client:clients (id, display_name, lead_status),

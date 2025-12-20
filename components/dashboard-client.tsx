@@ -9,6 +9,7 @@ import { isPast, isToday, isTomorrow } from 'date-fns';
 import { Phone, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DashboardNotes } from './dashboard-notes';
+import { DashboardMeetings } from './dashboard-meetings';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 export interface DashboardUser {
@@ -39,16 +40,27 @@ export interface GreetingData {
   };
 }
 
+interface DashboardMeeting {
+  id: string;
+  title: string;
+  start_time: string;
+  end_time: string;
+  meeting_link: string | null;
+  project?: { id: string; name: string } | null;
+  client?: { id: string; display_name: string } | null;
+}
+
 interface DashboardClientProps {
   greeting: string;
   dateString: string;
   user?: DashboardUser;
   greetingData?: GreetingData | null;
   leadFollowUps?: LeadFollowUp[];
+  meetings?: DashboardMeeting[];
 }
 
 // Minimal lead card for the compact widget (currently unused, kept for future use)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CompactLeadCard({ followUp }: { followUp: LeadFollowUp }) {
   const date = new Date(followUp.follow_up_date);
   const isOverdue = isPast(date) && !isToday(date);
@@ -112,6 +124,7 @@ export function DashboardClient({
   user,
   greetingData,
   leadFollowUps = [],
+  meetings = [],
 }: DashboardClientProps) {
   const [hasAutoGreeted, setHasAutoGreeted] = useState(false);
   const [shouldAutoGreet, setShouldAutoGreet] = useState(false);
@@ -208,8 +221,11 @@ export function DashboardClient({
     <div className="flex h-screen flex-col overflow-hidden bg-background/85">
       {/* Enhanced gradient background with more depth */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.03] blur-3xl animate-pulse-subtle" />
-        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.02] blur-3xl animate-pulse-subtle" style={{ animationDelay: '1s' }} />
+        <div className="animate-pulse-subtle absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.03] blur-3xl" />
+        <div
+          className="animate-pulse-subtle absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.02] blur-3xl"
+          style={{ animationDelay: '1s' }}
+        />
         <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.01] blur-3xl" />
       </div>
 
@@ -228,24 +244,29 @@ export function DashboardClient({
           </div>
 
           {/* Greeting text */}
-          <div className="mb-6 text-center sm:mb-8 space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text">
+          <div className="mb-6 space-y-2 text-center sm:mb-8">
+            <h1 className="bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
               {greeting}
             </h1>
-            <p className="text-sm text-muted-foreground sm:text-base font-medium">{dateString}</p>
+            <p className="text-sm font-medium text-muted-foreground sm:text-base">{dateString}</p>
           </div>
         </main>
 
-        {/* Bottom section - Two columns */}
-        <div className="mt-auto grid gap-6 border-t border-border/40 bg-background/40 backdrop-blur-sm px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 md:grid-cols-2">
+        {/* Bottom section - Three columns */}
+        <div className="mt-auto grid gap-4 border-t border-border/40 bg-background/40 px-4 py-6 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-8 md:grid-cols-2 lg:grid-cols-3">
+          {/* Meetings Widget */}
+          <div className="h-[320px]">
+            <DashboardMeetings meetings={meetings} />
+          </div>
+
           {/* Notes Widget */}
           <div className="h-[320px]">
             <DashboardNotes workspaceId={user?.workspaceId} />
           </div>
 
           {/* Follow-ups Widget */}
-          <div className="h-[320px]">
-            <Card className="flex h-full flex-col shadow-lg border-border/60 hover:shadow-xl transition-shadow duration-300">
+          <div className="h-[320px] md:col-span-2 lg:col-span-1">
+            <Card className="flex h-full flex-col border-border/60 shadow-lg transition-shadow duration-300 hover:shadow-xl">
               <CardHeader className="border-b border-border/60 pb-4">
                 <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10 text-qualia-500">
@@ -263,13 +284,15 @@ export function DashboardClient({
                 {sortedFollowUps.length > 0 ? (
                   <div className="divide-y divide-border/60">
                     {sortedFollowUps.map((followUp, index) => (
-                      <div 
-                        key={followUp.id} 
+                      <div
+                        key={followUp.id}
                         className="group p-4 transition-all duration-200 hover:bg-qualia-500/5"
                         style={{ animationDelay: `${index * 50}ms` }}
                       >
                         <div className="mb-2 flex items-center justify-between">
-                          <span className="text-sm font-semibold text-foreground">{followUp.contact_name}</span>
+                          <span className="text-sm font-semibold text-foreground">
+                            {followUp.contact_name}
+                          </span>
                           <span
                             className={cn(
                               'rounded-full px-2 py-0.5 text-[10px] font-medium capitalize',
@@ -283,14 +306,16 @@ export function DashboardClient({
                             {followUp.priority}
                           </span>
                         </div>
-                        <p className="mb-3 text-xs text-muted-foreground font-medium">{followUp.client_name}</p>
+                        <p className="mb-3 text-xs font-medium text-muted-foreground">
+                          {followUp.client_name}
+                        </p>
                         <div className="flex items-center justify-between">
                           <span className="text-[10px] font-medium text-muted-foreground">
                             {new Date(followUp.follow_up_date).toLocaleDateString()}
                           </span>
                           <Link
                             href={`/clients/${followUp.client_id}`}
-                            className="text-[10px] font-medium text-qualia-500 hover:text-qualia-600 dark:hover:text-qualia-400 transition-colors hover:underline"
+                            className="text-[10px] font-medium text-qualia-500 transition-colors hover:text-qualia-600 hover:underline dark:hover:text-qualia-400"
                           >
                             View Client →
                           </Link>
@@ -300,8 +325,8 @@ export function DashboardClient({
                   </div>
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    <div className="text-center space-y-2">
-                      <Phone className="h-8 w-8 mx-auto opacity-20" />
+                    <div className="space-y-2 text-center">
+                      <Phone className="mx-auto h-8 w-8 opacity-20" />
                       <p>No pending follow-ups</p>
                     </div>
                   </div>
@@ -311,7 +336,7 @@ export function DashboardClient({
           </div>
         </div>
 
-        {/* Send Message Container - moved below Notes and Follow-ups */}
+        {/* Send Message Container - moved below widgets */}
         <div className="mx-auto mt-4 w-full max-w-lg px-4 pb-4 sm:px-6 sm:pb-6">
           <DashboardAIInput />
         </div>

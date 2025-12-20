@@ -8,15 +8,20 @@ import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
 async function getUserDashboardData(userId: string, workspaceId?: string) {
   const supabase = await createClient();
 
-  // Get today and tomorrow dates
+  // Get current time minus 1 hour (to show in-progress meetings)
+  const now = new Date();
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+  // Get meetings for the next 7 days
+  const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  // Get today's date for task queries
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const endOfTomorrow = new Date(tomorrow);
-  endOfTomorrow.setHours(23, 59, 59, 999);
 
-  // Get upcoming meetings for today and tomorrow
+  // Get upcoming meetings (including in-progress ones)
   const { data: meetings } = await supabase
     .from('meetings')
     .select(
@@ -26,15 +31,16 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
       description,
       start_time,
       end_time,
+      meeting_link,
       project:projects(id, name),
       client:clients(id, display_name)
     `
     )
-    .gte('start_time', today.toISOString())
-    .lte('start_time', endOfTomorrow.toISOString())
+    .gte('start_time', oneHourAgo.toISOString())
+    .lte('start_time', oneWeekFromNow.toISOString())
     .eq('workspace_id', workspaceId)
     .order('start_time', { ascending: true })
-    .limit(5);
+    .limit(10);
 
   // Get high priority incomplete tasks
   const { data: highPriorityTasks } = await supabase
@@ -333,6 +339,18 @@ export default async function DashboardPage() {
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
+  // Transform meetings to the format expected by DashboardClient
+  const dashboardMeetings =
+    dashboardData?.meetings?.map((m) => ({
+      id: m.id,
+      title: m.title,
+      start_time: m.start_time,
+      end_time: m.end_time,
+      meeting_link: (m as { meeting_link?: string | null }).meeting_link || null,
+      project: Array.isArray(m.project) ? m.project[0] || null : m.project,
+      client: Array.isArray(m.client) ? m.client[0] || null : m.client,
+    })) || [];
+
   return (
     <DashboardClient
       greeting={greeting}
@@ -349,6 +367,7 @@ export default async function DashboardPage() {
       }
       greetingData={greetingData}
       leadFollowUps={leadFollowUps}
+      meetings={dashboardMeetings}
     />
   );
 }

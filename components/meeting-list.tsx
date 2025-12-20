@@ -18,6 +18,7 @@ interface Meeting {
   description: string | null;
   start_time: string;
   end_time: string;
+  meeting_link: string | null;
   project: {
     id: string;
     name: string;
@@ -343,6 +344,19 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
                             </>
                           )}
                         </div>
+
+                        {/* Join button for meetings with links */}
+                        {meeting.meeting_link && !isPast && (
+                          <a
+                            href={meeting.meeting_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 py-1.5 text-xs font-medium text-emerald-500 transition-all hover:bg-emerald-500 hover:text-white"
+                          >
+                            <Video className="h-3 w-3" />
+                            Join Meeting
+                          </a>
+                        )}
                       </div>
 
                       <button
@@ -413,14 +427,27 @@ function CurrentMeetingCard({
             </p>
           </div>
         </div>
-        <button
-          onClick={() => onDelete(meeting.id)}
-          disabled={isPending}
-          className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-red-500/10 hover:text-red-500"
-          title="Delete meeting"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {meeting.meeting_link && (
+            <a
+              href={meeting.meeting_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
+            >
+              <Video className="h-3.5 w-3.5" />
+              Join
+            </a>
+          )}
+          <button
+            onClick={() => onDelete(meeting.id)}
+            disabled={isPending}
+            className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-red-500/10 hover:text-red-500"
+            title="Delete meeting"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -471,14 +498,27 @@ function NextMeetingCard({
             </p>
           </div>
         </div>
-        <button
-          onClick={() => onDelete(meeting.id)}
-          disabled={isPending}
-          className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-red-500/10 hover:text-red-500"
-          title="Delete meeting"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {meeting.meeting_link && (
+            <a
+              href={meeting.meeting_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-500 transition-all hover:bg-emerald-500 hover:text-white"
+            >
+              <Video className="h-3.5 w-3.5" />
+              Join
+            </a>
+          )}
+          <button
+            onClick={() => onDelete(meeting.id)}
+            disabled={isPending}
+            className="rounded-lg p-2 text-muted-foreground transition-all hover:bg-red-500/10 hover:text-red-500"
+            title="Delete meeting"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

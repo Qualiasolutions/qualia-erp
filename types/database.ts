@@ -332,6 +332,7 @@ export type Database = {
           description: string | null;
           end_time: string;
           id: string;
+          meeting_link: string | null;
           project_id: string | null;
           start_time: string;
           title: string;
@@ -345,6 +346,7 @@ export type Database = {
           description?: string | null;
           end_time: string;
           id?: string;
+          meeting_link?: string | null;
           project_id?: string | null;
           start_time: string;
           title: string;
@@ -358,6 +360,7 @@ export type Database = {
           description?: string | null;
           end_time?: string;
           id?: string;
+          meeting_link?: string | null;
           project_id?: string | null;
           start_time?: string;
           title?: string;
