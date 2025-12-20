@@ -571,6 +571,23 @@ export async function POST(request: NextRequest) {
                 userContext?.workspaceId
               );
               break;
+            case 'assign_task':
+              result = await handleAssignTask(
+                args as { taskId: string; assigneeName?: string; assigneeId?: string },
+                userContext?.userId,
+                userContext?.workspaceId
+              );
+              break;
+            case 'update_project':
+              result = await handleUpdateProject(
+                args as { projectId?: string; projectName?: string; status?: string },
+                userContext?.userId,
+                userContext?.workspaceId
+              );
+              break;
+            case 'get_overdue_items':
+              result = await handleGetOverdueItems(userContext?.workspaceId);
+              break;
             default:
               result = `Unknown tool: ${name}`;
           }
@@ -1439,4 +1456,265 @@ async function handleSendNotification(
   const recipient = recipientFullName || args.recipientName || 'الفريق';
   const typeEmoji = args.type === 'urgent' ? '🔴' : args.type === 'reminder' ? '⏰' : '📨';
   return `${typeEmoji} تم إرسال الرسالة لـ ${recipient}`;
+}
+
+/**
+ * Assign a task to a team member
+ */
+async function handleAssignTask(
+  args: { taskId: string; assigneeName?: string; assigneeId?: string },
+  userId?: string,
+  workspaceId?: string
+): Promise<string> {
+  if (!userId) {
+    return 'ما قدرت أكلف - محتاج تسجل دخول';
+  }
+
+  if (!args.taskId) {
+    return 'محتاج رقم المهمة عشان أكلفها';
+  }
+
+  const supabase = await createClient();
+
+  // Find assignee by name if provided
+  let assigneeId = args.assigneeId;
+  let assigneeName = args.assigneeName;
+
+  if (!assigneeId && args.assigneeName) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .ilike('full_name', `%${args.assigneeName}%`)
+      .limit(1)
+      .single();
+
+    if (profile) {
+      assigneeId = profile.id;
+      assigneeName = profile.full_name;
+    } else {
+      return `ما لقيت حدا اسمه "${args.assigneeName}"`;
+    }
+  }
+
+  if (!assigneeId) {
+    return 'قلي مين بدك يشتغل عليها';
+  }
+
+  // Get existing task first
+  const { data: existingTask } = await supabase
+    .from('tasks')
+    .select('id, title')
+    .eq('id', args.taskId)
+    .single();
+
+  if (!existingTask) {
+    return 'ما لقيت المهمة';
+  }
+
+  // Update task with assignee
+  const { data: task, error } = await supabase
+    .from('tasks')
+    .update({ assignee_id: assigneeId })
+    .eq('id', args.taskId)
+    .select('id, title')
+    .single();
+
+  if (error) {
+    return `ما زبط: ${error.message}`;
+  }
+
+  // Log activity
+  await supabase.from('activities').insert({
+    actor_id: userId,
+    type: 'issue_assigned',
+    workspace_id: workspaceId || null,
+    metadata: {
+      task_id: task.id,
+      task_title: task.title,
+      assignee_id: assigneeId,
+      assignee_name: assigneeName,
+      assigned_by_voice: true,
+    },
+  });
+
+  return `تم ✅ كلفت "${task.title}" لـ ${assigneeName}`;
+}
+
+/**
+ * Update project status
+ */
+async function handleUpdateProject(
+  args: { projectId?: string; projectName?: string; status?: string },
+  userId?: string,
+  workspaceId?: string
+): Promise<string> {
+  if (!userId) {
+    return 'ما قدرت أحدث - محتاج تسجل دخول';
+  }
+
+  if (!args.status) {
+    return 'شو الـ status الجديد؟ (Active, Launched, Delayed, Archived)';
+  }
+
+  const supabase = await createClient();
+
+  // Find project by ID or name
+  let projectId = args.projectId;
+
+  if (!projectId && args.projectName) {
+    let query = supabase
+      .from('projects')
+      .select('id, name')
+      .ilike('name', `%${args.projectName}%`)
+      .limit(1);
+
+    if (workspaceId) {
+      query = query.eq('workspace_id', workspaceId);
+    }
+
+    const { data: project } = await query.single();
+
+    if (project) {
+      projectId = project.id;
+    } else {
+      return `ما لقيت مشروع اسمه "${args.projectName}"`;
+    }
+  }
+
+  if (!projectId) {
+    return 'قلي اسم المشروع أو رقمه';
+  }
+
+  // Validate status
+  const validStatuses = ['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'];
+  if (!validStatuses.includes(args.status)) {
+    return `الـ status "${args.status}" مش صحيح. جرب: ${validStatuses.join(', ')}`;
+  }
+
+  // Get existing project
+  const { data: existingProject } = await supabase
+    .from('projects')
+    .select('id, name, status')
+    .eq('id', projectId)
+    .single();
+
+  if (!existingProject) {
+    return 'ما لقيت المشروع';
+  }
+
+  // Update project
+  const { data: project, error } = await supabase
+    .from('projects')
+    .update({ status: args.status })
+    .eq('id', projectId)
+    .select('id, name, status')
+    .single();
+
+  if (error) {
+    return `ما زبط: ${error.message}`;
+  }
+
+  // Log activity
+  await supabase.from('activities').insert({
+    actor_id: userId,
+    type: 'project_updated',
+    project_id: project.id,
+    workspace_id: workspaceId || null,
+    metadata: {
+      name: project.name,
+      old_status: existingProject.status,
+      new_status: args.status,
+      updated_by_voice: true,
+    },
+  });
+
+  const statusArabic: Record<string, string> = {
+    Active: 'نشط ✅',
+    Launched: 'مُطلق 🚀',
+    Delayed: 'متأخر ⚠️',
+    Archived: 'مؤرشف 📦',
+    Canceled: 'ملغي ❌',
+    Demos: 'تجريبي 🎯',
+  };
+
+  return `تم ✅ "${project.name}" صار ${statusArabic[args.status] || args.status}`;
+}
+
+/**
+ * Get overdue tasks and issues
+ */
+async function handleGetOverdueItems(workspaceId?: string): Promise<string> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  // Get overdue tasks (from tasks table)
+  let tasksQuery = supabase
+    .from('tasks')
+    .select('id, title, due_date, priority, assignee:profiles!tasks_assignee_id_fkey(full_name)')
+    .lt('due_date', now.split('T')[0])
+    .neq('status', 'Done')
+    .neq('status', 'Canceled')
+    .order('due_date', { ascending: true })
+    .limit(10);
+
+  if (workspaceId) {
+    tasksQuery = tasksQuery.eq('workspace_id', workspaceId);
+  }
+
+  const { data: overdueTasks } = await tasksQuery;
+
+  // Get projects with passed target dates
+  let projectsQuery = supabase
+    .from('projects')
+    .select('id, name, target_date, status, lead:profiles!projects_lead_id_fkey(full_name)')
+    .lt('target_date', now.split('T')[0])
+    .not('status', 'in', '("Launched","Archived","Canceled")')
+    .order('target_date', { ascending: true })
+    .limit(5);
+
+  if (workspaceId) {
+    projectsQuery = projectsQuery.eq('workspace_id', workspaceId);
+  }
+
+  const { data: overdueProjects } = await projectsQuery;
+
+  const totalOverdue = (overdueTasks?.length || 0) + (overdueProjects?.length || 0);
+
+  if (totalOverdue === 0) {
+    return '🎉 ما في شي متأخر! كل شي ماشي تمام';
+  }
+
+  const parts: string[] = [];
+
+  // Format overdue tasks
+  if (overdueTasks && overdueTasks.length > 0) {
+    parts.push(`📋 مهام متأخرة (${overdueTasks.length}):`);
+    overdueTasks.forEach((task, i) => {
+      const assignee = Array.isArray(task.assignee)
+        ? task.assignee[0]?.full_name
+        : (task.assignee as { full_name?: string } | null)?.full_name;
+      const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString('ar-JO') : '';
+      const priorityEmoji =
+        task.priority === 'Urgent' ? '🔴' : task.priority === 'High' ? '🟠' : '';
+      parts.push(
+        `${i + 1}. ${priorityEmoji}${task.title} - ${dueDate}${assignee ? ` (${assignee})` : ''}`
+      );
+    });
+  }
+
+  // Format overdue projects
+  if (overdueProjects && overdueProjects.length > 0) {
+    parts.push(`\n🏗️ مشاريع متأخرة (${overdueProjects.length}):`);
+    overdueProjects.forEach((project, i) => {
+      const lead = Array.isArray(project.lead)
+        ? project.lead[0]?.full_name
+        : (project.lead as { full_name?: string } | null)?.full_name;
+      const targetDate = project.target_date
+        ? new Date(project.target_date).toLocaleDateString('ar-JO')
+        : '';
+      parts.push(`${i + 1}. ${project.name} - ${targetDate}${lead ? ` (${lead})` : ''}`);
+    });
+  }
+
+  return parts.join('\n');
 }
