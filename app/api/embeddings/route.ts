@@ -1,4 +1,4 @@
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { embedMany, embed } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
@@ -52,10 +52,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const input = inputSchema.parse(body);
 
-    // Check for OpenAI API key
-    const apiKey = process.env.OPENAI_API_KEY;
+    // Check for Google API key
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: 'OpenAI API key not configured' }), {
+      return new Response(JSON.stringify({ error: 'Google AI API key not configured' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
@@ -63,9 +63,10 @@ export async function POST(req: Request) {
 
     if (input.action === 'generate') {
       // Generate embeddings for one or more texts
+      // Using Google's text-embedding-004 (768 dimensions, free tier available)
       if (input.text) {
         const { embedding } = await embed({
-          model: openai.embedding('text-embedding-3-small'),
+          model: google.textEmbeddingModel('text-embedding-004'),
           value: input.text,
         });
         return Response.json({ embedding, dimensions: embedding.length });
@@ -73,7 +74,7 @@ export async function POST(req: Request) {
 
       if (input.texts && input.texts.length > 0) {
         const { embeddings } = await embedMany({
-          model: openai.embedding('text-embedding-3-small'),
+          model: google.textEmbeddingModel('text-embedding-004'),
           values: input.texts,
         });
         return Response.json({
@@ -91,9 +92,9 @@ export async function POST(req: Request) {
         return Response.json({ error: 'No query provided' }, { status: 400 });
       }
 
-      // Generate embedding for the query
+      // Generate embedding for the query using Google's model
       const { embedding } = await embed({
-        model: openai.embedding('text-embedding-3-small'),
+        model: google.textEmbeddingModel('text-embedding-004'),
         value: input.query,
       });
 

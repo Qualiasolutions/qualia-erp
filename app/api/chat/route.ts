@@ -1,5 +1,5 @@
 import { groq } from '@ai-sdk/groq';
-import { openai } from '@ai-sdk/openai';
+import { google } from '@ai-sdk/google';
 import { streamText, tool, stepCountIs, convertToModelMessages, embed } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 import { chatRateLimiter } from '@/lib/rate-limit';
@@ -494,8 +494,8 @@ Your personality:
             limit: z.number().optional().describe('Max results to return (default 5)'),
           }),
           execute: async ({ query, limit = 5 }) => {
-            // Check if OpenAI API key is available
-            if (!process.env.OPENAI_API_KEY) {
+            // Check if Google API key is available
+            if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
               return {
                 error: 'Knowledge base search is not configured',
                 results: [],
@@ -503,9 +503,9 @@ Your personality:
             }
 
             try {
-              // Generate embedding for the query
+              // Generate embedding for the query using Google's model
               const { embedding } = await embed({
-                model: openai.embedding('text-embedding-3-small'),
+                model: google.textEmbeddingModel('text-embedding-004'),
                 value: query,
               });
 
