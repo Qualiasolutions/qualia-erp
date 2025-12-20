@@ -26,15 +26,16 @@ import type { Task } from '@/app/actions/inbox';
 import { TaskCard } from '@/components/task-card';
 import { deleteTask, reorderTasks } from '@/app/actions/inbox';
 import { cn } from '@/lib/utils';
+import { ISSUE_STATUS_COLORS } from '@/lib/color-constants';
 
 interface InboxKanbanViewProps {
   tasks: Task[];
 }
 
 const statusColumns = [
-  { id: 'Todo', label: 'Todo', color: 'border-slate-300 dark:border-slate-700' },
-  { id: 'In Progress', label: 'In Progress', color: 'border-blue-300 dark:border-blue-700' },
-  { id: 'Done', label: 'Done', color: 'border-emerald-300 dark:border-emerald-700' },
+  { id: 'Todo', label: 'Todo', color: ISSUE_STATUS_COLORS.Todo.border },
+  { id: 'In Progress', label: 'In Progress', color: ISSUE_STATUS_COLORS['In Progress'].border },
+  { id: 'Done', label: 'Done', color: ISSUE_STATUS_COLORS.Done.border },
 ] as const;
 
 type StatusId = (typeof statusColumns)[number]['id'];

@@ -42,6 +42,7 @@ import {
   reorderPhaseItems,
 } from '@/app/actions/roadmap';
 import { cn } from '@/lib/utils';
+import { PHASE_STATUS_COLORS, type PhaseStatusKey } from '@/lib/color-constants';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,34 +82,47 @@ interface ProjectRoadmapProps {
 }
 
 const getStatusColor = (status: string, progress: number) => {
+  // Determine effective status based on progress
+  let effectiveStatus: PhaseStatusKey = 'not_started';
   if (status === 'completed' || progress === 100) {
-    return {
-      bg: 'bg-emerald-500/10',
-      border: 'border-emerald-500/30',
+    effectiveStatus = 'completed';
+  } else if (status === 'in_progress' || progress > 0) {
+    effectiveStatus = 'in_progress';
+  } else if (status === 'skipped') {
+    effectiveStatus = 'skipped';
+  }
+
+  const baseColors = PHASE_STATUS_COLORS[effectiveStatus];
+
+  // Extended colors for roadmap-specific styling
+  const colorMap = {
+    completed: {
+      ...baseColors,
       headerBg: 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20',
-      text: 'text-emerald-400',
       countBg: 'bg-emerald-500/20',
       accent: 'bg-emerald-500',
-    };
-  }
-  if (status === 'in_progress' || progress > 0) {
-    return {
-      bg: 'bg-blue-500/10',
-      border: 'border-blue-500/30',
+    },
+    in_progress: {
+      ...baseColors,
       headerBg: 'bg-gradient-to-r from-blue-500/20 to-blue-600/20',
-      text: 'text-blue-400',
       countBg: 'bg-blue-500/20',
       accent: 'bg-blue-500',
-    };
-  }
-  return {
-    bg: 'bg-slate-500/10',
-    border: 'border-slate-500/20',
-    headerBg: 'bg-gradient-to-r from-slate-500/10 to-slate-600/10',
-    text: 'text-slate-400',
-    countBg: 'bg-slate-500/20',
-    accent: 'bg-slate-500',
+    },
+    not_started: {
+      ...baseColors,
+      headerBg: 'bg-gradient-to-r from-slate-500/10 to-slate-600/10',
+      countBg: 'bg-slate-500/20',
+      accent: 'bg-slate-500',
+    },
+    skipped: {
+      ...baseColors,
+      headerBg: 'bg-gradient-to-r from-amber-500/10 to-amber-600/10',
+      countBg: 'bg-amber-500/20',
+      accent: 'bg-amber-500',
+    },
   };
+
+  return colorMap[effectiveStatus];
 };
 
 function TaskCard({

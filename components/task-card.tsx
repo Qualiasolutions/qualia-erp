@@ -9,58 +9,37 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn, getInitials } from '@/lib/utils';
 import type { Task } from '@/app/actions/inbox';
 import { EditTaskModal } from '@/components/edit-task-modal';
+import {
+  ISSUE_STATUS_COLORS,
+  ISSUE_PRIORITY_COLORS,
+  type IssueStatusKey,
+  type IssuePriorityKey,
+} from '@/lib/color-constants';
 
 interface TaskCardProps {
   task: Task;
   onDelete: (id: string) => void;
 }
 
-const priorityConfig = {
-  'No Priority': { color: 'text-muted-foreground', bg: 'bg-muted', label: 'None' },
-  Low: {
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    label: 'Low',
-  },
-  Medium: {
-    color: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-100 dark:bg-amber-900/30',
-    label: 'Medium',
-  },
-  High: {
-    color: 'text-orange-600 dark:text-orange-400',
-    bg: 'bg-orange-100 dark:bg-orange-900/30',
-    label: 'High',
-  },
-  Urgent: {
-    color: 'text-red-600 dark:text-red-400',
-    bg: 'bg-red-100 dark:bg-red-900/30',
-    label: 'Urgent',
-  },
+// Get status colors with fallback
+const getStatusColors = (status: string) => {
+  const colors = ISSUE_STATUS_COLORS[status as IssueStatusKey];
+  return colors || { bg: 'bg-muted', text: 'text-muted-foreground' };
 };
 
-const statusConfig = {
-  Todo: {
-    color: 'text-slate-600 dark:text-slate-400',
-    bg: 'bg-slate-100 dark:bg-slate-900/30',
-    label: 'Todo',
-  },
-  'In Progress': {
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    label: 'In Progress',
-  },
-  Done: {
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-    label: 'Done',
-  },
+// Get priority colors with fallback for 'No Priority'
+const getPriorityColors = (priority: string) => {
+  if (priority === 'No Priority') {
+    return { bg: 'bg-muted', text: 'text-muted-foreground' };
+  }
+  const colors = ISSUE_PRIORITY_COLORS[priority as IssuePriorityKey];
+  return colors || { bg: 'bg-muted', text: 'text-muted-foreground' };
 };
 
 export function TaskCard({ task, onDelete }: TaskCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const priority = priorityConfig[task.priority];
-  const status = statusConfig[task.status];
+  const priorityColors = getPriorityColors(task.priority);
+  const statusColors = getStatusColors(task.status);
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Done';
 
   return (
@@ -98,21 +77,21 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
               <span
                 className={cn(
                   'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                  status.color,
-                  status.bg
+                  statusColors.text,
+                  statusColors.bg
                 )}
               >
-                {status.label}
+                {task.status}
               </span>
               {task.priority !== 'No Priority' && (
                 <span
                   className={cn(
                     'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                    priority.color,
-                    priority.bg
+                    priorityColors.text,
+                    priorityColors.bg
                   )}
                 >
-                  {priority.label}
+                  {task.priority}
                 </span>
               )}
               {task.due_date && (

@@ -503,6 +503,22 @@ Your personality:
               return { error: 'No workspace found for user' };
             }
 
+            // Validate project exists if provided
+            if (project_id) {
+              const { data: project } = await supabase
+                .from('projects')
+                .select('id, name')
+                .eq('id', project_id)
+                .eq('workspace_id', workspaceId)
+                .single();
+
+              if (!project) {
+                return {
+                  error: `Project not found. Please verify the project ID or search for projects first.`,
+                };
+              }
+            }
+
             const { data, error } = await supabase
               .from('issues')
               .insert({
@@ -687,6 +703,38 @@ Your personality:
           execute: async ({ title, start_time, end_time, description, client_id, project_id }) => {
             if (!workspaceId) {
               return { error: 'No workspace found for user' };
+            }
+
+            // Validate client exists if provided
+            if (client_id) {
+              const { data: client } = await supabase
+                .from('clients')
+                .select('id, display_name')
+                .eq('id', client_id)
+                .eq('workspace_id', workspaceId)
+                .single();
+
+              if (!client) {
+                return {
+                  error: `Client not found. Please verify the client ID or search for clients first.`,
+                };
+              }
+            }
+
+            // Validate project exists if provided
+            if (project_id) {
+              const { data: project } = await supabase
+                .from('projects')
+                .select('id, name')
+                .eq('id', project_id)
+                .eq('workspace_id', workspaceId)
+                .single();
+
+              if (!project) {
+                return {
+                  error: `Project not found. Please verify the project ID or search for projects first.`,
+                };
+              }
             }
 
             // Default end time to 1 hour after start
