@@ -143,9 +143,9 @@ Your personality:
           }),
           execute: async () => {
             const [projects, issues, teams] = await Promise.all([
-              supabase.from('projects').select('status'),
-              supabase.from('issues').select('status, priority'),
-              supabase.from('teams').select('id'),
+              supabase.from('projects').select('status').eq('workspace_id', workspaceId),
+              supabase.from('issues').select('status, priority').eq('workspace_id', workspaceId),
+              supabase.from('teams').select('id').eq('workspace_id', workspaceId),
             ]);
 
             const byStatus: Record<string, number> = {};
@@ -179,6 +179,7 @@ Your personality:
                 creator:profiles!issues_creator_id_fkey(full_name),
                 project:projects(name), team:teams(name)`
               )
+              .eq('workspace_id', workspaceId)
               .order('created_at', { ascending: false })
               .limit(limit);
 
@@ -253,6 +254,7 @@ Your personality:
             const { data, error } = await supabase
               .from('teams')
               .select('id, name, key, description')
+              .eq('workspace_id', workspaceId)
               .order('name');
 
             if (error) return { error: error.message };
@@ -832,7 +834,7 @@ Your personality:
           },
         }),
       },
-      stopWhen: stepCountIs(5),
+      stopWhen: stepCountIs(12),
     });
 
     return result.toUIMessageStreamResponse();
