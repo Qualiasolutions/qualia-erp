@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import {
   parseFormData,
+  validateData,
   createIssueSchema,
   updateIssueSchema,
   createProjectSchema,
@@ -12,6 +13,7 @@ import {
   createClientSchema,
   updateClientSchema,
   createMeetingSchema,
+  updateMeetingSchema,
   createCommentSchema,
   createProjectWizardSchema,
   type CreateProjectWizardInput,
@@ -1598,6 +1600,68 @@ export async function deleteMeeting(meetingId: string): Promise<ActionResult> {
 
   revalidatePath('/schedule');
   return { success: true };
+}
+
+export async function updateMeeting(data: {
+  id: string;
+  title?: string;
+  description?: string | null;
+  start_time?: string;
+  end_time?: string;
+  project_id?: string | null;
+  client_id?: string | null;
+  meeting_link?: string | null;
+}): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Validate input
+  const validation = validateData(updateMeetingSchema, data);
+  if (!validation.success) {
+    return { success: false, error: validation.error };
+  }
+
+  const { id, ...updateData } = validation.data;
+
+  // Authorization check: only creator or admin can update
+  const canUpdate = await canDeleteMeeting(user.id, id); // Reuse same permission check
+  if (!canUpdate) {
+    return { success: false, error: 'You do not have permission to update this meeting' };
+  }
+
+  // Build update object, only including defined fields
+  const updates: Record<string, unknown> = {};
+  if (updateData.title !== undefined) updates.title = updateData.title;
+  if (updateData.description !== undefined) updates.description = updateData.description;
+  if (updateData.start_time !== undefined) updates.start_time = updateData.start_time;
+  if (updateData.end_time !== undefined) updates.end_time = updateData.end_time;
+  if (updateData.project_id !== undefined) updates.project_id = updateData.project_id;
+  if (updateData.client_id !== undefined) updates.client_id = updateData.client_id;
+  if (updateData.meeting_link !== undefined)
+    updates.meeting_link = updateData.meeting_link === '' ? null : updateData.meeting_link;
+  updates.updated_at = new Date().toISOString();
+
+  const { data: updatedMeeting, error } = await supabase
+    .from('meetings')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating meeting:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/schedule');
+  revalidatePath('/');
+  return { success: true, data: updatedMeeting };
 }
 
 export async function getMeetings(workspaceId?: string | null) {

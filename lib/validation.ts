@@ -255,6 +255,30 @@ export const createMeetingSchema = z
     }
   );
 
+export const updateMeetingSchema = z
+  .object({
+    id: z.string().uuid('Invalid meeting ID'),
+    title: z.string().min(1).max(200).optional(),
+    description: z.string().max(2000).optional().nullable(),
+    start_time: z.string().optional(),
+    end_time: z.string().optional(),
+    project_id: z.string().uuid().optional().nullable(),
+    client_id: z.string().uuid().optional().nullable(),
+    meeting_link: z.string().url().optional().nullable().or(z.literal('')),
+  })
+  .refine(
+    (data) => {
+      if (data.start_time && data.end_time) {
+        return new Date(data.end_time) > new Date(data.start_time);
+      }
+      return true;
+    },
+    {
+      message: 'End time must be after start time',
+      path: ['end_time'],
+    }
+  );
+
 // =====================
 // Comment Schemas
 // =====================
@@ -340,5 +364,6 @@ export type CreateTeamInput = z.infer<typeof createTeamSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
+export type UpdateMeetingInput = z.infer<typeof updateMeetingSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;

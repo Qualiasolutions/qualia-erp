@@ -1,10 +1,22 @@
 'use client';
 
-import { Video, Clock, CalendarDays, ExternalLink, Plus } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Video,
+  Clock,
+  CalendarDays,
+  ExternalLink,
+  Plus,
+  Link2,
+  Check,
+  Loader2,
+} from 'lucide-react';
 import { format, isToday, isTomorrow, isWithinInterval, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { createGoogleMeetLink } from '@/lib/google-meet';
+import { updateMeeting } from '@/app/actions';
 
 interface Meeting {
   id: string;
@@ -20,7 +32,10 @@ interface DashboardMeetingsProps {
   meetings: Meeting[];
 }
 
-export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
+export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetingsProps) {
+  const [meetings, setMeetings] = useState(initialMeetings);
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [generatingFor, setGeneratingFor] = useState<string | null>(null);
   const now = new Date();
 
   // Find current meeting (if any)
@@ -36,12 +51,53 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
     return start > now;
   });
 
+  // Meetings without links (for the popover)
+  const meetingsWithoutLinks = meetings.filter(
+    (m) => !m.meeting_link && parseISO(m.start_time) > now
+  );
+
   const nextMeeting = upcomingMeetings[0];
 
   // Handle instant meeting creation
   const handleInstantMeeting = () => {
     const meetLink = createGoogleMeetLink();
     window.open(meetLink, '_blank');
+    setPopoverOpen(false);
+  };
+
+  // Generate and attach meeting link to an existing meeting
+  const handleGenerateLink = async (meetingId: string) => {
+    setGeneratingFor(meetingId);
+
+    // Open Google Meet to create a new meeting
+    window.open(createGoogleMeetLink(), '_blank');
+
+    // Prompt user to paste the link
+    setTimeout(async () => {
+      const link = window.prompt(
+        'After Google Meet opens and creates your meeting:\n\n' +
+          '1. Copy the meeting URL from the browser address bar\n' +
+          '2. Paste it here\n\n' +
+          'Meeting URL:'
+      );
+
+      if (link && link.includes('meet.google.com')) {
+        const result = await updateMeeting({
+          id: meetingId,
+          meeting_link: link,
+        });
+
+        if (result.success) {
+          // Update local state
+          setMeetings((prev) =>
+            prev.map((m) => (m.id === meetingId ? { ...m, meeting_link: link } : m))
+          );
+        }
+      }
+
+      setGeneratingFor(null);
+      setPopoverOpen(false);
+    }, 1000);
   };
 
   // Calculate time until next meeting
@@ -89,6 +145,69 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
   // Count for display (current + upcoming)
   const totalActiveMeetings = (currentMeeting ? 1 : 0) + upcomingMeetings.length;
 
+  const MeetButton = () => (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <button
+          className="flex items-center gap-1 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
+          title="Meeting options"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Meet
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 border-border bg-card p-0" align="end">
+        <div className="border-b border-border p-3">
+          <button
+            onClick={handleInstantMeeting}
+            className="flex w-full items-center gap-3 rounded-lg bg-emerald-500 px-3 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-600"
+          >
+            <Video className="h-4 w-4" />
+            Start Instant Meeting
+          </button>
+        </div>
+
+        {meetingsWithoutLinks.length > 0 && (
+          <div className="p-2">
+            <p className="mb-2 px-2 text-xs font-medium text-muted-foreground">
+              Add link to scheduled meeting
+            </p>
+            <div className="max-h-48 space-y-1 overflow-y-auto">
+              {meetingsWithoutLinks.slice(0, 5).map((meeting) => (
+                <button
+                  key={meeting.id}
+                  onClick={() => handleGenerateLink(meeting.id)}
+                  disabled={generatingFor === meeting.id}
+                  className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left transition-all hover:bg-accent disabled:opacity-50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{meeting.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatMeetingDate(meeting.start_time)} at{' '}
+                      {format(parseISO(meeting.start_time), 'h:mm a')}
+                    </p>
+                  </div>
+                  {generatingFor === meeting.id ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-emerald-500" />
+                  ) : (
+                    <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {meetingsWithoutLinks.length === 0 && (
+          <div className="p-4 text-center">
+            <Check className="mx-auto mb-1 h-5 w-5 text-emerald-500" />
+            <p className="text-xs text-muted-foreground">All meetings have links</p>
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+
   if (meetings.length === 0) {
     return (
       <Card className="flex h-full flex-col border-border/60 shadow-lg transition-shadow duration-300 hover:shadow-xl">
@@ -98,14 +217,16 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
               <Video className="h-4 w-4" />
             </div>
             <span>Meetings</span>
-            <button
-              onClick={handleInstantMeeting}
-              className="ml-auto flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
-              title="Start instant Google Meet"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Start Meet
-            </button>
+            <div className="ml-auto">
+              <button
+                onClick={handleInstantMeeting}
+                className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
+                title="Start instant Google Meet"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Start Meet
+              </button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-1 items-center justify-center p-6">
@@ -135,14 +256,7 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                 {totalActiveMeetings}
               </span>
             )}
-            <button
-              onClick={handleInstantMeeting}
-              className="flex items-center gap-1 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
-              title="Start instant Google Meet"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Meet
-            </button>
+            <MeetButton />
           </div>
         </CardTitle>
       </CardHeader>
@@ -160,7 +274,7 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                     {getTimeRemaining(currentMeeting)}
                   </span>
                 </div>
-                {currentMeeting.meeting_link && (
+                {currentMeeting.meeting_link ? (
                   <a
                     href={currentMeeting.meeting_link}
                     target="_blank"
@@ -170,6 +284,19 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                     <Video className="h-3 w-3" />
                     Join
                   </a>
+                ) : (
+                  <button
+                    onClick={() => handleGenerateLink(currentMeeting.id)}
+                    disabled={generatingFor === currentMeeting.id}
+                    className="flex items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-500 transition-all hover:bg-emerald-500 hover:text-white disabled:opacity-50"
+                  >
+                    {generatingFor === currentMeeting.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Link2 className="h-3 w-3" />
+                    )}
+                    Add Link
+                  </button>
                 )}
               </div>
               <h4 className="mb-1 text-sm font-semibold text-foreground">{currentMeeting.title}</h4>
@@ -199,7 +326,7 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                     {getTimeUntil(nextMeeting.start_time)}
                   </span>
                 </div>
-                {nextMeeting.meeting_link && (
+                {nextMeeting.meeting_link ? (
                   <a
                     href={nextMeeting.meeting_link}
                     target="_blank"
@@ -209,6 +336,19 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                     <Video className="h-3 w-3" />
                     Join
                   </a>
+                ) : (
+                  <button
+                    onClick={() => handleGenerateLink(nextMeeting.id)}
+                    disabled={generatingFor === nextMeeting.id}
+                    className="flex items-center gap-1.5 rounded-lg border border-muted-foreground/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-emerald-500 hover:text-emerald-500 disabled:opacity-50"
+                  >
+                    {generatingFor === nextMeeting.id ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Link2 className="h-3 w-3" />
+                    )}
+                    Add Link
+                  </button>
                 )}
               </div>
               <h4 className="mb-1 text-sm font-semibold text-foreground">{nextMeeting.title}</h4>
@@ -238,7 +378,7 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                     </p>
                   )}
                 </div>
-                {meeting.meeting_link && (
+                {meeting.meeting_link ? (
                   <a
                     href={meeting.meeting_link}
                     target="_blank"
@@ -248,6 +388,19 @@ export function DashboardMeetings({ meetings }: DashboardMeetingsProps) {
                   >
                     <ExternalLink className="h-4 w-4" />
                   </a>
+                ) : (
+                  <button
+                    onClick={() => handleGenerateLink(meeting.id)}
+                    disabled={generatingFor === meeting.id}
+                    className="shrink-0 rounded-lg p-2 text-muted-foreground transition-all hover:bg-accent hover:text-emerald-500 disabled:opacity-50"
+                    title="Add meeting link"
+                  >
+                    {generatingFor === meeting.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Link2 className="h-4 w-4" />
+                    )}
+                  </button>
                 )}
               </div>
             </div>

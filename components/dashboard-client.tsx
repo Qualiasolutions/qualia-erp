@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
 import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
 import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { isPast, isToday, isTomorrow } from 'date-fns';
-import { Phone, Flame } from 'lucide-react';
+import { Phone, Flame, Volume2, X, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DashboardNotes } from './dashboard-notes';
 import { DashboardMeetings } from './dashboard-meetings';
@@ -126,26 +126,75 @@ export function DashboardClient({
   leadFollowUps = [],
   meetings = [],
 }: DashboardClientProps) {
-  const [hasAutoGreeted, setHasAutoGreeted] = useState(false);
-  const [shouldAutoGreet, setShouldAutoGreet] = useState(false);
+  const [hasGreeted, setHasGreeted] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [shouldStartGreeting, setShouldStartGreeting] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState<string>('');
 
+  // Check if there are important reminders to show notification
   useEffect(() => {
-    if (!user) return;
+    if (!user || !greetingData) return;
+
+    // Check if already greeted today
+    const lastGreeting = localStorage.getItem('lastAutoGreeting');
+    const today = new Date().toDateString();
+    if (lastGreeting === today) {
+      setHasGreeted(true);
+      return;
+    }
+
     const firstName = user.name.split(' ')[0].toLowerCase();
     const isSpecialUser = firstName === 'fawzi' || firstName === 'moayad';
-    if (isSpecialUser) {
-      setTimeout(() => setShouldAutoGreet(true), 2500);
-    }
-  }, [user]);
 
-  const handleAutoGreetComplete = () => {
+    // Build notification message
+    const hasUrgentItems = greetingData.reminders.some(
+      (r) => r.priority === 'critical' || r.priority === 'high'
+    );
+    const hasMeetings = greetingData.stats.todayMeetingsCount > 0;
+    const hasOverdueTasks = greetingData.stats.overdueTasksCount > 0;
+
+    let message = '';
+    if (hasUrgentItems) {
+      const urgentCount = greetingData.reminders.filter(
+        (r) => r.priority === 'critical' || r.priority === 'high'
+      ).length;
+      message = `${urgentCount} urgent reminder${urgentCount > 1 ? 's' : ''}`;
+    } else if (hasMeetings) {
+      message = `${greetingData.stats.todayMeetingsCount} meeting${greetingData.stats.todayMeetingsCount > 1 ? 's' : ''} today`;
+    } else if (hasOverdueTasks) {
+      message = `${greetingData.stats.overdueTasksCount} overdue task${greetingData.stats.overdueTasksCount > 1 ? 's' : ''}`;
+    } else if (isSpecialUser) {
+      message = 'Good morning update';
+    }
+
+    if (message && isSpecialUser) {
+      setNotificationMessage(message);
+      // Show notification after a short delay
+      setTimeout(() => setShowNotification(true), 2000);
+    }
+  }, [user, greetingData]);
+
+  const handleStartGreeting = useCallback(() => {
+    setShowNotification(false);
+    setShouldStartGreeting(true);
+  }, []);
+
+  const handleDismissNotification = useCallback(() => {
+    setShowNotification(false);
+    // Mark as greeted to prevent showing again today
     const today = new Date().toDateString();
     localStorage.setItem('lastAutoGreeting', today);
-    setHasAutoGreeted(true);
-    setShouldAutoGreet(false);
-  };
+    setHasGreeted(true);
+  }, []);
 
-  const buildAutoGreetingMessage = () => {
+  const handleGreetingComplete = useCallback(() => {
+    const today = new Date().toDateString();
+    localStorage.setItem('lastAutoGreeting', today);
+    setHasGreeted(true);
+    setShouldStartGreeting(false);
+  }, []);
+
+  const buildGreetingMessage = useCallback(() => {
     if (!user || !greetingData) return null;
     const firstName = user.name.split(' ')[0];
     const messages = [];
@@ -196,7 +245,7 @@ export function DashboardClient({
     }
 
     return messages.join('. ');
-  };
+  }, [user, greetingData]);
 
   // Sort follow-ups: overdue first, then by date
   const sortedFollowUps = [...leadFollowUps]
@@ -236,12 +285,43 @@ export function DashboardClient({
           <div className="mb-6 w-full sm:mb-8">
             <QualiaVoiceInline
               user={user}
-              autoGreet={shouldAutoGreet && !hasAutoGreeted}
-              autoGreetingMessage={buildAutoGreetingMessage()}
-              onAutoGreetComplete={handleAutoGreetComplete}
+              autoGreet={shouldStartGreeting && !hasGreeted}
+              autoGreetingMessage={buildGreetingMessage()}
+              onAutoGreetComplete={handleGreetingComplete}
               greetingContext={greetingData || undefined}
             />
           </div>
+
+          {/* Voice greeting notification */}
+          {showNotification && (
+            <div className="fixed bottom-24 right-6 z-50 duration-300 animate-in fade-in slide-in-from-bottom-4">
+              <div className="flex items-center gap-3 rounded-xl border border-qualia-500/30 bg-card/95 px-4 py-3 shadow-lg backdrop-blur-sm">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-qualia-500/10">
+                  <Bell className="h-5 w-5 text-qualia-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">Qualia has updates</p>
+                  <p className="text-xs text-muted-foreground">{notificationMessage}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleStartGreeting}
+                    className="flex items-center gap-1.5 rounded-lg bg-qualia-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-qualia-600"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                    Listen
+                  </button>
+                  <button
+                    onClick={handleDismissNotification}
+                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    title="Dismiss"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Greeting text */}
           <div className="mb-6 space-y-2 text-center sm:mb-8">
