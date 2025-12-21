@@ -3,13 +3,14 @@
 import useSWR, { SWRConfiguration, mutate } from 'swr';
 import { getTeams, getProjects, getProfiles, getCurrentWorkspaceId } from '@/app/actions';
 
-// Default SWR configuration optimized for our use case
+// Default SWR configuration optimized for performance
 export const swrConfig: SWRConfiguration = {
   revalidateOnFocus: false, // Don't refetch on window focus (server actions handle this)
   revalidateOnReconnect: true, // Refetch when network reconnects
-  dedupingInterval: 5000, // Dedupe requests within 5 seconds
+  dedupingInterval: 30000, // Dedupe requests within 30 seconds (was 5s - reduced API calls)
   errorRetryCount: 3, // Retry failed requests 3 times
   shouldRetryOnError: true,
+  keepPreviousData: true, // Show stale data while revalidating for better UX
 };
 
 // Cache keys for SWR
@@ -29,15 +30,14 @@ export function useTeams() {
     data,
     error,
     isLoading,
+    isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.teams, () => getTeams(), {
-    ...swrConfig,
-    revalidateOnMount: true,
-  });
+  } = useSWR(cacheKeys.teams, () => getTeams(), swrConfig);
 
   return {
     teams: data || [],
     isLoading,
+    isValidating, // True when revalidating in background (useful for UI feedback)
     isError: !!error,
     error,
     revalidate,
@@ -53,15 +53,14 @@ export function useProjects() {
     data,
     error,
     isLoading,
+    isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.projects, () => getProjects(), {
-    ...swrConfig,
-    revalidateOnMount: true,
-  });
+  } = useSWR(cacheKeys.projects, () => getProjects(), swrConfig);
 
   return {
     projects: data || [],
     isLoading,
+    isValidating,
     isError: !!error,
     error,
     revalidate,
@@ -77,15 +76,14 @@ export function useProfiles() {
     data,
     error,
     isLoading,
+    isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.profiles, () => getProfiles(), {
-    ...swrConfig,
-    revalidateOnMount: true,
-  });
+  } = useSWR(cacheKeys.profiles, () => getProfiles(), swrConfig);
 
   return {
     profiles: data || [],
     isLoading,
+    isValidating,
     isError: !!error,
     error,
     revalidate,
@@ -100,15 +98,14 @@ export function useCurrentWorkspaceId() {
     data,
     error,
     isLoading,
+    isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.workspaceId, () => getCurrentWorkspaceId(), {
-    ...swrConfig,
-    revalidateOnMount: true,
-  });
+  } = useSWR(cacheKeys.workspaceId, () => getCurrentWorkspaceId(), swrConfig);
 
   return {
     workspaceId: data,
     isLoading,
+    isValidating,
     isError: !!error,
     error,
     revalidate,

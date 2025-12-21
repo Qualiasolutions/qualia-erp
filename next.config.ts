@@ -66,8 +66,21 @@ const nextConfig: NextConfig = {
 
   // Experimental features for bundle optimization
   experimental: {
-    // optimizePackageImports handles lucide-react automatically
-    optimizePackageImports: ['lucide-react', 'date-fns', '@radix-ui/react-icons'],
+    // Tree-shake unused exports from these packages for smaller bundles
+    optimizePackageImports: [
+      'lucide-react',
+      'date-fns',
+      'date-fns-tz',
+      '@radix-ui/react-icons',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tooltip',
+      'framer-motion',
+      'cmdk',
+    ],
   },
 };
 

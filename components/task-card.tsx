@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { format } from 'date-fns';
 import { Edit2, Trash2, Calendar, AlertCircle, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,11 +36,16 @@ const getPriorityColors = (priority: string) => {
   return colors || { bg: 'bg-muted', text: 'text-muted-foreground' };
 };
 
-export function TaskCard({ task, onDelete }: TaskCardProps) {
+function TaskCardComponent({ task, onDelete }: TaskCardProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const priorityColors = getPriorityColors(task.priority);
-  const statusColors = getStatusColors(task.status);
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Done';
+
+  // Memoize derived values to prevent recalculation on every render
+  const priorityColors = useMemo(() => getPriorityColors(task.priority), [task.priority]);
+  const statusColors = useMemo(() => getStatusColors(task.status), [task.status]);
+  const isOverdue = useMemo(
+    () => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Done',
+    [task.due_date, task.status]
+  );
 
   return (
     <>
@@ -148,3 +153,6 @@ export function TaskCard({ task, onDelete }: TaskCardProps) {
     </>
   );
 }
+
+// Memoize TaskCard to prevent re-renders when parent list changes but this task hasn't
+export const TaskCard = memo(TaskCardComponent);
