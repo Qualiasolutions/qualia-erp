@@ -190,6 +190,259 @@ export const SEMANTIC_COLORS = {
   },
 } as const;
 
+// Task Difficulty Colors (Mentorship/Learning)
+export const TASK_DIFFICULTY_COLORS = {
+  starter: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    icon: 'Sparkles',
+    label: 'Starter',
+    description: 'Perfect for learning the basics',
+    xpMultiplier: 1,
+  },
+  easy: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    icon: 'ThumbsUp',
+    label: 'Easy',
+    description: 'Clear path with minor decisions',
+    xpMultiplier: 1.5,
+  },
+  medium: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    icon: 'Puzzle',
+    label: 'Medium',
+    description: 'Requires research and problem-solving',
+    xpMultiplier: 2,
+  },
+  hard: {
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-400',
+    icon: 'Flame',
+    label: 'Hard',
+    description: 'Multiple systems, complex logic',
+    xpMultiplier: 3,
+  },
+  expert: {
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    text: 'text-red-400',
+    icon: 'Crown',
+    label: 'Expert',
+    description: 'Architecture-level decisions',
+    xpMultiplier: 5,
+  },
+} as const;
+
+// Review Status Colors (Mentor Approval Workflow)
+export const REVIEW_STATUS_COLORS = {
+  pending: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    label: 'Pending Review',
+  },
+  approved: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    label: 'Approved',
+  },
+  needs_revision: {
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-400',
+    label: 'Needs Revision',
+  },
+} as const;
+
+// Assignment Type Colors
+export const ASSIGNMENT_TYPE_COLORS = {
+  mentor: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-400',
+    label: 'Mentor Assigned',
+    icon: 'GraduationCap',
+  },
+  self: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    label: 'Self Assigned',
+    icon: 'User',
+  },
+  system: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    label: 'Auto Assigned',
+    icon: 'Bot',
+  },
+} as const;
+
+// Teaching Note Type Colors
+export const TEACHING_NOTE_COLORS = {
+  hint: {
+    bg: 'bg-amber-500/5',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    icon: 'Lightbulb',
+    label: 'Hint',
+  },
+  explanation: {
+    bg: 'bg-blue-500/5',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    icon: 'BookOpen',
+    label: 'Explanation',
+  },
+  resource: {
+    bg: 'bg-cyan-500/5',
+    border: 'border-cyan-500/30',
+    text: 'text-cyan-400',
+    icon: 'Link',
+    label: 'Resource',
+  },
+  warning: {
+    bg: 'bg-red-500/5',
+    border: 'border-red-500/30',
+    text: 'text-red-400',
+    icon: 'AlertTriangle',
+    label: 'Warning',
+  },
+  encouragement: {
+    bg: 'bg-emerald-500/5',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    icon: 'Heart',
+    label: 'Encouragement',
+  },
+} as const;
+
+// Achievement Rarity Colors
+export const ACHIEVEMENT_RARITY_COLORS = {
+  common: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    glow: '',
+  },
+  rare: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    glow: 'ring-2 ring-blue-500/20',
+  },
+  epic: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-400',
+    glow: 'ring-2 ring-purple-500/30',
+  },
+  legendary: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    glow: 'ring-2 ring-amber-400/40 shadow-lg shadow-amber-500/20',
+  },
+} as const;
+
+// Skill Category Colors
+export const SKILL_CATEGORY_COLORS = {
+  violet: {
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/30',
+    text: 'text-violet-400',
+    solid: 'bg-violet-600',
+  },
+  blue: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    solid: 'bg-blue-600',
+  },
+  cyan: {
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/30',
+    text: 'text-cyan-400',
+    solid: 'bg-cyan-600',
+  },
+  emerald: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    solid: 'bg-emerald-600',
+  },
+  orange: {
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-400',
+    solid: 'bg-orange-600',
+  },
+  pink: {
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/30',
+    text: 'text-pink-400',
+    solid: 'bg-pink-600',
+  },
+  slate: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    solid: 'bg-slate-600',
+  },
+} as const;
+
+// Proficiency Level Colors (1-5)
+export const PROFICIENCY_LEVEL_COLORS = {
+  1: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    dot: 'bg-slate-400',
+    label: 'Novice',
+    progress: 20,
+  },
+  2: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-400',
+    dot: 'bg-blue-400',
+    label: 'Beginner',
+    progress: 40,
+  },
+  3: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+    dot: 'bg-emerald-400',
+    label: 'Intermediate',
+    progress: 60,
+  },
+  4: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-400',
+    dot: 'bg-purple-400',
+    label: 'Advanced',
+    progress: 80,
+  },
+  5: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    dot: 'bg-amber-400',
+    label: 'Expert',
+    progress: 100,
+  },
+} as const;
+
 // Type exports for TypeScript
 export type IssueStatusKey = keyof typeof ISSUE_STATUS_COLORS;
 export type IssuePriorityKey = keyof typeof ISSUE_PRIORITY_COLORS;
@@ -197,3 +450,10 @@ export type ProjectStatusKey = keyof typeof PROJECT_STATUS_COLORS;
 export type PhaseStatusKey = keyof typeof PHASE_STATUS_COLORS;
 export type LeadStatusKey = keyof typeof LEAD_STATUS_COLORS;
 export type SemanticColorKey = keyof typeof SEMANTIC_COLORS;
+export type TaskDifficultyKey = keyof typeof TASK_DIFFICULTY_COLORS;
+export type ReviewStatusKey = keyof typeof REVIEW_STATUS_COLORS;
+export type AssignmentTypeKey = keyof typeof ASSIGNMENT_TYPE_COLORS;
+export type TeachingNoteKey = keyof typeof TEACHING_NOTE_COLORS;
+export type AchievementRarityKey = keyof typeof ACHIEVEMENT_RARITY_COLORS;
+export type SkillCategoryColorKey = keyof typeof SKILL_CATEGORY_COLORS;
+export type ProficiencyLevelKey = keyof typeof PROFICIENCY_LEVEL_COLORS;

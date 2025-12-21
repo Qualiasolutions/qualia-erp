@@ -1006,3 +1006,198 @@ export const PROJECT_STATUSES: ProjectStatus[] = [
   'Canceled',
 ];
 export const PROJECT_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'];
+
+// =====================================================
+// MENTORSHIP, SKILLS & LEARNING TYPES
+// =====================================================
+
+// Task difficulty levels
+export type TaskDifficulty = 'starter' | 'easy' | 'medium' | 'hard' | 'expert';
+export const TASK_DIFFICULTIES: TaskDifficulty[] = ['starter', 'easy', 'medium', 'hard', 'expert'];
+
+// Review status for mentor approval workflow
+export type ReviewStatus = 'pending' | 'approved' | 'needs_revision';
+export const REVIEW_STATUSES: ReviewStatus[] = ['pending', 'approved', 'needs_revision'];
+
+// Assignment types
+export type AssignmentType = 'mentor' | 'self' | 'system';
+export const ASSIGNMENT_TYPES: AssignmentType[] = ['mentor', 'self', 'system'];
+
+// Teaching note types
+export type TeachingNoteType = 'hint' | 'explanation' | 'resource' | 'warning' | 'encouragement';
+export const TEACHING_NOTE_TYPES: TeachingNoteType[] = [
+  'hint',
+  'explanation',
+  'resource',
+  'warning',
+  'encouragement',
+];
+
+// Achievement categories and rarity
+export type AchievementCategory = 'consistency' | 'milestone' | 'mastery' | 'speed' | 'quality';
+export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+// Skill proficiency levels (1-5)
+export type ProficiencyLevel = 1 | 2 | 3 | 4 | 5;
+export const PROFICIENCY_LEVELS: ProficiencyLevel[] = [1, 2, 3, 4, 5];
+export const PROFICIENCY_LABELS: Record<ProficiencyLevel, string> = {
+  1: 'Novice',
+  2: 'Beginner',
+  3: 'Intermediate',
+  4: 'Advanced',
+  5: 'Expert',
+};
+
+// Skill practice source types
+export type SkillPracticeSource = 'phase_item' | 'issue' | 'project' | 'manual';
+
+// Skill category interface
+export interface SkillCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  icon: string;
+  color: string;
+  display_order: number;
+  created_at: string;
+}
+
+// Skill interface
+export interface Skill {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string | null;
+  project_types: string[];
+  complexity_level: number;
+  created_at: string;
+  // Joined data
+  category?: SkillCategory;
+}
+
+// User skill interface
+export interface UserSkill {
+  id: string;
+  profile_id: string;
+  skill_id: string;
+  proficiency_level: ProficiencyLevel;
+  times_practiced: number;
+  xp_earned: number;
+  last_practiced_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  skill?: Skill;
+}
+
+// Skill practice log interface
+export interface SkillPracticeLog {
+  id: string;
+  profile_id: string;
+  skill_id: string;
+  source_type: SkillPracticeSource;
+  source_id: string | null;
+  xp_earned: number;
+  notes: string | null;
+  practiced_at: string;
+}
+
+// Achievement interface
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  unlock_conditions: Record<string, unknown>;
+  xp_reward: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+// User achievement interface
+export interface UserAchievement {
+  id: string;
+  profile_id: string;
+  achievement_id: string;
+  earned_at: string;
+  is_seen: boolean;
+  // Joined data
+  achievement?: Achievement;
+}
+
+// Teaching note interface
+export interface TeachingNote {
+  id: string;
+  issue_id: string | null;
+  phase_item_id: string | null;
+  mentor_id: string;
+  note_type: TeachingNoteType;
+  content: string;
+  is_pinned: boolean;
+  created_at: string;
+  // Joined data
+  mentor?: Profile;
+}
+
+// Task reflection interface
+export interface TaskReflection {
+  id: string;
+  issue_id: string | null;
+  task_id: string | null;
+  profile_id: string;
+  what_learned: string | null;
+  challenges_faced: string | null;
+  time_spent_minutes: number | null;
+  difficulty_rating: number | null;
+  created_at: string;
+}
+
+// Issue skill junction
+export interface IssueSkill {
+  id: string;
+  issue_id: string;
+  skill_id: string;
+  is_primary: boolean;
+}
+
+// Extended profile with trainee fields
+export interface ExtendedProfile extends Profile {
+  is_trainee?: boolean;
+  mentor_id?: string | null;
+  learn_mode?: boolean;
+  onboarding_completed?: boolean;
+  onboarding_step?: number;
+  total_xp?: number;
+  current_streak?: number;
+  longest_streak?: number;
+  last_activity_date?: string | null;
+  // Joined data
+  mentor?: Profile;
+}
+
+// Extended issue with learning fields
+export interface ExtendedIssue extends Issue {
+  difficulty?: TaskDifficulty;
+  learning_objective?: string | null;
+  why_it_matters?: string | null;
+  estimated_minutes_experienced?: number | null;
+  estimated_minutes_trainee?: number | null;
+  requires_review?: boolean;
+  reviewer_id?: string | null;
+  review_status?: ReviewStatus | null;
+  review_notes?: string | null;
+  reviewed_at?: string | null;
+  // Joined data
+  reviewer?: Profile;
+  skills?: Skill[];
+  teaching_notes?: TeachingNote[];
+}
+
+// Extended issue assignee with mentor tracking
+export interface ExtendedIssueAssignee extends IssueAssignee {
+  assignment_type?: AssignmentType;
+  assignment_context?: string | null;
+  mentor_id?: string | null;
+}
