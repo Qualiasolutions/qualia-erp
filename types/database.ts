@@ -552,6 +552,69 @@ export type Database = {
         };
         Relationships: [];
       };
+      tasks: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          creator_id: string | null;
+          assignee_id: string | null;
+          project_id: string | null;
+          phase_id: string | null;
+          title: string;
+          description: string | null;
+          status: Database['public']['Enums']['task_status'];
+          priority: Database['public']['Enums']['task_priority'];
+          sort_order: number;
+          due_date: string | null;
+          completed_at: string | null;
+          difficulty: string | null;
+          learning_objective: string | null;
+          estimated_minutes_trainee: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          creator_id?: string | null;
+          assignee_id?: string | null;
+          project_id?: string | null;
+          phase_id?: string | null;
+          title: string;
+          description?: string | null;
+          status?: Database['public']['Enums']['task_status'];
+          priority?: Database['public']['Enums']['task_priority'];
+          sort_order?: number;
+          due_date?: string | null;
+          completed_at?: string | null;
+          difficulty?: string | null;
+          learning_objective?: string | null;
+          estimated_minutes_trainee?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          creator_id?: string | null;
+          assignee_id?: string | null;
+          project_id?: string | null;
+          phase_id?: string | null;
+          title?: string;
+          description?: string | null;
+          status?: Database['public']['Enums']['task_status'];
+          priority?: Database['public']['Enums']['task_priority'];
+          sort_order?: number;
+          due_date?: string | null;
+          completed_at?: string | null;
+          difficulty?: string | null;
+          learning_objective?: string | null;
+          estimated_minutes_trainee?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       milestone_issues: {
         Row: {
           added_at: string | null;
@@ -899,6 +962,8 @@ export type Database = {
         | 'other';
       project_status: 'Demos' | 'Active' | 'Launched' | 'Delayed' | 'Archived' | 'Canceled';
       project_type: 'web_design' | 'ai_agent' | 'voice_agent' | 'seo' | 'ads';
+      task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
+      task_status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
       user_role: 'admin' | 'employee';
     };
     CompositeTypes: {
@@ -939,6 +1004,14 @@ export type Message = Tables<'messages'>;
 export type Notification = Tables<'notifications'>;
 export type ProjectPhase = Tables<'project_phases'>;
 export type PhaseItem = Tables<'phase_items'>;
+export type Task = Tables<'tasks'>;
+
+// Task enum types
+export type TaskStatus = Enums<'task_status'>;
+export type TaskPriority = Enums<'task_priority'>;
+
+export const TASK_STATUSES: TaskStatus[] = ['Todo', 'In Progress', 'Done', 'Canceled'];
+export const TASK_PRIORITIES: TaskPriority[] = ['No Priority', 'Urgent', 'High', 'Medium', 'Low'];
 
 // Notification types
 export type NotificationType =

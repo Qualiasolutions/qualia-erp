@@ -43,6 +43,8 @@ export const createTaskSchema = z.object({
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   due_date: z.string().optional().nullable(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  phase_id: z.string().uuid('Invalid phase ID').optional().nullable(),
 });
 
 export const updateTaskSchema = z.object({
@@ -54,6 +56,8 @@ export const updateTaskSchema = z.object({
   due_date: z.string().optional().nullable(),
   sort_order: z.number().optional(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  phase_id: z.string().uuid('Invalid phase ID').optional().nullable(),
 });
 
 // =====================

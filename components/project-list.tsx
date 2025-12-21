@@ -7,7 +7,6 @@ import {
   Folder,
   Inbox,
   MoreVertical,
-  MoveRight,
   Trash2,
   Bot,
   Globe,
@@ -31,15 +30,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
-import { moveProjectToGroup, getClients, deleteProject } from '@/app/actions';
+import { getClients, deleteProject } from '@/app/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ProjectWizard } from '@/components/project-wizard';
@@ -162,49 +157,6 @@ const PLATFORM_CONFIG: Record<DeploymentPlatform, { icon: typeof Triangle; label
   none: { icon: Ban, label: 'N/A' },
 };
 
-// Legacy group config for backward compatibility
-const GROUP_CONFIG: Record<string, { color: string; bgColor: string }> = {
-  salman_kuwait: {
-    color: 'text-amber-600 dark:text-amber-400',
-    bgColor: 'bg-amber-500/10',
-  },
-  tasos_kyriakides: {
-    color: 'text-blue-600 dark:text-blue-400',
-    bgColor: 'bg-blue-500/10',
-  },
-  other: {
-    color: 'text-violet-600 dark:text-violet-400',
-    bgColor: 'bg-violet-500/10',
-  },
-  active: {
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-  },
-  demos: {
-    color: 'text-pink-600 dark:text-pink-400',
-    bgColor: 'bg-pink-500/10',
-  },
-  inactive: {
-    color: 'text-muted-foreground',
-    bgColor: 'bg-muted',
-  },
-  default: {
-    color: 'text-violet-600 dark:text-violet-400',
-    bgColor: 'bg-violet-500/10',
-  },
-};
-
-const PROJECT_GROUP_LABELS: Record<string, string> = {
-  active: 'Active',
-  salman_kuwait: 'Salman - Kuwait',
-  tasos_kyriakides: 'Tasos Kyriakides',
-  other: 'Other',
-  demos: 'Demos',
-  inactive: 'Inactive',
-};
-
-const ALL_GROUPS = ['active', 'salman_kuwait', 'tasos_kyriakides', 'other', 'demos', 'inactive'];
-
 function ProjectCard({
   project,
   isCollapsed,
@@ -214,7 +166,7 @@ function ProjectCard({
   isCollapsed: boolean;
   onToggleCollapse: () => void;
 }) {
-  const { isAdmin, isSuperAdmin } = useAdminContext();
+  const { isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -223,22 +175,13 @@ function ProjectCard({
   const platformConfig = project.deployment_platform
     ? PLATFORM_CONFIG[project.deployment_platform]
     : null;
-  const groupConfig = GROUP_CONFIG[project.project_group || 'default'] || GROUP_CONFIG['default'];
 
   const progress =
-    project.project_group === 'finished'
-      ? 100
-      : project.roadmap_progress !== undefined && project.roadmap_progress > 0
-        ? project.roadmap_progress
-        : project.issue_stats?.total
-          ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-          : 0;
-
-  const handleMoveToGroup = (newGroup: string) => {
-    startTransition(async () => {
-      await moveProjectToGroup(project.id, newGroup);
-    });
-  };
+    project.roadmap_progress !== undefined && project.roadmap_progress > 0
+      ? project.roadmap_progress
+      : project.issue_stats?.total
+        ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
+        : 0;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -262,7 +205,7 @@ function ProjectCard({
     });
   };
 
-  const showAdminActions = isAdmin || isSuperAdmin;
+  const showAdminActions = isSuperAdmin;
   const TypeIcon = typeConfig?.icon || Folder;
   const PlatformIcon = platformConfig?.icon;
   const isComplete = progress === 100;
@@ -384,11 +327,11 @@ function ProjectCard({
             <div
               className={cn(
                 'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110',
-                typeConfig ? typeConfig.bgColor : groupConfig.bgColor
+                typeConfig ? typeConfig.bgColor : 'bg-muted'
               )}
             >
               <TypeIcon
-                className={cn('h-5 w-5', typeConfig ? typeConfig.color : groupConfig.color)}
+                className={cn('h-5 w-5', typeConfig ? typeConfig.color : 'text-muted-foreground')}
               />
             </div>
 
@@ -486,42 +429,13 @@ function ProjectCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <MoveRight className="mr-2 h-4 w-4" />
-                  Move to group
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  {ALL_GROUPS.filter((g) => g !== project.project_group).map((group) => (
-                    <DropdownMenuItem key={group} onClick={() => handleMoveToGroup(group)}>
-                      <span
-                        className={cn(
-                          'mr-2 h-2 w-2 rounded-full',
-                          group === 'salman_kuwait' && 'bg-amber-500',
-                          group === 'tasos_kyriakides' && 'bg-blue-500',
-                          group === 'active' && 'bg-emerald-500',
-                          group === 'other' && 'bg-violet-500',
-                          group === 'demos' && 'bg-pink-500',
-                          group === 'inactive' && 'bg-gray-500'
-                        )}
-                      />
-                      {PROJECT_GROUP_LABELS[group]}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              {isSuperAdmin && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                    onClick={handleDelete}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete project
-                  </DropdownMenuItem>
-                </>
-              )}
+              <DropdownMenuItem
+                className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete project
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}

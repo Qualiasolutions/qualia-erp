@@ -17,6 +17,8 @@ export type Task = {
   workspace_id: string;
   creator_id: string | null;
   assignee_id: string | null;
+  project_id: string | null;
+  phase_id: string | null;
   title: string;
   description: string | null;
   status: 'Todo' | 'In Progress' | 'Done';
@@ -37,6 +39,15 @@ export type Task = {
     full_name: string | null;
     email: string | null;
     avatar_url: string | null;
+  } | null;
+  project?: {
+    id: string;
+    name: string;
+    project_type: string | null;
+  } | null;
+  phase?: {
+    id: string;
+    name: string;
   } | null;
 };
 
@@ -81,6 +92,8 @@ export async function getTasks(
       workspace_id,
       creator_id,
       assignee_id,
+      project_id,
+      phase_id,
       title,
       description,
       status,
@@ -91,7 +104,9 @@ export async function getTasks(
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
-      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url)
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
+      project:projects!tasks_project_id_fkey (id, name, project_type),
+      phase:project_phases!tasks_phase_id_fkey (id, name)
     `
     )
     .eq('workspace_id', wsId)
@@ -117,11 +132,15 @@ export async function getTasks(
     const t = task as unknown as {
       creator: Task['creator'] | Task['creator'][] | null;
       assignee: Task['assignee'] | Task['assignee'][] | null;
+      project: Task['project'] | Task['project'][] | null;
+      phase: Task['phase'] | Task['phase'][] | null;
     };
     return {
       ...task,
       creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
       assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+      project: Array.isArray(t.project) ? t.project[0] || null : t.project,
+      phase: Array.isArray(t.phase) ? t.phase[0] || null : t.phase,
     } as Task;
   });
 }
@@ -145,8 +164,17 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { title, description, status, priority, workspace_id, due_date, assignee_id } =
-    validation.data;
+  const {
+    title,
+    description,
+    status,
+    priority,
+    workspace_id,
+    due_date,
+    assignee_id,
+    project_id,
+    phase_id,
+  } = validation.data;
 
   // Get workspace ID from form or from user's default
   let wsId: string | null | undefined = workspace_id;
@@ -180,6 +208,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,
+      project_id: project_id || null,
+      phase_id: phase_id || null,
       due_date: due_date || null,
       sort_order: nextSortOrder,
     })
@@ -214,8 +244,18 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, title, description, status, priority, due_date, sort_order, assignee_id } =
-    validation.data;
+  const {
+    id,
+    title,
+    description,
+    status,
+    priority,
+    due_date,
+    sort_order,
+    assignee_id,
+    project_id,
+    phase_id,
+  } = validation.data;
 
   if (!id) {
     return { success: false, error: 'Task ID is required' };
@@ -231,6 +271,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (due_date !== undefined) updateData.due_date = due_date || null;
   if (sort_order !== undefined) updateData.sort_order = sort_order;
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
+  if (project_id !== undefined) updateData.project_id = project_id || null;
+  if (phase_id !== undefined) updateData.phase_id = phase_id || null;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -332,5 +374,109 @@ export async function reorderTasks(
   }
 
   revalidatePath('/inbox');
+  return { success: true };
+}
+
+/**
+ * Get tasks linked to a specific project
+ */
+export async function getProjectTasks(projectId: string): Promise<Task[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error('[getProjectTasks] No authenticated user');
+    return [];
+  }
+
+  const { data: tasks, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      workspace_id,
+      creator_id,
+      assignee_id,
+      project_id,
+      phase_id,
+      title,
+      description,
+      status,
+      priority,
+      sort_order,
+      due_date,
+      completed_at,
+      created_at,
+      updated_at,
+      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
+      project:projects!tasks_project_id_fkey (id, name, project_type),
+      phase:project_phases!tasks_phase_id_fkey (id, name)
+    `
+    )
+    .eq('project_id', projectId)
+    .order('phase_id', { ascending: true, nullsFirst: false })
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('[getProjectTasks] Error fetching project tasks:', error);
+    return [];
+  }
+
+  return (tasks || []).map((task) => {
+    const t = task as unknown as {
+      creator: Task['creator'] | Task['creator'][] | null;
+      assignee: Task['assignee'] | Task['assignee'][] | null;
+      project: Task['project'] | Task['project'][] | null;
+      phase: Task['phase'] | Task['phase'][] | null;
+    };
+    return {
+      ...task,
+      creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
+      assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+      project: Array.isArray(t.project) ? t.project[0] || null : t.project,
+      phase: Array.isArray(t.phase) ? t.phase[0] || null : t.phase,
+    } as Task;
+  });
+}
+
+/**
+ * Link a task to a project (and optionally a phase)
+ */
+export async function linkTaskToProject(
+  taskId: string,
+  projectId: string | null,
+  phaseId?: string | null
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      project_id: projectId,
+      phase_id: phaseId || null,
+    })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('[linkTaskToProject] Error linking task:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/inbox');
+  if (projectId) {
+    revalidatePath(`/projects/${projectId}`);
+    revalidatePath(`/projects/${projectId}/roadmap`);
+  }
   return { success: true };
 }
