@@ -3,7 +3,6 @@ import { connection } from 'next/server';
 import { ProjectList, type Project } from '@/components/project-list';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { ProjectTypeTabs } from '@/components/project-type-tabs';
 import { ProjectViewToggle } from '@/components/project-view-toggle';
 import { Folder } from 'lucide-react';
 import type { ProjectType } from '@/types/database';
@@ -138,9 +137,8 @@ export default async function ProjectsPage({
         </div>
       </header>
 
-      {/* Type Tabs + View Toggle */}
-      <div className="flex flex-col gap-2 border-b border-border px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:px-6">
-        <ProjectTypeTabs currentType={filters.type} />
+      {/* View Toggle */}
+      <div className="flex items-center justify-end border-b border-border px-4 py-2.5 sm:px-6">
         <ProjectViewToggle currentView={filters.view} currentType={filters.type} />
       </div>
 

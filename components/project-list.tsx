@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useTransition, useMemo, useState, useEffect } from 'react';
+import { useTransition, useMemo, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Folder,
@@ -26,6 +26,8 @@ import {
   CircleDot,
   Ban,
   Plus,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -203,7 +205,15 @@ const PROJECT_GROUP_LABELS: Record<string, string> = {
 
 const ALL_GROUPS = ['active', 'salman_kuwait', 'tasos_kyriakides', 'other', 'demos', 'inactive'];
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({
+  project,
+  isCollapsed,
+  onToggleCollapse,
+}: {
+  project: Project;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+}) {
   const { isAdmin, isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -259,6 +269,75 @@ function ProjectCard({ project }: { project: Project }) {
   const isPartnership = project.metadata?.is_partnership;
   const partnerName = project.metadata?.partner_name;
 
+  // Collapsed view - compact single line
+  if (isCollapsed) {
+    return (
+      <div
+        className={cn(
+          'group relative flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200',
+          isPartnership
+            ? 'border-orange-500/50'
+            : typeConfig
+              ? typeConfig.borderColor
+              : 'border-border',
+          isComplete ? 'opacity-50' : 'opacity-100',
+          'hover:bg-secondary/30'
+        )}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleCollapse();
+          }}
+          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
+        <div
+          className={cn(
+            'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded',
+            typeConfig ? typeConfig.bgColor : 'bg-muted'
+          )}
+        >
+          <TypeIcon
+            className={cn('h-3.5 w-3.5', typeConfig ? typeConfig.color : 'text-muted-foreground')}
+          />
+        </div>
+        <Link
+          href={`/projects/${project.id}`}
+          className="min-w-0 flex-1 truncate text-sm font-medium text-foreground hover:text-primary"
+        >
+          {project.name}
+        </Link>
+        {project.project_type !== 'seo' && project.project_type !== 'ads' && (
+          <div className="flex items-center gap-2">
+            <div className="h-1 w-12 overflow-hidden rounded-full bg-secondary/50">
+              <div
+                className={cn(
+                  'h-full rounded-full',
+                  isComplete ? 'bg-emerald-500' : typeConfig ? 'bg-current' : 'bg-primary',
+                  typeConfig?.color
+                )}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span
+              className={cn(
+                'text-xs tabular-nums',
+                isComplete ? 'text-emerald-500' : 'text-muted-foreground'
+              )}
+            >
+              {progress}%
+            </span>
+          </div>
+        )}
+        {isPartnership && <span className="text-xs">🤝</span>}
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -285,6 +364,20 @@ function ProjectCard({ project }: { project: Project }) {
 
       {/* Card content */}
       <div className="relative bg-card/80 backdrop-blur-sm">
+        {/* Collapse toggle */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleCollapse();
+          }}
+          className="absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+          title="Collapse"
+        >
+          <ChevronDown className="h-3.5 w-3.5" />
+        </button>
+
         <Link href={`/projects/${project.id}`} className="block p-4">
           {/* Header: Icon + Name + External link hint */}
           <div className="flex items-start gap-3">
@@ -442,6 +535,8 @@ interface Client {
   display_name: string | null;
 }
 
+const COLLAPSED_PROJECTS_KEY = 'qualia-collapsed-projects';
+
 export function ProjectList({
   projects,
   filterType = 'all',
@@ -450,7 +545,38 @@ export function ProjectList({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardDefaultType, setWizardDefaultType] = useState<ProjectType | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
+  const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
   const { currentWorkspace } = useWorkspace();
+
+  // Load collapsed state from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(COLLAPSED_PROJECTS_KEY);
+      if (stored) {
+        setCollapsedProjects(new Set(JSON.parse(stored)));
+      }
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, []);
+
+  // Save collapsed state to localStorage
+  const toggleCollapsed = useCallback((projectId: string) => {
+    setCollapsedProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      try {
+        localStorage.setItem(COLLAPSED_PROJECTS_KEY, JSON.stringify([...next]));
+      } catch {
+        // Ignore localStorage errors
+      }
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (wizardOpen && currentWorkspace) {
@@ -635,7 +761,11 @@ export function ProjectList({
                       className="slide-up"
                       style={{ animationDelay: `${columnIndex * 75 + index * 50}ms` }}
                     >
-                      <ProjectCard project={project} />
+                      <ProjectCard
+                        project={project}
+                        isCollapsed={collapsedProjects.has(project.id)}
+                        onToggleCollapse={() => toggleCollapsed(project.id)}
+                      />
                     </div>
                   ))
                 )}
