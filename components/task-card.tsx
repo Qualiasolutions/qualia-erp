@@ -2,7 +2,7 @@
 
 import { useState, useMemo, memo } from 'react';
 import { format } from 'date-fns';
-import { Edit2, Trash2, Calendar, AlertCircle, User } from 'lucide-react';
+import { Edit2, Trash2, Calendar, AlertCircle, User, FolderOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -98,6 +98,22 @@ function TaskCardComponent({ task, onDelete }: TaskCardProps) {
                 >
                   {task.priority}
                 </span>
+              )}
+              {task.project && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <FolderOpen className="h-3 w-3" />
+                        <span className="max-w-[100px] truncate">{task.project.name}</span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{task.project.name}</p>
+                      {task.phase && <p className="text-muted-foreground">{task.phase.name}</p>}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               {task.due_date && (
                 <div

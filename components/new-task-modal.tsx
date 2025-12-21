@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CalendarIcon, User } from 'lucide-react';
+import { Plus, CalendarIcon, User, Folder, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -26,12 +26,19 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { createTask } from '@/app/actions/inbox';
-import { useProfiles } from '@/lib/swr';
+import { useProfiles, useProjects } from '@/lib/swr';
+import { getProjectPhases } from '@/app/actions/roadmap';
 import { useRouter } from 'next/navigation';
+
+type Phase = {
+  id: string;
+  name: string;
+};
 
 export function NewTaskModal() {
   const router = useRouter();
   const { profiles } = useProfiles();
+  const { projects } = useProjects();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +50,10 @@ export function NewTaskModal() {
   );
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [phaseId, setPhaseId] = useState<string | null>(null);
+  const [phases, setPhases] = useState<Phase[]>([]);
+  const [loadingPhases, setLoadingPhases] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -53,9 +64,27 @@ export function NewTaskModal() {
       setPriority('No Priority');
       setAssigneeId(null);
       setDueDate(undefined);
+      setProjectId(null);
+      setPhaseId(null);
+      setPhases([]);
       setError(null);
     }
   }, [open]);
+
+  // Fetch phases when project changes
+  useEffect(() => {
+    if (projectId) {
+      setLoadingPhases(true);
+      setPhaseId(null);
+      getProjectPhases(projectId).then((data) => {
+        setPhases(data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
+        setLoadingPhases(false);
+      });
+    } else {
+      setPhases([]);
+      setPhaseId(null);
+    }
+  }, [projectId]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -72,6 +101,12 @@ export function NewTaskModal() {
     }
     if (dueDate) {
       formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
+    }
+    if (projectId) {
+      formData.set('project_id', projectId);
+    }
+    if (phaseId) {
+      formData.set('phase_id', phaseId);
     }
 
     const result = await createTask(formData);
@@ -215,6 +250,59 @@ export function NewTaskModal() {
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Project linking */}
+          <div className="space-y-2">
+            <Label htmlFor="project">Link to Project</Label>
+            <Select
+              value={projectId || 'none'}
+              onValueChange={(v) => setProjectId(v === 'none' ? null : v)}
+            >
+              <SelectTrigger id="project" className="border-border bg-background">
+                <SelectValue placeholder="No project" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 border-border bg-card">
+                <SelectItem value="none">
+                  <div className="flex items-center gap-2">
+                    <Folder className="h-4 w-4 text-muted-foreground" />
+                    <span>No project</span>
+                  </div>
+                </SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                      <span className="truncate">{project.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Phase selector - only shown when project is selected */}
+          {projectId && (
+            <div className="space-y-2">
+              <Label htmlFor="phase">Link to Phase</Label>
+              <Select
+                value={phaseId || 'none'}
+                onValueChange={(v) => setPhaseId(v === 'none' ? null : v)}
+                disabled={loadingPhases}
+              >
+                <SelectTrigger id="phase" className="border-border bg-background">
+                  <SelectValue placeholder={loadingPhases ? 'Loading...' : 'No phase'} />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  <SelectItem value="none">No phase (general project task)</SelectItem>
+                  {phases.map((phase) => (
+                    <SelectItem key={phase.id} value={phase.id}>
+                      {phase.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

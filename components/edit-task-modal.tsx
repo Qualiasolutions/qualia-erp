@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { CalendarIcon, User } from 'lucide-react';
+import { CalendarIcon, User, Folder, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,14 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { updateTask, type Task } from '@/app/actions/inbox';
-import { useProfiles } from '@/lib/swr';
+import { useProfiles, useProjects } from '@/lib/swr';
+import { getProjectPhases } from '@/app/actions/roadmap';
 import { useRouter } from 'next/navigation';
+
+type Phase = {
+  id: string;
+  name: string;
+};
 
 interface EditTaskModalProps {
   task: Task;
@@ -32,6 +38,7 @@ interface EditTaskModalProps {
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
   const router = useRouter();
   const { profiles } = useProfiles();
+  const { projects } = useProjects();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState(task.title);
@@ -42,6 +49,10 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.due_date ? new Date(task.due_date) : undefined
   );
+  const [projectId, setProjectId] = useState<string | null>(task.project_id);
+  const [phaseId, setPhaseId] = useState<string | null>(task.phase_id);
+  const [phases, setPhases] = useState<Phase[]>([]);
+  const [loadingPhases, setLoadingPhases] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -52,9 +63,37 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
       setPriority(task.priority);
       setAssigneeId(task.assignee_id);
       setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setProjectId(task.project_id);
+      setPhaseId(task.phase_id);
       setError(null);
+
+      // Load phases if task has a project
+      if (task.project_id) {
+        setLoadingPhases(true);
+        getProjectPhases(task.project_id).then((data) => {
+          setPhases(data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
+          setLoadingPhases(false);
+        });
+      } else {
+        setPhases([]);
+      }
     }
   }, [open, task]);
+
+  // Fetch phases when project changes
+  useEffect(() => {
+    if (projectId && projectId !== task.project_id) {
+      setLoadingPhases(true);
+      setPhaseId(null);
+      getProjectPhases(projectId).then((data) => {
+        setPhases(data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
+        setLoadingPhases(false);
+      });
+    } else if (!projectId) {
+      setPhases([]);
+      setPhaseId(null);
+    }
+  }, [projectId, task.project_id]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -79,6 +118,12 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
     }
     if (assigneeId !== task.assignee_id) {
       formData.set('assignee_id', assigneeId || '');
+    }
+    if (projectId !== task.project_id) {
+      formData.set('project_id', projectId || '');
+    }
+    if (phaseId !== task.phase_id) {
+      formData.set('phase_id', phaseId || '');
     }
 
     const result = await updateTask(formData);
@@ -216,6 +261,59 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
               </PopoverContent>
             </Popover>
           </div>
+
+          {/* Project linking */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-project">Link to Project</Label>
+            <Select
+              value={projectId || 'none'}
+              onValueChange={(v) => setProjectId(v === 'none' ? null : v)}
+            >
+              <SelectTrigger id="edit-project" className="border-border bg-background">
+                <SelectValue placeholder="No project" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60 border-border bg-card">
+                <SelectItem value="none">
+                  <div className="flex items-center gap-2">
+                    <Folder className="h-4 w-4 text-muted-foreground" />
+                    <span>No project</span>
+                  </div>
+                </SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                      <span className="truncate">{project.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Phase selector - only shown when project is selected */}
+          {projectId && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-phase">Link to Phase</Label>
+              <Select
+                value={phaseId || 'none'}
+                onValueChange={(v) => setPhaseId(v === 'none' ? null : v)}
+                disabled={loadingPhases}
+              >
+                <SelectTrigger id="edit-phase" className="border-border bg-background">
+                  <SelectValue placeholder={loadingPhases ? 'Loading...' : 'No phase'} />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  <SelectItem value="none">No phase (general project task)</SelectItem>
+                  {phases.map((phase) => (
+                    <SelectItem key={phase.id} value={phase.id}>
+                      {phase.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 

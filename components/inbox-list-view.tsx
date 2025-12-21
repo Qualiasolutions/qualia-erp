@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { GripVertical, Calendar, AlertCircle, Edit2, Trash2 } from 'lucide-react';
+import { GripVertical, Calendar, AlertCircle, Edit2, Trash2, FolderOpen } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -134,6 +134,15 @@ function SortableTaskRow({
               )}
             >
               {priority.label}
+            </span>
+          )}
+          {task.project && (
+            <span
+              className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+              title={task.phase ? `${task.project.name} - ${task.phase.name}` : task.project.name}
+            >
+              <FolderOpen className="h-3 w-3" />
+              <span className="max-w-[120px] truncate">{task.project.name}</span>
             </span>
           )}
         </div>
