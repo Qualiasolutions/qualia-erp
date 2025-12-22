@@ -1,16 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { DashboardAIInput } from '@/components/dashboard-ai-input';
 import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
-import type { LeadFollowUp } from '@/components/leads-follow-up-widget';
 import { useEffect, useState, useCallback } from 'react';
-import { isPast, isToday, isTomorrow } from 'date-fns';
-import { Phone, Flame, Volume2, X, Bell } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Volume2, X, Bell } from 'lucide-react';
 import { DashboardNotes } from './dashboard-notes';
 import { DashboardMeetings } from './dashboard-meetings';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { DashboardObjectives } from './dashboard-objectives';
 
 export interface DashboardUser {
   id: string;
@@ -55,67 +51,7 @@ interface DashboardClientProps {
   dateString: string;
   user?: DashboardUser;
   greetingData?: GreetingData | null;
-  leadFollowUps?: LeadFollowUp[];
   meetings?: DashboardMeeting[];
-}
-
-// Minimal lead card for the compact widget (currently unused, kept for future use)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CompactLeadCard({ followUp }: { followUp: LeadFollowUp }) {
-  const date = new Date(followUp.follow_up_date);
-  const isOverdue = isPast(date) && !isToday(date);
-  const isTodayDate = isToday(date);
-  const isTomorrowDate = isTomorrow(date);
-
-  const dateLabel = isOverdue
-    ? 'Overdue'
-    : isTodayDate
-      ? 'Today'
-      : isTomorrowDate
-        ? 'Tomorrow'
-        : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-  return (
-    <Link
-      href={`/clients/${followUp.client_id}`}
-      className={cn(
-        'group flex items-center gap-2 rounded-md px-2 py-1.5 transition-all',
-        'hover:bg-card/60',
-        isOverdue && 'bg-orange-500/5'
-      )}
-    >
-      <div
-        className={cn(
-          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs',
-          followUp.priority === 'urgent' || followUp.priority === 'high'
-            ? 'bg-orange-500/10 text-orange-500'
-            : 'bg-muted/50 text-muted-foreground'
-        )}
-      >
-        {followUp.lead_status === 'hot' ? (
-          <Flame className="h-3 w-3" />
-        ) : (
-          <Phone className="h-3 w-3" />
-        )}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-foreground">{followUp.contact_name}</p>
-        <p className="truncate text-[10px] text-muted-foreground">{followUp.client_name}</p>
-      </div>
-      <span
-        className={cn(
-          'rounded px-1.5 py-0.5 text-[10px] font-medium',
-          isOverdue
-            ? 'bg-orange-500/10 text-orange-500'
-            : isTodayDate
-              ? 'bg-emerald-500/10 text-emerald-500'
-              : 'bg-muted/50 text-muted-foreground'
-        )}
-      >
-        {dateLabel}
-      </span>
-    </Link>
-  );
 }
 
 export function DashboardClient({
@@ -123,7 +59,6 @@ export function DashboardClient({
   dateString,
   user,
   greetingData,
-  leadFollowUps = [],
   meetings = [],
 }: DashboardClientProps) {
   const [hasGreeted, setHasGreeted] = useState(false);
@@ -247,25 +182,6 @@ export function DashboardClient({
     return messages.join('. ');
   }, [user, greetingData]);
 
-  // Sort follow-ups: overdue first, then by date
-  const sortedFollowUps = [...leadFollowUps]
-    .filter((f) => f.status === 'pending')
-    .sort((a, b) => {
-      const aDate = new Date(a.follow_up_date);
-      const bDate = new Date(b.follow_up_date);
-      const aOverdue = isPast(aDate) && !isToday(aDate);
-      const bOverdue = isPast(bDate) && !isToday(bDate);
-      if (aOverdue && !bOverdue) return -1;
-      if (!aOverdue && bOverdue) return 1;
-      return aDate.getTime() - bDate.getTime();
-    })
-    .slice(0, 5);
-
-  const overdueCount = leadFollowUps.filter((f) => {
-    const date = new Date(f.follow_up_date);
-    return f.status === 'pending' && isPast(date) && !isToday(date);
-  }).length;
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background/85">
       {/* Enhanced gradient background with more depth */}
@@ -276,13 +192,15 @@ export function DashboardClient({
           style={{ animationDelay: '1s' }}
         />
         <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.01] blur-3xl" />
+        {/* Additional ambient glow */}
+        <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] rounded-full bg-amber-500/[0.02] blur-3xl" />
       </div>
 
-      <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col px-6">
+      <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
         {/* Main content - centered hero section */}
-        <main className="flex flex-1 flex-col items-center justify-center px-4 pb-4 sm:px-6 sm:pb-6">
+        <main className="flex flex-1 flex-col items-center justify-center py-8">
           {/* Voice assistant - hero element */}
-          <div className="mb-6 w-full sm:mb-8">
+          <div className="mb-8 w-full max-w-2xl">
             <QualiaVoiceInline
               user={user}
               autoGreet={shouldStartGreeting && !hasGreeted}
@@ -295,25 +213,25 @@ export function DashboardClient({
           {/* Voice greeting notification */}
           {showNotification && (
             <div className="fixed bottom-24 right-6 z-50 duration-300 animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex items-center gap-3 rounded-xl border border-qualia-500/30 bg-card/95 px-4 py-3 shadow-lg backdrop-blur-sm">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-qualia-500/10">
+              <div className="flex items-center gap-3 rounded-2xl border border-qualia-500/30 bg-card/95 px-5 py-4 shadow-2xl backdrop-blur-md">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-qualia-500/20 to-violet-500/10">
                   <Bell className="h-5 w-5 text-qualia-500" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-foreground">Qualia has updates</p>
+                  <p className="text-sm font-semibold text-foreground">Qualia has updates</p>
                   <p className="text-xs text-muted-foreground">{notificationMessage}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 pl-2">
                   <button
                     onClick={handleStartGreeting}
-                    className="flex items-center gap-1.5 rounded-lg bg-qualia-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-qualia-600"
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-qualia-500 to-qualia-600 px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-qualia-500/25"
                   >
                     <Volume2 className="h-3.5 w-3.5" />
                     Listen
                   </button>
                   <button
                     onClick={handleDismissNotification}
-                    className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     title="Dismiss"
                   >
                     <X className="h-4 w-4" />
@@ -324,101 +242,40 @@ export function DashboardClient({
           )}
 
           {/* Greeting text */}
-          <div className="mb-6 space-y-2 text-center sm:mb-8">
-            <h1 className="bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl">
+          <div className="mb-8 space-y-3 text-center">
+            <h1 className="bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
               {greeting}
             </h1>
-            <p className="text-sm font-medium text-muted-foreground sm:text-base">{dateString}</p>
+            <p className="text-base font-medium text-muted-foreground sm:text-lg">{dateString}</p>
+          </div>
+
+          {/* AI Input - centered below greeting */}
+          <div className="w-full max-w-xl">
+            <DashboardAIInput />
           </div>
         </main>
 
-        {/* Bottom section - Three columns */}
-        <div className="mt-auto grid gap-4 border-t border-border/40 bg-background/40 px-4 py-6 backdrop-blur-sm sm:gap-6 sm:px-6 sm:py-8 md:grid-cols-2 lg:grid-cols-3">
-          {/* Meetings Widget */}
-          <div className="h-[320px]">
-            <DashboardMeetings meetings={meetings} />
+        {/* Bottom section - Modern 2-column layout */}
+        <div className="mt-auto border-t border-border/30 bg-gradient-to-t from-background/80 to-transparent pb-8 pt-6">
+          {/* Top row: Meetings (compact) */}
+          <div className="mb-6">
+            <div className="h-[200px]">
+              <DashboardMeetings meetings={meetings} />
+            </div>
           </div>
 
-          {/* Notes Widget */}
-          <div className="h-[320px]">
-            <DashboardNotes workspaceId={user?.workspaceId} />
-          </div>
+          {/* Bottom row: Two equal columns - Objectives & Notes */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* 2025 Objectives Widget */}
+            <div className="h-[360px]">
+              <DashboardObjectives workspaceId={user?.workspaceId} />
+            </div>
 
-          {/* Follow-ups Widget */}
-          <div className="h-[320px] md:col-span-2 lg:col-span-1">
-            <Card className="flex h-full flex-col border-border/60 shadow-lg transition-shadow duration-300 hover:shadow-xl">
-              <CardHeader className="border-b border-border/60 pb-4">
-                <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10 text-qualia-500">
-                    <Phone className="h-4 w-4" />
-                  </div>
-                  <span>Follow-ups</span>
-                  {overdueCount > 0 && (
-                    <span className="ml-auto rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-500">
-                      {overdueCount} overdue
-                    </span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-0">
-                {sortedFollowUps.length > 0 ? (
-                  <div className="divide-y divide-border/60">
-                    {sortedFollowUps.map((followUp, index) => (
-                      <div
-                        key={followUp.id}
-                        className="group p-4 transition-all duration-200 hover:bg-qualia-500/5"
-                        style={{ animationDelay: `${index * 50}ms` }}
-                      >
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-sm font-semibold text-foreground">
-                            {followUp.contact_name}
-                          </span>
-                          <span
-                            className={cn(
-                              'rounded-full px-2 py-0.5 text-[10px] font-medium capitalize',
-                              followUp.priority === 'urgent'
-                                ? 'bg-red-500/10 text-red-500 ring-1 ring-red-500/20'
-                                : followUp.priority === 'high'
-                                  ? 'bg-orange-500/10 text-orange-500 ring-1 ring-orange-500/20'
-                                  : 'bg-muted/80 text-muted-foreground'
-                            )}
-                          >
-                            {followUp.priority}
-                          </span>
-                        </div>
-                        <p className="mb-3 text-xs font-medium text-muted-foreground">
-                          {followUp.client_name}
-                        </p>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-medium text-muted-foreground">
-                            {new Date(followUp.follow_up_date).toLocaleDateString()}
-                          </span>
-                          <Link
-                            href={`/clients/${followUp.client_id}`}
-                            className="text-[10px] font-medium text-qualia-500 transition-colors hover:text-qualia-600 hover:underline dark:hover:text-qualia-400"
-                          >
-                            View Client →
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                    <div className="space-y-2 text-center">
-                      <Phone className="mx-auto h-8 w-8 opacity-20" />
-                      <p>No pending follow-ups</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Team Notes Widget - wider */}
+            <div className="h-[360px]">
+              <DashboardNotes workspaceId={user?.workspaceId} />
+            </div>
           </div>
-        </div>
-
-        {/* Send Message Container - moved below widgets */}
-        <div className="mx-auto mt-4 w-full max-w-lg px-4 pb-4 sm:px-6 sm:pb-6">
-          <DashboardAIInput />
         </div>
       </div>
     </div>
