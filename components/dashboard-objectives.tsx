@@ -69,7 +69,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
     try {
       const { error } = await supabase
         .from('projects')
-        .update({ status: 'Completed' })
+        .update({ status: 'Launched' })
         .eq('id', projectId);
 
       if (error) throw error;
