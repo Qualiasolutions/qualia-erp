@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Qualia Internal Suite is a project management platform for Qualia Solutions. Built with Next.js 16 (App Router), Supabase, and AI capabilities including chat (Groq) and voice assistant (VAPI).
+Qualia Internal Suite is a project management platform for Qualia Solutions. Built with Next.js 15+ (App Router), Supabase, and AI capabilities including chat (Groq) and voice assistant (VAPI).
 
 ## Commands
 
@@ -20,10 +20,10 @@ npx tsc --noEmit     # Type check without build
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router, React 19, TypeScript)
+- **Framework**: Next.js 15+ (App Router, React 19, TypeScript)
 - **Database/Auth**: Supabase (PostgreSQL with pgvector for RAG)
 - **Styling**: Tailwind CSS + shadcn/ui (Radix primitives)
-- **AI**: Groq (chat), VAPI (voice), Google AI (embeddings)
+- **AI**: Groq (llama-3.1-8b-instant for chat), VAPI (voice), Google AI (embeddings)
 - **State**: SWR for client caching, Supabase Realtime for live updates
 - **Testing**: Jest + React Testing Library
 - **Monitoring**: Sentry
@@ -32,48 +32,106 @@ npx tsc --noEmit     # Type check without build
 
 ### Server Actions (`app/actions.ts` + `app/actions/*.ts`)
 
-All database mutations use server actions. ~2600 lines in main actions.ts file. Returns `ActionResult { success, error?, data? }` pattern.
+All database mutations use server actions. Returns `ActionResult` pattern:
+
+```typescript
+type ActionResult = { success: boolean; error?: string; data?: unknown };
+```
+
+Main actions file (~2600 lines) handles: issues, projects, teams, clients, meetings, milestones.
+Specialized actions in `app/actions/`: health, roadmap, inbox, learning.
+
+### Entity System
+
+Two task-like entities exist:
+
+- **Issues** (`issues` table): Project-level tasks with full workflow (Yet to Start → Todo → In Progress → Done → Canceled)
+- **Tasks** (`tasks` table): Personal inbox items with simpler status (Todo → In Progress → Done)
 
 ### Key Directories
 
 ```
 app/
-├── actions.ts              # Main server actions (projects, tasks, clients, etc.)
+├── actions.ts              # Main server actions
 ├── actions/                # Specialized actions (health, roadmap, inbox, learning)
-├── api/chat/route.ts       # AI chat agent with tools + RAG
-├── api/embeddings/route.ts # Google AI embeddings generation
-├── (dashboard)/            # Dashboard route group
+├── api/chat/route.ts       # AI chat agent (15+ tools)
+├── api/vapi/webhook/       # Voice assistant webhooks
+├── api/embeddings/route.ts # Google AI embeddings
 ├── clients/                # CRM section
-├── inbox/                  # Task inbox (kanban/list)
-├── projects/               # Project management
+├── inbox/                  # Personal task inbox
+├── projects/               # Project management with roadmaps
 └── schedule/               # Calendar views
 
-components/
-├── ui/                     # shadcn/ui components
-├── providers/              # Context providers (Theme, Workspace, Sidebar)
-├── mentorship/             # Trainee mentorship system
-├── skills/                 # Skills tracking
-└── onboarding/             # User onboarding flow
-
 lib/
-├── supabase/               # Client (browser) and server Supabase instances
+├── supabase/server.ts      # Server-side Supabase client (always create fresh)
+├── supabase/client.ts      # Browser-side Supabase client
 ├── validation.ts           # Zod schemas for all entities
-├── color-constants.ts      # Centralized color system
-├── rate-limit.ts           # In-memory rate limiter (needs Redis upgrade)
-├── vapi-webhook-handlers.ts # Voice assistant response handlers
-└── phase-templates.ts      # Project phase templates
+├── color-constants.ts      # Centralized Tailwind color classes
+└── vapi-webhook-handlers.ts # Voice tool handlers
+
+types/
+└── database.ts             # Auto-generated Supabase types (Tables<>, Enums<>)
+
+components/
+├── dashboard-client.tsx    # Main dashboard layout and state
+├── dashboard-objectives.tsx # 2025 Objectives project checklist
+├── dashboard-meetings.tsx  # Upcoming meetings widget
+├── dashboard-notes.tsx     # Team notes with realtime sync
+└── dashboard-ai-input.tsx  # AI chat input
 ```
+
+### Dashboard Structure
+
+The main dashboard (`app/dashboard-page.tsx` + `components/dashboard-client.tsx`) uses a modern layout:
+
+```
+┌─────────────────────────────────────────────────┐
+│              HERO SECTION (Center)              │
+│  - QualiaVoiceInline (voice assistant)          │
+│  - Greeting + Date                              │
+│  - DashboardAIInput (AI chat)                   │
+└─────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│           MEETINGS ROW (Compact)                │
+│              DashboardMeetings                  │
+└─────────────────────────────────────────────────┘
+                      ↓
+┌────────────────────────┬────────────────────────┐
+│   2025 Objectives      │     Team Notes         │
+│                        │                        │
+│  DashboardObjectives   │   DashboardNotes       │
+│  - Active projects     │   - Realtime notes     │
+│  - Click to complete   │   - CRUD operations    │
+└────────────────────────┴────────────────────────┘
+```
+
+**DashboardObjectives**: Shows active projects (`status = 'Active'`) as a checklist. Clicking marks project as `Completed`. Fetches from `projects` table filtered by workspace.
+
+**DashboardNotes**: Team notes with Supabase realtime subscriptions. Users can add/edit/delete their own notes. Data in `workspace_notes` table.
 
 ### Data Flow
 
 1. **Server Components**: Direct Supabase queries for initial data
 2. **Client Components**: SWR hooks for caching + Supabase subscriptions for realtime
-3. **Mutations**: Server actions with Zod validation, return ActionResult
+3. **Mutations**: Server actions with Zod validation → returns ActionResult
+4. **AI Tools**: Direct Supabase queries within tool execute functions
 
-### AI Integration
+### AI Chat Agent (`app/api/chat/route.ts`)
 
-- **Chat Agent** (`app/api/chat/route.ts`): Groq LLM with tools (create task, search knowledge, update project). Uses pgvector for semantic search via `match_documents()` RPC.
-- **Voice Assistant**: VAPI integration with 11+ tools. Webhook handlers in `lib/vapi-webhook-handlers.ts`.
+Uses Groq's llama-3.1-8b-instant with 15+ tools:
+
+**Read tools**: getDashboardStats, searchIssues, searchProjects, searchClients, getTeams, getRecentActivity, getUpcomingMeetings, getProjectDetails, getWorkspaceStats, searchKnowledgeBase (RAG)
+
+**Write tools**: createTask, updateTaskStatus, addComment, createClient, createMeeting
+
+**Roadmap tools**: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap
+
+RAG search uses `match_documents()` RPC with Google's text-embedding-004 model.
+
+### Voice Assistant (VAPI)
+
+Webhook at `app/api/vapi/webhook/route.ts`. Tool handlers in `lib/vapi-webhook-handlers.ts`.
 
 ## Environment Variables
 
@@ -97,6 +155,8 @@ This project has Supabase MCP configured. Use these tools:
 - `mcp__supabase__apply_migration` - Schema changes (DDL)
 - `mcp__supabase__get_logs` - Debug issues (api, postgres, auth)
 
+Key database types are in `types/database.ts` - use `Tables<'tablename'>` for row types.
+
 ## Testing
 
 ```bash
@@ -115,22 +175,14 @@ GitHub Actions workflows:
 - `ci-cd.yml` - Full pipeline (security, quality, test, build, deploy)
 - `supabase.yml` - Database migration automation
 
-Pre-commit hooks enforce: ESLint, Prettier, TypeScript, no console.log, security scanning.
-
-## Current Priorities
-
-From `AGENT_PROMPT.md`:
-
-1. Redis rate limiting (replace in-memory with Upstash)
-2. Chat message history (persist conversations)
-3. Voice call memory (store transcripts)
-4. Response caching
+Pre-commit hooks (Husky): ESLint, Prettier, TypeScript checks.
 
 ## Conventions
 
 - Server actions return `ActionResult { success, error?, data? }`
 - Use Zod schemas from `lib/validation.ts` for input validation
+- Use types from `types/database.ts` (e.g., `Tables<'projects'>`, `Enums<'project_status'>`)
+- Color classes from `lib/color-constants.ts` - never hardcode colors
 - Components use `'use client'` directive for client-side interactivity
-- Color system in `lib/color-constants.ts` - don't use hardcoded colors
 - Tailwind for styling, no inline CSS
 - Conventional commits: `feat:`, `fix:`, `perf:`, `refactor:`
