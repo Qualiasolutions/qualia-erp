@@ -7,6 +7,7 @@ import { Volume2, X, Bell } from 'lucide-react';
 import { DashboardNotes } from './dashboard-notes';
 import { DashboardMeetings } from './dashboard-meetings';
 import { DashboardObjectives } from './dashboard-objectives';
+import { cn } from '@/lib/utils';
 
 export interface DashboardUser {
   id: string;
@@ -183,24 +184,24 @@ export function DashboardClient({
   }, [user, greetingData]);
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-background/85">
+    <div className="relative flex min-h-[100dvh] flex-col overflow-x-hidden bg-background/95">
       {/* Enhanced gradient background with more depth */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-pulse-subtle absolute -left-1/4 -top-1/4 h-[600px] w-[600px] rounded-full bg-qualia-500/[0.03] blur-3xl" />
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="animate-pulse-subtle absolute -left-1/4 -top-1/4 h-[400px] w-[400px] rounded-full bg-qualia-500/[0.04] blur-3xl sm:h-[600px] sm:w-[600px]" />
         <div
-          className="animate-pulse-subtle absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-violet-500/[0.02] blur-3xl"
+          className="animate-pulse-subtle absolute -bottom-1/4 -right-1/4 h-[350px] w-[350px] rounded-full bg-violet-500/[0.03] blur-3xl sm:h-[500px] sm:w-[500px]"
           style={{ animationDelay: '1s' }}
         />
-        <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.01] blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.02] blur-3xl sm:h-[400px] sm:w-[400px]" />
         {/* Additional ambient glow */}
-        <div className="absolute right-1/4 top-1/3 h-[300px] w-[300px] rounded-full bg-amber-500/[0.02] blur-3xl" />
+        <div className="absolute right-1/4 top-1/3 hidden h-[300px] w-[300px] rounded-full bg-amber-500/[0.02] blur-3xl sm:block" />
       </div>
 
-      <div className="relative mx-auto flex h-full w-full max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
+      <div className="pb-safe relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-6 lg:px-8">
         {/* Main content - centered hero section */}
-        <main className="flex flex-1 flex-col items-center justify-center py-8">
+        <main className="flex flex-1 flex-col items-center justify-center py-6 sm:py-8 lg:py-12">
           {/* Voice assistant - hero element */}
-          <div className="mb-8 w-full max-w-2xl">
+          <div className="mb-6 w-full max-w-2xl sm:mb-8">
             <QualiaVoiceInline
               user={user}
               autoGreet={shouldStartGreeting && !hasGreeted}
@@ -212,29 +213,29 @@ export function DashboardClient({
 
           {/* Voice greeting notification */}
           {showNotification && (
-            <div className="fixed bottom-24 right-6 z-50 duration-300 animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex items-center gap-3 rounded-2xl border border-qualia-500/30 bg-card/95 px-5 py-4 shadow-2xl backdrop-blur-md">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-qualia-500/20 to-violet-500/10">
-                  <Bell className="h-5 w-5 text-qualia-500" />
+            <div className="fixed bottom-20 left-4 right-4 z-50 duration-300 animate-in fade-in slide-in-from-bottom-4 sm:bottom-24 sm:left-auto sm:right-6">
+              <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-qualia-500/30 bg-card/95 px-4 py-3 shadow-2xl backdrop-blur-md sm:px-5 sm:py-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-qualia-500/20 to-violet-500/10 sm:h-12 sm:w-12">
+                  <Bell className="h-4 w-4 text-qualia-500 sm:h-5 sm:w-5" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground">Qualia has updates</p>
-                  <p className="text-xs text-muted-foreground">{notificationMessage}</p>
+                  <p className="truncate text-xs text-muted-foreground">{notificationMessage}</p>
                 </div>
-                <div className="flex items-center gap-2 pl-2">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                   <button
                     onClick={handleStartGreeting}
-                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-qualia-500 to-qualia-600 px-4 py-2 text-xs font-semibold text-white shadow-lg transition-all hover:scale-105 hover:shadow-qualia-500/25"
+                    className="flex h-9 items-center gap-1.5 rounded-xl bg-gradient-to-r from-qualia-500 to-qualia-600 px-3 text-xs font-semibold text-white shadow-lg transition-all active:scale-95 sm:h-10 sm:px-4 sm:hover:scale-105 sm:hover:shadow-qualia-500/25"
                   >
                     <Volume2 className="h-3.5 w-3.5" />
-                    Listen
+                    <span className="xs:inline hidden">Listen</span>
                   </button>
                   <button
                     onClick={handleDismissNotification}
-                    className="rounded-xl p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:h-10 sm:w-10"
                     title="Dismiss"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
                   </button>
                 </div>
               </div>
@@ -242,38 +243,46 @@ export function DashboardClient({
           )}
 
           {/* Greeting text */}
-          <div className="mb-8 space-y-3 text-center">
-            <h1 className="bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+          <div className="mb-6 w-full max-w-2xl space-y-2 px-2 text-center sm:mb-8 sm:space-y-3 sm:px-0">
+            <h1 className="bg-gradient-to-r from-foreground via-foreground/90 to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-4xl lg:text-5xl">
               {greeting}
             </h1>
-            <p className="text-base font-medium text-muted-foreground sm:text-lg">{dateString}</p>
+            <p className="text-sm font-medium text-muted-foreground sm:text-base lg:text-lg">
+              {dateString}
+            </p>
           </div>
 
           {/* AI Input - centered below greeting */}
-          <div className="w-full max-w-xl">
+          <div className="w-full max-w-xl px-2 sm:px-0">
             <DashboardAIInput />
           </div>
         </main>
 
-        {/* Bottom section - Modern 2-column layout */}
-        <div className="mt-auto border-t border-border/30 bg-gradient-to-t from-background/80 to-transparent pb-8 pt-6">
-          {/* Top row: Meetings (compact) */}
-          <div className="mb-6">
-            <div className="h-[200px]">
+        {/* Bottom section - Responsive dashboard grid */}
+        <div className="mt-auto border-t border-border/30 bg-gradient-to-t from-background/90 to-transparent px-1 pb-6 pt-5 sm:px-0 sm:pb-8 sm:pt-6">
+          {/* Responsive grid: stack on mobile, 2 cols on tablet, optimized on desktop */}
+          <div className="grid gap-4 sm:gap-5 lg:gap-6">
+            {/* Meetings row - full width, adaptive height */}
+            <div
+              className={cn(
+                'min-h-[180px] sm:min-h-[200px]',
+                meetings.length === 0 ? 'h-auto' : 'h-[200px] sm:h-[220px]'
+              )}
+            >
               <DashboardMeetings meetings={meetings} />
             </div>
-          </div>
 
-          {/* Bottom row: Two equal columns - Objectives & Notes */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* 2025 Objectives Widget */}
-            <div className="h-[360px]">
-              <DashboardObjectives workspaceId={user?.workspaceId} />
-            </div>
+            {/* Two column grid for objectives and notes */}
+            <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:gap-6">
+              {/* 2025 Objectives Widget */}
+              <div className="min-h-[300px] sm:min-h-[340px] md:min-h-[360px]">
+                <DashboardObjectives workspaceId={user?.workspaceId} />
+              </div>
 
-            {/* Team Notes Widget - wider */}
-            <div className="h-[360px]">
-              <DashboardNotes workspaceId={user?.workspaceId} />
+              {/* Team Notes Widget */}
+              <div className="min-h-[300px] sm:min-h-[340px] md:min-h-[360px]">
+                <DashboardNotes workspaceId={user?.workspaceId} />
+              </div>
             </div>
           </div>
         </div>

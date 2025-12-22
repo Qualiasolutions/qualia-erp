@@ -93,18 +93,23 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
     }
   }
 
+  // Shared header component for consistency
+  const ObjectivesHeader = () => (
+    <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+      <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-500 sm:h-8 sm:w-8">
+          <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </div>
+        <span className="truncate">2025 Objectives</span>
+      </CardTitle>
+    </CardHeader>
+  );
+
   if (!workspaceId) {
     return (
-      <Card className="h-full border-border/60 shadow-lg">
-        <CardHeader className="border-b border-border/60 pb-4">
-          <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-              <Target className="h-4 w-4" />
-            </div>
-            <span>2025 Objectives</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex h-[260px] items-center justify-center">
+      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+        <ObjectivesHeader />
+        <CardContent className="flex flex-1 items-center justify-center p-6">
           <div className="text-center text-sm text-muted-foreground">
             <p>Workspace not found.</p>
           </div>
@@ -115,17 +120,10 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
 
   if (loading) {
     return (
-      <Card className="h-full border-border/60 shadow-lg">
-        <CardHeader className="border-b border-border/60 pb-4">
-          <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
-              <Target className="h-4 w-4" />
-            </div>
-            <span>2025 Objectives</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex h-[260px] items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+        <ObjectivesHeader />
+        <CardContent className="flex flex-1 items-center justify-center p-6">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground sm:h-8 sm:w-8" />
         </CardContent>
       </Card>
     );
@@ -135,79 +133,87 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
   const totalCount = projects.length;
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden border-border/60 shadow-lg transition-shadow duration-300 hover:shadow-xl">
-      <CardHeader className="shrink-0 border-b border-border/60 pb-4">
-        <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-500">
-            <Target className="h-4 w-4" />
+    <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+      <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+        <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-500 sm:h-8 sm:w-8">
+            <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
-          <span>2025 Objectives</span>
-          <span className="ml-auto flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
-            <Sparkles className="h-3 w-3" />
+          <span className="truncate">2025 Objectives</span>
+          <span className="ml-auto flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
+            <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             {totalCount} active
           </span>
         </CardTitle>
       </CardHeader>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="min-h-0 flex-1">
         <CardContent className="p-0">
           {projects.length === 0 ? (
-            <div className="flex h-[200px] items-center justify-center">
-              <div className="space-y-2 text-center">
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10">
-                  <Check className="h-6 w-6 text-emerald-500" />
+            <div className="flex min-h-[160px] items-center justify-center p-6 sm:min-h-[200px]">
+              <div className="space-y-3 text-center">
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 sm:h-12 sm:w-12">
+                  <Check className="h-5 w-5 text-emerald-500 sm:h-6 sm:w-6" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs font-medium text-muted-foreground sm:text-sm">
                   All objectives completed!
                 </p>
               </div>
             </div>
           ) : (
-            <div className="divide-y divide-border/40">
+            <div className="divide-y divide-border/30">
               {projects.map((project, index) => (
                 <div
                   key={project.id}
                   className={cn(
-                    'group flex items-center gap-3 px-4 py-3.5 transition-all duration-300',
-                    'hover:bg-gradient-to-r hover:from-amber-500/5 hover:to-transparent',
+                    'group flex items-center gap-3 px-4 py-3 transition-all duration-200 sm:gap-4 sm:px-5 sm:py-3.5',
+                    'active:bg-amber-500/10 sm:hover:bg-gradient-to-r sm:hover:from-amber-500/5 sm:hover:to-transparent',
                     completingId === project.id && 'pointer-events-none opacity-50'
                   )}
                   style={{
                     animationDelay: `${index * 50}ms`,
                   }}
                 >
-                  {/* Checkbox */}
+                  {/* Checkbox - 44px touch target */}
                   <button
                     onClick={() => handleComplete(project.id)}
                     disabled={completingId === project.id}
                     className={cn(
-                      'relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
-                      'border-muted-foreground/30 hover:border-amber-500 hover:bg-amber-500/10',
-                      'focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:ring-offset-background',
-                      completingId === project.id && 'border-amber-500 bg-amber-500'
+                      'relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 sm:h-9 sm:w-9 sm:rounded-lg',
+                      'active:scale-90 sm:hover:scale-105',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background'
                     )}
+                    aria-label={`Mark ${project.name} as complete`}
                   >
-                    {completingId === project.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin text-white" />
-                    ) : (
-                      <Check className="h-3 w-3 text-transparent transition-colors group-hover:text-amber-500" />
-                    )}
+                    <div
+                      className={cn(
+                        'flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all duration-200 sm:h-5 sm:w-5',
+                        'border-muted-foreground/30 group-hover:border-amber-500 group-hover:bg-amber-500/10',
+                        completingId === project.id && 'border-amber-500 bg-amber-500'
+                      )}
+                    >
+                      {completingId === project.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-white sm:h-3 sm:w-3" />
+                      ) : (
+                        <Check className="h-3.5 w-3.5 text-transparent transition-colors group-hover:text-amber-500 sm:h-3 sm:w-3" />
+                      )}
+                    </div>
                   </button>
 
                   {/* Project Info */}
                   <div className="min-w-0 flex-1">
                     <Link
                       href={`/projects/${project.id}`}
-                      className="block truncate text-sm font-medium text-foreground transition-colors hover:text-amber-600 dark:hover:text-amber-400"
+                      className="block truncate text-sm font-medium text-foreground transition-colors hover:text-amber-600 active:text-amber-700 dark:hover:text-amber-400 sm:text-sm"
                     >
                       {project.name}
                     </Link>
                   </div>
 
                   {/* Status Indicator */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                    <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 sm:inline">
                       Active
                     </span>
                   </div>
@@ -220,14 +226,14 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
 
       {/* Progress Footer */}
       {projects.length > 0 && (
-        <div className="shrink-0 border-t border-border/40 bg-muted/30 px-4 py-3">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Click to mark complete</span>
-            <span className="font-medium">
+        <div className="shrink-0 border-t border-border/40 bg-muted/20 px-4 py-3 sm:px-5 sm:py-3.5">
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground sm:text-xs">
+            <span>Tap to complete</span>
+            <span className="font-medium tabular-nums">
               {completedCount}/{totalCount + completedCount} done
             </span>
           </div>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted/60 sm:h-2">
             <div
               className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-all duration-500"
               style={{ width: `${totalCount > 0 ? 0 : 100}%` }}

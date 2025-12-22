@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, Send, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Loader2, Send, Trash2, Edit2, Check, X, MessageSquare } from 'lucide-react';
 import { formatTimeAgo, getInitials } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/components/workspace-provider';
+import { cn } from '@/lib/utils';
 
 interface Note {
   id: string;
@@ -28,7 +29,7 @@ interface Note {
 export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?: string }) {
   const { currentWorkspace } = useWorkspace();
   const workspaceId = propWorkspaceId || currentWorkspace?.id;
-  
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
@@ -39,10 +40,65 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
   const { toast } = useToast();
   const supabase = createClient();
 
+  const fetchNotes = useCallback(async () => {
+    if (!workspaceId) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('workspace_notes')
+        .select(
+          `
+          *,
+          profile:profiles(full_name, avatar_url, email)
+        `
+        )
+        .eq('workspace_id', workspaceId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        // Check if table doesn't exist
+        if (error.code === '42P01' || error.message.includes('does not exist')) {
+          console.warn('workspace_notes table does not exist. Please run the migration.');
+          setNotes([]);
+          return;
+        }
+        throw error;
+      }
+
+      // Transform data to handle array/object response
+      const transformedNotes = (data || []).map((note) => ({
+        ...note,
+        profile: Array.isArray(note.profile) ? note.profile[0] : note.profile,
+      }));
+
+      setNotes(transformedNotes);
+    } catch (error: unknown) {
+      console.error('Error fetching notes:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error loading notes',
+        description: error instanceof Error ? error.message : 'Failed to load team notes.',
+      });
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, supabase, toast]);
+
+  const getUser = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setCurrentUser(user?.id || null);
+  }, [supabase]);
+
   useEffect(() => {
     fetchNotes();
     getUser();
-    
+
     // Subscribe to realtime changes
     const channel = supabase
       .channel('workspace_notes')
@@ -63,83 +119,32 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId]);
-
-  async function getUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUser(user?.id || null);
-  }
-
-  async function fetchNotes() {
-    if (!workspaceId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('workspace_notes')
-        .select(`
-          *,
-          profile:profiles(full_name, avatar_url, email)
-        `)
-        .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        // Check if table doesn't exist
-        if (error.code === '42P01' || error.message.includes('does not exist')) {
-          console.warn('workspace_notes table does not exist. Please run the migration.');
-          setNotes([]);
-          return;
-        }
-        throw error;
-      }
-      
-      // Transform data to handle array/object response
-      const transformedNotes = (data || []).map(note => ({
-        ...note,
-        profile: Array.isArray(note.profile) ? note.profile[0] : note.profile
-      }));
-
-      setNotes(transformedNotes);
-    } catch (error: any) {
-      console.error('Error fetching notes:', error);
-      toast({
-        variant: "destructive",
-        title: "Error loading notes",
-        description: error?.message || "Failed to load team notes.",
-      });
-      setNotes([]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [workspaceId, fetchNotes, getUser, supabase]);
 
   async function handleSubmit() {
     if (!newNote.trim()) {
       toast({
-        variant: "destructive",
-        title: "Note is empty",
-        description: "Please type something before sending.",
+        variant: 'destructive',
+        title: 'Note is empty',
+        description: 'Please type something before sending.',
       });
       return;
     }
 
     if (!workspaceId) {
       toast({
-        variant: "destructive",
-        title: "Workspace not found",
-        description: "Please refresh the page and try again.",
+        variant: 'destructive',
+        title: 'Workspace not found',
+        description: 'Please refresh the page and try again.',
       });
       return;
     }
 
     if (!currentUser) {
       toast({
-        variant: "destructive",
-        title: "Not authenticated",
-        description: "Please log in to post notes.",
+        variant: 'destructive',
+        title: 'Not authenticated',
+        description: 'Please log in to post notes.',
       });
       return;
     }
@@ -163,10 +168,10 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
 
       setNewNote('');
       toast({
-        title: "Note added",
-        description: "Your note has been posted to the team board.",
+        title: 'Note added',
+        description: 'Your note has been posted to the team board.',
       });
-      
+
       // Optimistic update - add to local state immediately
       if (data) {
         const { data: profile } = await supabase
@@ -174,30 +179,30 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
           .select('full_name, avatar_url, email')
           .eq('id', currentUser)
           .single();
-        
+
         const newNoteWithProfile: Note = {
           ...data,
-          profile: profile || { full_name: null, avatar_url: null, email: null }
+          profile: profile || { full_name: null, avatar_url: null, email: null },
         };
-        setNotes(prev => [newNoteWithProfile, ...prev]);
+        setNotes((prev) => [newNoteWithProfile, ...prev]);
       }
-      
+
       // Also fetch to ensure consistency (realtime will handle updates)
       // Small delay to let the database catch up
       setTimeout(() => {
         fetchNotes();
       }, 500);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error adding note:', error);
-      const errorMessage = error?.message || 'Unknown error occurred';
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
-        variant: "destructive",
-        title: "Failed to add note",
-        description: errorMessage.includes('permission') 
+        variant: 'destructive',
+        title: 'Failed to add note',
+        description: errorMessage.includes('permission')
           ? "You don't have permission to post notes in this workspace."
           : errorMessage.includes('relation') || errorMessage.includes('does not exist')
-          ? "The notes feature is not set up yet. Please contact support."
-          : errorMessage,
+            ? 'The notes feature is not set up yet. Please contact support.'
+            : errorMessage,
       });
     } finally {
       setSubmitting(false);
@@ -206,24 +211,21 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this note?')) return;
-    
+
     try {
-      const { error } = await supabase
-        .from('workspace_notes')
-        .delete()
-        .eq('id', id);
+      const { error } = await supabase.from('workspace_notes').delete().eq('id', id);
 
       if (error) throw error;
-      
+
       toast({
-        title: "Note deleted",
+        title: 'Note deleted',
       });
       fetchNotes();
     } catch (error) {
       console.error('Error deleting note:', error);
       toast({
-        variant: "destructive",
-        title: "Failed to delete note",
+        variant: 'destructive',
+        title: 'Failed to delete note',
       });
     }
   }
@@ -241,14 +243,14 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
 
       setEditingId(null);
       toast({
-        title: "Note updated",
+        title: 'Note updated',
       });
       fetchNotes();
     } catch (error) {
       console.error('Error updating note:', error);
       toast({
-        variant: "destructive",
-        title: "Failed to update note",
+        variant: 'destructive',
+        title: 'Failed to update note',
       });
     }
   }
@@ -258,16 +260,31 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
     setEditContent(note.content);
   }
 
+  // Shared header component for consistency
+  const NotesHeader = () => (
+    <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+      <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 sm:h-8 sm:w-8">
+          <MessageSquare className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </div>
+        <span className="truncate">Team Notes</span>
+        {notes.length > 0 && (
+          <span className="ml-auto shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-normal text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+            {notes.length}
+          </span>
+        )}
+      </CardTitle>
+    </CardHeader>
+  );
+
   if (!workspaceId) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle>Team Notes</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <div className="text-center text-muted-foreground text-sm">
+      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+        <NotesHeader />
+        <CardContent className="flex flex-1 items-center justify-center p-6">
+          <div className="space-y-2 text-center text-sm text-muted-foreground">
             <p>Workspace not found.</p>
-            <p className="text-xs mt-2">Please refresh the page.</p>
+            <p className="text-xs">Please refresh the page.</p>
           </div>
         </CardContent>
       </Card>
@@ -276,83 +293,116 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
 
   if (loading) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle>Team Notes</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+        <NotesHeader />
+        <CardContent className="flex flex-1 items-center justify-center p-6">
+          <Loader2 className="h-7 w-7 animate-spin text-muted-foreground sm:h-8 sm:w-8" />
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="pb-3 border-b">
-        <CardTitle className="flex items-center gap-2">
-          <span>Team Notes</span>
-          <span className="text-xs font-normal text-muted-foreground px-2 py-0.5 rounded-full bg-secondary">
-            {notes.length}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      
-      <div className="flex-1 flex flex-col min-h-0">
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
+    <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+      <NotesHeader />
+
+      <div className="flex min-h-0 flex-1 flex-col">
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="space-y-3 p-4 sm:space-y-4 sm:p-5">
             {notes.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground text-sm">
+              <div className="flex min-h-[120px] items-center justify-center py-8 text-center text-xs text-muted-foreground sm:min-h-[160px] sm:text-sm">
                 No notes yet. Start the conversation!
               </div>
             ) : (
               notes.map((note) => (
-                <div key={note.id} className="group relative flex gap-3 rounded-lg border bg-card p-3 shadow-sm transition-all hover:shadow-md">
-                  <Avatar className="h-8 w-8 shrink-0">
+                <div
+                  key={note.id}
+                  className={cn(
+                    'group relative flex gap-2.5 rounded-xl border bg-card/50 p-3 shadow-sm transition-all sm:gap-3 sm:rounded-lg sm:p-4',
+                    'active:bg-accent/50 sm:hover:shadow-md'
+                  )}
+                >
+                  <Avatar className="h-8 w-8 shrink-0 sm:h-9 sm:w-9">
                     <AvatarImage src={note.profile?.avatar_url || ''} />
-                    <AvatarFallback>{getInitials(note.profile?.full_name || note.profile?.email || '?')}</AvatarFallback>
+                    <AvatarFallback className="text-xs sm:text-sm">
+                      {getInitials(note.profile?.full_name || note.profile?.email || '?')}
+                    </AvatarFallback>
                   </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">{note.profile?.full_name || 'Unknown User'}</span>
-                        <span className="text-xs text-muted-foreground">{formatTimeAgo(note.created_at)}</span>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1.5 flex items-start justify-between gap-2 sm:mb-2 sm:items-center">
+                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                        <span className="text-xs font-semibold sm:text-sm">
+                          {note.profile?.full_name || 'Unknown User'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground sm:text-xs">
+                          {formatTimeAgo(note.created_at)}
+                        </span>
                       </div>
-                      
+
                       {currentUser === note.user_id && (
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div
+                          className={cn(
+                            'flex shrink-0 items-center gap-0.5 transition-opacity',
+                            editingId === note.id
+                              ? 'opacity-100'
+                              : 'opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
+                          )}
+                        >
                           {editingId === note.id ? (
                             <>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-green-500" onClick={() => handleUpdate(note.id)}>
-                                <Check className="h-3 w-3" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-600 sm:h-7 sm:w-7"
+                                onClick={() => handleUpdate(note.id)}
+                              >
+                                <Check className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground" onClick={() => setEditingId(null)}>
-                                <X className="h-3 w-3" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:bg-muted hover:text-foreground sm:h-7 sm:w-7"
+                                onClick={() => setEditingId(null)}
+                              >
+                                <X className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               </Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground" onClick={() => startEdit(note)}>
-                                <Edit2 className="h-3 w-3" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:bg-muted hover:text-foreground sm:h-7 sm:w-7"
+                                onClick={() => startEdit(note)}
+                              >
+                                <Edit2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-red-500" onClick={() => handleDelete(note.id)}>
-                                <Trash2 className="h-3 w-3" />
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:bg-red-500/10 hover:text-red-500 sm:h-7 sm:w-7"
+                                onClick={() => handleDelete(note.id)}
+                              >
+                                <Trash2 className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                               </Button>
                             </>
                           )}
                         </div>
                       )}
                     </div>
-                    
+
                     {editingId === note.id ? (
-                      <Textarea 
-                        value={editContent} 
+                      <Textarea
+                        value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        className="min-h-[60px] text-sm resize-none"
+                        className="min-h-[60px] resize-none text-sm"
+                        autoFocus
                       />
                     ) : (
-                      <p className="text-sm text-foreground whitespace-pre-wrap break-words">{note.content}</p>
+                      <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground sm:text-sm">
+                        {note.content}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -361,13 +411,14 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/50">
-          <div className="flex gap-2">
+        {/* Input section - fixed at bottom */}
+        <div className="shrink-0 border-t border-border/40 bg-muted/20 p-3 sm:p-4">
+          <div className="flex gap-2 sm:gap-3">
             <Textarea
               placeholder="Type a note for the team..."
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
-              className="resize-none min-h-[44px] max-h-[120px]"
+              className="max-h-[100px] min-h-[44px] flex-1 resize-none text-sm sm:max-h-[120px]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -375,13 +426,17 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
                 }
               }}
             />
-            <Button 
-              size="icon" 
-              className="h-[44px] w-[44px] shrink-0" 
-              onClick={handleSubmit} 
+            <Button
+              size="icon"
+              className="h-11 w-11 shrink-0 sm:h-[44px] sm:w-[44px]"
+              onClick={handleSubmit}
               disabled={submitting || !newNote.trim()}
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {submitting ? (
+                <Loader2 className="h-4 w-4 animate-spin sm:h-5 sm:w-5" />
+              ) : (
+                <Send className="h-4 w-4 sm:h-5 sm:w-5" />
+              )}
             </Button>
           </div>
         </div>

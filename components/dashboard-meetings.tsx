@@ -14,9 +14,11 @@ import {
 import { format, isToday, isTomorrow, isWithinInterval, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 import { createGoogleMeetLink } from '@/lib/google-meet';
 import { updateMeeting } from '@/app/actions';
+import { cn } from '@/lib/utils';
 
 interface Meeting {
   id: string;
@@ -129,10 +131,10 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
     const end = parseISO(meeting.end_time);
     const diffMs = end.getTime() - now.getTime();
     const diffMins = Math.round(diffMs / 60000);
-    if (diffMins < 60) return `${diffMins}m remaining`;
+    if (diffMins < 60) return `${diffMins}m left`;
     const hours = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
-    return mins > 0 ? `${hours}h ${mins}m remaining` : `${hours}h remaining`;
+    return mins > 0 ? `${hours}h ${mins}m left` : `${hours}h left`;
   };
 
   const formatMeetingDate = (dateStr: string) => {
@@ -149,18 +151,24 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
         <button
-          className="flex items-center gap-1 rounded-lg bg-emerald-500 px-2.5 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
+          className={cn(
+            'flex h-8 items-center gap-1 rounded-lg bg-emerald-500 px-2.5 text-xs font-semibold text-white transition-all sm:h-9 sm:gap-1.5 sm:px-3',
+            'active:scale-95 sm:hover:bg-emerald-600'
+          )}
           title="Meeting options"
         >
           <Plus className="h-3.5 w-3.5" />
-          Meet
+          <span className="xs:inline hidden">Meet</span>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 border-border bg-card p-0" align="end">
-        <div className="border-b border-border p-3">
+      <PopoverContent className="w-64 border-border bg-card p-0 sm:w-72" align="end">
+        <div className="border-b border-border p-2.5 sm:p-3">
           <button
             onClick={handleInstantMeeting}
-            className="flex w-full items-center gap-3 rounded-lg bg-emerald-500 px-3 py-2.5 text-sm font-medium text-white transition-all hover:bg-emerald-600"
+            className={cn(
+              'flex w-full items-center gap-2.5 rounded-lg bg-emerald-500 px-3 py-2.5 text-sm font-medium text-white transition-all sm:gap-3',
+              'active:scale-98 sm:hover:bg-emerald-600'
+            )}
           >
             <Video className="h-4 w-4" />
             Start Instant Meeting
@@ -169,32 +177,38 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
         {meetingsWithoutLinks.length > 0 && (
           <div className="p-2">
-            <p className="mb-2 px-2 text-xs font-medium text-muted-foreground">
-              Add link to scheduled meeting
+            <p className="mb-2 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">
+              Add link to meeting
             </p>
-            <div className="max-h-48 space-y-1 overflow-y-auto">
-              {meetingsWithoutLinks.slice(0, 5).map((meeting) => (
-                <button
-                  key={meeting.id}
-                  onClick={() => handleGenerateLink(meeting.id)}
-                  disabled={generatingFor === meeting.id}
-                  className="flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2 text-left transition-all hover:bg-accent disabled:opacity-50"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{meeting.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatMeetingDate(meeting.start_time)} at{' '}
-                      {format(parseISO(meeting.start_time), 'h:mm a')}
-                    </p>
-                  </div>
-                  {generatingFor === meeting.id ? (
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-emerald-500" />
-                  ) : (
-                    <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                </button>
-              ))}
-            </div>
+            <ScrollArea className="max-h-40 sm:max-h-48">
+              <div className="space-y-1">
+                {meetingsWithoutLinks.slice(0, 5).map((meeting) => (
+                  <button
+                    key={meeting.id}
+                    onClick={() => handleGenerateLink(meeting.id)}
+                    disabled={generatingFor === meeting.id}
+                    className={cn(
+                      'flex w-full items-center justify-between gap-2 rounded-lg px-2 py-2.5 text-left transition-all sm:py-2',
+                      'active:bg-accent sm:hover:bg-accent',
+                      'disabled:opacity-50'
+                    )}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium sm:text-sm">{meeting.title}</p>
+                      <p className="text-[10px] text-muted-foreground sm:text-xs">
+                        {formatMeetingDate(meeting.start_time)} at{' '}
+                        {format(parseISO(meeting.start_time), 'h:mm a')}
+                      </p>
+                    </div>
+                    {generatingFor === meeting.id ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin text-emerald-500" />
+                    ) : (
+                      <Link2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         )}
 
@@ -208,34 +222,52 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
     </Popover>
   );
 
+  // Shared header for all states
+  const MeetingsHeader = ({ showMeetButton = true }: { showMeetButton?: boolean }) => (
+    <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+      <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500 sm:h-8 sm:w-8">
+          <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </div>
+        <span className="truncate">Meetings</span>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          {totalActiveMeetings > 0 && (
+            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-500 sm:text-xs">
+              {totalActiveMeetings}
+            </span>
+          )}
+          {showMeetButton && <MeetButton />}
+        </div>
+      </CardTitle>
+    </CardHeader>
+  );
+
   if (meetings.length === 0) {
     return (
-      <Card className="flex h-full flex-col border-border/60 shadow-lg transition-shadow duration-300 hover:shadow-xl">
-        <CardHeader className="border-b border-border/60 pb-4">
-          <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500">
-              <Video className="h-4 w-4" />
-            </div>
-            <span>Meetings</span>
-            <div className="ml-auto">
+      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+        <MeetingsHeader showMeetButton={false} />
+        <CardContent className="flex flex-1 items-center justify-center p-4 sm:p-6">
+          <div className="space-y-3 text-center">
+            <CalendarDays className="mx-auto h-7 w-7 opacity-20 sm:h-8 sm:w-8" />
+            <p className="text-xs text-muted-foreground sm:text-sm">No meetings scheduled</p>
+            <div className="flex flex-col items-center gap-2 sm:flex-row">
               <button
                 onClick={handleInstantMeeting}
-                className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
-                title="Start instant Google Meet"
+                className={cn(
+                  'flex h-9 items-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition-all sm:h-10 sm:px-4',
+                  'active:scale-95 sm:hover:bg-emerald-600'
+                )}
               >
                 <Plus className="h-3.5 w-3.5" />
                 Start Meet
               </button>
+              <Link
+                href="/schedule"
+                className="text-xs font-medium text-qualia-500 transition-colors hover:text-qualia-600 hover:underline dark:hover:text-qualia-400"
+              >
+                View schedule
+              </Link>
             </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-1 items-center justify-center p-6">
-          <div className="space-y-2 text-center">
-            <CalendarDays className="mx-auto h-8 w-8 opacity-20" />
-            <p className="text-sm text-muted-foreground">No meetings scheduled</p>
-            <Link href="/schedule" className="text-xs text-qualia-500 hover:underline">
-              View schedule
-            </Link>
           </div>
         </CardContent>
       </Card>
@@ -243,183 +275,204 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   }
 
   return (
-    <Card className="flex h-full flex-col border-border/60 shadow-lg transition-shadow duration-300 hover:shadow-xl">
-      <CardHeader className="border-b border-border/60 pb-4">
-        <CardTitle className="flex items-center gap-2.5 text-base font-semibold">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500">
-            <Video className="h-4 w-4" />
-          </div>
-          <span>Meetings</span>
-          <div className="ml-auto flex items-center gap-2">
-            {totalActiveMeetings > 0 && (
-              <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-500">
-                {totalActiveMeetings}
-              </span>
-            )}
-            <MeetButton />
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-0">
-        <div className="divide-y divide-border/60">
-          {/* Current Meeting - Highlighted */}
-          {currentMeeting && (
-            <div className="border-l-2 border-violet-500 bg-violet-500/5 p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                    Now
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {getTimeRemaining(currentMeeting)}
-                  </span>
-                </div>
-                {currentMeeting.meeting_link ? (
-                  <a
-                    href={currentMeeting.meeting_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600"
-                  >
-                    <Video className="h-3 w-3" />
-                    Join
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => handleGenerateLink(currentMeeting.id)}
-                    disabled={generatingFor === currentMeeting.id}
-                    className="flex items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-500 transition-all hover:bg-emerald-500 hover:text-white disabled:opacity-50"
-                  >
-                    {generatingFor === currentMeeting.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Link2 className="h-3 w-3" />
-                    )}
-                    Add Link
-                  </button>
-                )}
-              </div>
-              <h4 className="mb-1 text-sm font-semibold text-foreground">{currentMeeting.title}</h4>
-              <p className="mb-2 text-xs text-muted-foreground">
-                {format(parseISO(currentMeeting.start_time), 'h:mm a')} -{' '}
-                {format(parseISO(currentMeeting.end_time), 'h:mm a')}
-              </p>
-              {/* Progress bar */}
-              <div className="h-1 rounded-full bg-violet-500/20">
-                <div
-                  className="h-full rounded-full bg-violet-500 transition-all duration-1000"
-                  style={{ width: `${getMeetingProgress(currentMeeting)}%` }}
-                />
-              </div>
-            </div>
-          )}
+    <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+      <MeetingsHeader />
 
-          {/* Next Meeting - Emphasized */}
-          {nextMeeting && !currentMeeting && (
-            <div className="border-l-2 border-qualia-500 bg-qualia-500/5 p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold text-qualia-500">
-                    Up Next
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {getTimeUntil(nextMeeting.start_time)}
-                  </span>
-                </div>
-                {nextMeeting.meeting_link ? (
-                  <a
-                    href={nextMeeting.meeting_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-500 transition-all hover:bg-emerald-500 hover:text-white"
-                  >
-                    <Video className="h-3 w-3" />
-                    Join
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => handleGenerateLink(nextMeeting.id)}
-                    disabled={generatingFor === nextMeeting.id}
-                    className="flex items-center gap-1.5 rounded-lg border border-muted-foreground/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-all hover:border-emerald-500 hover:text-emerald-500 disabled:opacity-50"
-                  >
-                    {generatingFor === nextMeeting.id ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Link2 className="h-3 w-3" />
-                    )}
-                    Add Link
-                  </button>
-                )}
-              </div>
-              <h4 className="mb-1 text-sm font-semibold text-foreground">{nextMeeting.title}</h4>
-              <p className="text-xs text-muted-foreground">
-                {formatMeetingDate(nextMeeting.start_time)} at{' '}
-                {format(parseISO(nextMeeting.start_time), 'h:mm a')}
-              </p>
-            </div>
-          )}
-
-          {/* Other Upcoming Meetings */}
-          {upcomingMeetings.slice(currentMeeting ? 0 : 1, 4).map((meeting) => (
-            <div key={meeting.id} className="p-4 transition-all duration-200 hover:bg-qualia-500/5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex items-center gap-2">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {formatMeetingDate(meeting.start_time)} at{' '}
-                      {format(parseISO(meeting.start_time), 'h:mm a')}
+      <ScrollArea className="min-h-0 flex-1">
+        <CardContent className="p-0">
+          <div className="divide-y divide-border/30">
+            {/* Current Meeting - Highlighted */}
+            {currentMeeting && (
+              <div className="border-l-2 border-violet-500 bg-violet-500/5 p-3 sm:p-4">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                      Now
+                    </span>
+                    <span className="text-[10px] text-muted-foreground sm:text-xs">
+                      {getTimeRemaining(currentMeeting)}
                     </span>
                   </div>
-                  <h4 className="truncate text-sm font-medium text-foreground">{meeting.title}</h4>
-                  {meeting.project && (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                      {meeting.project.name}
-                    </p>
+                  {currentMeeting.meeting_link ? (
+                    <a
+                      href={currentMeeting.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        'flex h-8 items-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition-all sm:h-9',
+                        'active:scale-95 sm:hover:bg-emerald-600'
+                      )}
+                    >
+                      <Video className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      Join
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => handleGenerateLink(currentMeeting.id)}
+                      disabled={generatingFor === currentMeeting.id}
+                      className={cn(
+                        'flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-500 transition-all sm:h-9',
+                        'active:scale-95 sm:hover:bg-emerald-500 sm:hover:text-white',
+                        'disabled:opacity-50'
+                      )}
+                    >
+                      {generatingFor === currentMeeting.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Link2 className="h-3 w-3" />
+                      )}
+                      Add Link
+                    </button>
                   )}
                 </div>
-                {meeting.meeting_link ? (
-                  <a
-                    href={meeting.meeting_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 rounded-lg p-2 text-emerald-500 transition-all hover:bg-emerald-500/10"
-                    title="Join meeting"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => handleGenerateLink(meeting.id)}
-                    disabled={generatingFor === meeting.id}
-                    className="shrink-0 rounded-lg p-2 text-muted-foreground transition-all hover:bg-accent hover:text-emerald-500 disabled:opacity-50"
-                    title="Add meeting link"
-                  >
-                    {generatingFor === meeting.id ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Link2 className="h-4 w-4" />
-                    )}
-                  </button>
-                )}
+                <h4 className="mb-1 truncate text-sm font-semibold text-foreground">
+                  {currentMeeting.title}
+                </h4>
+                <p className="mb-2 text-[10px] text-muted-foreground sm:text-xs">
+                  {format(parseISO(currentMeeting.start_time), 'h:mm a')} -{' '}
+                  {format(parseISO(currentMeeting.end_time), 'h:mm a')}
+                </p>
+                {/* Progress bar */}
+                <div className="h-1.5 rounded-full bg-violet-500/20 sm:h-2">
+                  <div
+                    className="h-full rounded-full bg-violet-500 transition-all duration-1000"
+                    style={{ width: `${getMeetingProgress(currentMeeting)}%` }}
+                  />
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            )}
 
-        {/* View All Link */}
-        {totalActiveMeetings > 3 && (
-          <div className="border-t border-border/60 p-4">
-            <Link
-              href="/schedule"
-              className="flex items-center justify-center gap-1 text-xs font-medium text-qualia-500 transition-colors hover:text-qualia-600 dark:hover:text-qualia-400"
-            >
-              View all {totalActiveMeetings} meetings
-              <ExternalLink className="h-3 w-3" />
-            </Link>
+            {/* Next Meeting - Emphasized */}
+            {nextMeeting && !currentMeeting && (
+              <div className="border-l-2 border-qualia-500 bg-qualia-500/5 p-3 sm:p-4">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold text-qualia-500">
+                      Up Next
+                    </span>
+                    <span className="text-[10px] text-muted-foreground sm:text-xs">
+                      {getTimeUntil(nextMeeting.start_time)}
+                    </span>
+                  </div>
+                  {nextMeeting.meeting_link ? (
+                    <a
+                      href={nextMeeting.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        'flex h-8 items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-500 transition-all sm:h-9',
+                        'active:scale-95 sm:hover:bg-emerald-500 sm:hover:text-white'
+                      )}
+                    >
+                      <Video className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                      Join
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => handleGenerateLink(nextMeeting.id)}
+                      disabled={generatingFor === nextMeeting.id}
+                      className={cn(
+                        'flex h-8 items-center gap-1.5 rounded-lg border border-muted-foreground/30 px-3 text-xs font-medium text-muted-foreground transition-all sm:h-9',
+                        'active:scale-95 sm:hover:border-emerald-500 sm:hover:text-emerald-500',
+                        'disabled:opacity-50'
+                      )}
+                    >
+                      {generatingFor === nextMeeting.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Link2 className="h-3 w-3" />
+                      )}
+                      Add Link
+                    </button>
+                  )}
+                </div>
+                <h4 className="mb-1 truncate text-sm font-semibold text-foreground">
+                  {nextMeeting.title}
+                </h4>
+                <p className="text-[10px] text-muted-foreground sm:text-xs">
+                  {formatMeetingDate(nextMeeting.start_time)} at{' '}
+                  {format(parseISO(nextMeeting.start_time), 'h:mm a')}
+                </p>
+              </div>
+            )}
+
+            {/* Other Upcoming Meetings */}
+            {upcomingMeetings.slice(currentMeeting ? 0 : 1, 4).map((meeting) => (
+              <div
+                key={meeting.id}
+                className={cn(
+                  'p-3 transition-all duration-200 sm:p-4',
+                  'active:bg-qualia-500/10 sm:hover:bg-qualia-500/5'
+                )}
+              >
+                <div className="flex items-start justify-between gap-2 sm:gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex items-center gap-1.5 sm:gap-2">
+                      <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-[10px] text-muted-foreground sm:text-xs">
+                        {formatMeetingDate(meeting.start_time)} at{' '}
+                        {format(parseISO(meeting.start_time), 'h:mm a')}
+                      </span>
+                    </div>
+                    <h4 className="truncate text-xs font-medium text-foreground sm:text-sm">
+                      {meeting.title}
+                    </h4>
+                    {meeting.project && (
+                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground sm:text-xs">
+                        {meeting.project.name}
+                      </p>
+                    )}
+                  </div>
+                  {meeting.meeting_link ? (
+                    <a
+                      href={meeting.meeting_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-emerald-500 transition-all sm:h-8 sm:w-8',
+                        'active:bg-emerald-500/20 sm:hover:bg-emerald-500/10'
+                      )}
+                      title="Join meeting"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  ) : (
+                    <button
+                      onClick={() => handleGenerateLink(meeting.id)}
+                      disabled={generatingFor === meeting.id}
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-all sm:h-8 sm:w-8',
+                        'active:bg-accent sm:hover:bg-accent sm:hover:text-emerald-500',
+                        'disabled:opacity-50'
+                      )}
+                      title="Add meeting link"
+                    >
+                      {generatingFor === meeting.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Link2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </CardContent>
+
+          {/* View All Link */}
+          {totalActiveMeetings > 3 && (
+            <div className="border-t border-border/40 p-3 sm:p-4">
+              <Link
+                href="/schedule"
+                className="flex items-center justify-center gap-1 text-xs font-medium text-qualia-500 transition-colors hover:text-qualia-600 active:text-qualia-700 dark:hover:text-qualia-400"
+              >
+                View all {totalActiveMeetings} meetings
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </div>
+          )}
+        </CardContent>
+      </ScrollArea>
     </Card>
   );
 }
