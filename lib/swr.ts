@@ -2,6 +2,7 @@
 
 import useSWR, { SWRConfiguration, mutate } from 'swr';
 import { getTeams, getProjects, getProfiles, getCurrentWorkspaceId } from '@/app/actions';
+import { getTasks, getProjectTasks } from '@/app/actions/inbox';
 
 // Default SWR configuration optimized for performance
 export const swrConfig: SWRConfiguration = {
@@ -19,7 +20,16 @@ export const cacheKeys = {
   projects: 'projects',
   profiles: 'profiles',
   workspaceId: 'workspace-id',
+  inboxTasks: 'inbox-tasks',
+  projectTasks: (projectId: string) => `project-tasks-${projectId}`,
 } as const;
+
+// SWR config with auto-refresh for real-time task updates
+const autoRefreshConfig: SWRConfiguration = {
+  ...swrConfig,
+  revalidateOnFocus: true,
+  refreshInterval: 5000, // Refresh every 5 seconds
+};
 
 /**
  * Hook to fetch teams with caching
@@ -125,6 +135,76 @@ export function invalidateAllCaches() {
 /**
  * Invalidate specific cache
  */
-export function invalidateCache(key: keyof typeof cacheKeys) {
-  mutate(cacheKeys[key]);
+export function invalidateCache(
+  key: 'teams' | 'projects' | 'profiles' | 'workspaceId' | 'inboxTasks'
+) {
+  if (key === 'inboxTasks') {
+    mutate(cacheKeys.inboxTasks);
+  } else {
+    mutate(cacheKeys[key]);
+  }
+}
+
+/**
+ * Hook to fetch inbox tasks with auto-refresh
+ * Only fetches tasks where show_in_inbox = true
+ */
+export function useInboxTasks() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.inboxTasks, () => getTasks(null, { inboxOnly: true }), autoRefreshConfig);
+
+  return {
+    tasks: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch project tasks with auto-refresh
+ * Returns all tasks for a specific project (regardless of show_in_inbox)
+ */
+export function useProjectTasks(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.projectTasks(projectId) : null,
+    () => (projectId ? getProjectTasks(projectId) : Promise.resolve([])),
+    autoRefreshConfig
+  );
+
+  return {
+    tasks: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate project tasks cache
+ */
+export function invalidateProjectTasks(projectId: string) {
+  mutate(cacheKeys.projectTasks(projectId));
+}
+
+/**
+ * Invalidate inbox tasks cache
+ */
+export function invalidateInboxTasks() {
+  mutate(cacheKeys.inboxTasks);
 }

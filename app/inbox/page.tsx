@@ -11,7 +11,7 @@ import { Inbox } from 'lucide-react';
 async function InboxLoader({ view }: { view: string }) {
   await connection();
   const workspaceId = await getCurrentWorkspaceId();
-  const tasks = await getTasks(workspaceId);
+  const tasks = await getTasks(workspaceId, { inboxOnly: true });
 
   if (view === 'list') {
     return <InboxListView tasks={tasks} />;

@@ -30,7 +30,7 @@ import {
 } from '@/components/ui/select';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { formatDate, formatTimeAgo } from '@/lib/utils';
-import { ProjectRoadmap } from '@/components/project-roadmap';
+import { ProjectTaskKanban } from '@/components/project-task-kanban';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 
 const PROJECT_TYPES: { value: ProjectType; label: string; icon: typeof Globe }[] = [
@@ -196,9 +196,9 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
 
       {/* Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Content - Roadmap */}
+        {/* Main Content - Tasks */}
         <div className="flex-1 overflow-y-auto p-6">
-          <ProjectRoadmap projectId={project.id} workspaceId={project.workspace_id} />
+          <ProjectTaskKanban projectId={project.id} />
         </div>
 
         {/* Side Panel - Project Details */}

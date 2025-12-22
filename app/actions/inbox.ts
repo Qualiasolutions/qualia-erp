@@ -17,8 +17,7 @@ export type Task = {
   workspace_id: string;
   creator_id: string | null;
   assignee_id: string | null;
-  project_id: string | null;
-  phase_id: string | null;
+  project_id: string;
   title: string;
   description: string | null;
   status: 'Todo' | 'In Progress' | 'Done';
@@ -26,6 +25,7 @@ export type Task = {
   sort_order: number;
   due_date: string | null;
   completed_at: string | null;
+  show_in_inbox: boolean;
   created_at: string;
   updated_at: string;
   creator?: {
@@ -40,15 +40,11 @@ export type Task = {
     email: string | null;
     avatar_url: string | null;
   } | null;
-  project?: {
+  project: {
     id: string;
     name: string;
     project_type: string | null;
-  } | null;
-  phase?: {
-    id: string;
-    name: string;
-  } | null;
+  };
 };
 
 /**
@@ -59,6 +55,7 @@ export async function getTasks(
   options: {
     status?: string[];
     limit?: number;
+    inboxOnly?: boolean;
   } = {}
 ): Promise<Task[]> {
   const supabase = await createClient();
@@ -93,7 +90,6 @@ export async function getTasks(
       creator_id,
       assignee_id,
       project_id,
-      phase_id,
       title,
       description,
       status,
@@ -101,17 +97,22 @@ export async function getTasks(
       sort_order,
       due_date,
       completed_at,
+      show_in_inbox,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects!tasks_project_id_fkey (id, name, project_type),
-      phase:project_phases!tasks_phase_id_fkey (id, name)
+      project:projects!tasks_project_id_fkey (id, name, project_type)
     `
     )
     .eq('workspace_id', wsId)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
+
+  // Filter for inbox-only tasks
+  if (options.inboxOnly) {
+    query = query.eq('show_in_inbox', true);
+  }
 
   if (options.status && options.status.length > 0) {
     query = query.in('status', options.status);
@@ -132,15 +133,13 @@ export async function getTasks(
     const t = task as unknown as {
       creator: Task['creator'] | Task['creator'][] | null;
       assignee: Task['assignee'] | Task['assignee'][] | null;
-      project: Task['project'] | Task['project'][] | null;
-      phase: Task['phase'] | Task['phase'][] | null;
+      project: Task['project'] | Task['project'][];
     };
     return {
       ...task,
       creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
       assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
-      project: Array.isArray(t.project) ? t.project[0] || null : t.project,
-      phase: Array.isArray(t.phase) ? t.phase[0] || null : t.phase,
+      project: Array.isArray(t.project) ? t.project[0] : t.project,
     } as Task;
   });
 }
@@ -168,12 +167,11 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     title,
     description,
     status,
-    priority,
     workspace_id,
     due_date,
     assignee_id,
     project_id,
-    phase_id,
+    show_in_inbox,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -204,14 +202,14 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       title: title.trim(),
       description: description?.trim() || null,
       status,
-      priority,
+      priority: 'No Priority',
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,
-      project_id: project_id || null,
-      phase_id: phase_id || null,
+      project_id,
       due_date: due_date || null,
       sort_order: nextSortOrder,
+      show_in_inbox: show_in_inbox ?? false,
     })
     .select()
     .single();
@@ -244,18 +242,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const {
-    id,
-    title,
-    description,
-    status,
-    priority,
-    due_date,
-    sort_order,
-    assignee_id,
-    project_id,
-    phase_id,
-  } = validation.data;
+  const { id, title, description, status, due_date, sort_order, assignee_id, show_in_inbox } =
+    validation.data;
 
   if (!id) {
     return { success: false, error: 'Task ID is required' };
@@ -267,12 +255,10 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (title !== undefined) updateData.title = title.trim();
   if (description !== undefined) updateData.description = description?.trim() || null;
   if (status !== undefined) updateData.status = status;
-  if (priority !== undefined) updateData.priority = priority;
   if (due_date !== undefined) updateData.due_date = due_date || null;
   if (sort_order !== undefined) updateData.sort_order = sort_order;
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
-  if (project_id !== undefined) updateData.project_id = project_id || null;
-  if (phase_id !== undefined) updateData.phase_id = phase_id || null;
+  if (show_in_inbox !== undefined) updateData.show_in_inbox = show_in_inbox;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -401,7 +387,6 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       creator_id,
       assignee_id,
       project_id,
-      phase_id,
       title,
       description,
       status,
@@ -409,16 +394,16 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       sort_order,
       due_date,
       completed_at,
+      show_in_inbox,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects!tasks_project_id_fkey (id, name, project_type),
-      phase:project_phases!tasks_phase_id_fkey (id, name)
+      project:projects!tasks_project_id_fkey (id, name, project_type)
     `
     )
     .eq('project_id', projectId)
-    .order('phase_id', { ascending: true, nullsFirst: false })
+    .order('status', { ascending: true })
     .order('sort_order', { ascending: true });
 
   if (error) {
@@ -430,27 +415,21 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
     const t = task as unknown as {
       creator: Task['creator'] | Task['creator'][] | null;
       assignee: Task['assignee'] | Task['assignee'][] | null;
-      project: Task['project'] | Task['project'][] | null;
-      phase: Task['phase'] | Task['phase'][] | null;
+      project: Task['project'] | Task['project'][];
     };
     return {
       ...task,
       creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
       assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
-      project: Array.isArray(t.project) ? t.project[0] || null : t.project,
-      phase: Array.isArray(t.phase) ? t.phase[0] || null : t.phase,
+      project: Array.isArray(t.project) ? t.project[0] : t.project,
     } as Task;
   });
 }
 
 /**
- * Link a task to a project (and optionally a phase)
+ * Toggle the show_in_inbox flag for a task
  */
-export async function linkTaskToProject(
-  taskId: string,
-  projectId: string | null,
-  phaseId?: string | null
-): Promise<ActionResult> {
+export async function toggleTaskInbox(taskId: string, showInInbox: boolean): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -462,21 +441,14 @@ export async function linkTaskToProject(
 
   const { error } = await supabase
     .from('tasks')
-    .update({
-      project_id: projectId,
-      phase_id: phaseId || null,
-    })
+    .update({ show_in_inbox: showInInbox })
     .eq('id', taskId);
 
   if (error) {
-    console.error('[linkTaskToProject] Error linking task:', error);
+    console.error('[toggleTaskInbox] Error toggling task inbox:', error);
     return { success: false, error: error.message };
   }
 
   revalidatePath('/inbox');
-  if (projectId) {
-    revalidatePath(`/projects/${projectId}`);
-    revalidatePath(`/projects/${projectId}/roadmap`);
-  }
   return { success: true };
 }

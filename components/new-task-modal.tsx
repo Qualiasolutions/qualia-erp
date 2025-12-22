@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, CalendarIcon, User, Folder, FolderOpen } from 'lucide-react';
+import { Plus, CalendarIcon, User, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -26,14 +26,9 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { createTask } from '@/app/actions/inbox';
-import { useProfiles, useProjects } from '@/lib/swr';
-import { getProjectPhases } from '@/app/actions/roadmap';
+import { useProfiles, useProjects, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
 import { useRouter } from 'next/navigation';
-
-type Phase = {
-  id: string;
-  name: string;
-};
+import { Switch } from '@/components/ui/switch';
 
 export function NewTaskModal() {
   const router = useRouter();
@@ -45,15 +40,10 @@ export function NewTaskModal() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'Todo' | 'In Progress' | 'Done'>('Todo');
-  const [priority, setPriority] = useState<'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low'>(
-    'No Priority'
-  );
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [phaseId, setPhaseId] = useState<string | null>(null);
-  const [phases, setPhases] = useState<Phase[]>([]);
-  const [loadingPhases, setLoadingPhases] = useState(false);
+  const [showInInbox, setShowInInbox] = useState(true);
 
   useEffect(() => {
     if (open) {
@@ -61,33 +51,22 @@ export function NewTaskModal() {
       setTitle('');
       setDescription('');
       setStatus('Todo');
-      setPriority('No Priority');
       setAssigneeId(null);
       setDueDate(undefined);
       setProjectId(null);
-      setPhaseId(null);
-      setPhases([]);
+      setShowInInbox(true);
       setError(null);
     }
   }, [open]);
 
-  // Fetch phases when project changes
-  useEffect(() => {
-    if (projectId) {
-      setLoadingPhases(true);
-      setPhaseId(null);
-      getProjectPhases(projectId).then((data) => {
-        setPhases(data.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })));
-        setLoadingPhases(false);
-      });
-    } else {
-      setPhases([]);
-      setPhaseId(null);
-    }
-  }, [projectId]);
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (!projectId) {
+      setError('Please select a project');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -95,24 +74,22 @@ export function NewTaskModal() {
     formData.set('title', title);
     if (description) formData.set('description', description);
     formData.set('status', status);
-    formData.set('priority', priority);
     if (assigneeId) {
       formData.set('assignee_id', assigneeId);
     }
     if (dueDate) {
       formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
     }
-    if (projectId) {
-      formData.set('project_id', projectId);
-    }
-    if (phaseId) {
-      formData.set('phase_id', phaseId);
-    }
+    formData.set('project_id', projectId);
+    formData.set('show_in_inbox', showInInbox.toString());
 
     const result = await createTask(formData);
 
     if (result.success) {
       setOpen(false);
+      // Invalidate caches for instant refresh
+      invalidateInboxTasks();
+      invalidateProjectTasks(projectId);
       router.refresh();
     } else {
       setError(result.error || 'Failed to create task');
@@ -158,36 +135,18 @@ export function NewTaskModal() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-                <SelectTrigger id="status" className="border-border bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="Todo">Todo</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Done">Done</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)}>
-                <SelectTrigger id="priority" className="border-border bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="No Priority">No Priority</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Urgent">Urgent</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+              <SelectTrigger id="status" className="border-border bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="border-border bg-card">
+                <SelectItem value="Todo">Todo</SelectItem>
+                <SelectItem value="In Progress">In Progress</SelectItem>
+                <SelectItem value="Done">Done</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -251,23 +210,17 @@ export function NewTaskModal() {
             </Popover>
           </div>
 
-          {/* Project linking */}
+          {/* Project selection (required) */}
           <div className="space-y-2">
-            <Label htmlFor="project">Link to Project</Label>
-            <Select
-              value={projectId || 'none'}
-              onValueChange={(v) => setProjectId(v === 'none' ? null : v)}
-            >
-              <SelectTrigger id="project" className="border-border bg-background">
-                <SelectValue placeholder="No project" />
+            <Label htmlFor="project">Project *</Label>
+            <Select value={projectId || ''} onValueChange={(v) => setProjectId(v)}>
+              <SelectTrigger
+                id="project"
+                className={cn('border-border bg-background', !projectId && 'text-muted-foreground')}
+              >
+                <SelectValue placeholder="Select a project" />
               </SelectTrigger>
               <SelectContent className="max-h-60 border-border bg-card">
-                <SelectItem value="none">
-                  <div className="flex items-center gap-2">
-                    <Folder className="h-4 w-4 text-muted-foreground" />
-                    <span>No project</span>
-                  </div>
-                </SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     <div className="flex items-center gap-2">
@@ -280,35 +233,24 @@ export function NewTaskModal() {
             </Select>
           </div>
 
-          {/* Phase selector - only shown when project is selected */}
-          {projectId && (
-            <div className="space-y-2">
-              <Label htmlFor="phase">Link to Phase</Label>
-              <Select
-                value={phaseId || 'none'}
-                onValueChange={(v) => setPhaseId(v === 'none' ? null : v)}
-                disabled={loadingPhases}
-              >
-                <SelectTrigger id="phase" className="border-border bg-background">
-                  <SelectValue placeholder={loadingPhases ? 'Loading...' : 'No phase'} />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="none">No phase (general project task)</SelectItem>
-                  {phases.map((phase) => (
-                    <SelectItem key={phase.id} value={phase.id}>
-                      {phase.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          {/* Show in Inbox toggle */}
+          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="show_in_inbox" className="text-sm font-medium">
+                Show in Inbox
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Task will appear in your inbox for quick access
+              </p>
             </div>
-          )}
+            <Switch id="show_in_inbox" checked={showInInbox} onCheckedChange={setShowInInbox} />
+          </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button
             type="submit"
-            disabled={loading || !title.trim()}
+            disabled={loading || !title.trim() || !projectId}
             className="w-full bg-primary font-medium hover:bg-primary/90"
           >
             {loading ? 'Creating...' : 'Create Task'}
