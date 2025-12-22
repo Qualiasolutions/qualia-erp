@@ -78,9 +78,30 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-popover',
       '@radix-ui/react-select',
       '@radix-ui/react-tooltip',
+      '@radix-ui/react-switch',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-label',
+      '@radix-ui/react-slot',
       'framer-motion',
       'cmdk',
+      '@dnd-kit/core',
+      '@dnd-kit/sortable',
+      '@dnd-kit/utilities',
+      'zod',
     ],
+    // Enable client trace metadata for better Sentry tracing
+    clientTraceMetadata: ['baggage', 'sentry-trace'],
+  },
+
+  // Enable production browser source maps for better debugging
+  productionBrowserSourceMaps: false, // Disable for smaller bundle
+
+  // Compiler optimizations
+  compiler: {
+    // Remove console.log in production
+    removeConsole: process.env.NODE_ENV === 'production',
   },
 };
 

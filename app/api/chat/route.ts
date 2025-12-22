@@ -8,7 +8,7 @@ import { z } from 'zod';
 void tool;
 void stepCountIs;
 
-export const maxDuration = 60;
+export const maxDuration = 30; // Reduced from 60s to prevent slow request accumulation
 
 async function getUserInfo() {
   const supabase = await createClient();

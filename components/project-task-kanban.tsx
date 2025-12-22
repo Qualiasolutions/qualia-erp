@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { Plus, GripVertical, MoreVertical, Trash2, Inbox } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,7 +69,13 @@ interface TaskCardProps {
   isDragging?: boolean;
 }
 
-function TaskCard({ task, onDelete, onToggleInbox, isDragging }: TaskCardProps) {
+// Memoized TaskCard to prevent re-renders when sibling tasks change
+const TaskCard = memo(function TaskCard({
+  task,
+  onDelete,
+  onToggleInbox,
+  isDragging,
+}: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -79,10 +85,13 @@ function TaskCard({ task, onDelete, onToggleInbox, isDragging }: TaskCardProps) 
     isDragging: sortableDragging,
   } = useSortable({ id: task.id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }),
+    [transform, transition]
+  );
 
   const dragging = isDragging || sortableDragging;
 
@@ -157,7 +166,7 @@ function TaskCard({ task, onDelete, onToggleInbox, isDragging }: TaskCardProps) 
       </div>
     </div>
   );
-}
+});
 
 interface StatusColumnProps {
   status: TaskStatus;

@@ -8,10 +8,11 @@ import { getTasks, getProjectTasks } from '@/app/actions/inbox';
 export const swrConfig: SWRConfiguration = {
   revalidateOnFocus: false, // Don't refetch on window focus (server actions handle this)
   revalidateOnReconnect: true, // Refetch when network reconnects
-  dedupingInterval: 30000, // Dedupe requests within 30 seconds (was 5s - reduced API calls)
+  dedupingInterval: 60000, // Dedupe requests within 60 seconds (increased from 30s for less API calls)
   errorRetryCount: 3, // Retry failed requests 3 times
   shouldRetryOnError: true,
   keepPreviousData: true, // Show stale data while revalidating for better UX
+  focusThrottleInterval: 5000, // Throttle focus revalidation to max once per 5s
 };
 
 // Cache keys for SWR
@@ -28,7 +29,8 @@ export const cacheKeys = {
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
   revalidateOnFocus: true,
-  refreshInterval: 5000, // Refresh every 5 seconds
+  refreshInterval: 10000, // Refresh every 10 seconds (reduced from 5s for less load)
+  dedupingInterval: 8000, // Allow more frequent updates for tasks
 };
 
 /**
