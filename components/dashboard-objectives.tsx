@@ -37,7 +37,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
         .from('projects')
         .select('id, name, status')
         .eq('workspace_id', workspaceId)
-        .in('status', ['Active', 'active', 'in_progress'])
+        .in('status', ['Active', 'Demos'])
         .order('name', { ascending: true });
 
       if (error) throw error;
