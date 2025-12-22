@@ -103,6 +103,7 @@ WRITE:
 - addComment: Comment on tasks
 - createClient: Add clients/leads
 - createMeeting: Schedule meetings
+- createProject: Create new projects (requires team - use getTeams first)
 
 ROADMAP:
 - updateRoadmap: Modify phases
@@ -838,6 +839,64 @@ Your personality:
               success: true,
               meeting: data,
               message: `Scheduled meeting: "${data.title}" for ${new Date(data.start_time).toLocaleString()}`,
+            };
+          },
+        }),
+
+        createProject: tool({
+          description:
+            'Create a new project. Requires a team - use getTeams first to find available teams.',
+          inputSchema: z.object({
+            name: z.string().describe('Project name (required)'),
+            description: z.string().optional().describe('Project description'),
+            team_id: z.string().uuid().describe('Team ID (required) - use getTeams to find'),
+            status: z
+              .enum(['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'])
+              .default('Active')
+              .describe('Project status'),
+            target_date: z.string().optional().describe('Target completion date (ISO format)'),
+            project_group: z.string().optional().describe('Project group/category'),
+          }),
+          execute: async ({ name, description, team_id, status, target_date, project_group }) => {
+            if (!workspaceId) {
+              return { error: 'No workspace found for user' };
+            }
+
+            // Validate team exists
+            const { data: team } = await supabase
+              .from('teams')
+              .select('id, name')
+              .eq('id', team_id)
+              .eq('workspace_id', workspaceId)
+              .single();
+
+            if (!team) {
+              return {
+                error: `Team not found. Use getTeams to find available teams.`,
+              };
+            }
+
+            const { data, error } = await supabase
+              .from('projects')
+              .insert({
+                name: name.trim(),
+                description: description?.trim() || null,
+                status: status || 'Active',
+                team_id,
+                lead_id: user.id,
+                target_date: target_date || null,
+                workspace_id: workspaceId,
+                project_group: project_group || null,
+              })
+              .select('id, name, status')
+              .single();
+
+            if (error) return { error: error.message };
+
+            return {
+              success: true,
+              project: data,
+              message: `Created project: "${data.name}" with status ${data.status}`,
             };
           },
         }),

@@ -4,6 +4,7 @@ import { ProjectList, type Project } from '@/components/project-list';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { ProjectViewToggle } from '@/components/project-view-toggle';
+import { NewProjectModal } from '@/components/new-project-modal';
 import { Folder } from 'lucide-react';
 import type { ProjectType } from '@/types/database';
 
@@ -121,7 +122,7 @@ export default async function ProjectsPage({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center border-b border-border px-4 py-3 sm:px-6 sm:py-4">
+      <header className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 sm:h-9 sm:w-9">
             <Folder className="h-4 w-4 text-primary" />
@@ -135,6 +136,7 @@ export default async function ProjectsPage({
             </p>
           </div>
         </div>
+        <NewProjectModal />
       </header>
 
       {/* View Toggle */}
