@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Sparkles, GraduationCap, Flame, Target, Zap } from 'lucide-react';
+import { BookOpen, Sparkles, GraduationCap, Flame, Zap } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -120,13 +120,6 @@ export function LearnModeSettings() {
 
           {/* Quick Links */}
           <div className="flex gap-2 pt-2">
-            <a
-              href="/today"
-              className="flex items-center gap-1.5 rounded-lg bg-qualia-500/10 px-3 py-1.5 text-xs font-medium text-qualia-400 transition-colors hover:bg-qualia-500/20"
-            >
-              <Target className="h-3 w-3" />
-              Today&apos;s Focus
-            </a>
             <a
               href="/skills"
               className="flex items-center gap-1.5 rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition-colors hover:bg-purple-500/20"

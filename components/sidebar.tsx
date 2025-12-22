@@ -12,9 +12,6 @@ import {
   ChevronRight,
   Command,
   Inbox,
-  Zap,
-  Target,
-  Crosshair,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
@@ -23,9 +20,6 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutGrid },
-  { name: 'Command Center', href: '/command-center', icon: Zap, highlight: true },
-  { name: 'Today', href: '/today', icon: Target },
-  { name: 'Focus Mode', href: '/focus', icon: Crosshair },
   { name: 'Inbox', href: '/inbox', icon: Inbox },
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
@@ -95,7 +89,6 @@ function SidebarContent({
           {navigation.map((item, index) => {
             const isActive =
               pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
-            const isHighlight = 'highlight' in item && item.highlight;
 
             return (
               <Link
@@ -108,9 +101,7 @@ function SidebarContent({
                   isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 px-2.5',
                   isActive
                     ? 'bg-qualia-500/10 text-qualia-600 shadow-sm dark:text-qualia-400'
-                    : isHighlight
-                      ? 'text-qualia-500 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400'
-                      : 'text-muted-foreground hover:bg-qualia-500/5 hover:text-foreground'
+                    : 'text-muted-foreground hover:bg-qualia-500/5 hover:text-foreground'
                 )}
                 style={{ animationDelay: `${index * 25}ms` }}
               >
@@ -120,19 +111,10 @@ function SidebarContent({
                     isCollapsed ? 'h-[17px] w-[17px]' : 'h-4 w-4',
                     isActive
                       ? 'text-qualia-600 dark:text-qualia-400'
-                      : isHighlight
-                        ? 'text-qualia-500'
-                        : 'text-muted-foreground group-hover:scale-110 group-hover:text-qualia-500'
+                      : 'text-muted-foreground group-hover:scale-110 group-hover:text-qualia-500'
                   )}
                 />
-                {!isCollapsed && (
-                  <span className="flex items-center gap-2">
-                    {item.name}
-                    {isHighlight && !isActive && (
-                      <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-qualia-500" />
-                    )}
-                  </span>
-                )}
+                {!isCollapsed && <span>{item.name}</span>}
               </Link>
             );
           })}

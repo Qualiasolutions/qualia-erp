@@ -11,7 +11,6 @@ import {
   Building2,
   Calendar,
   Kanban,
-  Target,
   TrendingUp,
   BookOpen,
 } from 'lucide-react';
@@ -59,14 +58,6 @@ export function CommandMenu() {
             heading="Quick Actions"
             className="mb-2 px-2 py-1.5 text-xs font-medium text-muted-foreground"
           >
-            <Command.Item
-              onSelect={() => runCommand(() => router.push('/today'))}
-              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
-            >
-              <Target className="mr-2 h-4 w-4 text-qualia-400" />
-              <span>Today&apos;s Focus</span>
-              <span className="ml-auto text-xs text-muted-foreground/60">Your priority tasks</span>
-            </Command.Item>
             <Command.Item
               onSelect={() => runCommand(() => router.push('/skills'))}
               className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
