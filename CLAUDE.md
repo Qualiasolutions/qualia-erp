@@ -2,289 +2,135 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Overview
+## Project Overview
 
-Qualia is a multi-tenant project management platform for a digital agency, built with Next.js 16+ (App Router), Supabase, and the Vercel AI SDK. Features include CRM with lead pipeline, project roadmaps with phase templates, meeting scheduling with timezone support, command palette (Cmd+K), workspace switching, and a bilingual voice assistant (Arabic/English).
+Qualia Internal Suite is a project management platform for Qualia Solutions. Built with Next.js 16 (App Router), Supabase, and AI capabilities including chat (Groq) and voice assistant (VAPI).
 
-## Development Commands
+## Commands
 
 ```bash
-npm run dev      # Start development server (http://localhost:3000)
-npm run build    # Production build
-npm run lint     # ESLint with Next.js + TypeScript rules
-npx tsc --noEmit # TypeScript type checking
-
-# Testing
-npm test                        # Run all tests
-npm run test:watch              # Watch mode for development
-npm run test:coverage           # Generate coverage report
-npm test -- path/to/file.test   # Run single test file
-
-# Add shadcn/ui components
-npx shadcn@latest add <component-name>
-
-# Regenerate Supabase types after schema changes
-npx supabase gen types typescript --project-id <project-id> > types/database.ts
-
-# Local Supabase development (optional)
-npx supabase start    # Start local Supabase
-npx supabase stop     # Stop local Supabase
-npx supabase db reset # Reset local DB with migrations
+npm run dev          # Start development server (localhost:3000)
+npm run build        # Production build
+npm run lint         # ESLint
+npm test             # Jest tests
+npm run test:watch   # Jest watch mode
+npm run test:coverage # Coverage report
+npx tsc --noEmit     # Type check without build
 ```
 
-## Testing
+## Tech Stack
 
-Jest with React Testing Library. Test files in `__tests__/` directory.
+- **Framework**: Next.js 16 (App Router, React 19, TypeScript)
+- **Database/Auth**: Supabase (PostgreSQL with pgvector for RAG)
+- **Styling**: Tailwind CSS + shadcn/ui (Radix primitives)
+- **AI**: Groq (chat), VAPI (voice), Google AI (embeddings)
+- **State**: SWR for client caching, Supabase Realtime for live updates
+- **Testing**: Jest + React Testing Library
+- **Monitoring**: Sentry
 
-**Test utilities** (`__tests__/utils/render.tsx`):
+## Architecture
 
-- `render()` - Custom render with providers (ThemeProvider)
-- Factory functions: `createMockUser()`, `createMockProject()`, `createMockIssue()`, `createMockClient()`, `createMockMeeting()`, `createMockPhase()`, `createMockPhaseItem()`
+### Server Actions (`app/actions.ts` + `app/actions/*.ts`)
 
-**Coverage thresholds**: 50% minimum for branches, functions, lines, statements.
+All database mutations use server actions. ~2600 lines in main actions.ts file. Returns `ActionResult { success, error?, data? }` pattern.
 
-**Pre-commit hooks**: Husky runs lint-staged on commit (ESLint fix + Prettier for `.ts/.tsx`, Prettier for `.json/.md/.css`).
+### Key Directories
 
-## CI/CD
+```
+app/
+├── actions.ts              # Main server actions (projects, tasks, clients, etc.)
+├── actions/                # Specialized actions (health, roadmap, inbox, learning)
+├── api/chat/route.ts       # AI chat agent with tools + RAG
+├── api/embeddings/route.ts # Google AI embeddings generation
+├── (dashboard)/            # Dashboard route group
+├── clients/                # CRM section
+├── inbox/                  # Task inbox (kanban/list)
+├── projects/               # Project management
+└── schedule/               # Calendar views
 
-GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR to master/main:
+components/
+├── ui/                     # shadcn/ui components
+├── providers/              # Context providers (Theme, Workspace, Sidebar)
+├── mentorship/             # Trainee mentorship system
+├── skills/                 # Skills tracking
+└── onboarding/             # User onboarding flow
 
-1. **Lint** - ESLint
-2. **Type Check** - `tsc --noEmit`
-3. **Test** - Jest with coverage (uploads to Codecov)
-4. **Build** - Production build (runs after other jobs pass)
+lib/
+├── supabase/               # Client (browser) and server Supabase instances
+├── validation.ts           # Zod schemas for all entities
+├── color-constants.ts      # Centralized color system
+├── rate-limit.ts           # In-memory rate limiter (needs Redis upgrade)
+├── vapi-webhook-handlers.ts # Voice assistant response handlers
+└── phase-templates.ts      # Project phase templates
+```
+
+### Data Flow
+
+1. **Server Components**: Direct Supabase queries for initial data
+2. **Client Components**: SWR hooks for caching + Supabase subscriptions for realtime
+3. **Mutations**: Server actions with Zod validation, return ActionResult
+
+### AI Integration
+
+- **Chat Agent** (`app/api/chat/route.ts`): Groq LLM with tools (create task, search knowledge, update project). Uses pgvector for semantic search via `match_documents()` RPC.
+- **Voice Assistant**: VAPI integration with 11+ tools. Webhook handlers in `lib/vapi-webhook-handlers.ts`.
 
 ## Environment Variables
 
 Required in `.env.local`:
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=<supabase-project-url>
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<supabase-anon-or-publishable-key>
-GROQ_API_KEY=<groq-api-key>  # For AI chat (Llama 3.1 8B Instant)
-
-# VAPI Voice Assistant (optional)
-NEXT_PUBLIC_VAPI_PUBLIC_KEY=<vapi-public-key>
-NEXT_PUBLIC_VAPI_ASSISTANT_ID=<vapi-assistant-id>  # Optional, uses inline config if not set
-NEXT_PUBLIC_APP_URL=<app-url>  # For VAPI webhook (e.g., https://qualia.app)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+GROQ_API_KEY=
+GOOGLE_GENERATIVE_AI_API_KEY=
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=
+VAPI_WEBHOOK_SECRET=
 ```
 
-## Key Dependencies
+## Database Access
 
-- **Next.js**: `^16.0.7` (App Router with `middleware.ts` for auth session refresh and route protection)
-- **Supabase**: `@supabase/ssr` + `@supabase/supabase-js` for auth, database, and Realtime
-- **AI**: Vercel AI SDK (`ai`) with Groq provider (`@ai-sdk/groq`)
-- **UI**: shadcn/ui components, Radix primitives, Tailwind CSS, `cmdk` for command palette
-- **DnD**: `@dnd-kit/core` + `@dnd-kit/sortable` for drag-and-drop
-- **Validation**: Zod schemas in `lib/validation.ts` (Zod available via AI SDK transitive deps)
-- **Constants**: `lib/constants.ts` - Date formats, UI dimensions, status/priority colors, storage keys
-- **Utilities**: `lib/utils.ts` - `cn()` (Tailwind merge), date formatting (`formatDate`, `formatDateTime`, `formatRelativeTime`), `truncate`, `getInitials`, `pluralize`
-- **Timezone**: Uses `date-fns-tz` with `toZonedTime()` for Cyprus (Europe/Nicosia) and Jordan (Asia/Amman) timezone support in schedule views
-- **SWR Hooks**: `lib/swr.ts` - Cached data fetching hooks (`useProjects`, `useProfiles`, `useCurrentWorkspaceId`) with `invalidateCache()` and `invalidateAllCaches()` helpers
-- **Rate Limiting**: `lib/rate-limit.ts` - In-memory rate limiter with `chatRateLimiter` (20/min) and `apiRateLimiter` (100/min)
-- **VAPI**: `@vapi-ai/web` for voice assistant with ElevenLabs TTS and Deepgram transcription
+This project has Supabase MCP configured. Use these tools:
 
-## Architecture
+- `mcp__supabase__list_tables` - See schema
+- `mcp__supabase__execute_sql` - Run queries
+- `mcp__supabase__apply_migration` - Schema changes (DDL)
+- `mcp__supabase__get_logs` - Debug issues (api, postgres, auth)
 
-### Multi-Tenant Workspaces
+## Testing
 
-The app supports multiple workspaces (tenants). Core workspace tables:
-
-- **workspaces** - Organizations/tenants with name, slug, logo
-- **workspace_members** - Junction table linking profiles to workspaces with roles (owner/admin/member) and `is_default` flag
-
-`WorkspaceProvider` (`components/workspace-provider.tsx`) provides React context for:
-
-- `currentWorkspace` - The active workspace
-- `setCurrentWorkspace()` - Switch workspaces (persists to DB)
-- All data-fetching actions accept optional `workspaceId` parameter, falling back to user's default
-
-### Supabase Integration
-
-Two Supabase clients for different contexts:
-
-- `lib/supabase/server.ts` - Server-side client using `@supabase/ssr` with cookie handling. **Create a new client per request** (important for Fluid compute).
-- `lib/supabase/client.ts` - Browser client for client components.
-
-**Auth & Route Protection**: Uses Next.js middleware (`middleware.ts`) for session refresh and route protection. The middleware uses `supabase.auth.getClaims()` to check authentication, redirects unauthenticated users to `/auth/login`, and authenticated users away from `/auth/login`.
-
-### Type System (`types/database.ts`)
-
-Supabase-generated types with added helper utilities:
-
-- **Generic helpers**: `Tables<"table_name">`, `TablesInsert<>`, `TablesUpdate<>`, `Enums<>`
-- **Entity aliases**: `Profile`, `Project`, `Issue`, `Client`, `Meeting`, `Milestone`, `Workspace`, `ProjectPhase`, `PhaseItem`, etc.
-- **Enum types**: `IssueStatus`, `IssuePriority`, `ProjectGroup`, `ProjectType`, `ProjectStatus`, `LeadStatus`, `UserRole`
-- **Constant arrays**: `ISSUE_STATUSES`, `ISSUE_PRIORITIES`, `PROJECT_GROUPS`, `PROJECT_TYPES`, etc.
-
-### Validation (`lib/validation.ts`)
-
-Zod schemas for all entity mutations with consistent patterns:
-
-- **Create schemas**: `createIssueSchema`, `createProjectSchema`, `createClientSchema`, `createMeetingSchema`, `createMilestoneSchema`, `createCommentSchema`, `createWorkspaceSchema`, `createProjectWizardSchema` (combines project creation + auto-roadmap initialization)
-- **Update schemas**: `updateIssueSchema`, `updateProjectSchema`, `updateClientSchema`, `updateMilestoneSchema`
-- **Helper functions**:
-  - `parseFormData(schema, formData)` - Parses FormData, converts empty strings to null
-  - `validateData(schema, data)` - Validates plain objects
-- **Type exports**: `CreateIssueInput`, `UpdateProjectInput`, etc. (inferred from schemas)
-
-### Server Actions (`app/actions.ts`)
-
-All data mutations are server actions that:
-
-- Accept validated input (via Zod schemas)
-- Return `ActionResult` type: `{ success: boolean; error?: string; data?: unknown }`
-- Call `revalidatePath()` to refresh relevant pages
-- Log activities via `createActivity()` helper
-
-**Action organization:**
-
-- `app/actions.ts` - Main file with all server actions
-- `app/actions/index.ts` - Re-exports for backward compatibility
-- `app/actions/shared.ts` - Shared types and authorization helpers
-
-**Authorization helpers** (`app/actions/shared.ts`):
-
-- `isUserAdmin(userId)` - Check if user has admin role
-- `canDeleteIssue(userId, issueId)` - Creator or admin check
-- `canDeleteProject(userId, projectId)` - Lead or admin check
-- `canDeleteMeeting(userId, meetingId)` - Creator or admin check
-- `canDeleteClient(userId, clientId)` - Admin or workspace admin check
-- `canDeletePhase(userId, phaseId)` - Project lead or admin check
-- `canDeletePhaseItem(userId, itemId)` - Project lead or admin check
-- `normalizeFKResponse<T>(response)` - Helper to normalize Supabase FK arrays
-
-**Action categories:**
-
-- **Workspace**: `getCurrentWorkspaceId`, `getUserWorkspaces`, `setDefaultWorkspace`, `createWorkspace`, `addWorkspaceMember`
-- **CRUD**: `createIssue`, `createProject`, `createMeeting`, `createClient`, `updateIssue`, `updateProject`, `updateClient`, `deleteIssue`, `deleteProject`, `deleteMeeting`, `createComment`
-- **Project Phases**: `createPhase`, `updatePhase`, `deletePhase`, `getProjectPhases`, `updatePhaseItem`, `initializeProjectRoadmap`
-- **Fetch by ID**: `getIssueById`, `getProjectById`, `getClientById` - Return hydrated entities with relations
-- **List queries**: `getProjects`, `getProfiles`, `getMeetings`, `getClients` - Accept optional `workspaceId`
-- **Junction tables**: `addIssueAssignee`, `removeIssueAssignee`, `addMeetingAttendee`, `removeMeetingAttendee`
-- **Activity**: `getRecentActivities` - Fetches activity feed with actor/project/issue relations
-
-**Supabase FK normalization**: Foreign key joins may return arrays; use `normalizeFKResponse()` helper or manually:
-
-```tsx
-assignee: Array.isArray(issue.assignee) ? issue.assignee[0] || null : issue.assignee;
+```bash
+npm test                    # Run all tests
+npm test -- --watch         # Watch mode
+npm test -- path/to/test    # Single test file
 ```
 
-### Database Schema & RLS
+Tests in `__tests__/` mirror source structure. Coverage threshold: 50%.
 
-Migrations in `supabase/migrations/`. Core tables:
+## CI/CD
 
-**User & Workspace:**
+GitHub Actions workflows:
 
-- `profiles` - Extends auth.users (trigger on signup), has `role` (admin/employee)
-- `workspaces` - Multi-tenant organizations with slug
-- `workspace_members` - Junction with roles (owner/admin/member) and `is_default` flag
+- `ci.yml` - Quick lint + type check on PR
+- `ci-cd.yml` - Full pipeline (security, quality, test, build, deploy)
+- `supabase.yml` - Database migration automation
 
-**CRM:**
+Pre-commit hooks enforce: ESLint, Prettier, TypeScript, no console.log, security scanning.
 
-- `clients` - Lead tracking with `lead_status` enum (dropped/cold/hot/active_client/inactive_client/dead_lead)
-- `client_contacts` - Multiple contacts per client
-- `client_activities` - Activity log (calls, emails, meetings, notes)
+## Current Priorities
 
-**Project Management:**
+From `AGENT_PROMPT.md`:
 
-- `projects` - `project_group` for organization, `project_type` (web_design/ai_agent/voice_agent/seo/ads), `status`, `deployment_platform`
-- `project_phases` - Roadmap phases with status (not_started/in_progress/completed/skipped), template_key for pre-defined phases
-- `phase_items` - Checklist items within phases, with completion tracking and optional issue links
-- `issues` - Status, priority, parent/child hierarchy via `parent_id`
-- `issue_assignees` - Many-to-many assignees
-- `comments` - Issue comments
-- `milestones` - Project milestones with target dates and progress tracking
+1. Redis rate limiting (replace in-memory with Upstash)
+2. Chat message history (persist conversations)
+3. Voice call memory (store transcripts)
+4. Response caching
 
-**Phase Templates** (`lib/phase-templates.ts`):
+## Conventions
 
-Pre-defined roadmap templates for each project type (ai_agent, voice_agent, web_design, seo, ads). Use `initializeProjectRoadmap(projectId, projectType)` server action to populate phases from templates.
-
-**Calendar & Activity:**
-
-- `meetings` - Start/end times, linked to projects/clients
-- `meeting_attendees` - RSVP status (pending/accepted/declined/tentative)
-- `activities` - Feed with type enum and metadata JSON
-
-**Knowledge Base:**
-
-- `documents` - Vector embeddings (pgvector, 1536 dimensions) for RAG
-
-**Database Functions:**
-
-- **RBAC**: `is_admin()`, `is_system_admin()`, `is_workspace_admin(ws_id)`, `is_workspace_member(ws_id)`
-- **Stats**: `get_project_stats(workspace_id)` - Returns project stats with milestone progress, issue counts
-- **Vector Search**: `match_documents(query_embedding, match_threshold, match_count, filter_workspace_id)` - Cosine similarity search for RAG knowledge base with IVFFlat index
-- Admins: Full access; Employees: Access scoped to owned/assigned items
-- See `20240104000000_add_role_based_access_control.sql` for RLS policies
-
-### Data Fetching Pattern
-
-Detail pages (`/projects/[id]`, `/clients/[id]`) use a client component pattern:
-
-1. Extract `id` from `useParams()`
-2. Call server action (e.g., `getProjectById`) in `useEffect`
-3. Manage local loading/error state
-
-Modal components fetch dropdown data on-demand when opened via `useEffect`.
-
-### Error Handling
-
-- `app/global-error.tsx` - Root layout error boundary (full-page fallback with inline styles)
-- `components/error-boundary.tsx` - Reusable components:
-  - `ErrorBoundary` - Class component wrapper with retry
-  - `InlineError` - Inline error message with optional retry
-  - `PageError` - Full-page error display
-
-### Provider Hierarchy (`app/layout.tsx`)
-
-```
-ThemeProvider → SWRProvider → AdminProvider → WorkspaceProvider → SidebarProvider
-```
-
-Additional layout components: `LogoSplash` (loading screen), `CommandMenu` (Cmd+K), `AIChatWidget` (floating AI assistant), `WorkspaceChatWrapper` (voice assistant)
-
-### AI Integration
-
-- **Chat API**: `app/api/chat/route.ts` - Vercel AI SDK with Groq Llama 3.1 8B Instant (`llama-3.1-8b-instant`)
-- **Tools**: `getDashboardStats`, `searchIssues`, `searchProjects`, `getRecentActivity`
-- **Context**: System prompt includes current user info (name, email, role)
-- **Chat UI**: `components/chat.tsx` - Uses `useChat` hook, `convertToModelMessages()` for message format
-- **RAG**: Documents table with pgvector embeddings (not yet implemented)
-
-### Voice Assistant (VAPI)
-
-Bilingual voice assistant (Jordanian Arabic + English) using VAPI with ElevenLabs TTS and Deepgram transcription:
-
-- **Components**: `components/qualia-voice.tsx` (full-screen), `components/qualia-voice-inline.tsx` (compact)
-- **Webhook**: `app/api/vapi/webhook/route.ts` - Handles 11 voice tools: `get_projects`, `get_issues`, `create_issue`, `update_issue`, `get_team_members`, `get_schedule`, `create_meeting`, `search_knowledge_base`, `get_client_info`, `send_notification`, `web_search`
-- **Personalized modes** for Fawzi (technical/direct) and Moayad (learning-friendly)
-
-### Realtime Features
-
-Custom hooks for Supabase Realtime:
-
-- **`usePresence`** (`hooks/use-presence.tsx`) - Online presence tracking with channel subscriptions, status updates (online/away/busy)
-- Used by `components/active-users.tsx` for showing online team members
-
-### Routes
-
-| Route                         | Description                                                           |
-| ----------------------------- | --------------------------------------------------------------------- |
-| `/`                           | Dashboard with leads widget and activity feed                         |
-| `/projects`, `/projects/[id]` | Project grid (type tabs) and detail view                              |
-| `/projects/[id]/roadmap`      | Project roadmap with phases and checklist items                       |
-| `/clients`, `/clients/[id]`   | CRM list (lead pipeline) and client detail with contacts/activities   |
-| `/schedule`                   | Schedule views (list/week/month) with timezone toggle (Cyprus/Jordan) |
-| `/settings`                   | User settings                                                         |
-| `/auth/*`                     | Authentication flows                                                  |
-| `/api/chat`                   | AI chat streaming endpoint                                            |
-| `/api/vapi/webhook`           | VAPI voice assistant tool execution webhook                           |
-
-## Styling
-
-- **Theme**: Light/dark via `next-themes` (dark default), toggle in header
-- **Dark palette**: Backgrounds #141414, #1C1C1C; borders #2C2C2C
-- **Brand color**: `qualia` (#00A4AC teal) - `bg-qualia-600`, `text-qualia-400`, etc.
-- **Stack**: Tailwind CSS + tailwindcss-animate, Inter font
-- **Path alias**: `@/*` maps to project root (see `tsconfig.json`)
+- Server actions return `ActionResult { success, error?, data? }`
+- Use Zod schemas from `lib/validation.ts` for input validation
+- Components use `'use client'` directive for client-side interactivity
+- Color system in `lib/color-constants.ts` - don't use hardcoded colors
+- Tailwind for styling, no inline CSS
+- Conventional commits: `feat:`, `fix:`, `perf:`, `refactor:`

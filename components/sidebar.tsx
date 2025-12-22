@@ -12,6 +12,9 @@ import {
   ChevronRight,
   Command,
   Inbox,
+  Zap,
+  Target,
+  Crosshair,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkspaceSelector } from '@/components/workspace-selector';
@@ -20,6 +23,9 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutGrid },
+  { name: 'Command Center', href: '/command-center', icon: Zap, highlight: true },
+  { name: 'Today', href: '/today', icon: Target },
+  { name: 'Focus Mode', href: '/focus', icon: Crosshair },
   { name: 'Inbox', href: '/inbox', icon: Inbox },
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
@@ -57,7 +63,7 @@ function SidebarContent({
           </div>
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+              <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-sm font-bold tracking-tight text-foreground">
                 Qualia
               </span>
               <span className="text-[10px] font-medium text-muted-foreground">Solutions</span>
@@ -76,7 +82,7 @@ function SidebarContent({
       {/* Command hint */}
       {!isCollapsed && (
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 rounded-lg bg-qualia-500/5 border border-qualia-500/10 px-2.5 py-1.5 text-xs text-muted-foreground transition-all duration-200 hover:bg-qualia-500/10 hover:border-qualia-500/20">
+          <div className="flex items-center gap-2 rounded-lg border border-qualia-500/10 bg-qualia-500/5 px-2.5 py-1.5 text-xs text-muted-foreground transition-all duration-200 hover:border-qualia-500/20 hover:bg-qualia-500/10">
             <Command className="h-3 w-3 text-qualia-500" />
             <span className="font-medium">K to search</span>
           </div>
@@ -89,6 +95,7 @@ function SidebarContent({
           {navigation.map((item, index) => {
             const isActive =
               pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+            const isHighlight = 'highlight' in item && item.highlight;
 
             return (
               <Link
@@ -100,8 +107,10 @@ function SidebarContent({
                   'group relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-200',
                   isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 px-2.5',
                   isActive
-                    ? 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400 shadow-sm'
-                    : 'text-muted-foreground hover:bg-qualia-500/5 hover:text-foreground'
+                    ? 'bg-qualia-500/10 text-qualia-600 shadow-sm dark:text-qualia-400'
+                    : isHighlight
+                      ? 'text-qualia-500 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400'
+                      : 'text-muted-foreground hover:bg-qualia-500/5 hover:text-foreground'
                 )}
                 style={{ animationDelay: `${index * 25}ms` }}
               >
@@ -109,12 +118,21 @@ function SidebarContent({
                   className={cn(
                     'flex-shrink-0 transition-all duration-200',
                     isCollapsed ? 'h-[17px] w-[17px]' : 'h-4 w-4',
-                    isActive 
-                      ? 'text-qualia-600 dark:text-qualia-400' 
-                      : 'text-muted-foreground group-hover:text-qualia-500 group-hover:scale-110'
+                    isActive
+                      ? 'text-qualia-600 dark:text-qualia-400'
+                      : isHighlight
+                        ? 'text-qualia-500'
+                        : 'text-muted-foreground group-hover:scale-110 group-hover:text-qualia-500'
                   )}
                 />
-                {!isCollapsed && <span>{item.name}</span>}
+                {!isCollapsed && (
+                  <span className="flex items-center gap-2">
+                    {item.name}
+                    {isHighlight && !isActive && (
+                      <span className="flex h-1.5 w-1.5 animate-pulse rounded-full bg-qualia-500" />
+                    )}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -148,10 +166,14 @@ export function Sidebar() {
         <button
           type="button"
           onClick={toggleSidebar}
-          className="absolute right-0 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground shadow-md transition-all duration-200 hover:bg-qualia-500/10 hover:border-qualia-500/30 hover:text-qualia-600 dark:hover:text-qualia-400 hover:scale-110"
+          className="absolute right-0 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground shadow-md transition-all duration-200 hover:scale-110 hover:border-qualia-500/30 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          {isCollapsed ? (
+            <ChevronRight className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronLeft className="h-3.5 w-3.5" />
+          )}
         </button>
       </aside>
 
