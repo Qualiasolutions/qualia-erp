@@ -39,7 +39,6 @@ export function NewTaskModal() {
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<'Todo' | 'In Progress' | 'Done'>('Todo');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -50,7 +49,6 @@ export function NewTaskModal() {
       // Reset form when modal opens
       setTitle('');
       setDescription('');
-      setStatus('Todo');
       setAssigneeId(null);
       setDueDate(undefined);
       setProjectId(null);
@@ -73,7 +71,7 @@ export function NewTaskModal() {
     const formData = new FormData();
     formData.set('title', title);
     if (description) formData.set('description', description);
-    formData.set('status', status);
+    formData.set('status', 'Todo'); // Always start as Todo
     if (assigneeId) {
       formData.set('assignee_id', assigneeId);
     }
@@ -133,20 +131,6 @@ export function NewTaskModal() {
               rows={3}
               className="resize-none border-border bg-background"
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-              <SelectTrigger id="status" className="border-border bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-card">
-                <SelectItem value="Todo">Todo</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Done">Done</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">
