@@ -1,8 +1,10 @@
 'use client';
 
+import { useRef, memo } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Inbox } from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Activity } from '@/app/actions';
 import { getActivityConfig } from '@/lib/constants/activity-config';
 
@@ -23,7 +25,14 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function ActivityItem({ activity, index }: { activity: Activity; index: number }) {
+// Memoized activity item to prevent re-renders
+const ActivityItem = memo(function ActivityItem({
+  activity,
+  index,
+}: {
+  activity: Activity;
+  index: number;
+}) {
   const config = getActivityConfig(activity.type);
   const Icon = config.icon;
   // Generate ring color from bgColor for dashboard styling
@@ -93,9 +102,26 @@ function ActivityItem({ activity, index }: { activity: Activity; index: number }
       </div>
     </div>
   );
-}
+});
+
+// Threshold for when to enable virtualization
+const VIRTUALIZATION_THRESHOLD = 20;
+const ITEM_HEIGHT = 76; // Approximate height of each activity item
 
 export function DashboardActivityFeed({ activities }: { activities: Activity[] }) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  // Only use virtualization for large lists
+  const useVirtual = activities.length > VIRTUALIZATION_THRESHOLD;
+
+  const virtualizer = useVirtualizer({
+    count: activities.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ITEM_HEIGHT,
+    overscan: 5, // Render 5 extra items above/below viewport
+    enabled: useVirtual,
+  });
+
   if (activities.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -110,20 +136,54 @@ export function DashboardActivityFeed({ activities }: { activities: Activity[] }
     );
   }
 
-  return (
-    <div className="relative space-y-1">
-      {/* Timeline connector line */}
-      <div className="timeline-line" />
+  // For small lists, render normally without virtualization
+  if (!useVirtual) {
+    return (
+      <div className="relative space-y-1">
+        <div className="timeline-line" />
+        {activities.map((activity, index) => (
+          <div
+            key={activity.id}
+            className="reveal-stagger"
+            style={{ animationDelay: `${index * 40}ms` }}
+          >
+            <ActivityItem activity={activity} index={index} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-      {activities.map((activity, index) => (
-        <div
-          key={activity.id}
-          className="reveal-stagger"
-          style={{ animationDelay: `${index * 40}ms` }}
-        >
-          <ActivityItem activity={activity} index={index} />
-        </div>
-      ))}
+  // For large lists, use virtualization
+  return (
+    <div ref={parentRef} className="relative h-[500px] overflow-auto">
+      <div className="timeline-line" />
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const activity = activities[virtualRow.index];
+          return (
+            <div
+              key={activity.id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualRow.size}px`,
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <ActivityItem activity={activity} index={virtualRow.index} />
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
