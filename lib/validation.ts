@@ -310,12 +310,16 @@ export function parseFormData<T>(
   schema: z.ZodSchema<T>,
   formData: FormData
 ): { success: true; data: T } | { success: false; error: string } {
-  // Convert FormData to object, handling empty strings as null
+  // Convert FormData to object, handling empty strings as null and boolean strings
   const obj: Record<string, unknown> = {};
   formData.forEach((value, key) => {
     // Convert empty strings to null for optional fields
     if (value === '' || value === 'null' || value === 'undefined') {
       obj[key] = null;
+    } else if (value === 'true') {
+      obj[key] = true;
+    } else if (value === 'false') {
+      obj[key] = false;
     } else {
       obj[key] = value;
     }
