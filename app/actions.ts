@@ -2698,3 +2698,38 @@ export async function notifyTaskAssigned(
     await supabase.from('notifications').insert(notifications);
   }
 }
+
+// ============ AUTHENTICATION ACTIONS ============
+
+export async function loginAction(
+  prevState: { success: boolean; error: string | null },
+  formData: FormData
+): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient();
+
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+
+  if (!email || !password) {
+    return { success: false, error: 'Email and password are required' };
+  }
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    // Successful login - redirect will be handled by the client
+    return { success: true, error: null };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An error occurred during login',
+    };
+  }
+}

@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import { connection } from 'next/server';
 import { getTasks } from '@/app/actions/inbox';
 import { getCurrentWorkspaceId } from '@/app/actions';
@@ -43,12 +43,9 @@ function InboxSkeleton() {
   );
 }
 
-export default async function InboxPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>;
-}) {
-  const params = await searchParams;
+export default function InboxPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  // React 19: Use the use() hook to unwrap promises directly
+  const params = use(searchParams);
   const view = params.view || 'kanban';
 
   return (

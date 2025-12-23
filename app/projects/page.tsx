@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import { connection } from 'next/server';
 import { ProjectList, type Project } from '@/components/project-list';
 import { createClient } from '@/lib/supabase/server';
@@ -112,12 +112,9 @@ function ProjectListSkeleton() {
   );
 }
 
-export default async function ProjectsPage({
-  searchParams,
-}: {
-  searchParams: Promise<FilterParams>;
-}) {
-  const filters = await searchParams;
+export default function ProjectsPage({ searchParams }: { searchParams: Promise<FilterParams> }) {
+  // React 19: Use the use() hook to unwrap promises directly
+  const filters = use(searchParams);
 
   return (
     <div className="flex h-full flex-col bg-background">

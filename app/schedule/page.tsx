@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import { connection } from 'next/server';
 import { getMeetings } from '@/app/actions';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
@@ -50,12 +50,13 @@ function ScheduleSkeleton() {
   );
 }
 
-export default async function SchedulePage({
+export default function SchedulePage({
   searchParams,
 }: {
   searchParams: Promise<{ view?: string }>;
 }) {
-  const params = await searchParams;
+  // React 19: Use the use() hook to unwrap promises directly
+  const params = use(searchParams);
   const view = params.view || 'day';
 
   return (

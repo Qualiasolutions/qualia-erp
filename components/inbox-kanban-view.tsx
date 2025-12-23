@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useOptimistic } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -98,11 +98,39 @@ function DroppableColumn({
   );
 }
 
+type TaskUpdate = { id: string; sort_order: number; status?: string };
+
 export function InboxKanbanView({ tasks: initialTasks }: InboxKanbanViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [tasks, setTasks] = useState(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  // React 19: Use useOptimistic for instant UI feedback during drag operations
+  const [optimisticTasks, updateTasks] = useOptimistic(
+    initialTasks,
+    (currentTasks: Task[], updates: TaskUpdate[]) => {
+      return currentTasks
+        .map((task) => {
+          const update = updates.find((u) => u.id === task.id);
+          if (update) {
+            // Handle deletion
+            if (update.status === 'DELETED') {
+              return null;
+            }
+            return {
+              ...task,
+              sort_order: update.sort_order,
+              status: update.status ? (update.status as Task['status']) : task.status,
+            };
+          }
+          return task;
+        })
+        .filter((task): task is Task => task !== null);
+    }
+  );
+
+  // Use optimistic tasks for all operations
+  const tasks = optimisticTasks;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -116,9 +144,11 @@ export function InboxKanbanView({ tasks: initialTasks }: InboxKanbanViewProps) {
   );
 
   const handleDelete = (taskId: string) => {
+    // React 19: Optimistic delete - remove from UI immediately
+    updateTasks([{ id: taskId, sort_order: -1, status: 'DELETED' }]);
+
     startTransition(async () => {
       await deleteTask(taskId);
-      setTasks((prev) => prev.filter((t) => t.id !== taskId));
       router.refresh();
     });
   };
@@ -162,11 +192,14 @@ export function InboxKanbanView({ tasks: initialTasks }: InboxKanbanViewProps) {
     if (overColumn) {
       const activeTask = findTaskById(activeId);
       if (activeTask && activeTask.status !== overColumn.id) {
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === activeId ? { ...t, status: overColumn.id as Task['status'] } : t
-          )
-        );
+        // React 19: Optimistic status change during drag
+        updateTasks([
+          {
+            id: activeId,
+            sort_order: activeTask.sort_order,
+            status: overColumn.id,
+          },
+        ]);
       }
       return;
     }
@@ -178,9 +211,17 @@ export function InboxKanbanView({ tasks: initialTasks }: InboxKanbanViewProps) {
     if (!activeColumn || !overColumn2) return;
 
     if (activeColumn !== overColumn2) {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === activeId ? { ...t, status: overColumn2 as Task['status'] } : t))
-      );
+      const activeTask = findTaskById(activeId);
+      if (activeTask) {
+        // React 19: Optimistic status change when dragging over task in different column
+        updateTasks([
+          {
+            id: activeId,
+            sort_order: activeTask.sort_order,
+            status: overColumn2,
+          },
+        ]);
+      }
     }
   };
 
@@ -257,23 +298,12 @@ export function InboxKanbanView({ tasks: initialTasks }: InboxKanbanViewProps) {
       }
     });
 
-    // Update local state immediately for responsive UI
+    // React 19: Optimistic updates for instant feedback
     if (taskUpdates.length > 0) {
-      setTasks((prev) =>
-        prev.map((t) => {
-          const update = taskUpdates.find((u) => u.id === t.id);
-          if (update) {
-            return {
-              ...t,
-              sort_order: update.sort_order,
-              status: update.status ? (update.status as Task['status']) : t.status,
-            };
-          }
-          return t;
-        })
-      );
+      // Apply optimistic updates immediately
+      updateTasks(taskUpdates);
 
-      // Persist to database
+      // Persist to database in background
       startTransition(async () => {
         await reorderTasks(taskUpdates);
         router.refresh();

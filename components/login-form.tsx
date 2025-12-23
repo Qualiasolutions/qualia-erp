@@ -1,44 +1,33 @@
 'use client';
 
 import { cn } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { Loader2, Mail, Lock, ArrowRight } from 'lucide-react';
+import { loginAction } from '@/app/actions';
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<'div'>) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // React 19: Single state for form handling with useActionState
+  const [state, formAction, isPending] = useActionState(loginAction, {
+    success: false,
+    error: null,
+  });
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) throw error;
+  // Handle successful login redirect
+  useEffect(() => {
+    if (state.success) {
       // Use window.location for a full page reload to ensure server state is refreshed
       window.location.href = '/';
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : 'An error occurred');
-      setIsLoading(false);
     }
-  };
+  }, [state.success]);
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <div className="glass-card overflow-hidden rounded-2xl">
         <div className="p-8">
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form action={formAction} className="space-y-6">
             {/* Email field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium text-foreground">
@@ -48,11 +37,10 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 <Mail className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="name@company.com"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   className="glass h-12 rounded-xl border-white/10 bg-white/[0.02] pl-11 transition-all focus:border-qualia-500/50 focus:ring-qualia-500/20"
                 />
               </div>
@@ -75,19 +63,18 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   className="glass h-12 rounded-xl border-white/10 bg-white/[0.02] pl-11 transition-all focus:border-qualia-500/50 focus:ring-qualia-500/20"
                 />
               </div>
             </div>
 
             {/* Error message */}
-            {error && (
+            {state.error && (
               <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-3">
-                <p className="text-sm text-red-400">{error}</p>
+                <p className="text-sm text-red-400">{state.error}</p>
               </div>
             )}
 
@@ -95,9 +82,9 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             <Button
               type="submit"
               className="group h-12 w-full rounded-xl bg-gradient-to-r from-qualia-500 to-qualia-600 font-semibold text-black transition-all duration-300 hover:from-qualia-400 hover:to-qualia-500 hover:shadow-glow"
-              disabled={isLoading}
+              disabled={isPending}
             >
-              {isLoading ? (
+              {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Signing in...

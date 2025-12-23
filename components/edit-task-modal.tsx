@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useActionState, useOptimistic } from 'react';
 import { CalendarIcon, User, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,7 +22,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { updateTask, type Task } from '@/app/actions/inbox';
 import { useProfiles, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
-import { useRouter } from 'next/navigation';
 
 interface EditTaskModalProps {
   task: Task;
@@ -31,71 +30,76 @@ interface EditTaskModalProps {
 }
 
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
-  const router = useRouter();
   const { profiles } = useProfiles();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description || '');
-  const [status, setStatus] = useState<Task['status']>(task.status);
-  const [assigneeId, setAssigneeId] = useState<string | null>(task.assignee_id);
+
+  // Date picker state (controlled for calendar component)
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.due_date ? new Date(task.due_date) : undefined
   );
-  const [showInInbox, setShowInInbox] = useState(task.show_in_inbox);
 
+  // React 19: Optimistic task updates for instant UI feedback
+  const [optimisticTask, updateOptimisticTask] = useOptimistic(
+    task,
+    (currentTask: Task, updatedFields: Partial<Task>) => ({
+      ...currentTask,
+      ...updatedFields,
+    })
+  );
+
+  // React 19: useActionState for form handling
+  const [state, formAction, isPending] = useActionState(
+    async (prevState: { success: boolean; error: string | null }, formData: FormData) => {
+      // Client-side validation
+      const title = formData.get('title') as string;
+      if (!title.trim()) {
+        return { success: false, error: 'Title is required' };
+      }
+
+      // Add due date to form data if selected
+      if (dueDate) {
+        formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
+      }
+
+      // Add task ID for server action
+      formData.set('id', task.id);
+
+      // Apply optimistic updates immediately for instant feedback
+      const updates: Partial<Task> = {
+        title: title.trim(),
+        description: (formData.get('description') as string) || null,
+        status: (formData.get('status') as Task['status']) || task.status,
+        assignee_id: (formData.get('assignee_id') as string) || null,
+        show_in_inbox: formData.get('show_in_inbox') === 'on',
+        due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
+      };
+      updateOptimisticTask(updates);
+
+      // Call server action
+      const result = await updateTask(formData);
+
+      if (result.success) {
+        onOpenChange(false);
+        setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+
+        // Invalidate caches for refresh
+        invalidateInboxTasks();
+        invalidateProjectTasks(task.project_id);
+
+        return { success: true, error: null };
+      } else {
+        // If server fails, optimistic update will be reverted automatically
+        return { success: false, error: result.error || 'Failed to update task' };
+      }
+    },
+    { success: false, error: null }
+  );
+
+  // Reset form when modal opens
   useEffect(() => {
     if (open) {
-      // Reset form when modal opens with current task data
-      setTitle(task.title);
-      setDescription(task.description || '');
-      setStatus(task.status);
-      setAssigneeId(task.assignee_id);
       setDueDate(task.due_date ? new Date(task.due_date) : undefined);
-      setShowInInbox(task.show_in_inbox);
-      setError(null);
     }
-  }, [open, task]);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const formData = new FormData();
-    formData.set('id', task.id);
-    formData.set('title', title);
-    if (description !== task.description) {
-      formData.set('description', description);
-    }
-    if (status !== task.status) {
-      formData.set('status', status);
-    }
-    const dueDateStr = dueDate ? format(dueDate, 'yyyy-MM-dd') : '';
-    if (dueDateStr !== (task.due_date || '')) {
-      formData.set('due_date', dueDateStr || '');
-    }
-    if (assigneeId !== task.assignee_id) {
-      formData.set('assignee_id', assigneeId || '');
-    }
-    if (showInInbox !== task.show_in_inbox) {
-      formData.set('show_in_inbox', showInInbox.toString());
-    }
-
-    const result = await updateTask(formData);
-
-    if (result.success) {
-      onOpenChange(false);
-      // Invalidate caches for instant refresh
-      invalidateInboxTasks();
-      invalidateProjectTasks(task.project_id);
-      router.refresh();
-    } else {
-      setError(result.error || 'Failed to update task');
-    }
-
-    setLoading(false);
-  }
+  }, [open, task.due_date]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -103,13 +107,13 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         <DialogHeader>
           <DialogTitle className="text-lg">Edit Task</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={formAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="edit-title">Title *</Label>
             <Input
               id="edit-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              name="title"
+              defaultValue={optimisticTask.title}
               placeholder="Task title"
               required
               className="border-border bg-background"
@@ -120,8 +124,8 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             <Label htmlFor="edit-description">Description</Label>
             <Textarea
               id="edit-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              name="description"
+              defaultValue={optimisticTask.description || ''}
               placeholder="Task description (optional)"
               rows={3}
               className="resize-none border-border bg-background"
@@ -130,7 +134,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
 
           <div className="space-y-2">
             <Label htmlFor="edit-status">Status</Label>
-            <Select value={status} onValueChange={(v) => setStatus(v as Task['status'])}>
+            <Select name="status" defaultValue={optimisticTask.status}>
               <SelectTrigger id="edit-status" className="border-border bg-background">
                 <SelectValue />
               </SelectTrigger>
@@ -144,10 +148,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
 
           <div className="space-y-2">
             <Label htmlFor="edit-assignee">Assignee</Label>
-            <Select
-              value={assigneeId || 'unassigned'}
-              onValueChange={(v) => setAssigneeId(v === 'unassigned' ? null : v)}
-            >
+            <Select name="assignee_id" defaultValue={optimisticTask.assignee_id || 'unassigned'}>
               <SelectTrigger id="edit-assignee" className="border-border bg-background">
                 <SelectValue placeholder="Select assignee" />
               </SelectTrigger>
@@ -224,12 +225,12 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             </div>
             <Switch
               id="edit-show_in_inbox"
-              checked={showInInbox}
-              onCheckedChange={setShowInInbox}
+              name="show_in_inbox"
+              defaultChecked={optimisticTask.show_in_inbox}
             />
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
           <div className="flex gap-2">
             <Button
@@ -242,10 +243,10 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             </Button>
             <Button
               type="submit"
-              disabled={loading || !title.trim()}
+              disabled={isPending}
               className="flex-1 bg-primary font-medium hover:bg-primary/90"
             >
-              {loading ? 'Saving...' : 'Save Changes'}
+              {isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         </form>
