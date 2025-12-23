@@ -766,7 +766,13 @@ export function QualiaVoice({ isOpen, onClose, user }: QualiaVoiceProps) {
               callState === 'speaking' && 'border-qualia-300 bg-qualia-500/20'
             )}
           >
-            <Image src="/logo.webp" alt="Qualia" width={80} height={80} className="rounded-2xl" />
+            <Image
+              src="/sphere.png"
+              alt="Qualia"
+              width={80}
+              height={80}
+              className="drop-shadow-[0_0_15px_rgba(45,212,191,0.4)]"
+            />
           </div>
         </div>
 

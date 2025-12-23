@@ -8,6 +8,8 @@ import { DashboardNotes } from './dashboard-notes';
 import { DashboardMeetings } from './dashboard-meetings';
 import { DashboardObjectives } from './dashboard-objectives';
 import { cn } from '@/lib/utils';
+import { useTheme } from 'next-themes';
+import Image from 'next/image';
 
 export interface DashboardUser {
   id: string;
@@ -66,6 +68,13 @@ export function DashboardClient({
   const [showNotification, setShowNotification] = useState(false);
   const [shouldStartGreeting, setShouldStartGreeting] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState<string>('');
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  // Avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Check if there are important reminders to show notification
   useEffect(() => {
@@ -183,18 +192,39 @@ export function DashboardClient({
     return messages.join('. ');
   }, [user, greetingData]);
 
+  const isDark = mounted && resolvedTheme === 'dark';
+
   return (
-    <div className="relative flex min-h-[100dvh] flex-col overflow-x-hidden bg-background/95">
-      {/* Enhanced gradient background with more depth */}
+    <div className="relative flex min-h-[100dvh] flex-col overflow-x-hidden bg-background">
+      {/* Background image with smart overlay based on theme */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="animate-pulse-subtle absolute -left-1/4 -top-1/4 h-[400px] w-[400px] rounded-full bg-qualia-500/[0.04] blur-3xl sm:h-[600px] sm:w-[600px]" />
+        {/* Background image */}
+        <Image
+          src="/dashboard-bg.png"
+          alt=""
+          fill
+          className="object-cover object-center"
+          priority
+          quality={85}
+        />
+        {/* Smart overlay based on theme */}
         <div
-          className="animate-pulse-subtle absolute -bottom-1/4 -right-1/4 h-[350px] w-[350px] rounded-full bg-violet-500/[0.03] blur-3xl sm:h-[500px] sm:w-[500px]"
+          className={cn(
+            'absolute inset-0 transition-colors duration-500',
+            isDark
+              ? 'bg-gradient-to-b from-background/95 via-background/90 to-background/95'
+              : 'bg-gradient-to-b from-background/85 via-background/80 to-background/90'
+          )}
+        />
+        {/* Enhanced gradient accents with more depth */}
+        <div className="absolute -left-1/4 -top-1/4 h-[400px] w-[400px] animate-pulse-subtle rounded-full bg-qualia-500/[0.06] blur-3xl sm:h-[600px] sm:w-[600px]" />
+        <div
+          className="absolute -bottom-1/4 -right-1/4 h-[350px] w-[350px] animate-pulse-subtle rounded-full bg-violet-500/[0.05] blur-3xl sm:h-[500px] sm:w-[500px]"
           style={{ animationDelay: '1s' }}
         />
-        <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.02] blur-3xl sm:h-[400px] sm:w-[400px]" />
+        <div className="absolute left-1/2 top-1/2 h-[250px] w-[250px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-qualia-400/[0.03] blur-3xl sm:h-[400px] sm:w-[400px]" />
         {/* Additional ambient glow */}
-        <div className="absolute right-1/4 top-1/3 hidden h-[300px] w-[300px] rounded-full bg-amber-500/[0.02] blur-3xl sm:block" />
+        <div className="absolute right-1/4 top-1/3 hidden h-[300px] w-[300px] rounded-full bg-amber-500/[0.03] blur-3xl sm:block" />
       </div>
 
       <div className="pb-safe relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 sm:px-6 lg:px-8">

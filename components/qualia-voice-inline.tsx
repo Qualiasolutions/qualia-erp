@@ -840,14 +840,14 @@ export function QualiaVoiceInline({
               )}
             />
             <Image
-              src="/logo.webp"
+              src="/sphere.png"
               alt="Qualia"
               width={80}
               height={80}
               className={cn(
-                'relative rounded-2xl transition-transform duration-300',
+                'relative drop-shadow-[0_0_15px_rgba(45,212,191,0.4)] transition-transform duration-300',
                 callState === 'idle' && 'group-hover:scale-105',
-                isInCall && 'scale-105'
+                isInCall && 'scale-110 animate-pulse-subtle'
               )}
             />
 
