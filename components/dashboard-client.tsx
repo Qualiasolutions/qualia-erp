@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Volume2, X, Bell } from 'lucide-react';
 import { DashboardNotes } from './dashboard-notes';
 import { DashboardMeetings } from './dashboard-meetings';
-import { DashboardObjectives } from './dashboard-objectives';
+import { DashboardReminders } from './dashboard-reminders';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
@@ -302,11 +302,11 @@ export function DashboardClient({
               <DashboardMeetings meetings={meetings} />
             </div>
 
-            {/* Two column grid for objectives and notes */}
+            {/* Two column grid for reminders and notes */}
             <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:gap-6">
-              {/* 2025 Objectives Widget */}
+              {/* Reminders Widget */}
               <div className="min-h-[300px] sm:min-h-[340px] md:min-h-[360px]">
-                <DashboardObjectives workspaceId={user?.workspaceId} />
+                <DashboardReminders workspaceId={user?.workspaceId} />
               </div>
 
               {/* Team Notes Widget */}
