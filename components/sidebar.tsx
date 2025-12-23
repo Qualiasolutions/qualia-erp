@@ -139,7 +139,7 @@ export function Sidebar() {
       {/* Desktop Sidebar - Hidden on mobile */}
       <aside
         className={cn(
-          'relative hidden h-screen flex-col border-r border-border bg-card transition-all duration-200 ease-out md:flex',
+          'relative z-30 hidden h-screen flex-col border-r border-border bg-card transition-all duration-200 ease-out md:flex',
           isCollapsed ? 'w-[60px]' : 'w-56'
         )}
       >
