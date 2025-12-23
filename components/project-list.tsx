@@ -212,19 +212,21 @@ function ProjectCard({
   const isPartnership = project.metadata?.is_partnership;
   const partnerName = project.metadata?.partner_name;
 
-  // Collapsed view - compact single line
+  // Collapsed view - compact single line with premium touch
   if (isCollapsed) {
     return (
       <div
         className={cn(
-          'group relative flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 transition-all duration-200',
+          'shadow-sm shadow-black/5 dark:shadow-black/20',
+          'hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/30',
           isPartnership
             ? 'border-orange-500/50'
             : typeConfig
               ? typeConfig.borderColor
               : 'border-border',
           isComplete ? 'opacity-50' : 'opacity-100',
-          'hover:bg-secondary/30'
+          'hover:scale-[1.01] hover:bg-secondary/20'
         )}
       >
         <button
@@ -234,32 +236,33 @@ function ProjectCard({
             e.stopPropagation();
             onToggleCollapse();
           }}
-          className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-4 w-4" />
         </button>
         <div
           className={cn(
-            'flex h-6 w-6 flex-shrink-0 items-center justify-center rounded',
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg',
+            'shadow-sm ring-1 ring-white/5',
             typeConfig ? typeConfig.bgColor : 'bg-muted'
           )}
         >
           <TypeIcon
-            className={cn('h-3.5 w-3.5', typeConfig ? typeConfig.color : 'text-muted-foreground')}
+            className={cn('h-4 w-4', typeConfig ? typeConfig.color : 'text-muted-foreground')}
           />
         </div>
         <Link
           href={`/projects/${project.id}`}
-          className="min-w-0 flex-1 truncate text-sm font-medium text-foreground hover:text-primary"
+          className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground transition-colors hover:text-primary"
         >
           {project.name}
         </Link>
         {project.project_type !== 'seo' && project.project_type !== 'ads' && (
-          <div className="flex items-center gap-2">
-            <div className="h-1 w-12 overflow-hidden rounded-full bg-secondary/50">
+          <div className="flex items-center gap-2.5">
+            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary/40 shadow-inner">
               <div
                 className={cn(
-                  'h-full rounded-full',
+                  'h-full rounded-full transition-all duration-500',
                   isComplete ? 'bg-emerald-500' : typeConfig ? 'bg-current' : 'bg-primary',
                   typeConfig?.color
                 )}
@@ -268,8 +271,8 @@ function ProjectCard({
             </div>
             <span
               className={cn(
-                'text-xs tabular-nums',
-                isComplete ? 'text-emerald-500' : 'text-muted-foreground'
+                'text-xs font-semibold tabular-nums',
+                isComplete ? 'text-emerald-500' : 'text-muted-foreground/80'
               )}
             >
               {progress}%
@@ -284,29 +287,33 @@ function ProjectCard({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-xl border-2 transition-all duration-300',
+        'group relative overflow-hidden rounded-2xl border-2 transition-all duration-300',
         isPartnership
-          ? 'border-orange-500 ring-2 ring-orange-500/20'
+          ? 'border-orange-500/60 ring-2 ring-orange-500/20'
           : typeConfig
             ? typeConfig.borderColor
             : 'border-border',
-        isComplete ? 'opacity-60' : 'opacity-100',
-        'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
-        'hover:-translate-y-0.5'
+        isComplete ? 'opacity-50' : 'opacity-100',
+        'shadow-lg shadow-black/5 dark:shadow-black/20',
+        'hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30',
+        'hover:-translate-y-1 hover:scale-[1.01]'
       )}
     >
-      {/* Gradient background overlay */}
+      {/* Gradient background overlay - enhanced */}
       <div
         className={cn(
-          'absolute inset-0 bg-gradient-to-br opacity-50',
+          'absolute inset-0 bg-gradient-to-br opacity-40',
           typeConfig
             ? `${typeConfig.gradientFrom} ${typeConfig.gradientTo}`
             : 'from-muted/50 to-transparent'
         )}
       />
 
+      {/* Shine effect on hover */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/[0.03] to-white/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+
       {/* Card content */}
-      <div className="relative bg-card/80 backdrop-blur-sm">
+      <div className="relative bg-card/90 backdrop-blur-sm">
         {/* Collapse toggle */}
         <button
           type="button"
@@ -315,60 +322,65 @@ function ProjectCard({
             e.stopPropagation();
             onToggleCollapse();
           }}
-          className="absolute left-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+          className="absolute left-2.5 top-2.5 z-10 flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all duration-200 hover:bg-secondary hover:text-foreground group-hover:opacity-100"
           title="Collapse"
         >
-          <ChevronDown className="h-3.5 w-3.5" />
+          <ChevronDown className="h-4 w-4" />
         </button>
 
-        <Link href={`/projects/${project.id}`} className="block p-4">
+        <Link href={`/projects/${project.id}`} className="block p-5">
           {/* Header: Icon + Name + External link hint */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-4">
             <div
               className={cn(
-                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110',
+                'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-all duration-300',
+                'shadow-md shadow-black/10 dark:shadow-black/30',
+                'ring-2 ring-white/5',
+                'group-hover:scale-110 group-hover:shadow-lg',
                 typeConfig ? typeConfig.bgColor : 'bg-muted'
               )}
             >
               <TypeIcon
-                className={cn('h-5 w-5', typeConfig ? typeConfig.color : 'text-muted-foreground')}
+                className={cn('h-6 w-6', typeConfig ? typeConfig.color : 'text-muted-foreground')}
               />
             </div>
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="truncate text-sm font-semibold text-foreground transition-colors group-hover:text-primary">
+                <h3 className="truncate text-base font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
                   {project.name}
                 </h3>
-                <ExternalLink className="h-3 w-3 flex-shrink-0 text-muted-foreground/0 transition-all group-hover:text-muted-foreground/60" />
+                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/0 transition-all group-hover:text-muted-foreground/60" />
               </div>
 
-              {/* Meta info */}
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {/* Meta info - enhanced */}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground/80">
                 {project.client_name && (
-                  <span className="flex items-center gap-1">
+                  <span className="flex items-center gap-1.5 rounded-md bg-secondary/30 px-2 py-0.5">
                     <Building className="h-3 w-3" />
-                    <span className="max-w-[100px] truncate">{project.client_name}</span>
+                    <span className="max-w-[120px] truncate font-medium">
+                      {project.client_name}
+                    </span>
                   </span>
                 )}
                 {PlatformIcon && (
-                  <span className="flex items-center gap-1 rounded bg-secondary/50 px-1.5 py-0.5">
+                  <span className="flex items-center gap-1.5 rounded-md bg-secondary/30 px-2 py-0.5">
                     <PlatformIcon className="h-3 w-3" />
-                    <span>{platformConfig?.label}</span>
+                    <span className="font-medium">{platformConfig?.label}</span>
                   </span>
                 )}
               </div>
             </div>
           </div>
 
-          {/* Progress section - hidden for SEO and ADS projects */}
+          {/* Progress section - enhanced design */}
           {project.project_type !== 'seo' && project.project_type !== 'ads' && (
-            <div className="mt-4">
+            <div className="mt-5">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">Progress</span>
+                <span className="font-medium text-muted-foreground/70">Progress</span>
                 <span
                   className={cn(
-                    'font-semibold tabular-nums',
+                    'font-bold tabular-nums',
                     isComplete
                       ? 'text-emerald-500'
                       : progress >= 50
@@ -379,14 +391,14 @@ function ProjectCard({
                   {progress}%
                 </span>
               </div>
-              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary/50">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary/40 shadow-inner">
                 <div
                   className={cn(
-                    'h-full rounded-full transition-all duration-500',
+                    'h-full rounded-full transition-all duration-700 ease-out',
                     isComplete
-                      ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                      ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400'
                       : progress >= 50
-                        ? 'bg-gradient-to-r from-amber-500 to-amber-400'
+                        ? 'bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400'
                         : typeConfig
                           ? `bg-gradient-to-r ${typeConfig.gradientFrom.replace('/20', '')} ${typeConfig.gradientTo.replace('/5', '')}`
                           : 'bg-primary'
@@ -397,18 +409,18 @@ function ProjectCard({
             </div>
           )}
 
-          {/* Completion badge */}
+          {/* Completion badge - premium */}
           {isComplete && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-500">
-              <Sparkles className="h-3 w-3" />
-              <span className="font-medium">Completed</span>
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-500">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="font-semibold tracking-wide">Completed</span>
             </div>
           )}
 
-          {/* Partnership badge */}
+          {/* Partnership badge - enhanced */}
           {isPartnership && (
-            <div className="mt-3 flex items-center gap-1.5 rounded-md bg-orange-500/10 px-2 py-1 text-xs text-orange-500">
-              <span className="font-medium">🤝 Partnership with {partnerName}</span>
+            <div className="mt-4 flex items-center gap-2 rounded-lg bg-orange-500/10 px-3 py-1.5 text-xs text-orange-500">
+              <span className="font-semibold tracking-wide">🤝 Partnership with {partnerName}</span>
             </div>
           )}
         </Link>
@@ -420,7 +432,7 @@ function ProjectCard({
               <button
                 type="button"
                 className={cn(
-                  'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100',
+                  'absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all duration-200 hover:bg-secondary hover:text-foreground group-hover:opacity-100',
                   isPending && 'animate-pulse opacity-100'
                 )}
                 onClick={(e) => e.stopPropagation()}
@@ -532,7 +544,7 @@ export function ProjectList({
     });
   }, [projects, filterType, getProgress]);
 
-  // Group projects by type for columns view
+  // Group projects by type for columns view (only showing AI, Voice, and Web)
   const groupedByType = useMemo(() => {
     const sortByProgress = (list: Project[]) =>
       [...list].sort((a, b) => {
@@ -549,19 +561,17 @@ export function ProjectList({
       ai_agent: sortByProgress(projects.filter((p) => p.project_type === 'ai_agent')),
       voice_agent: sortByProgress(projects.filter((p) => p.project_type === 'voice_agent')),
       web_design: sortByProgress(projects.filter((p) => p.project_type === 'web_design')),
-      seo: sortByProgress(projects.filter((p) => p.project_type === 'seo')),
-      ads: sortByProgress(projects.filter((p) => p.project_type === 'ads')),
     };
   }, [projects, getProgress]);
 
   if (sortedProjects.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center text-center">
-        <div className="mb-4 rounded-xl bg-muted p-4">
-          <Inbox className="h-8 w-8 text-muted-foreground" />
+      <div className="flex h-80 flex-col items-center justify-center text-center">
+        <div className="mb-6 rounded-2xl bg-gradient-to-br from-secondary/50 to-secondary/20 p-6 shadow-xl shadow-black/10 ring-2 ring-white/5 dark:shadow-black/30">
+          <Inbox className="h-10 w-10 text-muted-foreground" />
         </div>
-        <p className="font-medium text-foreground">No projects found</p>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-xl font-bold tracking-tight text-foreground">No projects found</p>
+        <p className="mt-2 text-sm text-muted-foreground/80">
           {filterType === 'all'
             ? 'Create your first project to get started'
             : `No ${PROJECT_TYPE_CONFIG[filterType]?.label || filterType} projects yet`}
@@ -575,12 +585,10 @@ export function ProjectList({
       { type: 'ai_agent', projects: groupedByType.ai_agent },
       { type: 'voice_agent', projects: groupedByType.voice_agent },
       { type: 'web_design', projects: groupedByType.web_design },
-      { type: 'seo', projects: groupedByType.seo },
-      { type: 'ads', projects: groupedByType.ads },
     ];
 
     return (
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         {columns.map(({ type, projects: typeProjects }, columnIndex) => {
           const config = PROJECT_TYPE_CONFIG[type];
           const TypeIcon = config.icon;
@@ -595,56 +603,76 @@ export function ProjectList({
               className="slide-up space-y-4"
               style={{ animationDelay: `${columnIndex * 75}ms` }}
             >
-              {/* Column Header - Enhanced */}
+              {/* Column Header - Premium Design */}
               <div
                 className={cn(
-                  'group/header relative overflow-hidden rounded-xl border p-4',
+                  'group/header relative overflow-hidden rounded-2xl border-2 p-5',
                   config.borderColor,
-                  'bg-gradient-to-br',
+                  'bg-gradient-to-br backdrop-blur-sm',
                   config.gradientFrom,
-                  config.gradientTo
+                  config.gradientTo,
+                  'shadow-lg shadow-black/5 dark:shadow-black/20',
+                  'transition-all duration-300 hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30',
+                  'hover:scale-[1.02]'
                 )}
               >
-                {/* Decorative background pattern */}
-                <div className="absolute inset-0 opacity-5">
-                  <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-current" />
-                  <div className="absolute -bottom-2 -left-2 h-16 w-16 rounded-full bg-current" />
+                {/* Decorative background pattern - more premium */}
+                <div className="absolute inset-0 opacity-[0.03]">
+                  <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-current blur-xl" />
+                  <div className="absolute -bottom-4 -left-4 h-24 w-24 rounded-full bg-current blur-lg" />
+                  <div className="absolute right-1/4 top-1/2 h-16 w-16 rounded-full bg-current blur-md" />
                 </div>
 
-                <div className="relative flex items-center gap-3">
+                {/* Subtle shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 opacity-0 transition-opacity duration-500 group-hover/header:opacity-100" />
+
+                <div className="relative flex items-center gap-4">
                   <div
                     className={cn(
-                      'flex h-12 w-12 items-center justify-center rounded-xl',
-                      config.bgColor
+                      'flex h-14 w-14 items-center justify-center rounded-2xl',
+                      'shadow-lg shadow-black/10 dark:shadow-black/30',
+                      'ring-2 ring-white/10',
+                      config.bgColor,
+                      'transition-transform duration-300 group-hover/header:scale-110'
                     )}
                   >
-                    <TypeIcon className={cn('h-6 w-6', config.color)} />
+                    <TypeIcon className={cn('h-7 w-7', config.color)} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-base font-bold text-foreground">{config.label}</h3>
-                    <p className="text-xs text-muted-foreground">{config.description}</p>
+                    <h3 className="text-lg font-bold tracking-tight text-foreground">
+                      {config.label}
+                    </h3>
+                    <p className="text-sm text-muted-foreground/80">{config.description}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={() => handleOpenWizard(type)}
                       className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200',
+                        'flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300',
                         'opacity-0 group-hover/header:opacity-100',
-                        'hover:scale-110',
+                        'hover:scale-110 active:scale-95',
+                        'shadow-md shadow-black/10',
                         config.bgColor,
                         config.color
                       )}
                       title={`Create new ${config.label.toLowerCase().replace(/s$/, '')}`}
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-5 w-5" />
                     </button>
                     <div className="text-right">
-                      <div className={cn('text-2xl font-bold tabular-nums', config.color)}>
+                      <div
+                        className={cn(
+                          'text-3xl font-black tabular-nums tracking-tighter',
+                          config.color
+                        )}
+                      >
                         {typeProjects.length}
                       </div>
                       {activeCount > 0 && activeCount !== typeProjects.length && (
-                        <div className="text-xs text-muted-foreground">{activeCount} active</div>
+                        <div className="text-xs font-medium text-muted-foreground/70">
+                          {activeCount} active
+                        </div>
                       )}
                     </div>
                   </div>
@@ -652,21 +680,45 @@ export function ProjectList({
               </div>
 
               {/* Projects List */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {typeProjects.length === 0 ? (
                   <div
                     className={cn(
-                      'flex flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center',
+                      'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 text-center',
+                      'bg-gradient-to-br from-secondary/20 to-transparent',
+                      'transition-all duration-300 hover:border-solid hover:shadow-lg',
                       config.borderColor
                     )}
                   >
-                    <div className={cn('mb-3 rounded-xl p-3', config.bgColor)}>
-                      <TypeIcon className={cn('h-6 w-6', config.color)} />
+                    <div
+                      className={cn(
+                        'mb-4 rounded-2xl p-4',
+                        'shadow-lg shadow-black/10 dark:shadow-black/30',
+                        'ring-2 ring-white/5',
+                        config.bgColor
+                      )}
+                    >
+                      <TypeIcon className={cn('h-7 w-7', config.color)} />
                     </div>
-                    <p className="text-sm font-medium text-foreground">
+                    <p className="text-base font-semibold text-foreground">
                       No {config.label.toLowerCase()}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">Projects will appear here</p>
+                    <p className="mt-1.5 text-sm text-muted-foreground/70">
+                      Projects will appear here
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenWizard(type)}
+                      className={cn(
+                        'mt-4 flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200',
+                        'hover:scale-105 active:scale-95',
+                        config.bgColor,
+                        config.color
+                      )}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create first
+                    </button>
                   </div>
                 ) : (
                   typeProjects.map((project, index) => (
