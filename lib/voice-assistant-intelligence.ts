@@ -633,7 +633,7 @@ export function convertToArabicNumerals(text: string): string {
  */
 export function generateEnhancedSystemPrompt(userContext?: UserContext): string {
   const greeting = generateGreeting(userContext);
-  const firstName = userContext?.name?.split(' ')[0];
+  const firstName = userContext?.name?.split(' ')[0]?.toLowerCase();
 
   // Get random examples from phrase pools for the prompt
   const understoodExamples = DYNAMIC_PHRASES.understood.slice(0, 6).join('، ');
