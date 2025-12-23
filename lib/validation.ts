@@ -316,9 +316,10 @@ export function parseFormData<T>(
     // Convert empty strings to null for optional fields
     if (value === '' || value === 'null' || value === 'undefined') {
       obj[key] = null;
-    } else if (value === 'true') {
+    } else if (value === 'true' || value === 'on') {
+      // Handle both "true" string and "on" from checkbox/switch elements
       obj[key] = true;
-    } else if (value === 'false') {
+    } else if (value === 'false' || value === 'off') {
       obj[key] = false;
     } else {
       obj[key] = value;
