@@ -1,8 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, CalendarIcon, Clock, Users, Building2, Video, Link2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Plus,
+  CalendarIcon,
+  Clock,
+  Users,
+  Building2,
+  Video,
+  Link2,
+  Check,
+  X,
+  Sparkles,
+} from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, addDays } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { createMeeting, getClients } from '@/app/actions';
 
 // Get the next available time slot (rounds up to next 30 min)
 function getNextTimeSlot(): { date: Date; time: string } {
@@ -38,27 +69,8 @@ function getNextTimeSlot(): { date: Date; time: string } {
     time: `${nextHour.toString().padStart(2, '0')}:${nextMinute.toString().padStart(2, '0')}`,
   };
 }
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { createMeeting, getClients } from '@/app/actions';
 
-// Time slots in 30-minute increments (business hours focused)
+// Time slots in 30-minute increments
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const hour = Math.floor(i / 2);
   const minute = (i % 2) * 30;
@@ -71,12 +83,12 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
 
 // Common meeting durations
 const DURATION_OPTIONS = [
-  { value: 15, label: '15 min' },
-  { value: 30, label: '30 min' },
-  { value: 45, label: '45 min' },
-  { value: 60, label: '1 hour' },
-  { value: 90, label: '1.5 hours' },
-  { value: 120, label: '2 hours' },
+  { value: 15, label: '15m', full: '15 minutes' },
+  { value: 30, label: '30m', full: '30 minutes' },
+  { value: 45, label: '45m', full: '45 minutes' },
+  { value: 60, label: '1h', full: '1 hour' },
+  { value: 90, label: '1.5h', full: '1.5 hours' },
+  { value: 120, label: '2h', full: '2 hours' },
 ];
 
 interface Client {
@@ -85,16 +97,17 @@ interface Client {
 }
 
 export function NewMeetingModal() {
+  const linkInputRef = useRef<HTMLInputElement>(null);
+
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
   const [meetingType, setMeetingType] = useState<'internal' | 'client'>('internal');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [title, setTitle] = useState('');
   const [meetingLink, setMeetingLink] = useState<string>('');
-
-  // Modern time picker state
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>('09:00');
   const [duration, setDuration] = useState<number>(60);
@@ -102,7 +115,6 @@ export function NewMeetingModal() {
   useEffect(() => {
     if (open) {
       getClients().then((data) => setClients(data as Client[]));
-      // Reset form with smart defaults
       const nextSlot = getNextTimeSlot();
       setSelectedDate(nextSlot.date);
       setSelectedTime(nextSlot.time);
@@ -112,6 +124,7 @@ export function NewMeetingModal() {
       setTitle('');
       setMeetingLink('');
       setError(null);
+      setSuccess(false);
     }
   }, [open]);
 
@@ -127,7 +140,7 @@ export function NewMeetingModal() {
     }
   }, [meetingType, selectedClientId, clients]);
 
-  // Calculate start and end times for the form
+  // Calculate start and end times
   const getStartDateTime = () => {
     if (!selectedDate) return '';
     const [hours, minutes] = selectedTime.split(':').map(Number);
@@ -157,7 +170,6 @@ export function NewMeetingModal() {
       formData.set('client_id', selectedClientId);
     }
 
-    // Add meeting link if provided
     if (meetingLink.trim()) {
       formData.set('meeting_link', meetingLink.trim());
     }
@@ -165,7 +177,11 @@ export function NewMeetingModal() {
     const result = await createMeeting(formData);
 
     if (result.success) {
-      setOpen(false);
+      setSuccess(true);
+      setTimeout(() => {
+        setOpen(false);
+        setSuccess(false);
+      }, 600);
     } else {
       setError(result.error || 'Failed to create meeting');
     }
@@ -176,185 +192,318 @@ export function NewMeetingModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4" />
-          <span>New Meeting</span>
+        <Button className="group relative overflow-hidden">
+          <span className="relative z-10 flex items-center gap-2">
+            <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+            <span>New Meeting</span>
+          </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="border-border bg-card text-foreground sm:max-w-[420px]">
-        <DialogHeader>
-          <DialogTitle className="text-lg">Quick Schedule</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Meeting Type Toggle */}
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setMeetingType('internal')}
-              className={cn(
-                'flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
-                meetingType === 'internal'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border hover:border-muted-foreground/50'
-              )}
+      <DialogContent
+        className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[420px]"
+        showCloseButton={false}
+      >
+        <AnimatePresence mode="wait">
+          {success ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="flex flex-col items-center justify-center py-16"
             >
-              <Users className="h-4 w-4" />
-              <span className="text-sm font-medium">Internal</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMeetingType('client')}
-              className={cn(
-                'flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
-                meetingType === 'client'
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border hover:border-muted-foreground/50'
-              )}
-            >
-              <Building2 className="h-4 w-4" />
-              <span className="text-sm font-medium">Client</span>
-            </button>
-          </div>
-
-          {/* Client Selector (only for client meetings) */}
-          {meetingType === 'client' && (
-            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-              <SelectTrigger className="h-11 border-border bg-background">
-                <SelectValue placeholder="Select client..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px] border-border bg-card">
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.display_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Date Selection */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  'h-11 w-full justify-start border-border bg-background text-left font-normal',
-                  !selectedDate && 'text-muted-foreground'
-                )}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', damping: 15, stiffness: 300, delay: 0.1 }}
+                className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10"
               >
-                <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
-                {selectedDate ? format(selectedDate, 'EEE, MMM d, yyyy') : 'Pick a date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto border-border bg-card p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-
-          {/* Time & Duration */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Time */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 justify-start border-border bg-background text-left font-normal"
+                <Check className="h-8 w-8 text-emerald-500" />
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-lg font-medium text-foreground"
+              >
+                Meeting scheduled!
+              </motion.p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="form"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+                <DialogHeader className="flex-1">
+                  <DialogTitle className="flex items-center gap-2 text-base font-semibold">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    Quick Schedule
+                  </DialogTitle>
+                </DialogHeader>
+                <button
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  {TIME_SLOTS.find((t) => t.value === selectedTime)?.label}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-44 border-border bg-card p-1" align="start">
-                <div className="max-h-56 overflow-y-auto">
-                  {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="p-6">
+                <div className="space-y-5">
+                  {/* Meeting Type Toggle - Sleek segmented control */}
+                  <div className="relative flex rounded-xl bg-secondary/50 p-1">
+                    <motion.div
+                      className="absolute inset-y-1 rounded-lg bg-card shadow-sm"
+                      layoutId="meeting-type-bg"
+                      animate={{
+                        left: meetingType === 'internal' ? '4px' : 'calc(50% + 2px)',
+                        right: meetingType === 'internal' ? 'calc(50% + 2px)' : '4px',
+                      }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
                     <button
-                      key={slot.value}
                       type="button"
-                      onClick={() => setSelectedTime(slot.value)}
+                      onClick={() => setMeetingType('internal')}
                       className={cn(
-                        'w-full rounded-md px-3 py-2 text-left text-sm transition-colors',
-                        selectedTime === slot.value
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-accent'
+                        'relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-colors',
+                        meetingType === 'internal' ? 'text-foreground' : 'text-muted-foreground'
                       )}
                     >
-                      {slot.label}
+                      <Users className="h-4 w-4" />
+                      Internal
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setMeetingType('client')}
+                      className={cn(
+                        'relative z-10 flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-colors',
+                        meetingType === 'client' ? 'text-foreground' : 'text-muted-foreground'
+                      )}
+                    >
+                      <Building2 className="h-4 w-4" />
+                      Client
+                    </button>
+                  </div>
+
+                  {/* Client Selector */}
+                  <AnimatePresence>
+                    {meetingType === 'client' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                          <SelectTrigger className="h-11 rounded-xl border-border/50 bg-secondary/30">
+                            <SelectValue placeholder="Select client..." />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[200px] border-border/50 bg-card/95 backdrop-blur-xl">
+                            {clients.map((client) => (
+                              <SelectItem key={client.id} value={client.id}>
+                                {client.display_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Date & Time Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Date Selection */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-11 justify-start gap-2 rounded-xl border-border/50 bg-secondary/30 font-normal hover:bg-secondary/50"
+                        >
+                          <CalendarIcon className="h-4 w-4 text-primary" />
+                          <span className="truncate">
+                            {selectedDate ? format(selectedDate, 'MMM d') : 'Date'}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto border-border/50 bg-card/95 p-0 backdrop-blur-xl"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Time Selection */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-11 justify-start gap-2 rounded-xl border-border/50 bg-secondary/30 font-normal hover:bg-secondary/50"
+                        >
+                          <Clock className="h-4 w-4 text-primary" />
+                          {TIME_SLOTS.find((t) => t.value === selectedTime)?.label}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-40 border-border/50 bg-card/95 p-1 backdrop-blur-xl"
+                        align="start"
+                      >
+                        <div className="max-h-56 overflow-y-auto">
+                          {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
+                            <button
+                              key={slot.value}
+                              type="button"
+                              onClick={() => setSelectedTime(slot.value)}
+                              className={cn(
+                                'w-full rounded-lg px-3 py-2 text-left text-sm transition-colors',
+                                selectedTime === slot.value
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'hover:bg-secondary'
+                              )}
+                            >
+                              {slot.label}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Duration Chips */}
+                  <div>
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Duration</p>
+                    <div className="flex flex-wrap gap-2">
+                      {DURATION_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setDuration(opt.value)}
+                          className={cn(
+                            'rounded-full px-3 py-1.5 text-sm font-medium transition-all',
+                            duration === opt.value
+                              ? 'bg-primary text-primary-foreground shadow-sm'
+                              : 'bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Meeting Link */}
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                      <Video className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <input
+                      ref={linkInputRef}
+                      type="url"
+                      placeholder="Paste meeting link (optional)"
+                      value={meetingLink}
+                      onChange={(e) => setMeetingLink(e.target.value)}
+                      className="h-11 w-full rounded-xl border border-border/50 bg-secondary/30 pl-10 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                    />
+                    {meetingLink && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        <Link2 className="h-4 w-4 text-emerald-500" />
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Summary Card */}
+                  {selectedDate && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-xl border border-border/50 bg-gradient-to-br from-secondary/30 to-secondary/10 p-4"
+                    >
+                      <p className="font-medium text-foreground">{title}</p>
+                      <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <CalendarIcon className="h-3.5 w-3.5" />
+                          {format(selectedDate, 'EEE, MMM d')}
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="h-3.5 w-3.5" />
+                          {TIME_SLOTS.find((t) => t.value === selectedTime)?.label}
+                        </span>
+                        <span className="text-muted-foreground/70">
+                          {DURATION_OPTIONS.find((d) => d.value === duration)?.full}
+                        </span>
+                      </div>
+                      {meetingLink && (
+                        <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-500">
+                          <Video className="h-3.5 w-3.5" />
+                          <span className="font-medium">Video link attached</span>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Error */}
+                  <AnimatePresence>
+                    {error && (
+                      <motion.p
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="text-sm text-destructive"
+                      >
+                        {error}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </PopoverContent>
-            </Popover>
 
-            {/* Duration */}
-            <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
-              <SelectTrigger className="h-11 border-border bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-card">
-                {DURATION_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value.toString()}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Meeting Link (optional) */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Video className="h-4 w-4 text-muted-foreground" />
-              Meeting Link
-              <span className="text-xs font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <div className="relative">
-              <Link2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="url"
-                placeholder="Paste Google Meet, Zoom, or other link..."
-                value={meetingLink}
-                onChange={(e) => setMeetingLink(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          </div>
-
-          {/* Summary */}
-          {selectedDate && (
-            <div className="rounded-lg bg-secondary/50 px-3 py-2.5 text-sm">
-              <span className="text-muted-foreground">Scheduling: </span>
-              <span className="font-medium text-foreground">{title}</span>
-              <div className="mt-1 text-xs text-muted-foreground">
-                {format(selectedDate, 'EEEE, MMM d')} at{' '}
-                {TIME_SLOTS.find((t) => t.value === selectedTime)?.label} (
-                {DURATION_OPTIONS.find((d) => d.value === duration)?.label})
-              </div>
-              {meetingLink && (
-                <div className="mt-1.5 flex items-center gap-1 text-emerald-500">
-                  <Video className="h-3 w-3" />
-                  <span className="text-xs font-medium">Video link attached</span>
+                {/* Footer */}
+                <div className="mt-6 flex items-center justify-end gap-3 border-t border-border/50 pt-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setOpen(false)}
+                    className="text-muted-foreground"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={loading || (meetingType === 'client' && !selectedClientId)}
+                    className="min-w-[120px]"
+                  >
+                    {loading ? (
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
+                      />
+                    ) : (
+                      'Schedule'
+                    )}
+                  </Button>
                 </div>
-              )}
-            </div>
+              </form>
+            </motion.div>
           )}
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <Button
-            type="submit"
-            disabled={loading || (meetingType === 'client' && !selectedClientId)}
-            className="h-11 w-full bg-primary font-medium hover:bg-primary/90"
-          >
-            {loading ? 'Scheduling...' : 'Schedule Meeting'}
-          </Button>
-        </form>
+        </AnimatePresence>
       </DialogContent>
     </Dialog>
   );
