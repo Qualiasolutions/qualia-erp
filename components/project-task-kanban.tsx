@@ -53,7 +53,7 @@ import {
 type ItemType = 'task' | 'issue' | 'note' | 'resource';
 type TaskStatus = 'Todo' | 'In Progress' | 'Done';
 
-// Item type configuration with premium colors
+// Item type configuration - unified theme colors (qualia teal + neutrals)
 const ITEM_TYPE_CONFIG: Record<
   ItemType,
   {
@@ -72,63 +72,63 @@ const ITEM_TYPE_CONFIG: Record<
     icon: ListTodo,
     label: 'Task',
     pluralLabel: 'Tasks',
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/10',
-    borderColor: 'border-violet-500/30',
-    gradientFrom: 'from-violet-500/20',
-    gradientTo: 'to-violet-600/10',
-    accentColor: 'bg-violet-500',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+    gradientFrom: 'from-primary/10',
+    gradientTo: 'to-primary/5',
+    accentColor: 'bg-primary',
   },
   issue: {
     icon: Bug,
     label: 'Issue',
     pluralLabel: 'Issues',
-    color: 'text-rose-400',
-    bgColor: 'bg-rose-500/10',
-    borderColor: 'border-rose-500/30',
-    gradientFrom: 'from-rose-500/20',
-    gradientTo: 'to-rose-600/10',
-    accentColor: 'bg-rose-500',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+    gradientFrom: 'from-primary/10',
+    gradientTo: 'to-primary/5',
+    accentColor: 'bg-primary',
   },
   note: {
     icon: StickyNote,
     label: 'Note',
     pluralLabel: 'Notes',
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-    borderColor: 'border-amber-500/30',
-    gradientFrom: 'from-amber-500/20',
-    gradientTo: 'to-amber-600/10',
-    accentColor: 'bg-amber-500',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+    gradientFrom: 'from-primary/10',
+    gradientTo: 'to-primary/5',
+    accentColor: 'bg-primary',
   },
   resource: {
     icon: Bookmark,
     label: 'Resource',
     pluralLabel: 'Resources',
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-500/10',
-    borderColor: 'border-sky-500/30',
-    gradientFrom: 'from-sky-500/20',
-    gradientTo: 'to-sky-600/10',
-    accentColor: 'bg-sky-500',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
+    borderColor: 'border-primary/20',
+    gradientFrom: 'from-primary/10',
+    gradientTo: 'to-primary/5',
+    accentColor: 'bg-primary',
   },
 };
 
-// Status icons and colors
+// Status icons and colors - semantic colors only
 const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Circle; color: string; bgColor: string }> = {
   Todo: {
     icon: Circle,
-    color: 'text-slate-400',
-    bgColor: 'bg-slate-500/10',
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted',
   },
   'In Progress': {
     icon: Clock,
-    color: 'text-blue-400',
-    bgColor: 'bg-blue-500/10',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
   },
   Done: {
     icon: CheckCircle2,
-    color: 'text-emerald-400',
+    color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10',
   },
 };
@@ -326,7 +326,7 @@ const ResourceCard = memo(function ResourceCard({
       style={style}
       className={cn(
         'group relative flex items-center gap-3 rounded-xl border bg-card/90 px-4 py-3 backdrop-blur-sm transition-all',
-        'hover:border-sky-400/50 hover:shadow-md',
+        'hover:border-primary/40 hover:shadow-md',
         config.borderColor,
         isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50'
       )}
@@ -363,7 +363,7 @@ const ResourceCard = memo(function ResourceCard({
               href={linkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="shrink-0 rounded-full bg-sky-500/10 p-1.5 text-sky-400 transition-colors hover:bg-sky-500/20"
+              className="shrink-0 rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20"
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink className="h-3.5 w-3.5" />
@@ -373,7 +373,7 @@ const ResourceCard = memo(function ResourceCard({
         {task.description && !hasLink && (
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{task.description}</p>
         )}
-        {hasLink && linkUrl && <p className="mt-0.5 truncate text-xs text-sky-400/70">{linkUrl}</p>}
+        {hasLink && linkUrl && <p className="mt-0.5 truncate text-xs text-primary/70">{linkUrl}</p>}
       </div>
 
       {/* Actions */}
@@ -566,13 +566,13 @@ const ResourcesSection = memo(function ResourcesSection({
     <div
       ref={setNodeRef}
       className={cn(
-        'rounded-2xl border bg-gradient-to-r from-sky-500/5 via-card/50 to-sky-500/5 backdrop-blur-sm transition-all',
+        'rounded-2xl border bg-gradient-to-r from-primary/5 via-card/50 to-primary/5 backdrop-blur-sm transition-all',
         config.borderColor,
         isOver && 'border-primary/50 ring-2 ring-primary/30'
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-sky-500/20 px-5 py-3">
+      <div className="flex items-center justify-between border-b border-primary/20 px-5 py-3">
         <div className="flex items-center gap-3">
           <div
             className={cn('flex h-10 w-10 items-center justify-center rounded-xl', config.bgColor)}
@@ -590,7 +590,7 @@ const ResourcesSection = memo(function ResourcesSection({
           variant="outline"
           size="sm"
           onClick={onStartAddItem}
-          className="gap-2 border-sky-500/30 text-sky-400 hover:bg-sky-500/10 hover:text-sky-300"
+          className="gap-2 border-primary/30 text-primary hover:bg-primary/10"
         >
           <Plus className="h-4 w-4" />
           Add Resource
@@ -629,13 +629,13 @@ const ResourcesSection = memo(function ResourcesSection({
 
         {/* Add Form */}
         {isAddingItem && (
-          <div className="mt-3 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
+          <div className="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
             <div className="flex gap-3">
               <Input
                 placeholder="Resource title..."
                 value={newItemTitle}
                 onChange={(e) => onNewItemTitleChange(e.target.value)}
-                className="h-10 flex-1 border-sky-500/20 bg-background/80"
+                className="h-10 flex-1 border-primary/20 bg-background/80"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') onCreateItem();
                   if (e.key === 'Escape') onCancelAddItem();
@@ -821,11 +821,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
               <div
                 className={cn(
                   'h-full rounded-full transition-all duration-500',
-                  progress === 100
-                    ? 'bg-emerald-500'
-                    : progress >= 50
-                      ? 'bg-blue-500'
-                      : 'bg-violet-500'
+                  progress === 100 ? 'bg-emerald-500' : 'bg-primary'
                 )}
                 style={{ width: `${progress}%` }}
               />
@@ -834,11 +830,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
           <div
             className={cn(
               'flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold',
-              progress === 100
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : progress >= 50
-                  ? 'bg-blue-500/20 text-blue-400'
-                  : 'bg-violet-500/20 text-violet-400'
+              progress === 100 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-primary/20 text-primary'
             )}
           >
             {progress}%
