@@ -43,6 +43,7 @@ const nextConfig: NextConfig = {
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.vapi.ai wss://*.vapi.ai https://*.vapi.ai https://*.deepgram.com wss://*.deepgram.com https://*.daily.co wss://*.daily.co https://*.sentry.io https://vercel.live wss://vercel.live",
               "media-src 'self' blob: https://*.vapi.ai https://*.daily.co",
               "worker-src 'self' blob:",
+              "frame-src 'self' https://vercel.live",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
