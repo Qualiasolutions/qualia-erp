@@ -279,18 +279,6 @@ export default async function DashboardPage() {
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
-  // Transform meetings to the format expected by DashboardClient
-  const dashboardMeetings =
-    dashboardData?.meetings?.map((m) => ({
-      id: m.id,
-      title: m.title,
-      start_time: m.start_time,
-      end_time: m.end_time,
-      meeting_link: (m as { meeting_link?: string | null }).meeting_link || null,
-      project: Array.isArray(m.project) ? m.project[0] || null : m.project,
-      client: Array.isArray(m.client) ? m.client[0] || null : m.client,
-    })) || [];
-
   return (
     <DashboardClient
       greeting={greeting}
@@ -306,7 +294,6 @@ export default async function DashboardPage() {
           : undefined
       }
       greetingData={greetingData}
-      meetings={dashboardMeetings}
     />
   );
 }

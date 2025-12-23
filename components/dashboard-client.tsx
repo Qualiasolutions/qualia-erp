@@ -5,7 +5,6 @@ import { QualiaVoiceInline } from '@/components/qualia-voice-inline';
 import { useEffect, useState, useCallback } from 'react';
 import { Volume2, X, Bell } from 'lucide-react';
 import { DashboardNotes } from './dashboard-notes';
-import { DashboardMeetings } from './dashboard-meetings';
 import { DashboardReminders } from './dashboard-reminders';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
@@ -39,22 +38,11 @@ export interface GreetingData {
   };
 }
 
-interface DashboardMeeting {
-  id: string;
-  title: string;
-  start_time: string;
-  end_time: string;
-  meeting_link: string | null;
-  project?: { id: string; name: string } | null;
-  client?: { id: string; display_name: string } | null;
-}
-
 interface DashboardClientProps {
   greeting: string;
   dateString: string;
   user?: DashboardUser;
   greetingData?: GreetingData | null;
-  meetings?: DashboardMeeting[];
 }
 
 export function DashboardClient({
@@ -62,7 +50,6 @@ export function DashboardClient({
   dateString,
   user,
   greetingData,
-  meetings = [],
 }: DashboardClientProps) {
   const [hasGreeted, setHasGreeted] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
@@ -290,29 +277,16 @@ export function DashboardClient({
 
         {/* Bottom section - Responsive dashboard grid */}
         <div className="mt-auto border-t border-border/30 bg-gradient-to-t from-background/90 to-transparent px-1 pb-6 pt-5 sm:px-0 sm:pb-8 sm:pt-6">
-          {/* Responsive grid: stack on mobile, 2 cols on tablet, optimized on desktop */}
-          <div className="grid gap-4 sm:gap-5 lg:gap-6">
-            {/* Meetings row - full width, adaptive height */}
-            <div
-              className={cn(
-                'min-h-[180px] sm:min-h-[200px]',
-                meetings.length === 0 ? 'h-auto' : 'h-[200px] sm:h-[220px]'
-              )}
-            >
-              <DashboardMeetings meetings={meetings} />
+          {/* Two column grid for reminders and notes */}
+          <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:gap-6">
+            {/* Reminders Widget */}
+            <div className="min-h-[280px] sm:min-h-[320px] md:min-h-[340px]">
+              <DashboardReminders workspaceId={user?.workspaceId} />
             </div>
 
-            {/* Two column grid for reminders and notes */}
-            <div className="grid gap-4 sm:gap-5 md:grid-cols-2 lg:gap-6">
-              {/* Reminders Widget */}
-              <div className="min-h-[300px] sm:min-h-[340px] md:min-h-[360px]">
-                <DashboardReminders workspaceId={user?.workspaceId} />
-              </div>
-
-              {/* Team Notes Widget */}
-              <div className="min-h-[300px] sm:min-h-[340px] md:min-h-[360px]">
-                <DashboardNotes workspaceId={user?.workspaceId} />
-              </div>
+            {/* Team Notes Widget */}
+            <div className="min-h-[280px] sm:min-h-[320px] md:min-h-[340px]">
+              <DashboardNotes workspaceId={user?.workspaceId} />
             </div>
           </div>
         </div>
