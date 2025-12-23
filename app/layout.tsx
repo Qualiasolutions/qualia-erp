@@ -1,33 +1,18 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
-import dynamic from 'next/dynamic';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { Sidebar } from '@/components/sidebar';
+import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
 import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
+import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
 import { HeaderActions } from '@/components/header-actions';
-
-// Lazy load non-critical UI components for better initial bundle size
-const CommandMenu = dynamic(
-  () => import('@/components/command-menu').then((mod) => ({ default: mod.CommandMenu })),
-  { ssr: false }
-);
-const WorkspaceChatWrapper = dynamic(
-  () =>
-    import('@/components/workspace-chat-wrapper').then((mod) => ({
-      default: mod.WorkspaceChatWrapper,
-    })),
-  { ssr: false }
-);
-const AIChatWidget = dynamic(
-  () => import('@/components/ai-chat-widget').then((mod) => ({ default: mod.AIChatWidget })),
-  { ssr: false }
-);
+import { AIChatWidget } from '@/components/ai-chat-widget';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
 
