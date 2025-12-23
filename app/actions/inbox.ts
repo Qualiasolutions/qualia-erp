@@ -23,6 +23,7 @@ export type Task = {
   description: string | null;
   status: 'Todo' | 'In Progress' | 'Done';
   priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
+  item_type: 'task' | 'issue' | 'note' | 'resource';
   sort_order: number;
   due_date: string | null;
   completed_at: string | null;
@@ -95,6 +96,7 @@ export async function getTasks(
       description,
       status,
       priority,
+      item_type,
       sort_order,
       due_date,
       completed_at,
@@ -173,6 +175,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     assignee_id,
     project_id,
     show_in_inbox,
+    item_type,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -204,6 +207,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       description: description?.trim() || null,
       status,
       priority: 'No Priority',
+      item_type: item_type || 'task',
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,
@@ -409,6 +413,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       description,
       status,
       priority,
+      item_type,
       sort_order,
       due_date,
       completed_at,
@@ -421,7 +426,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
     `
     )
     .eq('project_id', projectId)
-    .order('status', { ascending: true })
+    .order('item_type', { ascending: true })
     .order('sort_order', { ascending: true });
 
   if (error) {

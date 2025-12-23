@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -8,15 +8,18 @@ import {
   Folder,
   Calendar,
   Trash2,
-  Save,
+  Check,
   User,
-  PanelRightClose,
-  PanelRightOpen,
+  Settings2,
+  X,
   Bot,
   Globe,
   Phone,
   TrendingUp,
   Megaphone,
+  Clock,
+  Building2,
+  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
-import { formatDate, formatTimeAgo } from '@/lib/utils';
+import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
 import { ProjectTaskKanban } from '@/components/project-task-kanban';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 
@@ -89,8 +92,10 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
 
   const [project, setProject] = useState<Project>(initialProject);
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPanel, setShowPanel] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Form state initialized from server-fetched data
   const [name, setName] = useState(initialProject.name);
@@ -101,9 +106,23 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
   const [leadId, setLeadId] = useState<string | null>(initialProject.lead?.id || null);
   const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
 
-  const handleSave = async () => {
+  // Track changes
+  useEffect(() => {
+    const changed =
+      name !== initialProject.name ||
+      description !== (initialProject.description || '') ||
+      projectType !== initialProject.project_type ||
+      leadId !== (initialProject.lead?.id || null) ||
+      targetDate !== (initialProject.target_date || '');
+    setHasChanges(changed);
+  }, [name, description, projectType, leadId, targetDate, initialProject]);
+
+  const handleSave = useCallback(async () => {
+    if (!hasChanges) return;
+
     setSaving(true);
     setError(null);
+    setSaved(false);
 
     const formData = new FormData();
     formData.set('id', project.id);
@@ -117,17 +136,20 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
     if (result.success) {
       const updatedProject = await getProjectById(project.id);
       if (updatedProject) setProject(updatedProject as Project);
+      setSaved(true);
+      setHasChanges(false);
+      setTimeout(() => setSaved(false), 2000);
     } else {
       setError(result.error || 'Failed to update project');
     }
 
     setSaving(false);
-  };
+  }, [hasChanges, project.id, name, description, projectType, leadId, targetDate]);
 
   const handleDelete = async () => {
     if (
       !confirm(
-        'Are you sure you want to delete this project? This will also delete all issues in this project.'
+        'Are you sure you want to delete this project? This will also delete all items in this project.'
       )
     )
       return;
@@ -142,54 +164,68 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
     });
   };
 
+  const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
+  const ProjectTypeIcon = selectedProjectType?.icon || Folder;
+
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
-        <div className="flex items-center gap-4">
-          <Link href="/projects" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-violet-500/10 text-violet-500">
-              <Folder className="h-4 w-4" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold">{project.name}</h1>
-              <div className="flex items-center gap-2">
-                {project.lead && (
-                  <span className="text-xs text-muted-foreground">
-                    Lead: {project.lead.full_name || project.lead.email}
-                  </span>
+    <div className="flex h-full flex-col bg-gradient-to-br from-background via-background to-background/95">
+      {/* Premium Header */}
+      <header className="relative border-b border-border/50 bg-card/80 px-6 py-4 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/projects"
+              className="group flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+            >
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+            </Link>
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'flex h-11 w-11 items-center justify-center rounded-xl shadow-lg ring-2 ring-white/10',
+                  'bg-gradient-to-br from-violet-500/20 to-violet-600/10 text-violet-400'
                 )}
+              >
+                <ProjectTypeIcon className="h-5 w-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight">{project.name}</h1>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  {selectedProjectType && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                      {selectedProjectType.label}
+                    </span>
+                  )}
+                  {project.lead && (
+                    <span className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {project.lead.full_name || project.lead.email}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPanel(!showPanel)}
-            className="gap-2"
-          >
-            {showPanel ? (
-              <>
-                <PanelRightClose className="h-4 w-4" />
-                Hide Details
-              </>
-            ) : (
-              <>
-                <PanelRightOpen className="h-4 w-4" />
-                Show Details
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPanel(!showPanel)}
+              className={cn(
+                'gap-2 rounded-xl border-border/50 transition-all',
+                showPanel && 'border-primary/30 bg-primary/10 text-primary'
+              )}
+            >
+              <Settings2 className="h-4 w-4" />
+              {showPanel ? 'Close' : 'Settings'}
+            </Button>
+          </div>
         </div>
       </header>
 
       {error && (
-        <div className="border-b border-red-500/20 bg-red-500/10 px-6 py-2 text-sm text-red-400">
+        <div className="border-b border-red-500/30 bg-red-500/10 px-6 py-3 text-sm font-medium text-red-400">
           {error}
         </div>
       )}
@@ -201,135 +237,207 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
           <ProjectTaskKanban projectId={project.id} />
         </div>
 
-        {/* Side Panel - Project Details */}
+        {/* Premium Side Panel */}
         {showPanel && (
-          <div className="w-[380px] flex-shrink-0 overflow-y-auto border-l border-border bg-card p-6">
-            <div className="space-y-6">
-              {/* Project Name */}
-              <div>
-                <label className="mb-2 block text-xs text-muted-foreground">Project Name</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="border-border bg-background"
-                  placeholder="Project name"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="mb-2 block text-xs text-muted-foreground">Description</label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[80px] border-border bg-background"
-                  placeholder="Add a description..."
-                />
-              </div>
-
-              {/* Project Type */}
-              <div>
-                <label className="mb-2 block flex items-center gap-1 text-xs text-muted-foreground">
-                  <Folder className="h-3 w-3" />
-                  Project Type
-                </label>
-                <Select
-                  value={projectType || 'none'}
-                  onValueChange={(v) => setProjectType(v === 'none' ? null : (v as ProjectType))}
-                >
-                  <SelectTrigger className="border-border bg-background">
-                    <SelectValue placeholder="No type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No type</SelectItem>
-                    {PROJECT_TYPES.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>
-                        <div className="flex items-center gap-2">
-                          <t.icon className="h-4 w-4" />
-                          {t.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Lead */}
-              <div>
-                <label className="mb-2 block flex items-center gap-1 text-xs text-muted-foreground">
-                  <User className="h-3 w-3" />
-                  Lead
-                </label>
-                <Select
-                  value={leadId || 'none'}
-                  onValueChange={(v) => setLeadId(v === 'none' ? null : v)}
-                >
-                  <SelectTrigger className="border-border bg-background">
-                    <SelectValue placeholder="No lead" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No lead</SelectItem>
-                    {profiles.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.full_name || p.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Target Date */}
-              <div>
-                <label className="mb-2 block flex items-center gap-1 text-xs text-muted-foreground">
-                  <Calendar className="h-3 w-3" />
-                  Target Date
-                </label>
-                <Input
-                  type="date"
-                  value={targetDate}
-                  onChange={(e) => setTargetDate(e.target.value)}
-                  className="border-border bg-background"
-                />
-              </div>
-
-              {/* Save/Delete Buttons */}
-              <div className="flex gap-2 border-t border-border pt-4">
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 bg-qualia-600 hover:bg-qualia-500"
-                >
-                  <Save className="mr-1 h-4 w-4" />
-                  {saving ? 'Saving...' : 'Save'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  disabled={isPending}
-                  className="text-red-400 hover:bg-red-500/10 hover:text-red-300"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Metadata */}
-              <div className="space-y-3 border-t border-border pt-4 text-xs text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Created {formatDate(project.created_at)}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-3 w-3" />
-                  Updated {formatTimeAgo(project.updated_at)}
-                </div>
-                {project.client && (
-                  <div className="flex items-center gap-2">
-                    <Folder className="h-3 w-3" />
-                    Client: {project.client.name}
+          <div className="relative w-[400px] flex-shrink-0 overflow-y-auto border-l border-border/50 bg-gradient-to-b from-card/95 to-card/80 backdrop-blur-lg">
+            {/* Panel Header */}
+            <div className="sticky top-0 z-10 border-b border-border/50 bg-card/90 px-6 py-4 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                    <Sparkles className="h-4 w-4 text-primary" />
                   </div>
-                )}
+                  <div>
+                    <h2 className="font-bold tracking-tight">Project Settings</h2>
+                    <p className="text-xs text-muted-foreground">Configure project details</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowPanel(false)}
+                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-5">
+                {/* Project Name - Premium Input */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Folder className="h-3 w-3" />
+                    Project Name
+                  </label>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="h-11 border-border/50 bg-secondary/30 text-base font-semibold transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                    placeholder="Project name"
+                  />
+                </div>
+
+                {/* Description - Premium Textarea */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Description
+                  </label>
+                  <Textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="min-h-[100px] resize-none border-border/50 bg-secondary/30 transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                    placeholder="Add a description..."
+                  />
+                </div>
+
+                {/* Two Column Layout for Type and Lead */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Project Type */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <Folder className="h-3 w-3" />
+                      Type
+                    </label>
+                    <Select
+                      value={projectType || 'none'}
+                      onValueChange={(v) =>
+                        setProjectType(v === 'none' ? null : (v as ProjectType))
+                      }
+                    >
+                      <SelectTrigger className="h-11 border-border/50 bg-secondary/30 transition-all focus:ring-2 focus:ring-primary/20">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                        <SelectItem value="none">No type</SelectItem>
+                        {PROJECT_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            <div className="flex items-center gap-2">
+                              <t.icon className="h-4 w-4" />
+                              {t.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Lead */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <User className="h-3 w-3" />
+                      Lead
+                    </label>
+                    <Select
+                      value={leadId || 'none'}
+                      onValueChange={(v) => setLeadId(v === 'none' ? null : v)}
+                    >
+                      <SelectTrigger className="h-11 border-border/50 bg-secondary/30 transition-all focus:ring-2 focus:ring-primary/20">
+                        <SelectValue placeholder="Select lead" />
+                      </SelectTrigger>
+                      <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                        <SelectItem value="none">No lead</SelectItem>
+                        {profiles.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.full_name || p.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Target Date */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    Target Date
+                  </label>
+                  <Input
+                    type="date"
+                    value={targetDate}
+                    onChange={(e) => setTargetDate(e.target.value)}
+                    className="h-11 border-border/50 bg-secondary/30 transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                {/* Action Buttons - Premium Style */}
+                <div className="space-y-3 pt-2">
+                  <Button
+                    size="lg"
+                    onClick={handleSave}
+                    disabled={saving || !hasChanges}
+                    className={cn(
+                      'w-full gap-2 rounded-xl font-semibold shadow-lg transition-all',
+                      hasChanges
+                        ? 'bg-primary hover:bg-primary/90 hover:shadow-xl'
+                        : saved
+                          ? 'bg-emerald-600 hover:bg-emerald-600'
+                          : 'bg-secondary text-muted-foreground hover:bg-secondary'
+                    )}
+                  >
+                    {saving ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        Saving...
+                      </>
+                    ) : saved ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Saved!
+                      </>
+                    ) : hasChanges ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Save Changes
+                      </>
+                    ) : (
+                      'No Changes'
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    onClick={handleDelete}
+                    disabled={isPending}
+                    className="w-full gap-2 rounded-xl text-red-400/80 transition-all hover:bg-red-500/10 hover:text-red-400"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete Project
+                  </Button>
+                </div>
+
+                {/* Metadata Section - Premium Card */}
+                <div className="mt-4 space-y-4 rounded-xl border border-border/50 bg-secondary/20 p-4">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Project Info
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        Created
+                      </span>
+                      <span className="font-medium">{formatDate(project.created_at)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        Updated
+                      </span>
+                      <span className="font-medium">{formatTimeAgo(project.updated_at)}</span>
+                    </div>
+                    {project.client && (
+                      <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-muted-foreground">
+                          <Building2 className="h-3.5 w-3.5" />
+                          Client
+                        </span>
+                        <span className="font-medium">{project.client.name}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -42,6 +42,7 @@ export const createTaskSchema = z.object({
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
   project_id: z.string().uuid('Invalid project ID').optional().nullable(),
   show_in_inbox: z.boolean().default(false),
+  item_type: z.enum(['task', 'issue', 'note', 'resource'] as const).default('task'),
 });
 
 export const updateTaskSchema = z.object({

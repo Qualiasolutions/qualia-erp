@@ -1,7 +1,20 @@
 'use client';
 
 import { useState, useCallback, useMemo, memo } from 'react';
-import { Plus, GripVertical, MoreVertical, Trash2, Inbox } from 'lucide-react';
+import {
+  Plus,
+  GripVertical,
+  MoreVertical,
+  Trash2,
+  Inbox,
+  CheckCircle2,
+  Circle,
+  Clock,
+  ListTodo,
+  Bug,
+  StickyNote,
+  Bookmark,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -33,49 +46,105 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
+type ItemType = 'task' | 'issue' | 'note' | 'resource';
 type TaskStatus = 'Todo' | 'In Progress' | 'Done';
 
-const STATUS_COLORS: Record<
-  TaskStatus,
-  { bg: string; border: string; text: string; headerBg: string; accent: string }
+// Item type configuration with premium colors
+const ITEM_TYPE_CONFIG: Record<
+  ItemType,
+  {
+    icon: typeof ListTodo;
+    label: string;
+    pluralLabel: string;
+    color: string;
+    bgColor: string;
+    borderColor: string;
+    gradientFrom: string;
+    gradientTo: string;
+    accentColor: string;
+  }
 > = {
-  Todo: {
-    bg: 'bg-slate-500/5',
-    border: 'border-slate-500/20',
-    text: 'text-slate-400',
-    headerBg: 'bg-gradient-to-r from-slate-500/10 to-slate-600/10',
-    accent: 'bg-slate-500',
+  task: {
+    icon: ListTodo,
+    label: 'Task',
+    pluralLabel: 'Tasks',
+    color: 'text-violet-400',
+    bgColor: 'bg-violet-500/10',
+    borderColor: 'border-violet-500/30',
+    gradientFrom: 'from-violet-500/20',
+    gradientTo: 'to-violet-600/10',
+    accentColor: 'bg-violet-500',
   },
-  'In Progress': {
-    bg: 'bg-blue-500/5',
-    border: 'border-blue-500/20',
-    text: 'text-blue-400',
-    headerBg: 'bg-gradient-to-r from-blue-500/20 to-blue-600/20',
-    accent: 'bg-blue-500',
+  issue: {
+    icon: Bug,
+    label: 'Issue',
+    pluralLabel: 'Issues',
+    color: 'text-rose-400',
+    bgColor: 'bg-rose-500/10',
+    borderColor: 'border-rose-500/30',
+    gradientFrom: 'from-rose-500/20',
+    gradientTo: 'to-rose-600/10',
+    accentColor: 'bg-rose-500',
   },
-  Done: {
-    bg: 'bg-emerald-500/5',
-    border: 'border-emerald-500/20',
-    text: 'text-emerald-400',
-    headerBg: 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/20',
-    accent: 'bg-emerald-500',
+  note: {
+    icon: StickyNote,
+    label: 'Note',
+    pluralLabel: 'Notes',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/10',
+    borderColor: 'border-amber-500/30',
+    gradientFrom: 'from-amber-500/20',
+    gradientTo: 'to-amber-600/10',
+    accentColor: 'bg-amber-500',
+  },
+  resource: {
+    icon: Bookmark,
+    label: 'Resource',
+    pluralLabel: 'Resources',
+    color: 'text-sky-400',
+    bgColor: 'bg-sky-500/10',
+    borderColor: 'border-sky-500/30',
+    gradientFrom: 'from-sky-500/20',
+    gradientTo: 'to-sky-600/10',
+    accentColor: 'bg-sky-500',
   },
 };
 
-interface TaskCardProps {
+// Status icons and colors
+const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Circle; color: string; bgColor: string }> = {
+  Todo: {
+    icon: Circle,
+    color: 'text-slate-400',
+    bgColor: 'bg-slate-500/10',
+  },
+  'In Progress': {
+    icon: Clock,
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+  },
+  Done: {
+    icon: CheckCircle2,
+    color: 'text-emerald-400',
+    bgColor: 'bg-emerald-500/10',
+  },
+};
+
+// Task already has item_type from the updated type definition
+
+interface ItemCardProps {
   task: Task;
   onDelete: () => void;
   onToggleInbox: () => void;
   isDragging?: boolean;
 }
 
-// Memoized TaskCard to prevent re-renders when sibling tasks change
-const TaskCard = memo(function TaskCard({
+// Premium Item Card with glass morphism effect
+const ItemCard = memo(function ItemCard({
   task,
   onDelete,
   onToggleInbox,
   isDragging,
-}: TaskCardProps) {
+}: ItemCardProps) {
   const {
     attributes,
     listeners,
@@ -94,153 +163,246 @@ const TaskCard = memo(function TaskCard({
   );
 
   const dragging = isDragging || sortableDragging;
+  const itemType = (task.item_type as ItemType) || 'task';
+  const typeConfig = ITEM_TYPE_CONFIG[itemType];
+  const statusConfig = STATUS_CONFIG[task.status as TaskStatus] || STATUS_CONFIG.Todo;
+  const StatusIcon = statusConfig.icon;
+  const isDone = task.status === 'Done';
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative rounded-xl border bg-card p-4 shadow-sm transition-all duration-200',
-        'hover:border-primary/30 hover:shadow-md',
-        dragging && 'z-50 rotate-1 scale-95 opacity-60 shadow-xl',
-        task.status === 'Done' && 'border-emerald-500/20 bg-emerald-500/5'
+        'group relative overflow-hidden rounded-xl border-2 bg-card/80 backdrop-blur-sm transition-all duration-300',
+        'shadow-sm hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-black/30',
+        'hover:-translate-y-0.5 hover:border-primary/40',
+        typeConfig.borderColor,
+        dragging && 'z-50 rotate-2 scale-[0.98] opacity-70 shadow-2xl ring-2 ring-primary/50',
+        isDone && 'opacity-60'
       )}
     >
-      {/* Drag Handle */}
+      {/* Gradient accent line */}
       <div
-        {...attributes}
-        {...listeners}
-        className={cn(
-          'absolute left-2 top-2 cursor-grab text-muted-foreground/50 active:cursor-grabbing',
-          'p-1 opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100'
-        )}
-      >
-        <GripVertical className="h-4 w-4" />
-      </div>
+        className={cn('absolute left-0 top-0 h-full w-1', typeConfig.accentColor, 'rounded-l-xl')}
+      />
 
-      <div className="flex items-start gap-3 pl-6">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                'text-sm font-medium',
-                task.status === 'Done' && 'text-muted-foreground line-through'
-              )}
-            >
-              {task.title}
-            </span>
-            {task.show_in_inbox && <Inbox className="h-3.5 w-3.5 text-primary" />}
+      {/* Content */}
+      <div className="p-4 pl-5">
+        {/* Header row */}
+        <div className="flex items-start gap-3">
+          {/* Drag Handle */}
+          <div
+            {...attributes}
+            {...listeners}
+            className={cn(
+              'mt-0.5 cursor-grab rounded-lg p-1.5 text-muted-foreground/40 active:cursor-grabbing',
+              'opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100'
+            )}
+          >
+            <GripVertical className="h-4 w-4" />
           </div>
-          {task.description && (
-            <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-              {task.description}
+
+          {/* Main content */}
+          <div className="min-w-0 flex-1">
+            {/* Title and badges */}
+            <div className="flex items-center gap-2">
+              <span
+                className={cn(
+                  'text-sm font-semibold leading-tight',
+                  isDone && 'text-muted-foreground line-through'
+                )}
+              >
+                {task.title}
+              </span>
             </div>
-          )}
-          {task.due_date && (
-            <div className="mt-2 text-xs text-muted-foreground">
-              Due: {new Date(task.due_date).toLocaleDateString()}
+
+            {/* Description */}
+            {task.description && (
+              <p
+                className={cn(
+                  'mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80',
+                  isDone && 'line-through'
+                )}
+              >
+                {task.description}
+              </p>
+            )}
+
+            {/* Footer badges */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {/* Status badge */}
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider',
+                  statusConfig.bgColor,
+                  statusConfig.color
+                )}
+              >
+                <StatusIcon className="h-3 w-3" />
+                {task.status}
+              </span>
+
+              {/* Due date */}
+              {task.due_date && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {new Date(task.due_date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                  })}
+                </span>
+              )}
+
+              {/* Inbox indicator */}
+              {task.show_in_inbox && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
+                  <Inbox className="h-3 w-3" />
+                </span>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Actions menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  'flex-shrink-0 rounded-lg p-1.5 text-muted-foreground/50',
+                  'opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100'
+                )}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={onToggleInbox}>
+                <Inbox className="mr-2 h-4 w-4" />
+                {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex-shrink-0 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onToggleInbox}>
-              <Inbox className="mr-2 h-4 w-4" />
-              {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onDelete} className="text-red-500">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
   );
 });
 
-interface StatusColumnProps {
-  status: TaskStatus;
+interface ItemColumnProps {
+  itemType: ItemType;
   tasks: Task[];
   projectId: string;
   onDeleteTask: (taskId: string) => void;
   onToggleInbox: (taskId: string, currentValue: boolean) => void;
-  isAddingTask: boolean;
-  newTaskTitle: string;
-  onNewTaskTitleChange: (value: string) => void;
-  onCreateTask: () => void;
-  onCancelAddTask: () => void;
-  onStartAddTask: () => void;
+  isAddingItem: boolean;
+  newItemTitle: string;
+  onNewItemTitleChange: (value: string) => void;
+  onCreateItem: () => void;
+  onCancelAddItem: () => void;
+  onStartAddItem: () => void;
   isOver?: boolean;
 }
 
-// Memoized StatusColumn to prevent re-renders when sibling columns change
-const StatusColumn = memo(function StatusColumn({
-  status,
+// Premium Item Column with glass effect
+const ItemColumn = memo(function ItemColumn({
+  itemType,
   tasks,
   onDeleteTask,
   onToggleInbox,
-  isAddingTask,
-  newTaskTitle,
-  onNewTaskTitleChange,
-  onCreateTask,
-  onCancelAddTask,
-  onStartAddTask,
+  isAddingItem,
+  newItemTitle,
+  onNewItemTitleChange,
+  onCreateItem,
+  onCancelAddItem,
+  onStartAddItem,
   isOver,
-}: StatusColumnProps) {
-  const { setNodeRef } = useSortable({ id: status });
-  const colors = STATUS_COLORS[status];
+}: ItemColumnProps) {
+  const { setNodeRef } = useSortable({ id: itemType });
+  const config = ITEM_TYPE_CONFIG[itemType];
+  const TypeIcon = config.icon;
   const count = tasks.length;
+  const doneCount = tasks.filter((t) => t.status === 'Done').length;
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'flex h-full min-w-[320px] max-w-[320px] flex-col rounded-xl border transition-all duration-200',
-        colors.border,
-        colors.bg,
-        isOver && 'scale-[1.02] shadow-lg ring-2 ring-primary/50'
+        'flex h-full min-w-[340px] flex-col rounded-2xl border-2 transition-all duration-300',
+        'bg-gradient-to-b from-card/90 to-card/70 backdrop-blur-md',
+        'shadow-lg shadow-black/5 dark:shadow-black/20',
+        config.borderColor,
+        isOver && 'scale-[1.02] shadow-xl ring-2 ring-primary/60'
       )}
     >
-      {/* Column Header */}
+      {/* Column Header - Premium */}
       <div
         className={cn(
-          'flex items-center justify-between rounded-t-xl border-b px-4 py-3',
-          colors.headerBg,
-          colors.border
+          'relative overflow-hidden rounded-t-2xl border-b-2 px-5 py-4',
+          config.borderColor,
+          `bg-gradient-to-br ${config.gradientFrom} ${config.gradientTo}`
         )}
       >
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold">{status}</h3>
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold',
-              colors.bg,
-              colors.text
-            )}
-          >
-            {count}
-          </span>
+        {/* Background decoration */}
+        <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
+        <div className="bg-white/3 absolute -bottom-2 -left-2 h-16 w-16 rounded-full blur-xl" />
+
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-xl',
+                'shadow-lg shadow-black/10 ring-2 ring-white/10',
+                config.bgColor
+              )}
+            >
+              <TypeIcon className={cn('h-5 w-5', config.color)} />
+            </div>
+            <div>
+              <h3 className="text-base font-bold tracking-tight text-foreground">
+                {config.pluralLabel}
+              </h3>
+              <p className="text-xs text-muted-foreground/70">
+                {doneCount}/{count} completed
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'inline-flex h-8 w-8 items-center justify-center rounded-lg text-lg font-black',
+                config.bgColor,
+                config.color
+              )}
+            >
+              {count}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onStartAddItem}
+              className={cn(
+                'h-9 w-9 rounded-xl p-0 transition-all hover:scale-110',
+                config.bgColor,
+                config.color
+              )}
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={onStartAddTask} className="h-7 w-7 p-0">
-          <Plus className="h-4 w-4" />
-        </Button>
       </div>
 
-      {/* Tasks List */}
-      <div className="min-h-[200px] flex-1 space-y-2 overflow-y-auto p-3">
+      {/* Items List */}
+      <div className="flex-1 space-y-3 overflow-y-auto p-4">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <TaskCard
+            <ItemCard
               key={task.id}
               task={task}
               onDelete={() => onDeleteTask(task.id)}
@@ -249,21 +411,28 @@ const StatusColumn = memo(function StatusColumn({
           ))}
         </SortableContext>
 
-        {/* Add Task Form */}
-        {isAddingTask && (
-          <div className="space-y-2 rounded-xl border-2 border-primary/30 bg-primary/5 p-3 duration-200 animate-in fade-in slide-in-from-top-2">
+        {/* Add Item Form */}
+        {isAddingItem && (
+          <div
+            className={cn(
+              'overflow-hidden rounded-xl border-2 p-4',
+              'bg-gradient-to-br from-primary/5 to-primary/10',
+              'border-primary/30 shadow-lg',
+              'duration-300 animate-in fade-in slide-in-from-top-2'
+            )}
+          >
             <Input
-              placeholder="Task title"
-              value={newTaskTitle}
-              onChange={(e) => onNewTaskTitleChange(e.target.value)}
-              className="h-9 border-primary/30 bg-background text-sm focus:border-primary"
+              placeholder={`New ${config.label.toLowerCase()} title...`}
+              value={newItemTitle}
+              onChange={(e) => onNewItemTitleChange(e.target.value)}
+              className="mb-3 h-10 border-primary/20 bg-background/80 text-sm font-medium focus:border-primary"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  onCreateTask();
+                  onCreateItem();
                 }
                 if (e.key === 'Escape') {
-                  onCancelAddTask();
+                  onCancelAddItem();
                 }
               }}
               autoFocus
@@ -271,23 +440,38 @@ const StatusColumn = memo(function StatusColumn({
             <div className="flex gap-2">
               <Button
                 size="sm"
-                onClick={onCreateTask}
-                disabled={!newTaskTitle.trim()}
-                className="h-8 flex-1 bg-qualia-600 hover:bg-qualia-500"
+                onClick={onCreateItem}
+                disabled={!newItemTitle.trim()}
+                className="h-9 flex-1 bg-primary font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
               >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Add
+                <Plus className="mr-1.5 h-4 w-4" />
+                Add {config.label}
               </Button>
-              <Button size="sm" variant="ghost" onClick={onCancelAddTask} className="h-8">
+              <Button size="sm" variant="ghost" onClick={onCancelAddItem} className="h-9 px-4">
                 Cancel
               </Button>
             </div>
           </div>
         )}
 
-        {tasks.length === 0 && !isAddingTask && (
-          <div className="flex h-32 items-center justify-center">
-            <p className="text-xs text-muted-foreground">No tasks</p>
+        {/* Empty state */}
+        {tasks.length === 0 && !isAddingItem && (
+          <div className="flex h-40 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/50 bg-secondary/20">
+            <div className={cn('mb-3 rounded-xl p-3', config.bgColor)}>
+              <TypeIcon className={cn('h-6 w-6', config.color)} />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground/70">
+              No {config.pluralLabel.toLowerCase()}
+            </p>
+            <button
+              onClick={onStartAddItem}
+              className={cn(
+                'mt-2 text-xs font-semibold transition-colors hover:underline',
+                config.color
+              )}
+            >
+              + Add first {config.label.toLowerCase()}
+            </button>
           </div>
         )}
       </div>
@@ -300,11 +484,12 @@ interface ProjectTaskKanbanProps {
 }
 
 export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
-  const { tasks, isLoading, revalidate } = useProjectTasks(projectId);
+  const { tasks: rawTasks, isLoading, revalidate } = useProjectTasks(projectId);
+  const tasks = rawTasks;
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
-  const [addingToStatus, setAddingToStatus] = useState<TaskStatus | null>(null);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [addingToType, setAddingToType] = useState<ItemType | null>(null);
+  const [newItemTitle, setNewItemTitle] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -314,21 +499,23 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     })
   );
 
-  // Group tasks by status
-  const tasksByStatus = useMemo(() => {
-    const grouped: Record<TaskStatus, Task[]> = {
-      Todo: [],
-      'In Progress': [],
-      Done: [],
+  // Group tasks by item type
+  const tasksByType = useMemo(() => {
+    const grouped: Record<ItemType, Task[]> = {
+      task: [],
+      issue: [],
+      note: [],
+      resource: [],
     };
     tasks.forEach((task) => {
-      if (grouped[task.status as TaskStatus]) {
-        grouped[task.status as TaskStatus].push(task);
+      const type = (task.item_type as ItemType) || 'task';
+      if (grouped[type]) {
+        grouped[type].push(task);
       }
     });
-    // Sort by sort_order within each status
-    Object.keys(grouped).forEach((status) => {
-      grouped[status as TaskStatus].sort((a, b) => a.sort_order - b.sort_order);
+    // Sort by sort_order within each type
+    Object.keys(grouped).forEach((type) => {
+      grouped[type as ItemType].sort((a, b) => a.sort_order - b.sort_order);
     });
     return grouped;
   }, [tasks]);
@@ -337,7 +524,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
 
   // Progress calculation
   const totalTasks = tasks.length;
-  const doneTasks = tasksByStatus['Done'].length;
+  const doneTasks = tasks.filter((t) => t.status === 'Done').length;
   const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -360,32 +547,19 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
       const activeTaskId = active.id as string;
       const overId = over.id as string;
 
-      // Find the active task
       const activeTask = tasks.find((t) => t.id === activeTaskId);
       if (!activeTask) return;
 
-      // Determine target status - either the column or another task's column
-      let targetStatus: TaskStatus;
-      const isOverColumn = ['Todo', 'In Progress', 'Done'].includes(overId);
+      // Check if over a column or a task
+      const isOverColumn = ['task', 'issue', 'note', 'resource'].includes(overId);
+      const activeType = (activeTask.item_type as ItemType) || 'task';
 
       if (isOverColumn) {
-        targetStatus = overId as TaskStatus;
-      } else {
-        const overTask = tasks.find((t) => t.id === overId);
-        if (!overTask) return;
-        targetStatus = overTask.status as TaskStatus;
-      }
-
-      // Get tasks in target column
-      const targetColumnTasks = [...tasksByStatus[targetStatus]];
-      const sourceColumnTasks = [...tasksByStatus[activeTask.status as TaskStatus]];
-
-      // If same column, just reorder
-      if (activeTask.status === targetStatus) {
+        // Dropped on empty column - just reorder within same type for now
+        // (changing type would require database update)
+        const targetColumnTasks = [...tasksByType[activeType]];
         const oldIndex = targetColumnTasks.findIndex((t) => t.id === activeTaskId);
-        const newIndex = isOverColumn
-          ? targetColumnTasks.length
-          : targetColumnTasks.findIndex((t) => t.id === overId);
+        const newIndex = targetColumnTasks.length - 1;
 
         if (oldIndex !== newIndex && newIndex !== -1) {
           const reordered = arrayMove(targetColumnTasks, oldIndex, newIndex);
@@ -398,36 +572,32 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
           invalidateInboxTasks();
         }
       } else {
-        // Moving to different column
-        // Remove from source
-        const sourceIndex = sourceColumnTasks.findIndex((t) => t.id === activeTaskId);
-        sourceColumnTasks.splice(sourceIndex, 1);
+        // Dropped on a task
+        const overTask = tasks.find((t) => t.id === overId);
+        if (!overTask) return;
 
-        // Add to target
-        const targetIndex = isOverColumn
-          ? targetColumnTasks.length
-          : targetColumnTasks.findIndex((t) => t.id === overId);
-        targetColumnTasks.splice(targetIndex, 0, activeTask);
+        const overType = (overTask.item_type as ItemType) || 'task';
 
-        // Update all affected tasks
-        const updates = [
-          ...sourceColumnTasks.map((task, index) => ({
-            id: task.id,
-            sort_order: index,
-          })),
-          ...targetColumnTasks.map((task, index) => ({
-            id: task.id,
-            sort_order: index,
-            status: task.id === activeTaskId ? targetStatus : undefined,
-          })),
-        ];
+        // Only reorder within same type
+        if (activeType === overType) {
+          const columnTasks = [...tasksByType[activeType]];
+          const oldIndex = columnTasks.findIndex((t) => t.id === activeTaskId);
+          const newIndex = columnTasks.findIndex((t) => t.id === overId);
 
-        await reorderTasks(updates);
-        revalidate();
-        invalidateInboxTasks();
+          if (oldIndex !== newIndex && newIndex !== -1) {
+            const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+            const updates = reordered.map((task, index) => ({
+              id: task.id,
+              sort_order: index,
+            }));
+            await reorderTasks(updates);
+            revalidate();
+            invalidateInboxTasks();
+          }
+        }
       }
     },
-    [tasks, tasksByStatus, revalidate]
+    [tasks, tasksByType, revalidate]
   );
 
   const handleDeleteTask = useCallback(
@@ -448,52 +618,80 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     [revalidate]
   );
 
-  const handleCreateTask = useCallback(
-    async (status: TaskStatus) => {
-      if (!newTaskTitle.trim()) return;
+  const handleCreateItem = useCallback(
+    async (itemType: ItemType) => {
+      if (!newItemTitle.trim()) return;
 
       const formData = new FormData();
-      formData.set('title', newTaskTitle.trim());
-      formData.set('status', status);
+      formData.set('title', newItemTitle.trim());
+      formData.set('status', 'Todo');
       formData.set('project_id', projectId);
       formData.set('show_in_inbox', 'false');
+      formData.set('item_type', itemType);
 
       await createTask(formData);
-      setNewTaskTitle('');
-      setAddingToStatus(null);
+      setNewItemTitle('');
+      setAddingToType(null);
       revalidate();
       invalidateProjectTasks(projectId);
     },
-    [newTaskTitle, projectId, revalidate]
+    [newItemTitle, projectId, revalidate]
   );
 
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="text-muted-foreground">Loading tasks...</div>
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="font-medium">Loading items...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Progress Bar */}
-      <div className="flex items-center gap-4 rounded-lg border bg-card p-4">
-        <div className="flex-1">
-          <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium">Progress</span>
-            <span className="text-muted-foreground">
-              {doneTasks} of {totalTasks} tasks completed
-            </span>
+    <div className="space-y-6">
+      {/* Progress Bar - Premium */}
+      <div className="overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-r from-card to-card/80 p-5 shadow-lg">
+        <div className="flex items-center gap-6">
+          <div className="flex-1">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-bold tracking-tight text-foreground">
+                Project Progress
+              </span>
+              <span className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">{doneTasks}</span> of{' '}
+                <span className="font-semibold text-foreground">{totalTasks}</span> items completed
+              </span>
+            </div>
+            <div className="h-3 overflow-hidden rounded-full bg-secondary/50 shadow-inner">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-700 ease-out',
+                  progress === 100
+                    ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400'
+                    : progress >= 50
+                      ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400'
+                      : 'bg-gradient-to-r from-violet-600 via-violet-500 to-violet-400'
+                )}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
+          <div
+            className={cn(
+              'flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black',
+              'shadow-lg ring-2 ring-white/10',
+              progress === 100
+                ? 'bg-emerald-500/20 text-emerald-400'
+                : progress >= 50
+                  ? 'bg-blue-500/20 text-blue-400'
+                  : 'bg-violet-500/20 text-violet-400'
+            )}
+          >
+            {progress}%
           </div>
         </div>
-        <div className="text-2xl font-bold text-emerald-500">{progress}%</div>
       </div>
 
       {/* Kanban Board */}
@@ -504,26 +702,26 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          <SortableContext items={['Todo', 'In Progress', 'Done']}>
-            {(['Todo', 'In Progress', 'Done'] as TaskStatus[]).map((status) => (
-              <StatusColumn
-                key={status}
-                status={status}
-                tasks={tasksByStatus[status]}
+        <div className="flex gap-5 overflow-x-auto pb-4">
+          <SortableContext items={['task', 'issue', 'note', 'resource']}>
+            {(['task', 'issue', 'note', 'resource'] as ItemType[]).map((itemType) => (
+              <ItemColumn
+                key={itemType}
+                itemType={itemType}
+                tasks={tasksByType[itemType]}
                 projectId={projectId}
                 onDeleteTask={handleDeleteTask}
                 onToggleInbox={handleToggleInbox}
-                isAddingTask={addingToStatus === status}
-                newTaskTitle={addingToStatus === status ? newTaskTitle : ''}
-                onNewTaskTitleChange={setNewTaskTitle}
-                onCreateTask={() => handleCreateTask(status)}
-                onCancelAddTask={() => {
-                  setAddingToStatus(null);
-                  setNewTaskTitle('');
+                isAddingItem={addingToType === itemType}
+                newItemTitle={addingToType === itemType ? newItemTitle : ''}
+                onNewItemTitleChange={setNewItemTitle}
+                onCreateItem={() => handleCreateItem(itemType)}
+                onCancelAddItem={() => {
+                  setAddingToType(null);
+                  setNewItemTitle('');
                 }}
-                onStartAddTask={() => setAddingToStatus(status)}
-                isOver={overId === status}
+                onStartAddItem={() => setAddingToType(itemType)}
+                isOver={overId === itemType}
               />
             ))}
           </SortableContext>
@@ -531,7 +729,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
 
         <DragOverlay>
           {activeTask && (
-            <TaskCard task={activeTask} onDelete={() => {}} onToggleInbox={() => {}} isDragging />
+            <ItemCard task={activeTask} onDelete={() => {}} onToggleInbox={() => {}} isDragging />
           )}
         </DragOverlay>
       </DndContext>
