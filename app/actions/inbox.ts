@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from '@/app/actions';
+import { notifyTaskCreated } from '@/lib/email';
 
 export type ActionResult = {
   success: boolean;
@@ -218,6 +219,23 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     console.error('[createTask] Error creating task:', error);
     return { success: false, error: error.message };
   }
+
+  // Send email notification to other admins (async, don't block response)
+  // Get project name for the email
+  let projectName: string | undefined;
+  if (project_id) {
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name')
+      .eq('id', project_id)
+      .single();
+    projectName = project?.name;
+  }
+
+  // Send notification (fire and forget - don't wait for it)
+  notifyTaskCreated(user.id, title.trim(), data.id, projectName, due_date || undefined).catch(
+    (err) => console.error('[createTask] Failed to send email notification:', err)
+  );
 
   revalidatePath('/inbox');
   return { success: true, data };

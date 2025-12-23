@@ -18,6 +18,12 @@ import {
   createProjectWizardSchema,
   type CreateProjectWizardInput,
 } from '@/lib/validation';
+import {
+  notifyProjectCreated,
+  notifyMeetingCreated,
+  notifyClientCreated,
+  notifyIssueCreated,
+} from '@/lib/email';
 
 export type ActionResult = {
   success: boolean;
@@ -480,6 +486,22 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
     { title: data.title, priority: data.priority }
   );
 
+  // Send email notification to other admins (fire and forget)
+  // Get project name for the email
+  let projectName: string | undefined;
+  if (project_id) {
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name')
+      .eq('id', project_id)
+      .single();
+    projectName = project?.name;
+  }
+
+  notifyIssueCreated(user.id, title.trim(), data.id, priority || undefined, projectName).catch(
+    (err) => console.error('[createIssue] Failed to send email notification:', err)
+  );
+
   revalidatePath('/issues');
   revalidatePath('/hub');
   revalidatePath('/board');
@@ -552,6 +574,18 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
       workspace_id: wsId,
     },
     { name: data.name, status: data.status }
+  );
+
+  // Send email notification to other admins (fire and forget)
+  // Get team name for the email
+  let teamName: string | undefined;
+  if (team_id) {
+    const { data: team } = await supabase.from('teams').select('name').eq('id', team_id).single();
+    teamName = team?.name;
+  }
+
+  notifyProjectCreated(user.id, name.trim(), data.id, teamName, target_date || undefined).catch(
+    (err) => console.error('[createProject] Failed to send email notification:', err)
   );
 
   revalidatePath('/projects');
@@ -1209,6 +1243,11 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
     return { success: false, error: error.message };
   }
 
+  // Send email notification to other admins (fire and forget)
+  notifyClientCreated(user.id, display_name.trim(), data.id, lead_status || undefined).catch(
+    (err) => console.error('[createClientRecord] Failed to send email notification:', err)
+  );
+
   revalidatePath('/clients');
   return { success: true, data };
 }
@@ -1569,6 +1608,40 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     },
     { title: title.trim(), start_time, end_time }
   );
+
+  // Send email notification to other admins (fire and forget)
+  // Get client name for the email if meeting is with a client
+  let clientName: string | undefined;
+  if (client_id) {
+    const { data: client } = await supabase
+      .from('clients')
+      .select('display_name')
+      .eq('id', client_id)
+      .single();
+    clientName = client?.display_name;
+  }
+
+  // Format times for email
+  const formattedStart = start_time
+    ? new Date(start_time).toLocaleString('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : undefined;
+  const formattedEnd = end_time
+    ? new Date(end_time).toLocaleString('en-US', {
+        timeStyle: 'short',
+      })
+    : undefined;
+
+  notifyMeetingCreated(
+    user.id,
+    title.trim(),
+    data.id,
+    formattedStart,
+    formattedEnd,
+    clientName
+  ).catch((err) => console.error('[createMeeting] Failed to send email notification:', err));
 
   revalidatePath('/schedule');
   revalidatePath('/'); // Also revalidate dashboard to show new activity
