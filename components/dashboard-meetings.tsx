@@ -272,33 +272,45 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
   if (meetings.length === 0) {
     return (
-      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
-        <MeetingsHeader showMeetButton={false} />
-        <CardContent className="flex flex-1 items-center justify-center p-4 sm:p-6">
-          <div className="space-y-3 text-center">
-            <CalendarDays className="mx-auto h-7 w-7 opacity-20 sm:h-8 sm:w-8" />
-            <p className="text-xs text-muted-foreground sm:text-sm">No meetings scheduled</p>
-            <div className="flex flex-col items-center gap-2 sm:flex-row">
-              <button
-                onClick={handleInstantMeeting}
-                className={cn(
-                  'flex h-9 items-center gap-1.5 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition-all sm:h-10 sm:px-4',
-                  'active:scale-95 sm:hover:bg-emerald-600'
-                )}
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Start Meet
-              </button>
-              <Link
-                href="/schedule"
-                className="text-xs font-medium text-qualia-500 transition-colors hover:text-qualia-600 hover:underline dark:hover:text-qualia-400"
-              >
-                View schedule
-              </Link>
+      <>
+        <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+          <MeetingsHeader showMeetButton={false} />
+          <CardContent className="flex flex-1 items-center justify-center p-4 sm:p-6">
+            <div className="space-y-3 text-center">
+              <CalendarDays className="mx-auto h-7 w-7 opacity-20 sm:h-8 sm:w-8" />
+              <p className="text-xs text-muted-foreground sm:text-sm">No meetings scheduled</p>
+              <div className="flex flex-col items-center gap-2 sm:flex-row">
+                <button
+                  onClick={() => setShowNewMeetingModal(true)}
+                  className={cn(
+                    'flex h-9 items-center gap-1.5 rounded-lg bg-qualia-500 px-3 text-xs font-semibold text-white transition-all sm:h-10 sm:px-4',
+                    'active:scale-95 sm:hover:bg-qualia-600'
+                  )}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New Meeting
+                </button>
+                <button
+                  onClick={handleInstantMeeting}
+                  className={cn(
+                    'flex h-9 items-center gap-1.5 rounded-lg border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-500 transition-all sm:h-10 sm:px-4',
+                    'active:scale-95 sm:hover:bg-emerald-500 sm:hover:text-white'
+                  )}
+                >
+                  <Video className="h-3.5 w-3.5" />
+                  Instant Meet
+                </button>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        {/* New Meeting Modal for empty state */}
+        <NewMeetingModalInline
+          open={showNewMeetingModal}
+          onOpenChange={setShowNewMeetingModal}
+          onMeetingCreated={handleMeetingCreated}
+        />
+      </>
     );
   }
 
