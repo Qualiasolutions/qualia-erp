@@ -103,7 +103,7 @@ export async function getTasks(
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects!tasks_project_id_fkey (id, name, project_type)
+      project:projects (id, name, project_type)
     `
     )
     .eq('workspace_id', wsId)
@@ -417,7 +417,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects!tasks_project_id_fkey (id, name, project_type)
+      project:projects (id, name, project_type)
     `
     )
     .eq('project_id', projectId)
