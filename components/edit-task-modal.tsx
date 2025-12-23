@@ -83,7 +83,9 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
 
         // Invalidate caches for refresh
         invalidateInboxTasks();
-        invalidateProjectTasks(task.project_id);
+        if (task.project_id) {
+          invalidateProjectTasks(task.project_id);
+        }
 
         return { success: true, error: null };
       } else {

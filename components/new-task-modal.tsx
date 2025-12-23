@@ -65,32 +65,29 @@ export function NewTaskModal() {
       if (open && (e.metaKey || e.ctrlKey) && e.key === 'Enter') {
         e.preventDefault();
         const form = document.getElementById('new-task-form') as HTMLFormElement;
-        if (form && title.trim() && projectId) {
+        if (form && title.trim()) {
           form.requestSubmit();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, title, projectId]);
+  }, [open, title]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!projectId) {
-      setError('Please select a project');
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
     const formData = new FormData();
     formData.set('title', title);
     formData.set('description', description);
-    formData.set('project_id', projectId);
     formData.set('status', 'Todo');
     formData.set('show_in_inbox', showInInbox ? 'true' : 'false');
 
+    if (projectId) {
+      formData.set('project_id', projectId);
+    }
     if (assigneeId) {
       formData.set('assignee_id', assigneeId);
     }
@@ -103,7 +100,9 @@ export function NewTaskModal() {
     if (result.success) {
       setSuccess(true);
       invalidateInboxTasks();
-      invalidateProjectTasks(projectId);
+      if (projectId) {
+        invalidateProjectTasks(projectId);
+      }
 
       // Close after brief success animation
       setTimeout(() => {
@@ -374,7 +373,7 @@ export function NewTaskModal() {
                   </p>
                   <Button
                     type="submit"
-                    disabled={loading || !title.trim() || !projectId}
+                    disabled={loading || !title.trim()}
                     className="min-w-[100px]"
                   >
                     {loading ? (

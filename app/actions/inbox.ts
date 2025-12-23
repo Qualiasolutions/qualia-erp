@@ -18,7 +18,7 @@ export type Task = {
   workspace_id: string;
   creator_id: string | null;
   assignee_id: string | null;
-  project_id: string;
+  project_id: string | null;
   title: string;
   description: string | null;
   status: 'Todo' | 'In Progress' | 'Done';
@@ -41,11 +41,11 @@ export type Task = {
     email: string | null;
     avatar_url: string | null;
   } | null;
-  project: {
+  project?: {
     id: string;
     name: string;
     project_type: string | null;
-  };
+  } | null;
 };
 
 /**
@@ -207,10 +207,10 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,
-      project_id,
+      project_id: project_id || null,
       due_date: due_date || null,
       sort_order: nextSortOrder,
-      show_in_inbox: show_in_inbox ?? false,
+      show_in_inbox: show_in_inbox ?? true, // Default to true when no project
     })
     .select()
     .single();

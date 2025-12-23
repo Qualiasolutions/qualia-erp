@@ -40,7 +40,7 @@ export const createTaskSchema = z.object({
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   due_date: z.string().optional().nullable(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
-  project_id: z.string().uuid('Project is required'),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
   show_in_inbox: z.boolean().default(false),
 });
 
