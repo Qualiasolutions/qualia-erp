@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn, getInitials } from '@/lib/utils';
+import { renderTextWithLinks } from '@/lib/render-links';
 import type { Task } from '@/app/actions/inbox';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import {
@@ -75,7 +76,9 @@ function TaskCardComponent({ task, onDelete }: TaskCardProps) {
             </div>
 
             {task.description && (
-              <p className="mb-2 line-clamp-2 text-xs text-muted-foreground">{task.description}</p>
+              <p className="mb-2 line-clamp-2 text-xs text-muted-foreground">
+                {renderTextWithLinks(task.description)}
+              </p>
             )}
 
             <div className="flex flex-wrap items-center gap-2">

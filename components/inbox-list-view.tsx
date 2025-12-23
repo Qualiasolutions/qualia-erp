@@ -24,6 +24,7 @@ import type { Task } from '@/app/actions/inbox';
 import { reorderTasks, deleteTask } from '@/app/actions/inbox';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { renderTextWithLinks } from '@/lib/render-links';
 import { Button } from '@/components/ui/button';
 import { EditTaskModal } from '@/components/edit-task-modal';
 
@@ -148,7 +149,9 @@ const SortableTaskRow = memo(function SortableTaskRow({
           )}
         </div>
         {task.description && (
-          <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">{task.description}</p>
+          <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">
+            {renderTextWithLinks(task.description)}
+          </p>
         )}
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {task.due_date && (

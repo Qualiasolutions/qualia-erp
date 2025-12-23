@@ -14,16 +14,19 @@ import {
   Bug,
   StickyNote,
   Bookmark,
+  ExternalLink,
+  Link as LinkIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
+  useDroppable,
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
@@ -38,6 +41,7 @@ import { createTask, deleteTask, reorderTasks, toggleTaskInbox } from '@/app/act
 import type { Task } from '@/app/actions/inbox';
 import { useProjectTasks, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { cn } from '@/lib/utils';
+import { renderTextWithLinks, extractFirstUrl } from '@/lib/render-links';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -129,30 +133,21 @@ const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Circle; color: string; bg
   },
 };
 
-// Task already has item_type from the updated type definition
-
-interface ItemCardProps {
+interface SortableItemCardProps {
   task: Task;
   onDelete: () => void;
   onToggleInbox: () => void;
-  isDragging?: boolean;
 }
 
-// Premium Item Card with glass morphism effect
-const ItemCard = memo(function ItemCard({
+// Sortable Item Card
+const SortableItemCard = memo(function SortableItemCard({
   task,
   onDelete,
   onToggleInbox,
-  isDragging,
-}: ItemCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging: sortableDragging,
-  } = useSortable({ id: task.id });
+}: SortableItemCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
 
   const style = useMemo(
     () => ({
@@ -162,7 +157,6 @@ const ItemCard = memo(function ItemCard({
     [transform, transition]
   );
 
-  const dragging = isDragging || sortableDragging;
   const itemType = (task.item_type as ItemType) || 'task';
   const typeConfig = ITEM_TYPE_CONFIG[itemType];
   const statusConfig = STATUS_CONFIG[task.status as TaskStatus] || STATUS_CONFIG.Todo;
@@ -174,79 +168,65 @@ const ItemCard = memo(function ItemCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative overflow-hidden rounded-xl border-2 bg-card/80 backdrop-blur-sm transition-all duration-300',
-        'shadow-sm hover:shadow-lg hover:shadow-black/10 dark:hover:shadow-black/30',
-        'hover:-translate-y-0.5 hover:border-primary/40',
+        'group relative overflow-hidden rounded-xl border bg-card/90 backdrop-blur-sm transition-all duration-200',
+        'shadow-sm hover:border-primary/30 hover:shadow-md',
         typeConfig.borderColor,
-        dragging && 'z-50 rotate-2 scale-[0.98] opacity-70 shadow-2xl ring-2 ring-primary/50',
+        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50',
         isDone && 'opacity-60'
       )}
     >
-      {/* Gradient accent line */}
-      <div
-        className={cn('absolute left-0 top-0 h-full w-1', typeConfig.accentColor, 'rounded-l-xl')}
-      />
+      {/* Accent line */}
+      <div className={cn('absolute left-0 top-0 h-full w-1', typeConfig.accentColor)} />
 
-      {/* Content */}
-      <div className="p-4 pl-5">
-        {/* Header row */}
-        <div className="flex items-start gap-3">
+      <div className="p-3 pl-4">
+        <div className="flex items-start gap-2">
           {/* Drag Handle */}
           <div
             {...attributes}
             {...listeners}
-            className={cn(
-              'mt-0.5 cursor-grab rounded-lg p-1.5 text-muted-foreground/40 active:cursor-grabbing',
-              'opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100'
-            )}
+            className="mt-0.5 cursor-grab rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary hover:text-foreground active:cursor-grabbing group-hover:opacity-100"
           >
             <GripVertical className="h-4 w-4" />
           </div>
 
-          {/* Main content */}
+          {/* Content */}
           <div className="min-w-0 flex-1">
-            {/* Title and badges */}
-            <div className="flex items-center gap-2">
-              <span
-                className={cn(
-                  'text-sm font-semibold leading-tight',
-                  isDone && 'text-muted-foreground line-through'
-                )}
-              >
-                {task.title}
-              </span>
-            </div>
+            <span
+              className={cn(
+                'text-sm font-medium leading-tight',
+                isDone && 'text-muted-foreground line-through'
+              )}
+            >
+              {task.title}
+            </span>
 
-            {/* Description */}
             {task.description && (
               <p
                 className={cn(
-                  'mt-1.5 line-clamp-2 text-xs leading-relaxed text-muted-foreground/80',
+                  'mt-1 line-clamp-2 text-xs text-muted-foreground/80',
                   isDone && 'line-through'
                 )}
               >
-                {task.description}
+                {renderTextWithLinks(task.description)}
               </p>
             )}
 
-            {/* Footer badges */}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {/* Status badge */}
+            {/* Badges */}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <span
                 className={cn(
-                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider',
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
                   statusConfig.bgColor,
                   statusConfig.color
                 )}
               >
-                <StatusIcon className="h-3 w-3" />
+                <StatusIcon className="h-2.5 w-2.5" />
                 {task.status}
               </span>
 
-              {/* Due date */}
               {task.due_date && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                  <Clock className="h-3 w-3" />
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] text-muted-foreground">
+                  <Clock className="h-2.5 w-2.5" />
                   {new Date(task.due_date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -254,29 +234,25 @@ const ItemCard = memo(function ItemCard({
                 </span>
               )}
 
-              {/* Inbox indicator */}
               {task.show_in_inbox && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[10px] font-medium text-primary">
-                  <Inbox className="h-3 w-3" />
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+                  <Inbox className="h-2.5 w-2.5" />
                 </span>
               )}
             </div>
           </div>
 
-          {/* Actions menu */}
+          {/* Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className={cn(
-                  'flex-shrink-0 rounded-lg p-1.5 text-muted-foreground/50',
-                  'opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100'
-                )}
+                className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100"
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem onClick={onToggleInbox}>
                 <Inbox className="mr-2 h-4 w-4" />
                 {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
@@ -294,10 +270,142 @@ const ItemCard = memo(function ItemCard({
   );
 });
 
-interface ItemColumnProps {
-  itemType: ItemType;
+// Overlay card for drag preview
+const DragOverlayCard = memo(function DragOverlayCard({ task }: { task: Task }) {
+  const itemType = (task.item_type as ItemType) || 'task';
+  const typeConfig = ITEM_TYPE_CONFIG[itemType];
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl border bg-card/95 p-3 shadow-2xl backdrop-blur-sm',
+        typeConfig.borderColor
+      )}
+    >
+      <div
+        className={cn('absolute left-0 top-0 h-full w-1 rounded-l-xl', typeConfig.accentColor)}
+      />
+      <div className="pl-3">
+        <span className="text-sm font-medium">{task.title}</span>
+      </div>
+    </div>
+  );
+});
+
+// Resource Card - Compact horizontal layout
+const ResourceCard = memo(function ResourceCard({
+  task,
+  onDelete,
+  onToggleInbox,
+}: {
+  task: Task;
+  onDelete: () => void;
+  onToggleInbox: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+  });
+
+  const style = useMemo(
+    () => ({
+      transform: CSS.Transform.toString(transform),
+      transition,
+    }),
+    [transform, transition]
+  );
+
+  const config = ITEM_TYPE_CONFIG.resource;
+
+  // Check if description contains a URL
+  const linkUrl = extractFirstUrl(task.description);
+  const hasLink = !!linkUrl;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'group relative flex items-center gap-3 rounded-xl border bg-card/90 px-4 py-3 backdrop-blur-sm transition-all',
+        'hover:border-sky-400/50 hover:shadow-md',
+        config.borderColor,
+        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50'
+      )}
+    >
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary active:cursor-grabbing group-hover:opacity-100"
+      >
+        <GripVertical className="h-4 w-4" />
+      </div>
+
+      {/* Icon */}
+      <div
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+          config.bgColor
+        )}
+      >
+        {hasLink ? (
+          <LinkIcon className={cn('h-4 w-4', config.color)} />
+        ) : (
+          <Bookmark className={cn('h-4 w-4', config.color)} />
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium">{task.title}</span>
+          {hasLink && linkUrl && (
+            <a
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 rounded-full bg-sky-500/10 p-1.5 text-sky-400 transition-colors hover:bg-sky-500/20"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
+        {task.description && !hasLink && (
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{task.description}</p>
+        )}
+        {hasLink && linkUrl && <p className="mt-0.5 truncate text-xs text-sky-400/70">{linkUrl}</p>}
+      </div>
+
+      {/* Actions */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary group-hover:opacity-100"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={onToggleInbox}>
+            <Inbox className="mr-2 h-4 w-4" />
+            {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+});
+
+// Droppable Column Component
+interface DroppableColumnProps {
+  id: ItemType;
   tasks: Task[];
-  projectId: string;
   onDeleteTask: (taskId: string) => void;
   onToggleInbox: (taskId: string, currentValue: boolean) => void;
   isAddingItem: boolean;
@@ -306,12 +414,10 @@ interface ItemColumnProps {
   onCreateItem: () => void;
   onCancelAddItem: () => void;
   onStartAddItem: () => void;
-  isOver?: boolean;
 }
 
-// Premium Item Column with glass effect
-const ItemColumn = memo(function ItemColumn({
-  itemType,
+const DroppableColumn = memo(function DroppableColumn({
+  id,
   tasks,
   onDeleteTask,
   onToggleInbox,
@@ -321,10 +427,9 @@ const ItemColumn = memo(function ItemColumn({
   onCreateItem,
   onCancelAddItem,
   onStartAddItem,
-  isOver,
-}: ItemColumnProps) {
-  const { setNodeRef } = useSortable({ id: itemType });
-  const config = ITEM_TYPE_CONFIG[itemType];
+}: DroppableColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  const config = ITEM_TYPE_CONFIG[id];
   const TypeIcon = config.icon;
   const count = tasks.length;
   const doneCount = tasks.filter((t) => t.status === 'Done').length;
@@ -333,76 +438,47 @@ const ItemColumn = memo(function ItemColumn({
     <div
       ref={setNodeRef}
       className={cn(
-        'flex h-full min-w-[340px] flex-col rounded-2xl border-2 transition-all duration-300',
-        'bg-gradient-to-b from-card/90 to-card/70 backdrop-blur-md',
-        'shadow-lg shadow-black/5 dark:shadow-black/20',
+        'flex min-w-[320px] flex-1 flex-col rounded-2xl border bg-card/50 backdrop-blur-sm transition-all',
         config.borderColor,
-        isOver && 'scale-[1.02] shadow-xl ring-2 ring-primary/60'
+        isOver && 'border-primary/50 bg-primary/5 ring-2 ring-primary/30'
       )}
     >
-      {/* Column Header - Premium */}
+      {/* Header */}
       <div
         className={cn(
-          'relative overflow-hidden rounded-t-2xl border-b-2 px-5 py-4',
+          'flex items-center justify-between rounded-t-2xl border-b px-4 py-3',
           config.borderColor,
-          `bg-gradient-to-br ${config.gradientFrom} ${config.gradientTo}`
+          `bg-gradient-to-r ${config.gradientFrom} ${config.gradientTo}`
         )}
       >
-        {/* Background decoration */}
-        <div className="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
-        <div className="bg-white/3 absolute -bottom-2 -left-2 h-16 w-16 rounded-full blur-xl" />
-
-        <div className="relative flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex h-11 w-11 items-center justify-center rounded-xl',
-                'shadow-lg shadow-black/10 ring-2 ring-white/10',
-                config.bgColor
-              )}
-            >
-              <TypeIcon className={cn('h-5 w-5', config.color)} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold tracking-tight text-foreground">
-                {config.pluralLabel}
-              </h3>
-              <p className="text-xs text-muted-foreground/70">
-                {doneCount}/{count} completed
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div
+            className={cn('flex h-9 w-9 items-center justify-center rounded-lg', config.bgColor)}
+          >
+            <TypeIcon className={cn('h-4 w-4', config.color)} />
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={cn(
-                'inline-flex h-8 w-8 items-center justify-center rounded-lg text-lg font-black',
-                config.bgColor,
-                config.color
-              )}
-            >
-              {count}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onStartAddItem}
-              className={cn(
-                'h-9 w-9 rounded-xl p-0 transition-all hover:scale-110',
-                config.bgColor,
-                config.color
-              )}
-            >
-              <Plus className="h-5 w-5" />
-            </Button>
+          <div>
+            <h3 className="text-sm font-bold">{config.pluralLabel}</h3>
+            <p className="text-xs text-muted-foreground">
+              {doneCount}/{count} done
+            </p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onStartAddItem}
+          className={cn('h-8 w-8 rounded-lg p-0', config.bgColor, config.color, 'hover:scale-105')}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
       </div>
 
-      {/* Items List */}
-      <div className="flex-1 space-y-3 overflow-y-auto p-4">
+      {/* Items */}
+      <div className="flex-1 space-y-2 overflow-y-auto p-3">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <ItemCard
+            <SortableItemCard
               key={task.id}
               task={task}
               onDelete={() => onDeleteTask(task.id)}
@@ -411,29 +487,17 @@ const ItemColumn = memo(function ItemColumn({
           ))}
         </SortableContext>
 
-        {/* Add Item Form */}
+        {/* Add Form */}
         {isAddingItem && (
-          <div
-            className={cn(
-              'overflow-hidden rounded-xl border-2 p-4',
-              'bg-gradient-to-br from-primary/5 to-primary/10',
-              'border-primary/30 shadow-lg',
-              'duration-300 animate-in fade-in slide-in-from-top-2'
-            )}
-          >
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
             <Input
-              placeholder={`New ${config.label.toLowerCase()} title...`}
+              placeholder={`New ${config.label.toLowerCase()}...`}
               value={newItemTitle}
               onChange={(e) => onNewItemTitleChange(e.target.value)}
-              className="mb-3 h-10 border-primary/20 bg-background/80 text-sm font-medium focus:border-primary"
+              className="mb-2 h-9 border-primary/20 bg-background/80 text-sm"
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  onCreateItem();
-                }
-                if (e.key === 'Escape') {
-                  onCancelAddItem();
-                }
+                if (e.key === 'Enter') onCreateItem();
+                if (e.key === 'Escape') onCancelAddItem();
               }}
               autoFocus
             />
@@ -442,36 +506,152 @@ const ItemColumn = memo(function ItemColumn({
                 size="sm"
                 onClick={onCreateItem}
                 disabled={!newItemTitle.trim()}
-                className="h-9 flex-1 bg-primary font-semibold shadow-lg transition-all hover:scale-[1.02] hover:shadow-xl"
+                className="h-8 flex-1"
               >
-                <Plus className="mr-1.5 h-4 w-4" />
-                Add {config.label}
+                Add
               </Button>
-              <Button size="sm" variant="ghost" onClick={onCancelAddItem} className="h-9 px-4">
+              <Button size="sm" variant="ghost" onClick={onCancelAddItem} className="h-8">
                 Cancel
               </Button>
             </div>
           </div>
         )}
 
-        {/* Empty state */}
+        {/* Empty State */}
         {tasks.length === 0 && !isAddingItem && (
-          <div className="flex h-40 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border/50 bg-secondary/20">
-            <div className={cn('mb-3 rounded-xl p-3', config.bgColor)}>
-              <TypeIcon className={cn('h-6 w-6', config.color)} />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground/70">
-              No {config.pluralLabel.toLowerCase()}
-            </p>
+          <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-secondary/10">
+            <TypeIcon className={cn('mb-2 h-6 w-6', config.color, 'opacity-50')} />
+            <p className="text-xs text-muted-foreground">No {config.pluralLabel.toLowerCase()}</p>
             <button
               onClick={onStartAddItem}
-              className={cn(
-                'mt-2 text-xs font-semibold transition-colors hover:underline',
-                config.color
-              )}
+              className={cn('mt-1 text-xs font-medium', config.color)}
             >
-              + Add first {config.label.toLowerCase()}
+              + Add {config.label.toLowerCase()}
             </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+// Resources Section (Top Row)
+interface ResourcesSectionProps {
+  resources: Task[];
+  onDeleteTask: (taskId: string) => void;
+  onToggleInbox: (taskId: string, currentValue: boolean) => void;
+  isAddingItem: boolean;
+  newItemTitle: string;
+  onNewItemTitleChange: (value: string) => void;
+  onCreateItem: () => void;
+  onCancelAddItem: () => void;
+  onStartAddItem: () => void;
+}
+
+const ResourcesSection = memo(function ResourcesSection({
+  resources,
+  onDeleteTask,
+  onToggleInbox,
+  isAddingItem,
+  newItemTitle,
+  onNewItemTitleChange,
+  onCreateItem,
+  onCancelAddItem,
+  onStartAddItem,
+}: ResourcesSectionProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: 'resource' });
+  const config = ITEM_TYPE_CONFIG.resource;
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'rounded-2xl border bg-gradient-to-r from-sky-500/5 via-card/50 to-sky-500/5 backdrop-blur-sm transition-all',
+        config.borderColor,
+        isOver && 'border-primary/50 ring-2 ring-primary/30'
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-sky-500/20 px-5 py-3">
+        <div className="flex items-center gap-3">
+          <div
+            className={cn('flex h-10 w-10 items-center justify-center rounded-xl', config.bgColor)}
+          >
+            <Bookmark className={cn('h-5 w-5', config.color)} />
+          </div>
+          <div>
+            <h3 className="font-bold text-foreground">Resources & Links</h3>
+            <p className="text-xs text-muted-foreground">
+              Quick access to important references ({resources.length})
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onStartAddItem}
+          className="gap-2 border-sky-500/30 text-sky-400 hover:bg-sky-500/10 hover:text-sky-300"
+        >
+          <Plus className="h-4 w-4" />
+          Add Resource
+        </Button>
+      </div>
+
+      {/* Resources Grid */}
+      <div className="p-4">
+        {resources.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <SortableContext
+              items={resources.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {resources.map((task) => (
+                <ResourceCard
+                  key={task.id}
+                  task={task}
+                  onDelete={() => onDeleteTask(task.id)}
+                  onToggleInbox={() => onToggleInbox(task.id, task.show_in_inbox)}
+                />
+              ))}
+            </SortableContext>
+          </div>
+        ) : !isAddingItem ? (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <div className={cn('mb-3 rounded-xl p-3', config.bgColor)}>
+              <Bookmark className={cn('h-6 w-6', config.color)} />
+            </div>
+            <p className="text-sm font-medium text-muted-foreground">No resources yet</p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              Add links, documentation, or references for quick access
+            </p>
+          </div>
+        ) : null}
+
+        {/* Add Form */}
+        {isAddingItem && (
+          <div className="mt-3 rounded-xl border border-sky-500/30 bg-sky-500/5 p-4">
+            <div className="flex gap-3">
+              <Input
+                placeholder="Resource title..."
+                value={newItemTitle}
+                onChange={(e) => onNewItemTitleChange(e.target.value)}
+                className="h-10 flex-1 border-sky-500/20 bg-background/80"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onCreateItem();
+                  if (e.key === 'Escape') onCancelAddItem();
+                }}
+                autoFocus
+              />
+              <Button onClick={onCreateItem} disabled={!newItemTitle.trim()} className="h-10">
+                Add
+              </Button>
+              <Button variant="ghost" onClick={onCancelAddItem} className="h-10">
+                Cancel
+              </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Tip: Add a URL in the description to make it a clickable link
+            </p>
           </div>
         )}
       </div>
@@ -484,17 +664,15 @@ interface ProjectTaskKanbanProps {
 }
 
 export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
-  const { tasks: rawTasks, isLoading, revalidate } = useProjectTasks(projectId);
-  const tasks = rawTasks;
+  const { tasks, isLoading, revalidate } = useProjectTasks(projectId);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [overId, setOverId] = useState<string | null>(null);
   const [addingToType, setAddingToType] = useState<ItemType | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8,
+        distance: 5,
       },
     })
   );
@@ -513,7 +691,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
         grouped[type].push(task);
       }
     });
-    // Sort by sort_order within each type
+    // Sort by sort_order
     Object.keys(grouped).forEach((type) => {
       grouped[type as ItemType].sort((a, b) => a.sort_order - b.sort_order);
     });
@@ -522,7 +700,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
 
   const activeTask = useMemo(() => tasks.find((t) => t.id === activeId), [tasks, activeId]);
 
-  // Progress calculation
+  // Progress
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t) => t.status === 'Done').length;
   const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
@@ -531,51 +709,24 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     setActiveId(event.active.id as string);
   }, []);
 
-  const handleDragOver = useCallback((event: DragEndEvent) => {
-    const { over } = event;
-    setOverId(over?.id as string | null);
-  }, []);
-
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
       setActiveId(null);
-      setOverId(null);
 
-      if (!over) return;
+      if (!over || active.id === over.id) return;
 
       const activeTaskId = active.id as string;
       const overId = over.id as string;
 
-      const activeTask = tasks.find((t) => t.id === activeTaskId);
-      if (!activeTask) return;
+      const draggedTask = tasks.find((t) => t.id === activeTaskId);
+      if (!draggedTask) return;
 
-      // Check if over a column or a task
-      const isOverColumn = ['task', 'issue', 'note', 'resource'].includes(overId);
-      const activeType = (activeTask.item_type as ItemType) || 'task';
+      const activeType = (draggedTask.item_type as ItemType) || 'task';
 
-      if (isOverColumn) {
-        // Dropped on empty column - just reorder within same type for now
-        // (changing type would require database update)
-        const targetColumnTasks = [...tasksByType[activeType]];
-        const oldIndex = targetColumnTasks.findIndex((t) => t.id === activeTaskId);
-        const newIndex = targetColumnTasks.length - 1;
-
-        if (oldIndex !== newIndex && newIndex !== -1) {
-          const reordered = arrayMove(targetColumnTasks, oldIndex, newIndex);
-          const updates = reordered.map((task, index) => ({
-            id: task.id,
-            sort_order: index,
-          }));
-          await reorderTasks(updates);
-          revalidate();
-          invalidateInboxTasks();
-        }
-      } else {
-        // Dropped on a task
-        const overTask = tasks.find((t) => t.id === overId);
-        if (!overTask) return;
-
+      // Check if dropped on another task in same column
+      const overTask = tasks.find((t) => t.id === overId);
+      if (overTask) {
         const overType = (overTask.item_type as ItemType) || 'task';
 
         // Only reorder within same type
@@ -584,7 +735,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
           const oldIndex = columnTasks.findIndex((t) => t.id === activeTaskId);
           const newIndex = columnTasks.findIndex((t) => t.id === overId);
 
-          if (oldIndex !== newIndex && newIndex !== -1) {
+          if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
             const reordered = arrayMove(columnTasks, oldIndex, newIndex);
             const updates = reordered.map((task, index) => ({
               id: task.id,
@@ -643,36 +794,38 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
       <div className="flex h-64 items-center justify-center">
         <div className="flex items-center gap-3 text-muted-foreground">
           <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="font-medium">Loading items...</span>
+          <span className="font-medium">Loading...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Progress Bar - Premium */}
-      <div className="overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-r from-card to-card/80 p-5 shadow-lg">
-        <div className="flex items-center gap-6">
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="space-y-6">
+        {/* Progress Bar */}
+        <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4">
           <div className="flex-1">
-            <div className="mb-3 flex items-center justify-between">
-              <span className="text-sm font-bold tracking-tight text-foreground">
-                Project Progress
-              </span>
-              <span className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">{doneTasks}</span> of{' '}
-                <span className="font-semibold text-foreground">{totalTasks}</span> items completed
+            <div className="mb-2 flex items-center justify-between text-sm">
+              <span className="font-medium">Progress</span>
+              <span className="text-muted-foreground">
+                {doneTasks}/{totalTasks} completed
               </span>
             </div>
-            <div className="h-3 overflow-hidden rounded-full bg-secondary/50 shadow-inner">
+            <div className="h-2 overflow-hidden rounded-full bg-secondary/50">
               <div
                 className={cn(
-                  'h-full rounded-full transition-all duration-700 ease-out',
+                  'h-full rounded-full transition-all duration-500',
                   progress === 100
-                    ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400'
+                    ? 'bg-emerald-500'
                     : progress >= 50
-                      ? 'bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400'
-                      : 'bg-gradient-to-r from-violet-600 via-violet-500 to-violet-400'
+                      ? 'bg-blue-500'
+                      : 'bg-violet-500'
                 )}
                 style={{ width: `${progress}%` }}
               />
@@ -680,8 +833,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
           </div>
           <div
             className={cn(
-              'flex h-16 w-16 items-center justify-center rounded-2xl text-2xl font-black',
-              'shadow-lg ring-2 ring-white/10',
+              'flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold',
               progress === 100
                 ? 'bg-emerald-500/20 text-emerald-400'
                 : progress >= 50
@@ -692,47 +844,47 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
             {progress}%
           </div>
         </div>
+
+        {/* Resources Section - Top Row */}
+        <ResourcesSection
+          resources={tasksByType.resource}
+          onDeleteTask={handleDeleteTask}
+          onToggleInbox={handleToggleInbox}
+          isAddingItem={addingToType === 'resource'}
+          newItemTitle={addingToType === 'resource' ? newItemTitle : ''}
+          onNewItemTitleChange={setNewItemTitle}
+          onCreateItem={() => handleCreateItem('resource')}
+          onCancelAddItem={() => {
+            setAddingToType(null);
+            setNewItemTitle('');
+          }}
+          onStartAddItem={() => setAddingToType('resource')}
+        />
+
+        {/* Main Columns - Tasks, Issues, Notes */}
+        <div className="grid gap-5 lg:grid-cols-3">
+          {(['task', 'issue', 'note'] as ItemType[]).map((itemType) => (
+            <DroppableColumn
+              key={itemType}
+              id={itemType}
+              tasks={tasksByType[itemType]}
+              onDeleteTask={handleDeleteTask}
+              onToggleInbox={handleToggleInbox}
+              isAddingItem={addingToType === itemType}
+              newItemTitle={addingToType === itemType ? newItemTitle : ''}
+              onNewItemTitleChange={setNewItemTitle}
+              onCreateItem={() => handleCreateItem(itemType)}
+              onCancelAddItem={() => {
+                setAddingToType(null);
+                setNewItemTitle('');
+              }}
+              onStartAddItem={() => setAddingToType(itemType)}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Kanban Board */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex gap-5 overflow-x-auto pb-4">
-          <SortableContext items={['task', 'issue', 'note', 'resource']}>
-            {(['task', 'issue', 'note', 'resource'] as ItemType[]).map((itemType) => (
-              <ItemColumn
-                key={itemType}
-                itemType={itemType}
-                tasks={tasksByType[itemType]}
-                projectId={projectId}
-                onDeleteTask={handleDeleteTask}
-                onToggleInbox={handleToggleInbox}
-                isAddingItem={addingToType === itemType}
-                newItemTitle={addingToType === itemType ? newItemTitle : ''}
-                onNewItemTitleChange={setNewItemTitle}
-                onCreateItem={() => handleCreateItem(itemType)}
-                onCancelAddItem={() => {
-                  setAddingToType(null);
-                  setNewItemTitle('');
-                }}
-                onStartAddItem={() => setAddingToType(itemType)}
-                isOver={overId === itemType}
-              />
-            ))}
-          </SortableContext>
-        </div>
-
-        <DragOverlay>
-          {activeTask && (
-            <ItemCard task={activeTask} onDelete={() => {}} onToggleInbox={() => {}} isDragging />
-          )}
-        </DragOverlay>
-      </DndContext>
-    </div>
+      <DragOverlay>{activeTask && <DragOverlayCard task={activeTask} />}</DragOverlay>
+    </DndContext>
   );
 }
