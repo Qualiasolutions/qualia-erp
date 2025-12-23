@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { createGoogleMeetLink } from '@/lib/google-meet';
 import { updateMeeting } from '@/app/actions';
 import { cn } from '@/lib/utils';
+import { NewMeetingModalInline } from './new-meeting-modal-inline';
 
 interface Meeting {
   id: string;
@@ -38,7 +39,21 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   const [meetings, setMeetings] = useState(initialMeetings);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
+  const [showNewMeetingModal, setShowNewMeetingModal] = useState(false);
   const now = new Date();
+
+  // Handle new meeting creation - adds meeting to local state instantly
+  const handleMeetingCreated = (newMeeting: Meeting) => {
+    setMeetings((prev) => {
+      // Add the new meeting and sort by start_time
+      const updated = [...prev, newMeeting].sort(
+        (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime()
+      );
+      return updated;
+    });
+    setShowNewMeetingModal(false);
+    setPopoverOpen(false);
+  };
 
   // Find current meeting (if any)
   const currentMeeting = meetings.find((meeting) => {
@@ -162,7 +177,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-64 border-border bg-card p-0 sm:w-72" align="end">
-        <div className="border-b border-border p-2.5 sm:p-3">
+        <div className="space-y-2 border-b border-border p-2.5 sm:p-3">
           <button
             onClick={handleInstantMeeting}
             className={cn(
@@ -172,6 +187,19 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
           >
             <Video className="h-4 w-4" />
             Start Instant Meeting
+          </button>
+          <button
+            onClick={() => {
+              setShowNewMeetingModal(true);
+              setPopoverOpen(false);
+            }}
+            className={cn(
+              'flex w-full items-center gap-2.5 rounded-lg border border-qualia-500/50 bg-qualia-500/10 px-3 py-2.5 text-sm font-medium text-qualia-500 transition-all sm:gap-3',
+              'active:scale-98 sm:hover:bg-qualia-500 sm:hover:text-white'
+            )}
+          >
+            <CalendarDays className="h-4 w-4" />
+            Schedule New Meeting
           </button>
         </div>
 
@@ -473,6 +501,13 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
           )}
         </CardContent>
       </ScrollArea>
+
+      {/* New Meeting Modal */}
+      <NewMeetingModalInline
+        open={showNewMeetingModal}
+        onOpenChange={setShowNewMeetingModal}
+        onMeetingCreated={handleMeetingCreated}
+      />
     </Card>
   );
 }
