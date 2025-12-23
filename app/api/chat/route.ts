@@ -132,7 +132,9 @@ READ: getDashboardStats, searchIssues, searchProjects, searchClients, getTeams, 
 
 WRITE: createTask, updateTaskStatus, addComment, createClient, createMeeting, createProject
 
-ROADMAP: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap (confirm first!)
+PROJECT UPDATES: updateProjectProgress (set progress 0-100%), updateProjectStatus (Active/Launched/Archived/etc)
+
+IMPORTANT: When user asks to update project progress (e.g., "set Anastasia to 100%", "mark project complete"), use updateProjectProgress tool immediately. You can search by project name - no need to find the ID first!
 
 ## Communication Style
 
@@ -404,7 +406,7 @@ ROADMAP: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap (confir
 
         getProjectDetails: tool({
           description:
-            'Get detailed project info including roadmap progress. Use when user asks about a specific project.',
+            'Get detailed project info including progress. Use when user asks about a specific project.',
           inputSchema: z.object({
             project_id: z.string().uuid().describe('Project ID'),
           }),
@@ -412,7 +414,7 @@ ROADMAP: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap (confir
             const { data: project, error } = await supabase
               .from('projects')
               .select(
-                `id, name, status, description, target_date, project_type,
+                `id, name, status, description, target_date, project_type, progress,
                 lead:profiles!projects_lead_id_fkey(full_name),
                 client:clients(display_name),
                 team:teams(name)`
@@ -422,21 +424,18 @@ ROADMAP: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap (confir
 
             if (error) return { error: error.message };
 
-            // Get roadmap progress
-            const { data: phases } = await supabase
-              .from('project_phases')
-              .select('id, name, status, phase_items(is_completed)')
+            // Get task statistics for this project
+            const { data: tasks } = await supabase
+              .from('tasks')
+              .select('status')
               .eq('project_id', project_id);
 
-            let totalItems = 0;
-            let completedItems = 0;
-            phases?.forEach((p) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (p.phase_items as any[])?.forEach((item: { is_completed: boolean }) => {
-                totalItems++;
-                if (item.is_completed) completedItems++;
-              });
-            });
+            const taskStats = {
+              total: tasks?.length || 0,
+              done: tasks?.filter((t) => t.status === 'Done').length || 0,
+              inProgress: tasks?.filter((t) => t.status === 'In Progress').length || 0,
+              todo: tasks?.filter((t) => t.status === 'Todo').length || 0,
+            };
 
             return {
               project: {
@@ -446,16 +445,12 @@ ROADMAP: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap (confir
                 description: project.description,
                 targetDate: project.target_date,
                 type: project.project_type,
+                progress: project.progress || 0,
                 lead: Array.isArray(project.lead) ? project.lead[0]?.full_name : null,
                 client: Array.isArray(project.client) ? project.client[0]?.display_name : null,
                 team: Array.isArray(project.team) ? project.team[0]?.name : null,
               },
-              roadmap: {
-                progress: totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0,
-                phasesCount: phases?.length || 0,
-                completedItems,
-                totalItems,
-              },
+              tasks: taskStats,
             };
           },
         }),
@@ -925,118 +920,209 @@ ROADMAP: updateRoadmap, addRoadmapItem, deleteRoadmapItem, deleteRoadmap (confir
           },
         }),
 
-        // ============ ROADMAP TOOLS ============
+        // ============ PROJECT PROGRESS TOOLS ============
 
-        updateRoadmap: tool({
-          description: 'Update a roadmap phase details (name, description, status)',
-          inputSchema: z.object({
-            phase_id: z.string().uuid().describe('The phase ID to update'),
-            name: z.string().optional(),
-            description: z.string().optional(),
-            status: z.enum(['not_started', 'in_progress', 'completed', 'skipped']).optional(),
-          }),
-          execute: async ({ phase_id, name, description, status }) => {
-            const updates: Record<string, string | number | boolean | null> = {};
-            if (name) updates.name = name;
-            if (description) updates.description = description;
-            if (status) updates.status = status;
-
-            if (Object.keys(updates).length === 0) return { error: 'No updates provided' };
-
-            const { error } = await supabase
-              .from('project_phases')
-              .update(updates)
-              .eq('id', phase_id);
-
-            if (error) return { error: error.message };
-            return { success: true, message: 'Roadmap phase updated' };
-          },
-        }),
-
-        deleteRoadmap: tool({
+        updateProjectProgress: tool({
           description:
-            'Delete an entire project roadmap (all phases and items). CAUTION: Irreversible.',
+            'Update a project\'s progress percentage. Use when user says "set progress to X%", "mark project as X% complete", "update Anastasia project to 100%", etc. Can also search by project name.',
           inputSchema: z.object({
-            project_id: z.string().uuid().describe('The project ID'),
+            project_id: z.string().uuid().optional().describe('Project ID (if known)'),
+            project_name: z
+              .string()
+              .optional()
+              .describe('Project name to search for (if ID not known)'),
+            progress: z.number().min(0).max(100).describe('Progress percentage (0-100)'),
           }),
-          execute: async ({ project_id }) => {
-            // First get phase IDs for this project
-            const { data: phases, error: phasesQueryError } = await supabase
-              .from('project_phases')
-              .select('id')
-              .eq('project_id', project_id);
+          execute: async ({ project_id, project_name, progress }) => {
+            let targetProjectId = project_id;
+            let projectInfo: { id: string; name: string; progress: number | null } | null = null;
 
-            if (phasesQueryError) return { error: phasesQueryError.message };
+            // If no project_id provided, search by name
+            if (!targetProjectId && project_name) {
+              const { data: projects } = await supabase
+                .from('projects')
+                .select('id, name, progress')
+                .eq('workspace_id', workspaceId)
+                .ilike('name', `%${project_name}%`)
+                .limit(5);
 
-            if (phases && phases.length > 0) {
-              const phaseIds = phases.map((p) => p.id);
+              if (!projects || projects.length === 0) {
+                return {
+                  error: `No project found matching "${project_name}". Try searching for projects first.`,
+                };
+              }
 
-              // Delete all items for these phases
-              const { error: itemsError } = await supabase
-                .from('phase_items')
-                .delete()
-                .in('phase_id', phaseIds);
+              if (projects.length > 1) {
+                return {
+                  error: `Multiple projects match "${project_name}". Please be more specific or use the project ID.`,
+                  matches: projects.map((p) => ({ id: p.id, name: p.name })),
+                };
+              }
 
-              if (itemsError) return { error: itemsError.message };
+              targetProjectId = projects[0].id;
+              projectInfo = projects[0];
             }
 
-            // Delete all phases for this project
+            if (!targetProjectId) {
+              return { error: 'Please provide either project_id or project_name' };
+            }
+
+            // Get project info if we don't have it
+            if (!projectInfo) {
+              const { data } = await supabase
+                .from('projects')
+                .select('id, name, progress')
+                .eq('id', targetProjectId)
+                .single();
+              projectInfo = data;
+            }
+
+            if (!projectInfo) {
+              return { error: 'Project not found' };
+            }
+
+            const oldProgress = projectInfo.progress || 0;
+
+            // Update the project progress
             const { error } = await supabase
-              .from('project_phases')
-              .delete()
-              .eq('project_id', project_id);
-
-            if (error) return { error: error.message };
-            return { success: true, message: 'Roadmap deleted successfully' };
-          },
-        }),
-
-        addRoadmapItem: tool({
-          description: 'Add an item to a roadmap phase',
-          inputSchema: z.object({
-            phase_id: z.string().uuid().describe('The phase ID'),
-            title: z.string().describe('Item title'),
-            description: z.string().optional(),
-          }),
-          execute: async ({ phase_id, title, description }) => {
-            // Get max order
-            const { data: maxOrder } = await supabase
-              .from('phase_items')
-              .select('display_order')
-              .eq('phase_id', phase_id)
-              .order('display_order', { ascending: false })
-              .limit(1)
-              .single();
-
-            const nextOrder = (maxOrder?.display_order || 0) + 1;
-
-            const { data, error } = await supabase
-              .from('phase_items')
-              .insert({
-                phase_id,
-                title,
-                description,
-                display_order: nextOrder,
-                is_completed: false,
+              .from('projects')
+              .update({
+                progress,
+                updated_at: new Date().toISOString(),
+                // If progress is 100%, consider updating status to Launched
+                ...(progress === 100 ? { status: 'Launched' } : {}),
               })
-              .select()
-              .single();
+              .eq('id', targetProjectId);
 
             if (error) return { error: error.message };
-            return { success: true, message: `Added item "${title}"`, item: data };
+
+            // Log activity
+            await supabase.from('activities').insert({
+              actor_id: user.id,
+              type: 'project_updated',
+              project_id: targetProjectId,
+              workspace_id: workspaceId,
+              metadata: {
+                field: 'progress',
+                old_value: oldProgress,
+                new_value: progress,
+                updated_by_ai: true,
+              },
+            });
+
+            return {
+              success: true,
+              message: `Updated "${projectInfo.name}" progress: ${oldProgress}% → ${progress}%${progress === 100 ? ' 🎉 Project marked as Launched!' : ''}`,
+              project: {
+                id: targetProjectId,
+                name: projectInfo.name,
+                oldProgress,
+                newProgress: progress,
+              },
+            };
           },
         }),
 
-        deleteRoadmapItem: tool({
-          description: 'Delete a roadmap item',
+        updateProjectStatus: tool({
+          description:
+            'Update a project\'s status. Use when user says "mark project as active", "archive project", "launch project", etc.',
           inputSchema: z.object({
-            item_id: z.string().uuid().describe('The item ID'),
+            project_id: z.string().uuid().optional().describe('Project ID (if known)'),
+            project_name: z
+              .string()
+              .optional()
+              .describe('Project name to search for (if ID not known)'),
+            status: z
+              .enum(['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'])
+              .describe('New project status'),
           }),
-          execute: async ({ item_id }) => {
-            const { error } = await supabase.from('phase_items').delete().eq('id', item_id);
+          execute: async ({ project_id, project_name, status }) => {
+            let targetProjectId = project_id;
+            let projectInfo: { id: string; name: string; status: string } | null = null;
+
+            // If no project_id provided, search by name
+            if (!targetProjectId && project_name) {
+              const { data: projects } = await supabase
+                .from('projects')
+                .select('id, name, status')
+                .eq('workspace_id', workspaceId)
+                .ilike('name', `%${project_name}%`)
+                .limit(5);
+
+              if (!projects || projects.length === 0) {
+                return {
+                  error: `No project found matching "${project_name}". Try searching for projects first.`,
+                };
+              }
+
+              if (projects.length > 1) {
+                return {
+                  error: `Multiple projects match "${project_name}". Please be more specific.`,
+                  matches: projects.map((p) => ({ id: p.id, name: p.name })),
+                };
+              }
+
+              targetProjectId = projects[0].id;
+              projectInfo = projects[0];
+            }
+
+            if (!targetProjectId) {
+              return { error: 'Please provide either project_id or project_name' };
+            }
+
+            // Get project info if we don't have it
+            if (!projectInfo) {
+              const { data } = await supabase
+                .from('projects')
+                .select('id, name, status')
+                .eq('id', targetProjectId)
+                .single();
+              projectInfo = data;
+            }
+
+            if (!projectInfo) {
+              return { error: 'Project not found' };
+            }
+
+            const oldStatus = projectInfo.status;
+
+            // Update the project status
+            const { error } = await supabase
+              .from('projects')
+              .update({
+                status,
+                updated_at: new Date().toISOString(),
+                // If launched, set progress to 100%
+                ...(status === 'Launched' ? { progress: 100 } : {}),
+              })
+              .eq('id', targetProjectId);
 
             if (error) return { error: error.message };
-            return { success: true, message: 'Roadmap item deleted' };
+
+            // Log activity
+            await supabase.from('activities').insert({
+              actor_id: user.id,
+              type: 'project_updated',
+              project_id: targetProjectId,
+              workspace_id: workspaceId,
+              metadata: {
+                field: 'status',
+                old_value: oldStatus,
+                new_value: status,
+                updated_by_ai: true,
+              },
+            });
+
+            return {
+              success: true,
+              message: `Updated "${projectInfo.name}" status: ${oldStatus} → ${status}`,
+              project: {
+                id: targetProjectId,
+                name: projectInfo.name,
+                oldStatus,
+                newStatus: status,
+              },
+            };
           },
         }),
       },
