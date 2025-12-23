@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useOptimistic } from 'react';
+import { useState, useTransition, useOptimistic, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DndContext,
@@ -40,7 +40,14 @@ const statusColumns = [
 
 type StatusId = (typeof statusColumns)[number]['id'];
 
-function SortableTaskCard({ task, onDelete }: { task: Task; onDelete: (id: string) => void }) {
+// Memoized SortableTaskCard to prevent re-renders when sibling tasks change
+const SortableTaskCard = memo(function SortableTaskCard({
+  task,
+  onDelete,
+}: {
+  task: Task;
+  onDelete: (id: string) => void;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
   });
@@ -56,9 +63,10 @@ function SortableTaskCard({ task, onDelete }: { task: Task; onDelete: (id: strin
       <TaskCard task={task} onDelete={onDelete} />
     </div>
   );
-}
+});
 
-function DroppableColumn({
+// Memoized DroppableColumn to prevent re-renders when sibling columns change
+const DroppableColumn = memo(function DroppableColumn({
   column,
   tasks,
   onDelete,
@@ -96,7 +104,7 @@ function DroppableColumn({
       </SortableContext>
     </div>
   );
-}
+});
 
 type TaskUpdate = { id: string; sort_order: number; status?: string };
 

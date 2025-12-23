@@ -1,18 +1,33 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { GeistSans } from 'geist/font/sans';
 import './globals.css';
 import { Sidebar } from '@/components/sidebar';
-import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
 import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
-import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
 import { HeaderActions } from '@/components/header-actions';
-import { AIChatWidget } from '@/components/ai-chat-widget';
+
+// Lazy load non-critical UI components for better initial bundle size
+const CommandMenu = dynamic(
+  () => import('@/components/command-menu').then((mod) => ({ default: mod.CommandMenu })),
+  { ssr: false }
+);
+const WorkspaceChatWrapper = dynamic(
+  () =>
+    import('@/components/workspace-chat-wrapper').then((mod) => ({
+      default: mod.WorkspaceChatWrapper,
+    })),
+  { ssr: false }
+);
+const AIChatWidget = dynamic(
+  () => import('@/components/ai-chat-widget').then((mod) => ({ default: mod.AIChatWidget })),
+  { ssr: false }
+);
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
 
@@ -136,7 +151,7 @@ export default function RootLayout({
                     <Sidebar />
                   </Suspense>
                   <div className="flex flex-1 flex-col overflow-hidden">
-                    <header className="flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-card/80 backdrop-blur-sm px-3 sm:justify-end sm:px-4 shadow-sm">
+                    <header className="flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-card/80 px-3 shadow-sm backdrop-blur-sm sm:justify-end sm:px-4">
                       <HeaderActions />
                     </header>
                     <main className="flex-1 overflow-y-auto">{children}</main>

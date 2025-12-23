@@ -183,7 +183,8 @@ interface StatusColumnProps {
   isOver?: boolean;
 }
 
-function StatusColumn({
+// Memoized StatusColumn to prevent re-renders when sibling columns change
+const StatusColumn = memo(function StatusColumn({
   status,
   tasks,
   onDeleteTask,
@@ -292,7 +293,7 @@ function StatusColumn({
       </div>
     </div>
   );
-}
+});
 
 interface ProjectTaskKanbanProps {
   projectId: string;

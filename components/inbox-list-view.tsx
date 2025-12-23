@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { format } from 'date-fns';
 import { GripVertical, Calendar, AlertCircle, Edit2, Trash2, FolderOpen } from 'lucide-react';
 import {
@@ -73,7 +73,8 @@ const statusConfig = {
   },
 };
 
-function SortableTaskRow({
+// Memoized SortableTaskRow to prevent re-renders when sibling tasks change
+const SortableTaskRow = memo(function SortableTaskRow({
   task,
   onDelete,
   onEdit,
@@ -185,7 +186,7 @@ function SortableTaskRow({
       </div>
     </div>
   );
-}
+});
 
 export function InboxListView({ tasks }: InboxListViewProps) {
   const router = useRouter();
