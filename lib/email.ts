@@ -6,9 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email sender configuration
-// NOTE: Using Resend's default domain until qualiasolutions.net is verified
-// To use custom domain: verify at https://resend.com/domains
-const FROM_EMAIL = 'Qualia Platform <onboarding@resend.dev>';
+const FROM_EMAIL = 'Qualia Platform <notifications@qualiasolutions.net>';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
 
 // Types for notification data
