@@ -552,15 +552,17 @@ export function QualiaVoice({ isOpen, onClose, user }: QualiaVoiceProps) {
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assistantId);
 
       if (isValidUUID) {
-        // Pass user context as metadata when using assistant ID
+        // Pass user context via variableValues AND append tools when using assistant ID
         await vapiRef.current.start(assistantId, {
-          metadata: user
+          variableValues: user
             ? {
                 userId: user.id,
                 userName: user.name,
                 workspaceId: user.workspaceId,
               }
             : undefined,
+          // Append tools to ensure they're available with the assistant
+          'tools:append': QUALIA_TOOLS,
         });
       } else {
         // Generate intelligent, time-aware greeting
