@@ -2,7 +2,42 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, CalendarIcon, Clock, Users, Building2, Video, Link2 } from 'lucide-react';
-import { format, setHours, setMinutes, addMinutes } from 'date-fns';
+import { format, setHours, setMinutes, addMinutes, addDays } from 'date-fns';
+
+// Get the next available time slot (rounds up to next 30 min)
+function getNextTimeSlot(): { date: Date; time: string } {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const currentMinute = now.getMinutes();
+
+  // Round up to next 30-minute slot
+  let nextHour = currentHour;
+  const nextMinute = currentMinute < 30 ? 30 : 0;
+  if (currentMinute >= 30) {
+    nextHour = currentHour + 1;
+  }
+
+  // If it's after 8 PM, default to 9 AM tomorrow
+  if (nextHour >= 20) {
+    return {
+      date: addDays(now, 1),
+      time: '09:00',
+    };
+  }
+
+  // If it's before 7 AM, default to 9 AM today
+  if (nextHour < 7) {
+    return {
+      date: now,
+      time: '09:00',
+    };
+  }
+
+  return {
+    date: now,
+    time: `${nextHour.toString().padStart(2, '0')}:${nextMinute.toString().padStart(2, '0')}`,
+  };
+}
 import {
   Dialog,
   DialogContent,
@@ -67,9 +102,10 @@ export function NewMeetingModal() {
   useEffect(() => {
     if (open) {
       getClients().then((data) => setClients(data as Client[]));
-      // Reset form
-      setSelectedDate(new Date());
-      setSelectedTime('09:00');
+      // Reset form with smart defaults
+      const nextSlot = getNextTimeSlot();
+      setSelectedDate(nextSlot.date);
+      setSelectedTime(nextSlot.time);
       setDuration(60);
       setMeetingType('internal');
       setSelectedClientId('');
