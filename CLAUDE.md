@@ -24,7 +24,7 @@ npx tsc --noEmit     # Type check without build
 - **Database/Auth**: Supabase (PostgreSQL with pgvector for RAG)
 - **Styling**: Tailwind CSS + shadcn/ui (Radix primitives)
 - **AI**: Groq (llama-3.1-8b-instant for chat), VAPI (voice), Google AI (embeddings)
-- **State**: SWR for client caching (60s dedup, 10s auto-refresh for tasks)
+- **State**: SWR for client caching (60s dedup, 30s auto-refresh for tasks with exponential backoff)
 - **Drag & Drop**: @dnd-kit for kanban boards
 - **Virtualization**: @tanstack/react-virtual for large lists
 - **Testing**: Jest + React Testing Library
@@ -72,17 +72,21 @@ app/
 ├── api/chat/route.ts       # AI chat agent (15+ tools, 30s timeout)
 ├── api/vapi/webhook/       # Voice assistant webhooks
 ├── api/embeddings/route.ts # Google AI embeddings
+├── error.tsx               # Global error boundary
 ├── clients/                # CRM section
 ├── inbox/                  # Personal task inbox (show_in_inbox=true tasks)
+│   └── error.tsx           # Inbox-specific error boundary
 ├── projects/               # Project management with task kanban
 └── schedule/               # Calendar views
 
 lib/
 ├── supabase/server.ts      # Server-side Supabase client (always create fresh)
 ├── supabase/client.ts      # Browser-side Supabase client
-├── swr.ts                  # SWR hooks with optimized caching config
+├── swr.ts                  # SWR hooks with tab visibility + immediate invalidation
 ├── validation.ts           # Zod schemas for all entities
-├── color-constants.ts      # Centralized Tailwind color classes
+├── color-constants.ts      # Centralized Tailwind color classes (task/priority colors)
+├── client-utils.ts         # Client types, status config, helper functions
+├── rate-limit.ts           # API rate limiting utilities
 └── vapi-webhook-handlers.ts # Voice tool handlers
 
 components/
@@ -91,8 +95,17 @@ components/
 ├── edit-task-modal.tsx     # Edit task details
 ├── task-card.tsx           # Reusable task card with memo optimization
 ├── inbox-kanban-view.tsx   # Kanban view for inbox tasks
-├── inbox-list-view.tsx     # List view for inbox tasks
+├── inbox-list-view.tsx     # List view with drag-drop state sync
+├── client-list.tsx         # Client list container with view toggle
+├── client-card.tsx         # Memoized client card for grid view
+├── client-row.tsx          # Memoized client row for list view
+├── client-detail-modal.tsx # Client detail/edit modal
 └── dashboard-activity-feed.tsx # Virtualized activity feed
+
+hooks/
+├── use-presence.tsx        # Real-time presence via Supabase (dev-only logging)
+├── use-speech-recognition.ts # Browser speech recognition
+└── use-voice-synthesis.ts  # Text-to-speech synthesis
 
 types/
 └── database.ts             # Auto-generated Supabase types (Tables<>, Enums<>)
@@ -103,7 +116,7 @@ types/
 1. **Server Components**: Direct Supabase queries for initial data
 2. **Client Components**: SWR hooks for caching + auto-refresh for tasks
 3. **Mutations**: Server actions with Zod validation → returns ActionResult → invalidates SWR cache
-4. **Real-time**: SWR auto-refresh every 10s for tasks (not Supabase Realtime)
+4. **Real-time**: SWR auto-refresh every 30s for tasks (not Supabase Realtime)
 
 ### SWR Caching Strategy (`lib/swr.ts`)
 
@@ -117,10 +130,15 @@ swrConfig = {
 
 // Auto-refresh config - tasks that change frequently
 autoRefreshConfig = {
-  refreshInterval: 10000, // Refresh every 10s
-  dedupingInterval: 8000, // Tighter dedup for tasks
+  refreshInterval: () => (isDocumentVisible() ? 30000 : 0), // 30s when visible, stops when hidden
+  dedupingInterval: 15000, // 15s dedup for tasks
   revalidateOnFocus: true,
+  onErrorRetry, // Exponential backoff (1s, 2s, 4s) on errors
 };
+
+// Immediate invalidation (prevents stale data after mutations)
+invalidateInboxTasks(immediate: true);      // Force refetch now
+invalidateProjectTasks(projectId, immediate: true);
 ```
 
 ### AI Chat Agent (`app/api/chat/route.ts`)
@@ -141,20 +159,55 @@ Webhook at `app/api/vapi/webhook/route.ts`. Tool handlers in `lib/vapi-webhook-h
 
 ### Bundle Size (`next.config.ts`)
 
-- Tree-shaking via `optimizePackageImports` for: lucide-react, date-fns, Radix UI, framer-motion, @dnd-kit, @tanstack/react-virtual, zod
+- Tree-shaking via `optimizePackageImports` for: lucide-react, date-fns, @radix-ui/react-icons, framer-motion, @dnd-kit/core, @dnd-kit/sortable, @tanstack/react-virtual, zod
+- Note: Keep list to ~8 packages to prevent build hangs with Turbopack
 - `removeConsole: true` in production
 - Source maps disabled in production
+- Bundle analyzer available: `ANALYZE=true npm run build`
 
 ### Component Optimization
 
-- `React.memo()` on frequently re-rendered components (TaskCard, ActivityItem)
+- `React.memo()` on frequently re-rendered components (TaskCard, ClientCard, ClientRow, ActivityItem)
 - `useMemo()` for expensive computations and style objects
 - Virtualization for large lists (>20 items) using @tanstack/react-virtual
+- Split large components: `client-list.tsx` split into `client-card.tsx`, `client-row.tsx`, `client-detail-modal.tsx`
+
+### Z-Index Scale (`tailwind.config.ts`)
+
+Use semantic z-index values to prevent overlay conflicts:
+
+```
+z-dropdown: 40, z-sticky: 45, z-modal: 50, z-popover: 55, z-overlay: 60, z-toast: 70, z-tooltip: 80, z-command: 90
+```
 
 ### API Optimization
 
 - Chat API timeout reduced to 30s to prevent slow request accumulation
 - Rate limiting: 20 req/min for chat, 100 req/min for API
+- SWR exponential backoff on errors (1s, 2s, 4s delays)
+
+### Database Optimization
+
+RLS policies optimized to use `(SELECT auth.uid())` pattern for better performance:
+
+```sql
+-- BAD: Re-evaluates auth.uid() for each row
+USING (profile_id = auth.uid())
+
+-- GOOD: Evaluates once per query
+USING (profile_id = (SELECT auth.uid()))
+```
+
+**Indexed foreign keys** for JOIN performance:
+
+- All primary foreign keys have covering indexes
+- Composite indexes for common query patterns (workspace + status, project + sort_order)
+
+**Migrations applied**:
+
+- `add_missing_foreign_key_indexes` - 15 indexes for FK constraints
+- `optimize_rls_policies_initplan` - 40+ policies optimized
+- `consolidate_duplicate_rls_policies` - Removed redundant policies
 
 ## Environment Variables
 
@@ -182,11 +235,39 @@ Key database types are in `types/database.ts` - use `Tables<'tablename'>` for ro
 
 ### Key Tables
 
-- `tasks` - All tasks with `project_id` (required) and `show_in_inbox` flag
-- `projects` - Projects that contain tasks
-- `issues` - Legacy issue system (separate from tasks)
-- `profiles` - User profiles
-- `workspaces` - Multi-tenant workspaces
+| Table        | Rows | Description                                      |
+| ------------ | ---- | ------------------------------------------------ |
+| `tasks`      | 26   | Tasks with `project_id` and `show_in_inbox` flag |
+| `projects`   | 11   | Projects containing tasks                        |
+| `clients`    | 53   | CRM clients with lead_status                     |
+| `meetings`   | 55   | Scheduled meetings with attendees                |
+| `activities` | 56   | Activity feed (virtualized)                      |
+| `profiles`   | 2    | User profiles linked to auth.users               |
+| `workspaces` | 4    | Multi-tenant workspaces                          |
+| `documents`  | 12   | RAG documents with pgvector embeddings           |
+| `issues`     | 2    | Legacy issue system (separate from tasks)        |
+
+### Supabase Connection
+
+- **Project URL**: `https://vbpzaiqovffpsroxaulv.supabase.co`
+- **RLS**: Enabled on all tables (optimized with `(SELECT auth.uid())` pattern)
+- **Realtime**: Available but SWR polling preferred for tasks
+
+### Recent Migrations
+
+```bash
+# View applied migrations
+mcp__supabase__list_migrations
+
+# Check performance advisors
+mcp__supabase__get_advisors type="performance"
+```
+
+Latest performance migrations:
+
+- `add_missing_foreign_key_indexes` - FK indexes for JOIN performance
+- `optimize_rls_policies_initplan` - RLS query optimization
+- `consolidate_duplicate_rls_policies` - Remove policy redundancy
 
 ## Testing
 
@@ -198,6 +279,12 @@ npm test -- path/to/test    # Single test file
 
 Tests in `__tests__/` mirror source structure. Coverage threshold: 50%.
 
+## Deployment
+
+- **Production**: https://qualia-erp.vercel.app
+- **Platform**: Vercel (auto-deploy from master)
+- **Build time**: ~9s compile + ~1s static generation (Turbopack)
+
 ## CI/CD
 
 GitHub Actions workflows:
@@ -208,14 +295,52 @@ GitHub Actions workflows:
 
 Pre-commit hooks (Husky): ESLint, Prettier, TypeScript checks.
 
+## Error Handling
+
+### Error Boundaries
+
+Next.js App Router error boundaries in `error.tsx` files:
+
+```typescript
+// app/inbox/error.tsx - Route-specific error boundary
+'use client';
+export default function InboxError({ error, reset }: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (/* Error UI with retry button */);
+}
+```
+
+- `app/error.tsx` - Global fallback for unhandled errors
+- `app/inbox/error.tsx` - Inbox-specific with contextual messaging
+- Always include `reset()` button and optional page reload
+
+### Server Action Errors
+
+All server actions return `ActionResult`:
+
+```typescript
+type ActionResult = { success: boolean; error?: string; data?: unknown };
+
+// Usage pattern
+const result = await createTask(data);
+if (!result.success) {
+  toast.error(result.error || 'Something went wrong');
+  return;
+}
+```
+
 ## Conventions
 
 - Server actions return `ActionResult { success, error?, data? }`
 - Use Zod schemas from `lib/validation.ts` for input validation
 - Use types from `types/database.ts` (e.g., `Tables<'projects'>`, `Enums<'project_status'>`)
 - Color classes from `lib/color-constants.ts` - never hardcode colors
+- Client utilities from `lib/client-utils.ts` - status config, getInitials, etc.
 - Components use `'use client'` directive for client-side interactivity
 - Tailwind for styling, no inline CSS
 - Conventional commits: `feat:`, `fix:`, `perf:`, `refactor:`
 - Use `React.memo()` for list item components
-- Invalidate SWR cache after mutations: `invalidateInboxTasks()`, `invalidateProjectTasks(id)`
+- Invalidate SWR cache after mutations: `invalidateInboxTasks(true)`, `invalidateProjectTasks(id, true)`
+- Wrap development-only console.logs: `if (process.env.NODE_ENV === 'development')`

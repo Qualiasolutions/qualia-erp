@@ -1,5 +1,11 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+// Bundle analyzer for performance debugging (run with ANALYZE=true npm run build)
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const nextConfig: NextConfig = {
   // Security headers
@@ -93,20 +99,22 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Sentry configuration
-export default withSentryConfig(nextConfig, {
-  // For all available options, see:
-  // https://github.com/getsentry/sentry-webpack-plugin#options
+// Sentry configuration (wrapped with bundle analyzer)
+export default withBundleAnalyzer(
+  withSentryConfig(nextConfig, {
+    // For all available options, see:
+    // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: process.env.SENTRY_ORG,
-  project: process.env.SENTRY_PROJECT,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
 
-  // Only print logs for uploading source maps in CI
-  silent: !process.env.CI,
+    // Only print logs for uploading source maps in CI
+    silent: !process.env.CI,
 
-  // Upload source maps for better stack traces
-  widenClientFileUpload: true,
+    // Upload source maps for better stack traces
+    widenClientFileUpload: true,
 
-  // Disable Sentry telemetry
-  telemetry: false,
-});
+    // Disable Sentry telemetry
+    telemetry: false,
+  })
+);

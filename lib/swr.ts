@@ -31,13 +31,39 @@ const isDocumentVisible = () => {
   return document.visibilityState === 'visible';
 };
 
+// Exponential backoff for error retries (reduces API hammering on failures)
+const onErrorRetry = (
+  error: Error,
+  key: string,
+  config: SWRConfiguration,
+  revalidate: (opts?: { retryCount?: number }) => void,
+  { retryCount }: { retryCount: number }
+) => {
+  // Don't retry on 4xx errors
+  if (
+    (error as Error & { status?: number }).status &&
+    (error as Error & { status?: number }).status! >= 400 &&
+    (error as Error & { status?: number }).status! < 500
+  )
+    return;
+
+  // Only retry up to 3 times
+  if (retryCount >= 3) return;
+
+  // Exponential backoff: 1s, 2s, 4s
+  const delay = Math.min(1000 * Math.pow(2, retryCount), 4000);
+  setTimeout(() => revalidate({ retryCount }), delay);
+};
+
 // SWR config with auto-refresh for real-time task updates
 // Stops refreshing when tab is hidden to save resources
+// Increased polling interval from 10s to 30s to reduce API calls
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
   revalidateOnFocus: true,
-  refreshInterval: () => (isDocumentVisible() ? 10000 : 0), // Stop refresh when tab hidden
-  dedupingInterval: 8000, // Allow more frequent updates for tasks
+  refreshInterval: () => (isDocumentVisible() ? 30000 : 0), // 30s refresh when visible, stop when hidden
+  dedupingInterval: 15000, // 15s dedup for tasks (was 8s)
+  onErrorRetry, // Use exponential backoff
 };
 
 /**
