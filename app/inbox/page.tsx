@@ -61,13 +61,6 @@ export default function InboxPage({ searchParams }: { searchParams: Promise<{ vi
             <p className="text-xs text-muted-foreground">Manage your tasks and to-dos</p>
           </div>
         </div>
-        <div className="mx-4 flex items-center rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-900/20 dark:text-yellow-200">
-          <p>
-            <strong>Note for Moayad:</strong> Always remember to start new chats frequently, use
-            /init, and every task to create a plan and apply it using superpowers. When done push to
-            github.
-          </p>
-        </div>
         <div className="flex items-center gap-2">
           <InboxViewToggle currentView={view} />
           <NewTaskModal />

@@ -140,6 +140,18 @@ export default {
       transitionDuration: {
         '400': '400ms',
       },
+      // Z-index scale to prevent conflicts between overlays
+      zIndex: {
+        dropdown: '40',
+        sticky: '45',
+        modal: '50',
+        popover: '55',
+        overlay: '60',
+        toast: '70',
+        tooltip: '80',
+        command: '90',
+        max: '100',
+      },
     },
   },
   plugins: [tailwindcssAnimate],

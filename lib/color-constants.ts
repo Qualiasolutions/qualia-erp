@@ -443,7 +443,65 @@ export const PROFICIENCY_LEVEL_COLORS = {
   },
 } as const;
 
+// Task Status Colors (Inbox/Project Tasks)
+export const TASK_STATUS_COLORS = {
+  Todo: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-600 dark:text-slate-400',
+    label: 'Todo',
+  },
+  'In Progress': {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-600 dark:text-blue-400',
+    label: 'In Progress',
+  },
+  Done: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    label: 'Done',
+  },
+} as const;
+
+// Task Priority Colors
+export const TASK_PRIORITY_COLORS = {
+  'No Priority': {
+    bg: 'bg-muted',
+    border: 'border-muted',
+    text: 'text-muted-foreground',
+    label: 'None',
+  },
+  Low: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-600 dark:text-blue-400',
+    label: 'Low',
+  },
+  Medium: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-600 dark:text-amber-400',
+    label: 'Medium',
+  },
+  High: {
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-600 dark:text-orange-400',
+    label: 'High',
+  },
+  Urgent: {
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    text: 'text-red-600 dark:text-red-400',
+    label: 'Urgent',
+  },
+} as const;
+
 // Type exports for TypeScript
+export type TaskStatusKey = keyof typeof TASK_STATUS_COLORS;
+export type TaskPriorityKey = keyof typeof TASK_PRIORITY_COLORS;
 export type IssueStatusKey = keyof typeof ISSUE_STATUS_COLORS;
 export type IssuePriorityKey = keyof typeof ISSUE_PRIORITY_COLORS;
 export type ProjectStatusKey = keyof typeof PROJECT_STATUS_COLORS;

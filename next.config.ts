@@ -68,28 +68,14 @@ const nextConfig: NextConfig = {
   // Experimental features for bundle optimization
   experimental: {
     // Tree-shake unused exports from these packages for smaller bundles
+    // Note: Reduced list to prevent build hangs with Next.js 16+ Turbopack
     optimizePackageImports: [
       'lucide-react',
       'date-fns',
-      'date-fns-tz',
       '@radix-ui/react-icons',
-      '@radix-ui/react-avatar',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-popover',
-      '@radix-ui/react-select',
-      '@radix-ui/react-tooltip',
-      '@radix-ui/react-switch',
-      '@radix-ui/react-checkbox',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-accordion',
-      '@radix-ui/react-label',
-      '@radix-ui/react-slot',
       'framer-motion',
-      'cmdk',
       '@dnd-kit/core',
       '@dnd-kit/sortable',
-      '@dnd-kit/utilities',
       '@tanstack/react-virtual',
       'zod',
     ],

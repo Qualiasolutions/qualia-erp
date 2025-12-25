@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -15,20 +15,13 @@ import {
   RefreshCw,
   Sparkles,
   AlertCircle,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   getWorkspaceHealthDashboard,
   recordAllProjectsHealth,
@@ -100,11 +93,7 @@ export function ProjectHealthDashboard({ workspaceId }: ProjectHealthDashboardPr
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
-  useEffect(() => {
-    loadDashboard();
-  }, [workspaceId]);
-
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -120,7 +109,11 @@ export function ProjectHealthDashboard({ workspaceId }: ProjectHealthDashboardPr
     } finally {
       setLoading(false);
     }
-  }
+  }, [workspaceId]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
 
   async function handleRefresh() {
     setRefreshing(true);
@@ -234,9 +227,7 @@ export function ProjectHealthDashboard({ workspaceId }: ProjectHealthDashboardPr
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div
-              className={cn('text-2xl font-bold', getHealthColor(workspaceStats.averageHealth))}
-            >
+            <div className={cn('text-2xl font-bold', getHealthColor(workspaceStats.averageHealth))}>
               {workspaceStats.averageHealth}%
             </div>
           </CardContent>
@@ -361,12 +352,8 @@ function ProjectHealthCard({ project }: { project: ProjectHealthData }) {
               )}
             </div>
             <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-              {project.client_name && (
-                <span>Client: {project.client_name}</span>
-              )}
-              {project.lead_name && (
-                <span>Lead: {project.lead_name}</span>
-              )}
+              {project.client_name && <span>Client: {project.client_name}</span>}
+              {project.lead_name && <span>Lead: {project.lead_name}</span>}
               {project.project_type && (
                 <Badge variant="secondary">{project.project_type.replace('_', ' ')}</Badge>
               )}
@@ -410,9 +397,7 @@ function ProjectHealthCard({ project }: { project: ProjectHealthData }) {
                     <Icon className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">{component.label}</span>
                   </div>
-                  <span className={cn('text-sm font-bold', getHealthColor(score))}>
-                    {score}%
-                  </span>
+                  <span className={cn('text-sm font-bold', getHealthColor(score))}>{score}%</span>
                 </div>
                 <Progress value={score} className="h-1.5" />
               </div>

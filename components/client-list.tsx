@@ -2,44 +2,19 @@
 
 import { useState, useMemo, useTransition } from 'react';
 import {
-  Building2,
-  Phone,
-  Globe,
-  MoreHorizontal,
-  Trash2,
   Search,
   Plus,
   Inbox,
   LayoutGrid,
   List,
   Columns3,
-  Folder,
-  Calendar,
   ArrowUpDown,
-  MapPin,
-  FileText,
-  ToggleLeft,
-  ToggleRight,
-  Skull,
   UserCheck,
   UserMinus,
+  Skull,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -47,26 +22,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { deleteClientRecord, toggleClientStatus, type LeadStatus } from '@/app/actions';
+import { deleteClientRecord, toggleClientStatus } from '@/app/actions';
 import { NewClientModal } from '@/components/new-client-modal';
+import { ClientCard } from '@/components/client-card';
+import { ClientRow } from '@/components/client-row';
+import { ClientDetailModal } from '@/components/client-detail-modal';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { formatDistanceToNow } from 'date-fns';
-
-export type Client = {
-  id: string;
-  display_name: string | null;
-  phone: string | null;
-  website: string | null;
-  billing_address: string | null;
-  lead_status: LeadStatus;
-  notes: string | null;
-  last_contacted_at: string | null;
-  created_at: string;
-  creator: { id: string; full_name: string | null; email: string | null } | null;
-  assigned: { id: string; full_name: string | null; email: string | null } | null;
-  projects?: { id: string }[];
-};
+import { type Client, type ClientStatus, statusPriority } from '@/lib/client-utils';
 
 type ViewMode = 'grid' | 'list' | 'columns';
 type SortBy = 'status' | 'name' | 'recent' | 'contacted' | 'projects';
@@ -75,499 +38,7 @@ interface ClientListProps {
   clients: Client[];
 }
 
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
-
-function getStatusConfig(status: LeadStatus) {
-  switch (status) {
-    case 'active_client':
-      return {
-        label: 'Active',
-        color: 'text-emerald-600 dark:text-emerald-400',
-        bg: 'bg-emerald-500/10',
-        hoverBg: 'hover:bg-emerald-500/20',
-        icon: ToggleRight,
-        iconBg: 'from-emerald-500/20 to-emerald-500/5',
-      };
-    case 'inactive_client':
-      return {
-        label: 'Inactive',
-        color: 'text-amber-600 dark:text-amber-400',
-        bg: 'bg-amber-500/10',
-        hoverBg: 'hover:bg-amber-500/20',
-        icon: ToggleLeft,
-        iconBg: 'from-amber-500/20 to-amber-500/5',
-      };
-    case 'dead_lead':
-      return {
-        label: 'Dead Lead',
-        color: 'text-red-600 dark:text-red-400',
-        bg: 'bg-red-500/10',
-        hoverBg: 'hover:bg-red-500/20',
-        icon: Skull,
-        iconBg: 'from-red-500/20 to-red-500/5',
-      };
-    default:
-      return {
-        label: 'Unknown',
-        color: 'text-muted-foreground',
-        bg: 'bg-muted',
-        hoverBg: 'hover:bg-muted/80',
-        icon: ToggleLeft,
-        iconBg: 'from-muted to-muted/50',
-      };
-  }
-}
-
-type ClientStatus = 'active_client' | 'inactive_client' | 'dead_lead';
-
-function ClientCard({
-  client,
-  onDelete,
-  onChangeStatus,
-  onOpenDetail,
-  isPending,
-}: {
-  client: Client;
-  onDelete: (id: string) => void;
-  onChangeStatus: (client: Client, status: ClientStatus) => void;
-  onOpenDetail: (client: Client) => void;
-  isPending: boolean;
-}) {
-  const projectCount = client.projects?.length || 0;
-  const statusConfig = getStatusConfig(client.lead_status);
-  const StatusIcon = statusConfig.icon;
-
-  return (
-    <div
-      onClick={() => onOpenDetail(client)}
-      className={cn(
-        'surface group relative flex cursor-pointer flex-col gap-3 rounded-xl p-4 transition-all duration-200 hover:shadow-md',
-        isPending && 'pointer-events-none opacity-50'
-      )}
-    >
-      {/* Header: Avatar + Name + Status */}
-      <div className="flex items-start gap-3">
-        <div className="relative">
-          <div
-            className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br',
-              statusConfig.iconBg
-            )}
-          >
-            <Building2 className={cn('h-5 w-5', statusConfig.color)} />
-          </div>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-semibold text-foreground">{client.display_name || 'Unnamed Client'}</h3>
-          {client.assigned && (
-            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Avatar className="h-4 w-4">
-                <AvatarFallback className="text-[8px]">
-                  {getInitials(client.assigned.full_name || 'U')}
-                </AvatarFallback>
-              </Avatar>
-              <span className="truncate">{client.assigned.full_name}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          {/* Status Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  'flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium transition-all',
-                  statusConfig.bg,
-                  statusConfig.hoverBg,
-                  statusConfig.color
-                )}
-              >
-                <StatusIcon className="h-4 w-4" />
-                {statusConfig.label}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onChangeStatus(client, 'active_client')}>
-                <UserCheck className="mr-2 h-4 w-4 text-emerald-500" />
-                Active
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onChangeStatus(client, 'inactive_client')}>
-                <UserMinus className="mr-2 h-4 w-4 text-amber-500" />
-                Inactive
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onChangeStatus(client, 'dead_lead')}>
-                <Skull className="mr-2 h-4 w-4 text-red-500" />
-                Dead Lead
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* More Options */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 flex-shrink-0 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-500">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-
-      {/* Contact Info */}
-      <div
-        className="space-y-1.5 text-xs text-muted-foreground"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {client.phone && (
-          <div className="flex items-center gap-2">
-            <Phone className="h-3.5 w-3.5 text-muted-foreground/70" />
-            <a href={`tel:${client.phone}`} className="transition-colors hover:text-foreground">
-              {client.phone}
-            </a>
-          </div>
-        )}
-        {client.website && (
-          <div className="flex items-center gap-2">
-            <Globe className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
-            <a
-              href={
-                client.website.startsWith('http') ? client.website : `https://${client.website}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="truncate transition-colors hover:text-foreground"
-            >
-              {client.website.replace(/^https?:\/\//, '').split('/')[0]}
-            </a>
-          </div>
-        )}
-        {client.billing_address && (
-          <div className="flex items-center gap-2">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-muted-foreground/70" />
-            <span className="truncate">{client.billing_address}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Notes */}
-      {client.notes && (
-        <div className="rounded-lg bg-muted/50 p-2.5 text-xs text-muted-foreground">
-          <div className="flex items-start gap-2">
-            <FileText className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-            <p className="line-clamp-2">{client.notes}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Footer Stats */}
-      <div className="flex items-center gap-4 border-t border-border/50 pt-3 text-xs">
-        {projectCount > 0 && (
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Folder className="h-3.5 w-3.5" />
-            <span className="font-medium text-foreground">{projectCount}</span>
-            <span>project{projectCount !== 1 ? 's' : ''}</span>
-          </div>
-        )}
-        {client.last_contacted_at && (
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            <span>
-              {formatDistanceToNow(new Date(client.last_contacted_at), { addSuffix: true })}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ClientRow({
-  client,
-  onDelete,
-  onChangeStatus,
-  onOpenDetail,
-  isPending,
-}: {
-  client: Client;
-  onDelete: (id: string) => void;
-  onChangeStatus: (client: Client, status: ClientStatus) => void;
-  onOpenDetail: (client: Client) => void;
-  isPending: boolean;
-}) {
-  const projectCount = client.projects?.length || 0;
-  const statusConfig = getStatusConfig(client.lead_status);
-  const StatusIcon = statusConfig.icon;
-
-  return (
-    <div
-      onClick={() => onOpenDetail(client)}
-      className={cn(
-        'group flex cursor-pointer items-center gap-4 rounded-lg px-4 py-3 transition-colors duration-200 hover:bg-secondary/50',
-        isPending && 'pointer-events-none opacity-50'
-      )}
-    >
-      <div className="relative">
-        <div
-          className={cn('flex h-10 w-10 items-center justify-center rounded-lg', statusConfig.bg)}
-        >
-          <Building2 className={cn('h-4 w-4', statusConfig.color)} />
-        </div>
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-foreground">
-          {client.display_name || 'Unnamed Client'}
-        </span>
-        <div
-          className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {client.phone && (
-            <a
-              href={`tel:${client.phone}`}
-              className="flex items-center gap-1 transition-colors hover:text-foreground"
-            >
-              <Phone className="h-3 w-3" />
-              {client.phone}
-            </a>
-          )}
-          {client.website && (
-            <a
-              href={
-                client.website.startsWith('http') ? client.website : `https://${client.website}`
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 transition-colors hover:text-foreground"
-            >
-              <Globe className="h-3 w-3" />
-              {client.website.replace(/^https?:\/\//, '').split('/')[0]}
-            </a>
-          )}
-          {client.assigned && (
-            <span className="flex items-center gap-1">
-              <Avatar className="h-3.5 w-3.5">
-                <AvatarFallback className="text-[7px]">
-                  {getInitials(client.assigned.full_name || 'U')}
-                </AvatarFallback>
-              </Avatar>
-              {client.assigned.full_name}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {projectCount > 0 && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Folder className="h-3.5 w-3.5" />
-          <span className="font-medium text-foreground">{projectCount}</span>
-        </div>
-      )}
-
-      {/* Status Dropdown */}
-      <div onClick={(e) => e.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-all',
-                statusConfig.bg,
-                statusConfig.hoverBg,
-                statusConfig.color
-              )}
-            >
-              <StatusIcon className="h-4 w-4" />
-              {statusConfig.label}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onChangeStatus(client, 'active_client')}>
-              <UserCheck className="mr-2 h-4 w-4 text-emerald-500" />
-              Active
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onChangeStatus(client, 'inactive_client')}>
-              <UserMinus className="mr-2 h-4 w-4 text-amber-500" />
-              Inactive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onChangeStatus(client, 'dead_lead')}>
-              <Skull className="mr-2 h-4 w-4 text-red-500" />
-              Dead Lead
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div onClick={(e) => e.stopPropagation()}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onDelete(client.id)} className="text-red-500">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-}
-
-// Client Detail Modal
-function ClientDetailModal({
-  client,
-  open,
-  onOpenChange,
-}: {
-  client: Client | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  if (!client) return null;
-  const statusConfig = getStatusConfig(client.lead_status);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                'flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br',
-                statusConfig.iconBg
-              )}
-            >
-              <Building2 className={cn('h-6 w-6', statusConfig.color)} />
-            </div>
-            <div>
-              <DialogTitle className="text-lg">{client.display_name || 'Unnamed Client'}</DialogTitle>
-              <DialogDescription>Client details and contact information</DialogDescription>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium',
-                  statusConfig.bg,
-                  statusConfig.color
-                )}
-              >
-                {statusConfig.label}
-              </span>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className="space-y-4 pt-4">
-          {/* Contact Information */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-medium text-muted-foreground">Contact Information</h4>
-            <div className="space-y-2">
-              {client.phone && (
-                <a
-                  href={`tel:${client.phone}`}
-                  className="flex items-center gap-3 rounded-lg bg-muted/50 p-3 transition-colors hover:bg-muted"
-                >
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{client.phone}</span>
-                </a>
-              )}
-              {client.website && (
-                <a
-                  href={
-                    client.website.startsWith('http') ? client.website : `https://${client.website}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-lg bg-muted/50 p-3 transition-colors hover:bg-muted"
-                >
-                  <Globe className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{client.website}</span>
-                </a>
-              )}
-              {client.billing_address && (
-                <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
-                  <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{client.billing_address}</span>
-                </div>
-              )}
-              {!client.phone && !client.website && !client.billing_address && (
-                <p className="text-sm text-muted-foreground">No contact information available</p>
-              )}
-            </div>
-          </div>
-
-          {/* Notes */}
-          {client.notes && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
-              <div className="rounded-lg bg-muted/50 p-3">
-                <p className="whitespace-pre-wrap text-sm">{client.notes}</p>
-              </div>
-            </div>
-          )}
-
-          {/* Projects */}
-          {client.projects && client.projects.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">
-                Projects ({client.projects.length})
-              </h4>
-              <div className="flex items-center gap-2 rounded-lg bg-qualia-500/10 p-3">
-                <Folder className="h-4 w-4 text-qualia-500" />
-                <span className="text-sm font-medium text-qualia-500">
-                  {client.projects.length} project{client.projects.length !== 1 ? 's' : ''}{' '}
-                  connected
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Assigned */}
-          {client.assigned && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Assigned To</h4>
-              <div className="flex items-center gap-3 rounded-lg bg-muted/50 p-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{getInitials(client.assigned.full_name || 'U')}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-sm font-medium">{client.assigned.full_name}</p>
-                  {client.assigned.email && (
-                    <p className="text-xs text-muted-foreground">{client.assigned.email}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+export type { Client };
 
 export function ClientList({ clients: initialClients }: ClientListProps) {
   const router = useRouter();
@@ -593,17 +64,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     );
   }, [initialClients, searchQuery]);
 
-  // Status priority for sorting (active first, then inactive, then dead)
-  const statusPriority: Record<LeadStatus, number> = {
-    active_client: 0,
-    inactive_client: 1,
-    dead_lead: 2,
-    // These are filtered out but needed for type safety
-    dropped: 3,
-    cold: 4,
-    hot: 5,
-  };
-
   // Sort clients
   const sortedClients = useMemo(() => {
     const sorted = [...searchFiltered];
@@ -612,7 +72,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
         sorted.sort((a, b) => {
           const statusDiff = statusPriority[a.lead_status] - statusPriority[b.lead_status];
           if (statusDiff !== 0) return statusDiff;
-          // Within same status, sort by project count (most first), then name
           const projectDiff = (b.projects?.length || 0) - (a.projects?.length || 0);
           if (projectDiff !== 0) return projectDiff;
           const aName = a.display_name || '';
@@ -642,7 +101,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
         break;
     }
     return sorted;
-  }, [searchFiltered, sortBy, statusPriority]);
+  }, [searchFiltered, sortBy]);
 
   // Group clients by status for column view
   const groupedClients = useMemo(() => {
@@ -650,7 +109,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     const inactive = searchFiltered.filter((c) => c.lead_status === 'inactive_client');
     const dead = searchFiltered.filter((c) => c.lead_status === 'dead_lead');
 
-    // Sort each group by project count, then name
     const sortGroup = (clients: Client[]) =>
       clients.sort((a, b) => {
         const projectDiff = (b.projects?.length || 0) - (a.projects?.length || 0);
@@ -667,7 +125,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     };
   }, [searchFiltered]);
 
-  // Count clients by status
   const activeCount = groupedClients.active.length;
   const inactiveCount = groupedClients.inactive.length;
   const deadLeadCount = groupedClients.dead.length;
@@ -684,10 +141,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     });
   }
 
-  async function handleChangeStatus(
-    client: Client,
-    newStatus: 'active_client' | 'inactive_client' | 'dead_lead'
-  ) {
+  async function handleChangeStatus(client: Client, newStatus: ClientStatus) {
     if (client.lead_status === newStatus) return;
     setPendingId(client.id);
     startTransition(async () => {
@@ -743,7 +197,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Sort Dropdown - only show when not in columns view */}
           {viewMode !== 'columns' && (
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
               <SelectTrigger className="h-9 w-[140px] text-xs">
@@ -760,7 +213,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
             </Select>
           )}
 
-          {/* View Toggle */}
           <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
             <button
               onClick={() => setViewMode('columns')}

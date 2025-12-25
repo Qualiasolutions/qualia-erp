@@ -65,10 +65,14 @@ export function usePresence({ channelName, user }: UsePresenceProps) {
         updatePresence(state);
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
-        console.log('User joined:', newPresences);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Presence] User joined:', newPresences);
+        }
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-        console.log('User left:', leftPresences);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Presence] User left:', leftPresences);
+        }
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED') {

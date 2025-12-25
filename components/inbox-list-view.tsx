@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { format } from 'date-fns';
 import { GripVertical, Calendar, AlertCircle, Edit2, Trash2, FolderOpen } from 'lucide-react';
 import {
@@ -197,6 +197,11 @@ export function InboxListView({ tasks }: InboxListViewProps) {
   const [, setIsReordering] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
+
+  // Sync local state with props when tasks change from server/SWR
+  useEffect(() => {
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

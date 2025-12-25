@@ -25,11 +25,18 @@ export const cacheKeys = {
   projectTasks: (projectId: string) => `project-tasks-${projectId}`,
 } as const;
 
+// Check if document is visible (for tab visibility)
+const isDocumentVisible = () => {
+  if (typeof document === 'undefined') return true;
+  return document.visibilityState === 'visible';
+};
+
 // SWR config with auto-refresh for real-time task updates
+// Stops refreshing when tab is hidden to save resources
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
   revalidateOnFocus: true,
-  refreshInterval: 10000, // Refresh every 10 seconds (reduced from 5s for less load)
+  refreshInterval: () => (isDocumentVisible() ? 10000 : 0), // Stop refresh when tab hidden
   dedupingInterval: 8000, // Allow more frequent updates for tasks
 };
 
@@ -199,14 +206,26 @@ export function useProjectTasks(projectId: string | null) {
 
 /**
  * Invalidate project tasks cache
+ * @param immediate - If true, forces immediate refetch (fixes 8-10s stale data issue)
  */
-export function invalidateProjectTasks(projectId: string) {
-  mutate(cacheKeys.projectTasks(projectId));
+export function invalidateProjectTasks(projectId: string, immediate = true) {
+  if (immediate) {
+    // Force immediate refetch by passing undefined data and revalidate option
+    mutate(cacheKeys.projectTasks(projectId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.projectTasks(projectId));
+  }
 }
 
 /**
  * Invalidate inbox tasks cache
+ * @param immediate - If true, forces immediate refetch (fixes 8-10s stale data issue)
  */
-export function invalidateInboxTasks() {
-  mutate(cacheKeys.inboxTasks);
+export function invalidateInboxTasks(immediate = true) {
+  if (immediate) {
+    // Force immediate refetch by passing undefined data and revalidate option
+    mutate(cacheKeys.inboxTasks, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.inboxTasks);
+  }
 }
