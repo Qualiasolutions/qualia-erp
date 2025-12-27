@@ -41,7 +41,7 @@ type ActionResult = { success: boolean; error?: string; data?: unknown };
 ```
 
 Main actions file (~2600 lines) handles: issues, projects, teams, clients, meetings, milestones.
-Specialized actions in `app/actions/`: health, inbox, learning.
+Specialized actions in `app/actions/`: health, inbox, learning, shared (reusable utilities).
 
 ### Task System
 
@@ -49,6 +49,7 @@ Tasks are the unified work item system:
 
 - **Tasks** (`tasks` table): All tasks belong to a project (required via `project_id`)
 - **Inbox visibility**: Tasks can optionally appear in inbox via `show_in_inbox` boolean
+- **Item types**: `task` | `issue` | `note` | `resource` (for kanban categorization)
 - **Status**: Todo → In Progress → Done
 - **Priority**: Hidden from UI, defaults to 'No Priority'
 
@@ -59,6 +60,7 @@ type Task = {
   project_id: string; // Required - every task belongs to a project
   show_in_inbox: boolean; // If true, appears in inbox AND project view
   status: 'Todo' | 'In Progress' | 'Done';
+  item_type: 'task' | 'issue' | 'note' | 'resource';
   // ... other fields
 };
 ```
@@ -180,6 +182,14 @@ Use semantic z-index values to prevent overlay conflicts:
 z-dropdown: 40, z-sticky: 45, z-modal: 50, z-popover: 55, z-overlay: 60, z-toast: 70, z-tooltip: 80, z-command: 90
 ```
 
+### Brand Colors
+
+Use `qualia-*` classes for brand colors (teal #00A4AC):
+
+```
+text-qualia-400, bg-qualia-500/10, border-qualia-500/30
+```
+
 ### API Optimization
 
 - Chat API timeout reduced to 30s to prevent slow request accumulation
@@ -235,17 +245,17 @@ Key database types are in `types/database.ts` - use `Tables<'tablename'>` for ro
 
 ### Key Tables
 
-| Table        | Rows | Description                                      |
-| ------------ | ---- | ------------------------------------------------ |
-| `tasks`      | 26   | Tasks with `project_id` and `show_in_inbox` flag |
-| `projects`   | 11   | Projects containing tasks                        |
-| `clients`    | 53   | CRM clients with lead_status                     |
-| `meetings`   | 55   | Scheduled meetings with attendees                |
-| `activities` | 56   | Activity feed (virtualized)                      |
-| `profiles`   | 2    | User profiles linked to auth.users               |
-| `workspaces` | 4    | Multi-tenant workspaces                          |
-| `documents`  | 12   | RAG documents with pgvector embeddings           |
-| `issues`     | 2    | Legacy issue system (separate from tasks)        |
+| Table        | Description                                           |
+| ------------ | ----------------------------------------------------- |
+| `tasks`      | Tasks with `project_id`, `show_in_inbox`, `item_type` |
+| `projects`   | Projects containing tasks                             |
+| `clients`    | CRM clients with lead_status                          |
+| `meetings`   | Scheduled meetings with attendees                     |
+| `activities` | Activity feed (virtualized for performance)           |
+| `profiles`   | User profiles linked to auth.users                    |
+| `workspaces` | Multi-tenant workspaces                               |
+| `documents`  | RAG documents with pgvector embeddings                |
+| `issues`     | Legacy issue system (separate from tasks)             |
 
 ### Supabase Connection
 
@@ -278,6 +288,15 @@ npm test -- path/to/test    # Single test file
 ```
 
 Tests in `__tests__/` mirror source structure. Coverage threshold: 50%.
+
+## Security
+
+Security headers configured in `next.config.ts`:
+
+- CSP with strict connect-src whitelist (Supabase, Groq, VAPI, Sentry)
+- X-Frame-Options: DENY
+- HSTS with includeSubDomains
+- Microphone permission allowed (for voice assistant)
 
 ## Deployment
 

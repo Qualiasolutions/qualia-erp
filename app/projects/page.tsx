@@ -1,22 +1,37 @@
-import { Suspense, use } from 'react';
+import { Suspense } from 'react';
 import { connection } from 'next/server';
-import { ProjectList, type Project } from '@/components/project-list';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { ProjectViewToggle } from '@/components/project-view-toggle';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { Folder } from 'lucide-react';
+import { ProjectListView } from '@/components/project-list-view';
 import type { ProjectType } from '@/types/database';
 
-type FilterType = ProjectType | 'all';
-type ViewMode = 'columns' | 'grid' | 'list' | 'timeline';
-
-interface FilterParams {
-  type?: FilterType;
-  view?: ViewMode;
+export interface ProjectData {
+  id: string;
+  name: string;
+  status: string;
+  start_date: string | null;
+  target_date: string | null;
+  project_group: string | null;
+  project_type: ProjectType | null;
+  deployment_platform: string | null;
+  client_id: string | null;
+  client_name: string | null;
+  lead: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+  } | null;
+  issue_stats: {
+    total: number;
+    done: number;
+  };
+  roadmap_progress: number;
+  metadata: { is_partnership?: boolean; partner_name?: string } | null;
 }
 
-async function ProjectListLoader({ filters }: { filters: FilterParams }) {
+async function ProjectListLoader() {
   await connection();
   const supabase = await createClient();
   const workspaceId = await getCurrentWorkspaceId();
@@ -27,11 +42,11 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectList projects={[]} />;
+    return <ProjectListView projects={[]} />;
   }
 
   // Map RPC result to Project interface
-  const projects: Project[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
+  const projects: ProjectData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
     name: p.name as string,
     status: p.status as string,
@@ -57,65 +72,31 @@ async function ProjectListLoader({ filters }: { filters: FilterParams }) {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Get the filter type (default to 'all') and view mode
-  const filterType = filters.type || 'all';
-  const viewMode = filters.view || 'columns';
-
-  return <ProjectList projects={projects} filterType={filterType} viewMode={viewMode} />;
+  return <ProjectListView projects={projects} />;
 }
 
 function ProjectListSkeleton() {
-  const CardSkeleton = () => (
-    <div className="surface flex flex-col gap-2 rounded-lg p-3">
-      <div className="flex items-center gap-3">
-        <div className="h-7 w-7 animate-pulse rounded-md bg-muted" />
-        <div className="h-4 flex-1 animate-pulse rounded bg-muted" />
-        <div className="h-1 w-12 animate-pulse rounded-full bg-muted" />
-        <div className="h-3 w-7 animate-pulse rounded bg-muted" />
-      </div>
-      <div className="flex items-center gap-3 pl-9">
-        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-      </div>
-    </div>
-  );
-
   return (
-    <div className="space-y-5">
-      {/* Stats skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-8 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+    <div className="space-y-2">
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
+        >
+          <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
+          <div className="flex-1 space-y-2">
+            <div className="h-5 w-48 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
           </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-4">
-            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-          </div>
+          <div className="h-2 w-24 animate-pulse rounded-full bg-muted" />
+          <div className="h-5 w-12 animate-pulse rounded bg-muted" />
         </div>
-        <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
-          <div className="h-8 w-8 animate-pulse rounded bg-muted" />
-          <div className="h-8 w-8 animate-pulse rounded bg-muted" />
-        </div>
-      </div>
-      {/* Grid skeleton */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(9)].map((_, i) => (
-          <CardSkeleton key={i} />
-        ))}
-      </div>
+      ))}
     </div>
   );
 }
 
-export default function ProjectsPage({ searchParams }: { searchParams: Promise<FilterParams> }) {
-  // React 19: Use the use() hook to unwrap promises directly
-  const filters = use(searchParams);
-
+export default function ProjectsPage() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
@@ -136,15 +117,10 @@ export default function ProjectsPage({ searchParams }: { searchParams: Promise<F
         <NewProjectModal />
       </header>
 
-      {/* View Toggle */}
-      <div className="flex items-center justify-end border-b border-border px-4 py-2.5 sm:px-6">
-        <ProjectViewToggle currentView={filters.view} currentType={filters.type} />
-      </div>
-
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         <Suspense fallback={<ProjectListSkeleton />}>
-          <ProjectListLoader filters={filters} />
+          <ProjectListLoader />
         </Suspense>
       </div>
     </div>
