@@ -41,7 +41,7 @@ type ActionResult = { success: boolean; error?: string; data?: unknown };
 ```
 
 Main actions file (~2600 lines) handles: issues, projects, teams, clients, meetings, milestones.
-Specialized actions in `app/actions/`: health, inbox, learning, shared (reusable utilities).
+Specialized actions in `app/actions/`: health, inbox, learning, payments, shared (reusable utilities).
 
 ### Task System
 
@@ -78,7 +78,8 @@ app/
 ├── clients/                # CRM section
 ├── inbox/                  # Personal task inbox (show_in_inbox=true tasks)
 │   └── error.tsx           # Inbox-specific error boundary
-├── projects/               # Project management with task kanban
+├── payments/               # Hidden admin-only financial tracking (/payments)
+├── projects/               # Project management (grouped list view)
 └── schedule/               # Calendar views
 
 lib/
@@ -92,6 +93,7 @@ lib/
 └── vapi-webhook-handlers.ts # Voice tool handlers
 
 components/
+├── project-list-view.tsx   # Projects grouped list (by type: AI, Voice, Web, etc.)
 ├── project-task-kanban.tsx # Drag-and-drop task kanban for projects
 ├── new-task-modal.tsx      # Create task (requires project, optional inbox)
 ├── edit-task-modal.tsx     # Edit task details
@@ -250,6 +252,7 @@ Key database types are in `types/database.ts` - use `Tables<'tablename'>` for ro
 | `tasks`      | Tasks with `project_id`, `show_in_inbox`, `item_type` |
 | `projects`   | Projects containing tasks                             |
 | `clients`    | CRM clients with lead_status                          |
+| `payments`   | Financial tracking (admin-only via RLS)               |
 | `meetings`   | Scheduled meetings with attendees                     |
 | `activities` | Activity feed (virtualized for performance)           |
 | `profiles`   | User profiles linked to auth.users                    |
@@ -297,6 +300,15 @@ Security headers configured in `next.config.ts`:
 - X-Frame-Options: DENY
 - HSTS with includeSubDomains
 - Microphone permission allowed (for voice assistant)
+
+### Hidden Admin Pages
+
+Some pages are hidden from navigation and restricted to specific users:
+
+- `/payments` - Financial tracking, restricted to `info@qualiasolutions.net`
+  - Uses RLS policy checking `auth.users.email`
+  - Server-side redirect for unauthorized users
+  - Not shown in sidebar navigation
 
 ## Deployment
 
