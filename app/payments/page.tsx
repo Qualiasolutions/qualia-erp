@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentWorkspaceId } from '@/app/actions';
 import { getPayments, getPaymentsSummary } from '@/app/actions/payments';
 import { PaymentsClient } from './payments-client';
 import { Wallet } from 'lucide-react';
@@ -21,9 +22,18 @@ async function PaymentsLoader() {
     redirect('/');
   }
 
+  const workspaceId = await getCurrentWorkspaceId();
+
+  // Fetch clients for the dropdown
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('id, name, display_name')
+    .eq('workspace_id', workspaceId)
+    .order('name');
+
   const [payments, summary] = await Promise.all([getPayments(), getPaymentsSummary()]);
 
-  return <PaymentsClient payments={payments} summary={summary} />;
+  return <PaymentsClient payments={payments} summary={summary} clients={clients || []} />;
 }
 
 function PaymentsSkeleton() {

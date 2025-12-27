@@ -29,6 +29,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
+export type Client = {
+  id: string;
+  name: string;
+  display_name: string | null;
+};
+
 interface PaymentsClientProps {
   payments: Payment[];
   summary: {
@@ -37,6 +43,7 @@ interface PaymentsClientProps {
     pendingIncoming: number;
     pendingOutgoing: number;
   };
+  clients: Client[];
 }
 
 const STATUS_CONFIG = {
@@ -92,7 +99,7 @@ function SummaryCard({
   );
 }
 
-function NewPaymentForm({ onClose }: { onClose: () => void }) {
+function NewPaymentForm({ onClose, clients }: { onClose: () => void; clients: Client[] }) {
   const [isPending, startTransition] = useTransition();
   const [type, setType] = useState<'incoming' | 'outgoing'>('incoming');
 
@@ -104,7 +111,13 @@ function NewPaymentForm({ onClose }: { onClose: () => void }) {
       const result = await createPayment({
         type,
         amount: parseFloat(formData.get('amount') as string),
-        description: formData.get('description') as string,
+        description:
+          type === 'incoming'
+            ? clients.find((c) => c.id === formData.get('client_id'))?.display_name ||
+              clients.find((c) => c.id === formData.get('client_id'))?.name ||
+              'Client payment'
+            : (formData.get('description') as string),
+        client_id: type === 'incoming' ? (formData.get('client_id') as string) : undefined,
         category: (formData.get('category') as string) || undefined,
         payment_date: (formData.get('payment_date') as string) || undefined,
         status: (formData.get('status') as 'pending' | 'completed') || 'pending',
@@ -163,17 +176,35 @@ function NewPaymentForm({ onClose }: { onClose: () => void }) {
         />
       </div>
 
-      {/* Description */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-foreground">Description</label>
-        <input
-          type="text"
-          name="description"
-          required
-          placeholder="What is this payment for?"
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
-        />
-      </div>
+      {/* Client selection for incoming OR Description for outgoing */}
+      {type === 'incoming' ? (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
+          <select
+            name="client_id"
+            required
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          >
+            <option value="">Select a client...</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.display_name || client.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : (
+        <div>
+          <label className="mb-1.5 block text-sm font-medium text-foreground">Description</label>
+          <input
+            type="text"
+            name="description"
+            required
+            placeholder="What is this expense for?"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          />
+        </div>
+      )}
 
       {/* Category & Date row */}
       <div className="grid grid-cols-2 gap-3">
@@ -182,7 +213,7 @@ function NewPaymentForm({ onClose }: { onClose: () => void }) {
           <input
             type="text"
             name="category"
-            placeholder="e.g., Software, Salary"
+            placeholder={type === 'incoming' ? 'e.g., Project, Retainer' : 'e.g., Software, Salary'}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
           />
         </div>
@@ -286,7 +317,11 @@ function PaymentRow({ payment }: { payment: Payment }) {
       {/* Details */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="truncate font-medium text-foreground">{payment.description}</p>
+          <p className="truncate font-medium text-foreground">
+            {isIncoming && (payment.client?.display_name || payment.client?.name)
+              ? payment.client.display_name || payment.client.name
+              : payment.description}
+          </p>
           {payment.category && (
             <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
               {payment.category}
@@ -295,9 +330,7 @@ function PaymentRow({ payment }: { payment: Payment }) {
         </div>
         <div className="mt-0.5 flex items-center gap-3 text-sm text-muted-foreground">
           <span>{format(new Date(payment.payment_date), 'MMM d, yyyy')}</span>
-          {payment.client?.display_name || payment.client?.name ? (
-            <span className="truncate">• {payment.client.display_name || payment.client.name}</span>
-          ) : null}
+          {!isIncoming && payment.notes && <span className="truncate">• {payment.notes}</span>}
         </div>
       </div>
 
@@ -366,7 +399,7 @@ function PaymentRow({ payment }: { payment: Payment }) {
   );
 }
 
-export function PaymentsClient({ payments, summary }: PaymentsClientProps) {
+export function PaymentsClient({ payments, summary, clients }: PaymentsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const balance = summary.totalIncoming - summary.totalOutgoing;
@@ -403,7 +436,7 @@ export function PaymentsClient({ payments, summary }: PaymentsClientProps) {
               <DialogHeader>
                 <DialogTitle>New Payment</DialogTitle>
               </DialogHeader>
-              <NewPaymentForm onClose={() => setDialogOpen(false)} />
+              <NewPaymentForm onClose={() => setDialogOpen(false)} clients={clients} />
             </DialogContent>
           </Dialog>
         </div>
