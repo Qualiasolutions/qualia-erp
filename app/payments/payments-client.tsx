@@ -602,10 +602,10 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
       );
     });
 
-    // Sort groups by date (newest first)
+    // Sort groups by date (oldest first / chronological)
     return Object.values(groups).sort((a, b) => {
-      if (a.year !== b.year) return b.year - a.year;
-      return b.month - a.month;
+      if (a.year !== b.year) return a.year - b.year;
+      return a.month - b.month;
     });
   }, [payments]);
 
