@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect, memo } from 'react';
-import { format } from 'date-fns';
-import { GripVertical, Calendar, AlertCircle, Edit2, Trash2, FolderOpen } from 'lucide-react';
+import { useState, useEffect, memo, useCallback } from 'react';
+import { GripVertical, Trash2, Circle, Loader2, CheckCircle2, MoreHorizontal } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -21,72 +20,53 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Task } from '@/app/actions/inbox';
-import { reorderTasks, deleteTask } from '@/app/actions/inbox';
+import { reorderTasks, deleteTask, quickUpdateTask } from '@/app/actions/inbox';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { renderTextWithLinks } from '@/lib/render-links';
 import { Button } from '@/components/ui/button';
-import { EditTaskModal } from '@/components/edit-task-modal';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { InlineText, InlineSelect, InlineDate } from '@/components/ui/inline-edit';
+import { invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
 
 interface InboxListViewProps {
   tasks: Task[];
 }
 
-const priorityConfig = {
-  'No Priority': { color: 'text-muted-foreground', bg: 'bg-muted', label: 'None' },
-  Low: {
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    label: 'Low',
-  },
-  Medium: {
-    color: 'text-amber-600 dark:text-amber-400',
-    bg: 'bg-amber-100 dark:bg-amber-900/30',
-    label: 'Medium',
-  },
-  High: {
-    color: 'text-orange-600 dark:text-orange-400',
-    bg: 'bg-orange-100 dark:bg-orange-900/30',
-    label: 'High',
-  },
-  Urgent: {
-    color: 'text-red-600 dark:text-red-400',
-    bg: 'bg-red-100 dark:bg-red-900/30',
-    label: 'Urgent',
-  },
-};
-
-const statusConfig = {
-  Todo: {
-    color: 'text-slate-600 dark:text-slate-400',
-    bg: 'bg-slate-100 dark:bg-slate-900/30',
-    label: 'Todo',
-  },
-  'In Progress': {
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
+// Status options for inline select
+const statusOptions = [
+  { value: 'Todo', label: 'Todo', icon: <Circle className="h-3.5 w-3.5 text-muted-foreground" /> },
+  {
+    value: 'In Progress',
     label: 'In Progress',
+    icon: <Loader2 className="h-3.5 w-3.5 text-blue-500" />,
   },
-  Done: {
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
-    label: 'Done',
-  },
+  { value: 'Done', label: 'Done', icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> },
+];
+
+// Minimal status config for section headers
+const statusConfig = {
+  Todo: { label: 'Todo' },
+  'In Progress': { label: 'In Progress' },
+  Done: { label: 'Done' },
 };
 
-// Memoized SortableTaskRow to prevent re-renders when sibling tasks change
+// Memoized SortableTaskRow with inline editing
 const SortableTaskRow = memo(function SortableTaskRow({
   task,
   onDelete,
-  onEdit,
 }: {
   task: Task;
   onDelete: (id: string) => void;
-  onEdit: (task: Task) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
   });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -94,99 +74,156 @@ const SortableTaskRow = memo(function SortableTaskRow({
     opacity: isDragging ? 0.5 : 1,
   };
 
-  const priority = priorityConfig[task.priority];
-  const status = statusConfig[task.status];
   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Done';
+  const showPriority = task.priority === 'High' || task.priority === 'Urgent';
+
+  // Inline update handlers
+  const handleTitleSave = useCallback(
+    async (newTitle: string) => {
+      setIsUpdating(true);
+      try {
+        const result = await quickUpdateTask(task.id, { title: newTitle });
+        if (result.success) {
+          invalidateInboxTasks(true);
+          if (task.project_id) invalidateProjectTasks(task.project_id, true);
+        }
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [task.id, task.project_id]
+  );
+
+  const handleStatusSave = useCallback(
+    async (newStatus: string) => {
+      setIsUpdating(true);
+      try {
+        const result = await quickUpdateTask(task.id, {
+          status: newStatus as 'Todo' | 'In Progress' | 'Done',
+        });
+        if (result.success) {
+          invalidateInboxTasks(true);
+          if (task.project_id) invalidateProjectTasks(task.project_id, true);
+        }
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [task.id, task.project_id]
+  );
+
+  const handleDueDateSave = useCallback(
+    async (newDate: Date | null) => {
+      setIsUpdating(true);
+      try {
+        const result = await quickUpdateTask(task.id, {
+          due_date: newDate ? newDate.toISOString().split('T')[0] : null,
+        });
+        if (result.success) {
+          invalidateInboxTasks(true);
+          if (task.project_id) invalidateProjectTasks(task.project_id, true);
+        }
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [task.id, task.project_id]
+  );
 
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex items-center gap-4 rounded-lg border border-border bg-card p-4 transition-all hover:shadow-sm',
-        isDragging && 'shadow-lg'
+        'group flex items-center gap-3 rounded-md border border-border bg-card p-3 transition-colors duration-150 hover:border-border/80',
+        isDragging && 'ring-1 ring-primary/30',
+        isUpdating && 'opacity-70'
       )}
     >
+      {/* Drag handle */}
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        className="cursor-grab text-muted-foreground/30 hover:text-muted-foreground active:cursor-grabbing"
       >
-        <GripVertical className="h-4 w-4" />
+        <GripVertical className="h-3.5 w-3.5" />
       </button>
 
-      <div className="min-w-0 flex-1">
-        <div className="mb-1 flex items-center gap-3">
-          <h3 className="truncate text-sm font-semibold text-foreground">{task.title}</h3>
-          <span
-            className={cn(
-              'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-              status.color,
-              status.bg
-            )}
-          >
-            {status.label}
-          </span>
-          {task.priority !== 'No Priority' && (
-            <span
-              className={cn(
-                'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                priority.color,
-                priority.bg
-              )}
-            >
-              {priority.label}
-            </span>
-          )}
+      {/* Main content - single line layout */}
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        {/* Title - inline editable */}
+        <InlineText
+          value={task.title}
+          onSave={handleTitleSave}
+          className="min-w-0 flex-1 truncate text-[13px] font-medium text-foreground"
+          disabled={isUpdating}
+        />
+
+        {/* Metadata - inline with dots */}
+        <div className="flex shrink-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+          {/* Status - inline select */}
+          <InlineSelect
+            value={task.status}
+            options={statusOptions}
+            onSave={handleStatusSave}
+            disabled={isUpdating}
+          />
+
           {task.project && (
-            <span
-              className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-              title={task.project.name}
-            >
-              <FolderOpen className="h-3 w-3" />
-              <span className="max-w-[120px] truncate">{task.project.name}</span>
-            </span>
+            <>
+              <span className="text-border">·</span>
+              <span className="max-w-[80px] truncate">{task.project.name}</span>
+            </>
           )}
-        </div>
-        {task.description && (
-          <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">
-            {renderTextWithLinks(task.description)}
-          </p>
-        )}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          {task.due_date && (
-            <div
-              className={cn(
-                'flex items-center gap-1',
-                isOverdue && 'text-red-600 dark:text-red-400'
-              )}
-            >
-              <Calendar className="h-3 w-3" />
-              <span>{format(new Date(task.due_date), 'MMM d, yyyy')}</span>
-              {isOverdue && <AlertCircle className="h-3 w-3" />}
-            </div>
+
+          {/* Due date - inline picker */}
+          <span className="text-border">·</span>
+          <InlineDate
+            value={task.due_date ? new Date(task.due_date) : null}
+            onSave={handleDueDateSave}
+            placeholder="No date"
+            disabled={isUpdating}
+            showClear={false}
+            className={cn(isOverdue && 'font-medium text-red-500')}
+          />
+
+          {showPriority && (
+            <>
+              <span className="text-border">·</span>
+              <span
+                className={cn(
+                  'font-medium',
+                  task.priority === 'Urgent' ? 'text-red-500' : 'text-orange-500'
+                )}
+              >
+                {task.priority}
+              </span>
+            </>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          onClick={() => onEdit(task)}
-        >
-          <Edit2 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-red-500"
-          onClick={() => onDelete(task.id)}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
+      {/* Actions */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover:opacity-100"
+          >
+            <MoreHorizontal className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-32">
+          <DropdownMenuItem
+            onClick={() => onDelete(task.id)}
+            className="text-red-500 focus:text-red-500"
+          >
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 });
@@ -195,7 +232,6 @@ export function InboxListView({ tasks }: InboxListViewProps) {
   const router = useRouter();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [, setIsReordering] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [localTasks, setLocalTasks] = useState<Task[]>(tasks);
 
   // Sync local state with props when tasks change from server/SWR
@@ -296,10 +332,6 @@ export function InboxListView({ tasks }: InboxListViewProps) {
     }
   };
 
-  const handleEdit = (task: Task) => {
-    setEditingTask(task);
-  };
-
   if (tasks.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center rounded-lg border border-dashed border-border text-center">
@@ -314,67 +346,49 @@ export function InboxListView({ tasks }: InboxListViewProps) {
   const statusOrder: Task['status'][] = ['Todo', 'In Progress', 'Done'];
 
   return (
-    <>
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="space-y-6">
-          {statusOrder.map((status) => {
-            const statusTasks = tasksByStatus[status] || [];
-            if (statusTasks.length === 0) return null;
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="space-y-6">
+        {statusOrder.map((status) => {
+          const statusTasks = tasksByStatus[status] || [];
+          if (statusTasks.length === 0) return null;
 
-            return (
-              <div key={status} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {statusConfig[status].label}
-                  </h3>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {statusTasks.length}
-                  </span>
+          return (
+            <div key={status} className="space-y-2">
+              {/* Section header - Minimal */}
+              <div className="flex items-center gap-2 py-1">
+                <h3 className="text-[13px] font-medium text-foreground">
+                  {statusConfig[status].label}
+                </h3>
+                <span className="text-xs text-muted-foreground">({statusTasks.length})</span>
+              </div>
+              <SortableContext
+                items={statusTasks.map((t) => t.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {statusTasks.map((task) => (
+                    <SortableTaskRow key={task.id} task={task} onDelete={handleDelete} />
+                  ))}
                 </div>
-                <SortableContext
-                  items={statusTasks.map((t) => t.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {statusTasks.map((task) => (
-                      <SortableTaskRow
-                        key={task.id}
-                        task={task}
-                        onDelete={handleDelete}
-                        onEdit={handleEdit}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </div>
-            );
-          })}
-        </div>
-        <DragOverlay>
-          {activeTask ? (
-            <div className="rotate-1 opacity-90">
-              <div className="rounded-lg border border-border bg-card p-4 shadow-lg">
-                <div className="text-sm font-semibold">{activeTask.title}</div>
-              </div>
+              </SortableContext>
             </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
-
-      {editingTask && (
-        <EditTaskModal
-          task={editingTask}
-          open={!!editingTask}
-          onOpenChange={(open) => {
-            if (!open) setEditingTask(null);
-          }}
-        />
-      )}
-    </>
+          );
+        })}
+      </div>
+      <DragOverlay>
+        {activeTask ? (
+          <div className="rotate-1 opacity-95">
+            <div className="rounded-md border border-border bg-card p-3 shadow-elevation-2 ring-1 ring-primary/20">
+              <div className="text-[13px] font-medium">{activeTask.title}</div>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

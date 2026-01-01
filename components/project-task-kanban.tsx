@@ -16,6 +16,10 @@ import {
   Bookmark,
   ExternalLink,
   Link as LinkIcon,
+  LayoutGrid,
+  Layers,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +46,7 @@ import type { Task } from '@/app/actions/inbox';
 import { useProjectTasks, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { cn } from '@/lib/utils';
 import { renderTextWithLinks, extractFirstUrl } from '@/lib/render-links';
+import { getPhasesForType, type Phase } from '@/lib/project-phases';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -139,7 +144,7 @@ interface SortableItemCardProps {
   onToggleInbox: () => void;
 }
 
-// Sortable Item Card
+// Sortable Item Card - Minimal design
 const SortableItemCard = memo(function SortableItemCard({
   task,
   onDelete,
@@ -157,8 +162,6 @@ const SortableItemCard = memo(function SortableItemCard({
     [transform, transition]
   );
 
-  const itemType = (task.item_type as ItemType) || 'task';
-  const typeConfig = ITEM_TYPE_CONFIG[itemType];
   const statusConfig = STATUS_CONFIG[task.status as TaskStatus] || STATUS_CONFIG.Todo;
   const StatusIcon = statusConfig.icon;
   const isDone = task.status === 'Done';
@@ -168,126 +171,102 @@ const SortableItemCard = memo(function SortableItemCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative overflow-hidden rounded-xl border bg-card/90 backdrop-blur-sm transition-all duration-200',
-        'shadow-sm hover:border-primary/30 hover:shadow-md',
-        typeConfig.borderColor,
-        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50',
-        isDone && 'opacity-60'
+        'group relative rounded-md border border-border bg-card p-2.5 transition-colors duration-150',
+        'hover:border-border/80',
+        isDragging && 'z-50 scale-[1.01] opacity-90 ring-1 ring-primary/30',
+        isDone && 'opacity-50'
       )}
     >
-      {/* Accent line */}
-      <div className={cn('absolute left-0 top-0 h-full w-1', typeConfig.accentColor)} />
+      <div className="flex items-start gap-2">
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          className="mt-0.5 cursor-grab rounded p-0.5 text-muted-foreground/30 opacity-0 transition-opacity hover:text-muted-foreground active:cursor-grabbing group-hover:opacity-100"
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </div>
 
-      <div className="p-3 pl-4">
-        <div className="flex items-start gap-2">
-          {/* Drag Handle */}
-          <div
-            {...attributes}
-            {...listeners}
-            className="mt-0.5 cursor-grab rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary hover:text-foreground active:cursor-grabbing group-hover:opacity-100"
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <span
+            className={cn(
+              'text-[13px] font-medium leading-tight',
+              isDone && 'text-muted-foreground line-through'
+            )}
           >
-            <GripVertical className="h-4 w-4" />
-          </div>
+            {task.title}
+          </span>
 
-          {/* Content */}
-          <div className="min-w-0 flex-1">
-            <span
+          {task.description && (
+            <p
               className={cn(
-                'text-sm font-medium leading-tight',
-                isDone && 'text-muted-foreground line-through'
+                'mt-1 line-clamp-1 text-xs text-muted-foreground',
+                isDone && 'line-through'
               )}
             >
-              {task.title}
-            </span>
+              {renderTextWithLinks(task.description)}
+            </p>
+          )}
 
-            {task.description && (
-              <p
-                className={cn(
-                  'mt-1 line-clamp-2 text-xs text-muted-foreground/80',
-                  isDone && 'line-through'
-                )}
-              >
-                {renderTextWithLinks(task.description)}
-              </p>
-            )}
+          {/* Inline metadata - single line */}
+          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <StatusIcon className={cn('h-3 w-3', statusConfig.color)} />
+            <span>{task.status}</span>
 
-            {/* Badges */}
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium',
-                  statusConfig.bgColor,
-                  statusConfig.color
-                )}
-              >
-                <StatusIcon className="h-2.5 w-2.5" />
-                {task.status}
-              </span>
-
-              {task.due_date && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] text-muted-foreground">
-                  <Clock className="h-2.5 w-2.5" />
+            {task.due_date && (
+              <>
+                <span className="text-border">·</span>
+                <span>
                   {new Date(task.due_date).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                   })}
                 </span>
-              )}
+              </>
+            )}
 
-              {task.show_in_inbox && (
-                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-                  <Inbox className="h-2.5 w-2.5" />
-                </span>
-              )}
-            </div>
+            {task.show_in_inbox && (
+              <>
+                <span className="text-border">·</span>
+                <Inbox className="h-2.5 w-2.5 text-primary" />
+              </>
+            )}
           </div>
-
-          {/* Actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={onToggleInbox}>
-                <Inbox className="mr-2 h-4 w-4" />
-                {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
+
+        {/* Actions */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="rounded p-0.5 text-muted-foreground/30 opacity-0 transition-opacity hover:text-muted-foreground group-hover:opacity-100"
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={onToggleInbox}>
+              <Inbox className="mr-2 h-4 w-4" />
+              {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
 });
 
-// Overlay card for drag preview
+// Overlay card for drag preview - Minimal
 const DragOverlayCard = memo(function DragOverlayCard({ task }: { task: Task }) {
-  const itemType = (task.item_type as ItemType) || 'task';
-  const typeConfig = ITEM_TYPE_CONFIG[itemType];
-
   return (
-    <div
-      className={cn(
-        'rounded-xl border bg-card/95 p-3 shadow-2xl backdrop-blur-sm',
-        typeConfig.borderColor
-      )}
-    >
-      <div
-        className={cn('absolute left-0 top-0 h-full w-1 rounded-l-xl', typeConfig.accentColor)}
-      />
-      <div className="pl-3">
-        <span className="text-sm font-medium">{task.title}</span>
-      </div>
+    <div className="rounded-md border border-border bg-card p-2.5 shadow-lg">
+      <span className="text-[13px] font-medium">{task.title}</span>
     </div>
   );
 });
@@ -432,45 +411,29 @@ const DroppableColumn = memo(function DroppableColumn({
   const config = ITEM_TYPE_CONFIG[id];
   const TypeIcon = config.icon;
   const count = tasks.length;
-  const doneCount = tasks.filter((t) => t.status === 'Done').length;
 
   return (
     <div
       ref={setNodeRef}
       className={cn(
-        'flex min-w-[320px] flex-1 flex-col rounded-2xl border bg-card/50 backdrop-blur-sm transition-all',
-        config.borderColor,
-        isOver && 'border-primary/50 bg-primary/5 ring-2 ring-primary/30'
+        'flex min-w-[280px] flex-1 flex-col rounded-lg border border-border bg-card/50 transition-colors duration-150',
+        isOver && 'border-primary/40 bg-primary/5'
       )}
     >
-      {/* Header */}
-      <div
-        className={cn(
-          'flex items-center justify-between rounded-t-2xl border-b px-4 py-3',
-          config.borderColor,
-          `bg-gradient-to-r ${config.gradientFrom} ${config.gradientTo}`
-        )}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={cn('flex h-9 w-9 items-center justify-center rounded-lg', config.bgColor)}
-          >
-            <TypeIcon className={cn('h-4 w-4', config.color)} />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold">{config.pluralLabel}</h3>
-            <p className="text-xs text-muted-foreground">
-              {doneCount}/{count} done
-            </p>
-          </div>
+      {/* Header - Minimal */}
+      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+        <div className="flex items-center gap-2">
+          <TypeIcon className="h-4 w-4 text-muted-foreground" />
+          <h3 className="text-[13px] font-medium">{config.pluralLabel}</h3>
+          <span className="text-xs text-muted-foreground">({count})</span>
         </div>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={onStartAddItem}
-          className={cn('h-8 w-8 rounded-lg p-0', config.bgColor, config.color, 'hover:scale-105')}
+          className="h-6 w-6 text-muted-foreground hover:text-foreground"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
         </Button>
       </div>
 
@@ -487,14 +450,14 @@ const DroppableColumn = memo(function DroppableColumn({
           ))}
         </SortableContext>
 
-        {/* Add Form */}
+        {/* Add Form - Minimal */}
         {isAddingItem && (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+          <div className="rounded-md border border-border bg-muted/30 p-2.5">
             <Input
               placeholder={`New ${config.label.toLowerCase()}...`}
               value={newItemTitle}
               onChange={(e) => onNewItemTitleChange(e.target.value)}
-              className="mb-2 h-9 border-primary/20 bg-background/80 text-sm"
+              className="mb-2 h-8 text-[13px]"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') onCreateItem();
                 if (e.key === 'Escape') onCancelAddItem();
@@ -506,25 +469,24 @@ const DroppableColumn = memo(function DroppableColumn({
                 size="sm"
                 onClick={onCreateItem}
                 disabled={!newItemTitle.trim()}
-                className="h-8 flex-1"
+                className="h-7 flex-1 text-xs"
               >
                 Add
               </Button>
-              <Button size="sm" variant="ghost" onClick={onCancelAddItem} className="h-8">
+              <Button size="sm" variant="ghost" onClick={onCancelAddItem} className="h-7 text-xs">
                 Cancel
               </Button>
             </div>
           </div>
         )}
 
-        {/* Empty State */}
+        {/* Empty State - Minimal */}
         {tasks.length === 0 && !isAddingItem && (
-          <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-secondary/10">
-            <TypeIcon className={cn('mb-2 h-6 w-6', config.color, 'opacity-50')} />
+          <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-border/50">
             <p className="text-xs text-muted-foreground">No {config.pluralLabel.toLowerCase()}</p>
             <button
               onClick={onStartAddItem}
-              className={cn('mt-1 text-xs font-medium', config.color)}
+              className="mt-1 text-xs text-muted-foreground hover:text-foreground"
             >
               + Add {config.label.toLowerCase()}
             </button>
@@ -659,6 +621,226 @@ const ResourcesSection = memo(function ResourcesSection({
   );
 });
 
+// Phase Group Component for phase view
+interface PhaseGroupProps {
+  phase: Phase;
+  tasks: Task[];
+  isExpanded: boolean;
+  onToggle: () => void;
+  onDeleteTask: (taskId: string) => void;
+  onToggleInbox: (taskId: string, currentValue: boolean) => void;
+}
+
+const PhaseGroup = memo(function PhaseGroup({
+  phase,
+  tasks,
+  isExpanded,
+  onToggle,
+  onDeleteTask,
+  onToggleInbox,
+}: PhaseGroupProps) {
+  const doneCount = tasks.filter((t) => t.status === 'Done').length;
+  const totalCount = tasks.length;
+  const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+  // Determine phase status
+  const status =
+    totalCount === 0
+      ? 'empty'
+      : doneCount === totalCount
+        ? 'completed'
+        : doneCount > 0
+          ? 'in_progress'
+          : 'not_started';
+
+  const statusColors = {
+    empty: 'border-border/50 bg-secondary/20',
+    not_started: 'border-border/50 bg-card/50',
+    in_progress: 'border-primary/30 bg-primary/5',
+    completed: 'border-emerald-500/30 bg-emerald-500/5',
+  };
+
+  const progressColors = {
+    empty: 'bg-secondary',
+    not_started: 'bg-muted-foreground/30',
+    in_progress: 'bg-primary',
+    completed: 'bg-emerald-500',
+  };
+
+  return (
+    <div className={cn('rounded-xl border transition-all', statusColors[status])}>
+      {/* Phase Header */}
+      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
+        <div className="flex items-center gap-3">
+          {isExpanded ? (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold">{phase.name}</span>
+              <span
+                className={cn(
+                  'rounded-full px-2 py-0.5 text-xs font-medium',
+                  status === 'completed'
+                    ? 'bg-emerald-500/20 text-emerald-500'
+                    : status === 'in_progress'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-secondary text-muted-foreground'
+                )}
+              >
+                {doneCount}/{totalCount}
+              </span>
+            </div>
+            {phase.description && (
+              <p className="mt-0.5 text-xs text-muted-foreground">{phase.description}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div className="flex items-center gap-3">
+          <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary/50">
+            <div
+              className={cn('h-full transition-all', progressColors[status])}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          <span
+            className={cn(
+              'min-w-[3rem] text-right text-sm font-medium',
+              status === 'completed'
+                ? 'text-emerald-500'
+                : status === 'in_progress'
+                  ? 'text-primary'
+                  : 'text-muted-foreground'
+            )}
+          >
+            {progress}%
+          </span>
+        </div>
+      </button>
+
+      {/* Tasks List */}
+      {isExpanded && tasks.length > 0 && (
+        <div className="space-y-2 border-t border-border/50 p-4">
+          {tasks.map((task) => (
+            <PhaseTaskCard
+              key={task.id}
+              task={task}
+              onDelete={() => onDeleteTask(task.id)}
+              onToggleInbox={() => onToggleInbox(task.id, task.show_in_inbox)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {isExpanded && tasks.length === 0 && (
+        <div className="border-t border-border/50 p-6 text-center">
+          <p className="text-sm text-muted-foreground">No tasks in this phase</p>
+        </div>
+      )}
+    </div>
+  );
+});
+
+// Simplified task card for phase view
+const PhaseTaskCard = memo(function PhaseTaskCard({
+  task,
+  onDelete,
+  onToggleInbox,
+}: {
+  task: Task;
+  onDelete: () => void;
+  onToggleInbox: () => void;
+}) {
+  const statusConfig = STATUS_CONFIG[task.status as TaskStatus] || STATUS_CONFIG.Todo;
+  const StatusIcon = statusConfig.icon;
+  const isDone = task.status === 'Done';
+  const itemType = (task.item_type as ItemType) || 'task';
+  const typeConfig = ITEM_TYPE_CONFIG[itemType];
+  const TypeIcon = typeConfig.icon;
+
+  return (
+    <div
+      className={cn(
+        'group flex items-center gap-3 rounded-lg border border-border/50 bg-card/80 p-3 transition-all hover:border-primary/30 hover:shadow-sm',
+        isDone && 'opacity-60'
+      )}
+    >
+      {/* Status Icon */}
+      <div
+        className={cn(
+          'flex h-6 w-6 items-center justify-center rounded-full',
+          statusConfig.bgColor
+        )}
+      >
+        <StatusIcon className={cn('h-3 w-3', statusConfig.color)} />
+      </div>
+
+      {/* Content */}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <TypeIcon className={cn('h-3 w-3 shrink-0', typeConfig.color)} />
+          <span
+            className={cn(
+              'truncate text-sm font-medium',
+              isDone && 'text-muted-foreground line-through'
+            )}
+          >
+            {task.title}
+          </span>
+        </div>
+      </div>
+
+      {/* Badges */}
+      <div className="flex items-center gap-2">
+        {task.due_date && (
+          <span className="flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] text-muted-foreground">
+            <Clock className="h-2.5 w-2.5" />
+            {new Date(task.due_date).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </span>
+        )}
+        {task.show_in_inbox && (
+          <span className="rounded-full bg-primary/10 p-1">
+            <Inbox className="h-3 w-3 text-primary" />
+          </span>
+        )}
+      </div>
+
+      {/* Actions */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary group-hover:opacity-100"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={onToggleInbox}>
+            <Inbox className="mr-2 h-4 w-4" />
+            {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+});
+
+type ViewMode = 'type' | 'phase';
+
 interface ProjectTaskKanbanProps {
   projectId: string;
 }
@@ -668,6 +850,8 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addingToType, setAddingToType] = useState<ItemType | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('type');
+  const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -699,6 +883,56 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
   }, [tasks]);
 
   const activeTask = useMemo(() => tasks.find((t) => t.id === activeId), [tasks, activeId]);
+
+  // Get project type from first task's project relation
+  const projectType = useMemo(() => {
+    const firstTaskWithProject = tasks.find((t) => t.project?.project_type);
+    return firstTaskWithProject?.project?.project_type || null;
+  }, [tasks]);
+
+  // Get available phases for this project type
+  const availablePhases = useMemo(() => {
+    return getPhasesForType(projectType);
+  }, [projectType]);
+
+  // Group tasks by milestone/phase
+  const tasksByPhase = useMemo(() => {
+    const grouped: Record<string, Task[]> = {};
+    // Initialize with empty arrays for each phase
+    availablePhases.forEach((phase) => {
+      grouped[phase.name] = [];
+    });
+    // Add "Unassigned" for tasks without a milestone
+    grouped['Unassigned'] = [];
+
+    tasks.forEach((task) => {
+      const milestone = task.milestone || 'Unassigned';
+      if (!grouped[milestone]) {
+        grouped[milestone] = [];
+      }
+      grouped[milestone].push(task);
+    });
+
+    // Sort by sort_order within each phase
+    Object.keys(grouped).forEach((phase) => {
+      grouped[phase].sort((a, b) => a.sort_order - b.sort_order);
+    });
+
+    return grouped;
+  }, [tasks, availablePhases]);
+
+  // Toggle phase expansion
+  const togglePhase = useCallback((phaseName: string) => {
+    setExpandedPhases((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(phaseName)) {
+        newSet.delete(phaseName);
+      } else {
+        newSet.add(phaseName);
+      }
+      return newSet;
+    });
+  }, []);
 
   // Progress
   const totalTasks = tasks.length;
@@ -808,7 +1042,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
       onDragEnd={handleDragEnd}
     >
       <div className="space-y-6">
-        {/* Progress Bar */}
+        {/* Progress Bar & View Toggle */}
         <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4">
           <div className="flex-1">
             <div className="mb-2 flex items-center justify-between text-sm">
@@ -835,45 +1069,114 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
           >
             {progress}%
           </div>
+
+          {/* View Toggle - Only show if project has phases */}
+          {availablePhases.length > 0 && (
+            <div className="flex rounded-lg border border-border/50 bg-secondary/30 p-1">
+              <button
+                onClick={() => setViewMode('type')}
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+                  viewMode === 'type'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <LayoutGrid className="h-4 w-4" />
+                <span className="hidden sm:inline">Type</span>
+              </button>
+              <button
+                onClick={() => setViewMode('phase')}
+                className={cn(
+                  'flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all',
+                  viewMode === 'phase'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Layers className="h-4 w-4" />
+                <span className="hidden sm:inline">Phases</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Resources Section - Top Row */}
-        <ResourcesSection
-          resources={tasksByType.resource}
-          onDeleteTask={handleDeleteTask}
-          onToggleInbox={handleToggleInbox}
-          isAddingItem={addingToType === 'resource'}
-          newItemTitle={addingToType === 'resource' ? newItemTitle : ''}
-          onNewItemTitleChange={setNewItemTitle}
-          onCreateItem={() => handleCreateItem('resource')}
-          onCancelAddItem={() => {
-            setAddingToType(null);
-            setNewItemTitle('');
-          }}
-          onStartAddItem={() => setAddingToType('resource')}
-        />
-
-        {/* Main Columns - Tasks, Issues, Notes */}
-        <div className="grid gap-5 lg:grid-cols-3">
-          {(['task', 'issue', 'note'] as ItemType[]).map((itemType) => (
-            <DroppableColumn
-              key={itemType}
-              id={itemType}
-              tasks={tasksByType[itemType]}
+        {/* TYPE VIEW */}
+        {viewMode === 'type' && (
+          <>
+            {/* Resources Section - Top Row */}
+            <ResourcesSection
+              resources={tasksByType.resource}
               onDeleteTask={handleDeleteTask}
               onToggleInbox={handleToggleInbox}
-              isAddingItem={addingToType === itemType}
-              newItemTitle={addingToType === itemType ? newItemTitle : ''}
+              isAddingItem={addingToType === 'resource'}
+              newItemTitle={addingToType === 'resource' ? newItemTitle : ''}
               onNewItemTitleChange={setNewItemTitle}
-              onCreateItem={() => handleCreateItem(itemType)}
+              onCreateItem={() => handleCreateItem('resource')}
               onCancelAddItem={() => {
                 setAddingToType(null);
                 setNewItemTitle('');
               }}
-              onStartAddItem={() => setAddingToType(itemType)}
+              onStartAddItem={() => setAddingToType('resource')}
             />
-          ))}
-        </div>
+
+            {/* Main Columns - Tasks, Issues, Notes */}
+            <div className="grid gap-5 lg:grid-cols-3">
+              {(['task', 'issue', 'note'] as ItemType[]).map((itemType) => (
+                <DroppableColumn
+                  key={itemType}
+                  id={itemType}
+                  tasks={tasksByType[itemType]}
+                  onDeleteTask={handleDeleteTask}
+                  onToggleInbox={handleToggleInbox}
+                  isAddingItem={addingToType === itemType}
+                  newItemTitle={addingToType === itemType ? newItemTitle : ''}
+                  onNewItemTitleChange={setNewItemTitle}
+                  onCreateItem={() => handleCreateItem(itemType)}
+                  onCancelAddItem={() => {
+                    setAddingToType(null);
+                    setNewItemTitle('');
+                  }}
+                  onStartAddItem={() => setAddingToType(itemType)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* PHASE VIEW */}
+        {viewMode === 'phase' && (
+          <div className="space-y-3">
+            {/* Predefined phases in order */}
+            {availablePhases.map((phase) => (
+              <PhaseGroup
+                key={phase.name}
+                phase={phase}
+                tasks={tasksByPhase[phase.name] || []}
+                isExpanded={expandedPhases.has(phase.name)}
+                onToggle={() => togglePhase(phase.name)}
+                onDeleteTask={handleDeleteTask}
+                onToggleInbox={handleToggleInbox}
+              />
+            ))}
+
+            {/* Unassigned tasks (tasks without a milestone) */}
+            {tasksByPhase['Unassigned']?.length > 0 && (
+              <PhaseGroup
+                phase={{
+                  name: 'Unassigned',
+                  order: 999,
+                  description: 'Tasks not assigned to a phase',
+                }}
+                tasks={tasksByPhase['Unassigned']}
+                isExpanded={expandedPhases.has('Unassigned')}
+                onToggle={() => togglePhase('Unassigned')}
+                onDeleteTask={handleDeleteTask}
+                onToggleInbox={handleToggleInbox}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       <DragOverlay>{activeTask && <DragOverlayCard task={activeTask} />}</DragOverlay>

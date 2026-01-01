@@ -1,188 +1,225 @@
 'use client';
 
-import { useState, useMemo, memo } from 'react';
-import { format } from 'date-fns';
-import { Edit2, Trash2, Calendar, AlertCircle, User, FolderOpen, Inbox } from 'lucide-react';
+import { useState, useMemo, memo, useCallback } from 'react';
+import { Trash2, User, Circle, Loader2, CheckCircle2, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn, getInitials } from '@/lib/utils';
 import { renderTextWithLinks } from '@/lib/render-links';
 import type { Task } from '@/app/actions/inbox';
-import { EditTaskModal } from '@/components/edit-task-modal';
-import {
-  ISSUE_STATUS_COLORS,
-  ISSUE_PRIORITY_COLORS,
-  type IssueStatusKey,
-  type IssuePriorityKey,
-} from '@/lib/color-constants';
+import { quickUpdateTask } from '@/app/actions/inbox';
+import { InlineText, InlineSelect, InlineDate } from '@/components/ui/inline-edit';
+import { invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
 
 interface TaskCardProps {
   task: Task;
   onDelete: (id: string) => void;
 }
 
-// Get status colors with fallback
-const getStatusColors = (status: string) => {
-  const colors = ISSUE_STATUS_COLORS[status as IssueStatusKey];
-  return colors || { bg: 'bg-muted', text: 'text-muted-foreground' };
-};
-
-// Get priority colors with fallback for 'No Priority'
-const getPriorityColors = (priority: string) => {
-  if (priority === 'No Priority') {
-    return { bg: 'bg-muted', text: 'text-muted-foreground' };
-  }
-  const colors = ISSUE_PRIORITY_COLORS[priority as IssuePriorityKey];
-  return colors || { bg: 'bg-muted', text: 'text-muted-foreground' };
-};
+// Status options for inline select
+const statusOptions = [
+  { value: 'Todo', label: 'Todo', icon: <Circle className="h-3.5 w-3.5 text-muted-foreground" /> },
+  {
+    value: 'In Progress',
+    label: 'In Progress',
+    icon: <Loader2 className="h-3.5 w-3.5 text-blue-500" />,
+  },
+  { value: 'Done', label: 'Done', icon: <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> },
+];
 
 function TaskCardComponent({ task, onDelete }: TaskCardProps) {
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Memoize derived values to prevent recalculation on every render
-  const priorityColors = useMemo(() => getPriorityColors(task.priority), [task.priority]);
-  const statusColors = useMemo(() => getStatusColors(task.status), [task.status]);
   const isOverdue = useMemo(
     () => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Done',
     [task.due_date, task.status]
   );
 
+  const showPriority = task.priority === 'High' || task.priority === 'Urgent';
+
+  // Inline update handlers
+  const handleTitleSave = useCallback(
+    async (newTitle: string) => {
+      setIsUpdating(true);
+      try {
+        const result = await quickUpdateTask(task.id, { title: newTitle });
+        if (result.success) {
+          invalidateInboxTasks(true);
+          if (task.project_id) invalidateProjectTasks(task.project_id, true);
+        }
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [task.id, task.project_id]
+  );
+
+  const handleStatusSave = useCallback(
+    async (newStatus: string) => {
+      setIsUpdating(true);
+      try {
+        const result = await quickUpdateTask(task.id, {
+          status: newStatus as 'Todo' | 'In Progress' | 'Done',
+        });
+        if (result.success) {
+          invalidateInboxTasks(true);
+          if (task.project_id) invalidateProjectTasks(task.project_id, true);
+        }
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [task.id, task.project_id]
+  );
+
+  const handleDueDateSave = useCallback(
+    async (newDate: Date | null) => {
+      setIsUpdating(true);
+      try {
+        const result = await quickUpdateTask(task.id, {
+          due_date: newDate ? newDate.toISOString().split('T')[0] : null,
+        });
+        if (result.success) {
+          invalidateInboxTasks(true);
+          if (task.project_id) invalidateProjectTasks(task.project_id, true);
+        }
+      } finally {
+        setIsUpdating(false);
+      }
+    },
+    [task.id, task.project_id]
+  );
+
   return (
-    <>
-      <div className="group relative rounded-lg border border-border bg-card p-4 transition-all hover:shadow-md">
-        <div className="flex items-start gap-3">
-          <div className="min-w-0 flex-1">
-            <div className="mb-2 flex items-start justify-between gap-2">
-              <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{task.title}</h3>
-              <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  onClick={() => setIsEditModalOpen(true)}
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-red-500"
-                  onClick={() => onDelete(task.id)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-
-            {task.description && (
-              <p className="mb-2 line-clamp-2 text-xs text-muted-foreground">
-                {renderTextWithLinks(task.description)}
-              </p>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={cn(
-                  'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                  statusColors.text,
-                  statusColors.bg
-                )}
-              >
-                {task.status}
-              </span>
-              {task.priority !== 'No Priority' && (
-                <span
-                  className={cn(
-                    'inline-flex items-center rounded px-2 py-0.5 text-xs font-medium',
-                    priorityColors.text,
-                    priorityColors.bg
-                  )}
-                >
-                  {task.priority}
-                </span>
-              )}
-              {task.project && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                        <FolderOpen className="h-3 w-3" />
-                        <span className="max-w-[100px] truncate">{task.project.name}</span>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{task.project.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {task.show_in_inbox && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-flex items-center gap-1 rounded bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-600 dark:text-blue-400">
-                        <Inbox className="h-3 w-3" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Shown in inbox</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {task.due_date && (
-                <div
-                  className={cn(
-                    'inline-flex items-center gap-1 text-xs',
-                    isOverdue ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="h-3 w-3" />
-                  <span>{format(new Date(task.due_date), 'MMM d, yyyy')}</span>
-                  {isOverdue && <AlertCircle className="h-3 w-3" />}
-                </div>
-              )}
-              {task.assignee && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="ml-auto">
-                        <Avatar className="h-6 w-6">
-                          {task.assignee.avatar_url ? (
-                            <AvatarImage
-                              src={task.assignee.avatar_url}
-                              alt={task.assignee.full_name || 'Assignee'}
-                            />
-                          ) : null}
-                          <AvatarFallback className="bg-qualia-600 text-[10px] text-white">
-                            {getInitials(task.assignee.full_name || task.assignee.email || 'U')}
-                          </AvatarFallback>
-                        </Avatar>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{task.assignee.full_name || task.assignee.email}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              {!task.assignee && (
-                <div className="ml-auto">
-                  <Avatar className="h-6 w-6 opacity-40">
-                    <AvatarFallback className="text-[10px]">
-                      <User className="h-3 w-3" />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+    <div
+      className={cn(
+        'group relative rounded-md border border-border bg-card p-3 transition-colors duration-150 hover:border-border/80',
+        isUpdating && 'opacity-70'
+      )}
+    >
+      {/* Title row with actions */}
+      <div className="mb-1.5 flex items-start justify-between gap-2">
+        <InlineText
+          value={task.title}
+          onSave={handleTitleSave}
+          className="line-clamp-2 flex-1 text-[13px] font-medium text-foreground"
+          disabled={isUpdating}
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-150 hover:text-foreground group-hover:opacity-100"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32">
+            <DropdownMenuItem
+              onClick={() => onDelete(task.id)}
+              className="text-red-500 focus:text-red-500"
+            >
+              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <EditTaskModal task={task} open={isEditModalOpen} onOpenChange={setIsEditModalOpen} />
-    </>
+      {/* Description - only if exists */}
+      {task.description && (
+        <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">
+          {renderTextWithLinks(task.description)}
+        </p>
+      )}
+
+      {/* Single-line metadata with dot separators */}
+      <div className="flex items-center gap-1.5 text-[13px]">
+        {/* Status - inline select */}
+        <InlineSelect
+          value={task.status}
+          options={statusOptions}
+          onSave={handleStatusSave}
+          disabled={isUpdating}
+          className="text-muted-foreground"
+        />
+
+        {/* Project name */}
+        {task.project && (
+          <>
+            <span className="text-border">·</span>
+            <span className="max-w-[100px] truncate text-muted-foreground">
+              {task.project.name}
+            </span>
+          </>
+        )}
+
+        {/* Due date - inline date picker */}
+        <span className="text-border">·</span>
+        <InlineDate
+          value={task.due_date ? new Date(task.due_date) : null}
+          onSave={handleDueDateSave}
+          placeholder="No date"
+          disabled={isUpdating}
+          className={cn(isOverdue && 'text-red-500')}
+        />
+
+        {/* Priority - only show if High or Urgent */}
+        {showPriority && (
+          <>
+            <span className="text-border">·</span>
+            <span
+              className={cn(
+                'font-medium',
+                task.priority === 'Urgent' ? 'text-red-500' : 'text-orange-500'
+              )}
+            >
+              {task.priority}
+            </span>
+          </>
+        )}
+
+        {/* Assignee avatar - pushed to end */}
+        <div className="ml-auto">
+          {task.assignee ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar className="h-5 w-5">
+                    {task.assignee.avatar_url ? (
+                      <AvatarImage
+                        src={task.assignee.avatar_url}
+                        alt={task.assignee.full_name || 'Assignee'}
+                      />
+                    ) : null}
+                    <AvatarFallback className="bg-primary text-[9px] text-primary-foreground">
+                      {getInitials(task.assignee.full_name || task.assignee.email || 'U')}
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{task.assignee.full_name || task.assignee.email}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <Avatar className="h-5 w-5 opacity-30">
+              <AvatarFallback className="text-[9px]">
+                <User className="h-2.5 w-2.5" />
+              </AvatarFallback>
+            </Avatar>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

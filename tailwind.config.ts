@@ -82,10 +82,17 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       boxShadow: {
-        glow: '0 0 20px -5px rgba(0, 164, 172, 0.4)',
-        'glow-lg': '0 0 40px -10px rgba(0, 164, 172, 0.4)',
-        'glow-xl': '0 0 60px -15px rgba(0, 164, 172, 0.5)',
-        'inner-glow': 'inset 0 0 20px rgba(0, 164, 172, 0.1)',
+        // Reduced glow effects for minimal design
+        glow: '0 0 12px -3px rgba(0, 164, 172, 0.25)',
+        'glow-lg': '0 0 24px -6px rgba(0, 164, 172, 0.25)',
+        'glow-xl': '0 0 36px -9px rgba(0, 164, 172, 0.3)',
+        'inner-glow': 'inset 0 0 12px rgba(0, 164, 172, 0.08)',
+        // Minimal elevation shadows
+        'elevation-1': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
+        'elevation-2': '0 2px 4px 0 rgb(0 0 0 / 0.04)',
+        'elevation-3': '0 4px 8px 0 rgb(0 0 0 / 0.05)',
+        // Inline edit focus
+        'inline-focus': '0 0 0 2px hsl(174 72% 40% / 0.15)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -142,6 +149,7 @@ export default {
       },
       // Z-index scale to prevent conflicts between overlays
       zIndex: {
+        'inline-edit': '35', // Below dropdown, above content
         dropdown: '40',
         sticky: '45',
         modal: '50',

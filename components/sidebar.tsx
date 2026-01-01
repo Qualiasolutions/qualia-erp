@@ -10,7 +10,6 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Command,
   Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,29 +36,18 @@ function SidebarContent({
 
   return (
     <>
-      {/* Logo */}
+      {/* Logo - Minimal */}
       <div
         className={cn(
-          'flex items-center border-b border-border/60 bg-gradient-to-b from-card to-card/95',
+          'flex items-center border-b border-border',
           isCollapsed ? 'h-14 justify-center' : 'h-14 px-4'
         )}
       >
-        <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="relative flex-shrink-0">
-            <div className="absolute -inset-1 rounded-lg bg-qualia-500/20 opacity-0 blur-sm transition-opacity duration-300 group-hover:opacity-100" />
-            <Image
-              src="/logo.webp"
-              alt="Qualia"
-              width={28}
-              height={28}
-              className="relative rounded-lg transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
-            />
-          </div>
+        <Link href="/" className="flex items-center gap-2.5" onClick={onLinkClick}>
+          <Image src="/logo.webp" alt="Qualia" width={26} height={26} className="rounded-md" />
           {!isCollapsed && (
             <div className="flex flex-col">
-              <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-sm font-bold tracking-tight text-foreground">
-                Qualia
-              </span>
+              <span className="text-sm font-semibold tracking-tight text-foreground">Qualia</span>
               <span className="text-[10px] font-medium text-muted-foreground">Solutions</span>
             </div>
           )}
@@ -73,12 +61,12 @@ function SidebarContent({
         </div>
       )}
 
-      {/* Command hint */}
+      {/* Command hint - Minimal */}
       {!isCollapsed && (
         <div className="px-3 py-2">
-          <div className="flex items-center gap-2 rounded-lg border border-qualia-500/10 bg-qualia-500/5 px-2.5 py-1.5 text-xs text-muted-foreground transition-all duration-200 hover:border-qualia-500/20 hover:bg-qualia-500/10">
-            <Command className="h-3 w-3 text-qualia-500" />
-            <span className="font-medium">K to search</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground">
+            <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>
+            <span>Search</span>
           </div>
         </div>
       )}
@@ -86,7 +74,7 @@ function SidebarContent({
       {/* Main Navigation */}
       <nav className={cn('flex-1 py-2', isCollapsed ? 'px-2' : 'px-2')}>
         <div className="space-y-0.5">
-          {navigation.map((item, index) => {
+          {navigation.map((item) => {
             const isActive =
               pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
 
@@ -97,21 +85,18 @@ function SidebarContent({
                 title={isCollapsed ? item.name : undefined}
                 onClick={onLinkClick}
                 className={cn(
-                  'group relative flex items-center gap-2.5 rounded-lg text-[13px] font-medium transition-all duration-200',
-                  isCollapsed ? 'mx-auto h-9 w-9 justify-center' : 'h-9 px-2.5',
+                  'group relative flex items-center gap-2 rounded-md text-[13px] font-medium transition-colors duration-150',
+                  isCollapsed ? 'mx-auto h-8 w-8 justify-center' : 'h-8 px-2',
                   isActive
-                    ? 'bg-qualia-500/10 text-qualia-600 shadow-sm dark:text-qualia-400'
-                    : 'text-muted-foreground hover:bg-qualia-500/5 hover:text-foreground'
+                    ? 'border-l-2 border-primary bg-transparent pl-[6px] text-foreground'
+                    : 'border-l-2 border-transparent text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                 )}
-                style={{ animationDelay: `${index * 25}ms` }}
               >
                 <item.icon
                   className={cn(
-                    'flex-shrink-0 transition-all duration-200',
-                    isCollapsed ? 'h-[17px] w-[17px]' : 'h-4 w-4',
-                    isActive
-                      ? 'text-qualia-600 dark:text-qualia-400'
-                      : 'text-muted-foreground group-hover:scale-110 group-hover:text-qualia-500'
+                    'flex-shrink-0 transition-colors duration-150',
+                    isCollapsed ? 'h-4 w-4' : 'h-4 w-4',
+                    isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                   )}
                 />
                 {!isCollapsed && <span>{item.name}</span>}
@@ -144,18 +129,14 @@ export function Sidebar() {
         )}
       >
         <SidebarContent isCollapsed={isCollapsed} />
-        {/* Collapse Toggle - Right Edge Middle */}
+        {/* Collapse Toggle - Minimal */}
         <button
           type="button"
           onClick={toggleSidebar}
-          className="absolute right-0 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-full border border-border/60 bg-card text-muted-foreground shadow-md transition-all duration-200 hover:scale-110 hover:border-qualia-500/30 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
+          className="absolute right-0 top-1/2 z-10 flex h-6 w-6 -translate-y-1/2 translate-x-1/2 items-center justify-center rounded-md border border-border bg-card text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {isCollapsed ? (
-            <ChevronRight className="h-3.5 w-3.5" />
-          ) : (
-            <ChevronLeft className="h-3.5 w-3.5" />
-          )}
+          {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
       </aside>
 

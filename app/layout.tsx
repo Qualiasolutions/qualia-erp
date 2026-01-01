@@ -12,7 +12,6 @@ import { LogoSplash } from '@/components/logo-splash';
 import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
 import { HeaderActions } from '@/components/header-actions';
-import { AIChatWidget } from '@/components/ai-chat-widget';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
 
@@ -118,7 +117,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://dhnlvbjxmmsxetxphqbh.supabase.co" />
-        <link rel="dns-prefetch" href="https://api.vapi.ai" />
       </head>
       <body
         className={`${GeistSans.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
@@ -142,7 +140,6 @@ export default function RootLayout({
                     <main className="flex-1 overflow-y-auto">{children}</main>
                   </div>
                   <WorkspaceChatWrapper />
-                  <AIChatWidget />
                 </SidebarProvider>
               </WorkspaceProvider>
             </AdminProvider>

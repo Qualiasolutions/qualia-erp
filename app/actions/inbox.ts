@@ -28,6 +28,7 @@ export type Task = {
   due_date: string | null;
   completed_at: string | null;
   show_in_inbox: boolean;
+  milestone: string | null;
   created_at: string;
   updated_at: string;
   creator?: {
@@ -101,6 +102,7 @@ export async function getTasks(
       due_date,
       completed_at,
       show_in_inbox,
+      milestone,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -176,6 +178,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     project_id,
     show_in_inbox,
     item_type,
+    milestone,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -215,6 +218,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       due_date: due_date || null,
       sort_order: nextSortOrder,
       show_in_inbox: show_in_inbox ?? true, // Default to true when no project
+      milestone: milestone || null,
     })
     .select()
     .single();
@@ -264,8 +268,17 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, title, description, status, due_date, sort_order, assignee_id, show_in_inbox } =
-    validation.data;
+  const {
+    id,
+    title,
+    description,
+    status,
+    due_date,
+    sort_order,
+    assignee_id,
+    show_in_inbox,
+    milestone,
+  } = validation.data;
 
   if (!id) {
     return { success: false, error: 'Task ID is required' };
@@ -281,6 +294,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (sort_order !== undefined) updateData.sort_order = sort_order;
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
   if (show_in_inbox !== undefined) updateData.show_in_inbox = show_in_inbox;
+  if (milestone !== undefined) updateData.milestone = milestone || null;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -418,6 +432,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       due_date,
       completed_at,
       show_in_inbox,
+      milestone,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -469,6 +484,66 @@ export async function toggleTaskInbox(taskId: string, showInInbox: boolean): Pro
 
   if (error) {
     console.error('[toggleTaskInbox] Error toggling task inbox:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/inbox');
+  return { success: true };
+}
+
+/**
+ * Quick update task fields - simplified for inline editing
+ * Accepts a partial object instead of FormData
+ */
+export async function quickUpdateTask(
+  taskId: string,
+  updates: {
+    title?: string;
+    status?: 'Todo' | 'In Progress' | 'Done';
+    due_date?: string | null;
+    priority?: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
+    description?: string | null;
+    assignee_id?: string | null;
+  }
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Build update object
+  const updateData: Record<string, unknown> = {};
+
+  if (updates.title !== undefined) {
+    const trimmed = updates.title.trim();
+    if (!trimmed) {
+      return { success: false, error: 'Title cannot be empty' };
+    }
+    updateData.title = trimmed;
+  }
+  if (updates.status !== undefined) {
+    updateData.status = updates.status;
+    // Update completed_at when status changes
+    if (updates.status === 'Done') {
+      updateData.completed_at = new Date().toISOString();
+    } else {
+      updateData.completed_at = null;
+    }
+  }
+  if (updates.due_date !== undefined) updateData.due_date = updates.due_date;
+  if (updates.priority !== undefined) updateData.priority = updates.priority;
+  if (updates.description !== undefined)
+    updateData.description = updates.description?.trim() || null;
+  if (updates.assignee_id !== undefined) updateData.assignee_id = updates.assignee_id;
+
+  const { error } = await supabase.from('tasks').update(updateData).eq('id', taskId);
+
+  if (error) {
+    console.error('[quickUpdateTask] Error updating task:', error);
     return { success: false, error: error.message };
   }
 
