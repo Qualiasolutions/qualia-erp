@@ -1,6 +1,5 @@
 'use client';
 
-import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 
 /**
@@ -15,15 +14,6 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Report error to Sentry
-    Sentry.captureException(error, {
-      tags: {
-        error_boundary: 'global',
-      },
-      extra: {
-        digest: error.digest,
-      },
-    });
     console.error('Global error:', error);
   }, [error]);
 
@@ -40,7 +30,7 @@ export default function GlobalError({
             gap: '1.5rem',
             padding: '1rem',
             fontFamily: 'system-ui, sans-serif',
-            backgroundColor: '#141414',
+            backgroundColor: '#08090b',
             color: '#fff',
           }}
         >
@@ -72,7 +62,7 @@ export default function GlobalError({
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
               Application Error
             </h1>
-            <p style={{ color: '#999', maxWidth: '400px' }}>
+            <p style={{ color: '#888', maxWidth: '400px' }}>
               A critical error occurred. Please try refreshing the page.
             </p>
             {error.digest && (
@@ -93,7 +83,7 @@ export default function GlobalError({
               onClick={() => window.location.reload()}
               style={{
                 padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
+                borderRadius: '0.75rem',
                 border: '1px solid #333',
                 backgroundColor: 'transparent',
                 color: '#fff',
@@ -106,11 +96,12 @@ export default function GlobalError({
               onClick={reset}
               style={{
                 padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
+                borderRadius: '0.75rem',
                 border: 'none',
-                backgroundColor: '#00A4AC',
-                color: '#fff',
+                backgroundColor: '#00d4de',
+                color: '#000',
                 cursor: 'pointer',
+                fontWeight: 500,
               }}
             >
               Try Again

@@ -1,5 +1,4 @@
 import type { NextConfig } from 'next';
-import { withSentryConfig } from '@sentry/nextjs';
 import bundleAnalyzer from '@next/bundle-analyzer';
 
 // Bundle analyzer for performance debugging (run with ANALYZE=true npm run build)
@@ -42,12 +41,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://*.sentry.io https://vercel.live",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://vercel.live",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://api.vapi.ai wss://*.vapi.ai https://*.vapi.ai https://*.deepgram.com wss://*.deepgram.com https://*.daily.co wss://*.daily.co https://*.sentry.io https://vercel.live wss://vercel.live",
-              "media-src 'self' blob: https://*.vapi.ai https://*.daily.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live",
+              "media-src 'self' blob:",
               "worker-src 'self' blob:",
               "frame-src 'self' https://vercel.live",
               "frame-ancestors 'none'",
@@ -74,7 +73,6 @@ const nextConfig: NextConfig = {
   // Experimental features for bundle optimization
   experimental: {
     // Tree-shake unused exports from these packages for smaller bundles
-    // Note: Reduced list to prevent build hangs with Next.js 16+ Turbopack
     optimizePackageImports: [
       'lucide-react',
       'date-fns',
@@ -85,12 +83,10 @@ const nextConfig: NextConfig = {
       '@tanstack/react-virtual',
       'zod',
     ],
-    // Enable client trace metadata for better Sentry tracing
-    clientTraceMetadata: ['baggage', 'sentry-trace'],
   },
 
   // Enable production browser source maps for better debugging
-  productionBrowserSourceMaps: false, // Disable for smaller bundle
+  productionBrowserSourceMaps: false,
 
   // Compiler optimizations
   compiler: {
@@ -99,22 +95,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Sentry configuration (wrapped with bundle analyzer)
-export default withBundleAnalyzer(
-  withSentryConfig(nextConfig, {
-    // For all available options, see:
-    // https://github.com/getsentry/sentry-webpack-plugin#options
-
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-
-    // Only print logs for uploading source maps in CI
-    silent: !process.env.CI,
-
-    // Upload source maps for better stack traces
-    widenClientFileUpload: true,
-
-    // Disable Sentry telemetry
-    telemetry: false,
-  })
-);
+export default withBundleAnalyzer(nextConfig);

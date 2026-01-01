@@ -82,17 +82,22 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       boxShadow: {
-        // Reduced glow effects for minimal design
-        glow: '0 0 12px -3px rgba(0, 164, 172, 0.25)',
-        'glow-lg': '0 0 24px -6px rgba(0, 164, 172, 0.25)',
-        'glow-xl': '0 0 36px -9px rgba(0, 164, 172, 0.3)',
-        'inner-glow': 'inset 0 0 12px rgba(0, 164, 172, 0.08)',
-        // Minimal elevation shadows
-        'elevation-1': '0 1px 2px 0 rgb(0 0 0 / 0.03)',
-        'elevation-2': '0 2px 4px 0 rgb(0 0 0 / 0.04)',
-        'elevation-3': '0 4px 8px 0 rgb(0 0 0 / 0.05)',
+        // Premium glow system - vibrant teal
+        'glow-sm': '0 0 20px -5px hsl(174 100% 42% / 0.15)',
+        glow: '0 0 30px -5px hsl(174 100% 42% / 0.2)',
+        'glow-lg': '0 0 50px -10px hsl(174 100% 42% / 0.25)',
+        'glow-xl': '0 0 70px -15px hsl(174 100% 42% / 0.3)',
+        'inner-glow': 'inset 0 1px 0 0 hsl(0 0% 100% / 0.05)',
+        // Premium depth system
+        'depth-1': '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+        'depth-2': '0 3px 6px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.12)',
+        'depth-3': '0 10px 20px rgba(0,0,0,0.15), 0 3px 6px rgba(0,0,0,0.10)',
+        'depth-4': '0 14px 28px rgba(0,0,0,0.20), 0 10px 10px rgba(0,0,0,0.12)',
         // Inline edit focus
-        'inline-focus': '0 0 0 2px hsl(174 72% 40% / 0.15)',
+        'inline-focus': '0 0 0 2px hsl(174 100% 42% / 0.2)',
+        // Card hover glow
+        'card-hover':
+          '0 0 0 1px hsl(174 100% 42% / 0.1), 0 20px 40px -15px hsl(174 100% 42% / 0.15)',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -104,11 +109,13 @@ export default {
         float: 'float 6s ease-in-out infinite',
         'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
         shimmer: 'shimmer 2s linear infinite',
-        'fade-in': 'fadeIn 0.5s ease-out forwards',
-        'slide-up': 'slideUp 0.5s ease-out forwards',
-        'slide-in': 'slideIn 0.3s ease-out forwards',
+        'fade-in': 'fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'slide-in': 'slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'bounce-subtle': 'bounceSubtle 2s ease-in-out infinite',
         'pulse-subtle': 'pulseSubtle 3s ease-in-out infinite',
+        'glow-pulse': 'glowPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'scale-in': 'scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       },
       keyframes: {
         float: {
@@ -143,6 +150,18 @@ export default {
           '0%': { opacity: '0', transform: 'translateX(-10px)' },
           '100%': { opacity: '1', transform: 'translateX(0)' },
         },
+        glowPulse: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '1' },
+        },
+        scaleIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+      transitionTimingFunction: {
+        premium: 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'ease-out-expo': 'cubic-bezier(0.19, 1, 0.22, 1)',
       },
       transitionDuration: {
         '400': '400ms',
