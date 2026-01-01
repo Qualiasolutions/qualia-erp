@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { ListTodo, AlertCircle, Calendar, TrendingUp, Sparkles } from 'lucide-react';
+import { ListTodo, AlertCircle, Calendar, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MindOfQualia } from '@/components/mind-of-qualia';
 
 export interface DashboardUser {
   id: string;
@@ -82,7 +83,6 @@ function StatCard({ label, value, icon, accent = 'default' }: StatCardProps) {
 
 export function DashboardClient({ greeting, dateString, greetingData }: DashboardClientProps) {
   const [mounted, setMounted] = useState(false);
-  const [inputFocused, setInputFocused] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -113,17 +113,6 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
     return Math.round((stats.completed / total) * 100);
   }, [stats]);
 
-  // Open command palette
-  const handleInputClick = () => {
-    // Trigger command palette
-    const event = new KeyboardEvent('keydown', {
-      key: 'k',
-      metaKey: true,
-      bubbles: true,
-    });
-    document.dispatchEvent(event);
-  };
-
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -133,24 +122,24 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
   }
 
   return (
-    <div className="hero-section relative">
+    <div className="relative min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8">
       {/* Subtle ambient glow */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -left-1/4 -top-1/4 h-[500px] w-[500px] rounded-full bg-primary/[0.03] blur-3xl" />
         <div className="absolute -bottom-1/4 -right-1/4 h-[400px] w-[400px] rounded-full bg-primary/[0.02] blur-3xl" />
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl">
+      <div className="relative z-10 mx-auto w-full max-w-5xl">
         {/* Greeting Section */}
-        <div className="mb-12 text-center">
-          <h1 className="mb-2 text-4xl font-semibold tracking-tight text-foreground md:text-5xl">
+        <div className="mb-8 text-center">
+          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             {greeting}
           </h1>
-          <p className="text-base text-muted-foreground">{dateString}</p>
+          <p className="text-sm text-muted-foreground">{dateString}</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="mb-12 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           <StatCard
             label="Open Tasks"
             value={stats.tasks}
@@ -175,52 +164,16 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
           />
         </div>
 
-        {/* AI Input - Premium Glass Effect */}
+        {/* Mind of Qualia - AI Assistant Widget */}
         <div className="mx-auto max-w-2xl">
-          <button
-            onClick={handleInputClick}
-            onFocus={() => setInputFocused(true)}
-            onBlur={() => setInputFocused(false)}
-            className={cn(
-              'input-ai group w-full text-left',
-              inputFocused && 'ring-2 ring-primary/20'
-            )}
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary transition-all duration-200 group-hover:bg-primary/15 group-hover:shadow-glow-sm">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div className="flex-1">
-                <div className="text-sm font-medium text-foreground">
-                  What would you like to do?
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  Ask AI to help with tasks, schedule, or anything else...
-                </div>
-              </div>
-              <kbd className="hidden rounded-lg border border-border/50 bg-muted/50 px-2 py-1 font-mono text-xs text-muted-foreground sm:inline-block">
-                ⌘K
-              </kbd>
-            </div>
-          </button>
-
-          {/* Quick action chips */}
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            {['Create a task', 'Schedule meeting', 'Check deadlines', 'View projects'].map(
-              (action) => (
-                <button key={action} onClick={handleInputClick} className="btn-ghost text-xs">
-                  {action}
-                </button>
-              )
-            )}
-          </div>
+          <MindOfQualia />
         </div>
 
         {/* Bottom hint */}
-        <div className="mt-16 text-center">
+        <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground/60">
             Press <kbd className="rounded bg-muted/50 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>{' '}
-            anytime for AI assistance
+            for quick navigation
           </p>
         </div>
       </div>
