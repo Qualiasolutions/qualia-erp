@@ -39,7 +39,6 @@ interface TimeBlockRowProps {
   onTaskComplete?: (taskId: string) => void;
   onTaskClick?: (task: Task) => void;
   onMeetingClick?: (meeting: Meeting) => void;
-  onStartTimer?: (blockId: string) => void;
 }
 
 export const TimeBlockRow = memo(function TimeBlockRow({
@@ -51,7 +50,6 @@ export const TimeBlockRow = memo(function TimeBlockRow({
   onTaskComplete,
   onTaskClick,
   onMeetingClick,
-  onStartTimer,
 }: TimeBlockRowProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const colors = SCHEDULE_BLOCK_COLORS[block.type];
@@ -64,7 +62,6 @@ export const TimeBlockRow = memo(function TimeBlockRow({
   const hasTasks = tasks.length > 0;
   const hasMeetings = meetings.length > 0;
   const hasContent = hasTasks || hasMeetings;
-  const isFocusBlock = block.type === 'focus';
 
   return (
     <div
@@ -121,22 +118,6 @@ export const TimeBlockRow = memo(function TimeBlockRow({
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          {/* Focus timer button */}
-          {isFocusBlock && onStartTimer && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartTimer(block.id);
-              }}
-              className={cn(
-                'rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium',
-                'text-foreground/70 transition-colors hover:bg-muted hover:text-foreground'
-              )}
-            >
-              Start Timer
-            </button>
-          )}
-
           {/* Content count */}
           {hasContent && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">

@@ -8,7 +8,6 @@ import { useTodaysTasks, useTodaysMeetings, invalidateTodaysSchedule } from '@/l
 import { quickUpdateTask } from '@/app/actions/inbox';
 import { ScheduleHeader } from './schedule-header';
 import { TimeBlockGrid } from './time-block-grid';
-import { ProductivityPanel } from './productivity-panel';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import type { Task } from '@/app/actions/inbox';
 
@@ -71,16 +70,6 @@ export function DailyScheduleHub({
     }
   }, []);
 
-  // Handle timer start
-  const handleStartTimer = useCallback((blockId: string) => {
-    // Scroll to productivity panel and focus timer
-    const panel = document.querySelector('[data-productivity-panel]');
-    if (panel) {
-      panel.scrollIntoView({ behavior: 'smooth' });
-    }
-    console.log('Starting timer for block:', blockId);
-  }, []);
-
   // Handle manual refresh
   const handleRefresh = useCallback(() => {
     revalidateTasks();
@@ -120,30 +109,18 @@ export function DailyScheduleHub({
 
       {/* Main Content */}
       <div className="mx-auto max-w-5xl px-6 py-6">
-        <div className="space-y-6">
-          {/* Time Block Grid */}
-          <section>
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              Daily Schedule
-            </h2>
-            <TimeBlockGrid
-              tasks={displayTasks}
-              meetings={displayMeetings}
-              onTaskComplete={handleTaskComplete}
-              onTaskClick={handleTaskClick}
-              onMeetingClick={handleMeetingClick}
-              onStartTimer={handleStartTimer}
-            />
-          </section>
-
-          {/* Productivity Panel */}
-          <section data-productivity-panel>
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-              Productivity Tools
-            </h2>
-            <ProductivityPanel />
-          </section>
-        </div>
+        <section>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Daily Schedule
+          </h2>
+          <TimeBlockGrid
+            tasks={displayTasks}
+            meetings={displayMeetings}
+            onTaskComplete={handleTaskComplete}
+            onTaskClick={handleTaskClick}
+            onMeetingClick={handleMeetingClick}
+          />
+        </section>
       </div>
 
       {/* Edit Task Modal */}

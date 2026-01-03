@@ -13,6 +13,7 @@ import {
   Settings,
   User,
   Users,
+  FileText,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -25,6 +26,7 @@ const navigation = [
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
   { name: 'Team', href: '/team', icon: Users },
+  { name: 'Documents', href: '/documents', icon: FileText },
 ];
 
 const bottomNav = [{ name: 'Settings', href: '/settings', icon: Settings }];

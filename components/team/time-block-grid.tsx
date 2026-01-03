@@ -29,7 +29,6 @@ interface TimeBlockGridProps {
   onTaskComplete?: (taskId: string) => void;
   onTaskClick?: (task: Task) => void;
   onMeetingClick?: (meeting: Meeting) => void;
-  onStartTimer?: (blockId: string) => void;
 }
 
 export function TimeBlockGrid({
@@ -38,7 +37,6 @@ export function TimeBlockGrid({
   onTaskComplete,
   onTaskClick,
   onMeetingClick,
-  onStartTimer,
 }: TimeBlockGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [currentBlockId, setCurrentBlockId] = useState<string | null>(null);
@@ -118,7 +116,6 @@ export function TimeBlockGrid({
             onTaskComplete={onTaskComplete}
             onTaskClick={onTaskClick}
             onMeetingClick={onMeetingClick}
-            onStartTimer={onStartTimer}
           />
         </div>
       ))}
