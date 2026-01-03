@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, memo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ListTodo, AlertCircle, Calendar, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MindOfQualia } from '@/components/mind-of-qualia';
@@ -44,82 +44,29 @@ interface StatCardProps {
   label: string;
   value: number | string;
   icon: React.ReactNode;
-  accent?: 'default' | 'warning' | 'success' | 'info';
-  delay?: number;
+  variant?: 'default' | 'warning' | 'success' | 'info';
 }
 
-const StatCard = memo(function StatCard({
-  label,
-  value,
-  icon,
-  accent = 'default',
-  delay = 0,
-}: StatCardProps) {
-  const accentStyles = {
-    warning: {
-      value: 'text-amber-500',
-      icon: 'bg-amber-500/10 text-amber-500 group-hover:bg-amber-500/20',
-      glow: 'via-amber-500/50',
-    },
-    success: {
-      value: 'text-emerald-500',
-      icon: 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20',
-      glow: 'via-emerald-500/50',
-    },
-    info: {
-      value: 'text-blue-500',
-      icon: 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20',
-      glow: 'via-blue-500/50',
-    },
-    default: {
-      value: 'text-foreground',
-      icon: 'bg-primary/10 text-primary group-hover:bg-primary/20',
-      glow: 'via-primary/50',
-    },
+function StatCard({ label, value, icon, variant = 'default' }: StatCardProps) {
+  const variantStyles = {
+    default: 'text-foreground',
+    warning: 'text-amber-600 dark:text-amber-400',
+    success: 'text-emerald-600 dark:text-emerald-400',
+    info: 'text-blue-600 dark:text-blue-400',
   };
 
-  const styles = accentStyles[accent];
-
   return (
-    <div
-      className="card-premium group relative animate-fade-in overflow-hidden p-5 opacity-0"
-      style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
-    >
-      {/* Gradient background on hover */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-
-      <div className="relative flex items-start justify-between">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="flex items-center justify-between">
         <div>
-          <div
-            className={cn(
-              'text-3xl font-semibold tracking-tight transition-all duration-300 group-hover:scale-105',
-              styles.value
-            )}
-          >
-            {value}
-          </div>
-          <div className="mt-1.5 text-sm font-medium text-muted-foreground">{label}</div>
+          <div className={cn('text-2xl font-semibold', variantStyles[variant])}>{value}</div>
+          <div className="mt-1 text-sm text-muted-foreground">{label}</div>
         </div>
-        <div
-          className={cn(
-            'rounded-xl p-2.5 transition-all duration-300 group-hover:scale-110',
-            styles.icon
-          )}
-        >
-          {icon}
-        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">{icon}</div>
       </div>
-
-      {/* Bottom glow line */}
-      <div
-        className={cn(
-          'absolute -bottom-px left-1/2 h-[2px] w-0 -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent transition-all duration-500 group-hover:w-3/4',
-          styles.glow
-        )}
-      />
     </div>
   );
-});
+}
 
 export function DashboardClient({ greeting, dateString, greetingData }: DashboardClientProps) {
   const [mounted, setMounted] = useState(false);
@@ -128,15 +75,9 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
     setMounted(true);
   }, []);
 
-  // Calculate stats
   const stats = useMemo(() => {
     if (!greetingData?.stats) {
-      return {
-        tasks: 0,
-        urgent: 0,
-        meetings: 0,
-        completed: 0,
-      };
+      return { tasks: 0, urgent: 0, meetings: 0, completed: 0 };
     }
     return {
       tasks: greetingData.stats.overdueTasksCount + greetingData.stats.urgentTasksCount,
@@ -146,7 +87,6 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
     };
   }, [greetingData]);
 
-  // Calculate progress percentage
   const progressPercentage = useMemo(() => {
     const total = stats.tasks + stats.completed;
     if (total === 0) return 100;
@@ -156,80 +96,59 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8">
-      {/* Ambient background effects */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] animate-pulse-subtle rounded-full bg-primary/[0.04] blur-[100px]" />
-        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-primary/[0.03] blur-[80px]" />
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b border-border px-6 py-8">
+        <div className="mx-auto max-w-4xl">
+          <h1 className="text-2xl font-semibold text-foreground">{greeting}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{dateString}</p>
+        </div>
       </div>
 
-      <div className="relative z-10 mx-auto w-full max-w-5xl">
-        {/* Greeting Section */}
-        <div
-          className="mb-10 animate-slide-up text-center opacity-0"
-          style={{ animationFillMode: 'forwards' }}
-        >
-          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-            {greeting}
-          </h1>
-          <p className="text-sm text-muted-foreground">{dateString}</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="mx-auto max-w-4xl px-6 py-8">
+        {/* Stats */}
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard
             label="Open Tasks"
             value={stats.tasks}
-            icon={<ListTodo className="h-5 w-5" />}
-            delay={100}
+            icon={<ListTodo className="h-5 w-5 text-muted-foreground" />}
           />
           <StatCard
             label="Urgent"
             value={stats.urgent}
-            icon={<AlertCircle className="h-5 w-5" />}
-            accent={stats.urgent > 0 ? 'warning' : 'default'}
-            delay={150}
+            icon={<AlertCircle className="h-5 w-5 text-muted-foreground" />}
+            variant={stats.urgent > 0 ? 'warning' : 'default'}
           />
           <StatCard
             label="Meetings"
             value={stats.meetings}
-            icon={<Calendar className="h-5 w-5" />}
-            accent="info"
-            delay={200}
+            icon={<Calendar className="h-5 w-5 text-muted-foreground" />}
+            variant="info"
           />
           <StatCard
             label="Progress"
             value={`${progressPercentage}%`}
-            icon={<TrendingUp className="h-5 w-5" />}
-            accent={progressPercentage >= 80 ? 'success' : 'default'}
-            delay={250}
+            icon={<TrendingUp className="h-5 w-5 text-muted-foreground" />}
+            variant={progressPercentage >= 80 ? 'success' : 'default'}
           />
         </div>
 
-        {/* Mind of Qualia - AI Assistant Widget */}
-        <div
-          className="mx-auto max-w-2xl animate-fade-in opacity-0"
-          style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}
-        >
+        {/* AI Assistant */}
+        <div className="mx-auto max-w-2xl">
           <MindOfQualia />
         </div>
 
-        {/* Bottom hint */}
-        <div
-          className="mt-10 animate-fade-in text-center opacity-0"
-          style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}
-        >
-          <p className="text-xs text-muted-foreground/50">
+        {/* Keyboard hint */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-muted-foreground">
             Press{' '}
-            <kbd className="rounded-md border border-border/50 bg-muted/30 px-2 py-1 font-mono text-[10px] font-medium text-muted-foreground">
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs">
               ⌘K
             </kbd>{' '}
             for quick navigation
