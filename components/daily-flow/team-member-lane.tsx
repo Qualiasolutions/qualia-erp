@@ -2,7 +2,7 @@
 
 import { memo, useTransition } from 'react';
 import { cn } from '@/lib/utils';
-import { Check, Circle, Clock, HelpCircle, Loader2, MoreHorizontal, Play } from 'lucide-react';
+import { Check, Clock, Loader2, ArrowRight } from 'lucide-react';
 import { USER_COLORS } from '@/lib/color-constants';
 import { quickUpdateTask } from '@/app/actions/inbox';
 import { invalidateDailyFlow } from '@/lib/swr';
@@ -20,10 +20,9 @@ interface TeamMemberLaneProps {
 }
 
 /**
- * Calculate time elapsed since task started (In Progress)
+ * Calculate time elapsed since task started
  */
 function getElapsedTime(task: Task): string {
-  // Use updated_at as proxy for when task moved to In Progress
   const startTime = new Date(task.updated_at);
   const now = new Date();
   const diffMs = now.getTime() - startTime.getTime();
@@ -39,35 +38,35 @@ function getElapsedTime(task: Task): string {
 }
 
 /**
- * Work item card component
+ * Task card - minimal, professional design
  */
-const WorkItemCard = memo(function WorkItemCard({
+const TaskCard = memo(function TaskCard({
   task,
-  isCurrentTask,
+  isActive,
   colorKey,
   onComplete,
   onClick,
   isCompleting,
 }: {
   task: Task;
-  isCurrentTask: boolean;
+  isActive: boolean;
   colorKey: 'fawzi' | 'moayad';
   onComplete: () => void;
   onClick: () => void;
   isCompleting: boolean;
 }) {
   const colors = USER_COLORS[colorKey];
-  const isInProgress = task.status === 'In Progress';
 
   return (
     <div
       className={cn(
-        'group relative flex items-start gap-3 rounded-lg border p-3 transition-all',
-        'hover:border-border hover:bg-muted/30',
-        isCurrentTask ? `${colors.bg} ${colors.border}` : 'border-border/50 bg-background/50'
+        'group flex items-start gap-3 rounded border p-3 transition-colors',
+        isActive
+          ? `${colors.border} ${colors.bg}`
+          : 'border-border/50 bg-background hover:border-border'
       )}
     >
-      {/* Checkbox / Status */}
+      {/* Completion checkbox */}
       <button
         onClick={(e) => {
           e.stopPropagation();
@@ -75,72 +74,48 @@ const WorkItemCard = memo(function WorkItemCard({
         }}
         disabled={isCompleting}
         className={cn(
-          'mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-all',
-          'hover:border-emerald-500 hover:bg-emerald-500/10',
-          isInProgress ? `${colors.border} ${colors.bg}` : 'border-muted-foreground/30'
+          'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
+          'hover:border-foreground hover:bg-muted',
+          isActive ? colors.border : 'border-border'
         )}
       >
         {isCompleting ? (
-          <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-        ) : isInProgress ? (
-          <div className={cn('h-2 w-2 rounded-full', colors.dot)} />
-        ) : null}
+          <Loader2 className="h-2.5 w-2.5 animate-spin text-muted-foreground" />
+        ) : (
+          <Check className="h-2.5 w-2.5 opacity-0 group-hover:opacity-30" />
+        )}
       </button>
 
       {/* Content */}
-      <div className="min-w-0 flex-1" onClick={onClick}>
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'cursor-pointer truncate text-sm font-medium hover:text-foreground',
-              isCurrentTask ? 'text-foreground' : 'text-muted-foreground'
-            )}
-          >
-            {task.title}
-          </span>
-        </div>
-
-        <div className="mt-1 flex items-center gap-2">
-          {/* Project badge */}
-          {task.project && (
-            <span className="max-w-[120px] truncate text-xs text-muted-foreground">
-              {task.project.name}
-            </span>
+      <div className="min-w-0 flex-1 cursor-pointer" onClick={onClick}>
+        <p
+          className={cn(
+            'truncate text-sm',
+            isActive ? 'font-medium text-foreground' : 'text-muted-foreground'
           )}
+        >
+          {task.title}
+        </p>
 
-          {/* Time elapsed for In Progress tasks */}
-          {isInProgress && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              {getElapsedTime(task)}
-            </span>
-          )}
-
-          {/* Priority badge */}
-          {task.priority !== 'No Priority' && (
-            <span
-              className={cn(
-                'rounded px-1.5 py-0.5 text-[10px] font-medium',
-                task.priority === 'Urgent' && 'bg-red-500/10 text-red-500',
-                task.priority === 'High' && 'bg-orange-500/10 text-orange-500'
-              )}
-            >
-              {task.priority}
-            </span>
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          {task.project && <span className="max-w-[100px] truncate">{task.project.name}</span>}
+          {isActive && task.status === 'In Progress' && (
+            <>
+              <span className="text-border">·</span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                {getElapsedTime(task)}
+              </span>
+            </>
           )}
         </div>
       </div>
-
-      {/* Quick actions */}
-      <button className="rounded p-1 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100">
-        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-      </button>
     </div>
   );
 });
 
 /**
- * Team member lane showing their current task and upcoming work
+ * Team member lane - clean, professional layout
  */
 export const TeamMemberLane = memo(function TeamMemberLane({
   member,
@@ -149,7 +124,6 @@ export const TeamMemberLane = memo(function TeamMemberLane({
   isCurrentUser,
   onTaskClick,
   onAssignTask,
-  onNeedHelp,
 }: TeamMemberLaneProps) {
   const [isPending, startTransition] = useTransition();
   const colors = USER_COLORS[member.colorKey];
@@ -164,42 +138,40 @@ export const TeamMemberLane = memo(function TeamMemberLane({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="mb-4 flex items-center gap-3">
-        <div className={cn('h-3 w-3 rounded-full', colors.dot)} />
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground">
-            {member.full_name || member.email.split('@')[0]}
-          </h3>
-          <span className="text-xs capitalize text-muted-foreground">{member.role}</span>
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className={cn('h-2.5 w-2.5 rounded-full', colors.dot)} />
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              {member.full_name || member.email.split('@')[0]}
+            </h3>
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              {member.role}
+            </span>
+          </div>
         </div>
         {isCurrentUser && (
-          <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[10px] font-medium text-qualia-500">
-            You
-          </span>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">You</span>
         )}
       </div>
 
       {/* Current Task */}
       <div className="mb-4">
-        <div className="mb-2 flex items-center gap-2">
-          <Play className="h-3 w-3 text-muted-foreground" />
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Now Working On
-          </span>
+        <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Active
         </div>
 
         {currentTask ? (
-          <WorkItemCard
+          <TaskCard
             task={currentTask}
-            isCurrentTask={true}
+            isActive={true}
             colorKey={member.colorKey}
             onComplete={() => handleCompleteTask(currentTask.id)}
             onClick={() => onTaskClick?.(currentTask)}
             isCompleting={isPending}
           />
         ) : (
-          <div className="flex h-16 items-center justify-center rounded-lg border border-dashed border-border/50 text-sm text-muted-foreground">
-            <Circle className="mr-2 h-4 w-4 opacity-50" />
+          <div className="flex h-14 items-center justify-center rounded border border-dashed border-border/50 text-xs text-muted-foreground">
             No active task
           </div>
         )}
@@ -207,20 +179,17 @@ export const TeamMemberLane = memo(function TeamMemberLane({
 
       {/* Up Next */}
       <div className="flex-1">
-        <div className="mb-2 flex items-center gap-2">
-          <Clock className="h-3 w-3 text-muted-foreground" />
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Up Next
-          </span>
+        <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Queue ({upcomingTasks.length})
         </div>
 
         {upcomingTasks.length > 0 ? (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {upcomingTasks.map((task) => (
-              <WorkItemCard
+              <TaskCard
                 key={task.id}
                 task={task}
-                isCurrentTask={false}
+                isActive={false}
                 colorKey={member.colorKey}
                 onComplete={() => handleCompleteTask(task.id)}
                 onClick={() => onTaskClick?.(task)}
@@ -229,43 +198,24 @@ export const TeamMemberLane = memo(function TeamMemberLane({
             ))}
           </div>
         ) : (
-          <div className="flex h-12 items-center justify-center rounded-lg border border-dashed border-border/50 text-xs text-muted-foreground">
-            No upcoming tasks
+          <div className="flex h-10 items-center justify-center rounded border border-dashed border-border/50 text-xs text-muted-foreground">
+            Empty
           </div>
         )}
       </div>
 
-      {/* Action buttons */}
-      <div className="mt-4 border-t border-border/50 pt-4">
-        {member.role === 'lead' ? (
+      {/* Action */}
+      {member.role === 'lead' && (
+        <div className="mt-4 border-t border-border/50 pt-3">
           <button
             onClick={onAssignTask}
-            className="w-full rounded-lg border border-dashed border-border/50 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-border hover:bg-muted/30"
+            className="flex w-full items-center justify-center gap-1.5 rounded border border-border/50 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
           >
-            + Assign Task
+            Assign Task
+            <ArrowRight className="h-3 w-3" />
           </button>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              onClick={onNeedHelp}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-500/10 dark:text-amber-400"
-            >
-              <HelpCircle className="h-4 w-4" />
-              Need Help?
-            </button>
-            {currentTask && (
-              <button
-                onClick={() => currentTask && handleCompleteTask(currentTask.id)}
-                disabled={isPending || !currentTask}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/5 px-4 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400"
-              >
-                <Check className="h-4 w-4" />
-                Done!
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 });

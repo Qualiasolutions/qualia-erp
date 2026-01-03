@@ -57,7 +57,7 @@ function isMeetingLive(meeting: DailyMeeting): boolean {
 }
 
 /**
- * NOW indicator component
+ * NOW indicator component - minimal line design
  */
 const NowIndicator = memo(function NowIndicator({
   position,
@@ -69,25 +69,15 @@ const NowIndicator = memo(function NowIndicator({
   if (!isVisible) return null;
 
   return (
-    <div
-      className="absolute bottom-0 top-0 z-10 flex flex-col items-center"
-      style={{ left: `${position}%` }}
-    >
-      {/* Top triangle */}
-      <div className="h-0 w-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-qualia-500" />
-      {/* Line */}
-      <div className="w-0.5 flex-1 bg-qualia-500" />
-      {/* Pulse dot */}
-      <div className="relative">
-        <div className="absolute -inset-1 animate-ping rounded-full bg-qualia-500/30" />
-        <div className="h-2 w-2 rounded-full bg-qualia-500" />
-      </div>
+    <div className="absolute bottom-0 top-0 z-10" style={{ left: `${position}%` }}>
+      <div className="h-full w-px bg-qualia-500" />
+      <div className="absolute -left-1 top-0 h-2 w-2 rounded-full bg-qualia-500" />
     </div>
   );
 });
 
 /**
- * Meeting block on timeline
+ * Meeting block on timeline - clean, minimal design
  */
 const TimelineMeeting = memo(function TimelineMeeting({
   meeting,
@@ -107,12 +97,11 @@ const TimelineMeeting = memo(function TimelineMeeting({
     <button
       onClick={onClick}
       className={cn(
-        'absolute top-8 flex h-10 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-all',
-        'cursor-pointer hover:ring-2 hover:ring-offset-1 hover:ring-offset-background',
+        'absolute top-8 flex h-9 items-center gap-1.5 rounded px-2.5 text-xs font-medium transition-all',
         'min-w-[60px] overflow-hidden whitespace-nowrap',
         isLive
-          ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:ring-violet-400'
-          : 'border border-violet-500/30 bg-violet-500/15 text-violet-600 hover:ring-violet-500/50 dark:text-violet-400'
+          ? 'bg-foreground text-background'
+          : 'border border-border bg-card text-foreground hover:border-foreground/20'
       )}
       style={{
         left: `${left}%`,
@@ -120,21 +109,15 @@ const TimelineMeeting = memo(function TimelineMeeting({
       }}
       title={`${meeting.title} at ${startTime}`}
     >
-      {isLive && (
-        <span className="relative flex h-2 w-2 shrink-0">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-        </span>
-      )}
       <Video className="h-3 w-3 shrink-0" />
       <span className="truncate">{meeting.title}</span>
-      {meeting.meeting_link && <ExternalLink className="h-3 w-3 shrink-0 opacity-60" />}
+      {meeting.meeting_link && <ExternalLink className="h-3 w-3 shrink-0 opacity-40" />}
     </button>
   );
 });
 
 /**
- * Visual Timeline component showing 8:30 AM - 2:30 PM with meetings
+ * Visual Timeline component - clean, professional design
  */
 export const VisualTimeline = memo(function VisualTimeline({
   meetings,
@@ -154,7 +137,7 @@ export const VisualTimeline = memo(function VisualTimeline({
     };
 
     updatePosition();
-    const interval = setInterval(updatePosition, 60000); // Every minute
+    const interval = setInterval(updatePosition, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -177,9 +160,9 @@ export const VisualTimeline = memo(function VisualTimeline({
   return (
     <div className="relative">
       {/* Timeline container */}
-      <div className="relative h-24 overflow-hidden rounded-xl border border-border/50 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 dark:from-slate-900/50 dark:via-slate-800/30 dark:to-slate-900/50">
+      <div className="relative h-20 overflow-hidden rounded border border-border bg-card">
         {/* Time markers */}
-        <div className="absolute inset-x-0 top-0 flex h-6 items-center px-1">
+        <div className="absolute inset-x-0 top-0 flex h-6 items-center border-b border-border/50 px-1">
           {TIME_MARKERS.map((marker) => {
             const position = getTimePosition(marker.minutes);
             return (
@@ -188,7 +171,7 @@ export const VisualTimeline = memo(function VisualTimeline({
                 className="absolute flex flex-col items-center"
                 style={{ left: `${position}%` }}
               >
-                <span className="-translate-x-1/2 text-[10px] font-medium text-muted-foreground/70">
+                <span className="-translate-x-1/2 text-[10px] font-medium text-muted-foreground">
                   {marker.time}
                 </span>
               </div>
@@ -198,22 +181,22 @@ export const VisualTimeline = memo(function VisualTimeline({
 
         {/* Grid lines */}
         <div className="absolute inset-x-0 bottom-0 top-6">
-          {TIME_MARKERS.slice(0, -1).map((marker) => {
+          {TIME_MARKERS.map((marker) => {
             const position = getTimePosition(marker.minutes);
             return (
               <div
                 key={marker.time}
-                className="absolute bottom-0 top-0 w-px bg-border/30"
+                className="absolute bottom-0 top-0 w-px bg-border/40"
                 style={{ left: `${position}%` }}
               />
             );
           })}
         </div>
 
-        {/* Progress bar (elapsed time) */}
+        {/* Elapsed time background */}
         {isWithinHours && (
           <div
-            className="absolute bottom-0 left-0 top-6 bg-qualia-500/5"
+            className="absolute bottom-0 left-0 top-6 bg-muted/30"
             style={{ width: `${nowPosition}%` }}
           />
         )}
@@ -243,13 +226,16 @@ export const VisualTimeline = memo(function VisualTimeline({
         </div>
       </div>
 
-      {/* Timeline label */}
-      <div className="mt-2 flex items-center justify-between px-1">
-        <span className="text-xs text-muted-foreground">8:30 AM</span>
-        <span className="text-xs font-medium text-muted-foreground">
-          {isWithinHours ? 'Working Hours' : 'Outside Working Hours'}
+      {/* Footer info */}
+      <div className="mt-1.5 flex items-center justify-between px-0.5">
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+          Working Hours
         </span>
-        <span className="text-xs text-muted-foreground">2:30 PM</span>
+        {isWithinHours && (
+          <span className="text-[10px] text-muted-foreground">
+            {Math.round(nowPosition)}% elapsed
+          </span>
+        )}
       </div>
     </div>
   );

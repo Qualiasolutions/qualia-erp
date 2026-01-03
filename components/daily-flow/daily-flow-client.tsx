@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect } from 'react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Calendar, RefreshCw, Video, Loader2, Users } from 'lucide-react';
+import { RefreshCw, Video, Loader2 } from 'lucide-react';
 import { useDailyFlow, invalidateDailyFlow } from '@/lib/swr';
 import { createInstantMeeting } from '@/app/actions';
 import { VisualTimeline } from './visual-timeline';
@@ -13,8 +13,7 @@ import { EditTaskModal } from '@/components/edit-task-modal';
 import type { Task } from '@/app/actions/inbox';
 
 /**
- * Main Daily Flow client component
- * Unified view of timeline, team work, and project focus
+ * Daily Flow - unified team dashboard
  */
 export function DailyFlowClient() {
   const {
@@ -32,12 +31,10 @@ export function DailyFlowClient() {
   const [mounted, setMounted] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  // Hydration check
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Handle instant meeting
   const handleStartMeeting = async () => {
     startTransition(async () => {
       const result = await createInstantMeeting();
@@ -51,74 +48,53 @@ export function DailyFlowClient() {
     });
   };
 
-  // Handle manual refresh
   const handleRefresh = () => {
     revalidate();
   };
 
-  // Handle task modal close
   const handleTaskModalClose = () => {
     setSelectedTask(null);
     invalidateDailyFlow(true);
   };
 
-  // Handle assign task - opens project page for now
   const handleAssignTask = () => {
-    // TODO: Implement task assignment modal
     window.location.href = '/projects';
   };
 
-  // Handle need help (for now, just show an alert - could open chat)
   const handleNeedHelp = () => {
-    // TODO: Implement help request system
-    alert('Help request feature coming soon! For now, ask Fawzi directly.');
+    // Placeholder for help system
   };
 
-  // Handle meeting click
   const handleMeetingClick = () => {
-    // TODO: Open meeting detail modal or prompt for link
+    // Placeholder for meeting details
   };
 
-  // Loading state
   if (!mounted || isLoading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   const today = new Date();
-  const dateString = format(today, 'EEEE, MMMM d, yyyy');
+  const dateString = format(today, 'EEEE, MMMM d');
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{dateString}</h1>
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Users className="h-4 w-4" />
-              Team Schedule
-            </p>
-          </div>
-
-          {/* Team member indicators */}
-          <div className="hidden items-center gap-2 border-l border-border/50 pl-4 md:flex">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">{dateString}</h1>
+          <div className="mt-1 flex items-center gap-3">
             {teamMembers.map((member) => (
               <div
                 key={member.id}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium',
-                  member.colorKey === 'fawzi'
-                    ? 'bg-qualia-500/10 text-qualia-500'
-                    : 'bg-indigo-500/10 text-indigo-500'
-                )}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground"
               >
                 <span
                   className={cn(
-                    'h-2 w-2 rounded-full',
+                    'h-1.5 w-1.5 rounded-full',
                     member.colorKey === 'fawzi' ? 'bg-qualia-500' : 'bg-indigo-500'
                   )}
                 />
@@ -128,61 +104,54 @@ export function DailyFlowClient() {
           </div>
         </div>
 
-        {/* Quick actions */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleRefresh}
             disabled={isValidating}
             className={cn(
-              'rounded-lg border border-border/50 p-2 transition-colors hover:bg-muted/50',
+              'rounded border border-border p-2 transition-colors hover:bg-muted',
               isValidating && 'opacity-50'
             )}
-            title="Refresh"
+            aria-label="Refresh"
           >
             <RefreshCw
-              className={cn('h-4 w-4 text-muted-foreground', isValidating && 'animate-spin')}
+              className={cn('h-3.5 w-3.5 text-muted-foreground', isValidating && 'animate-spin')}
             />
           </button>
 
           <button
             onClick={handleStartMeeting}
             disabled={isPending}
-            className="flex items-center gap-2 rounded-lg bg-violet-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-600 disabled:opacity-50"
+            className="flex items-center gap-2 rounded bg-foreground px-3.5 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
           >
             {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Video className="h-4 w-4" />
+              <Video className="h-3.5 w-3.5" />
             )}
-            Start Meeting
+            New Meeting
           </button>
         </div>
       </div>
 
-      {/* Visual Timeline */}
+      {/* Timeline */}
       <section>
-        <div className="mb-3 flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Today&apos;s Timeline
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            Timeline
           </h2>
           {meetings.length > 0 && (
-            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-violet-500">
-              {meetings.length} meeting{meetings.length !== 1 ? 's' : ''}
-            </span>
+            <span className="text-[10px] text-muted-foreground">{meetings.length} scheduled</span>
           )}
         </div>
         <VisualTimeline meetings={meetings} onMeetingClick={handleMeetingClick} />
       </section>
 
-      {/* Team Work Lanes */}
+      {/* Team Lanes */}
       <section>
-        <div className="mb-3 flex items-center gap-2">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Team Workload
-          </h2>
-        </div>
+        <h2 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Workload
+        </h2>
         <TeamLanes
           tasks={tasks}
           teamMembers={teamMembers}
@@ -193,14 +162,16 @@ export function DailyFlowClient() {
         />
       </section>
 
-      {/* Project Focus Bar */}
+      {/* Project Focus */}
       <section>
+        <h2 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          Focus
+        </h2>
         <ProjectFocusBar
           project={focusProject}
           tasks={tasks}
           meetings={meetings}
           onSwitchProject={() => {
-            // TODO: Open project picker
             window.location.href = '/projects';
           }}
         />

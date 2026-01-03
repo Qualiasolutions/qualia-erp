@@ -16,7 +16,7 @@ interface TeamLanesProps {
 }
 
 /**
- * Two-column team lanes showing each member's work
+ * Team lanes container - clean grid layout
  */
 export const TeamLanes = memo(function TeamLanes({
   tasks,
@@ -26,7 +26,7 @@ export const TeamLanes = memo(function TeamLanes({
   onAssignTask,
   onNeedHelp,
 }: TeamLanesProps) {
-  // Sort members: lead first, then trainee
+  // Sort: lead first
   const sortedMembers = useMemo(() => {
     return [...teamMembers].sort((a, b) => {
       if (a.role === 'lead' && b.role !== 'lead') return -1;
@@ -35,7 +35,7 @@ export const TeamLanes = memo(function TeamLanes({
     });
   }, [teamMembers]);
 
-  // Pre-compute task data for each member
+  // Pre-compute task data
   const memberTaskData = useMemo(() => {
     const data = new Map<string, { currentTask: Task | null; upcomingTasks: Task[] }>();
 
@@ -51,21 +51,18 @@ export const TeamLanes = memo(function TeamLanes({
 
   if (sortedMembers.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border/50 text-muted-foreground">
-        No team members found
+      <div className="flex h-32 items-center justify-center rounded border border-dashed border-border/50 text-xs text-muted-foreground">
+        No team members
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {sortedMembers.map((member) => {
         const taskData = memberTaskData.get(member.id)!;
         return (
-          <div
-            key={member.id}
-            className="rounded-xl border border-border/50 bg-card/30 p-5 backdrop-blur-sm"
-          >
+          <div key={member.id} className="rounded border border-border bg-card p-4">
             <TeamMemberLane
               member={member}
               currentTask={taskData.currentTask}
