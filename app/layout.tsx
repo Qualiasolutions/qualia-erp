@@ -84,22 +84,16 @@ export const metadata: Metadata = {
 
 function SidebarSkeleton() {
   return (
-    <div className="flex h-screen w-60 flex-col border-r border-border bg-card">
-      <div className="flex h-14 items-center border-b border-border px-4">
+    <div className="hidden h-full w-16 flex-shrink-0 flex-col border-r border-border/50 bg-background/80 backdrop-blur-xl md:flex">
+      <div className="flex h-16 items-center justify-center border-b border-border/50">
         <div className="h-7 w-7 animate-pulse rounded-lg bg-muted" />
-        <div className="ml-2.5 space-y-1.5">
-          <div className="h-3.5 w-16 animate-pulse rounded bg-muted" />
-          <div className="h-2.5 w-20 animate-pulse rounded bg-muted" />
-        </div>
       </div>
-      <div className="border-b border-border p-3">
-        <div className="h-9 animate-pulse rounded-lg bg-muted" />
-      </div>
-      <nav className="flex-1 space-y-1 p-3">
-        <div key="skeleton-1" className="h-9 animate-pulse rounded-lg bg-muted" />
-        <div key="skeleton-2" className="h-9 animate-pulse rounded-lg bg-muted" />
-        <div key="skeleton-3" className="h-9 animate-pulse rounded-lg bg-muted" />
-        <div key="skeleton-4" className="h-9 animate-pulse rounded-lg bg-muted" />
+      <nav className="flex flex-1 flex-col items-center gap-1 py-4">
+        <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+        <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+        <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+        <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
+        <div className="h-10 w-10 animate-pulse rounded-xl bg-muted" />
       </nav>
     </div>
   );

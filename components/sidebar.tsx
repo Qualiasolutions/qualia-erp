@@ -228,7 +228,7 @@ export function Sidebar() {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className={cn(
-          'relative z-30 hidden h-screen flex-col border-r border-border/50 bg-background/50 backdrop-blur-sm transition-all duration-300 ease-premium md:flex',
+          'relative z-sticky hidden h-full flex-shrink-0 flex-col border-r border-border/50 bg-background/80 backdrop-blur-xl transition-all duration-300 ease-premium md:flex',
           showExpanded ? 'w-60' : 'w-16'
         )}
       >

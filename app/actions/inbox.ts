@@ -28,7 +28,6 @@ export type Task = {
   due_date: string | null;
   completed_at: string | null;
   show_in_inbox: boolean;
-  milestone: string | null;
   created_at: string;
   updated_at: string;
   creator?: {
@@ -102,7 +101,6 @@ export async function getTasks(
       due_date,
       completed_at,
       show_in_inbox,
-      milestone,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -178,7 +176,6 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     project_id,
     show_in_inbox,
     item_type,
-    milestone,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -218,7 +215,6 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       due_date: due_date || null,
       sort_order: nextSortOrder,
       show_in_inbox: show_in_inbox ?? true, // Default to true when no project
-      milestone: milestone || null,
     })
     .select()
     .single();
@@ -268,17 +264,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const {
-    id,
-    title,
-    description,
-    status,
-    due_date,
-    sort_order,
-    assignee_id,
-    show_in_inbox,
-    milestone,
-  } = validation.data;
+  const { id, title, description, status, due_date, sort_order, assignee_id, show_in_inbox } =
+    validation.data;
 
   if (!id) {
     return { success: false, error: 'Task ID is required' };
@@ -294,7 +281,6 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (sort_order !== undefined) updateData.sort_order = sort_order;
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
   if (show_in_inbox !== undefined) updateData.show_in_inbox = show_in_inbox;
-  if (milestone !== undefined) updateData.milestone = milestone || null;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -432,7 +418,6 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       due_date,
       completed_at,
       show_in_inbox,
-      milestone,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),

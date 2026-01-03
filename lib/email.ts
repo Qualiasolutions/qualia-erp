@@ -3,7 +3,15 @@
 import { Resend } from 'resend';
 import { createClient } from '@/lib/supabase/server';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization to avoid errors when API key is missing
+let resend: Resend | null = null;
+
+function getResendClient(): Resend | null {
+  if (!resend && process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resend;
+}
 
 // Email sender configuration
 const FROM_EMAIL = 'Qualia Platform <notifications@qualiasolutions.net>';
@@ -220,12 +228,21 @@ export async function notifyAdminsOfCreation(
       additionalInfo,
     };
 
+    // Check if Resend is configured
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn(
+        '[notifyAdminsOfCreation] Resend API key not configured, skipping email notifications'
+      );
+      return { success: true }; // Silent success when not configured
+    }
+
     // Send emails to all other admins
     const emailPromises = otherAdmins.map(async (admin) => {
       const subject = `New ${entityType} created: ${entityName}`;
 
       try {
-        const { error } = await resend.emails.send({
+        const { error } = await resendClient.emails.send({
           from: FROM_EMAIL,
           to: admin.email,
           subject,
@@ -333,4 +350,58 @@ export async function notifyIssueCreated(
   if (projectName) additionalInfo['Project'] = projectName;
 
   return notifyAdminsOfCreation(creatorId, 'issue', issueTitle, issueId, additionalInfo);
+}
+
+// ============================================================================
+// Daily Reminder Functions (stub implementations for cron job)
+// ============================================================================
+
+type TaskForReminder = {
+  id: string;
+  title: string;
+  due_date: string | null;
+  priority: string;
+  assignee: { email: string; name: string } | null;
+};
+
+type TasksByAssignee = Map<
+  string,
+  {
+    email: string;
+    name: string;
+    overdue: TaskForReminder[];
+    upcoming: TaskForReminder[];
+  }
+>;
+
+/**
+ * Get tasks for daily reminders (stub - returns empty map)
+ * TODO: Implement actual task fetching logic
+ */
+export async function getTasksForReminders(): Promise<{
+  tasksByAssignee: TasksByAssignee;
+}> {
+  // Stub implementation - returns empty map
+  // TODO: Implement actual logic to fetch tasks from database
+  return { tasksByAssignee: new Map() };
+}
+
+/**
+ * Send daily digest email (stub - returns success)
+ * TODO: Implement actual email sending logic
+ */
+export async function sendDailyDigest(
+  email: string,
+  name: string,
+  overdue: TaskForReminder[],
+  upcoming: TaskForReminder[]
+): Promise<{ success: boolean; error?: string }> {
+  // Stub implementation - returns success without sending
+  // TODO: Implement actual email sending logic
+  void email;
+  void name;
+  void overdue;
+  void upcoming;
+  console.log('[sendDailyDigest] Stub implementation - email not sent');
+  return { success: true };
 }

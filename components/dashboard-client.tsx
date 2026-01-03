@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { ListTodo, AlertCircle, Calendar, TrendingUp } from 'lucide-react';
+import { useEffect, useState, useMemo, memo } from 'react';
+import { ListTodo, AlertCircle, Calendar, TrendingUp, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MindOfQualia } from '@/components/mind-of-qualia';
 
@@ -44,42 +44,82 @@ interface StatCardProps {
   label: string;
   value: number | string;
   icon: React.ReactNode;
-  accent?: 'default' | 'warning' | 'success';
+  accent?: 'default' | 'warning' | 'success' | 'info';
+  delay?: number;
 }
 
-function StatCard({ label, value, icon, accent = 'default' }: StatCardProps) {
+const StatCard = memo(function StatCard({
+  label,
+  value,
+  icon,
+  accent = 'default',
+  delay = 0,
+}: StatCardProps) {
+  const accentStyles = {
+    warning: {
+      value: 'text-amber-500',
+      icon: 'bg-amber-500/10 text-amber-500 group-hover:bg-amber-500/20',
+      glow: 'via-amber-500/50',
+    },
+    success: {
+      value: 'text-emerald-500',
+      icon: 'bg-emerald-500/10 text-emerald-500 group-hover:bg-emerald-500/20',
+      glow: 'via-emerald-500/50',
+    },
+    info: {
+      value: 'text-blue-500',
+      icon: 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500/20',
+      glow: 'via-blue-500/50',
+    },
+    default: {
+      value: 'text-foreground',
+      icon: 'bg-primary/10 text-primary group-hover:bg-primary/20',
+      glow: 'via-primary/50',
+    },
+  };
+
+  const styles = accentStyles[accent];
+
   return (
-    <div className="card-stat group">
-      <div className="flex items-start justify-between">
+    <div
+      className="card-premium group relative animate-fade-in overflow-hidden p-5 opacity-0"
+      style={{ animationDelay: `${delay}ms`, animationFillMode: 'forwards' }}
+    >
+      {/* Gradient background on hover */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+      <div className="relative flex items-start justify-between">
         <div>
           <div
             className={cn(
-              'text-3xl font-light tracking-tight transition-colors duration-200',
-              accent === 'warning' && 'text-amber-500',
-              accent === 'success' && 'text-emerald-500',
-              accent === 'default' && 'text-foreground'
+              'text-3xl font-semibold tracking-tight transition-all duration-300 group-hover:scale-105',
+              styles.value
             )}
           >
             {value}
           </div>
-          <div className="mt-1 text-sm text-muted-foreground">{label}</div>
+          <div className="mt-1.5 text-sm font-medium text-muted-foreground">{label}</div>
         </div>
         <div
           className={cn(
-            'rounded-xl p-2 transition-all duration-200',
-            accent === 'warning' && 'bg-amber-500/10 text-amber-500',
-            accent === 'success' && 'bg-emerald-500/10 text-emerald-500',
-            accent === 'default' && 'bg-primary/10 text-primary'
+            'rounded-xl p-2.5 transition-all duration-300 group-hover:scale-110',
+            styles.icon
           )}
         >
           {icon}
         </div>
       </div>
-      {/* Bottom glow accent */}
-      <div className="absolute -bottom-px left-1/2 h-px w-0 -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/50 to-transparent transition-all duration-300 group-hover:w-2/3" />
+
+      {/* Bottom glow line */}
+      <div
+        className={cn(
+          'absolute -bottom-px left-1/2 h-[2px] w-0 -translate-x-1/2 bg-gradient-to-r from-transparent to-transparent transition-all duration-500 group-hover:w-3/4',
+          styles.glow
+        )}
+      />
     </div>
   );
-}
+});
 
 export function DashboardClient({ greeting, dateString, greetingData }: DashboardClientProps) {
   const [mounted, setMounted] = useState(false);
@@ -123,56 +163,79 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)] px-4 py-8 sm:px-6 lg:px-8">
-      {/* Subtle ambient glow */}
+      {/* Ambient background effects */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-1/4 -top-1/4 h-[500px] w-[500px] rounded-full bg-primary/[0.03] blur-3xl" />
-        <div className="absolute -bottom-1/4 -right-1/4 h-[400px] w-[400px] rounded-full bg-primary/[0.02] blur-3xl" />
+        <div className="absolute -left-1/4 -top-1/4 h-[600px] w-[600px] animate-pulse-subtle rounded-full bg-primary/[0.04] blur-[100px]" />
+        <div className="absolute -bottom-1/4 -right-1/4 h-[500px] w-[500px] rounded-full bg-primary/[0.03] blur-[80px]" />
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-5xl">
         {/* Greeting Section */}
-        <div className="mb-8 text-center">
-          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+        <div
+          className="mb-10 animate-slide-up text-center opacity-0"
+          style={{ animationFillMode: 'forwards' }}
+        >
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
+            <Zap className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">Dashboard</span>
+          </div>
+          <h1 className="mb-3 text-4xl font-bold tracking-tight text-foreground md:text-5xl">
             {greeting}
           </h1>
-          <p className="text-sm text-muted-foreground">{dateString}</p>
+          <p className="text-base text-muted-foreground">{dateString}</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+        <div className="mb-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <StatCard
             label="Open Tasks"
             value={stats.tasks}
             icon={<ListTodo className="h-5 w-5" />}
+            delay={100}
           />
           <StatCard
             label="Urgent"
             value={stats.urgent}
             icon={<AlertCircle className="h-5 w-5" />}
             accent={stats.urgent > 0 ? 'warning' : 'default'}
+            delay={150}
           />
           <StatCard
             label="Meetings"
             value={stats.meetings}
             icon={<Calendar className="h-5 w-5" />}
+            accent="info"
+            delay={200}
           />
           <StatCard
             label="Progress"
             value={`${progressPercentage}%`}
             icon={<TrendingUp className="h-5 w-5" />}
             accent={progressPercentage >= 80 ? 'success' : 'default'}
+            delay={250}
           />
         </div>
 
         {/* Mind of Qualia - AI Assistant Widget */}
-        <div className="mx-auto max-w-2xl">
+        <div
+          className="mx-auto max-w-2xl animate-fade-in opacity-0"
+          style={{ animationDelay: '300ms', animationFillMode: 'forwards' }}
+        >
           <MindOfQualia />
         </div>
 
         {/* Bottom hint */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground/60">
-            Press <kbd className="rounded bg-muted/50 px-1.5 py-0.5 font-mono text-[10px]">⌘K</kbd>{' '}
+        <div
+          className="mt-10 animate-fade-in text-center opacity-0"
+          style={{ animationDelay: '400ms', animationFillMode: 'forwards' }}
+        >
+          <p className="text-xs text-muted-foreground/50">
+            Press{' '}
+            <kbd className="rounded-md border border-border/50 bg-muted/30 px-2 py-1 font-mono text-[10px] font-medium text-muted-foreground">
+              ⌘K
+            </kbd>{' '}
             for quick navigation
           </p>
         </div>

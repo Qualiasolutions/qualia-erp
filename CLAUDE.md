@@ -20,15 +20,14 @@ npx tsc --noEmit     # Type check without build
 
 ## Tech Stack
 
-- **Framework**: Next.js 15+ (App Router, React 19, TypeScript)
+- **Framework**: Next.js 16+ (App Router, React 19, TypeScript)
 - **Database/Auth**: Supabase (PostgreSQL with pgvector for RAG)
 - **Styling**: Tailwind CSS + shadcn/ui (Radix primitives)
-- **AI**: Groq (llama-3.1-8b-instant for chat), VAPI (voice), Google AI (embeddings)
+- **AI**: Gemini 2.5 Flash (chat), VAPI (voice), Google AI (embeddings)
 - **State**: SWR for client caching (60s dedup, 30s auto-refresh for tasks with exponential backoff)
 - **Drag & Drop**: @dnd-kit for kanban boards
 - **Virtualization**: @tanstack/react-virtual for large lists
 - **Testing**: Jest + React Testing Library
-- **Monitoring**: Sentry
 
 ## Architecture
 
@@ -83,6 +82,9 @@ app/
 └── schedule/               # Calendar views
 
 lib/
+├── ai/ai-core.ts           # Shared AI processing (Gemini 2.5 Flash)
+├── ai/tools/               # AI tools: read-tools.ts, write-tools.ts
+├── ai/system-prompt.ts     # Chat system prompt
 ├── supabase/server.ts      # Server-side Supabase client (always create fresh)
 ├── supabase/client.ts      # Browser-side Supabase client
 ├── swr.ts                  # SWR hooks with tab visibility + immediate invalidation
@@ -147,7 +149,7 @@ invalidateProjectTasks(projectId, immediate: true);
 
 ### AI Chat Agent (`app/api/chat/route.ts`)
 
-Uses Groq's llama-3.1-8b-instant with 15+ tools. Max duration: 30s.
+Uses Gemini 2.5 Flash with 15+ tools. Max duration: 30s. Shared AI core in `lib/ai/ai-core.ts`.
 
 **Read tools**: getDashboardStats, searchIssues, searchProjects, searchClients, getTeams, getRecentActivity, getUpcomingMeetings, getProjectDetails, getWorkspaceStats, searchKnowledgeBase (RAG)
 
@@ -228,7 +230,6 @@ Required in `.env.local`:
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-GROQ_API_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
 NEXT_PUBLIC_VAPI_PUBLIC_KEY=
 VAPI_WEBHOOK_SECRET=

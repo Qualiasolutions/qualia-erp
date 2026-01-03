@@ -895,28 +895,15 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     return getPhasesForType(projectType);
   }, [projectType]);
 
-  // Group tasks by milestone/phase
+  // Group tasks by phase (currently all tasks go to Unassigned since milestone field not implemented)
   const tasksByPhase = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
     // Initialize with empty arrays for each phase
     availablePhases.forEach((phase) => {
       grouped[phase.name] = [];
     });
-    // Add "Unassigned" for tasks without a milestone
-    grouped['Unassigned'] = [];
-
-    tasks.forEach((task) => {
-      const milestone = task.milestone || 'Unassigned';
-      if (!grouped[milestone]) {
-        grouped[milestone] = [];
-      }
-      grouped[milestone].push(task);
-    });
-
-    // Sort by sort_order within each phase
-    Object.keys(grouped).forEach((phase) => {
-      grouped[phase].sort((a, b) => a.sort_order - b.sort_order);
-    });
+    // All tasks go to Unassigned until milestone/phase assignment is implemented
+    grouped['Unassigned'] = [...tasks].sort((a, b) => a.sort_order - b.sort_order);
 
     return grouped;
   }, [tasks, availablePhases]);
@@ -1160,7 +1147,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
               />
             ))}
 
-            {/* Unassigned tasks (tasks without a milestone) */}
+            {/* Unassigned tasks (tasks not assigned to a phase) */}
             {tasksByPhase['Unassigned']?.length > 0 && (
               <PhaseGroup
                 phase={{
