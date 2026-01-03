@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, memo } from 'react';
-import { ListTodo, AlertCircle, Calendar, TrendingUp, Zap } from 'lucide-react';
+import { ListTodo, AlertCircle, Calendar, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MindOfQualia } from '@/components/mind-of-qualia';
 
@@ -177,14 +177,10 @@ export function DashboardClient({ greeting, dateString, greetingData }: Dashboar
           className="mb-10 animate-slide-up text-center opacity-0"
           style={{ animationFillMode: 'forwards' }}
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
-            <Zap className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs font-medium text-primary">Dashboard</span>
-          </div>
-          <h1 className="mb-3 text-4xl font-bold tracking-tight text-foreground md:text-5xl">
+          <h1 className="mb-2 text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
             {greeting}
           </h1>
-          <p className="text-base text-muted-foreground">{dateString}</p>
+          <p className="text-sm text-muted-foreground">{dateString}</p>
         </div>
 
         {/* Stats Grid */}

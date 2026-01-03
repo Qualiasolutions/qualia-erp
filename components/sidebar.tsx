@@ -140,7 +140,7 @@ function SidebarContent({
         )}
 
         {/* Main Navigation */}
-        <nav className={cn('flex-1 py-4', isCollapsed ? 'px-2' : 'px-3')}>
+        <nav className={cn('flex-1 py-4', isCollapsed ? 'px-3' : 'px-4')}>
           <div className={cn('space-y-1', isCollapsed && 'flex flex-col items-center')}>
             {navigation.map((item) => {
               const isActive =
@@ -160,7 +160,7 @@ function SidebarContent({
         </nav>
 
         {/* Bottom Section */}
-        <div className={cn('border-t border-border/50 py-4', isCollapsed ? 'px-2' : 'px-3')}>
+        <div className={cn('border-t border-border/50 py-4', isCollapsed ? 'px-3' : 'px-4')}>
           <div className={cn('space-y-1', isCollapsed && 'flex flex-col items-center')}>
             {bottomNav.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href);
