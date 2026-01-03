@@ -86,12 +86,14 @@ function MeetingItem({
   meeting,
   onUpdateLink,
   currentUserId,
+  autoShowLinkInput = false,
 }: {
   meeting: Meeting;
   onUpdateLink: (meetingId: string, link: string) => void;
   currentUserId?: string;
+  autoShowLinkInput?: boolean;
 }) {
-  const [showLinkInput, setShowLinkInput] = useState(false);
+  const [showLinkInput, setShowLinkInput] = useState(autoShowLinkInput);
   const [linkValue, setLinkValue] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -202,14 +204,11 @@ function MeetingItem({
               </div>
             ) : (
               <button
-                onClick={() => {
-                  window.open(createGoogleMeetLink(), '_blank');
-                  setShowLinkInput(true);
-                }}
-                className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                onClick={() => setShowLinkInput(true)}
+                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
               >
                 <Video className="h-3.5 w-3.5" />
-                Start & Share
+                Add Link
               </button>
             )
           ) : (
@@ -238,6 +237,7 @@ export function DashboardClient({
   const [meetings, setMeetings] = useState(upcomingMeetings);
   const [tasks, setTasks] = useState(todaysTasks);
   const [isCreatingMeeting, setIsCreatingMeeting] = useState(false);
+  const [justCreatedMeetingId, setJustCreatedMeetingId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -267,6 +267,8 @@ export function DashboardClient({
       if (result.success && result.data) {
         const newMeeting = result.data as Meeting;
         setMeetings((prev) => [newMeeting, ...prev]);
+        // Track this meeting so the link input auto-shows
+        setJustCreatedMeetingId(newMeeting.id);
         // Open Google Meet in new tab
         window.open(createGoogleMeetLink(), '_blank');
       }
@@ -274,16 +276,23 @@ export function DashboardClient({
     });
   }, []);
 
-  const handleUpdateMeetingLink = useCallback((meetingId: string, link: string) => {
-    startTransition(async () => {
-      const result = await updateMeetingLink(meetingId, link);
-      if (result.success) {
-        setMeetings((prev) =>
-          prev.map((m) => (m.id === meetingId ? { ...m, meeting_link: link } : m))
-        );
-      }
-    });
-  }, []);
+  const handleUpdateMeetingLink = useCallback(
+    (meetingId: string, link: string) => {
+      startTransition(async () => {
+        const result = await updateMeetingLink(meetingId, link);
+        if (result.success) {
+          setMeetings((prev) =>
+            prev.map((m) => (m.id === meetingId ? { ...m, meeting_link: link } : m))
+          );
+          // Clear the just-created flag once link is saved
+          if (meetingId === justCreatedMeetingId) {
+            setJustCreatedMeetingId(null);
+          }
+        }
+      });
+    },
+    [justCreatedMeetingId]
+  );
 
   if (!mounted) {
     return (
@@ -403,6 +412,7 @@ export function DashboardClient({
                         meeting={meeting}
                         onUpdateLink={handleUpdateMeetingLink}
                         currentUserId={user?.id}
+                        autoShowLinkInput={meeting.id === justCreatedMeetingId}
                       />
                     ))}
                   </div>
@@ -418,6 +428,7 @@ export function DashboardClient({
                         meeting={meeting}
                         onUpdateLink={handleUpdateMeetingLink}
                         currentUserId={user?.id}
+                        autoShowLinkInput={meeting.id === justCreatedMeetingId}
                       />
                     ))}
                   </div>
