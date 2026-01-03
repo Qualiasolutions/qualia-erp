@@ -9,7 +9,6 @@ import {
   Folder,
   Calendar,
   Building2,
-  Inbox,
   Settings,
   User,
   Users,
@@ -21,7 +20,6 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutGrid },
-  { name: 'Inbox', href: '/inbox', icon: Inbox },
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
