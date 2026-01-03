@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useState } from 'react';
 import {
   Sun,
@@ -18,6 +19,14 @@ import {
   ArrowRight,
   Coffee,
   Rocket,
+  FileSignature,
+  Shield,
+  Megaphone,
+  Download,
+  Send,
+  Loader2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -88,6 +97,275 @@ const principles = [
     description: 'We deliver excellence. Take the time needed to do things right the first time.',
   },
 ];
+
+const templates = [
+  {
+    id: 'web-dev',
+    icon: Globe,
+    title: 'Web Development Agreement',
+    description: 'For website design, development, and web application projects',
+    file: '/tempaltes/TEMPLATE_Web_Development_Agreement.pdf',
+    color: 'blue',
+    prompts: [
+      'Create a web development agreement for €3,000',
+      'Generate a website project contract with 3 milestones',
+    ],
+  },
+  {
+    id: 'ai-agent',
+    icon: Bot,
+    title: 'AI Agent Agreement',
+    description: 'For AI voice agents, chatbots, and automation projects',
+    file: '/tempaltes/TEMPLATE_AI_Agent_Agreement.pdf',
+    color: 'purple',
+    prompts: [
+      'Create an AI agent agreement with 50/50 payment',
+      'Draft a voice assistant development contract',
+    ],
+  },
+  {
+    id: 'marketing',
+    icon: Megaphone,
+    title: 'Marketing Agreement',
+    description: 'For social media management and digital marketing services',
+    file: '/tempaltes/TEMPLATE_Marketing_Agreement.pdf',
+    color: 'orange',
+    prompts: [
+      'Create a 3-month marketing retainer at €800/month',
+      'Generate a social media management agreement',
+    ],
+  },
+  {
+    id: 'nda',
+    icon: Shield,
+    title: 'NDA Agreement',
+    description: 'Non-disclosure agreement for confidential discussions',
+    file: '/tempaltes/TEMPLATE_NDA_Agreement.pdf',
+    color: 'green',
+    prompts: [
+      'Create an NDA for a potential AI project',
+      'Draft a mutual confidentiality agreement',
+    ],
+  },
+];
+
+const templateColorStyles = {
+  blue: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-500',
+    hover: 'hover:border-blue-500/50 hover:bg-blue-500/5',
+  },
+  purple: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-500',
+    hover: 'hover:border-purple-500/50 hover:bg-purple-500/5',
+  },
+  orange: {
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/30',
+    text: 'text-orange-500',
+    hover: 'hover:border-orange-500/50 hover:bg-orange-500/5',
+  },
+  green: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-500',
+    hover: 'hover:border-emerald-500/50 hover:bg-emerald-500/5',
+  },
+};
+
+// Document Generator Chat Component
+function DocumentGenerator() {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>(
+    []
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = input.trim();
+    setInput('');
+    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            ...messages.map((m) => ({ role: m.role, content: m.content })),
+            { role: 'user', content: userMessage },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate document');
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          assistantMessage += chunk;
+          setMessages((prev) => {
+            const newMessages = [...prev];
+            const lastMessage = newMessages[newMessages.length - 1];
+            if (lastMessage?.role === 'assistant') {
+              lastMessage.content = assistantMessage;
+            } else {
+              newMessages.push({ role: 'assistant', content: assistantMessage });
+            }
+            return newMessages;
+          });
+        }
+      }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content:
+            'Sorry, I encountered an error. Please try again or sign in to use the document generator.',
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePromptClick = (prompt: string) => {
+    setInput(prompt);
+  };
+
+  const copyLastMessage = () => {
+    const lastAssistant = messages.filter((m) => m.role === 'assistant').pop();
+    if (lastAssistant) {
+      navigator.clipboard.writeText(lastAssistant.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-border/40 px-5 py-3">
+        <div className="flex items-center gap-2">
+          <FileSignature className="h-5 w-5 text-primary" />
+          <h3 className="text-sm font-medium text-foreground">Document Generator</h3>
+        </div>
+        {messages.some((m) => m.role === 'assistant') && (
+          <button
+            onClick={copyLastMessage}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+        )}
+      </div>
+
+      {/* Messages Area */}
+      <div className="h-[300px] overflow-y-auto p-4">
+        {messages.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <FileSignature className="mb-3 h-10 w-10 text-muted-foreground/30" />
+            <p className="mb-1 text-sm font-medium text-foreground">Generate Documents</p>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Ask me to create contracts, agreements, proposals, or any document
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {templates.slice(0, 2).flatMap((t) =>
+                t.prompts.slice(0, 1).map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => handlePromptClick(prompt)}
+                    className="rounded-lg border border-border/40 bg-muted/20 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-border hover:bg-muted/40 hover:text-foreground"
+                  >
+                    {prompt}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={cn('flex', message.role === 'user' ? 'justify-end' : 'justify-start')}
+              >
+                <div
+                  className={cn(
+                    'max-w-[90%] rounded-xl px-3.5 py-2.5 text-sm',
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted/50 text-foreground'
+                  )}
+                >
+                  <p className="whitespace-pre-wrap">{message.content}</p>
+                </div>
+              </div>
+            ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-1.5 rounded-xl bg-muted/50 px-3.5 py-2.5">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/40" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/40 [animation-delay:0.2s]" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-foreground/40 [animation-delay:0.4s]" />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <form onSubmit={handleSubmit} className="border-t border-border/40 p-4">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Describe the document you need..."
+            disabled={isLoading}
+            className="h-10 flex-1 rounded-lg border border-border/50 bg-muted/30 px-3 text-sm text-foreground transition-colors placeholder:text-muted-foreground/50 focus:border-border focus:bg-background focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 export default function TeamWorkflowPage() {
   const [activeSection, setActiveSection] = useState<'morning' | 'evening'>('morning');
@@ -400,6 +678,90 @@ export default function TeamWorkflowPage() {
                 <p className="text-sm text-muted-foreground">{principle.description}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Document Templates Section */}
+        <div className="mb-16">
+          <div className="mb-8 text-center">
+            <h2 className="mb-2 text-2xl font-semibold text-foreground">Document Templates</h2>
+            <p className="text-muted-foreground">
+              Professional agreements and contracts for client projects
+            </p>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Templates Grid */}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {templates.map((template) => {
+                const colors =
+                  templateColorStyles[template.color as keyof typeof templateColorStyles];
+                return (
+                  <div
+                    key={template.id}
+                    className={cn(
+                      'group rounded-xl border p-4 transition-all duration-300',
+                      colors.border,
+                      colors.hover
+                    )}
+                  >
+                    <div className="mb-3 flex items-start justify-between">
+                      <div className={cn('rounded-lg p-2', colors.bg)}>
+                        <template.icon className={cn('h-5 w-5', colors.text)} />
+                      </div>
+                      <a
+                        href={template.file}
+                        download
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        PDF
+                      </a>
+                    </div>
+                    <h3 className="mb-1 font-medium text-foreground">{template.title}</h3>
+                    <p className="mb-3 text-xs text-muted-foreground">{template.description}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {template.prompts.map((prompt, i) => (
+                        <span
+                          key={i}
+                          className="rounded bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+                        >
+                          {prompt.slice(0, 25)}...
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Document Generator */}
+            <DocumentGenerator />
+          </div>
+        </div>
+
+        {/* Brand Guidelines */}
+        <div className="mb-16">
+          <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-6">
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+                <Sparkles className="h-7 w-7 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="mb-1 font-semibold text-foreground">Brand Guidelines</h3>
+                <p className="text-sm text-muted-foreground">
+                  Official Qualia Solutions brand colors, logos, and design standards
+                </p>
+              </div>
+              <a
+                href="/tempaltes/Qualia_Solutions_Brand_Guidelines.pdf"
+                download
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                <Download className="h-4 w-4" />
+                Download PDF
+              </a>
+            </div>
           </div>
         </div>
 
