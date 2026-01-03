@@ -186,24 +186,23 @@ export function getUserColorKey(email: string | null | undefined): 'fawzi' | 'mo
 }
 
 /**
- * Filter tasks for today (due today or in progress)
+ * Filter tasks for today (due today, overdue, or in progress)
+ * Only shows tasks with actual due dates - not all Todo tasks
  */
 export function filterTodaysTasks(tasks: Task[]): Task[] {
   const today = new Date().toISOString().split('T')[0];
 
   return tasks.filter((task) => {
-    // Include all in-progress tasks
+    // Include all in-progress tasks (active work)
     if (task.status === 'In Progress') return true;
 
-    // Include tasks due today or overdue
+    // Include tasks due today or overdue (must have a due date)
     if (task.due_date) {
       const dueDate = task.due_date.split('T')[0];
       return dueDate <= today;
     }
 
-    // Include todo tasks (they need to be done)
-    if (task.status === 'Todo') return true;
-
+    // Don't include random Todo tasks without due dates
     return false;
   });
 }
