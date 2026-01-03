@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { StickyNote, Save, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickNotesWidgetProps {
@@ -31,7 +30,7 @@ export function QuickNotesWidget({ className }: QuickNotesWidgetProps) {
     }
   }, []);
 
-  // Auto-save on change (debounced)
+  // Save notes
   const saveNotes = useCallback((content: string) => {
     setIsSaving(true);
     const today = new Date().toISOString().split('T')[0];
@@ -75,47 +74,32 @@ export function QuickNotesWidget({ className }: QuickNotesWidgetProps) {
   };
 
   return (
-    <div className={cn('rounded-lg border border-border bg-card', className)}>
+    <div className={cn('rounded-lg border border-border/60 bg-card/50', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <StickyNote className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Quick Notes</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {isSaving ? (
-            <>
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Saving...</span>
-            </>
-          ) : lastSaved ? (
-            <>
-              <Save className="h-3 w-3" />
-              <span>Saved {formatLastSaved()}</span>
-            </>
-          ) : null}
-        </div>
+      <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+        <span className="text-sm font-medium text-foreground">Notes</span>
+        <span className="text-xs text-muted-foreground/50">
+          {isSaving ? 'Saving...' : lastSaved ? `Saved ${formatLastSaved()}` : ''}
+        </span>
       </div>
 
-      {/* Notes textarea */}
+      {/* Notes area */}
       <div className="p-4">
         <textarea
           value={notes}
           onChange={handleChange}
-          placeholder="Jot down notes, ideas, or reminders for today..."
+          placeholder="Notes, ideas, reminders..."
           className={cn(
-            'h-32 w-full resize-none rounded-md border-0 bg-transparent p-0',
-            'text-sm placeholder:text-muted-foreground/50',
+            'h-40 w-full resize-none rounded-md border-0 bg-transparent p-0',
+            'text-sm text-foreground/80 placeholder:text-muted-foreground/40',
             'focus:outline-none focus:ring-0'
           )}
         />
       </div>
 
-      {/* Footer with tips */}
-      <div className="border-t border-border px-4 py-2">
-        <p className="text-xs text-muted-foreground/60">
-          Notes are saved automatically and reset daily
-        </p>
+      {/* Footer */}
+      <div className="border-t border-border/40 px-4 py-2">
+        <p className="text-[11px] text-muted-foreground/40">Auto-saved locally. Resets daily.</p>
       </div>
     </div>
   );

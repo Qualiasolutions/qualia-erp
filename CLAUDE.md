@@ -83,7 +83,7 @@ app/
 ├── payments/               # Hidden admin-only financial tracking (/payments)
 ├── projects/               # Project management (grouped list view)
 ├── schedule/               # Calendar views
-└── team/                   # Team workflow page (trainee onboarding)
+└── team/                   # Team workflow page (daily schedule, document templates)
 
 lib/
 ├── ai/ai-core.ts           # Shared AI processing (Gemini 2.5 Flash)
@@ -97,6 +97,7 @@ lib/
 ├── color-constants.ts      # Centralized Tailwind color classes (task/priority colors)
 ├── client-utils.ts         # Client types, status config, helper functions
 ├── rate-limit.ts           # API rate limiting utilities
+├── email.ts                # Resend email notifications (admin alerts)
 └── vapi-webhook-handlers.ts # Voice tool handlers
 
 components/
@@ -249,6 +250,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 GOOGLE_GENERATIVE_AI_API_KEY=
 NEXT_PUBLIC_VAPI_PUBLIC_KEY=
 VAPI_WEBHOOK_SECRET=
+RESEND_API_KEY=  # Optional: Email notifications to admins
 ```
 
 ## Database Access
@@ -283,7 +285,7 @@ Key database types are in `types/database.ts` - use `Tables<'tablename'>` for ro
 - **RLS**: Enabled on all tables (optimized with `(SELECT auth.uid())` pattern)
 - **Realtime**: Available but SWR polling preferred for tasks
 
-### Recent Migrations
+### Useful MCP Commands
 
 ```bash
 # View applied migrations
@@ -292,12 +294,6 @@ mcp__supabase__list_migrations
 # Check performance advisors
 mcp__supabase__get_advisors type="performance"
 ```
-
-Latest performance migrations:
-
-- `add_missing_foreign_key_indexes` - FK indexes for JOIN performance
-- `optimize_rls_policies_initplan` - RLS query optimization
-- `consolidate_duplicate_rls_policies` - Remove policy redundancy
 
 ## Testing
 

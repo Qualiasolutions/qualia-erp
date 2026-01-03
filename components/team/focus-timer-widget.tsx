@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useEffect, useRef } from 'react';
-import { Play, Pause, RotateCcw, Clock } from 'lucide-react';
+import { Play, Pause, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface FocusTimerWidgetProps {
@@ -34,17 +34,13 @@ export function FocusTimerWidget({
   // Use ref to avoid stale closure in timer effect
   const handleCompleteRef = useRef<() => void>(() => {});
   handleCompleteRef.current = () => {
-    // Play sound
     if (audioRef.current) {
       audioRef.current.play().catch(() => {});
     }
-
-    // Increment session count
     const today = new Date().toISOString().split('T')[0];
     const newCount = sessionCount + 1;
     setSessionCount(newCount);
     localStorage.setItem(`focus-sessions-${today}`, String(newCount));
-
     onComplete?.();
   };
 
@@ -70,10 +66,7 @@ export function FocusTimerWidget({
     };
   }, [isRunning, timeLeft]);
 
-  const toggleTimer = () => {
-    setIsRunning(!isRunning);
-  };
-
+  const toggleTimer = () => setIsRunning(!isRunning);
   const resetTimer = () => {
     setIsRunning(false);
     setTimeLeft(initialMinutes * 60);
@@ -88,89 +81,92 @@ export function FocusTimerWidget({
   const progress = ((initialMinutes * 60 - timeLeft) / (initialMinutes * 60)) * 100;
 
   return (
-    <div className={cn('rounded-lg border border-border bg-card p-4', className)}>
-      {/* Hidden audio for completion sound */}
+    <div className={cn('rounded-lg border border-border/60 bg-card/50', className)}>
       <audio ref={audioRef} preload="auto">
         <source src="/sounds/timer-complete.mp3" type="audio/mpeg" />
       </audio>
 
       {/* Header */}
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Focus Timer</span>
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {sessionCount} session{sessionCount !== 1 ? 's' : ''} today
+      <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+        <span className="text-sm font-medium text-foreground">Focus Timer</span>
+        <span className="text-xs tabular-nums text-muted-foreground/60">
+          {sessionCount} session{sessionCount !== 1 ? 's' : ''}
         </span>
       </div>
 
       {/* Timer display */}
-      <div className="mb-4 text-center">
-        <div
-          className={cn(
-            'font-mono text-4xl font-bold tracking-wider',
-            isRunning ? 'text-blue-500' : 'text-foreground'
-          )}
-        >
-          {formatTime(timeLeft)}
-        </div>
-
-        {/* Progress bar */}
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+      <div className="px-4 py-6">
+        <div className="text-center">
           <div
             className={cn(
-              'h-full transition-all duration-1000',
-              isRunning ? 'bg-blue-500' : 'bg-muted-foreground/30'
-            )}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-3">
-        <button
-          onClick={resetTimer}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted/50 transition-colors hover:bg-muted"
-          title="Reset"
-        >
-          <RotateCcw className="h-4 w-4 text-muted-foreground" />
-        </button>
-        <button
-          onClick={toggleTimer}
-          className={cn(
-            'flex h-14 w-14 items-center justify-center rounded-full transition-colors',
-            isRunning
-              ? 'bg-amber-500 text-white hover:bg-amber-600'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          )}
-          title={isRunning ? 'Pause' : 'Start'}
-        >
-          {isRunning ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 translate-x-0.5" />}
-        </button>
-        <div className="h-10 w-10" /> {/* Spacer for symmetry */}
-      </div>
-
-      {/* Quick duration presets */}
-      <div className="mt-4 flex items-center justify-center gap-2">
-        {[15, 25, 45].map((mins) => (
-          <button
-            key={mins}
-            onClick={() => {
-              setIsRunning(false);
-              setTimeLeft(mins * 60);
-            }}
-            className={cn(
-              'rounded-md px-2 py-1 text-xs transition-colors',
-              timeLeft === mins * 60 && !isRunning
-                ? 'bg-blue-500/20 text-blue-500'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              'font-mono text-4xl font-light tracking-widest transition-colors duration-300',
+              isRunning ? 'text-foreground' : 'text-foreground/60'
             )}
           >
-            {mins}m
+            {formatTime(timeLeft)}
+          </div>
+
+          {/* Progress bar */}
+          <div className="mx-auto mt-4 h-0.5 w-32 overflow-hidden rounded-full bg-border/40">
+            <div
+              className="h-full bg-foreground/30 transition-all duration-1000"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            onClick={resetTimer}
+            className={cn(
+              'flex h-9 w-9 items-center justify-center rounded-full border border-border/60',
+              'text-muted-foreground/60 transition-all duration-150',
+              'hover:border-border hover:bg-muted/30 hover:text-foreground'
+            )}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
           </button>
-        ))}
+
+          <button
+            onClick={toggleTimer}
+            className={cn(
+              'flex h-12 w-12 items-center justify-center rounded-full border transition-all duration-150',
+              isRunning
+                ? 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
+                : 'border-border bg-background text-foreground/80 hover:bg-muted/50'
+            )}
+          >
+            {isRunning ? (
+              <Pause className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4 translate-x-0.5" />
+            )}
+          </button>
+
+          <div className="h-9 w-9" />
+        </div>
+
+        {/* Duration presets */}
+        <div className="mt-5 flex items-center justify-center gap-1">
+          {[15, 25, 45].map((mins) => (
+            <button
+              key={mins}
+              onClick={() => {
+                setIsRunning(false);
+                setTimeLeft(mins * 60);
+              }}
+              className={cn(
+                'rounded px-3 py-1 text-xs font-medium transition-colors duration-150',
+                timeLeft === mins * 60 && !isRunning
+                  ? 'bg-foreground/10 text-foreground'
+                  : 'text-muted-foreground/50 hover:bg-muted/50 hover:text-foreground/70'
+              )}
+            >
+              {mins}m
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

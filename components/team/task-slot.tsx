@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import { memo } from 'react';
-import { Check, Circle } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { USER_COLORS, TASK_PRIORITY_COLORS } from '@/lib/color-constants';
+import { USER_COLORS } from '@/lib/color-constants';
 import { getUserColorKey } from '@/lib/schedule-utils';
 import type { Task } from '@/app/actions/inbox';
 
@@ -23,10 +23,10 @@ export const TaskSlot = memo(function TaskSlot({
 }: TaskSlotProps) {
   const userColorKey = getUserColorKey(task.assignee?.email);
   const userColors = userColorKey ? USER_COLORS[userColorKey] : null;
-  const priorityColors = TASK_PRIORITY_COLORS[task.priority] || TASK_PRIORITY_COLORS['No Priority'];
 
   const isCompleted = task.status === 'Done';
   const isInProgress = task.status === 'In Progress';
+  const isHighPriority = task.priority === 'Urgent' || task.priority === 'High';
 
   const handleCheckClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,61 +39,58 @@ export const TaskSlot = memo(function TaskSlot({
     <div
       onClick={() => onClick?.(task)}
       className={cn(
-        'group flex items-center gap-2 rounded-md border px-2 py-1.5 transition-colors',
-        'cursor-pointer hover:bg-muted/50',
-        userColors ? userColors.bg : 'bg-muted/30',
-        userColors ? userColors.border : 'border-border',
-        isCompleted && 'opacity-50'
+        'group flex items-center gap-3 rounded-md border border-border/50 bg-background/50 px-3 py-2',
+        'cursor-pointer transition-all duration-150',
+        'hover:border-border hover:bg-muted/30',
+        isCompleted && 'opacity-40'
       )}
     >
       {/* Checkbox */}
       <button
         onClick={handleCheckClick}
         className={cn(
-          'flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors',
+          'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-150',
           isCompleted
-            ? 'border-emerald-500 bg-emerald-500 text-white'
+            ? 'border-foreground/20 bg-foreground/10'
             : isInProgress
-              ? 'border-blue-500 bg-blue-500/20'
-              : 'border-muted-foreground/40 hover:border-muted-foreground'
+              ? 'border-foreground/30 bg-foreground/5'
+              : 'border-border hover:border-foreground/30'
         )}
       >
-        {isCompleted ? (
-          <Check className="h-3 w-3" />
-        ) : isInProgress ? (
-          <Circle className="h-2 w-2 fill-blue-500" />
-        ) : null}
+        {isCompleted && <Check className="h-3 w-3 text-foreground/50" />}
+        {isInProgress && <div className="h-1.5 w-1.5 rounded-full bg-foreground/40" />}
       </button>
 
-      {/* User color dot */}
-      {userColors && <div className={cn('h-2 w-2 shrink-0 rounded-full', userColors.dot)} />}
+      {/* User indicator */}
+      {userColors && <div className={cn('h-1.5 w-1.5 shrink-0 rounded-full', userColors.dot)} />}
 
       {/* Task title */}
       <span
         className={cn(
-          'flex-1 truncate text-sm',
-          isCompleted && 'text-muted-foreground line-through'
+          'flex-1 truncate text-sm text-foreground/80',
+          isCompleted && 'text-foreground/40 line-through'
         )}
       >
         {task.title}
       </span>
 
-      {/* Priority badge (only show for high/urgent) */}
-      {!compact && (task.priority === 'Urgent' || task.priority === 'High') && (
+      {/* Priority indicator */}
+      {!compact && isHighPriority && (
         <span
           className={cn(
-            'shrink-0 rounded px-1.5 py-0.5 text-xs font-medium',
-            priorityColors.bg,
-            priorityColors.text
+            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+            task.priority === 'Urgent'
+              ? 'bg-foreground/5 text-foreground/50'
+              : 'bg-foreground/5 text-foreground/40'
           )}
         >
           {task.priority}
         </span>
       )}
 
-      {/* Assignee name (compact mode) */}
+      {/* Assignee initial (compact mode) */}
       {compact && userColorKey && (
-        <span className={cn('shrink-0 text-xs', userColors?.text)}>
+        <span className="shrink-0 text-xs font-medium text-muted-foreground/60">
           {userColorKey === 'fawzi' ? 'F' : 'M'}
         </span>
       )}

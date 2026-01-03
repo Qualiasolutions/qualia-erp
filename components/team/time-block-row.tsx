@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { memo, useState } from 'react';
-import { Sun, Target, Coffee, CheckCircle2, Play, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SCHEDULE_BLOCK_COLORS } from '@/lib/color-constants';
 import type { TimeBlock, TimeBlockType } from '@/lib/schedule-constants';
@@ -11,12 +11,12 @@ import { TaskSlot } from './task-slot';
 import { MeetingSlot } from './meeting-slot';
 import type { Task } from '@/app/actions/inbox';
 
-// Icons for each block type
-const BLOCK_ICONS: Record<TimeBlockType, React.ElementType> = {
-  standup: Sun,
-  focus: Target,
-  break: Coffee,
-  wrapup: CheckCircle2,
+// Block type labels for professional display
+const BLOCK_TYPE_LABELS: Record<TimeBlockType, string> = {
+  standup: 'Sync',
+  focus: 'Focus',
+  break: 'Break',
+  wrapup: 'Review',
 };
 
 interface Meeting {
@@ -35,7 +35,7 @@ interface TimeBlockRowProps {
   tasks?: Task[];
   meetings?: Meeting[];
   isActive?: boolean;
-  progress?: number; // 0-100 for current block
+  progress?: number;
   onTaskComplete?: (taskId: string) => void;
   onTaskClick?: (task: Task) => void;
   onMeetingClick?: (meeting: Meeting) => void;
@@ -55,7 +55,6 @@ export const TimeBlockRow = memo(function TimeBlockRow({
 }: TimeBlockRowProps) {
   const [isExpanded, setIsExpanded] = useState(true);
   const colors = SCHEDULE_BLOCK_COLORS[block.type];
-  const Icon = BLOCK_ICONS[block.type];
 
   const startMinutes = parseTimeToMinutes(block.start);
   const endMinutes = parseTimeToMinutes(block.end);
@@ -70,17 +69,15 @@ export const TimeBlockRow = memo(function TimeBlockRow({
   return (
     <div
       className={cn(
-        'relative rounded-lg border transition-all',
-        colors.bg,
+        'relative overflow-hidden rounded-lg border transition-all duration-200',
         colors.border,
-        isActive && 'ring-2 ring-offset-2',
-        isActive && colors.border.replace('border-', 'ring-')
+        isActive && 'ring-1 ring-foreground/10 ring-offset-1 ring-offset-background'
       )}
     >
-      {/* Progress bar for active block */}
+      {/* Progress indicator for active block */}
       {isActive && progress > 0 && (
         <div
-          className={cn('absolute left-0 top-0 h-1 rounded-t-lg transition-all', colors.accent)}
+          className="absolute left-0 top-0 h-0.5 bg-foreground/20 transition-all duration-1000"
           style={{ width: `${progress}%` }}
         />
       )}
@@ -88,41 +85,43 @@ export const TimeBlockRow = memo(function TimeBlockRow({
       {/* Header */}
       <div
         className={cn(
-          'flex items-center gap-3 px-4 py-3',
-          hasContent && 'cursor-pointer',
-          hasContent && 'border-b',
-          hasContent && colors.border
+          'flex items-center gap-4 px-4 py-3 transition-colors',
+          colors.headerBg,
+          hasContent && 'cursor-pointer hover:bg-muted/30'
         )}
         onClick={() => hasContent && setIsExpanded(!isExpanded)}
       >
-        {/* Block icon */}
-        <div
-          className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-md', colors.bg)}
-        >
-          <Icon className={cn('h-4 w-4', colors.icon)} />
+        {/* Time column */}
+        <div className="w-24 shrink-0">
+          <div className="font-mono text-sm tabular-nums text-foreground">{startTime}</div>
+          <div className="font-mono text-xs tabular-nums text-muted-foreground/60">{endTime}</div>
         </div>
 
+        {/* Divider */}
+        <div className="h-8 w-px bg-border/60" />
+
         {/* Block info */}
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className={cn('text-sm font-medium', colors.text)}>{block.label}</h3>
-            {isActive && (
-              <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-xs font-medium text-red-500">
-                NOW
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span>
-              {startTime} - {endTime}
-            </span>
-            <span>({block.durationMinutes} min)</span>
+        <div className="flex flex-1 items-center gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">{block.label}</span>
+              {isActive && (
+                <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-foreground/50">
+                  Active
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+              <span>{BLOCK_TYPE_LABELS[block.type]}</span>
+              <span>·</span>
+              <span>{block.durationMinutes}m</span>
+            </div>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
-          {/* Start timer button for focus blocks */}
+        <div className="flex items-center gap-3">
+          {/* Focus timer button */}
           {isFocusBlock && onStartTimer && (
             <button
               onClick={(e) => {
@@ -130,63 +129,66 @@ export const TimeBlockRow = memo(function TimeBlockRow({
                 onStartTimer(block.id);
               }}
               className={cn(
-                'flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                'bg-blue-500 text-white hover:bg-blue-600'
+                'rounded-md border border-border/60 bg-background px-3 py-1.5 text-xs font-medium',
+                'text-foreground/70 transition-colors hover:bg-muted hover:text-foreground'
               )}
             >
-              <Play className="h-3 w-3" />
-              Timer
+              Start Timer
             </button>
           )}
 
-          {/* Task/meeting count */}
+          {/* Content count */}
           {hasContent && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              {hasTasks && (
-                <span>
-                  {tasks.length} task{tasks.length > 1 ? 's' : ''}
-                </span>
-              )}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60">
+              {hasTasks && <span>{tasks.length}</span>}
               {hasTasks && hasMeetings && <span>·</span>}
               {hasMeetings && (
                 <span>
-                  {meetings.length} meeting{meetings.length > 1 ? 's' : ''}
+                  {meetings.length} call{meetings.length > 1 ? 's' : ''}
                 </span>
               )}
             </div>
           )}
 
-          {/* Expand/collapse */}
+          {/* Expand/collapse indicator */}
           {hasContent && (
-            <button className="rounded p-1 hover:bg-muted">
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight
+              className={cn(
+                'h-4 w-4 text-muted-foreground/40 transition-transform duration-200',
+                isExpanded && 'rotate-90'
               )}
-            </button>
+            />
           )}
         </div>
       </div>
 
-      {/* Content (tasks and meetings) */}
+      {/* Content area */}
       {hasContent && isExpanded && (
-        <div className="space-y-2 px-4 py-3">
-          {/* Meetings first */}
-          {meetings.map((meeting) => (
-            <MeetingSlot key={meeting.id} meeting={meeting} onClick={onMeetingClick} />
-          ))}
+        <div className={cn('border-t px-4 py-3', colors.border)}>
+          <div className="space-y-2">
+            {/* Meetings */}
+            {meetings.map((meeting) => (
+              <MeetingSlot key={meeting.id} meeting={meeting} onClick={onMeetingClick} />
+            ))}
 
-          {/* Then tasks */}
-          {tasks.map((task) => (
-            <TaskSlot key={task.id} task={task} onComplete={onTaskComplete} onClick={onTaskClick} />
-          ))}
+            {/* Tasks */}
+            {tasks.map((task) => (
+              <TaskSlot
+                key={task.id}
+                task={task}
+                onComplete={onTaskComplete}
+                onClick={onTaskClick}
+              />
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Break block description */}
+      {/* Break description */}
       {block.type === 'break' && !hasContent && (
-        <div className="px-4 pb-3 text-xs text-muted-foreground">{block.description}</div>
+        <div className="border-t border-border/40 px-4 py-2">
+          <p className="text-xs text-muted-foreground/50">{block.description}</p>
+        </div>
       )}
     </div>
   );

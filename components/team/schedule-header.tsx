@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { format } from 'date-fns';
-import { Calendar, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TEAM_MEMBERS } from '@/lib/schedule-constants';
 import { USER_COLORS } from '@/lib/color-constants';
@@ -14,36 +13,32 @@ interface ScheduleHeaderProps {
 export function ScheduleHeader({ className }: ScheduleHeaderProps) {
   const today = new Date();
   const formattedDate = format(today, 'EEEE, MMMM d');
-  const isToday = true; // Always showing today's schedule
 
   return (
-    <div className={cn('rounded-lg border border-border bg-card px-6 py-4', className)}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={cn('rounded-lg border border-border/60 bg-card/50 backdrop-blur-sm', className)}
+    >
+      <div className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         {/* Date section */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-qualia-500/10">
-            <Calendar className="h-5 w-5 text-qualia-500" />
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-900">
+            <span className="text-lg font-semibold tabular-nums text-foreground">
+              {format(today, 'd')}
+            </span>
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">Today&apos;s Schedule</h1>
-              {isToday && (
-                <span className="rounded bg-qualia-500/10 px-1.5 py-0.5 text-xs font-medium text-qualia-500">
-                  Live
-                </span>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">{formattedDate}</p>
+            <h1 className="text-lg font-semibold tracking-tight text-foreground">
+              Today&apos;s Schedule
+            </h1>
+            <p className="text-sm text-muted-foreground/80">{formattedDate}</p>
           </div>
         </div>
 
         {/* Team members */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-            <Users className="h-4 w-4" />
-            <span>Team</span>
-          </div>
-
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
+            Team
+          </span>
           <div className="flex items-center gap-2">
             {Object.entries(TEAM_MEMBERS).map(([key, member]) => {
               const colors = USER_COLORS[member.colorKey];
@@ -51,20 +46,15 @@ export function ScheduleHeader({ className }: ScheduleHeaderProps) {
                 <div
                   key={key}
                   className={cn(
-                    'flex items-center gap-2 rounded-full border px-3 py-1.5',
-                    colors.bg,
+                    'flex items-center gap-2 rounded-full border px-3 py-1.5 transition-colors',
+                    'bg-background/50 hover:bg-background',
                     colors.border
                   )}
                 >
-                  {/* Avatar dot */}
-                  <div className={cn('h-2 w-2 rounded-full', colors.dot)} />
-
-                  {/* Name */}
-                  <span className={cn('text-sm font-medium', colors.text)}>{member.name}</span>
-
-                  {/* Role badge */}
-                  <span className="text-xs text-muted-foreground">
-                    {member.role === 'admin' ? 'Lead' : 'Trainee'}
+                  <div className={cn('h-1.5 w-1.5 rounded-full', colors.dot)} />
+                  <span className="text-sm font-medium text-foreground">{member.name}</span>
+                  <span className="text-xs text-muted-foreground/70">
+                    {member.role === 'admin' ? 'Lead' : 'Dev'}
                   </span>
                 </div>
               );
@@ -73,16 +63,21 @@ export function ScheduleHeader({ className }: ScheduleHeaderProps) {
         </div>
       </div>
 
-      {/* Working hours info */}
-      <div className="mt-3 flex items-center gap-4 border-t border-border pt-3">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-medium">Working Hours:</span>
-          <span>8:30 AM - 2:30 PM</span>
-          <span className="text-muted-foreground/50">(6 hours)</span>
+      {/* Working hours info - subtle footer */}
+      <div className="flex items-center gap-6 border-t border-border/40 px-6 py-3">
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-medium text-muted-foreground/70">Hours</span>
+          <span className="tabular-nums text-foreground">8:30 – 2:30</span>
         </div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-medium">Focus Blocks:</span>
-          <span>3 sessions</span>
+        <div className="h-3 w-px bg-border/60" />
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-medium text-muted-foreground/70">Duration</span>
+          <span className="tabular-nums text-foreground">6h</span>
+        </div>
+        <div className="h-3 w-px bg-border/60" />
+        <div className="flex items-center gap-2 text-xs">
+          <span className="font-medium text-muted-foreground/70">Focus Blocks</span>
+          <span className="tabular-nums text-foreground">3</span>
         </div>
       </div>
     </div>
