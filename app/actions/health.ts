@@ -37,7 +37,7 @@ export interface ProjectHealthData {
   velocity_health: number | null;
   quality_health: number | null;
   communication_health: number | null;
-  metrics_data: any;
+  metrics_data: HealthMetrics['metrics_data'] | null;
   last_measured_at: string | null;
   lead_name: string | null;
   client_name: string | null;
@@ -63,9 +63,7 @@ export interface HealthInsight {
 }
 
 // Get current health for all projects in workspace
-export async function getWorkspaceHealthDashboard(
-  workspaceId?: string
-): Promise<ActionResult> {
+export async function getWorkspaceHealthDashboard(workspaceId?: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
 
@@ -94,17 +92,14 @@ export async function getWorkspaceHealthDashboard(
 }
 
 // Get detailed health for a specific project
-export async function getProjectHealthDetails(
-  projectId: string
-): Promise<ActionResult> {
+export async function getProjectHealthDetails(projectId: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
 
     // Calculate fresh health metrics
-    const { data: health, error: healthError } = await supabase.rpc(
-      'calculate_project_health',
-      { p_project_id: projectId }
-    );
+    const { data: health, error: healthError } = await supabase.rpc('calculate_project_health', {
+      p_project_id: projectId,
+    });
 
     if (healthError) throw healthError;
 
@@ -126,10 +121,7 @@ export async function getProjectHealthDetails(
         'measured_at, overall_health_score, schedule_health, velocity_health, quality_health, communication_health'
       )
       .eq('project_id', projectId)
-      .gte(
-        'measured_at',
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      )
+      .gte('measured_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       .order('measured_at', { ascending: true });
 
     if (historyError) throw historyError;
@@ -149,9 +141,7 @@ export async function getProjectHealthDetails(
 }
 
 // Record new health snapshot
-export async function recordProjectHealth(
-  projectId: string
-): Promise<ActionResult> {
+export async function recordProjectHealth(projectId: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
     const {
@@ -174,27 +164,24 @@ export async function recordProjectHealth(
     }
 
     // Calculate health
-    const { data: health, error: calcError } = await supabase.rpc(
-      'calculate_project_health',
-      { p_project_id: projectId }
-    );
+    const { data: health, error: calcError } = await supabase.rpc('calculate_project_health', {
+      p_project_id: projectId,
+    });
 
     if (calcError) throw calcError;
 
     // Insert health record
-    const { error: insertError } = await supabase
-      .from('project_health_metrics')
-      .insert({
-        project_id: projectId,
-        workspace_id: project.workspace_id,
-        overall_health_score: health.overall_health_score,
-        schedule_health: health.schedule_health,
-        velocity_health: health.velocity_health,
-        quality_health: health.quality_health,
-        communication_health: health.communication_health,
-        metrics_data: health.metrics_data,
-        created_by: user.id,
-      });
+    const { error: insertError } = await supabase.from('project_health_metrics').insert({
+      project_id: projectId,
+      workspace_id: project.workspace_id,
+      overall_health_score: health.overall_health_score,
+      schedule_health: health.schedule_health,
+      velocity_health: health.velocity_health,
+      quality_health: health.quality_health,
+      communication_health: health.communication_health,
+      metrics_data: health.metrics_data,
+      created_by: user.id,
+    });
 
     if (insertError) throw insertError;
 
@@ -209,9 +196,7 @@ export async function recordProjectHealth(
 }
 
 // Record health for all projects in workspace
-export async function recordAllProjectsHealth(
-  workspaceId?: string
-): Promise<ActionResult> {
+export async function recordAllProjectsHealth(workspaceId?: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
     const {
@@ -236,12 +221,14 @@ export async function recordAllProjectsHealth(
 
     if (projectsError) throw projectsError;
 
-    // Record health for each project
-    const results = [];
-    for (const project of projects || []) {
-      const result = await recordProjectHealth(project.id);
-      results.push({ project_id: project.id, success: result.success });
-    }
+    // Record health for each project in parallel for better performance
+    const results = await Promise.all(
+      (projects || []).map((project) =>
+        recordProjectHealth(project.id)
+          .then((result) => ({ project_id: project.id, success: result.success }))
+          .catch(() => ({ project_id: project.id, success: false }))
+      )
+    );
 
     // Refresh materialized view
     await supabase.rpc('refresh_project_health_view');

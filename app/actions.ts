@@ -792,17 +792,14 @@ export async function getProjectById(id: string) {
     .eq('project_id', id)
     .order('created_at', { ascending: false });
 
-  // Get issue stats
-  const { count: totalIssues } = await supabase
+  // Get issue stats - optimized: fetch once, count in-memory
+  const { data: issueStatuses } = await supabase
     .from('issues')
-    .select('*', { count: 'exact', head: true })
+    .select('status')
     .eq('project_id', id);
 
-  const { count: doneIssues } = await supabase
-    .from('issues')
-    .select('*', { count: 'exact', head: true })
-    .eq('project_id', id)
-    .eq('status', 'Done');
+  const totalIssues = issueStatuses?.length || 0;
+  const doneIssues = issueStatuses?.filter((i) => i.status === 'Done').length || 0;
 
   return {
     ...project,
@@ -819,7 +816,11 @@ export async function getProjectById(id: string) {
 
 export async function getTeamById(id: string) {
   const supabase = await createClient();
-  const { data: team, error } = await supabase.from('teams').select('*').eq('id', id).single();
+  const { data: team, error } = await supabase
+    .from('teams')
+    .select('id, key, name, description, workspace_id')
+    .eq('id', id)
+    .single();
 
   if (error) {
     console.error('Error fetching team:', error);
@@ -2550,7 +2551,7 @@ export async function getNotifications(workspaceId: string, limit = 50) {
 
   const { data, error } = await supabase
     .from('notifications')
-    .select('*')
+    .select('id, type, title, message, read, created_at, workspace_id, user_id, entity_id')
     .eq('workspace_id', workspaceId)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
