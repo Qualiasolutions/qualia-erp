@@ -18,14 +18,33 @@ export function MindOfQualia() {
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const [error, setError] = React.useState<string | null>(null);
+
   // AI Chat integration
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat',
     }),
+    onError: (err) => {
+      console.error('Chat error:', err);
+      if (err.message?.includes('401') || err.message?.includes('sign in')) {
+        setError('Please sign in to use the AI assistant');
+      } else if (err.message?.includes('429')) {
+        setError('Too many requests. Please wait a moment.');
+      } else {
+        setError('Something went wrong. Please try again.');
+      }
+    },
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
+
+  // Clear error when user starts typing
+  React.useEffect(() => {
+    if (inputValue && error) {
+      setError(null);
+    }
+  }, [inputValue, error]);
 
   // Scroll to bottom when messages update
   React.useEffect(() => {
@@ -58,6 +77,7 @@ export function MindOfQualia() {
   // Clear chat
   const handleClear = () => {
     setMessages([]);
+    setError(null);
   };
 
   return (
@@ -71,7 +91,7 @@ export function MindOfQualia() {
           <h3 className="text-sm font-medium text-foreground">AI Assistant</h3>
           <span className="text-xs text-muted-foreground">by Qualia</span>
         </div>
-        {messages.length > 0 && (
+        {(messages.length > 0 || error) && (
           <button
             onClick={handleClear}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
@@ -83,7 +103,12 @@ export function MindOfQualia() {
 
       {/* Messages Area */}
       <div className="relative h-[220px] overflow-y-auto p-5">
-        {messages.length === 0 ? (
+        {error && (
+          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+        {messages.length === 0 && !error ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="mb-1 text-sm font-medium text-foreground">How can I help?</p>
             <p className="mb-5 text-xs text-muted-foreground">
