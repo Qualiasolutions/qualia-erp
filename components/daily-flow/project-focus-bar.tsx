@@ -51,7 +51,7 @@ export const ProjectFocusBar = memo(function ProjectFocusBar({
     return (
       <button
         onClick={onSwitchProject}
-        className="flex w-full items-center justify-between rounded border border-dashed border-border/50 p-4 text-left transition-colors hover:border-border"
+        className="flex w-full items-center justify-between rounded border border-dashed border-border/60 p-4 text-left transition-colors hover:border-foreground/30 dark:border-border"
       >
         <div className="flex items-center gap-3">
           <FolderKanban className="h-4 w-4 text-muted-foreground" />
@@ -67,7 +67,7 @@ export const ProjectFocusBar = memo(function ProjectFocusBar({
   const meetingCount = getProjectMeetingCount(meetings, project.id);
 
   return (
-    <div className="flex items-center gap-4 rounded border border-border bg-card p-4">
+    <div className="flex items-center gap-4 rounded border border-border/60 bg-card p-4 dark:border-border">
       {/* Icon */}
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-muted">
         <Icon className="h-4 w-4 text-foreground" />
@@ -108,7 +108,7 @@ export const ProjectFocusBar = memo(function ProjectFocusBar({
       </div>
 
       {/* Stats */}
-      <div className="hidden items-center gap-3 border-l border-border pl-4 sm:flex">
+      <div className="hidden items-center gap-3 border-l border-border/60 pl-4 dark:border-border sm:flex">
         <div className="text-center">
           <div className="text-sm font-semibold text-foreground">{taskCount}</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Tasks</div>

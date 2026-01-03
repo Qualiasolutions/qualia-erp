@@ -52,13 +52,10 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center gap-3 border-b border-border/50 px-4">
-        <Link href="/" className="flex items-center gap-2.5" onClick={onLinkClick}>
-          <Image src="/logo.webp" alt="Qualia" width={24} height={24} className="rounded" />
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">Qualia</span>
-            <span className="text-[10px] text-muted-foreground">Solutions</span>
-          </div>
+      <div className="flex h-14 items-center border-b border-border/50 px-4">
+        <Link href="/" className="flex items-center gap-3" onClick={onLinkClick}>
+          <Image src="/logo.webp" alt="Qualia" width={40} height={40} className="rounded" />
+          <span className="text-sm font-semibold text-foreground">Qualia Solutions</span>
         </Link>
       </div>
 

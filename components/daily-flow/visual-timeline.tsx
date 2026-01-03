@@ -160,18 +160,25 @@ export const VisualTimeline = memo(function VisualTimeline({
   return (
     <div className="relative">
       {/* Timeline container */}
-      <div className="relative h-20 overflow-hidden rounded border border-border bg-card">
+      <div className="relative h-20 overflow-visible rounded border border-border/60 bg-card dark:border-border">
         {/* Time markers */}
-        <div className="absolute inset-x-0 top-0 flex h-6 items-center border-b border-border/50 px-1">
-          {TIME_MARKERS.map((marker) => {
+        <div className="absolute inset-x-4 top-0 flex h-6 items-center border-b border-border/60 dark:border-border">
+          {TIME_MARKERS.map((marker, index) => {
             const position = getTimePosition(marker.minutes);
+            const isFirst = index === 0;
+            const isLast = index === TIME_MARKERS.length - 1;
             return (
               <div
                 key={marker.time}
                 className="absolute flex flex-col items-center"
                 style={{ left: `${position}%` }}
               >
-                <span className="-translate-x-1/2 text-[10px] font-medium text-muted-foreground">
+                <span
+                  className={cn(
+                    'text-[10px] font-medium text-muted-foreground',
+                    isFirst ? 'translate-x-0' : isLast ? '-translate-x-full' : '-translate-x-1/2'
+                  )}
+                >
                   {marker.time}
                 </span>
               </div>
@@ -180,13 +187,13 @@ export const VisualTimeline = memo(function VisualTimeline({
         </div>
 
         {/* Grid lines */}
-        <div className="absolute inset-x-0 bottom-0 top-6">
+        <div className="absolute inset-x-4 bottom-0 top-6">
           {TIME_MARKERS.map((marker) => {
             const position = getTimePosition(marker.minutes);
             return (
               <div
                 key={marker.time}
-                className="absolute bottom-0 top-0 w-px bg-border/40"
+                className="absolute bottom-0 top-0 w-px bg-border/60 dark:bg-border"
                 style={{ left: `${position}%` }}
               />
             );
@@ -196,13 +203,13 @@ export const VisualTimeline = memo(function VisualTimeline({
         {/* Elapsed time background */}
         {isWithinHours && (
           <div
-            className="absolute bottom-0 left-0 top-6 bg-muted/30"
-            style={{ width: `${nowPosition}%` }}
+            className="absolute bottom-0 left-4 top-6 bg-muted/30"
+            style={{ width: `calc(${nowPosition}% - 16px)` }}
           />
         )}
 
         {/* Meetings */}
-        <div className="absolute inset-x-2 bottom-2 top-0">
+        <div className="absolute inset-x-4 bottom-2 top-0">
           {positionedMeetings.map(({ meeting, left, width }) => (
             <TimelineMeeting
               key={meeting.id}
@@ -221,13 +228,13 @@ export const VisualTimeline = memo(function VisualTimeline({
         </div>
 
         {/* NOW indicator */}
-        <div className="absolute inset-x-2 bottom-0 top-6">
+        <div className="absolute inset-x-4 bottom-0 top-6">
           <NowIndicator position={nowPosition} isVisible={isWithinHours} />
         </div>
       </div>
 
       {/* Footer info */}
-      <div className="mt-1.5 flex items-center justify-between px-0.5">
+      <div className="mt-1.5 flex items-center justify-between px-1">
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
           Working Hours
         </span>

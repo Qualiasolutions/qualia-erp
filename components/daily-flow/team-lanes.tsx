@@ -51,7 +51,7 @@ export const TeamLanes = memo(function TeamLanes({
 
   if (sortedMembers.length === 0) {
     return (
-      <div className="flex h-32 items-center justify-center rounded border border-dashed border-border/50 text-xs text-muted-foreground">
+      <div className="flex h-32 items-center justify-center rounded border border-dashed border-border/60 text-xs text-muted-foreground dark:border-border">
         No team members
       </div>
     );
@@ -62,7 +62,10 @@ export const TeamLanes = memo(function TeamLanes({
       {sortedMembers.map((member) => {
         const taskData = memberTaskData.get(member.id)!;
         return (
-          <div key={member.id} className="rounded border border-border bg-card p-4">
+          <div
+            key={member.id}
+            className="rounded border border-border/60 bg-card p-4 dark:border-border"
+          >
             <TeamMemberLane
               member={member}
               currentTask={taskData.currentTask}

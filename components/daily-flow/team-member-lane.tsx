@@ -141,14 +141,9 @@ export const TeamMemberLane = memo(function TeamMemberLane({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className={cn('h-2.5 w-2.5 rounded-full', colors.dot)} />
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">
-              {member.full_name || member.email.split('@')[0]}
-            </h3>
-            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              {member.role}
-            </span>
-          </div>
+          <h3 className="text-sm font-semibold text-foreground">
+            {member.full_name || member.email.split('@')[0]}
+          </h3>
         </div>
         {isCurrentUser && (
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">You</span>
@@ -171,7 +166,7 @@ export const TeamMemberLane = memo(function TeamMemberLane({
             isCompleting={isPending}
           />
         ) : (
-          <div className="flex h-14 items-center justify-center rounded border border-dashed border-border/50 text-xs text-muted-foreground">
+          <div className="flex h-14 items-center justify-center rounded border border-dashed border-border/60 text-xs text-muted-foreground dark:border-border">
             No active task
           </div>
         )}
@@ -198,7 +193,7 @@ export const TeamMemberLane = memo(function TeamMemberLane({
             ))}
           </div>
         ) : (
-          <div className="flex h-10 items-center justify-center rounded border border-dashed border-border/50 text-xs text-muted-foreground">
+          <div className="flex h-10 items-center justify-center rounded border border-dashed border-border/60 text-xs text-muted-foreground dark:border-border">
             Empty
           </div>
         )}
@@ -206,10 +201,10 @@ export const TeamMemberLane = memo(function TeamMemberLane({
 
       {/* Action */}
       {member.role === 'lead' && (
-        <div className="mt-4 border-t border-border/50 pt-3">
+        <div className="mt-4 border-t border-border/60 pt-3 dark:border-border">
           <button
             onClick={onAssignTask}
-            className="flex w-full items-center justify-center gap-1.5 rounded border border-border/50 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+            className="flex w-full items-center justify-center gap-1.5 rounded border border-border/60 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground dark:border-border"
           >
             Assign Task
             <ArrowRight className="h-3 w-3" />
