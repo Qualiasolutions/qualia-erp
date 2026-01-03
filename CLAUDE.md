@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Qualia Internal Suite is a project management platform for Qualia Solutions. Built with Next.js 15+ (App Router), Supabase, and AI capabilities including chat (Groq) and voice assistant (VAPI).
+Qualia Internal Suite is a project management platform for Qualia Solutions. Built with Next.js 16+ (App Router), Supabase, and AI capabilities including chat (Gemini 2.5 Flash) and voice assistant (VAPI).
+
+**Design Philosophy**: Clean, professional UI inspired by Linear/Plane. No flashy animations, gradients, or gaming-style effects. Simple borders, subtle backgrounds, organized typography.
 
 ## Commands
 
@@ -23,11 +25,12 @@ npx tsc --noEmit     # Type check without build
 - **Framework**: Next.js 16+ (App Router, React 19, TypeScript)
 - **Database/Auth**: Supabase (PostgreSQL with pgvector for RAG)
 - **Styling**: Tailwind CSS + shadcn/ui (Radix primitives)
-- **AI**: Gemini 2.5 Flash (chat), VAPI (voice), Google AI (embeddings)
+- **AI**: Gemini 2.5 Flash (chat via `lib/ai/ai-core.ts`), VAPI (voice), Google AI (embeddings)
 - **State**: SWR for client caching (60s dedup, 30s auto-refresh for tasks with exponential backoff)
 - **Drag & Drop**: @dnd-kit for kanban boards
 - **Virtualization**: @tanstack/react-virtual for large lists
 - **Testing**: Jest + React Testing Library
+- **Monitoring**: Sentry (production)
 
 ## Architecture
 
@@ -79,10 +82,12 @@ app/
 │   └── error.tsx           # Inbox-specific error boundary
 ├── payments/               # Hidden admin-only financial tracking (/payments)
 ├── projects/               # Project management (grouped list view)
-└── schedule/               # Calendar views
+├── schedule/               # Calendar views
+└── team/                   # Team workflow page (trainee onboarding)
 
 lib/
 ├── ai/ai-core.ts           # Shared AI processing (Gemini 2.5 Flash)
+├── ai/gemini-client.ts     # Gemini model configuration
 ├── ai/tools/               # AI tools: read-tools.ts, write-tools.ts
 ├── ai/system-prompt.ts     # Chat system prompt
 ├── supabase/server.ts      # Server-side Supabase client (always create fresh)
@@ -95,6 +100,9 @@ lib/
 └── vapi-webhook-handlers.ts # Voice tool handlers
 
 components/
+├── sidebar.tsx             # Main sidebar navigation
+├── dashboard-client.tsx    # Dashboard with stats and AI assistant
+├── mind-of-qualia.tsx      # AI chat assistant widget
 ├── project-list-view.tsx   # Projects grouped list (by type: AI, Voice, Web, etc.)
 ├── project-task-kanban.tsx # Drag-and-drop task kanban for projects
 ├── new-task-modal.tsx      # Create task (requires project, optional inbox)
@@ -107,6 +115,14 @@ components/
 ├── client-row.tsx          # Memoized client row for list view
 ├── client-detail-modal.tsx # Client detail/edit modal
 └── dashboard-activity-feed.tsx # Virtualized activity feed
+
+tempaltes/                  # Document templates (source)
+├── SYSTEM_INSTRUCTIONS.md  # AI document generation instructions
+├── TEMPLATE_*.pdf          # Agreement templates (Web Dev, AI Agent, Marketing, NDA)
+└── Qualia_Solutions_Brand_Guidelines.pdf
+
+public/tempaltes/           # Served document templates (downloadable)
+└── *.pdf                   # Same PDFs as above, served via /tempaltes/*.pdf
 
 hooks/
 ├── use-presence.tsx        # Real-time presence via Supabase (dev-only logging)
