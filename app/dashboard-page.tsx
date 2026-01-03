@@ -1,26 +1,24 @@
 import { createClient } from '@/lib/supabase/server';
 import { format } from 'date-fns';
-import { DashboardClient } from '@/components/dashboard-client';
+import { DashboardClient, type Meeting } from '@/components/dashboard-client';
 import { getCurrentUserProfile } from './actions';
+import type { Task } from './actions/inbox';
 
-// Helper function to get user's upcoming meetings and tasks
-async function getUserDashboardData(userId: string, workspaceId?: string) {
+// Helper function to get user's dashboard data
+async function getDashboardData(userId: string, workspaceId?: string) {
   const supabase = await createClient();
 
-  // Get current time minus 1 hour (to show in-progress meetings)
+  // Get current time
   const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-
-  // Get meetings for the next 7 days
-  const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-  // Get today's date for task queries
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Get upcoming meetings (including in-progress ones)
+  // Get meetings for next 7 days (including ongoing ones from 1 hour ago)
+  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  const oneWeekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
   const { data: meetings } = await supabase
     .from('meetings')
     .select(
@@ -32,7 +30,8 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
       end_time,
       meeting_link,
       project:projects(id, name),
-      client:clients(id, display_name)
+      client:clients(id, display_name),
+      creator:profiles!meetings_created_by_fkey(id, full_name)
     `
     )
     .gte('start_time', oneHourAgo.toISOString())
@@ -41,222 +40,104 @@ async function getUserDashboardData(userId: string, workspaceId?: string) {
     .order('start_time', { ascending: true })
     .limit(10);
 
-  // Get high priority incomplete tasks
-  const { data: highPriorityTasks } = await supabase
-    .from('issues')
-    .select('id, title, priority, status, due_date')
-    .eq('workspace_id', workspaceId)
-    .in('priority', ['high', 'critical'])
-    .in('status', ['backlog', 'todo', 'in_progress'])
-    .order('due_date', { ascending: true, nullsFirst: false })
-    .limit(5);
-
-  // Get tasks assigned to the user that are overdue or due today
-  const { data: assignedIssues } = await supabase
-    .from('issue_assignees')
+  // Get today's tasks (due today or overdue, not done)
+  const { data: todaysTasks } = await supabase
+    .from('tasks')
     .select(
       `
-      issue:issues(
-        id,
-        title,
-        priority,
-        status,
-        due_date
-      )
+      id,
+      title,
+      status,
+      due_date,
+      priority,
+      project_id,
+      project:projects(id, name)
     `
     )
-    .eq('assignee_id', userId)
-    .lte('issues.due_date', tomorrow.toISOString())
-    .in('issues.status', ['backlog', 'todo', 'in_progress'])
+    .eq('workspace_id', workspaceId)
+    .in('status', ['Todo', 'In Progress'])
+    .lte('due_date', tomorrow.toISOString())
+    .order('due_date', { ascending: true })
+    .limit(10);
+
+  // Get pending tasks assigned to user (in Todo status)
+  const { data: pendingTasks } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      title,
+      status,
+      due_date,
+      priority,
+      project_id,
+      project:projects(id, name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .eq('assigned_to', userId)
+    .eq('status', 'Todo')
+    .order('created_at', { ascending: false })
     .limit(5);
 
-  // Define the task type
-  type TaskType = {
-    id: string;
-    title: string;
-    priority: string;
-    status: string;
-    due_date: string | null;
-  };
-
-  // Extract the issues from the join result
-  // The data structure comes as an array of arrays due to Supabase joins
-  const userTasks: Array<TaskType> = [];
-
-  assignedIssues?.forEach((item: { issue: TaskType | TaskType[] | null }) => {
-    // Handle both array and single object cases for nested data
-    const issue = Array.isArray(item.issue) ? item.issue[0] : item.issue;
-    if (issue) {
-      userTasks.push({
-        id: issue.id,
-        title: issue.title,
-        priority: issue.priority,
-        status: issue.status,
-        due_date: issue.due_date,
-      });
-    }
+  // Normalize FK arrays to single objects
+  const normalizeMeeting = (m: Record<string, unknown>): Meeting => ({
+    id: m.id as string,
+    title: m.title as string,
+    description: m.description as string | null,
+    start_time: m.start_time as string,
+    end_time: m.end_time as string,
+    meeting_link: m.meeting_link as string | null,
+    project: Array.isArray(m.project) ? m.project[0] || null : (m.project as Meeting['project']),
+    client: Array.isArray(m.client) ? m.client[0] || null : (m.client as Meeting['client']),
+    creator: Array.isArray(m.creator) ? m.creator[0] || null : (m.creator as Meeting['creator']),
   });
 
-  // Get recently completed tasks (for motivation)
-  const lastWeek = new Date(today);
-  lastWeek.setDate(lastWeek.getDate() - 7);
-
-  const { count } = await supabase
-    .from('issues')
-    .select('id', { count: 'exact', head: true })
-    .eq('workspace_id', workspaceId)
-    .eq('status', 'done')
-    .gte('updated_at', lastWeek.toISOString());
-
-  // Get team members' birthdays or important dates (if available)
-  // For now, we'll use a hardcoded approach for demo
-  const importantDates = getImportantDates();
+  const normalizeTask = (t: Record<string, unknown>): Task => ({
+    id: t.id as string,
+    title: t.title as string,
+    status: t.status as Task['status'],
+    due_date: t.due_date as string | null,
+    priority: t.priority as Task['priority'],
+    project_id: t.project_id as string | null,
+    project: Array.isArray(t.project) ? t.project[0] || null : (t.project as Task['project']),
+    // Add required fields with defaults
+    description: null,
+    item_type: 'task',
+    show_in_inbox: false,
+    sort_order: 0,
+    workspace_id: workspaceId || '',
+    creator_id: null,
+    assignee_id: null,
+    completed_at: null,
+    created_at: '',
+    updated_at: '',
+  });
 
   return {
-    meetings: meetings || [],
-    highPriorityTasks: highPriorityTasks || [],
-    userTasks: userTasks,
-    completedTasksCount: count || 0,
-    importantDates,
+    meetings: (meetings || []).map((m) => normalizeMeeting(m as Record<string, unknown>)),
+    todaysTasks: (todaysTasks || []).map((t) => normalizeTask(t as Record<string, unknown>)),
+    pendingTasks: (pendingTasks || []).map((t) => normalizeTask(t as Record<string, unknown>)),
   };
 }
 
-// Helper function for special dates and occasions
-function getImportantDates() {
-  const today = new Date();
-  const dates = [];
+// Helper function to get current workspace ID
+async function getCurrentWorkspaceId() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Check if it's a special day
-  const month = today.getMonth() + 1;
-  const day = today.getDate();
+  if (!user) return null;
 
-  // Ramadan/Eid (approximate - would need a proper Islamic calendar library)
-  if (month === 3 && day >= 10 && day <= 30) {
-    dates.push({ type: 'ramadan', message: 'رمضان كريم' });
-  }
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('profile_id', user.id)
+    .eq('is_default', true)
+    .single();
 
-  // Friday (special day in Islamic culture)
-  if (today.getDay() === 5) {
-    dates.push({ type: 'friday', message: 'جمعة مباركة' });
-  }
-
-  // Beginning of month (good for monthly planning)
-  if (day === 1) {
-    dates.push({ type: 'month_start', message: 'بداية شهر جديد' });
-  }
-
-  return dates;
-}
-
-// Generate personalized greeting data
-function generatePersonalizedGreeting(
-  userName: string,
-  dashboardData: Awaited<ReturnType<typeof getUserDashboardData>>
-) {
-  const firstName = userName?.split(' ')[0] || '';
-  const isFawzi = firstName.toLowerCase() === 'fawzi';
-  const isMoayad = firstName.toLowerCase() === 'moayad';
-
-  // Count urgent items
-  const todayMeetingsCount = dashboardData.meetings.filter((m) => {
-    const meetingDate = new Date(m.start_time);
-    const today = new Date();
-    return meetingDate.toDateString() === today.toDateString();
-  }).length;
-
-  const urgentTasksCount = dashboardData.highPriorityTasks.length;
-  const overdueTasksCount = dashboardData.userTasks.filter((t) => {
-    if (!t?.due_date) return false;
-    return new Date(t.due_date) < new Date();
-  }).length;
-
-  // Build reminders array
-  const reminders: Array<{
-    type: string;
-    priority: 'critical' | 'high' | 'medium' | 'low';
-    message: string;
-    details?: Record<string, unknown>;
-    count?: number;
-  }> = [];
-
-  // Meeting reminders
-  if (todayMeetingsCount > 0) {
-    const nextMeeting = dashboardData.meetings[0];
-    const meetingTime = format(new Date(nextMeeting.start_time), 'h:mm a');
-    reminders.push({
-      type: 'meeting',
-      priority: 'high' as const,
-      message: `عندك اجتماع "${nextMeeting.title}" الساعة ${meetingTime}`,
-      details: nextMeeting,
-    });
-  }
-
-  // Task reminders
-  if (overdueTasksCount > 0) {
-    reminders.push({
-      type: 'overdue_tasks',
-      priority: 'critical' as const,
-      message: `عندك ${overdueTasksCount} مهام متأخرة لازم تخلصها`,
-      count: overdueTasksCount,
-    });
-  }
-
-  if (urgentTasksCount > 0) {
-    reminders.push({
-      type: 'urgent_tasks',
-      priority: 'high' as const,
-      message: `في ${urgentTasksCount} مهام عاجلة محتاجة انتباهك`,
-      count: urgentTasksCount,
-    });
-  }
-
-  // Motivational messages based on completed tasks
-  const motivationalMessages = [];
-  if (dashboardData.completedTasksCount > 10) {
-    motivationalMessages.push('ماشاء الله! أسبوع منتج، خلصت أكثر من 10 مهام');
-  }
-
-  // Special messages for Fawzi
-  if (isFawzi) {
-    if (urgentTasksCount === 0 && overdueTasksCount === 0) {
-      motivationalMessages.push('كل شي تحت السيطرة يا فوزي، ما في مهام عاجلة');
-    }
-    if (todayMeetingsCount > 2) {
-      reminders.push({
-        type: 'busy_day',
-        priority: 'medium' as const,
-        message: 'يوم مزدحم اليوم، خلي بالك من الوقت',
-      });
-    }
-  }
-
-  // Special messages for Moayad
-  if (isMoayad) {
-    if (dashboardData.completedTasksCount > 5) {
-      motivationalMessages.push('عمل رائع يا مؤيد! استمر بنفس الحماس');
-    }
-    // Add learning tips
-    if (Math.random() > 0.7) {
-      motivationalMessages.push('نصيحة اليوم: جرب استخدم الـ AI لتسريع شغلك');
-    }
-  }
-
-  // Friday blessing
-  if (dashboardData.importantDates.some((d) => d.type === 'friday')) {
-    motivationalMessages.push('جمعة مباركة! الله يوفقك في شغلك');
-  }
-
-  return {
-    reminders,
-    motivationalMessages,
-    specialOccasions: dashboardData.importantDates,
-    stats: {
-      todayMeetingsCount,
-      urgentTasksCount,
-      overdueTasksCount,
-      completedTasksCount: dashboardData.completedTasksCount,
-    },
-  };
+  return membership?.workspace_id || null;
 }
 
 export default async function DashboardPage() {
@@ -264,15 +145,12 @@ export default async function DashboardPage() {
   const workspaceId = await getCurrentWorkspaceId();
 
   // Fetch dashboard data if user is logged in
-  let dashboardData = null;
-  let greetingData = null;
+  let dashboardData = { meetings: [], todaysTasks: [], pendingTasks: [] } as Awaited<
+    ReturnType<typeof getDashboardData>
+  >;
 
-  if (profile?.id) {
-    dashboardData = await getUserDashboardData(profile.id, workspaceId || undefined);
-    greetingData = generatePersonalizedGreeting(
-      profile.full_name || profile.email || '',
-      dashboardData
-    );
+  if (profile?.id && workspaceId) {
+    dashboardData = await getDashboardData(profile.id, workspaceId);
   }
 
   const now = new Date();
@@ -293,27 +171,9 @@ export default async function DashboardPage() {
             }
           : undefined
       }
-      greetingData={greetingData}
+      todaysTasks={dashboardData.todaysTasks}
+      upcomingMeetings={dashboardData.meetings}
+      pendingTasks={dashboardData.pendingTasks}
     />
   );
-}
-
-// Helper function to get current workspace ID
-async function getCurrentWorkspaceId() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  // Get the user's default workspace
-  const { data: membership } = await supabase
-    .from('workspace_members')
-    .select('workspace_id')
-    .eq('profile_id', user.id)
-    .eq('is_default', true)
-    .single();
-
-  return membership?.workspace_id || null;
 }

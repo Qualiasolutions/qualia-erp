@@ -1738,6 +1738,91 @@ export async function updateMeeting(data: {
   return { success: true, data: updatedMeeting };
 }
 
+/**
+ * Creates an instant meeting with a Google Meet link placeholder.
+ * The meeting starts now and lasts 1 hour by default.
+ */
+export async function createInstantMeeting(title?: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Get workspace ID
+  const wsId = await getCurrentWorkspaceId();
+  if (!wsId) {
+    return { success: false, error: 'No workspace found' };
+  }
+
+  // Create meeting starting now, lasting 1 hour
+  const now = new Date();
+  const endTime = new Date(now.getTime() + 60 * 60 * 1000);
+
+  const meetingTitle =
+    title ||
+    `Quick Meeting - ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
+
+  const { data, error } = await supabase
+    .from('meetings')
+    .insert({
+      title: meetingTitle,
+      description: 'Instant meeting created from dashboard',
+      start_time: now.toISOString(),
+      end_time: endTime.toISOString(),
+      workspace_id: wsId,
+      created_by: user.id,
+      meeting_link: null, // Will be updated when host pastes the link
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating instant meeting:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/schedule');
+  revalidatePath('/');
+  return { success: true, data };
+}
+
+/**
+ * Updates the meeting link for an instant meeting.
+ */
+export async function updateMeetingLink(
+  meetingId: string,
+  meetingLink: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { data, error } = await supabase
+    .from('meetings')
+    .update({ meeting_link: meetingLink, updated_at: new Date().toISOString() })
+    .eq('id', meetingId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating meeting link:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/schedule');
+  revalidatePath('/');
+  return { success: true, data };
+}
+
 export async function getMeetings(workspaceId?: string | null) {
   const supabase = await createClient();
 
