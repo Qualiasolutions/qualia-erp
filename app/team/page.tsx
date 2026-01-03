@@ -3,18 +3,9 @@
 import * as React from 'react';
 import { useState } from 'react';
 import {
-  Sun,
-  Moon,
-  Phone,
   FileText,
-  Receipt,
-  Settings,
-  Code,
   Bot,
   Globe,
-  Clock,
-  Coffee,
-  Rocket,
   FileSignature,
   Shield,
   Megaphone,
@@ -25,21 +16,9 @@ import {
   Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DailyScheduleHub } from '@/components/team/daily-schedule-hub';
 
-const morningTasks = [
-  { icon: Phone, title: 'Client Communication', description: 'Calls, emails, follow-ups' },
-  { icon: FileText, title: 'Documentation', description: 'Contracts, proposals, briefs' },
-  { icon: Receipt, title: 'Invoices', description: 'Billing and payments' },
-  { icon: Settings, title: 'Operations', description: 'CRM, files, project boards' },
-];
-
-const eveningTasks = [
-  { icon: Bot, title: 'AI Development', description: 'Voice agents, chatbots, automation' },
-  { icon: Globe, title: 'Web Development', description: 'Websites and web apps' },
-  { icon: Code, title: 'Implementation', description: 'Coding, APIs, integrations' },
-  { icon: Rocket, title: 'Deployment', description: 'Launch and go-live' },
-];
-
+// Document templates configuration
 const templates = [
   {
     id: 'web-dev',
@@ -228,193 +207,79 @@ function DocumentGenerator() {
   );
 }
 
-export default function TeamWorkflowPage() {
-  const [activeTab, setActiveTab] = useState<'morning' | 'evening'>('morning');
+function DocumentTemplates() {
+  return (
+    <div className="space-y-2">
+      {templates.map((template) => (
+        <div
+          key={template.id}
+          className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
+              <template.icon className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-foreground">{template.title}</h3>
+              <p className="text-xs text-muted-foreground">{template.description}</p>
+            </div>
+          </div>
+          <a
+            href={template.file}
+            download
+            className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <Download className="h-3 w-3" />
+            PDF
+          </a>
+        </div>
+      ))}
 
+      {/* Brand Guidelines */}
+      <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-foreground">Brand Guidelines</h3>
+            <p className="text-xs text-muted-foreground">Colors, logos, standards</p>
+          </div>
+        </div>
+        <a
+          href="/tempaltes/Qualia_Solutions_Brand_Guidelines.pdf"
+          download
+          className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground hover:bg-primary/90"
+        >
+          <Download className="h-3 w-3" />
+          PDF
+        </a>
+      </div>
+    </div>
+  );
+}
+
+export default function TeamSchedulePage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border px-6 py-8">
-        <div className="mx-auto max-w-4xl">
-          <h1 className="text-2xl font-semibold text-foreground">Team Workflow</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            How we organize our work at Qualia Solutions
-          </p>
-        </div>
-      </div>
+      {/* Main Schedule Hub */}
+      <DailyScheduleHub />
 
-      <div className="mx-auto max-w-4xl px-6 py-8">
-        {/* Daily Schedule */}
-        <section className="mb-12">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Daily Schedule
-          </h2>
-
-          {/* Tab Buttons */}
-          <div className="mb-6 flex gap-2">
-            <button
-              onClick={() => setActiveTab('morning')}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                activeTab === 'morning'
-                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              <Sun className="h-4 w-4" />
-              Morning (2-3h)
-            </button>
-            <button
-              onClick={() => setActiveTab('evening')}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                activeTab === 'evening'
-                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                  : 'text-muted-foreground hover:bg-muted'
-              )}
-            >
-              <Moon className="h-4 w-4" />
-              Evening (4-5h)
-            </button>
-          </div>
-
-          {/* Task Grid */}
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(activeTab === 'morning' ? morningTasks : eveningTasks).map((task) => (
-              <div
-                key={task.title}
-                className="flex items-start gap-3 rounded-lg border border-border bg-card p-4"
-              >
-                <div
-                  className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-md',
-                    activeTab === 'morning' ? 'bg-amber-500/10' : 'bg-indigo-500/10'
-                  )}
-                >
-                  <task.icon
-                    className={cn(
-                      'h-4 w-4',
-                      activeTab === 'morning'
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-indigo-600 dark:text-indigo-400'
-                    )}
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-foreground">{task.title}</h3>
-                  <p className="text-xs text-muted-foreground">{task.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Summary */}
-          <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span>{activeTab === 'morning' ? '2-3 hours' : '4-5 hours'}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Coffee className="h-3 w-3" />
-              <span>
-                {activeTab === 'morning' ? 'Operations & Admin' : 'Development & Building'}
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* Templates */}
-        <section className="mb-12">
+      {/* Documents Section */}
+      <div className="border-t border-border">
+        <div className="mx-auto max-w-5xl px-6 py-8">
           <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Document Templates
           </h2>
 
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Template List */}
-            <div className="space-y-2">
-              {templates.map((template) => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-card p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted">
-                      <template.icon className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium text-foreground">{template.title}</h3>
-                      <p className="text-xs text-muted-foreground">{template.description}</p>
-                    </div>
-                  </div>
-                  <a
-                    href={template.file}
-                    download
-                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    <Download className="h-3 w-3" />
-                    PDF
-                  </a>
-                </div>
-              ))}
-
-              {/* Brand Guidelines */}
-              <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-                    <FileText className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-foreground">Brand Guidelines</h3>
-                    <p className="text-xs text-muted-foreground">Colors, logos, standards</p>
-                  </div>
-                </div>
-                <a
-                  href="/tempaltes/Qualia_Solutions_Brand_Guidelines.pdf"
-                  download
-                  className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground hover:bg-primary/90"
-                >
-                  <Download className="h-3 w-3" />
-                  PDF
-                </a>
-              </div>
-            </div>
+            <DocumentTemplates />
 
             {/* Document Generator */}
             <DocumentGenerator />
           </div>
-        </section>
-
-        {/* Quick Reference */}
-        <section>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Key Principles
-          </h2>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="text-sm font-medium text-foreground">Structure Creates Freedom</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Organized blocks eliminate decision fatigue
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="text-sm font-medium text-foreground">Operations First</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Morning admin keeps business running
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="text-sm font-medium text-foreground">Deep Work Evening</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Complex tasks need uninterrupted focus
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="text-sm font-medium text-foreground">Quality Over Speed</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Take time to do things right</p>
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
     </div>
   );

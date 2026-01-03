@@ -1,8 +1,15 @@
 'use client';
 
 import useSWR, { SWRConfiguration, mutate } from 'swr';
-import { getTeams, getProjects, getProfiles, getCurrentWorkspaceId } from '@/app/actions';
+import {
+  getTeams,
+  getProjects,
+  getProfiles,
+  getCurrentWorkspaceId,
+  getMeetings,
+} from '@/app/actions';
 import { getTasks, getProjectTasks } from '@/app/actions/inbox';
+import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
 // Default SWR configuration optimized for performance
 export const swrConfig: SWRConfiguration = {
@@ -23,6 +30,8 @@ export const cacheKeys = {
   workspaceId: 'workspace-id',
   inboxTasks: 'inbox-tasks',
   projectTasks: (projectId: string) => `project-tasks-${projectId}`,
+  todaysTasks: 'todays-tasks',
+  todaysMeetings: 'todays-meetings',
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -253,5 +262,77 @@ export function invalidateInboxTasks(immediate = true) {
     mutate(cacheKeys.inboxTasks, undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.inboxTasks);
+  }
+}
+
+/**
+ * Hook to fetch today's tasks for the team schedule
+ * Filters active tasks (Todo, In Progress) due today or overdue
+ */
+export function useTodaysTasks() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.todaysTasks,
+    async () => {
+      const allTasks = await getTasks(null, { status: ['Todo', 'In Progress'] });
+      return filterTodaysTasks(allTasks);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    tasks: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch today's meetings for the team schedule
+ */
+export function useTodaysMeetings() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.todaysMeetings,
+    async () => {
+      const allMeetings = await getMeetings();
+      return filterTodaysMeetings(allMeetings);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    meetings: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate today's schedule data
+ */
+export function invalidateTodaysSchedule(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.todaysTasks, undefined, { revalidate: true });
+    mutate(cacheKeys.todaysMeetings, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.todaysTasks);
+    mutate(cacheKeys.todaysMeetings);
   }
 }

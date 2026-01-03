@@ -515,3 +515,56 @@ export type TeachingNoteKey = keyof typeof TEACHING_NOTE_COLORS;
 export type AchievementRarityKey = keyof typeof ACHIEVEMENT_RARITY_COLORS;
 export type SkillCategoryColorKey = keyof typeof SKILL_CATEGORY_COLORS;
 export type ProficiencyLevelKey = keyof typeof PROFICIENCY_LEVEL_COLORS;
+
+// Schedule Block Colors (Team Daily Schedule)
+export const SCHEDULE_BLOCK_COLORS = {
+  standup: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-600 dark:text-amber-400',
+    icon: 'text-amber-500',
+    accent: 'bg-amber-500',
+  },
+  focus: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-600 dark:text-blue-400',
+    icon: 'text-blue-500',
+    accent: 'bg-blue-500',
+  },
+  break: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    icon: 'text-emerald-500',
+    accent: 'bg-emerald-500',
+  },
+  wrapup: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-600 dark:text-slate-400',
+    icon: 'text-slate-500',
+    accent: 'bg-slate-500',
+  },
+} as const;
+
+// Team Member Colors (User identification in schedule)
+export const USER_COLORS = {
+  fawzi: {
+    bg: 'bg-qualia-500/10',
+    border: 'border-qualia-500/30',
+    text: 'text-qualia-500',
+    dot: 'bg-qualia-500',
+    ring: 'ring-qualia-500/30',
+  },
+  moayad: {
+    bg: 'bg-indigo-500/10',
+    border: 'border-indigo-500/30',
+    text: 'text-indigo-500',
+    dot: 'bg-indigo-500',
+    ring: 'ring-indigo-500/30',
+  },
+} as const;
+
+export type ScheduleBlockType = keyof typeof SCHEDULE_BLOCK_COLORS;
+export type UserColorKey = keyof typeof USER_COLORS;
