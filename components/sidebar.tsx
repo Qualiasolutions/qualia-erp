@@ -4,7 +4,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Folder, Calendar, Building2, Inbox, Settings, User } from 'lucide-react';
+import {
+  LayoutGrid,
+  Folder,
+  Calendar,
+  Building2,
+  Inbox,
+  Settings,
+  User,
+  Users,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -15,6 +24,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Team', href: '/team', icon: Users },
 ];
 
 const bottomNav = [{ name: 'Settings', href: '/settings', icon: Settings }];
