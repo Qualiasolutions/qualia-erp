@@ -1,3 +1,3 @@
-import DashboardPage from './dashboard-page';
+import DailyFlowPage from './daily-flow-page';
 
-export default DashboardPage;
+export default DailyFlowPage;

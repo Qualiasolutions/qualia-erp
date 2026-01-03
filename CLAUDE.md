@@ -43,7 +43,7 @@ type ActionResult = { success: boolean; error?: string; data?: unknown };
 ```
 
 Main actions file (~2600 lines) handles: issues, projects, teams, clients, meetings, milestones.
-Specialized actions in `app/actions/`: health, inbox, learning, payments, shared (reusable utilities).
+Specialized actions in `app/actions/`: health, inbox, learning, payments, shared (reusable utilities), index (barrel exports).
 
 ### Task System
 
@@ -98,6 +98,7 @@ lib/
 ├── client-utils.ts         # Client types, status config, helper functions
 ├── rate-limit.ts           # API rate limiting utilities
 ├── email.ts                # Resend email notifications (admin alerts)
+├── schedule-utils.ts       # Task/meeting filtering for team schedule
 └── vapi-webhook-handlers.ts # Voice tool handlers
 
 components/
@@ -162,6 +163,7 @@ autoRefreshConfig = {
 // Immediate invalidation (prevents stale data after mutations)
 invalidateInboxTasks(immediate: true);      // Force refetch now
 invalidateProjectTasks(projectId, immediate: true);
+invalidateTodaysSchedule(immediate: true);  // For team schedule page
 ```
 
 ### AI Chat Agent (`app/api/chat/route.ts`)
@@ -200,7 +202,7 @@ Webhook at `app/api/vapi/webhook/route.ts`. Tool handlers in `lib/vapi-webhook-h
 Use semantic z-index values to prevent overlay conflicts:
 
 ```
-z-dropdown: 40, z-sticky: 45, z-modal: 50, z-popover: 55, z-overlay: 60, z-toast: 70, z-tooltip: 80, z-command: 90
+z-inline-edit: 35, z-dropdown: 40, z-sticky: 45, z-modal: 50, z-popover: 55, z-overlay: 60, z-toast: 70, z-tooltip: 80, z-command: 90, z-max: 100
 ```
 
 ### Brand Colors
@@ -386,5 +388,5 @@ if (!result.success) {
 - Tailwind for styling, no inline CSS
 - Conventional commits: `feat:`, `fix:`, `perf:`, `refactor:`
 - Use `React.memo()` for list item components
-- Invalidate SWR cache after mutations: `invalidateInboxTasks(true)`, `invalidateProjectTasks(id, true)`
+- Invalidate SWR cache after mutations: `invalidateInboxTasks(true)`, `invalidateProjectTasks(id, true)`, `invalidateTodaysSchedule(true)`
 - Wrap development-only console.logs: `if (process.env.NODE_ENV === 'development')`

@@ -336,3 +336,49 @@ export function invalidateTodaysSchedule(immediate = true) {
     mutate(cacheKeys.todaysMeetings);
   }
 }
+
+/**
+ * Hook for Daily Flow page data
+ * Combines meetings, tasks, and focus project with auto-refresh
+ */
+export function useDailyFlow() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    'daily-flow',
+    async () => {
+      const { getDailyFlowData } = await import('@/app/actions/daily-flow');
+      return getDailyFlowData();
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    data: data || null,
+    meetings: data?.meetings || [],
+    tasks: data?.tasks || [],
+    focusProject: data?.focusProject || null,
+    teamMembers: data?.teamMembers || [],
+    currentUserId: data?.currentUserId || null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate daily flow cache
+ */
+export function invalidateDailyFlow(immediate = true) {
+  if (immediate) {
+    mutate('daily-flow', undefined, { revalidate: true });
+  } else {
+    mutate('daily-flow');
+  }
+}

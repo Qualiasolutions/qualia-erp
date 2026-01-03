@@ -1,8 +1,9 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import * as React from 'react';
-import { DailyScheduleHub } from '@/components/team/daily-schedule-hub';
-
+/**
+ * Team page - redirects to main Daily Flow page
+ * The team functionality has been merged into the main dashboard
+ */
 export default function TeamSchedulePage() {
-  return <DailyScheduleHub />;
+  redirect('/');
 }
