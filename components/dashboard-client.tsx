@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isToday } from 'date-fns';
-import { createInstantMeeting, updateMeetingLink } from '@/app/actions';
+import { createInstantMeeting, updateMeetingLink, deleteMeeting } from '@/app/actions';
 import { quickUpdateTask, type Task } from '@/app/actions/inbox';
 import { createGoogleMeetLink } from '@/lib/google-meet';
 
@@ -85,22 +85,30 @@ function TaskItem({
 function MeetingItem({
   meeting,
   onUpdateLink,
+  onDelete,
   currentUserId,
   autoShowLinkInput = false,
 }: {
   meeting: Meeting;
   onUpdateLink: (meetingId: string, link: string) => void;
+  onDelete: (meetingId: string) => void;
   currentUserId?: string;
   autoShowLinkInput?: boolean;
 }) {
   const [showLinkInput, setShowLinkInput] = useState(autoShowLinkInput);
   const [linkValue, setLinkValue] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const startTime = new Date(meeting.start_time);
   const isNow = isToday(startTime) && startTime <= new Date();
   const isCreator = meeting.creator?.id === currentUserId;
   const hasLink = !!meeting.meeting_link;
+
+  const handleDelete = () => {
+    setIsDeleting(true);
+    onDelete(meeting.id);
+  };
 
   const handleSaveLink = () => {
     if (linkValue.trim()) {
@@ -155,6 +163,20 @@ function MeetingItem({
 
         {/* Action buttons */}
         <div className="flex shrink-0 items-center gap-2">
+          {/* Delete button for creator */}
+          {isCreator && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/50 hover:bg-red-500/10 hover:text-red-500 disabled:opacity-50"
+            >
+              {isDeleting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <X className="h-3.5 w-3.5" />
+              )}
+            </button>
+          )}
           {hasLink ? (
             <>
               <button
@@ -294,6 +316,15 @@ export function DashboardClient({
     [justCreatedMeetingId]
   );
 
+  const handleDeleteMeeting = useCallback((meetingId: string) => {
+    startTransition(async () => {
+      const result = await deleteMeeting(meetingId);
+      if (result.success) {
+        setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+      }
+    });
+  }, []);
+
   if (!mounted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -411,6 +442,7 @@ export function DashboardClient({
                         key={meeting.id}
                         meeting={meeting}
                         onUpdateLink={handleUpdateMeetingLink}
+                        onDelete={handleDeleteMeeting}
                         currentUserId={user?.id}
                         autoShowLinkInput={meeting.id === justCreatedMeetingId}
                       />
@@ -427,6 +459,7 @@ export function DashboardClient({
                         key={meeting.id}
                         meeting={meeting}
                         onUpdateLink={handleUpdateMeetingLink}
+                        onDelete={handleDeleteMeeting}
                         currentUserId={user?.id}
                         autoShowLinkInput={meeting.id === justCreatedMeetingId}
                       />
