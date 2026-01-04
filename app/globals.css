@@ -38,26 +38,30 @@
   }
 
   .dark {
-    /* Dark mode - Rich, deep, premium */
-    --background: 240 10% 3.5%;
-    --foreground: 0 0% 98%;
-    --card: 240 8% 6%;
-    --card-foreground: 0 0% 96%;
-    --popover: 240 8% 7%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 174 100% 42%;
-    --primary-foreground: 240 10% 4%;
-    --secondary: 240 6% 10%;
+    /* Dark mode - Qualia Brand Guidelines */
+    /* Background: #050505, Elevated: #0f0f0f, Card: #141414 */
+    --background: 0 0% 2%;
+    --foreground: 0 0% 93%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 93%;
+    --popover: 0 0% 6%;
+    --popover-foreground: 0 0% 93%;
+    /* Primary Teal: #00FFD1 for CTAs, interactive elements */
+    --primary: 166 100% 50%;
+    --primary-foreground: 0 0% 2%;
+    --secondary: 0 0% 6%;
     --secondary-foreground: 0 0% 85%;
-    --muted: 240 6% 12%;
-    --muted-foreground: 240 5% 55%;
-    --accent: 174 60% 10%;
-    --accent-foreground: 174 100% 60%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 240 4% 65%;
+    /* Accent uses brand teal #00a4ac */
+    --accent: 183 100% 20%;
+    --accent-foreground: 166 100% 50%;
     --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 240 6% 15%;
-    --input: 240 6% 15%;
-    --ring: 174 100% 42%;
+    /* Subtle white borders as per brand */
+    --border: 0 0% 12%;
+    --input: 0 0% 10%;
+    --ring: 166 100% 50%;
 
     /* Status colors - brighter for dark */
     --success: 142 76% 48%;
@@ -191,14 +195,15 @@
     @apply w-2/3;
   }
 
-  /* Glass card */
+  /* Glass card - Qualia Brand Guidelines */
+  /* bg: rgba(255,255,255,0.03-0.08), border: rgba(255,255,255,0.1), blur: 12px */
   .card-glass {
-    @apply relative overflow-hidden rounded-xl;
-    @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+    @apply relative overflow-hidden rounded-2xl;
+    @apply border border-white/10 bg-white/[0.05] backdrop-blur-[12px];
   }
 
   .dark .card-glass {
-    @apply border-white/5 bg-white/[0.02];
+    @apply border-white/10 bg-white/[0.03];
   }
 }
 
@@ -333,19 +338,20 @@
 
 /* ============================================
    SHADOWS & GLOW EFFECTS
+   Primary Teal #00FFD1 (166 100% 50%)
    ============================================ */
 @layer utilities {
   /* Premium glow effects */
   .glow-sm {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.15);
+    box-shadow: 0 0 20px -5px hsl(166 100% 50% / 0.15);
   }
 
   .glow {
-    box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.2);
+    box-shadow: 0 0 30px -5px hsl(166 100% 50% / 0.2);
   }
 
   .glow-lg {
-    box-shadow: 0 0 50px -10px hsl(var(--primary) / 0.25);
+    box-shadow: 0 0 50px -10px hsl(166 100% 50% / 0.25);
   }
 
   /* Depth shadows */
@@ -423,10 +429,10 @@
 @keyframes glow-pulse {
   0%,
   100% {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 20px -5px hsl(166 100% 50% / 0.3);
   }
   50% {
-    box-shadow: 0 0 30px -5px hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 30px -5px hsl(166 100% 50% / 0.5);
   }
 }
 
@@ -487,29 +493,30 @@
 }
 
 /* ============================================
-   SCROLLBAR - MINIMAL
+   SCROLLBAR - QUALIA BRAND
+   Width: 8px, Track: #050505, Thumb: Primary Teal
    ============================================ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: hsl(0 0% 2%);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.15);
-  border-radius: 3px;
+  background: hsl(166 100% 50% / 0.3);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.25);
+  background: hsl(166 100% 50% / 0.5);
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.15) transparent;
+  scrollbar-color: hsl(166 100% 50% / 0.3) hsl(0 0% 2%);
 }
 
 /* ============================================
@@ -598,16 +605,17 @@
 
 /* ============================================
    AMBIENT EFFECTS (subtle background glow)
+   Primary Teal #00FFD1 (166 100% 50%)
    ============================================ */
 .ambient-glow {
   @apply pointer-events-none fixed -z-10;
   width: 600px;
   height: 600px;
   border-radius: 50%;
-  background: radial-gradient(circle, hsl(var(--primary) / 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, hsl(166 100% 50% / 0.08) 0%, transparent 70%);
   filter: blur(60px);
 }
 
 .dark .ambient-glow {
-  background: radial-gradient(circle, hsl(var(--primary) / 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, hsl(166 100% 50% / 0.12) 0%, transparent 70%);
 }
