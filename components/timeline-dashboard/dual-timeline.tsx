@@ -167,7 +167,8 @@ export const DualTimeline = memo(function DualTimeline({
         </div>
 
         {/* Timeline Grid - enhanced styling */}
-        <div className="relative bg-gradient-to-b from-background to-muted/20">
+        {/* Height: 3 lanes × h-28 (112px) + h-7 footer (28px) = 364px */}
+        <div className="relative h-[364px] bg-gradient-to-b from-background to-muted/20">
           <TimelineGrid>
             {/* Fawzi's task slots - top lane */}
             <div className="relative h-28">

@@ -62,8 +62,8 @@ export const TimelineGrid = memo(function TimelineGrid({ className, children }: 
         })}
       </div>
 
-      {/* Content layer */}
-      <div className="absolute inset-0 bottom-7">{children}</div>
+      {/* Content layer - flex column to stack lanes */}
+      <div className="absolute inset-0 bottom-7 flex flex-col">{children}</div>
     </div>
   );
 });
