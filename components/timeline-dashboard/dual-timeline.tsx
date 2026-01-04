@@ -170,7 +170,7 @@ export const DualTimeline = memo(function DualTimeline({
         <div className="relative bg-gradient-to-b from-background to-muted/20">
           <TimelineGrid>
             {/* Fawzi's task slots - top lane */}
-            <div className="relative h-20">
+            <div className="relative h-28">
               {fawziScheduled.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
                   <span className="text-xs text-muted-foreground/50">No scheduled tasks</span>
@@ -188,7 +188,7 @@ export const DualTimeline = memo(function DualTimeline({
             </div>
 
             {/* Unified Meeting Line - center */}
-            <div className="relative h-24 border-y border-border/40 bg-muted/30">
+            <div className="relative h-28 border-y border-border/40 bg-muted/30">
               {meetings.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
                   <span className="text-xs text-muted-foreground/50">No meetings scheduled</span>
@@ -201,7 +201,7 @@ export const DualTimeline = memo(function DualTimeline({
             </div>
 
             {/* Moayad's task slots - bottom lane */}
-            <div className="relative h-20">
+            <div className="relative h-28">
               {moayadScheduled.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
                   <span className="text-xs text-muted-foreground/50">No scheduled tasks</span>
