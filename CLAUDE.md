@@ -67,23 +67,29 @@ type Task = {
 };
 ```
 
+### Navigation Structure
+
+Main pages accessible via sidebar: **Today** (Daily Flow) → **Projects** → **Clients** → **Schedule** → **Documents** → **Settings**
+
+Hidden admin pages: `/payments` (restricted to `info@qualiasolutions.net`)
+
 ### Key Directories
 
 ```
 app/
-├── actions.ts              # Main server actions
-├── actions/inbox.ts        # Task CRUD, reordering, inbox toggle
+├── actions.ts              # Main server actions (~2600 lines)
+├── actions/inbox.ts        # Task CRUD, reordering (legacy name, handles all tasks)
+├── daily-flow-page.tsx     # Home page component (Things 3-inspired UI)
 ├── api/chat/route.ts       # AI chat agent (15+ tools, 30s timeout)
 ├── api/vapi/webhook/       # Voice assistant webhooks
 ├── api/embeddings/route.ts # Google AI embeddings
 ├── error.tsx               # Global error boundary
 ├── clients/                # CRM section
-├── inbox/                  # Personal task inbox (show_in_inbox=true tasks)
-│   └── error.tsx           # Inbox-specific error boundary
-├── payments/               # Hidden admin-only financial tracking (/payments)
+├── documents/              # Document templates with AI drafting agent
+├── payments/               # Hidden admin-only financial tracking
 ├── projects/               # Project management (grouped list view)
 ├── schedule/               # Calendar views
-└── team/                   # Team workflow page (daily schedule, document templates)
+└── team/                   # Redirects to / (Daily Flow)
 
 lib/
 ├── ai/ai-core.ts           # Shared AI processing (Gemini 2.5 Flash)
@@ -102,23 +108,26 @@ lib/
 └── vapi-webhook-handlers.ts # Voice tool handlers
 
 components/
-├── sidebar.tsx             # Main sidebar navigation
-├── dashboard-client.tsx    # Dashboard with stats and AI assistant
+├── sidebar.tsx             # Main sidebar navigation (Today, Projects, Clients, Schedule, Documents)
+├── daily-flow/             # Daily Flow dashboard components (Things 3-inspired)
+│   ├── daily-flow-client.tsx   # Main dashboard orchestrator
+│   ├── your-focus-section.tsx  # Personal task focus area
+│   ├── team-lanes.tsx          # Team member lanes view
+│   ├── visual-timeline.tsx     # Timeline visualization
+│   ├── command-palette.tsx     # Quick command interface
+│   └── focus-task-card.tsx     # Task card for focus view
 ├── mind-of-qualia.tsx      # AI chat assistant widget
 ├── project-list-view.tsx   # Projects grouped list (by type: AI, Voice, Web, etc.)
 ├── project-task-kanban.tsx # Drag-and-drop task kanban for projects
 ├── new-task-modal.tsx      # Create task (requires project, optional inbox)
 ├── edit-task-modal.tsx     # Edit task details
 ├── task-card.tsx           # Reusable task card with memo optimization
-├── inbox-kanban-view.tsx   # Kanban view for inbox tasks
-├── inbox-list-view.tsx     # List view with drag-drop state sync
 ├── client-list.tsx         # Client list container with view toggle
 ├── client-card.tsx         # Memoized client card for grid view
 ├── client-row.tsx          # Memoized client row for list view
-├── client-detail-modal.tsx # Client detail/edit modal
-└── dashboard-activity-feed.tsx # Virtualized activity feed
+└── client-detail-modal.tsx # Client detail/edit modal
 
-tempaltes/                  # Document templates (source)
+tempaltes/                  # Document templates (source) - note: typo in directory name
 ├── SYSTEM_INSTRUCTIONS.md  # AI document generation instructions
 ├── TEMPLATE_*.pdf          # Agreement templates (Web Dev, AI Agent, Marketing, NDA)
 └── Qualia_Solutions_Brand_Guidelines.pdf
@@ -316,15 +325,6 @@ Security headers configured in `next.config.ts`:
 - HSTS with includeSubDomains
 - Microphone permission allowed (for voice assistant)
 
-### Hidden Admin Pages
-
-Some pages are hidden from navigation and restricted to specific users:
-
-- `/payments` - Financial tracking, restricted to `info@qualiasolutions.net`
-  - Uses RLS policy checking `auth.users.email`
-  - Server-side redirect for unauthorized users
-  - Not shown in sidebar navigation
-
 ## Deployment
 
 - **Production**: https://qualia-erp.vercel.app
@@ -345,22 +345,10 @@ Pre-commit hooks (Husky): ESLint, Prettier, TypeScript checks.
 
 ### Error Boundaries
 
-Next.js App Router error boundaries in `error.tsx` files:
-
-```typescript
-// app/inbox/error.tsx - Route-specific error boundary
-'use client';
-export default function InboxError({ error, reset }: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  return (/* Error UI with retry button */);
-}
-```
+Next.js App Router error boundaries in `error.tsx` files. Always include `reset()` button and optional page reload.
 
 - `app/error.tsx` - Global fallback for unhandled errors
-- `app/inbox/error.tsx` - Inbox-specific with contextual messaging
-- Always include `reset()` button and optional page reload
+- Route-specific `error.tsx` files for contextual messaging
 
 ### Server Action Errors
 

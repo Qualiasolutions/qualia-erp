@@ -1,3 +1,3 @@
-import DailyFlowPage from './daily-flow-page';
+import TimelineDashboardPage from './timeline-dashboard-page';
 
-export default DailyFlowPage;
+export default TimelineDashboardPage;

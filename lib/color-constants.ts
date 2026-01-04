@@ -572,3 +572,107 @@ export const USER_COLORS = {
 
 export type ScheduleBlockType = keyof typeof SCHEDULE_BLOCK_COLORS;
 export type UserColorKey = keyof typeof USER_COLORS;
+
+// Phase Badge Colors (for timeline dashboard)
+export const PHASE_BADGE_COLORS = {
+  Research: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-500',
+  },
+  Design: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-500',
+  },
+  Build: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-500',
+  },
+  Test: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-500',
+  },
+  Deploy: {
+    bg: 'bg-qualia-500/10',
+    border: 'border-qualia-500/30',
+    text: 'text-qualia-500',
+  },
+  // Voice Agent phases
+  Script: {
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/30',
+    text: 'text-violet-500',
+  },
+  'Voice Setup': {
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/30',
+    text: 'text-pink-500',
+  },
+  Integration: {
+    bg: 'bg-cyan-500/10',
+    border: 'border-cyan-500/30',
+    text: 'text-cyan-500',
+  },
+  Testing: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-500',
+  },
+  Launch: {
+    bg: 'bg-qualia-500/10',
+    border: 'border-qualia-500/30',
+    text: 'text-qualia-500',
+  },
+  // Web Design phases
+  Discovery: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-500',
+  },
+  Wireframes: {
+    bg: 'bg-indigo-500/10',
+    border: 'border-indigo-500/30',
+    text: 'text-indigo-500',
+  },
+  Development: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-500',
+  },
+  // SEO/Ads phases
+  Audit: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-500',
+  },
+  Strategy: {
+    bg: 'bg-blue-500/10',
+    border: 'border-blue-500/30',
+    text: 'text-blue-500',
+  },
+  Implementation: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-500',
+  },
+  Monitoring: {
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-500',
+  },
+  Creative: {
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/30',
+    text: 'text-pink-500',
+  },
+  Optimize: {
+    bg: 'bg-qualia-500/10',
+    border: 'border-qualia-500/30',
+    text: 'text-qualia-500',
+  },
+} as const;
+
+export type PhaseBadgeKey = keyof typeof PHASE_BADGE_COLORS;

@@ -338,7 +338,7 @@ export function invalidateTodaysSchedule(immediate = true) {
 }
 
 /**
- * Hook for Daily Flow page data
+ * Hook for Daily Flow page data (legacy - will be replaced by useTimelineDashboard)
  * Combines meetings, tasks, and focus project with auto-refresh
  */
 export function useDailyFlow() {
@@ -380,5 +380,52 @@ export function invalidateDailyFlow(immediate = true) {
     mutate('daily-flow', undefined, { revalidate: true });
   } else {
     mutate('daily-flow');
+  }
+}
+
+/**
+ * Hook for Timeline Dashboard data
+ * Fetches meetings, tasks with phase info, team members, and assignment notifications
+ * Auto-refreshes every 30s when tab is visible
+ */
+export function useTimelineDashboard() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    'timeline-dashboard',
+    async () => {
+      const { getTimelineDashboardData } = await import('@/app/actions/timeline-dashboard');
+      return getTimelineDashboardData();
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    data: data || null,
+    meetings: data?.meetings || [],
+    tasks: data?.tasks || [],
+    teamMembers: data?.teamMembers || [],
+    currentUserId: data?.currentUserId || null,
+    newAssignments: data?.newAssignments || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate timeline dashboard cache
+ */
+export function invalidateTimeline(immediate = true) {
+  if (immediate) {
+    mutate('timeline-dashboard', undefined, { revalidate: true });
+  } else {
+    mutate('timeline-dashboard');
   }
 }

@@ -4,14 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { Sun, Folder, Calendar, Building2, Settings, User, Inbox, FileText } from 'lucide-react';
+import { Sun, Folder, Calendar, Building2, Settings, User, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
   { name: 'Today', href: '/', icon: Sun },
-  { name: 'Inbox', href: '/inbox', icon: Inbox },
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
