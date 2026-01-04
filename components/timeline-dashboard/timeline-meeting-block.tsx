@@ -32,8 +32,8 @@ export const TimelineMeetingBlock = memo(function TimelineMeetingBlock({
       className={cn(
         'group absolute bottom-2 top-4 rounded-lg border transition-all duration-150',
         isLive
-          ? 'border-qualia-500/50 bg-qualia-500/15 shadow-sm shadow-qualia-500/10 ring-1 ring-qualia-500/20'
-          : 'border-border/60 bg-background/80 hover:border-border hover:bg-muted/60 hover:shadow-sm',
+          ? 'border-qualia-500/50 bg-card shadow-sm shadow-qualia-500/10 ring-1 ring-qualia-500/20'
+          : 'border-border/60 bg-card hover:border-border hover:bg-muted hover:shadow-sm',
         className
       )}
       style={{
