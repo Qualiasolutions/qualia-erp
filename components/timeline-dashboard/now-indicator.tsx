@@ -1,7 +1,7 @@
 'use client';
 
 import { memo, useEffect, useState } from 'react';
-import { getCurrentTimePosition, formatMinutesToDisplay } from '@/lib/timeline-utils';
+import { getCurrentTimePosition } from '@/lib/timeline-utils';
 
 /**
  * Refined current time indicator
@@ -9,21 +9,17 @@ import { getCurrentTimePosition, formatMinutesToDisplay } from '@/lib/timeline-u
  */
 export const NowIndicator = memo(function NowIndicator() {
   const [position, setPosition] = useState<number | null>(null);
-  const [currentTime, setCurrentTime] = useState<string>('');
 
   useEffect(() => {
-    const updateTime = () => {
+    const updatePosition = () => {
       setPosition(getCurrentTimePosition());
-      const now = new Date();
-      const minutes = now.getHours() * 60 + now.getMinutes();
-      setCurrentTime(formatMinutesToDisplay(minutes));
     };
 
     // Initial position
-    updateTime();
+    updatePosition();
 
     // Update every minute
-    const interval = setInterval(updateTime, 60000);
+    const interval = setInterval(updatePosition, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -48,13 +44,6 @@ export const NowIndicator = memo(function NowIndicator() {
           <div className="h-3 w-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/40" />
           <div className="absolute inset-0 animate-ping rounded-full bg-rose-500/40" />
         </div>
-      </div>
-
-      {/* Time label - cleaner design */}
-      <div className="absolute -left-5 -top-5 rounded-md bg-rose-500 px-1.5 py-0.5 shadow-sm shadow-rose-500/30">
-        <span className="font-mono text-[9px] font-semibold tracking-tight text-white">
-          {currentTime.split(' ')[0]}
-        </span>
       </div>
     </div>
   );

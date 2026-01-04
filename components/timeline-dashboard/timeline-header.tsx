@@ -2,7 +2,7 @@
 
 import { memo, useMemo } from 'react';
 import { format } from 'date-fns';
-import { RefreshCw, Video, Keyboard, Clock, CheckCircle2, Circle } from 'lucide-react';
+import { RefreshCw, Video, Clock, CheckCircle2, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QuickAssignButton } from './quick-assign-button';
 import type { TimelineTask, TeamMember } from '@/app/actions/timeline-dashboard';
@@ -15,7 +15,6 @@ interface TimelineHeaderProps {
   isValidating?: boolean;
   onRefresh?: () => void;
   onStartMeeting?: () => void;
-  onShowShortcuts?: () => void;
   className?: string;
 }
 
@@ -30,7 +29,6 @@ export const TimelineHeader = memo(function TimelineHeader({
   isValidating = false,
   onRefresh,
   onStartMeeting,
-  onShowShortcuts,
   className,
 }: TimelineHeaderProps) {
   const today = new Date();
@@ -132,16 +130,6 @@ export const TimelineHeader = memo(function TimelineHeader({
           className="h-8 w-8 text-muted-foreground hover:text-foreground"
         >
           <RefreshCw className={cn('h-3.5 w-3.5', isValidating && 'animate-spin')} />
-        </Button>
-
-        {/* Keyboard shortcuts */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onShowShortcuts}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-        >
-          <Keyboard className="h-3.5 w-3.5" />
         </Button>
       </div>
     </div>

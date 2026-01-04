@@ -79,6 +79,8 @@ Hidden admin pages: `/payments` (restricted to `info@qualiasolutions.net`)
 app/
 ├── actions.ts              # Main server actions (~2600 lines)
 ├── actions/inbox.ts        # Task CRUD, reordering (legacy name, handles all tasks)
+├── actions/daily-flow.ts   # Daily Flow page data aggregation
+├── actions/timeline-dashboard.ts # Timeline dashboard data with phases
 ├── daily-flow-page.tsx     # Home page component (Things 3-inspired UI)
 ├── api/chat/route.ts       # AI chat agent (15+ tools, 30s timeout)
 ├── api/vapi/webhook/       # Voice assistant webhooks
@@ -173,6 +175,8 @@ autoRefreshConfig = {
 invalidateInboxTasks(immediate: true);      // Force refetch now
 invalidateProjectTasks(projectId, immediate: true);
 invalidateTodaysSchedule(immediate: true);  // For team schedule page
+invalidateDailyFlow(immediate: true);       // Daily Flow dashboard
+invalidateTimeline(immediate: true);        // Timeline dashboard
 ```
 
 ### AI Chat Agent (`app/api/chat/route.ts`)
@@ -320,7 +324,7 @@ Tests in `__tests__/` mirror source structure. Coverage threshold: 50%.
 
 Security headers configured in `next.config.ts`:
 
-- CSP with strict connect-src whitelist (Supabase, Groq, VAPI, Sentry)
+- CSP with strict connect-src whitelist (Supabase, OpenRouter, Google Generative AI, Vercel Live)
 - X-Frame-Options: DENY
 - HSTS with includeSubDomains
 - Microphone permission allowed (for voice assistant)
@@ -376,5 +380,5 @@ if (!result.success) {
 - Tailwind for styling, no inline CSS
 - Conventional commits: `feat:`, `fix:`, `perf:`, `refactor:`
 - Use `React.memo()` for list item components
-- Invalidate SWR cache after mutations: `invalidateInboxTasks(true)`, `invalidateProjectTasks(id, true)`, `invalidateTodaysSchedule(true)`
+- Invalidate SWR cache after mutations: `invalidateInboxTasks(true)`, `invalidateProjectTasks(id, true)`, `invalidateTodaysSchedule(true)`, `invalidateDailyFlow(true)`, `invalidateTimeline(true)`
 - Wrap development-only console.logs: `if (process.env.NODE_ENV === 'development')`

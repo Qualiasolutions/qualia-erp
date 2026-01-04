@@ -8,7 +8,6 @@ import { assignTaskToMember, markAssignmentSeen } from '@/app/actions/timeline-d
 import { createInstantMeeting } from '@/app/actions';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import type { TimelineTask } from '@/app/actions/timeline-dashboard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 /**
  * Main Timeline Dashboard client component
@@ -28,7 +27,6 @@ export function TimelineDashboardClient() {
 
   const [isPending, startTransition] = useTransition();
   const [selectedTask, setSelectedTask] = useState<TimelineTask | null>(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Handle task assignment
   const handleAssign = useCallback((taskId: string, assigneeId: string) => {
@@ -95,7 +93,6 @@ export function TimelineDashboardClient() {
         isValidating={isValidating || isPending}
         onRefresh={handleRefresh}
         onStartMeeting={handleStartMeeting}
-        onShowShortcuts={() => setShowShortcuts(true)}
       />
 
       {/* Main content: Dual timeline */}
@@ -124,38 +121,6 @@ export function TimelineDashboardClient() {
           }}
         />
       )}
-
-      {/* Keyboard Shortcuts Dialog */}
-      <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Keyboard Shortcuts</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3 py-4">
-            <ShortcutRow keys={['R']} description="Refresh data" />
-            <ShortcutRow keys={['?']} description="Show shortcuts" />
-            <ShortcutRow keys={['Esc']} description="Close dialogs" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-}
-
-function ShortcutRow({ keys, description }: { keys: string[]; description: string }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground">{description}</span>
-      <div className="flex gap-1">
-        {keys.map((key) => (
-          <kbd
-            key={key}
-            className="rounded border border-border bg-muted px-2 py-0.5 text-xs font-medium"
-          >
-            {key}
-          </kbd>
-        ))}
-      </div>
     </div>
   );
 }
