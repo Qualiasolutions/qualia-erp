@@ -10,18 +10,18 @@ interface TimelineGridProps {
 }
 
 /**
- * Timeline grid background with time markers
- * Shows 8:30 AM - 2:30 PM with 30-minute intervals
+ * Polished timeline grid with elegant time markers
+ * Shows 8:30 AM - 2:30 PM with refined visual hierarchy
  */
 export const TimelineGrid = memo(function TimelineGrid({ className, children }: TimelineGridProps) {
   return (
     <div className={cn('relative h-full w-full', className)}>
-      {/* Grid lines */}
+      {/* Grid lines - subtle and elegant */}
       <div className="absolute inset-0 flex">
         {TIME_MARKERS.map((marker) => {
           const position = getTimelinePosition(marker.minutes);
-          const isHour =
-            marker.time.endsWith(':00') || marker.time === '8:30' || marker.time === '2:30';
+          const isHour = marker.time.endsWith(':00');
+          const isEdge = marker.time === '8:30' || marker.time === '2:30';
 
           return (
             <div
@@ -31,23 +31,30 @@ export const TimelineGrid = memo(function TimelineGrid({ className, children }: 
             >
               {/* Vertical grid line */}
               <div
-                className={cn('h-full border-l', isHour ? 'border-border/50' : 'border-border/20')}
+                className={cn(
+                  'h-full w-px',
+                  isHour ? 'bg-border/40' : isEdge ? 'bg-border/30' : 'bg-border/15'
+                )}
               />
             </div>
           );
         })}
       </div>
 
-      {/* Time labels at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 flex h-6 border-t border-border/30 bg-background/80 backdrop-blur-sm">
-        {TIME_MARKERS.filter((_, i) => i % 2 === 0).map((marker) => {
+      {/* Time labels at bottom - cleaner typography */}
+      <div className="absolute bottom-0 left-0 right-0 flex h-7 border-t border-border/30 bg-background/90 backdrop-blur-sm">
+        {TIME_MARKERS.filter((_, i) => i % 2 === 0).map((marker, index, arr) => {
           const position = getTimelinePosition(marker.minutes);
+          const isEdge = index === 0 || index === arr.length - 1;
 
           return (
             <span
               key={marker.time}
-              className="absolute -translate-x-1/2 text-[10px] text-muted-foreground"
-              style={{ left: `${position}%`, top: '4px' }}
+              className={cn(
+                'absolute -translate-x-1/2 font-mono text-[10px]',
+                isEdge ? 'font-medium text-muted-foreground' : 'text-muted-foreground/70'
+              )}
+              style={{ left: `${position}%`, top: '6px' }}
             >
               {marker.time}
             </span>
@@ -56,7 +63,7 @@ export const TimelineGrid = memo(function TimelineGrid({ className, children }: 
       </div>
 
       {/* Content layer */}
-      <div className="absolute inset-0 bottom-6">{children}</div>
+      <div className="absolute inset-0 bottom-7">{children}</div>
     </div>
   );
 });

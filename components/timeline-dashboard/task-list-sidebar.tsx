@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useMemo } from 'react';
+import { Clock, ListTodo, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TimelineTaskCard } from './timeline-task-card';
 import type { TimelineTask, TeamMember } from '@/app/actions/timeline-dashboard';
@@ -20,14 +21,13 @@ interface TaskListSidebarProps {
 }
 
 /**
- * Scrollable task list sidebar for a team member
- * Shows tasks grouped by status (In Progress first, then Todo)
+ * Polished task list for team members
+ * Clean grouping with refined visual hierarchy
  */
 export const TaskListSidebar = memo(function TaskListSidebar({
   tasks,
   memberId,
-  memberName,
-  colorKey,
+  // colorKey is used by parent for styling but not needed here
   isLead = false,
   teamMembers = [],
   currentUserId,
@@ -49,55 +49,45 @@ export const TaskListSidebar = memo(function TaskListSidebar({
 
   if (totalTasks === 0) {
     return (
-      <div
-        className={cn(
-          'flex h-full items-center justify-center text-sm text-muted-foreground',
-          className
-        )}
-      >
-        No tasks assigned
+      <div className={cn('flex flex-col items-center justify-center py-8', className)}>
+        <ListTodo className="mb-2 h-6 w-6 text-muted-foreground/40" />
+        <p className="text-sm text-muted-foreground/60">No tasks assigned</p>
       </div>
     );
   }
 
   return (
-    <div className={cn('flex h-full flex-col', className)}>
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">{memberName}&apos;s Tasks</span>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {totalTasks}
-        </span>
-      </div>
-
-      {/* Task list */}
-      <div className="flex-1 space-y-2 overflow-y-auto p-3">
+    <div className={cn('flex flex-col', className)}>
+      {/* Task list - cleaner spacing */}
+      <div className="max-h-[320px] space-y-4 overflow-y-auto p-3">
         {/* Active tasks */}
         {activeTasks.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'h-1.5 w-1.5 rounded-full',
-                  colorKey === 'fawzi' ? 'bg-qualia-500' : 'bg-indigo-500'
-                )}
-              />
-              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                In Progress
+              <div className="flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2 py-0.5">
+                <Clock className="h-3 w-3 text-blue-500" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                  Active
+                </span>
+              </div>
+              <span className="text-[10px] font-medium text-muted-foreground">
+                {activeTasks.length}
               </span>
             </div>
-            {activeTasks.map((task) => (
-              <TimelineTaskCard
-                key={task.id}
-                task={task}
-                isHighlighted={newAssignments.includes(task.id)}
-                isLead={isLead}
-                teamMembers={teamMembers}
-                currentUserId={currentUserId}
-                onAssign={onAssign}
-                onClick={() => onTaskClick?.(task)}
-              />
-            ))}
+            <div className="space-y-2">
+              {activeTasks.map((task) => (
+                <TimelineTaskCard
+                  key={task.id}
+                  task={task}
+                  isHighlighted={newAssignments.includes(task.id)}
+                  isLead={isLead}
+                  teamMembers={teamMembers}
+                  currentUserId={currentUserId}
+                  onAssign={onAssign}
+                  onClick={() => onTaskClick?.(task)}
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -105,27 +95,37 @@ export const TaskListSidebar = memo(function TaskListSidebar({
         {queuedTasks.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
-              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                Queue ({queuedTasks.length})
+              <div className="flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5">
+                <ListTodo className="h-3 w-3 text-muted-foreground" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Queue
+                </span>
+              </div>
+              <span className="text-[10px] font-medium text-muted-foreground">
+                {queuedTasks.length}
               </span>
             </div>
-            {queuedTasks.slice(0, 5).map((task) => (
-              <TimelineTaskCard
-                key={task.id}
-                task={task}
-                isHighlighted={newAssignments.includes(task.id)}
-                isLead={isLead}
-                teamMembers={teamMembers}
-                currentUserId={currentUserId}
-                onAssign={onAssign}
-                onClick={() => onTaskClick?.(task)}
-              />
-            ))}
+            <div className="space-y-2">
+              {queuedTasks.slice(0, 5).map((task) => (
+                <TimelineTaskCard
+                  key={task.id}
+                  task={task}
+                  isHighlighted={newAssignments.includes(task.id)}
+                  isLead={isLead}
+                  teamMembers={teamMembers}
+                  currentUserId={currentUserId}
+                  onAssign={onAssign}
+                  onClick={() => onTaskClick?.(task)}
+                />
+              ))}
+            </div>
+
+            {/* Show more indicator */}
             {queuedTasks.length > 5 && (
-              <div className="text-center text-xs text-muted-foreground">
-                +{queuedTasks.length - 5} more tasks
-              </div>
+              <button className="flex w-full items-center justify-center gap-1 rounded-md py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <ChevronDown className="h-3.5 w-3.5" />
+                <span>Show {queuedTasks.length - 5} more</span>
+              </button>
             )}
           </div>
         )}

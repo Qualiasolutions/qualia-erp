@@ -1,7 +1,16 @@
 'use client';
 
 import { memo, useTransition } from 'react';
-import { Check, Clock, Folder, MoreHorizontal, UserPlus } from 'lucide-react';
+import {
+  Check,
+  Clock,
+  Folder,
+  MoreHorizontal,
+  UserPlus,
+  Play,
+  Pause,
+  CheckCircle2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TASK_PRIORITY_COLORS, USER_COLORS } from '@/lib/color-constants';
 import { PhaseBadge } from './phase-badge';
@@ -28,8 +37,8 @@ interface TimelineTaskCardProps {
 }
 
 /**
- * Task card for the timeline dashboard
- * Shows title, project, phase badge, priority, and quick actions
+ * Polished task card for the timeline dashboard
+ * Clean design with subtle interactions and clear visual hierarchy
  */
 export const TimelineTaskCard = memo(function TimelineTaskCard({
   task,
@@ -44,10 +53,6 @@ export const TimelineTaskCard = memo(function TimelineTaskCard({
 
   const isActive = task.status === 'In Progress';
   const priorityColors = TASK_PRIORITY_COLORS[task.priority] || TASK_PRIORITY_COLORS['No Priority'];
-
-  // Get assignee color
-  const assigneeColorKey = task.assignee?.email?.includes('info@qualia') ? 'fawzi' : 'moayad';
-  const assigneeColor = USER_COLORS[assigneeColorKey];
 
   // Calculate elapsed time for active tasks
   const getElapsedTime = () => {
@@ -80,18 +85,19 @@ export const TimelineTaskCard = memo(function TimelineTaskCard({
   return (
     <div
       className={cn(
-        'group relative rounded-lg border bg-card p-3 transition-all',
-        isActive && 'border-qualia-500/50 bg-qualia-500/5',
-        isHighlighted &&
-          'animate-pulse ring-2 ring-indigo-500 ring-offset-2 ring-offset-background',
-        !isActive && !isHighlighted && 'border-border hover:border-border/80 hover:bg-muted/30',
-        isPending && 'opacity-50',
+        'group relative rounded-lg border bg-card transition-all duration-150',
+        isActive && 'border-blue-500/40 bg-blue-500/5 shadow-sm shadow-blue-500/5',
+        isHighlighted && 'ring-2 ring-indigo-500/50 ring-offset-2 ring-offset-background',
+        !isActive &&
+          !isHighlighted &&
+          'border-border/60 hover:border-border hover:bg-muted/40 hover:shadow-sm',
+        isPending && 'pointer-events-none opacity-50',
         className
       )}
       onClick={onClick}
     >
-      <div className="flex items-start gap-3">
-        {/* Checkbox */}
+      <div className="flex items-start gap-3 p-3">
+        {/* Checkbox - refined */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -99,81 +105,88 @@ export const TimelineTaskCard = memo(function TimelineTaskCard({
           }}
           disabled={isPending}
           className={cn(
-            'mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors',
+            'mt-0.5 flex h-[18px] w-[18px] flex-shrink-0 items-center justify-center rounded-full border-[1.5px] transition-all duration-150',
             isActive
-              ? 'border-qualia-500 bg-qualia-500/10 hover:bg-qualia-500/20'
-              : 'border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted'
+              ? 'border-blue-500 bg-blue-500/10 hover:bg-blue-500/20'
+              : 'border-muted-foreground/25 hover:border-muted-foreground/40 hover:bg-muted'
           )}
         >
           <Check
             className={cn(
-              'h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100',
-              isActive ? 'text-qualia-500' : 'text-muted-foreground'
+              'h-2.5 w-2.5 opacity-0 transition-opacity group-hover:opacity-100',
+              isActive ? 'text-blue-500' : 'text-muted-foreground'
             )}
+            strokeWidth={2.5}
           />
         </button>
 
         {/* Content */}
         <div className="min-w-0 flex-1">
           {/* Title row */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             <span
               className={cn(
-                'truncate text-sm font-medium',
+                'flex-1 truncate text-[13px] font-medium leading-tight',
                 isActive ? 'text-foreground' : 'text-foreground/90'
               )}
             >
               {task.title}
             </span>
 
-            {/* Priority badge */}
+            {/* Priority badge - more subtle */}
             {task.priority !== 'No Priority' && (
               <span
                 className={cn(
-                  'flex-shrink-0 rounded px-1 py-0.5 text-[10px] font-medium',
+                  'flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
                   priorityColors.bg,
                   priorityColors.text
                 )}
               >
-                {task.priority === 'Urgent' ? 'P1' : task.priority === 'High' ? 'P2' : 'P3'}
+                {task.priority === 'Urgent'
+                  ? 'P1'
+                  : task.priority === 'High'
+                    ? 'P2'
+                    : task.priority === 'Medium'
+                      ? 'P3'
+                      : 'P4'}
               </span>
             )}
           </div>
 
-          {/* Meta row */}
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          {/* Meta row - cleaner */}
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             {/* Project */}
             {task.project?.name && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
                 <Folder className="h-3 w-3" />
-                <span className="truncate">{task.project.name}</span>
+                <span className="max-w-[100px] truncate">{task.project.name}</span>
               </span>
             )}
 
             {/* Phase badge */}
             {task.phase && <PhaseBadge phase={task.phase} />}
 
-            {/* Active indicator */}
+            {/* Active indicator - refined */}
             {isActive && (
-              <span className="flex items-center gap-1 text-qualia-500">
-                <Clock className="h-3 w-3" />
+              <span className="flex items-center gap-1 rounded-full bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                <Clock className="h-2.5 w-2.5" />
                 <span>{getElapsedTime()}</span>
               </span>
             )}
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        {/* Actions - refined */}
+        <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           {/* Assign button (lead only) */}
           {isLead && otherMembers.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   onClick={(e) => e.stopPropagation()}
-                  className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted"
+                  className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  <UserPlus className="h-4 w-4 text-muted-foreground" />
+                  <UserPlus className="h-3.5 w-3.5" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
@@ -199,17 +212,17 @@ export const TimelineTaskCard = memo(function TimelineTaskCard({
             </DropdownMenu>
           )}
 
-          {/* More actions */}
+          {/* More actions - refined icons */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
                 onClick={(e) => e.stopPropagation()}
-                className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-muted"
+                className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
               >
-                <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                <MoreHorizontal className="h-3.5 w-3.5" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-36">
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
@@ -221,7 +234,17 @@ export const TimelineTaskCard = memo(function TimelineTaskCard({
                   });
                 }}
               >
-                {isActive ? 'Pause' : 'Start'}
+                {isActive ? (
+                  <>
+                    <Pause className="mr-2 h-3.5 w-3.5" />
+                    Pause
+                  </>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-3.5 w-3.5" />
+                    Start
+                  </>
+                )}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={(e) => {
@@ -229,21 +252,17 @@ export const TimelineTaskCard = memo(function TimelineTaskCard({
                   handleComplete();
                 }}
               >
-                Mark Complete
+                <CheckCircle2 className="mr-2 h-3.5 w-3.5" />
+                Complete
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Assignee indicator */}
-      {task.assignee && (
-        <div className="absolute -right-1 -top-1">
-          <div
-            className={cn('h-3 w-3 rounded-full border-2 border-background', assigneeColor.dot)}
-            title={task.assignee.full_name || task.assignee.email || undefined}
-          />
-        </div>
+      {/* Active left accent */}
+      {isActive && (
+        <div className="absolute bottom-0 left-0 top-0 w-0.5 rounded-l-lg bg-blue-500" />
       )}
     </div>
   );
