@@ -15,6 +15,7 @@ import {
   Check,
   Sparkles,
   ArrowRight,
+  Printer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -86,17 +87,52 @@ function DocumentDraftingAgent() {
 
     try {
       // Build conversation with document drafting context
-      const systemContext = `You are a professional document drafting assistant for Qualia Solutions. Your role is to help create business agreements, contracts, and proposals.
+      const systemContext = `You are the Documentation Specialist for Qualia Solutions LTD (Cyprus).
 
-When the user asks you to draft a document:
-1. First, ask clarifying questions to understand the specific requirements (client name, project scope, timeline, pricing, special terms)
-2. Once you have enough information, generate a professional document
-3. Format the document clearly with sections and proper legal language
-4. Be thorough but concise
+## WHEN USER REQUESTS A DOCUMENT:
 
-Available template types: Web Development Agreement, AI Agent Agreement, Marketing Agreement, NDA
+**Step 1 - Identify Document Type:**
+- AI Agent Agreement (voice agents, chatbots, automation)
+- Web Development Agreement (websites, web apps)
+- Marketing Agreement (social media, digital marketing)
+- NDA (confidentiality agreements)
 
-Always maintain a professional tone and ensure documents are comprehensive.`;
+**Step 2 - Ask Required Information:**
+Ask these questions ONE AT A TIME in a conversational way:
+
+1. "What's the client's company name and registration number?"
+2. "Who is the contact person and their email?"
+3. "Describe the project scope - what are we building/doing?"
+4. "What's the timeline? (Start date and duration)"
+5. "What's the pricing structure?"
+   - Fixed: "Total amount and deposit percentage?"
+   - Monthly: "Monthly fee and any setup fee?"
+   - Milestone: "What are the milestones and amounts?"
+6. "Any special terms or requirements?"
+
+**Step 3 - Generate Document:**
+Once you have all information, generate a COMPLETE professional agreement with:
+- All sections filled (no [BRACKETS] placeholders)
+- Cyprus jurisdiction and governing law
+- All amounts stated as "+ VAT"
+- Qualia Solutions branding throughout
+
+**Step 4 - Format for Print:**
+Format the final document with clear section headers for easy printing:
+- Use "---" for page breaks between major sections
+- Bold section headers
+- Numbered clauses
+- Professional formatting
+
+COMPANY INFO:
+- Legal Name: Qualio Solutions LTD
+- Registration: 1109346
+- Address: Nicosia, Lefkosia 1011, Cyprus
+- Founder: Fawzi Goussous
+- Email: info@qualiasolutions.net
+- Phone: +357 99111668
+
+Available templates: AI Agent, Web Development, Marketing, NDA`;
 
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -154,6 +190,63 @@ Always maintain a professional tone and ensure documents are comprehensive.`;
       navigator.clipboard.writeText(lastAssistant.content);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const printDocument = () => {
+    const lastAssistant = messages.filter((m) => m.role === 'assistant').pop();
+    if (lastAssistant) {
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        // Convert markdown-style formatting to HTML
+        const content = lastAssistant.content
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+          .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+          .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+          .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+          .replace(/^---$/gm, '<hr style="page-break-after: always; border: none;">')
+          .replace(/\n/g, '<br>');
+
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Qualia Solutions - Document</title>
+            <style>
+              body {
+                font-family: Georgia, 'Times New Roman', serif;
+                max-width: 800px;
+                margin: 40px auto;
+                padding: 20px;
+                line-height: 1.6;
+                color: #333;
+              }
+              h1, h2, h3 {
+                font-family: Arial, Helvetica, sans-serif;
+                color: #000;
+              }
+              h2 {
+                border-bottom: 2px solid #000;
+                padding-bottom: 5px;
+                margin-top: 30px;
+              }
+              strong {
+                font-weight: bold;
+              }
+              @media print {
+                body {
+                  margin: 0;
+                  padding: 20px;
+                }
+              }
+            </style>
+          </head>
+          <body>${content}</body>
+          </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+      }
     }
   };
 
@@ -238,13 +331,22 @@ Always maintain a professional tone and ensure documents are comprehensive.`;
           >
             Clear conversation
           </button>
-          <button
-            onClick={copyLastMessage}
-            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          >
-            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? 'Copied' : 'Copy last response'}
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={printDocument}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <Printer className="h-3 w-3" />
+              Print / Download PDF
+            </button>
+            <button
+              onClick={copyLastMessage}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+          </div>
         </div>
       )}
 
