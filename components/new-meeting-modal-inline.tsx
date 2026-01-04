@@ -128,11 +128,9 @@ export function NewMeetingModalInline({
     }
   }, [open]);
 
-  // Auto-generate title based on meeting type
+  // Auto-generate title based on client selection only
   useEffect(() => {
-    if (meetingType === 'internal') {
-      setTitle('Internal Meeting');
-    } else if (selectedClientId) {
+    if (meetingType === 'client' && selectedClientId) {
       const client = clients.find((c) => c.id === selectedClientId);
       if (client) {
         setTitle(`Meeting with ${client.display_name}`);
