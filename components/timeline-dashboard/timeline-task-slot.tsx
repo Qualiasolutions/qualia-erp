@@ -53,7 +53,7 @@ export const TimelineTaskSlot = memo(function TimelineTaskSlot({
     <div
       onClick={onClick}
       className={cn(
-        'absolute bottom-2 top-2 cursor-pointer rounded-lg border px-2.5 py-1.5',
+        'absolute bottom-2.5 top-2.5 cursor-pointer rounded-lg border px-2.5 py-2',
         'transition-all duration-150 ease-out',
         'hover:translate-y-[-1px] hover:shadow-md',
         style.base,
