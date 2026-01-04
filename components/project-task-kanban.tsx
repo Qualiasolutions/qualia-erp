@@ -299,21 +299,39 @@ const ResourceCard = memo(function ResourceCard({
   const linkUrl = extractFirstUrl(task.description);
   const hasLink = !!linkUrl;
 
+  // Handle container click to open link
+  const handleContainerClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Don't navigate if clicking on interactive elements
+      const target = e.target as HTMLElement;
+      if (target.closest('button') || target.closest('[data-drag-handle]')) {
+        return;
+      }
+      if (hasLink && linkUrl) {
+        window.open(linkUrl, '_blank', 'noopener,noreferrer');
+      }
+    },
+    [hasLink, linkUrl]
+  );
+
   return (
     <div
       ref={setNodeRef}
       style={style}
+      onClick={handleContainerClick}
       className={cn(
         'group relative flex items-center gap-3 rounded-xl border bg-card/90 px-4 py-3 backdrop-blur-sm transition-all',
         'hover:border-primary/40 hover:shadow-md',
         config.borderColor,
-        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50'
+        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50',
+        hasLink && 'cursor-pointer'
       )}
     >
       {/* Drag Handle */}
       <div
         {...attributes}
         {...listeners}
+        data-drag-handle
         className="cursor-grab rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary active:cursor-grabbing group-hover:opacity-100"
       >
         <GripVertical className="h-4 w-4" />
