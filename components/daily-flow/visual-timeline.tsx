@@ -97,11 +97,11 @@ const TimelineMeeting = memo(function TimelineMeeting({
     <button
       onClick={onClick}
       className={cn(
-        'absolute top-8 flex h-9 items-center gap-1.5 rounded px-2.5 text-xs font-medium transition-all',
-        'min-w-[60px] overflow-hidden whitespace-nowrap',
+        'absolute top-6 flex h-7 items-center gap-1 rounded px-2 text-[11px] font-medium transition-all',
+        'min-w-[50px] overflow-hidden whitespace-nowrap',
         isLive
           ? 'bg-foreground text-background'
-          : 'border border-border bg-card text-foreground hover:border-foreground/20'
+          : 'border border-border/60 bg-card text-foreground hover:border-foreground/20 dark:border-border'
       )}
       style={{
         left: `${left}%`,
@@ -111,7 +111,7 @@ const TimelineMeeting = memo(function TimelineMeeting({
     >
       <Video className="h-3 w-3 shrink-0" />
       <span className="truncate">{meeting.title}</span>
-      {meeting.meeting_link && <ExternalLink className="h-3 w-3 shrink-0 opacity-40" />}
+      {meeting.meeting_link && <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-40" />}
     </button>
   );
 });
@@ -159,10 +159,10 @@ export const VisualTimeline = memo(function VisualTimeline({
 
   return (
     <div className="relative">
-      {/* Timeline container */}
-      <div className="relative h-20 overflow-visible rounded border border-border/60 bg-card dark:border-border">
+      {/* Timeline container - reduced height for Things 3 style */}
+      <div className="relative h-14 overflow-visible rounded-lg border border-border/60 bg-card dark:border-border">
         {/* Time markers */}
-        <div className="absolute inset-x-4 top-0 flex h-6 items-center border-b border-border/60 dark:border-border">
+        <div className="absolute inset-x-4 top-0 flex h-5 items-center border-b border-border/60 dark:border-border">
           {TIME_MARKERS.map((marker, index) => {
             const position = getTimePosition(marker.minutes);
             const isFirst = index === 0;
@@ -187,13 +187,13 @@ export const VisualTimeline = memo(function VisualTimeline({
         </div>
 
         {/* Grid lines */}
-        <div className="absolute inset-x-4 bottom-0 top-6">
+        <div className="absolute inset-x-4 bottom-0 top-5">
           {TIME_MARKERS.map((marker) => {
             const position = getTimePosition(marker.minutes);
             return (
               <div
                 key={marker.time}
-                className="absolute bottom-0 top-0 w-px bg-border/60 dark:bg-border"
+                className="absolute bottom-0 top-0 w-px bg-border/40 dark:bg-border/60"
                 style={{ left: `${position}%` }}
               />
             );
@@ -203,13 +203,13 @@ export const VisualTimeline = memo(function VisualTimeline({
         {/* Elapsed time background */}
         {isWithinHours && (
           <div
-            className="absolute bottom-0 left-4 top-6 bg-muted/30"
+            className="absolute bottom-0 left-4 top-5 bg-muted/20"
             style={{ width: `calc(${nowPosition}% - 16px)` }}
           />
         )}
 
         {/* Meetings */}
-        <div className="absolute inset-x-4 bottom-2 top-0">
+        <div className="absolute inset-x-4 bottom-1.5 top-0">
           {positionedMeetings.map(({ meeting, left, width }) => (
             <TimelineMeeting
               key={meeting.id}
@@ -228,7 +228,7 @@ export const VisualTimeline = memo(function VisualTimeline({
         </div>
 
         {/* NOW indicator */}
-        <div className="absolute inset-x-4 bottom-0 top-6">
+        <div className="absolute inset-x-4 bottom-0 top-5">
           <NowIndicator position={nowPosition} isVisible={isWithinHours} />
         </div>
       </div>

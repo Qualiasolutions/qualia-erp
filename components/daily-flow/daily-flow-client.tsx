@@ -1,19 +1,24 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-import { RefreshCw, Video, Loader2 } from 'lucide-react';
+import { useState, useTransition, useEffect, useCallback, useMemo } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useDailyFlow, invalidateDailyFlow } from '@/lib/swr';
 import { createInstantMeeting } from '@/app/actions';
+import { quickUpdateTask } from '@/app/actions/inbox';
+import { DailyFlowHeader } from './daily-flow-header';
 import { VisualTimeline } from './visual-timeline';
-import { TeamLanes } from './team-lanes';
+import { YourFocusSection } from './your-focus-section';
+import { TeamSummary } from './team-summary';
+import { CollapsibleSection } from './collapsible-section';
 import { ProjectFocusBar } from './project-focus-bar';
+import { CommandPalette } from './command-palette';
+import { KeyboardShortcutsDialog, useKeyboardShortcuts } from './keyboard-shortcuts';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import type { Task } from '@/app/actions/inbox';
 
 /**
- * Daily Flow - unified team dashboard
+ * Daily Flow - Things 3 inspired unified dashboard
+ * Clean, focused, keyboard-driven
  */
 export function DailyFlowClient() {
   const {
@@ -30,11 +35,43 @@ export function DailyFlowClient() {
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskIndex, setSelectedTaskIndex] = useState(0);
+  const [focusMode, setFocusMode] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Get current user's sorted tasks for keyboard navigation
+  const myTasks = useMemo(() => {
+    if (!currentUserId) return [];
+    return tasks
+      .filter(
+        (t) =>
+          t.assignee_id === currentUserId && (t.status === 'Todo' || t.status === 'In Progress')
+      )
+      .sort((a, b) => {
+        // In Progress first
+        if (a.status === 'In Progress' && b.status !== 'In Progress') return -1;
+        if (b.status === 'In Progress' && a.status !== 'In Progress') return 1;
+        // Then by priority
+        const priorityOrder: Record<string, number> = {
+          Urgent: 0,
+          High: 1,
+          Medium: 2,
+          Low: 3,
+          'No Priority': 4,
+        };
+        return (
+          (priorityOrder[a.priority || 'No Priority'] ?? 4) -
+          (priorityOrder[b.priority || 'No Priority'] ?? 4)
+        );
+      });
+  }, [tasks, currentUserId]);
+
+  // Handlers
   const handleStartMeeting = async () => {
     startTransition(async () => {
       const result = await createInstantMeeting();
@@ -48,26 +85,91 @@ export function DailyFlowClient() {
     });
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     revalidate();
-  };
+  }, [revalidate]);
 
-  const handleTaskModalClose = () => {
+  const handleTaskModalClose = useCallback(() => {
     setSelectedTask(null);
     invalidateDailyFlow(true);
-  };
+  }, []);
 
-  const handleAssignTask = () => {
-    window.location.href = '/projects';
-  };
+  const handleToggleFocus = useCallback(() => {
+    setFocusMode((prev) => !prev);
+  }, []);
 
-  const handleNeedHelp = () => {
-    // Placeholder for help system
-  };
+  const handleOpenCommandPalette = useCallback(() => {
+    setCommandOpen(true);
+  }, []);
 
-  const handleMeetingClick = () => {
-    // Placeholder for meeting details
-  };
+  const handleOpenShortcuts = useCallback(() => {
+    setShortcutsOpen(true);
+  }, []);
+
+  const handleNavigateUp = useCallback(() => {
+    setSelectedTaskIndex((prev) => Math.max(0, prev - 1));
+  }, []);
+
+  const handleNavigateDown = useCallback(() => {
+    setSelectedTaskIndex((prev) => Math.min(myTasks.length - 1, prev + 1));
+  }, [myTasks.length]);
+
+  const handleSelectTask = useCallback(() => {
+    if (myTasks[selectedTaskIndex]) {
+      setSelectedTask(myTasks[selectedTaskIndex]);
+    }
+  }, [myTasks, selectedTaskIndex]);
+
+  const handleCompleteTask = useCallback(async () => {
+    const task = myTasks[selectedTaskIndex];
+    if (task) {
+      await quickUpdateTask(task.id, { status: 'Done' });
+      invalidateDailyFlow(true);
+    }
+  }, [myTasks, selectedTaskIndex]);
+
+  const handleCyclePriority = useCallback(async () => {
+    const task = myTasks[selectedTaskIndex];
+    if (!task) return;
+
+    type PriorityType = 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
+    const priorityCycle: Record<PriorityType, PriorityType> = {
+      Urgent: 'High',
+      High: 'Medium',
+      Medium: 'Low',
+      Low: 'No Priority',
+      'No Priority': 'Urgent',
+    };
+    const currentPriority = (task.priority as PriorityType) || 'No Priority';
+    const newPriority: PriorityType = priorityCycle[currentPriority] || 'Urgent';
+
+    await quickUpdateTask(task.id, { priority: newPriority });
+    invalidateDailyFlow(true);
+  }, [myTasks, selectedTaskIndex]);
+
+  const handleSnooze = useCallback(async () => {
+    const task = myTasks[selectedTaskIndex];
+    if (!task) return;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    await quickUpdateTask(task.id, { due_date: tomorrow.toISOString() });
+    invalidateDailyFlow(true);
+  }, [myTasks, selectedTaskIndex]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onNavigateUp: handleNavigateUp,
+    onNavigateDown: handleNavigateDown,
+    onSelect: handleSelectTask,
+    onComplete: handleCompleteTask,
+    onPriorityCycle: handleCyclePriority,
+    onSnooze: handleSnooze,
+    onToggleFocus: handleToggleFocus,
+    onOpenCommandPalette: handleOpenCommandPalette,
+    onOpenShortcuts: handleOpenShortcuts,
+    onRefresh: handleRefresh,
+  });
 
   if (!mounted || isLoading) {
     return (
@@ -77,105 +179,89 @@ export function DailyFlowClient() {
     );
   }
 
-  const today = new Date();
-  const dateString = format(today, 'EEEE, MMMM d');
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold text-foreground">{dateString}</h1>
-          <div className="mt-1 flex items-center gap-3">
-            {teamMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground"
-              >
-                <span
-                  className={cn(
-                    'h-1.5 w-1.5 rounded-full',
-                    member.colorKey === 'fawzi' ? 'bg-qualia-500' : 'bg-indigo-500'
-                  )}
-                />
-                {member.full_name || member.email.split('@')[0]}
-              </div>
-            ))}
-          </div>
-        </div>
+      <DailyFlowHeader
+        isValidating={isValidating}
+        isPending={isPending}
+        focusMode={focusMode}
+        onRefresh={handleRefresh}
+        onStartMeeting={handleStartMeeting}
+        onToggleFocus={handleToggleFocus}
+        onOpenCommandPalette={handleOpenCommandPalette}
+        onOpenShortcuts={handleOpenShortcuts}
+      />
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleRefresh}
-            disabled={isValidating}
-            className={cn(
-              'rounded border border-border p-2 transition-colors hover:bg-muted',
-              isValidating && 'opacity-50'
-            )}
-            aria-label="Refresh"
-          >
-            <RefreshCw
-              className={cn('h-3.5 w-3.5 text-muted-foreground', isValidating && 'animate-spin')}
-            />
-          </button>
-
-          <button
-            onClick={handleStartMeeting}
-            disabled={isPending}
-            className="flex items-center gap-2 rounded bg-foreground px-3.5 py-2 text-xs font-medium text-background transition-colors hover:bg-foreground/90 disabled:opacity-50"
-          >
-            {isPending ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Video className="h-3.5 w-3.5" />
-            )}
-            New Meeting
-          </button>
-        </div>
-      </div>
-
-      {/* Timeline */}
+      {/* Timeline - Compact */}
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Timeline
           </h2>
           {meetings.length > 0 && (
-            <span className="text-[10px] text-muted-foreground">{meetings.length} scheduled</span>
+            <span className="text-[10px] text-muted-foreground">
+              {meetings.length} meeting{meetings.length !== 1 ? 's' : ''}
+            </span>
           )}
         </div>
-        <VisualTimeline meetings={meetings} onMeetingClick={handleMeetingClick} />
+        <VisualTimeline meetings={meetings} />
       </section>
 
-      {/* Team Lanes */}
-      <section>
-        <h2 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Workload
-        </h2>
-        <TeamLanes
+      {/* Your Focus - Primary section */}
+      <YourFocusSection
+        tasks={tasks}
+        currentUserId={currentUserId}
+        selectedTaskId={myTasks[selectedTaskIndex]?.id}
+        onTaskSelect={(task) => {
+          const index = myTasks.findIndex((t) => t.id === task.id);
+          if (index >= 0) setSelectedTaskIndex(index);
+        }}
+        onTaskClick={setSelectedTask}
+      />
+
+      {/* Team Schedule - Collapsible, hidden in focus mode */}
+      {!focusMode && (
+        <TeamSummary
           tasks={tasks}
           teamMembers={teamMembers}
           currentUserId={currentUserId}
           onTaskClick={setSelectedTask}
-          onAssignTask={handleAssignTask}
-          onNeedHelp={handleNeedHelp}
-        />
-      </section>
-
-      {/* Project Focus */}
-      <section>
-        <h2 className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Focus
-        </h2>
-        <ProjectFocusBar
-          project={focusProject}
-          tasks={tasks}
-          meetings={meetings}
-          onSwitchProject={() => {
+          onAssignTask={() => {
             window.location.href = '/projects';
           }}
+          defaultOpen={false}
         />
-      </section>
+      )}
+
+      {/* Focus Project - Collapsible, hidden in focus mode */}
+      {!focusMode && (
+        <CollapsibleSection title="Focus Project" badge={focusProject?.name} defaultOpen={false}>
+          <ProjectFocusBar
+            project={focusProject}
+            tasks={tasks}
+            meetings={meetings}
+            onSwitchProject={() => {
+              window.location.href = '/projects';
+            }}
+          />
+        </CollapsibleSection>
+      )}
+
+      {/* Command Palette */}
+      <CommandPalette
+        open={commandOpen}
+        onOpenChange={setCommandOpen}
+        tasks={tasks}
+        meetings={meetings}
+        onTaskSelect={setSelectedTask}
+        onRefresh={handleRefresh}
+        onToggleFocus={handleToggleFocus}
+        onStartMeeting={handleStartMeeting}
+      />
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
 
       {/* Edit Task Modal */}
       {selectedTask && (
