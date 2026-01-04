@@ -134,16 +134,22 @@ COMPANY INFO:
 
 Available templates: AI Agent, Web Development, Marketing, NDA`;
 
+      // Build messages - prepend context to first user message if no history
+      const chatMessages =
+        messages.length === 0
+          ? [{ role: 'user' as const, content: `${systemContext}\n\nUser request: ${userMessage}` }]
+          : [
+              ...messages.map((m) => ({
+                role: m.role as 'user' | 'assistant',
+                content: m.content,
+              })),
+              { role: 'user' as const, content: userMessage },
+            ];
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: systemContext },
-            ...messages.map((m) => ({ role: m.role, content: m.content })),
-            { role: 'user', content: userMessage },
-          ],
-        }),
+        body: JSON.stringify({ messages: chatMessages }),
       });
 
       if (!response.ok) throw new Error('Failed');
