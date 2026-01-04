@@ -172,7 +172,7 @@ Available templates: AI Agent, Web Development, Marketing, NDA`;
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', content: 'Please sign in to use the document generator.' },
+        { role: 'assistant', content: 'Something went wrong. Please try again.' },
       ]);
     } finally {
       setIsLoading(false);
