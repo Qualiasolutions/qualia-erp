@@ -63,8 +63,8 @@ interface DayViewProps {
 }
 
 const HOUR_HEIGHT = 55; // pixels per hour (optimized to fit on one page)
-const START_HOUR = 9; // 9 AM
-const END_HOUR = 21; // 8 PM (inclusive, shows 9am-8pm)
+const START_HOUR = 7; // 7 AM
+const END_HOUR = 21; // 8 PM (inclusive, shows 7am-8pm)
 
 // Get timezone from localStorage or detect from browser
 function useTimezone() {

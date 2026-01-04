@@ -1,16 +1,24 @@
 /**
- * Gemini 2.5 Flash Client Configuration
- * FREE tier - 1M tokens/min input, 65K tokens output
+ * AI Client Configuration
+ * Uses OpenRouter with Gemini 3 Flash Preview (December 2025)
  */
 
+import { createOpenAI } from '@ai-sdk/openai';
 import { google } from '@ai-sdk/google';
 
-// Gemini 2.5 Flash - FREE tier, excellent quality
-// Rate limits: 1,000,000 tokens/minute (input), 65,536 tokens (output)
-export const geminiModel = google('gemini-2.5-flash-preview-05-20');
+// OpenRouter client for Gemini 3 Flash Preview
+const openrouter = createOpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: 'https://openrouter.ai/api/v1',
+});
 
-// Alternative for simpler tasks (faster, lower cost if on paid tier)
-export const geminiFlashModel = google('gemini-2.0-flash');
+// Gemini 3 Flash Preview - December 2025 release
+// Near Pro-level reasoning with lower latency
+// 1M token context window
+export const geminiModel = openrouter('google/gemini-3-flash-preview');
 
-// Model for embeddings (used for RAG/knowledge base)
+// Same model for simpler tasks
+export const geminiFlashModel = openrouter('google/gemini-3-flash-preview');
+
+// Keep Google embeddings for RAG (superior quality)
 export const geminiEmbeddingModel = google.textEmbeddingModel('text-embedding-004');

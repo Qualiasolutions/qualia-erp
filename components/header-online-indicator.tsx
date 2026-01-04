@@ -88,12 +88,6 @@ function OnlineIndicatorContent({
           className="group flex items-center gap-2 rounded-lg px-2 py-1.5 transition-all duration-200 hover:bg-qualia-500/10"
           title={`${onlineUsers.length} online`}
         >
-          {/* Online indicator dot */}
-          <div className="relative flex items-center">
-            <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" />
-            <span className="absolute h-2 w-2 animate-ping rounded-full bg-emerald-500/50" />
-          </div>
-
           {/* Stacked avatars */}
           <div className="flex -space-x-1.5">
             {displayUsers.map((user) => (
@@ -148,12 +142,9 @@ function OnlineIndicatorContent({
                         <span className="ml-1 font-normal text-muted-foreground">(you)</span>
                       )}
                     </p>
-                    <div className="flex items-center gap-1">
-                      <span className={cn('h-1.5 w-1.5 rounded-full', statusColors[user.status])} />
-                      <span className="text-[10px] capitalize text-muted-foreground">
-                        {user.status}
-                      </span>
-                    </div>
+                    <span className="text-[10px] capitalize text-muted-foreground">
+                      {user.status}
+                    </span>
                   </div>
                 </div>
               ))

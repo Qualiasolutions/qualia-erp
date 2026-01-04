@@ -9,7 +9,6 @@ import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
-import { WorkspaceChatWrapper } from '@/components/workspace-chat-wrapper';
 import { AdminProvider } from '@/components/admin-provider';
 import { HeaderActions } from '@/components/header-actions';
 
@@ -137,7 +136,6 @@ export default function RootLayout({
                     </header>
                     <main className="flex-1 overflow-y-auto">{children}</main>
                   </div>
-                  <WorkspaceChatWrapper />
                 </SidebarProvider>
               </WorkspaceProvider>
             </AdminProvider>
