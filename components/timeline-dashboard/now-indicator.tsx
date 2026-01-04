@@ -5,7 +5,7 @@ import { getCurrentTimePosition } from '@/lib/timeline-utils';
 
 /**
  * Refined current time indicator
- * Elegant design with subtle glow effect
+ * Shows position line only, no time label
  */
 export const NowIndicator = memo(function NowIndicator() {
   const [position, setPosition] = useState<number | null>(null);
