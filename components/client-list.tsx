@@ -11,7 +11,6 @@ import {
   ArrowUpDown,
   UserCheck,
   UserMinus,
-  Skull,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,7 +106,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
   const groupedClients = useMemo(() => {
     const active = searchFiltered.filter((c) => c.lead_status === 'active_client');
     const inactive = searchFiltered.filter((c) => c.lead_status === 'inactive_client');
-    const dead = searchFiltered.filter((c) => c.lead_status === 'dead_lead');
 
     const sortGroup = (clients: Client[]) =>
       clients.sort((a, b) => {
@@ -121,13 +119,11 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
     return {
       active: sortGroup(active),
       inactive: sortGroup(inactive),
-      dead: sortGroup(dead),
     };
   }, [searchFiltered]);
 
   const activeCount = groupedClients.active.length;
   const inactiveCount = groupedClients.inactive.length;
-  const deadLeadCount = groupedClients.dead.length;
 
   async function handleDelete(id: string) {
     if (!confirm('Are you sure you want to delete this client?')) return;
@@ -186,13 +182,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
               <span className="font-medium text-foreground">{inactiveCount}</span>
               <span className="text-muted-foreground">inactive</span>
             </div>
-            {deadLeadCount > 0 && (
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-500" />
-                <span className="font-medium text-foreground">{deadLeadCount}</span>
-                <span className="text-muted-foreground">dead</span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -288,7 +277,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
           )}
         </div>
       ) : viewMode === 'columns' ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Active Column */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 px-1">
@@ -343,42 +332,6 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
                 </div>
               ) : (
                 groupedClients.inactive.map((client, index) => (
-                  <div
-                    key={client.id}
-                    className="slide-in"
-                    style={{ animationDelay: `${index * 30}ms` }}
-                  >
-                    <ClientCard
-                      client={client}
-                      onDelete={handleDelete}
-                      onChangeStatus={handleChangeStatus}
-                      onOpenDetail={handleOpenDetail}
-                      isPending={pendingId === client.id}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Dead Leads Column */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 px-1">
-              <div className="flex h-6 w-6 items-center justify-center rounded-md bg-red-500/10">
-                <Skull className="h-3.5 w-3.5 text-red-500" />
-              </div>
-              <span className="text-sm font-semibold text-foreground">Dead Leads</span>
-              <span className="ml-auto rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
-                {groupedClients.dead.length}
-              </span>
-            </div>
-            <div className="space-y-2">
-              {groupedClients.dead.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
-                  <p className="text-xs text-muted-foreground">No dead leads</p>
-                </div>
-              ) : (
-                groupedClients.dead.map((client, index) => (
                   <div
                     key={client.id}
                     className="slide-in"

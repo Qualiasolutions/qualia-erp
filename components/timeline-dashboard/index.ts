@@ -4,7 +4,6 @@
 export { TimelineDashboardClient } from './timeline-dashboard-client';
 export { TimelineHeader } from './timeline-header';
 export { DualTimeline } from './dual-timeline';
-export { TimelineLane } from './timeline-lane';
 export { TimelineGrid } from './timeline-grid';
 export { NowIndicator } from './now-indicator';
 export { TimelineMeetingBlock } from './timeline-meeting-block';
