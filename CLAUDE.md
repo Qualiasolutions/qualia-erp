@@ -42,8 +42,8 @@ All database mutations use server actions. Returns `ActionResult` pattern:
 type ActionResult = { success: boolean; error?: string; data?: unknown };
 ```
 
-Main actions file (~2600 lines) handles: issues, projects, teams, clients, meetings, milestones.
-Specialized actions in `app/actions/`: health, inbox, learning, payments, shared (reusable utilities), index (barrel exports).
+Main actions file (~2800 lines) handles: issues, projects, teams, clients, meetings, milestones.
+Specialized actions in `app/actions/`: daily-flow, health, inbox, learning, payments, shared (reusable utilities), timeline-dashboard, index (barrel exports).
 
 ### Task System
 
