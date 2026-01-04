@@ -30,7 +30,7 @@ export const TimelineMeetingBlock = memo(function TimelineMeetingBlock({
   return (
     <div
       className={cn(
-        'group absolute bottom-2.5 top-2.5 overflow-hidden rounded-lg border transition-all duration-150',
+        'group absolute bottom-2 top-4 rounded-lg border transition-all duration-150',
         isLive
           ? 'border-qualia-500/50 bg-qualia-500/15 shadow-sm shadow-qualia-500/10 ring-1 ring-qualia-500/20'
           : 'border-border/60 bg-background/80 hover:border-border hover:bg-muted/60 hover:shadow-sm',
@@ -114,10 +114,10 @@ export const TimelineMeetingBlock = memo(function TimelineMeetingBlock({
         </div>
       )}
 
-      {/* Live text badge */}
+      {/* Live text badge - inside container */}
       {isLive && (
-        <div className="absolute left-2.5 top-0 -translate-y-1/2">
-          <span className="rounded-full bg-qualia-500 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white shadow-sm">
+        <div className="absolute left-2 top-1">
+          <span className="rounded bg-qualia-500 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-white shadow-sm">
             Live
           </span>
         </div>

@@ -7,7 +7,6 @@ import { USER_COLORS } from '@/lib/color-constants';
 import { TimelineGrid } from './timeline-grid';
 import { NowIndicator } from './now-indicator';
 import { TimelineMeetingBlock } from './timeline-meeting-block';
-import { TimelineTaskSlot } from './timeline-task-slot';
 import { TaskListSidebar } from './task-list-sidebar';
 import { autoScheduleTasks } from '@/lib/timeline-utils';
 import type { TimelineMeeting, TimelineTask, TeamMember } from '@/app/actions/timeline-dashboard';
@@ -166,30 +165,12 @@ export const DualTimeline = memo(function DualTimeline({
           </div>
         </div>
 
-        {/* Timeline Grid - enhanced styling */}
-        {/* Height: 3 lanes × h-28 (112px) + h-7 footer (28px) = 364px */}
-        <div className="relative h-[364px] bg-gradient-to-b from-background to-muted/20">
+        {/* Timeline Grid - single meeting row */}
+        {/* Height: 1 row h-24 (96px) + h-7 footer (28px) = 124px */}
+        <div className="relative h-[124px] bg-gradient-to-b from-background to-muted/20">
           <TimelineGrid>
-            {/* Fawzi's task slots - top lane */}
-            <div className="relative h-28">
-              {fawziScheduled.length === 0 ? (
-                <div className="flex h-full items-center justify-center">
-                  <span className="text-xs text-muted-foreground/50">No scheduled tasks</span>
-                </div>
-              ) : (
-                fawziScheduled.map((st) => (
-                  <TimelineTaskSlot
-                    key={st.task.id}
-                    scheduledTask={st}
-                    colorKey="fawzi"
-                    onClick={() => onTaskClick?.(st.task)}
-                  />
-                ))
-              )}
-            </div>
-
-            {/* Unified Meeting Line - center */}
-            <div className="relative h-28 border-y border-border/40 bg-muted/30">
+            {/* Single Meeting Row */}
+            <div className="relative h-24">
               {meetings.length === 0 ? (
                 <div className="flex h-full items-center justify-center">
                   <span className="text-xs text-muted-foreground/50">No meetings scheduled</span>
@@ -201,25 +182,7 @@ export const DualTimeline = memo(function DualTimeline({
               )}
             </div>
 
-            {/* Moayad's task slots - bottom lane */}
-            <div className="relative h-28">
-              {moayadScheduled.length === 0 ? (
-                <div className="flex h-full items-center justify-center">
-                  <span className="text-xs text-muted-foreground/50">No scheduled tasks</span>
-                </div>
-              ) : (
-                moayadScheduled.map((st) => (
-                  <TimelineTaskSlot
-                    key={st.task.id}
-                    scheduledTask={st}
-                    colorKey="moayad"
-                    onClick={() => onTaskClick?.(st.task)}
-                  />
-                ))
-              )}
-            </div>
-
-            {/* Now indicator spans all lanes */}
+            {/* Now indicator */}
             <NowIndicator />
           </TimelineGrid>
         </div>
