@@ -1,384 +1,118 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Qualia Internal Suite - Project management platform built with Next.js 16+, Supabase, and AI (Gemini 2.5 Flash chat, VAPI voice).
 
-## Project Overview
-
-Qualia Internal Suite is a project management platform for Qualia Solutions. Built with Next.js 16+ (App Router), Supabase, and AI capabilities including chat (Gemini 2.5 Flash) and voice assistant (VAPI).
-
-**Design Philosophy**: Clean, professional UI inspired by Linear/Plane. No flashy animations, gradients, or gaming-style effects. Simple borders, subtle backgrounds, organized typography.
+**Design**: Clean, professional UI like Linear/Plane. No flashy effects.
 
 ## Commands
 
 ```bash
-npm run dev          # Start development server (localhost:3000)
-npm run build        # Production build
-npm run lint         # ESLint
-npm test             # Jest tests
-npm run test:watch   # Jest watch mode
-npm run test:coverage # Coverage report
-npx tsc --noEmit     # Type check without build
+npm run dev       # Dev server (localhost:3000)
+npm run build     # Production build
+npm run lint      # ESLint
+npm test          # Jest tests
 ```
 
 ## Tech Stack
 
 - **Framework**: Next.js 16+ (App Router, React 19, TypeScript)
-- **Database/Auth**: Supabase (PostgreSQL with pgvector for RAG)
-- **Styling**: Tailwind CSS + shadcn/ui (Radix primitives)
-- **AI**: Gemini 2.5 Flash (chat via `lib/ai/ai-core.ts`), VAPI (voice), Google AI (embeddings)
-- **State**: SWR for client caching (60s dedup, 30s auto-refresh for tasks with exponential backoff)
-- **Drag & Drop**: @dnd-kit for kanban boards
-- **Virtualization**: @tanstack/react-virtual for large lists
-- **Testing**: Jest + React Testing Library
-- **Monitoring**: Sentry (production)
+- **Database**: Supabase (PostgreSQL, pgvector for RAG)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State**: SWR (30s auto-refresh for tasks)
+- **AI**: Gemini 2.5 Flash, VAPI voice, Google embeddings
 
 ## Architecture
 
-### Server Actions (`app/actions.ts` + `app/actions/*.ts`)
+### Server Actions
 
-All database mutations use server actions. Returns `ActionResult` pattern:
+All mutations in `app/actions.ts` + `app/actions/*.ts`. Return `ActionResult`:
 
 ```typescript
 type ActionResult = { success: boolean; error?: string; data?: unknown };
 ```
-
-Main actions file (~2800 lines) handles: issues, projects, teams, clients, meetings, milestones.
-Specialized actions in `app/actions/`: daily-flow, health, inbox, learning, payments, shared (reusable utilities), timeline-dashboard, index (barrel exports).
-
-### Task System
-
-Tasks are the unified work item system:
-
-- **Tasks** (`tasks` table): All tasks belong to a project (required via `project_id`)
-- **Inbox visibility**: Tasks can optionally appear in inbox via `show_in_inbox` boolean
-- **Item types**: `task` | `issue` | `note` | `resource` (for kanban categorization)
-- **Status**: Todo → In Progress → Done
-- **Priority**: Hidden from UI, defaults to 'No Priority'
-
-```typescript
-// Task type from app/actions/inbox.ts
-type Task = {
-  id: string;
-  project_id: string; // Required - every task belongs to a project
-  show_in_inbox: boolean; // If true, appears in inbox AND project view
-  status: 'Todo' | 'In Progress' | 'Done';
-  item_type: 'task' | 'issue' | 'note' | 'resource';
-  // ... other fields
-};
-```
-
-### Navigation Structure
-
-Main pages accessible via sidebar: **Today** (Daily Flow) → **Projects** → **Clients** → **Schedule** → **Documents** → **Settings**
-
-Hidden admin pages: `/payments` (restricted to `info@qualiasolutions.net`)
 
 ### Key Directories
 
 ```
 app/
-├── actions.ts              # Main server actions (~2600 lines)
-├── actions/inbox.ts        # Task CRUD, reordering (legacy name, handles all tasks)
-├── actions/daily-flow.ts   # Daily Flow page data aggregation
-├── actions/timeline-dashboard.ts # Timeline dashboard data with phases
-├── daily-flow-page.tsx     # Home page component (Things 3-inspired UI)
-├── api/chat/route.ts       # AI chat agent (15+ tools, 30s timeout)
-├── api/vapi/webhook/       # Voice assistant webhooks
-├── api/embeddings/route.ts # Google AI embeddings
-├── error.tsx               # Global error boundary
-├── clients/                # CRM section
-├── documents/              # Document templates with AI drafting agent
-├── payments/               # Hidden admin-only financial tracking
-├── projects/               # Project management (grouped list view)
-├── schedule/               # Calendar views
-└── team/                   # Redirects to / (Daily Flow)
+├── actions.ts           # Main server actions
+├── actions/inbox.ts     # Task CRUD
+├── api/chat/route.ts    # AI chat (15+ tools)
+├── api/vapi/webhook/    # Voice webhooks
 
 lib/
-├── ai/ai-core.ts           # Shared AI processing (Gemini 2.5 Flash)
-├── ai/gemini-client.ts     # Gemini model configuration
-├── ai/tools/               # AI tools: read-tools.ts, write-tools.ts
-├── ai/system-prompt.ts     # Chat system prompt
-├── supabase/server.ts      # Server-side Supabase client (always create fresh)
-├── supabase/client.ts      # Browser-side Supabase client
-├── swr.ts                  # SWR hooks with tab visibility + immediate invalidation
-├── validation.ts           # Zod schemas for all entities
-├── color-constants.ts      # Centralized Tailwind color classes (task/priority colors)
-├── client-utils.ts         # Client types, status config, helper functions
-├── rate-limit.ts           # API rate limiting utilities
-├── email.ts                # Resend email notifications (admin alerts)
-├── schedule-utils.ts       # Task/meeting filtering for team schedule
-└── vapi-webhook-handlers.ts # Voice tool handlers
+├── validation.ts        # Zod schemas
+├── swr.ts               # SWR hooks + cache invalidation
+├── ai/                  # AI processing
 
 components/
-├── sidebar.tsx             # Main sidebar navigation (Today, Projects, Clients, Schedule, Documents)
-├── daily-flow/             # Daily Flow dashboard components (Things 3-inspired)
-│   ├── daily-flow-client.tsx   # Main dashboard orchestrator
-│   ├── your-focus-section.tsx  # Personal task focus area
-│   ├── team-lanes.tsx          # Team member lanes view
-│   ├── visual-timeline.tsx     # Timeline visualization
-│   ├── command-palette.tsx     # Quick command interface
-│   └── focus-task-card.tsx     # Task card for focus view
-├── mind-of-qualia.tsx      # AI chat assistant widget
-├── project-list-view.tsx   # Projects grouped list (by type: AI, Voice, Web, etc.)
-├── project-task-kanban.tsx # Drag-and-drop task kanban for projects
-├── new-task-modal.tsx      # Create task (requires project, optional inbox)
-├── edit-task-modal.tsx     # Edit task details
-├── task-card.tsx           # Reusable task card with memo optimization
-├── client-list.tsx         # Client list container with view toggle
-├── client-card.tsx         # Memoized client card for grid view
-├── client-row.tsx          # Memoized client row for list view
-└── client-detail-modal.tsx # Client detail/edit modal
+├── ui/                  # shadcn/ui components
+├── daily-flow/          # Dashboard components
+├── project-wizard/      # Project creation wizard
 
-tempaltes/                  # Document templates (source) - note: typo in directory name
-├── SYSTEM_INSTRUCTIONS.md  # AI document generation instructions
-├── TEMPLATE_*.pdf          # Agreement templates (Web Dev, AI Agent, Marketing, NDA)
-└── Qualia_Solutions_Brand_Guidelines.pdf
-
-public/tempaltes/           # Served document templates (downloadable)
-└── *.pdf                   # Same PDFs as above, served via /tempaltes/*.pdf
-
-hooks/
-├── use-presence.tsx        # Real-time presence via Supabase (dev-only logging)
-├── use-speech-recognition.ts # Browser speech recognition
-└── use-voice-synthesis.ts  # Text-to-speech synthesis
-
-types/
-└── database.ts             # Auto-generated Supabase types (Tables<>, Enums<>)
+types/database.ts        # Supabase types (Tables<>, Enums<>)
 ```
 
 ### Data Flow
 
-1. **Server Components**: Direct Supabase queries for initial data
-2. **Client Components**: SWR hooks for caching + auto-refresh for tasks
-3. **Mutations**: Server actions with Zod validation → returns ActionResult → invalidates SWR cache
-4. **Real-time**: SWR auto-refresh every 30s for tasks (not Supabase Realtime)
+1. Server Components → Direct Supabase queries
+2. Client Components → SWR hooks for caching
+3. Mutations → Server actions → Zod validation → ActionResult → Invalidate SWR
 
-### SWR Caching Strategy (`lib/swr.ts`)
+### Cache Invalidation
+
+After mutations, always invalidate with `immediate: true`:
 
 ```typescript
-// Default config - infrequently changing data
-swrConfig = {
-  dedupingInterval: 60000, // 60s dedup window
-  focusThrottleInterval: 5000, // Max 1 refetch per 5s on focus
-  keepPreviousData: true, // Show stale while revalidating
-};
-
-// Auto-refresh config - tasks that change frequently
-autoRefreshConfig = {
-  refreshInterval: () => (isDocumentVisible() ? 30000 : 0), // 30s when visible, stops when hidden
-  dedupingInterval: 15000, // 15s dedup for tasks
-  revalidateOnFocus: true,
-  onErrorRetry, // Exponential backoff (1s, 2s, 4s) on errors
-};
-
-// Immediate invalidation (prevents stale data after mutations)
-invalidateInboxTasks(immediate: true);      // Force refetch now
-invalidateProjectTasks(projectId, immediate: true);
-invalidateTodaysSchedule(immediate: true);  // For team schedule page
-invalidateDailyFlow(immediate: true);       // Daily Flow dashboard
-invalidateTimeline(immediate: true);        // Timeline dashboard
+invalidateInboxTasks(true);
+invalidateProjectTasks(projectId, true);
+invalidateDailyFlow(true);
 ```
 
-### AI Chat Agent (`app/api/chat/route.ts`)
+## Database (Supabase MCP)
 
-Uses Gemini 2.5 Flash with 15+ tools. Max duration: 30s. Shared AI core in `lib/ai/ai-core.ts`.
+**ALWAYS use Supabase MCP tools for database operations** - never write raw SQL in code files.
 
-**Read tools**: getDashboardStats, searchIssues, searchProjects, searchClients, getTeams, getRecentActivity, getUpcomingMeetings, getProjectDetails, getWorkspaceStats, searchKnowledgeBase (RAG)
-
-**Write tools**: createTask, updateTaskStatus, addComment, createClient, createMeeting
-
-RAG search uses `match_documents()` RPC with Google's text-embedding-004 model.
-
-### Voice Assistant (VAPI)
-
-Webhook at `app/api/vapi/webhook/route.ts`. Tool handlers in `lib/vapi-webhook-handlers.ts`.
-
-## Performance Optimizations
-
-### Bundle Size (`next.config.ts`)
-
-- Tree-shaking via `optimizePackageImports` for: lucide-react, date-fns, @radix-ui/react-icons, framer-motion, @dnd-kit/core, @dnd-kit/sortable, @tanstack/react-virtual, zod
-- Note: Keep list to ~8 packages to prevent build hangs with Turbopack
-- `removeConsole: true` in production
-- Source maps disabled in production
-- Bundle analyzer available: `ANALYZE=true npm run build`
-
-### Component Optimization
-
-- `React.memo()` on frequently re-rendered components (TaskCard, ClientCard, ClientRow, ActivityItem)
-- `useMemo()` for expensive computations and style objects
-- Virtualization for large lists (>20 items) using @tanstack/react-virtual
-- Split large components: `client-list.tsx` split into `client-card.tsx`, `client-row.tsx`, `client-detail-modal.tsx`
-
-### Z-Index Scale (`tailwind.config.ts`)
-
-Use semantic z-index values to prevent overlay conflicts:
-
+```bash
+mcp__supabase__list_tables        # View schema
+mcp__supabase__execute_sql        # Run queries
+mcp__supabase__apply_migration    # DDL changes (migrations)
+mcp__supabase__get_logs           # Debug (api, postgres, auth)
+mcp__supabase__get_advisors       # Security/performance checks
 ```
-z-inline-edit: 35, z-dropdown: 40, z-sticky: 45, z-modal: 50, z-popover: 55, z-overlay: 60, z-toast: 70, z-tooltip: 80, z-command: 90, z-max: 100
-```
-
-### Brand Colors
-
-Use `qualia-*` classes for brand colors (teal #00A4AC):
-
-```
-text-qualia-400, bg-qualia-500/10, border-qualia-500/30
-```
-
-### API Optimization
-
-- Chat API timeout reduced to 30s to prevent slow request accumulation
-- Rate limiting: 20 req/min for chat, 100 req/min for API
-- SWR exponential backoff on errors (1s, 2s, 4s delays)
-
-### Database Optimization
-
-RLS policies optimized to use `(SELECT auth.uid())` pattern for better performance:
-
-```sql
--- BAD: Re-evaluates auth.uid() for each row
-USING (profile_id = auth.uid())
-
--- GOOD: Evaluates once per query
-USING (profile_id = (SELECT auth.uid()))
-```
-
-**Indexed foreign keys** for JOIN performance:
-
-- All primary foreign keys have covering indexes
-- Composite indexes for common query patterns (workspace + status, project + sort_order)
-
-**Migrations applied**:
-
-- `add_missing_foreign_key_indexes` - 15 indexes for FK constraints
-- `optimize_rls_policies_initplan` - 40+ policies optimized
-- `consolidate_duplicate_rls_policies` - Removed redundant policies
-
-## Environment Variables
-
-Required in `.env.local`:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-GOOGLE_GENERATIVE_AI_API_KEY=
-NEXT_PUBLIC_VAPI_PUBLIC_KEY=
-VAPI_WEBHOOK_SECRET=
-RESEND_API_KEY=  # Optional: Email notifications to admins
-```
-
-## Database Access
-
-This project has Supabase MCP configured. Use these tools:
-
-- `mcp__supabase__list_tables` - See schema
-- `mcp__supabase__execute_sql` - Run queries
-- `mcp__supabase__apply_migration` - Schema changes (DDL)
-- `mcp__supabase__get_logs` - Debug issues (api, postgres, auth)
-
-Key database types are in `types/database.ts` - use `Tables<'tablename'>` for row types.
 
 ### Key Tables
 
-| Table        | Description                                           |
-| ------------ | ----------------------------------------------------- |
-| `tasks`      | Tasks with `project_id`, `show_in_inbox`, `item_type` |
-| `projects`   | Projects containing tasks                             |
-| `clients`    | CRM clients with lead_status                          |
-| `payments`   | Financial tracking (admin-only via RLS)               |
-| `meetings`   | Scheduled meetings with attendees                     |
-| `activities` | Activity feed (virtualized for performance)           |
-| `profiles`   | User profiles linked to auth.users                    |
-| `workspaces` | Multi-tenant workspaces                               |
-| `documents`  | RAG documents with pgvector embeddings                |
-| `issues`     | Legacy issue system (separate from tasks)             |
+| Table        | Description                                                  |
+| ------------ | ------------------------------------------------------------ |
+| `tasks`      | Tasks with `project_id`, `show_in_inbox`, `item_type`        |
+| `projects`   | Projects (type: web_design, ai_agent, voice_agent, seo, ads) |
+| `clients`    | CRM with `lead_status`                                       |
+| `meetings`   | Scheduled meetings                                           |
+| `profiles`   | User profiles                                                |
+| `workspaces` | Multi-tenant workspaces                                      |
 
-### Supabase Connection
+Types: `Tables<'projects'>`, `Enums<'project_status'>`
 
-- **Project URL**: `https://vbpzaiqovffpsroxaulv.supabase.co`
-- **RLS**: Enabled on all tables (optimized with `(SELECT auth.uid())` pattern)
-- **Realtime**: Available but SWR polling preferred for tasks
+## Styling
 
-### Useful MCP Commands
+**Brand color**: `qualia-*` classes (teal #00A4AC)
 
-```bash
-# View applied migrations
-mcp__supabase__list_migrations
+**Z-index scale**: `z-dropdown: 40`, `z-modal: 50`, `z-popover: 55`, `z-toast: 70`, `z-command: 90`
 
-# Check performance advisors
-mcp__supabase__get_advisors type="performance"
-```
-
-## Testing
-
-```bash
-npm test                    # Run all tests
-npm test -- --watch         # Watch mode
-npm test -- path/to/test    # Single test file
-```
-
-Tests in `__tests__/` mirror source structure. Coverage threshold: 50%.
-
-## Security
-
-Security headers configured in `next.config.ts`:
-
-- CSP with strict connect-src whitelist (Supabase, OpenRouter, Google Generative AI, Vercel Live)
-- X-Frame-Options: DENY
-- HSTS with includeSubDomains
-- Microphone permission allowed (for voice assistant)
-
-## Deployment
-
-- **Production**: https://qualia-erp.vercel.app
-- **Platform**: Vercel (auto-deploy from master)
-- **Build time**: ~9s compile + ~1s static generation (Turbopack)
-
-## CI/CD
-
-GitHub Actions workflows:
-
-- `ci.yml` - Quick lint + type check on PR
-- `ci-cd.yml` - Full pipeline (security, quality, test, build, deploy)
-- `supabase.yml` - Database migration automation
-
-Pre-commit hooks (Husky): ESLint, Prettier, TypeScript checks.
-
-## Error Handling
-
-### Error Boundaries
-
-Next.js App Router error boundaries in `error.tsx` files. Always include `reset()` button and optional page reload.
-
-- `app/error.tsx` - Global fallback for unhandled errors
-- Route-specific `error.tsx` files for contextual messaging
-
-### Server Action Errors
-
-All server actions return `ActionResult`:
-
-```typescript
-type ActionResult = { success: boolean; error?: string; data?: unknown };
-
-// Usage pattern
-const result = await createTask(data);
-if (!result.success) {
-  toast.error(result.error || 'Something went wrong');
-  return;
-}
-```
+Colors from `lib/color-constants.ts` - never hardcode.
 
 ## Conventions
 
 - Server actions return `ActionResult { success, error?, data? }`
-- Use Zod schemas from `lib/validation.ts` for input validation
-- Use types from `types/database.ts` (e.g., `Tables<'projects'>`, `Enums<'project_status'>`)
-- Color classes from `lib/color-constants.ts` - never hardcode colors
-- Client utilities from `lib/client-utils.ts` - status config, getInitials, etc.
-- Components use `'use client'` directive for client-side interactivity
-- Tailwind for styling, no inline CSS
-- Conventional commits: `feat:`, `fix:`, `perf:`, `refactor:`
-- Use `React.memo()` for list item components
-- Invalidate SWR cache after mutations: `invalidateInboxTasks(true)`, `invalidateProjectTasks(id, true)`, `invalidateTodaysSchedule(true)`, `invalidateDailyFlow(true)`, `invalidateTimeline(true)`
-- Wrap development-only console.logs: `if (process.env.NODE_ENV === 'development')`
+- Zod schemas in `lib/validation.ts`
+- `'use client'` for interactive components
+- `React.memo()` for list items
+- Commits: `feat:`, `fix:`, `perf:`, `refactor:`
+
+## Deployment & Access
+
+- **Production**: https://qualia-erp.vercel.app (auto-deploy from master)
+- **GitHub**: github.com/Qualiasolutions (has push access)
+- **Vercel CLI**: Available for deployments and env management
+- Pre-commit: ESLint, Prettier, TypeScript
