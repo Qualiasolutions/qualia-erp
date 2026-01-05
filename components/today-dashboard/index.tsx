@@ -143,7 +143,7 @@ export function TodayDashboard({
         {/* Desktop: 3 columns, Tablet: 2 columns, Mobile: stacked */}
         <div className="flex h-full flex-col gap-4 lg:flex-row lg:gap-6">
           {/* Left column - Meetings Timeline (SWR-connected) */}
-          <div className="h-[400px] shrink-0 lg:h-full lg:w-72">
+          <div className="h-[400px] shrink-0 lg:h-full lg:w-80">
             <MeetingsWrapper initialMeetings={meetings} />
           </div>
 
