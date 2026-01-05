@@ -1,13 +1,7 @@
 'use client';
 
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SelectWithOther } from '@/components/ui/select-with-other';
 import { cn } from '@/lib/utils';
 import {
   Bot,
@@ -153,11 +147,7 @@ function getPlatformsForType(projectType: ProjectType | null): PlatformOption[] 
   return DEV_PLATFORMS;
 }
 
-export function StepConfiguration({
-  data,
-  clients,
-  onChange,
-}: StepConfigurationProps) {
+export function StepConfiguration({ data, clients, onChange }: StepConfigurationProps) {
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -269,25 +259,27 @@ export function StepConfiguration({
         <Label htmlFor="client" className="text-sm font-medium">
           Client <span className="text-qualia-500">*</span>
         </Label>
-        <Select value={data.client_id} onValueChange={(value) => onChange({ client_id: value })}>
-          <SelectTrigger className="h-12 rounded-xl border-border/50 bg-muted/30 px-4 text-base transition-all focus:border-qualia-500 focus:ring-2 focus:ring-qualia-500/20">
-            <SelectValue placeholder="Select a client" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            {clients.map((client) => (
-              <SelectItem
-                key={client.id}
-                value={client.id}
-                className="rounded-lg py-3 focus:bg-qualia-500/10"
-              >
-                <div className="flex items-center gap-2">
-                  <Building className="h-4 w-4 text-muted-foreground" />
-                  {client.display_name || 'Unnamed Client'}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SelectWithOther
+          options={clients.map((client) => ({
+            value: client.id,
+            label: client.display_name || 'Unnamed Client',
+            icon: <Building className="h-4 w-4 text-muted-foreground" />,
+          }))}
+          value={data.custom_client_name || data.client_id}
+          onChange={(value, isCustom) => {
+            if (isCustom) {
+              onChange({ client_id: '', custom_client_name: value });
+            } else {
+              onChange({ client_id: value, custom_client_name: '' });
+            }
+          }}
+          placeholder="Select a client"
+          otherLabel="Other client..."
+          otherPlaceholder="Client name..."
+          icon={<Building className="h-4 w-4 text-muted-foreground" />}
+          className="w-full"
+          triggerClassName="h-12 w-full justify-between rounded-xl border-border/50 bg-muted/30 px-4 text-base"
+        />
         <p className="text-xs text-muted-foreground">
           The client this project is being created for
         </p>

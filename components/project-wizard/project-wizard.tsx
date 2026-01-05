@@ -23,6 +23,7 @@ export interface WizardData {
   project_type: ProjectType | null;
   deployment_platform: DeploymentPlatform | null;
   client_id: string;
+  custom_client_name: string;
 }
 
 interface ProjectWizardProps {
@@ -56,6 +57,7 @@ export function ProjectWizard({
     project_type: null,
     deployment_platform: null,
     client_id: '',
+    custom_client_name: '',
   });
 
   // Set default type when wizard opens with a defaultType
@@ -81,7 +83,7 @@ export function ProjectWizard({
         return (
           wizardData.project_type !== null &&
           wizardData.deployment_platform !== null &&
-          wizardData.client_id.length > 0
+          (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0)
         );
       case 3:
         return true;
@@ -116,7 +118,8 @@ export function ProjectWizard({
         description: wizardData.description || null,
         project_type: wizardData.project_type!,
         deployment_platform: wizardData.deployment_platform!,
-        client_id: wizardData.client_id,
+        client_id: wizardData.client_id || undefined,
+        custom_client_name: wizardData.custom_client_name || undefined,
         team_id: null,
         workspace_id: currentWorkspace?.id,
       });
@@ -145,6 +148,7 @@ export function ProjectWizard({
         project_type: null,
         deployment_platform: null,
         client_id: '',
+        custom_client_name: '',
       });
       setError(null);
       onOpenChange(false);
@@ -202,11 +206,7 @@ export function ProjectWizard({
             {currentStep === 1 && <StepBasicInfo data={wizardData} onChange={updateWizardData} />}
 
             {currentStep === 2 && (
-              <StepConfiguration
-                data={wizardData}
-                clients={clients}
-                onChange={updateWizardData}
-              />
+              <StepConfiguration data={wizardData} clients={clients} onChange={updateWizardData} />
             )}
 
             {currentStep === 3 && <StepReview data={wizardData} clients={clients} />}

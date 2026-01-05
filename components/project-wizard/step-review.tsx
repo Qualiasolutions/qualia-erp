@@ -51,7 +51,6 @@ export function StepReview({ data, clients }: StepReviewProps) {
     ? PLATFORM_CONFIG[data.deployment_platform]
     : null;
 
-
   return (
     <div className="space-y-6">
       <div>
@@ -105,11 +104,15 @@ export function StepReview({ data, clients }: StepReviewProps) {
             <Building className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Client</p>
-              <p className="font-medium">{client?.display_name || 'Not selected'}</p>
+              <p className="font-medium">
+                {data.custom_client_name || client?.display_name || 'Not selected'}
+                {data.custom_client_name && (
+                  <span className="ml-1.5 text-xs text-amber-500">(new)</span>
+                )}
+              </p>
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Final confirmation message */}

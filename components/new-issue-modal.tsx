@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SelectWithOther } from '@/components/ui/select-with-other';
 import { createIssue, getProjects } from '@/app/actions';
 import { useWorkspace } from '@/components/workspace-provider';
 import { STATUS_OPTIONS, PRIORITY_OPTIONS } from '@/lib/constants/task-config';
@@ -34,11 +35,15 @@ export function NewIssueModal() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [customProjectName, setCustomProjectName] = useState<string>('');
   const { currentWorkspace } = useWorkspace();
 
   useEffect(() => {
     if (open && currentWorkspace) {
       getProjects(currentWorkspace.id).then(setProjects);
+      setSelectedProjectId('');
+      setCustomProjectName('');
     }
   }, [open, currentWorkspace]);
 
@@ -49,6 +54,14 @@ export function NewIssueModal() {
     // Add workspace_id to form data
     if (currentWorkspace) {
       formData.set('workspace_id', currentWorkspace.id);
+    }
+
+    // Add project info
+    if (selectedProjectId) {
+      formData.set('project_id', selectedProjectId);
+    }
+    if (customProjectName) {
+      formData.set('custom_project_name', customProjectName);
     }
 
     const result = await createIssue(formData);
@@ -132,18 +145,27 @@ export function NewIssueModal() {
 
           <div className="space-y-2">
             <Label>Project</Label>
-            <Select name="project_id">
-              <SelectTrigger className="border-border bg-background">
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-card">
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectWithOther
+              options={projects.map((project) => ({
+                value: project.id,
+                label: project.name,
+              }))}
+              value={customProjectName || selectedProjectId}
+              onChange={(value, isCustom) => {
+                if (isCustom) {
+                  setSelectedProjectId('');
+                  setCustomProjectName(value);
+                } else {
+                  setSelectedProjectId(value);
+                  setCustomProjectName('');
+                }
+              }}
+              placeholder="Select project"
+              otherLabel="Other project..."
+              otherPlaceholder="Project name..."
+              className="w-full"
+              triggerClassName="w-full justify-between border-border bg-background"
+            />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

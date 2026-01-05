@@ -23,13 +23,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { SelectWithOther } from '@/components/ui/select-with-other';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -106,6 +100,7 @@ export function NewMeetingModal() {
   const [clients, setClients] = useState<Client[]>([]);
   const [meetingType, setMeetingType] = useState<'internal' | 'client'>('internal');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [customClientName, setCustomClientName] = useState<string>('');
   const [title, setTitle] = useState('');
   const [meetingLink, setMeetingLink] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -121,6 +116,7 @@ export function NewMeetingModal() {
       setDuration(60);
       setMeetingType('internal');
       setSelectedClientId('');
+      setCustomClientName('');
       setTitle('');
       setMeetingLink('');
       setError(null);
@@ -130,13 +126,17 @@ export function NewMeetingModal() {
 
   // Auto-generate title based on client selection only
   useEffect(() => {
-    if (meetingType === 'client' && selectedClientId) {
-      const client = clients.find((c) => c.id === selectedClientId);
-      if (client) {
-        setTitle(`Meeting with ${client.display_name}`);
+    if (meetingType === 'client') {
+      if (customClientName) {
+        setTitle(`Meeting with ${customClientName}`);
+      } else if (selectedClientId) {
+        const client = clients.find((c) => c.id === selectedClientId);
+        if (client) {
+          setTitle(`Meeting with ${client.display_name}`);
+        }
       }
     }
-  }, [meetingType, selectedClientId, clients]);
+  }, [meetingType, selectedClientId, customClientName, clients]);
 
   // Calculate start and end times
   const getStartDateTime = () => {
@@ -164,8 +164,13 @@ export function NewMeetingModal() {
     formData.set('start_time', getStartDateTime());
     formData.set('end_time', getEndDateTime());
 
-    if (meetingType === 'client' && selectedClientId) {
-      formData.set('client_id', selectedClientId);
+    if (meetingType === 'client') {
+      if (selectedClientId) {
+        formData.set('client_id', selectedClientId);
+      }
+      if (customClientName) {
+        formData.set('custom_client_name', customClientName);
+      }
     }
 
     if (meetingLink.trim()) {
@@ -299,18 +304,28 @@ export function NewMeetingModal() {
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-                          <SelectTrigger className="h-11 rounded-xl border-border/50 bg-secondary/30">
-                            <SelectValue placeholder="Select client..." />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px] border-border/50 bg-card/95 backdrop-blur-xl">
-                            {clients.map((client) => (
-                              <SelectItem key={client.id} value={client.id}>
-                                {client.display_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <SelectWithOther
+                          options={clients.map((client) => ({
+                            value: client.id,
+                            label: client.display_name,
+                          }))}
+                          value={customClientName || selectedClientId}
+                          onChange={(value, isCustom) => {
+                            if (isCustom) {
+                              setSelectedClientId('');
+                              setCustomClientName(value);
+                            } else {
+                              setSelectedClientId(value);
+                              setCustomClientName('');
+                            }
+                          }}
+                          placeholder="Select client..."
+                          otherLabel="Other client..."
+                          otherPlaceholder="Client name..."
+                          icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
+                          className="w-full"
+                          triggerClassName="h-11 w-full justify-between rounded-xl border-border/50 bg-secondary/30"
+                        />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -484,7 +499,10 @@ export function NewMeetingModal() {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={loading || (meetingType === 'client' && !selectedClientId)}
+                    disabled={
+                      loading ||
+                      (meetingType === 'client' && !selectedClientId && !customClientName)
+                    }
                     className="min-w-[120px]"
                   >
                     {loading ? (

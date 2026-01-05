@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SelectWithOther } from '@/components/ui/select-with-other';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,6 +37,7 @@ export function NewTaskModal() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState<string>('');
+  const [customProjectName, setCustomProjectName] = useState<string>('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [showInInbox, setShowInInbox] = useState(true);
@@ -49,6 +51,7 @@ export function NewTaskModal() {
       setTitle('');
       setDescription('');
       setProjectId('');
+      setCustomProjectName('');
       setAssigneeId(null);
       setDueDate(undefined);
       setShowInInbox(true);
@@ -87,6 +90,9 @@ export function NewTaskModal() {
 
     if (projectId) {
       formData.set('project_id', projectId);
+    }
+    if (customProjectName) {
+      formData.set('custom_project_name', customProjectName);
     }
     if (assigneeId) {
       formData.set('assignee_id', assigneeId);
@@ -212,25 +218,28 @@ export function NewTaskModal() {
 
                   {/* Quick Options Row */}
                   <div className="flex flex-wrap gap-2">
-                    {/* Project Selector */}
-                    <Select value={projectId} onValueChange={setProjectId}>
-                      <SelectTrigger
-                        className={cn(
-                          'h-9 w-auto min-w-[140px] gap-2 rounded-full border-border/50 bg-secondary/50 px-3 text-sm transition-all hover:bg-secondary',
-                          projectId && 'border-primary/30 bg-primary/5'
-                        )}
-                      >
-                        <FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />
-                        <SelectValue placeholder="Project" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[240px] border-border/50 bg-card/95 backdrop-blur-xl">
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            <span className="truncate">{project.name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {/* Project Selector with "Other" option */}
+                    <SelectWithOther
+                      options={projects.map((project) => ({
+                        value: project.id,
+                        label: project.name,
+                      }))}
+                      value={customProjectName || projectId}
+                      onChange={(value, isCustom) => {
+                        if (isCustom) {
+                          setProjectId('');
+                          setCustomProjectName(value);
+                        } else {
+                          setProjectId(value);
+                          setCustomProjectName('');
+                        }
+                      }}
+                      placeholder="Project"
+                      otherLabel="Other project..."
+                      otherPlaceholder="Project name..."
+                      icon={<FolderOpen className="h-3.5 w-3.5 text-muted-foreground" />}
+                      triggerClassName="rounded-full"
+                    />
 
                     {/* Assignee Selector */}
                     <Select

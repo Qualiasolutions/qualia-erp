@@ -104,32 +104,38 @@ export const createProjectSchema = z.object({
 });
 
 // Schema for the project creation wizard (with required fields)
-export const createProjectWizardSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
-  description: z.string().max(5000, 'Description too long').optional().nullable(),
-  project_type: z.enum(['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'] as const, {
-    message: 'Project type is required',
-  }),
-  deployment_platform: z.enum(
-    [
-      'vercel',
-      'squarespace',
-      'railway',
-      'meta',
-      'instagram',
-      'google_ads',
-      'tiktok',
-      'linkedin',
-      'none',
-    ] as const,
-    {
-      message: 'Platform is required',
-    }
-  ),
-  client_id: z.string().uuid('Invalid client ID'),
-  team_id: z.string().uuid('Invalid team ID').optional().nullable(),
-  workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
-});
+export const createProjectWizardSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
+    description: z.string().max(5000, 'Description too long').optional().nullable(),
+    project_type: z.enum(['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'] as const, {
+      message: 'Project type is required',
+    }),
+    deployment_platform: z.enum(
+      [
+        'vercel',
+        'squarespace',
+        'railway',
+        'meta',
+        'instagram',
+        'google_ads',
+        'tiktok',
+        'linkedin',
+        'none',
+      ] as const,
+      {
+        message: 'Platform is required',
+      }
+    ),
+    client_id: z.string().uuid('Invalid client ID').optional(),
+    custom_client_name: z.string().max(200, 'Client name too long').optional(),
+    team_id: z.string().uuid('Invalid team ID').optional().nullable(),
+    workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
+  })
+  .refine((data) => data.client_id || data.custom_client_name, {
+    message: 'Either client or custom client name is required',
+    path: ['client_id'],
+  });
 
 export const updateProjectSchema = z.object({
   id: z.string().uuid('Invalid project ID'),

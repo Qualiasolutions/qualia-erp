@@ -2527,8 +2527,16 @@ export async function createProjectWithRoadmap(
     return { success: false, error: firstError?.message || 'Validation failed' };
   }
 
-  const { name, description, project_type, deployment_platform, client_id, team_id, workspace_id } =
-    validation.data;
+  const {
+    name,
+    description,
+    project_type,
+    deployment_platform,
+    client_id,
+    custom_client_name,
+    team_id,
+    workspace_id,
+  } = validation.data;
 
   // Get workspace ID from input or from user's default
   let wsId = workspace_id;
@@ -2540,6 +2548,26 @@ export async function createProjectWithRoadmap(
     return { success: false, error: 'Workspace is required' };
   }
 
+  // Handle custom client name - create new client if provided
+  let finalClientId = client_id;
+  if (!client_id && custom_client_name) {
+    const { data: newClient, error: clientError } = await supabase
+      .from('clients')
+      .insert({
+        display_name: custom_client_name.trim(),
+        workspace_id: wsId,
+        lead_status: 'lead',
+      })
+      .select('id')
+      .single();
+
+    if (clientError) {
+      console.error('Error creating client:', clientError);
+      return { success: false, error: 'Failed to create client' };
+    }
+    finalClientId = newClient.id;
+  }
+
   // Create the project
   const { data: project, error: projectError } = await supabase
     .from('projects')
@@ -2548,7 +2576,7 @@ export async function createProjectWithRoadmap(
       description: description?.trim() || null,
       project_type,
       deployment_platform,
-      client_id,
+      client_id: finalClientId,
       team_id,
       lead_id: user.id,
       workspace_id: wsId,

@@ -47,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SelectWithOther } from '@/components/ui/select-with-other';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -104,6 +105,7 @@ export function NewMeetingModalInline({
   const [clients, setClients] = useState<Client[]>([]);
   const [meetingType, setMeetingType] = useState<'internal' | 'client'>('internal');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
+  const [customClientName, setCustomClientName] = useState<string>('');
   const [title, setTitle] = useState('');
   const [meetingLink, setMeetingLink] = useState<string>('');
 
@@ -122,21 +124,26 @@ export function NewMeetingModalInline({
       setDuration(60);
       setMeetingType('internal');
       setSelectedClientId('');
+      setCustomClientName('');
       setTitle('');
       setMeetingLink('');
       setError(null);
     }
   }, [open]);
 
-  // Auto-generate title based on client selection only
+  // Auto-generate title based on client selection or custom name
   useEffect(() => {
-    if (meetingType === 'client' && selectedClientId) {
-      const client = clients.find((c) => c.id === selectedClientId);
-      if (client) {
-        setTitle(`Meeting with ${client.display_name}`);
+    if (meetingType === 'client') {
+      if (customClientName) {
+        setTitle(`Meeting with ${customClientName}`);
+      } else if (selectedClientId) {
+        const client = clients.find((c) => c.id === selectedClientId);
+        if (client) {
+          setTitle(`Meeting with ${client.display_name}`);
+        }
       }
     }
-  }, [meetingType, selectedClientId, clients]);
+  }, [meetingType, selectedClientId, customClientName, clients]);
 
   // Calculate start and end times for the form
   const getStartDateTime = () => {
@@ -164,8 +171,12 @@ export function NewMeetingModalInline({
     formData.set('start_time', getStartDateTime());
     formData.set('end_time', getEndDateTime());
 
-    if (meetingType === 'client' && selectedClientId) {
-      formData.set('client_id', selectedClientId);
+    if (meetingType === 'client') {
+      if (selectedClientId) {
+        formData.set('client_id', selectedClientId);
+      } else if (customClientName) {
+        formData.set('custom_client_name', customClientName);
+      }
     }
 
     // Add meeting link if provided
@@ -194,7 +205,9 @@ export function NewMeetingModalInline({
         project: null,
         client: selectedClient
           ? { id: selectedClient.id, display_name: selectedClient.display_name }
-          : null,
+          : customClientName
+            ? { id: 'custom', display_name: customClientName }
+            : null,
       };
       onMeetingCreated(newMeeting);
     } else {
@@ -243,18 +256,28 @@ export function NewMeetingModalInline({
 
           {/* Client Selector (only for client meetings) */}
           {meetingType === 'client' && (
-            <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-              <SelectTrigger className="h-11 border-border bg-background">
-                <SelectValue placeholder="Select client..." />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px] border-border bg-card">
-                {clients.map((client) => (
-                  <SelectItem key={client.id} value={client.id}>
-                    {client.display_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SelectWithOther
+              options={clients.map((client) => ({
+                value: client.id,
+                label: client.display_name,
+                icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
+              }))}
+              value={customClientName || selectedClientId}
+              onChange={(value, isCustom) => {
+                if (isCustom) {
+                  setSelectedClientId('');
+                  setCustomClientName(value);
+                } else {
+                  setSelectedClientId(value);
+                  setCustomClientName('');
+                }
+              }}
+              placeholder="Select client..."
+              otherLabel="Other client..."
+              otherPlaceholder="Client name..."
+              icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
+              triggerClassName="h-11 border-border bg-background"
+            />
           )}
 
           {/* Date Selection */}
@@ -374,7 +397,9 @@ export function NewMeetingModalInline({
 
           <Button
             type="submit"
-            disabled={loading || (meetingType === 'client' && !selectedClientId)}
+            disabled={
+              loading || (meetingType === 'client' && !selectedClientId && !customClientName)
+            }
             className="h-11 w-full bg-primary font-medium hover:bg-primary/90"
           >
             {loading ? 'Scheduling...' : 'Schedule Meeting'}
