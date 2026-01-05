@@ -1260,6 +1260,7 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
   const { data, error } = await supabase
     .from('clients')
     .insert({
+      name: display_name.trim(), // Required NOT NULL column
       display_name: display_name.trim(),
       phone: phone?.trim() || null,
       website: website?.trim() || null,
