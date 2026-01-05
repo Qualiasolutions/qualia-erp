@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -110,16 +111,16 @@ export function TodayDashboard({
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" asChild>
-              <a href="/inbox?new=1">
+              <Link href="/projects">
                 <Plus className="mr-1 h-4 w-4" />
-                Assign Task
-              </a>
+                Manage Tasks
+              </Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <a href="/schedule?new=1">
+              <Link href="/schedule?new=1">
                 <Video className="mr-1 h-4 w-4" />
                 Meeting
-              </a>
+              </Link>
             </Button>
             <Button
               variant="ghost"
