@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Video, RefreshCw, Loader2 } from 'lucide-react';
-import { MeetingsTimeline } from './meetings-timeline';
+import { MeetingsWrapper } from './meetings-wrapper';
 import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
 import { useTransition } from 'react';
@@ -142,9 +142,9 @@ export function TodayDashboard({
       <main className="flex-1 overflow-hidden p-4 sm:p-6">
         {/* Desktop: 3 columns, Tablet: 2 columns, Mobile: stacked */}
         <div className="flex h-full flex-col gap-4 lg:flex-row lg:gap-6">
-          {/* Left column - Meetings Timeline */}
+          {/* Left column - Meetings Timeline (SWR-connected) */}
           <div className="h-[400px] shrink-0 lg:h-full lg:w-72">
-            <MeetingsTimeline meetings={meetings} />
+            <MeetingsWrapper initialMeetings={meetings} />
           </div>
 
           {/* Middle column - Active Leads */}
@@ -164,5 +164,6 @@ export function TodayDashboard({
 
 // Re-export components
 export { MeetingsTimeline } from './meetings-timeline';
+export { MeetingsWrapper } from './meetings-wrapper';
 export { ActiveLeadsList } from './active-leads-list';
 export { TasksWidget } from './tasks-widget';
