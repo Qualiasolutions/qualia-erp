@@ -1,8 +1,9 @@
 import { Suspense } from 'react';
 import { getClients } from '@/app/actions';
-import { ClientList, type Client } from '@/components/client-list';
+import { ClientTableView } from '@/components/client-table-view';
 import { NewClientModal } from '@/components/new-client-modal';
 import { Building2 } from 'lucide-react';
+import { type Client } from '@/lib/client-utils';
 
 async function ClientListLoader() {
   const data = await getClients();
@@ -15,70 +16,64 @@ async function ClientListLoader() {
       c.lead_status === 'dead_lead'
   );
 
-  return <ClientList clients={clients} />;
+  return <ClientTableView clients={clients} />;
 }
 
-function ClientListSkeleton() {
-  const CardSkeleton = () => (
-    <div className="surface flex items-center gap-3 rounded-lg px-3 py-2.5">
-      <div className="h-7 w-7 animate-pulse rounded-md bg-muted" />
-      <div className="flex-1 space-y-1">
-        <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-        <div className="h-3 w-24 animate-pulse rounded bg-muted" />
-      </div>
-    </div>
-  );
-
+function ClientTableSkeleton() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Stats skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-8 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-14 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="h-4 w-px bg-border" />
-          <div className="flex items-center gap-4">
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-          </div>
+      <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-8 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-14 animate-pulse rounded bg-muted" />
         </div>
-        <div className="flex items-center gap-0.5 rounded-lg bg-secondary p-0.5">
-          <div className="h-8 w-8 animate-pulse rounded bg-muted" />
-          <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+        <div className="h-5 w-px bg-border" />
+        <div className="flex items-center gap-4">
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
         </div>
       </div>
 
-      {/* Search skeleton */}
-      <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+      {/* Filter skeleton */}
+      <div className="flex gap-3">
+        <div className="h-9 w-48 animate-pulse rounded-lg bg-muted" />
+        <div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
+        <div className="h-9 w-36 animate-pulse rounded-lg bg-muted" />
+      </div>
 
-      {/* Columns skeleton */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Active column */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-2 w-2 rounded-full bg-emerald-500" />
-            <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="space-y-1.5">
-            {[...Array(5)].map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
+      {/* Table skeleton */}
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {/* Header */}
+        <div className="flex items-center gap-4 border-b border-border bg-secondary/50 px-4 py-3">
+          <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted" />
         </div>
-        {/* Inactive column */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 px-1">
-            <div className="h-2 w-2 rounded-full bg-amber-500" />
-            <div className="h-4 w-14 animate-pulse rounded bg-muted" />
+        {/* Rows */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
+          >
+            <div className="h-4 w-6 animate-pulse rounded bg-muted" />
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+              <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+            </div>
+            <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+            <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+            <div className="h-6 w-6 animate-pulse rounded-full bg-muted" />
+            <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-20 animate-pulse rounded bg-muted" />
           </div>
-          <div className="space-y-1.5">
-            {[...Array(3)].map((_, i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   );
@@ -105,7 +100,7 @@ export default function ClientsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <Suspense fallback={<ClientListSkeleton />}>
+        <Suspense fallback={<ClientTableSkeleton />}>
           <ClientListLoader />
         </Suspense>
       </div>
