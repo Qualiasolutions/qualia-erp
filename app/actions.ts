@@ -1283,6 +1283,7 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
   );
 
   revalidatePath('/clients');
+  revalidatePath('/'); // Revalidate Today dashboard
   return { success: true, data };
 }
 
@@ -1344,6 +1345,7 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
 
   revalidatePath('/clients');
   revalidatePath(`/clients/${id}`);
+  revalidatePath('/'); // Revalidate Today dashboard
   return { success: true, data };
 }
 
@@ -1371,6 +1373,7 @@ export async function deleteClientRecord(id: string): Promise<ActionResult> {
   }
 
   revalidatePath('/clients');
+  revalidatePath('/'); // Revalidate Today dashboard
   return { success: true };
 }
 

@@ -133,7 +133,6 @@ function QuickAddLeadDialog({
     if (!name.trim()) return;
 
     const formData = new FormData();
-    formData.set('name', name.trim());
     formData.set('display_name', name.trim());
     if (phone) formData.set('phone', phone);
     formData.set('lead_status', status);
@@ -147,6 +146,9 @@ function QuickAddLeadDialog({
         setStatus('hot');
         setOpen(false);
         onSuccess();
+      } else {
+        console.error('Failed to create lead:', result.error);
+        alert(result.error || 'Failed to create lead');
       }
     });
   };
