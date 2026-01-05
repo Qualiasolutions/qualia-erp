@@ -1274,3 +1274,20 @@ export interface ExtendedIssueAssignee extends IssueAssignee {
   assignment_context?: string | null;
   mentor_id?: string | null;
 }
+
+// Project file interface
+export interface ProjectFile {
+  id: string;
+  project_id: string;
+  workspace_id: string | null;
+  name: string;
+  original_name: string;
+  storage_path: string;
+  file_size: number;
+  mime_type: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  uploader?: Profile;
+}

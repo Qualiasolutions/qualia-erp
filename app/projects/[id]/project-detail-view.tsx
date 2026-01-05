@@ -32,6 +32,7 @@ import {
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
 import { ProjectTaskKanban } from '@/components/project-task-kanban';
+import { ProjectFiles } from '@/components/project-files';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 
 const PROJECT_TYPES: { value: ProjectType; label: string; icon: typeof Globe }[] = [
@@ -396,6 +397,11 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Files Section */}
+                <div className="mt-4 rounded-lg border border-border bg-secondary/50 p-3">
+                  <ProjectFiles projectId={project.id} />
                 </div>
               </div>
             </div>
