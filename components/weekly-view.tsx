@@ -160,7 +160,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
 
   return (
     <>
-      <div className="surface overflow-hidden rounded-xl">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
           <div className="flex items-center gap-4">
@@ -284,7 +284,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   return (
                     <div
                       key={meeting.id}
-                      className="group absolute left-1 right-1 z-10 cursor-pointer overflow-hidden rounded-md border border-primary/30 bg-primary/20 p-1.5 transition-colors hover:bg-primary/30"
+                      className="group absolute left-1 right-1 z-10 cursor-pointer overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-1.5 transition-colors hover:bg-violet-500/20"
                       style={{ top: `${top}px`, height: `${height}px` }}
                       title={`${meeting.title}\n${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}`}
                     >
@@ -296,7 +296,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                             e.stopPropagation();
                             handleEdit(meeting);
                           }}
-                          className="rounded p-0.5 text-muted-foreground hover:bg-primary/30 hover:text-foreground"
+                          className="rounded p-0.5 text-muted-foreground hover:bg-violet-500/20 hover:text-foreground"
                           title="Edit meeting"
                         >
                           <Pencil className="h-3 w-3" />

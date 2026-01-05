@@ -174,13 +174,13 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
               className={cn(
                 'relative min-h-[80px] rounded-lg p-1 text-left transition-all duration-200',
                 isCurrentMonth ? 'hover:bg-white/[0.05]' : 'opacity-40',
-                isCurrentDay && 'bg-qualia-500/5 ring-1 ring-qualia-500/50'
+                isCurrentDay && 'bg-violet-500/5 ring-1 ring-violet-500/50'
               )}
             >
               <span
                 className={cn(
                   'inline-flex h-6 w-6 items-center justify-center rounded-full text-xs',
-                  isCurrentDay ? 'bg-qualia-500 font-semibold text-white' : 'text-muted-foreground'
+                  isCurrentDay ? 'bg-violet-500 font-semibold text-white' : 'text-muted-foreground'
                 )}
               >
                 {format(day, 'd')}
@@ -191,7 +191,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                 {dayMeetings.slice(0, 2).map((meeting) => (
                   <div
                     key={meeting.id}
-                    className="flex items-center gap-1 truncate rounded bg-qualia-500/20 px-1 py-0.5 text-[10px] text-qualia-300"
+                    className="flex items-center gap-1 truncate rounded bg-violet-500/20 px-1 py-0.5 text-[10px] text-violet-300"
                     title={meeting.title}
                   >
                     <Clock className="h-2.5 w-2.5 flex-shrink-0" />
