@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { Folder } from 'lucide-react';
-import { ProjectListView } from '@/components/project-list-view';
+import { ProjectTableView } from '@/components/project-table-view';
 import type { ProjectType } from '@/types/database';
 
 export interface ProjectData {
@@ -42,7 +42,7 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectListView projects={[]} />;
+    return <ProjectTableView projects={[]} />;
   }
 
   // Map RPC result to Project interface
@@ -72,26 +72,52 @@ async function ProjectListLoader() {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  return <ProjectListView projects={projects} />;
+  return <ProjectTableView projects={projects} />;
 }
 
-function ProjectListSkeleton() {
+function ProjectTableSkeleton() {
   return (
-    <div className="space-y-2">
-      {[...Array(8)].map((_, i) => (
-        <div
-          key={i}
-          className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
-        >
-          <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
-          <div className="flex-1 space-y-2">
-            <div className="h-5 w-48 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="h-2 w-24 animate-pulse rounded-full bg-muted" />
-          <div className="h-5 w-12 animate-pulse rounded bg-muted" />
+    <div className="space-y-4">
+      {/* Filter skeleton */}
+      <div className="flex gap-3">
+        <div className="h-9 w-48 animate-pulse rounded-lg bg-muted" />
+        <div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
+        <div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
+        <div className="h-9 w-36 animate-pulse rounded-lg bg-muted" />
+      </div>
+
+      {/* Table skeleton */}
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {/* Header */}
+        <div className="flex items-center gap-4 border-b border-border bg-secondary/50 px-4 py-3">
+          <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-8 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-14 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-14 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
         </div>
-      ))}
+        {/* Rows */}
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
+          >
+            <div className="h-4 w-6 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+            <div className="h-2 w-16 animate-pulse rounded-full bg-muted" />
+            <div className="h-6 w-6 animate-pulse rounded-full bg-muted" />
+            <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+            <div className="h-4 w-10 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+            <div className="h-5 w-12 animate-pulse rounded bg-muted" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -119,7 +145,7 @@ export default function ProjectsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <Suspense fallback={<ProjectListSkeleton />}>
+        <Suspense fallback={<ProjectTableSkeleton />}>
           <ProjectListLoader />
         </Suspense>
       </div>

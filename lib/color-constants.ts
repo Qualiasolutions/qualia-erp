@@ -73,9 +73,9 @@ export const PROJECT_STATUS_COLORS = {
     text: 'text-slate-400',
   },
   Active: {
-    bg: 'bg-qualia-500/10',
-    border: 'border-qualia-500/30',
-    text: 'text-qualia-400',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
   },
   'On Hold': {
     bg: 'bg-amber-500/10',
@@ -91,6 +91,27 @@ export const PROJECT_STATUS_COLORS = {
     bg: 'bg-red-500/10',
     border: 'border-red-500/30',
     text: 'text-red-400',
+  },
+  // Additional project statuses
+  Demos: {
+    bg: 'bg-purple-500/10',
+    border: 'border-purple-500/30',
+    text: 'text-purple-400',
+  },
+  Launched: {
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-400',
+  },
+  Delayed: {
+    bg: 'bg-red-500/10',
+    border: 'border-red-500/30',
+    text: 'text-red-400',
+  },
+  Archived: {
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
   },
 } as const;
 
