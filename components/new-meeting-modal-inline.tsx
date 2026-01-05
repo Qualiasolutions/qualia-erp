@@ -52,6 +52,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { createMeeting, getClients } from '@/app/actions';
+import { invalidateMeetings } from '@/lib/swr';
 
 // Time slots in 30-minute increments (business hours focused)
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
@@ -187,6 +188,8 @@ export function NewMeetingModalInline({
     const result = await createMeeting(formData);
 
     if (result.success && result.data) {
+      // Invalidate all meeting-related caches for immediate UI update across app
+      invalidateMeetings(true);
       // Build the meeting object to pass to the callback
       const meetingData = result.data as {
         id: string;

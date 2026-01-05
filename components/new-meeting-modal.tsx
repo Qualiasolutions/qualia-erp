@@ -28,6 +28,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { createMeeting, getClients } from '@/app/actions';
+import { invalidateMeetings } from '@/lib/swr';
 
 // Get the next available time slot (rounds up to next 30 min)
 function getNextTimeSlot(): { date: Date; time: string } {
@@ -180,6 +181,8 @@ export function NewMeetingModal() {
     const result = await createMeeting(formData);
 
     if (result.success) {
+      // Invalidate all meeting-related caches for immediate UI update
+      invalidateMeetings(true);
       setSuccess(true);
       setTimeout(() => {
         setOpen(false);

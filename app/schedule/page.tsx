@@ -2,9 +2,7 @@ import { Suspense, use } from 'react';
 import { connection } from 'next/server';
 import { getMeetings } from '@/app/actions';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
-import { CalendarView } from '@/components/calendar-view';
-import { WeeklyView } from '@/components/weekly-view';
-import { DayView } from '@/components/day-view';
+import { ScheduleContent } from '@/components/schedule-content';
 import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
 import { Calendar } from 'lucide-react';
 
@@ -12,40 +10,61 @@ async function ScheduleLoader({ view }: { view: string }) {
   await connection();
   const meetings = await getMeetings();
 
-  if (view === 'day') {
-    return <DayView meetings={meetings} />;
-  }
-
-  if (view === 'week') {
-    return <WeeklyView meetings={meetings} />;
-  }
-
-  if (view === 'month') {
-    return <CalendarView meetings={meetings} />;
-  }
-
-  // Default to day view
-  return <DayView meetings={meetings} />;
+  return <ScheduleContent view={view} initialMeetings={meetings} />;
 }
 
 function ScheduleSkeleton() {
   return (
-    <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="surface rounded-lg p-4">
-          <div className="flex items-start gap-4">
-            <div className="h-12 w-12 animate-pulse rounded-lg bg-muted" />
-            <div className="flex-1 space-y-2">
-              <div className="h-4 w-48 animate-pulse rounded bg-muted" />
-              <div className="h-3 w-32 animate-pulse rounded bg-muted" />
-              <div className="flex gap-4 pt-1">
-                <div className="h-3 w-20 animate-pulse rounded bg-muted" />
-                <div className="h-3 w-16 animate-pulse rounded bg-muted" />
-              </div>
-            </div>
+    <div className="space-y-4">
+      {/* Stats skeleton */}
+      <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-8 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="h-5 w-px bg-border" />
+        <div className="flex items-center gap-4">
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+
+      {/* Calendar skeleton */}
+      <div className="overflow-hidden rounded-lg border border-border bg-card">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border bg-secondary/50 px-4 py-3">
+          <div className="flex items-center gap-4">
+            <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-14 animate-pulse rounded bg-muted" />
+            <div className="h-7 w-7 animate-pulse rounded bg-muted" />
+            <div className="h-7 w-7 animate-pulse rounded bg-muted" />
           </div>
         </div>
-      ))}
+        {/* Time grid skeleton */}
+        <div className="grid grid-cols-[80px_1fr]">
+          <div className="space-y-0">
+            {[...Array(12)].map((_, i) => (
+              <div
+                key={i}
+                className="flex h-[55px] items-start justify-end border-b border-border/50 pr-2"
+              >
+                <div className="h-3 w-8 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+          </div>
+          <div className="relative border-l border-border">
+            {[...Array(12)].map((_, i) => (
+              <div key={i} className="h-[55px] border-b border-border/50" />
+            ))}
+            {/* Meeting placeholders */}
+            <div className="absolute left-2 right-2 top-[110px] h-[82px] animate-pulse rounded-md bg-violet-500/10" />
+            <div className="absolute left-2 right-2 top-[275px] h-[55px] animate-pulse rounded-md bg-violet-500/10" />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,9 @@ import {
 import { getTasks, getProjectTasks } from '@/app/actions/inbox';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
+// Type for meetings with all relations
+export type MeetingWithRelations = Awaited<ReturnType<typeof getMeetings>>[number];
+
 // Default SWR configuration optimized for performance
 export const swrConfig: SWRConfiguration = {
   revalidateOnFocus: false, // Don't refetch on window focus (server actions handle this)
@@ -32,6 +35,7 @@ export const cacheKeys = {
   projectTasks: (projectId: string) => `project-tasks-${projectId}`,
   todaysTasks: 'todays-tasks',
   todaysMeetings: 'todays-meetings',
+  meetings: 'all-meetings',
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -426,6 +430,49 @@ export function invalidateTimeline(immediate = true) {
   if (immediate) {
     mutate('timeline-dashboard', undefined, { revalidate: true });
   } else {
+    mutate('timeline-dashboard');
+  }
+}
+
+/**
+ * Hook to fetch all meetings with caching and auto-refresh
+ * Used by schedule page for real-time updates
+ */
+export function useMeetings(initialData?: MeetingWithRelations[]) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.meetings, () => getMeetings(), {
+    ...autoRefreshConfig,
+    fallbackData: initialData,
+  });
+
+  return {
+    meetings: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate meetings cache - call after creating/updating/deleting meetings
+ */
+export function invalidateMeetings(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.meetings, undefined, { revalidate: true });
+    mutate(cacheKeys.todaysMeetings, undefined, { revalidate: true });
+    mutate('daily-flow', undefined, { revalidate: true });
+    mutate('timeline-dashboard', undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.meetings);
+    mutate(cacheKeys.todaysMeetings);
+    mutate('daily-flow');
     mutate('timeline-dashboard');
   }
 }
