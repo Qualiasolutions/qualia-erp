@@ -1,3 +1,3 @@
-import TimelineDashboardPage from './timeline-dashboard-page';
+import TodayPage from './today-page';
 
-export default TimelineDashboardPage;
+export default TodayPage;

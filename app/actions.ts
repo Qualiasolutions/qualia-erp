@@ -1518,7 +1518,7 @@ export async function logClientActivity(
 
 export async function toggleClientStatus(
   clientId: string,
-  newStatus: 'active_client' | 'inactive_client' | 'dead_lead'
+  newStatus: LeadStatus
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -1554,12 +1554,21 @@ export async function toggleClientStatus(
   }
 
   // Log the status change
-  const statusLabel = newStatus === 'active_client' ? 'Active' : 'Inactive';
+  const statusLabels: Record<LeadStatus, string> = {
+    hot: 'Hot Lead',
+    cold: 'Cold Lead',
+    dropped: 'Dropped',
+    active_client: 'Active Client',
+    inactive_client: 'Inactive Client',
+    dead_lead: 'Dead Lead',
+  };
+  const statusLabel = statusLabels[newStatus] || newStatus;
   await logClientActivity(clientId, 'status_change', `Status changed to ${statusLabel}`, {
     old_status: currentClient.lead_status,
     new_status: newStatus,
   });
 
+  revalidatePath('/');
   revalidatePath('/clients');
   revalidatePath(`/clients/${clientId}`);
   return { success: true };

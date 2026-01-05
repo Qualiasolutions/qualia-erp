@@ -140,8 +140,8 @@ function DraggableMeeting({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative cursor-grab overflow-hidden rounded-lg border border-primary/30 bg-primary/20 p-3 transition-colors hover:bg-primary/30',
-        isDragging && 'cursor-grabbing shadow-lg ring-2 ring-primary/50'
+        'group relative h-full cursor-grab overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-2.5 transition-all hover:border-violet-500/50 hover:bg-violet-500/15',
+        isDragging && 'cursor-grabbing shadow-lg ring-2 ring-violet-500/50'
       )}
     >
       {/* Drag handle */}
@@ -154,17 +154,17 @@ function DraggableMeeting({
       </div>
 
       {/* Action buttons */}
-      <div className="absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="absolute right-1.5 top-1.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
             onEdit(meeting);
           }}
-          className="rounded p-1 text-muted-foreground hover:bg-primary/30 hover:text-foreground"
+          className="rounded-md p-1 text-muted-foreground hover:bg-violet-500/20 hover:text-violet-400"
           title="Edit meeting"
         >
-          <Pencil className="h-3.5 w-3.5" />
+          <Pencil className="h-3 w-3" />
         </button>
         <button
           type="button"
@@ -173,10 +173,10 @@ function DraggableMeeting({
             onDelete(meeting.id);
           }}
           disabled={isPending}
-          className="rounded p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-500"
+          className="rounded-md p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
           title="Delete meeting"
         >
-          <Trash2 className="h-3.5 w-3.5" />
+          <Trash2 className="h-3 w-3" />
         </button>
       </div>
 
@@ -192,7 +192,7 @@ function DraggableMeeting({
             </div>
           )}
           {height > 80 && meeting.project && (
-            <div className="mt-2 truncate text-xs text-primary/80">{meeting.project.name}</div>
+            <div className="mt-1 truncate text-xs text-violet-400/80">{meeting.project.name}</div>
           )}
           {height > 100 && meeting.description && (
             <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">
@@ -372,9 +372,9 @@ export function DayView({ meetings }: DayViewProps) {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="surface overflow-hidden rounded-xl">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border bg-card px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border bg-secondary/50 px-4 py-3">
             <div className="flex items-center gap-4">
               <h2 className="text-sm font-semibold text-foreground">
                 {format(currentDate, 'EEEE, MMMM d, yyyy')}
@@ -384,7 +384,7 @@ export function DayView({ meetings }: DayViewProps) {
                 <select
                   value={timezone}
                   onChange={(e) => setTimezone(e.target.value)}
-                  className="rounded-md border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="rounded-md border border-border bg-card px-2 py-1 text-xs text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value={TIMEZONE_CYPRUS}>Cyprus (Fawzi)</option>
                   <option value={TIMEZONE_JORDAN}>Jordan (Moayad)</option>
@@ -395,21 +395,26 @@ export function DayView({ meetings }: DayViewProps) {
               <button
                 type="button"
                 onClick={goToToday}
-                className="rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground"
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                  isToday
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-secondary text-muted-foreground hover:bg-secondary/80 hover:text-foreground'
+                )}
               >
                 Today
               </button>
               <button
                 type="button"
                 onClick={goToPreviousDay}
-                className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 type="button"
                 onClick={goToNextDay}
-                className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -507,7 +512,7 @@ export function DayView({ meetings }: DayViewProps) {
         {/* Drag overlay for visual feedback */}
         <DragOverlay>
           {activeMeeting && (
-            <div className="w-64 cursor-grabbing rounded-lg border border-primary bg-primary/30 p-3 shadow-lg">
+            <div className="w-64 cursor-grabbing rounded-md border border-violet-500 bg-violet-500/20 p-3 shadow-lg backdrop-blur-sm">
               <div className="truncate text-sm font-semibold text-foreground">
                 {activeMeeting.title}
               </div>
