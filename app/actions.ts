@@ -1620,9 +1620,11 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     const { data: newClient, error: clientError } = await supabase
       .from('clients')
       .insert({
+        name: custom_client_name.trim(),
         display_name: custom_client_name.trim(),
         workspace_id: wsId,
-        lead_status: 'lead',
+        lead_status: 'hot',
+        created_by: user.id,
       })
       .select('id')
       .single();

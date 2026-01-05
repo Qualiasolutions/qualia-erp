@@ -249,7 +249,7 @@ export const createMeetingSchema = z
     client_id: z.string().uuid('Invalid client ID').optional().nullable(),
     custom_client_name: z.string().max(200, 'Client name too long').optional(),
     workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
-    meeting_link: z.string().url('Invalid meeting link').optional().nullable(),
+    meeting_link: z.string().url('Invalid meeting link').optional().nullable().or(z.literal('')),
   })
   .refine(
     (data) => {
