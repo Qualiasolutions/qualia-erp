@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   ArrowLeft,
   Folder,
-  Calendar,
   Trash2,
   Check,
   User,
@@ -19,7 +18,6 @@ import {
   Megaphone,
   Clock,
   Building2,
-  Sparkles,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,32 +166,26 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
   const ProjectTypeIcon = selectedProjectType?.icon || Folder;
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-br from-background via-background to-background/95">
-      {/* Premium Header */}
-      <header className="relative border-b border-border/50 bg-card/80 px-6 py-4 backdrop-blur-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5" />
-        <div className="relative flex items-center justify-between">
+    <div className="flex h-full flex-col bg-background">
+      {/* Header */}
+      <header className="border-b border-border">
+        <div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-4">
             <Link
               href="/projects"
-              className="group flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/50 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
-              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+              <ArrowLeft className="h-4 w-4" />
             </Link>
             <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  'flex h-11 w-11 items-center justify-center rounded-xl shadow-lg ring-2 ring-white/10',
-                  'bg-gradient-to-br from-violet-500/20 to-violet-600/10 text-violet-400'
-                )}
-              >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500">
                 <ProjectTypeIcon className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-lg font-bold tracking-tight">{project.name}</h1>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <h1 className="text-lg font-semibold sm:text-xl">{project.name}</h1>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {selectedProjectType && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+                    <span className="rounded-md bg-secondary px-1.5 py-0.5">
                       {selectedProjectType.label}
                     </span>
                   )}
@@ -212,10 +204,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
               variant="outline"
               size="sm"
               onClick={() => setShowPanel(!showPanel)}
-              className={cn(
-                'gap-2 rounded-xl border-border/50 transition-all',
-                showPanel && 'border-primary/30 bg-primary/10 text-primary'
-              )}
+              className={cn('gap-2', showPanel && 'bg-secondary')}
             >
               <Settings2 className="h-4 w-4" />
               {showPanel ? 'Close' : 'Settings'}
@@ -237,77 +226,64 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
           <ProjectTaskKanban projectId={project.id} />
         </div>
 
-        {/* Premium Side Panel */}
+        {/* Side Panel */}
         {showPanel && (
-          <div className="relative w-[400px] flex-shrink-0 overflow-y-auto border-l border-border/50 bg-gradient-to-b from-card/95 to-card/80 backdrop-blur-lg">
+          <div className="w-[380px] flex-shrink-0 overflow-y-auto border-l border-border bg-card">
             {/* Panel Header */}
-            <div className="sticky top-0 z-10 border-b border-border/50 bg-card/90 px-6 py-4 backdrop-blur-sm">
+            <div className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-bold tracking-tight">Project Settings</h2>
-                    <p className="text-xs text-muted-foreground">Configure project details</p>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-4 w-4 text-muted-foreground" />
+                  <h2 className="font-semibold">Project Settings</h2>
                 </div>
                 <button
                   onClick={() => setShowPanel(false)}
-                  className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
 
-            <div className="p-6">
-              <div className="space-y-5">
-                {/* Project Name - Premium Input */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <Folder className="h-3 w-3" />
-                    Project Name
-                  </label>
+            <div className="p-4">
+              <div className="space-y-4">
+                {/* Project Name */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Project Name</label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="h-11 border-border/50 bg-secondary/30 text-base font-semibold transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                    className="h-9"
                     placeholder="Project name"
                   />
                 </div>
 
-                {/* Description - Premium Textarea */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Description
-                  </label>
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Description</label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="min-h-[100px] resize-none border-border/50 bg-secondary/30 transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                    className="min-h-[80px] resize-none"
                     placeholder="Add a description..."
                   />
                 </div>
 
                 {/* Two Column Layout for Type and Lead */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {/* Project Type */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <Folder className="h-3 w-3" />
-                      Type
-                    </label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Type</label>
                     <Select
                       value={projectType || 'none'}
                       onValueChange={(v) =>
                         setProjectType(v === 'none' ? null : (v as ProjectType))
                       }
                     >
-                      <SelectTrigger className="h-11 border-border/50 bg-secondary/30 transition-all focus:ring-2 focus:ring-primary/20">
+                      <SelectTrigger className="h-9">
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
-                      <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                      <SelectContent>
                         <SelectItem value="none">No type</SelectItem>
                         {PROJECT_TYPES.map((t) => (
                           <SelectItem key={t.value} value={t.value}>
@@ -322,19 +298,16 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                   </div>
 
                   {/* Lead */}
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      <User className="h-3 w-3" />
-                      Lead
-                    </label>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Lead</label>
                     <Select
                       value={leadId || 'none'}
                       onValueChange={(v) => setLeadId(v === 'none' ? null : v)}
                     >
-                      <SelectTrigger className="h-11 border-border/50 bg-secondary/30 transition-all focus:ring-2 focus:ring-primary/20">
+                      <SelectTrigger className="h-9">
                         <SelectValue placeholder="Select lead" />
                       </SelectTrigger>
-                      <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                      <SelectContent>
                         <SelectItem value="none">No lead</SelectItem>
                         {profiles.map((p) => (
                           <SelectItem key={p.id} value={p.id}>
@@ -347,33 +320,22 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                 </div>
 
                 {/* Target Date */}
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    Target Date
-                  </label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">Target Date</label>
                   <Input
                     type="date"
                     value={targetDate}
                     onChange={(e) => setTargetDate(e.target.value)}
-                    className="h-11 border-border/50 bg-secondary/30 transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
+                    className="h-9"
                   />
                 </div>
 
-                {/* Action Buttons - Premium Style */}
-                <div className="space-y-3 pt-2">
+                {/* Action Buttons */}
+                <div className="space-y-2 pt-2">
                   <Button
-                    size="lg"
                     onClick={handleSave}
                     disabled={saving || !hasChanges}
-                    className={cn(
-                      'w-full gap-2 rounded-xl font-semibold shadow-lg transition-all',
-                      hasChanges
-                        ? 'bg-primary hover:bg-primary/90 hover:shadow-xl'
-                        : saved
-                          ? 'bg-emerald-600 hover:bg-emerald-600'
-                          : 'bg-secondary text-muted-foreground hover:bg-secondary'
-                    )}
+                    className={cn('w-full gap-2', saved && 'bg-emerald-600 hover:bg-emerald-600')}
                   >
                     {saving ? (
                       <>
@@ -397,43 +359,40 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
 
                   <Button
                     variant="ghost"
-                    size="lg"
                     onClick={handleDelete}
                     disabled={isPending}
-                    className="w-full gap-2 rounded-xl text-red-400/80 transition-all hover:bg-red-500/10 hover:text-red-400"
+                    className="w-full gap-2 text-red-500 hover:bg-red-500/10 hover:text-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete Project
                   </Button>
                 </div>
 
-                {/* Metadata Section - Premium Card */}
-                <div className="mt-4 space-y-4 rounded-xl border border-border/50 bg-secondary/20 p-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Project Info
-                  </h3>
-                  <div className="space-y-3 text-sm">
+                {/* Metadata Section */}
+                <div className="mt-2 space-y-3 rounded-lg border border-border bg-secondary/50 p-3">
+                  <h3 className="text-xs font-medium text-muted-foreground">Project Info</h3>
+                  <div className="space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3 w-3" />
                         Created
                       </span>
-                      <span className="font-medium">{formatDate(project.created_at)}</span>
+                      <span>{formatDate(project.created_at)}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5" />
+                        <Clock className="h-3 w-3" />
                         Updated
                       </span>
-                      <span className="font-medium">{formatTimeAgo(project.updated_at)}</span>
+                      <span>{formatTimeAgo(project.updated_at)}</span>
                     </div>
                     {project.client && (
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2 text-muted-foreground">
-                          <Building2 className="h-3.5 w-3.5" />
+                          <Building2 className="h-3 w-3" />
                           Client
                         </span>
-                        <span className="font-medium">{project.client.name}</span>
+                        <span>{project.client.name}</span>
                       </div>
                     )}
                   </div>
