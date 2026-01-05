@@ -174,6 +174,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     due_date,
     assignee_id,
     project_id,
+    custom_project_name,
     show_in_inbox,
     item_type,
   } = validation.data;
@@ -186,6 +187,30 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
 
   if (!wsId) {
     return { success: false, error: 'Workspace ID is required' };
+  }
+
+  // Handle custom project name - create new project if provided
+  let finalProjectId = project_id;
+  if (!project_id && custom_project_name) {
+    const { data: newProject, error: projectError } = await supabase
+      .from('projects')
+      .insert({
+        name: custom_project_name.trim(),
+        workspace_id: wsId,
+        lead_id: user.id,
+        status: 'Active',
+        project_group: 'active',
+        project_type: 'web_design', // Default type
+        deployment_platform: 'vercel', // Default platform
+      })
+      .select('id')
+      .single();
+
+    if (projectError) {
+      console.error('[createTask] Error creating project:', projectError);
+      return { success: false, error: 'Failed to create project' };
+    }
+    finalProjectId = newProject.id;
   }
 
   // Get the highest sort_order for this status in the workspace
@@ -211,7 +236,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,
-      project_id: project_id || null,
+      project_id: finalProjectId || null,
       due_date: due_date || null,
       sort_order: nextSortOrder,
       show_in_inbox: show_in_inbox ?? true, // Default to true when no project
@@ -226,12 +251,12 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
 
   // Send email notification to other admins (async, don't block response)
   // Get project name for the email
-  let projectName: string | undefined;
-  if (project_id) {
+  let projectName: string | undefined = custom_project_name?.trim();
+  if (!projectName && finalProjectId) {
     const { data: project } = await supabase
       .from('projects')
       .select('name')
-      .eq('id', project_id)
+      .eq('id', finalProjectId)
       .single();
     projectName = project?.name;
   }

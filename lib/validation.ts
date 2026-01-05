@@ -14,6 +14,7 @@ export const createIssueSchema = z.object({
     .default('No Priority'),
   team_id: z.string().uuid('Invalid team ID').optional().nullable(),
   project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  custom_project_name: z.string().max(200, 'Project name too long').optional(),
   parent_id: z.string().uuid('Invalid parent ID').optional().nullable(),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
@@ -41,6 +42,7 @@ export const createTaskSchema = z.object({
   due_date: z.string().optional().nullable(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
   project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  custom_project_name: z.string().max(200, 'Project name too long').optional(),
   show_in_inbox: z.boolean().default(false),
   item_type: z.enum(['task', 'issue', 'note', 'resource'] as const).default('task'),
 });
@@ -245,6 +247,7 @@ export const createMeetingSchema = z
     end_time: z.string().min(1, 'End time is required'),
     project_id: z.string().uuid('Invalid project ID').optional().nullable(),
     client_id: z.string().uuid('Invalid client ID').optional().nullable(),
+    custom_client_name: z.string().max(200, 'Client name too long').optional(),
     workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
     meeting_link: z.string().url('Invalid meeting link').optional().nullable(),
   })

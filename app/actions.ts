@@ -426,8 +426,17 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { title, description, status, priority, team_id, project_id, workspace_id, assignee_id } =
-    validation.data;
+  const {
+    title,
+    description,
+    status,
+    priority,
+    team_id,
+    project_id,
+    custom_project_name,
+    workspace_id,
+    assignee_id,
+  } = validation.data;
 
   // Get workspace ID from form or from user's default
   let wsId = workspace_id;
@@ -439,6 +448,30 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'Workspace is required' };
   }
 
+  // Handle custom project name - create new project if provided
+  let finalProjectId = project_id;
+  if (!project_id && custom_project_name) {
+    const { data: newProject, error: projectError } = await supabase
+      .from('projects')
+      .insert({
+        name: custom_project_name.trim(),
+        workspace_id: wsId,
+        lead_id: user.id,
+        status: 'Active',
+        project_group: 'active',
+        project_type: 'web_design',
+        deployment_platform: 'vercel',
+      })
+      .select('id')
+      .single();
+
+    if (projectError) {
+      console.error('Error creating project:', projectError);
+      return { success: false, error: 'Failed to create project' };
+    }
+    finalProjectId = newProject.id;
+  }
+
   const { data, error } = await supabase
     .from('issues')
     .insert({
@@ -447,7 +480,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
       status,
       priority,
       team_id: team_id || null,
-      project_id: project_id || null,
+      project_id: finalProjectId || null,
       creator_id: user.id,
       workspace_id: wsId,
     })
@@ -480,7 +513,7 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
     {
       issue_id: data.id,
       team_id: team_id,
-      project_id: project_id,
+      project_id: finalProjectId,
       workspace_id: wsId,
     },
     { title: data.title, priority: data.priority }
@@ -488,12 +521,12 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
 
   // Send email notification to other admins (fire and forget)
   // Get project name for the email
-  let projectName: string | undefined;
-  if (project_id) {
+  let projectName: string | undefined = custom_project_name?.trim();
+  if (!projectName && finalProjectId) {
     const { data: project } = await supabase
       .from('projects')
       .select('name')
-      .eq('id', project_id)
+      .eq('id', finalProjectId)
       .single();
     projectName = project?.name;
   }
@@ -1557,6 +1590,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     end_time,
     project_id,
     client_id,
+    custom_client_name,
     workspace_id,
     meeting_link,
   } = validation.data;
@@ -1567,6 +1601,26 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     wsId = await getCurrentWorkspaceId();
   }
 
+  // Handle custom client name - create new client if provided
+  let finalClientId = client_id;
+  if (!client_id && custom_client_name && wsId) {
+    const { data: newClient, error: clientError } = await supabase
+      .from('clients')
+      .insert({
+        display_name: custom_client_name.trim(),
+        workspace_id: wsId,
+        lead_status: 'lead',
+      })
+      .select('id')
+      .single();
+
+    if (clientError) {
+      console.error('Error creating client:', clientError);
+      return { success: false, error: 'Failed to create client' };
+    }
+    finalClientId = newClient.id;
+  }
+
   const { data, error } = await supabase
     .from('meetings')
     .insert({
@@ -1575,7 +1629,7 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
       start_time,
       end_time,
       project_id: project_id || null,
-      client_id: client_id || null,
+      client_id: finalClientId || null,
       created_by: user.id,
       workspace_id: wsId,
       meeting_link: meeting_link || null,
@@ -1589,8 +1643,8 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
   }
 
   // Log client activity if meeting is with a client
-  if (client_id) {
-    await logClientActivity(client_id, 'meeting', `Meeting scheduled: ${title}`, {
+  if (finalClientId) {
+    await logClientActivity(finalClientId, 'meeting', `Meeting scheduled: ${title}`, {
       meeting_id: data.id,
       start_time,
       end_time,
@@ -1612,12 +1666,12 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
 
   // Send email notification to other admins (fire and forget)
   // Get client name for the email if meeting is with a client
-  let clientName: string | undefined;
-  if (client_id) {
+  let clientName: string | undefined = custom_client_name?.trim();
+  if (!clientName && finalClientId) {
     const { data: client } = await supabase
       .from('clients')
       .select('display_name')
-      .eq('id', client_id)
+      .eq('id', finalClientId)
       .single();
     clientName = client?.display_name;
   }
