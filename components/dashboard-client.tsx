@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useTransition, useCallback } from 'react';
+import Link from 'next/link';
 import {
   CheckCircle2,
   Circle,
@@ -59,25 +60,29 @@ function TaskItem({
   const isOverdue = task.due_date && new Date(task.due_date) < new Date();
 
   return (
-    <div className="group flex items-center gap-3 rounded-lg border border-border/60 bg-card/50 p-3 transition-all hover:border-border hover:bg-card">
+    <div className="group flex items-center gap-4 rounded-xl border border-white/15 bg-card/60 p-4 transition-all hover:border-white/30 hover:bg-card/80">
       <button
         onClick={() => onComplete(task.id)}
         disabled={isPending}
-        className="flex h-5 w-5 shrink-0 items-center justify-center"
+        className="flex h-6 w-6 shrink-0 items-center justify-center"
       >
         {isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
-          <Circle className="h-5 w-5 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+          <Circle className="h-6 w-6 text-white/30 transition-colors group-hover:text-primary" />
         )}
       </button>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
+        <p className="truncate text-base font-medium text-foreground">{task.title}</p>
         {task.project && (
-          <p className="truncate text-xs text-muted-foreground">{task.project.name}</p>
+          <p className="mt-1 truncate text-sm text-muted-foreground">{task.project.name}</p>
         )}
       </div>
-      {isOverdue && <span className="shrink-0 text-xs font-medium text-red-500">Overdue</span>}
+      {isOverdue && (
+        <span className="shrink-0 rounded-md bg-red-500/20 px-2 py-1 text-xs font-medium text-red-400">
+          Overdue
+        </span>
+      )}
     </div>
   );
 }
@@ -129,32 +134,32 @@ function MeetingItem({
   return (
     <div
       className={cn(
-        'rounded-lg border p-4 transition-all',
+        'rounded-xl border p-5 transition-all',
         isNow
-          ? 'border-primary/50 bg-primary/5'
-          : 'border-border/60 bg-card/50 hover:border-border hover:bg-card'
+          ? 'border-primary/60 bg-primary/10'
+          : 'border-white/15 bg-card/60 hover:border-white/30 hover:bg-card/80'
       )}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isNow && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/20 px-3 py-1 text-xs font-semibold text-primary">
+                <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
                 Live
               </span>
             )}
-            <h3 className="truncate text-sm font-medium text-foreground">{meeting.title}</h3>
+            <h3 className="truncate text-base font-semibold text-foreground">{meeting.title}</h3>
           </div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
+          <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
             <span>
               {format(startTime, 'h:mm a')}
               {!isToday(startTime) && ` - ${format(startTime, 'MMM d')}`}
             </span>
             {meeting.client && (
               <>
-                <span className="text-muted-foreground/40">·</span>
+                <span className="text-white/20">·</span>
                 <span>{meeting.client.display_name}</span>
               </>
             )}
@@ -162,18 +167,18 @@ function MeetingItem({
         </div>
 
         {/* Action buttons */}
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-3">
           {/* Delete button for creator */}
           {isCreator && (
             <button
               onClick={handleDelete}
               disabled={isDeleting}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground/50 hover:bg-red-500/10 hover:text-red-500 disabled:opacity-50"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-muted-foreground hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
             >
               {isDeleting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <X className="h-3.5 w-3.5" />
+                <X className="h-4 w-4" />
               )}
             </button>
           )}
@@ -181,62 +186,62 @@ function MeetingItem({
             <>
               <button
                 onClick={copyLink}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-muted-foreground hover:border-white/30 hover:bg-white/5 hover:text-foreground"
               >
-                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
               <a
                 href={meeting.meeting_link!}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium',
+                  'flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all',
                   isNow
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    : 'border border-border bg-background text-foreground hover:bg-muted'
+                    : 'border border-white/20 bg-white/5 text-foreground hover:border-white/40 hover:bg-white/10'
                 )}
               >
-                <Video className="h-3.5 w-3.5" />
+                <Video className="h-4 w-4" />
                 Join
               </a>
             </>
           ) : isCreator ? (
             showLinkInput ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={linkValue}
                   onChange={(e) => setLinkValue(e.target.value)}
                   placeholder="Paste Meet link..."
-                  className="h-7 w-40 rounded-md border border-border bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="h-9 w-44 rounded-lg border border-white/20 bg-white/5 px-3 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   autoFocus
                 />
                 <button
                   onClick={handleSaveLink}
-                  className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  <Check className="h-3.5 w-3.5" />
+                  <Check className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setShowLinkInput(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-md border border-border hover:bg-muted"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 hover:bg-white/10"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setShowLinkInput(true)}
-                className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                className="flex items-center gap-2 rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-foreground hover:border-white/40 hover:bg-white/10"
               >
-                <Video className="h-3.5 w-3.5" />
+                <Video className="h-4 w-4" />
                 Add Link
               </button>
             )
           ) : (
-            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <VideoOff className="h-3.5 w-3.5" />
-              No link yet
+            <span className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-muted-foreground">
+              <VideoOff className="h-4 w-4" />
+              No link
             </span>
           )}
         </div>
@@ -339,29 +344,41 @@ export function DashboardClient({
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border px-6 py-6">
-        <div className="mx-auto max-w-5xl">
-          <h1 className="text-2xl font-semibold text-foreground">{greeting}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{dateString}</p>
+      <div className="border-b border-white/10 bg-card/30 px-8 py-8">
+        <div className="mx-auto max-w-7xl">
+          <h1 className="text-3xl font-bold text-foreground">{greeting}</h1>
+          <p className="mt-2 text-base text-muted-foreground">{dateString}</p>
         </div>
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 py-6">
-        <div className="grid gap-6 lg:grid-cols-2">
+      <div className="mx-auto max-w-7xl px-8 py-8">
+        <div className="grid gap-8 lg:grid-cols-2">
           {/* Left Column - Tasks */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Today's Tasks */}
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                  Today&apos;s Tasks
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
-                </span>
+            <section className="rounded-2xl border border-white/10 bg-card/40 p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold text-foreground">Today&apos;s Tasks</h2>
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-muted-foreground">
+                    {tasks.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/projects"
+                    className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-white/30 hover:text-foreground"
+                  >
+                    View All
+                  </Link>
+                  <button className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90">
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Task
+                  </button>
+                </div>
               </div>
               {tasks.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {tasks.slice(0, 5).map((task) => (
                     <TaskItem
                       key={task.id}
@@ -371,29 +388,37 @@ export function DashboardClient({
                     />
                   ))}
                   {tasks.length > 5 && (
-                    <p className="pt-1 text-center text-xs text-muted-foreground">
+                    <button className="w-full rounded-lg border border-white/10 py-3 text-center text-sm font-medium text-muted-foreground hover:border-white/20 hover:text-foreground">
                       +{tasks.length - 5} more tasks
-                    </p>
+                    </button>
                   )}
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-border/60 py-8 text-center">
-                  <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-500/50" />
-                  <p className="mt-2 text-sm text-muted-foreground">All caught up!</p>
+                <div className="rounded-xl border border-dashed border-white/20 py-12 text-center">
+                  <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-500/60" />
+                  <p className="mt-3 text-base text-muted-foreground">All caught up!</p>
+                  <button className="mt-4 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-foreground hover:bg-white/15">
+                    Add a new task
+                  </button>
                 </div>
               )}
             </section>
 
             {/* Pending Items */}
             {pendingTasks.length > 0 && (
-              <section>
-                <div className="mb-3 flex items-center justify-between">
-                  <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                    Waiting on You
-                  </h2>
-                  <span className="text-xs text-muted-foreground">{pendingTasks.length}</span>
+              <section className="rounded-2xl border border-white/10 bg-card/40 p-6">
+                <div className="mb-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-lg font-semibold text-foreground">Waiting on You</h2>
+                    <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-medium text-amber-400">
+                      {pendingTasks.length}
+                    </span>
+                  </div>
+                  <button className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-white/30 hover:text-foreground">
+                    Mark All Done
+                  </button>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {pendingTasks.slice(0, 3).map((task) => (
                     <TaskItem
                       key={task.id}
@@ -408,35 +433,46 @@ export function DashboardClient({
           </div>
 
           {/* Right Column - Meetings */}
-          <div>
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                  Meetings
-                </h2>
-                <button
-                  onClick={handleCreateInstantMeeting}
-                  disabled={isCreatingMeeting || isPending}
-                  className={cn(
-                    'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
-                    'border border-primary/50 text-primary hover:bg-primary/10',
-                    'disabled:cursor-not-allowed disabled:opacity-50'
-                  )}
-                >
-                  {isCreatingMeeting ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Plus className="h-3.5 w-3.5" />
-                  )}
-                  Start Instant Meeting
-                </button>
+          <div className="space-y-8">
+            <section className="rounded-2xl border border-white/10 bg-card/40 p-6">
+              <div className="mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold text-foreground">Meetings</h2>
+                  <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-muted-foreground">
+                    {meetings.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a
+                    href="/schedule"
+                    className="flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-white/30 hover:text-foreground"
+                  >
+                    View Calendar
+                  </a>
+                  <button
+                    onClick={handleCreateInstantMeeting}
+                    disabled={isCreatingMeeting || isPending}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all',
+                      'bg-primary text-primary-foreground hover:bg-primary/90',
+                      'disabled:cursor-not-allowed disabled:opacity-50'
+                    )}
+                  >
+                    {isCreatingMeeting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Plus className="h-3.5 w-3.5" />
+                    )}
+                    Instant Meeting
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {/* Today's Meetings */}
                 {todayMeetings.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Today</p>
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Today</p>
                     {todayMeetings.map((meeting) => (
                       <MeetingItem
                         key={meeting.id}
@@ -452,8 +488,8 @@ export function DashboardClient({
 
                 {/* Upcoming Meetings */}
                 {upcomingOtherMeetings.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Upcoming</p>
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Upcoming</p>
                     {upcomingOtherMeetings.slice(0, 3).map((meeting) => (
                       <MeetingItem
                         key={meeting.id}
@@ -464,33 +500,85 @@ export function DashboardClient({
                         autoShowLinkInput={meeting.id === justCreatedMeetingId}
                       />
                     ))}
+                    {upcomingOtherMeetings.length > 3 && (
+                      <a
+                        href="/schedule"
+                        className="block w-full rounded-lg border border-white/10 py-3 text-center text-sm font-medium text-muted-foreground hover:border-white/20 hover:text-foreground"
+                      >
+                        +{upcomingOtherMeetings.length - 3} more meetings
+                      </a>
+                    )}
                   </div>
                 )}
 
                 {/* Empty state */}
                 {meetings.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-border/60 py-8 text-center">
-                    <Video className="mx-auto h-8 w-8 text-muted-foreground/30" />
-                    <p className="mt-2 text-sm text-muted-foreground">No meetings scheduled</p>
+                  <div className="rounded-xl border border-dashed border-white/20 py-12 text-center">
+                    <Video className="mx-auto h-10 w-10 text-muted-foreground/40" />
+                    <p className="mt-3 text-base text-muted-foreground">No meetings scheduled</p>
                     <button
                       onClick={handleCreateInstantMeeting}
                       disabled={isCreatingMeeting}
-                      className="mt-3 text-xs font-medium text-primary hover:underline"
+                      className="mt-4 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                     >
-                      Start an instant meeting
+                      Start Instant Meeting
                     </button>
                   </div>
                 )}
+              </div>
+            </section>
+
+            {/* Quick Actions Panel */}
+            <section className="rounded-2xl border border-white/10 bg-card/40 p-6">
+              <h2 className="mb-4 text-lg font-semibold text-foreground">Quick Actions</h2>
+              <div className="grid grid-cols-2 gap-3">
+                <Link
+                  href="/projects"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-all hover:border-white/25 hover:bg-white/10"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20">
+                    <Plus className="h-5 w-5 text-blue-400" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">New Project</span>
+                </Link>
+                <Link
+                  href="/clients"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-all hover:border-white/25 hover:bg-white/10"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/20">
+                    <Plus className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">New Client</span>
+                </Link>
+                <Link
+                  href="/documents"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-all hover:border-white/25 hover:bg-white/10"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
+                    <Plus className="h-5 w-5 text-purple-400" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">New Document</span>
+                </Link>
+                <button
+                  onClick={handleCreateInstantMeeting}
+                  disabled={isCreatingMeeting}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-all hover:border-white/25 hover:bg-white/10 disabled:opacity-50"
+                >
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
+                    <Video className="h-5 w-5 text-orange-400" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">Quick Meet</span>
+                </button>
               </div>
             </section>
           </div>
         </div>
 
         {/* Keyboard hint */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-10 text-center">
+          <p className="text-sm text-muted-foreground">
             Press{' '}
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-xs">
+            <kbd className="rounded-md border border-white/20 bg-white/5 px-2 py-1 font-mono text-xs text-foreground">
               ⌘K
             </kbd>{' '}
             for quick navigation
