@@ -2,6 +2,7 @@
  * Schedule utilities for task scoring and block assignment
  */
 
+import { isToday, parseISO } from 'date-fns';
 import type { Task } from '@/app/actions/inbox';
 import { TimeBlock, TIME_BLOCKS, parseTimeToMinutes, TaskPriority } from './schedule-constants';
 
@@ -208,12 +209,15 @@ export function filterTodaysTasks(tasks: Task[]): Task[] {
 }
 
 /**
- * Filter meetings for today
+ * Filter meetings for today using proper date comparison
  */
 export function filterTodaysMeetings<T extends { start_time: string }>(meetings: T[]): T[] {
-  const today = new Date().toISOString().split('T')[0];
-
   return meetings.filter((meeting) => {
-    return meeting.start_time.startsWith(today);
+    try {
+      const meetingDate = parseISO(meeting.start_time);
+      return isToday(meetingDate);
+    } catch {
+      return false;
+    }
   });
 }
