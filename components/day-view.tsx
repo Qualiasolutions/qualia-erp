@@ -22,6 +22,7 @@ import {
   Trash2,
   Pencil,
   GripVertical,
+  Video,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -127,6 +128,14 @@ function DraggableMeeting({
   const startTime = toZonedTime(parseISO(meeting.start_time), timezone);
   const endTime = toZonedTime(parseISO(meeting.end_time), timezone);
 
+  const hasLink = !!meeting.meeting_link;
+
+  const handleClick = () => {
+    if (hasLink) {
+      window.open(meeting.meeting_link!, '_blank');
+    }
+  };
+
   const style = transform
     ? {
         transform: CSS.Translate.toString(transform),
@@ -139,19 +148,30 @@ function DraggableMeeting({
     <div
       ref={setNodeRef}
       style={style}
+      onClick={handleClick}
       className={cn(
-        'group relative h-full cursor-grab overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-2.5 transition-all hover:border-violet-500/50 hover:bg-violet-500/15',
-        isDragging && 'cursor-grabbing shadow-lg ring-2 ring-violet-500/50'
+        'group relative h-full overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-2.5 transition-all hover:border-violet-500/50 hover:bg-violet-500/15',
+        isDragging && 'cursor-grabbing shadow-lg ring-2 ring-violet-500/50',
+        hasLink ? 'cursor-pointer' : 'cursor-grab'
       )}
     >
       {/* Drag handle */}
       <div
         {...attributes}
         {...listeners}
+        onClick={(e) => e.stopPropagation()}
         className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab opacity-0 transition-opacity group-hover:opacity-100"
       >
         <GripVertical className="h-4 w-4 text-muted-foreground" />
       </div>
+
+      {/* Live/Link indicator */}
+      {hasLink && (
+        <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-emerald-500 group-hover:opacity-0">
+          <Video className="h-3 w-3" />
+          <span className="text-[10px] font-medium">Join</span>
+        </div>
+      )}
 
       {/* Action buttons */}
       <div className="absolute right-1.5 top-1.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">

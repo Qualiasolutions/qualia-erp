@@ -13,7 +13,7 @@ import {
   setMinutes,
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { ChevronLeft, ChevronRight, Clock, Globe, Trash2, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Globe, Trash2, Pencil, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
 import { EditMeetingModal } from './edit-meeting-modal';
@@ -275,6 +275,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   const { top, height } = getMeetingPosition(meeting);
                   const startTime = toZonedTime(parseISO(meeting.start_time), timezone);
                   const endTime = toZonedTime(parseISO(meeting.end_time), timezone);
+                  const hasLink = !!meeting.meeting_link;
 
                   // Skip if outside visible hours
                   if (startTime.getHours() >= END_HOUR || endTime.getHours() < START_HOUR) {
@@ -284,10 +285,21 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   return (
                     <div
                       key={meeting.id}
-                      className="group absolute left-1 right-1 z-10 cursor-pointer overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-1.5 transition-colors hover:bg-violet-500/20"
+                      onClick={() => hasLink && window.open(meeting.meeting_link!, '_blank')}
+                      className={cn(
+                        'group absolute left-1 right-1 z-10 overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-1.5 transition-colors hover:bg-violet-500/20',
+                        hasLink ? 'cursor-pointer' : 'cursor-default'
+                      )}
                       style={{ top: `${top}px`, height: `${height}px` }}
-                      title={`${meeting.title}\n${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}`}
+                      title={`${meeting.title}\n${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}${hasLink ? '\nClick to join' : ''}`}
                     >
+                      {/* Live/Link indicator */}
+                      {hasLink && (
+                        <div className="absolute right-0.5 top-0.5 flex items-center gap-0.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-500 group-hover:opacity-0">
+                          <Video className="h-2.5 w-2.5" />
+                        </div>
+                      )}
+
                       {/* Action buttons */}
                       <div className="absolute right-0.5 top-0.5 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                         <button
