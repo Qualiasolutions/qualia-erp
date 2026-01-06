@@ -298,6 +298,26 @@ export function NewMeetingModal() {
                     </button>
                   </div>
 
+                  {/* Title for Internal Meetings */}
+                  <AnimatePresence>
+                    {meetingType === 'internal' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <input
+                          type="text"
+                          placeholder="Meeting title (e.g., Team Standup)"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          className="h-11 w-full rounded-xl border border-border/50 bg-secondary/30 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {/* Client Selector */}
                   <AnimatePresence>
                     {meetingType === 'client' && (
@@ -504,6 +524,7 @@ export function NewMeetingModal() {
                     type="submit"
                     disabled={
                       loading ||
+                      !title.trim() ||
                       (meetingType === 'client' && !selectedClientId && !customClientName)
                     }
                     className="min-w-[120px]"
