@@ -1,6 +1,6 @@
 'use client';
 
-import { useTodaysMeetings } from '@/lib/swr';
+import { useTodaysMeetings, invalidateMeetings } from '@/lib/swr';
 import { MeetingsTimeline } from './meetings-timeline';
 
 interface Meeting {
@@ -40,5 +40,10 @@ export function MeetingsWrapper({ initialMeetings }: MeetingsWrapperProps) {
     })),
   }));
 
-  return <MeetingsTimeline meetings={normalizedMeetings} />;
+  // Handle meeting creation - refresh the data
+  const handleMeetingCreated = () => {
+    invalidateMeetings(true);
+  };
+
+  return <MeetingsTimeline meetings={normalizedMeetings} onMeetingCreated={handleMeetingCreated} />;
 }

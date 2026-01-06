@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format, parseISO, isToday } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Video, ExternalLink } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Video, ExternalLink, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
 
 interface Meeting {
   id: string;
@@ -20,6 +22,7 @@ interface Meeting {
 
 interface MeetingsTimelineProps {
   meetings: Meeting[];
+  onMeetingCreated?: (meeting: Meeting) => void;
 }
 
 // Time slots from 8:30 AM to 6:00 PM
@@ -92,11 +95,19 @@ function isCurrentTimeSlot(slot: string): boolean {
   return currentMinutes >= slotMinutes && currentMinutes < slotMinutes + 30;
 }
 
-export function MeetingsTimeline({ meetings }: MeetingsTimelineProps) {
+export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelineProps) {
+  const [showModal, setShowModal] = useState(false);
+
   // Filter to today's meetings only
   const todayMeetings = useMemo(() => {
     return meetings.filter((m) => isToday(parseISO(m.start_time)));
   }, [meetings]);
+
+  // Handle meeting creation
+  const handleMeetingCreated = (meeting: Meeting) => {
+    onMeetingCreated?.(meeting);
+    setShowModal(false);
+  };
 
   // Map meetings to their time slots
   const meetingsBySlot = useMemo(() => {
@@ -132,11 +143,21 @@ export function MeetingsTimeline({ meetings }: MeetingsTimelineProps) {
         <CardTitle className="flex items-center gap-2 text-base">
           <Video className="h-4 w-4 text-muted-foreground" />
           Today&apos;s Meetings
-          {todayMeetings.length > 0 && (
-            <span className="ml-auto text-sm font-normal text-muted-foreground">
-              {todayMeetings.length} scheduled
-            </span>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {todayMeetings.length > 0 && (
+              <span className="text-sm font-normal text-muted-foreground">
+                {todayMeetings.length} scheduled
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:text-violet-400"
+              onClick={() => setShowModal(true)}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto px-3 pb-4">
@@ -177,20 +198,17 @@ export function MeetingsTimeline({ meetings }: MeetingsTimelineProps) {
 
                   {/* Meeting card or empty slot */}
                   {meeting ? (
-                    <div className="flex-1 rounded-lg border border-violet-500/30 bg-violet-500/10 p-2.5 shadow-sm transition-colors hover:bg-violet-500/15">
+                    <div className="flex-1 rounded-lg border border-violet-500/30 bg-violet-500/10 p-2 shadow-sm transition-colors hover:bg-violet-500/15">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{meeting.title}</p>
-                          <div className="mt-0.5 flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              {getDuration(meeting.start_time, meeting.end_time)}
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {getDuration(meeting.start_time, meeting.end_time)}
+                          </span>
+                          {meeting.client && (
+                            <span className="truncate text-sm font-medium text-violet-400">
+                              {meeting.client.display_name}
                             </span>
-                            {meeting.client && (
-                              <span className="truncate text-xs text-violet-400">
-                                {meeting.client.display_name}
-                              </span>
-                            )}
-                          </div>
+                          )}
                         </div>
                         <div className="flex items-center gap-1">
                           {meeting.attendees?.[0]?.profile && (
@@ -223,6 +241,13 @@ export function MeetingsTimeline({ meetings }: MeetingsTimelineProps) {
           </div>
         </div>
       </CardContent>
+
+      {/* New Meeting Modal */}
+      <NewMeetingModalInline
+        open={showModal}
+        onOpenChange={setShowModal}
+        onMeetingCreated={handleMeetingCreated}
+      />
     </Card>
   );
 }
