@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, CalendarIcon, User, FolderOpen, Inbox, Sparkles, Check, X } from 'lucide-react';
+import { Plus, CalendarIcon, User, FolderOpen, Sparkles, Check, X } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -40,7 +40,6 @@ export function NewTaskModal() {
   const [customProjectName, setCustomProjectName] = useState<string>('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-  const [showInInbox, setShowInInbox] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -54,7 +53,6 @@ export function NewTaskModal() {
       setCustomProjectName('');
       setAssigneeId(null);
       setDueDate(undefined);
-      setShowInInbox(true);
       setError(null);
       setSuccess(false);
       // Focus input after animation
@@ -86,7 +84,7 @@ export function NewTaskModal() {
     formData.set('title', title);
     formData.set('description', description);
     formData.set('status', 'Todo');
-    formData.set('show_in_inbox', showInInbox ? 'true' : 'false');
+    formData.set('show_in_inbox', 'true');
 
     if (projectId) {
       formData.set('project_id', projectId);
@@ -309,49 +307,6 @@ export function NewTaskModal() {
                       </PopoverContent>
                     </Popover>
                   </div>
-
-                  {/* Inbox Toggle - Modern pill style */}
-                  <button
-                    type="button"
-                    onClick={() => setShowInInbox(!showInInbox)}
-                    className={cn(
-                      'flex w-full items-center gap-3 rounded-xl border px-4 py-3 transition-all',
-                      showInInbox
-                        ? 'border-primary/30 bg-primary/5'
-                        : 'border-border/50 bg-secondary/30 hover:bg-secondary/50'
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
-                        showInInbox ? 'bg-primary/20' : 'bg-secondary'
-                      )}
-                    >
-                      <Inbox
-                        className={cn(
-                          'h-4 w-4 transition-colors',
-                          showInInbox ? 'text-primary' : 'text-muted-foreground'
-                        )}
-                      />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium text-foreground">Show in Inbox</p>
-                      <p className="text-xs text-muted-foreground">Quick access from your inbox</p>
-                    </div>
-                    <div
-                      className={cn(
-                        'flex h-5 w-9 items-center rounded-full p-0.5 transition-colors',
-                        showInInbox ? 'bg-primary' : 'bg-secondary'
-                      )}
-                    >
-                      <motion.div
-                        layout
-                        className="h-4 w-4 rounded-full bg-white shadow-sm"
-                        animate={{ x: showInInbox ? 16 : 0 }}
-                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      />
-                    </div>
-                  </button>
 
                   {/* Error */}
                   <AnimatePresence>

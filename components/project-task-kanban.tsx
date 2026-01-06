@@ -6,7 +6,6 @@ import {
   GripVertical,
   MoreVertical,
   Trash2,
-  Inbox,
   CheckCircle2,
   Circle,
   Clock,
@@ -41,7 +40,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { createTask, deleteTask, reorderTasks, toggleTaskInbox } from '@/app/actions/inbox';
+import { createTask, deleteTask, reorderTasks } from '@/app/actions/inbox';
 import type { Task } from '@/app/actions/inbox';
 import { useProjectTasks, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { cn } from '@/lib/utils';
@@ -52,7 +51,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 type ItemType = 'task' | 'issue' | 'note' | 'resource';
@@ -141,15 +139,10 @@ const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Circle; color: string; bg
 interface SortableItemCardProps {
   task: Task;
   onDelete: () => void;
-  onToggleInbox: () => void;
 }
 
 // Sortable Item Card - Minimal design
-const SortableItemCard = memo(function SortableItemCard({
-  task,
-  onDelete,
-  onToggleInbox,
-}: SortableItemCardProps) {
+const SortableItemCard = memo(function SortableItemCard({ task, onDelete }: SortableItemCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
   });
@@ -225,13 +218,6 @@ const SortableItemCard = memo(function SortableItemCard({
                 </span>
               </>
             )}
-
-            {task.show_in_inbox && (
-              <>
-                <span className="text-border">·</span>
-                <Inbox className="h-2.5 w-2.5 text-primary" />
-              </>
-            )}
           </div>
         </div>
 
@@ -246,11 +232,6 @@ const SortableItemCard = memo(function SortableItemCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={onToggleInbox}>
-              <Inbox className="mr-2 h-4 w-4" />
-              {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
@@ -275,11 +256,9 @@ const DragOverlayCard = memo(function DragOverlayCard({ task }: { task: Task }) 
 const ResourceCard = memo(function ResourceCard({
   task,
   onDelete,
-  onToggleInbox,
 }: {
   task: Task;
   onDelete: () => void;
-  onToggleInbox: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -384,11 +363,6 @@ const ResourceCard = memo(function ResourceCard({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={onToggleInbox}>
-            <Inbox className="mr-2 h-4 w-4" />
-            {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
@@ -404,7 +378,6 @@ interface DroppableColumnProps {
   id: ItemType;
   tasks: Task[];
   onDeleteTask: (taskId: string) => void;
-  onToggleInbox: (taskId: string, currentValue: boolean) => void;
   isAddingItem: boolean;
   newItemTitle: string;
   onNewItemTitleChange: (value: string) => void;
@@ -417,7 +390,6 @@ const DroppableColumn = memo(function DroppableColumn({
   id,
   tasks,
   onDeleteTask,
-  onToggleInbox,
   isAddingItem,
   newItemTitle,
   onNewItemTitleChange,
@@ -459,12 +431,7 @@ const DroppableColumn = memo(function DroppableColumn({
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
           {tasks.map((task) => (
-            <SortableItemCard
-              key={task.id}
-              task={task}
-              onDelete={() => onDeleteTask(task.id)}
-              onToggleInbox={() => onToggleInbox(task.id, task.show_in_inbox)}
-            />
+            <SortableItemCard key={task.id} task={task} onDelete={() => onDeleteTask(task.id)} />
           ))}
         </SortableContext>
 
@@ -519,7 +486,6 @@ const DroppableColumn = memo(function DroppableColumn({
 interface ResourcesSectionProps {
   resources: Task[];
   onDeleteTask: (taskId: string) => void;
-  onToggleInbox: (taskId: string, currentValue: boolean) => void;
   isAddingItem: boolean;
   newItemTitle: string;
   onNewItemTitleChange: (value: string) => void;
@@ -531,7 +497,6 @@ interface ResourcesSectionProps {
 const ResourcesSection = memo(function ResourcesSection({
   resources,
   onDeleteTask,
-  onToggleInbox,
   isAddingItem,
   newItemTitle,
   onNewItemTitleChange,
@@ -586,12 +551,7 @@ const ResourcesSection = memo(function ResourcesSection({
               strategy={verticalListSortingStrategy}
             >
               {resources.map((task) => (
-                <ResourceCard
-                  key={task.id}
-                  task={task}
-                  onDelete={() => onDeleteTask(task.id)}
-                  onToggleInbox={() => onToggleInbox(task.id, task.show_in_inbox)}
-                />
+                <ResourceCard key={task.id} task={task} onDelete={() => onDeleteTask(task.id)} />
               ))}
             </SortableContext>
           </div>
@@ -646,7 +606,12 @@ interface PhaseGroupProps {
   isExpanded: boolean;
   onToggle: () => void;
   onDeleteTask: (taskId: string) => void;
-  onToggleInbox: (taskId: string, currentValue: boolean) => void;
+  onAddTask: () => void;
+  isAddingTask?: boolean;
+  newTaskTitle?: string;
+  onNewTaskTitleChange?: (value: string) => void;
+  onCreateTask?: () => void;
+  onCancelAddTask?: () => void;
 }
 
 const PhaseGroup = memo(function PhaseGroup({
@@ -655,7 +620,12 @@ const PhaseGroup = memo(function PhaseGroup({
   isExpanded,
   onToggle,
   onDeleteTask,
-  onToggleInbox,
+  onAddTask,
+  isAddingTask,
+  newTaskTitle,
+  onNewTaskTitleChange,
+  onCreateTask,
+  onCancelAddTask,
 }: PhaseGroupProps) {
   const doneCount = tasks.filter((t) => t.status === 'Done').length;
   const totalCount = tasks.length;
@@ -741,23 +711,52 @@ const PhaseGroup = memo(function PhaseGroup({
       </button>
 
       {/* Tasks List */}
-      {isExpanded && tasks.length > 0 && (
+      {isExpanded && (
         <div className="space-y-2 border-t border-border/50 p-4">
           {tasks.map((task) => (
-            <PhaseTaskCard
-              key={task.id}
-              task={task}
-              onDelete={() => onDeleteTask(task.id)}
-              onToggleInbox={() => onToggleInbox(task.id, task.show_in_inbox)}
-            />
+            <PhaseTaskCard key={task.id} task={task} onDelete={() => onDeleteTask(task.id)} />
           ))}
-        </div>
-      )}
 
-      {/* Empty State */}
-      {isExpanded && tasks.length === 0 && (
-        <div className="border-t border-border/50 p-6 text-center">
-          <p className="text-sm text-muted-foreground">No tasks in this phase</p>
+          {/* Add Task Form */}
+          {isAddingTask && onNewTaskTitleChange && onCreateTask && onCancelAddTask ? (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+              <Input
+                placeholder="Task title..."
+                value={newTaskTitle || ''}
+                onChange={(e) => onNewTaskTitleChange(e.target.value)}
+                className="mb-2 h-9 border-primary/20 bg-background/80"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') onCreateTask();
+                  if (e.key === 'Escape') onCancelAddTask();
+                }}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={onCreateTask}
+                  disabled={!newTaskTitle?.trim()}
+                  className="h-8 flex-1"
+                >
+                  Add Task
+                </Button>
+                <Button size="sm" variant="ghost" onClick={onCancelAddTask} className="h-8">
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddTask();
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add task
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -768,11 +767,9 @@ const PhaseGroup = memo(function PhaseGroup({
 const PhaseTaskCard = memo(function PhaseTaskCard({
   task,
   onDelete,
-  onToggleInbox,
 }: {
   task: Task;
   onDelete: () => void;
-  onToggleInbox: () => void;
 }) {
   const statusConfig = STATUS_CONFIG[task.status as TaskStatus] || STATUS_CONFIG.Todo;
   const StatusIcon = statusConfig.icon;
@@ -824,11 +821,6 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
             })}
           </span>
         )}
-        {task.show_in_inbox && (
-          <span className="rounded-full bg-primary/10 p-1">
-            <Inbox className="h-3 w-3 text-primary" />
-          </span>
-        )}
       </div>
 
       {/* Actions */}
@@ -842,11 +834,6 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={onToggleInbox}>
-            <Inbox className="mr-2 h-4 w-4" />
-            {task.show_in_inbox ? 'Remove from Inbox' : 'Add to Inbox'}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
@@ -867,6 +854,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
   const { tasks, isLoading, revalidate } = useProjectTasks(projectId);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addingToType, setAddingToType] = useState<ItemType | null>(null);
+  const [addingToPhase, setAddingToPhase] = useState<string | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('type');
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
@@ -999,15 +987,6 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     [revalidate]
   );
 
-  const handleToggleInbox = useCallback(
-    async (taskId: string, currentValue: boolean) => {
-      await toggleTaskInbox(taskId, !currentValue);
-      revalidate();
-      invalidateInboxTasks();
-    },
-    [revalidate]
-  );
-
   const handleCreateItem = useCallback(
     async (itemType: ItemType) => {
       if (!newItemTitle.trim()) return;
@@ -1027,6 +1006,25 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     },
     [newItemTitle, projectId, revalidate]
   );
+
+  const handleCreatePhaseTask = useCallback(async () => {
+    if (!newItemTitle.trim() || !addingToPhase) return;
+
+    const formData = new FormData();
+    formData.set('title', newItemTitle.trim());
+    formData.set('status', 'Todo');
+    formData.set('project_id', projectId);
+    formData.set('show_in_inbox', 'true');
+    formData.set('item_type', 'task');
+    // Note: phase_name is stored temporarily - will need backend support for phase_id
+
+    await createTask(formData);
+    setNewItemTitle('');
+    setAddingToPhase(null);
+    revalidate();
+    invalidateProjectTasks(projectId);
+    invalidateInboxTasks();
+  }, [newItemTitle, projectId, addingToPhase, revalidate]);
 
   if (isLoading) {
     return (
@@ -1113,7 +1111,6 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
             <ResourcesSection
               resources={tasksByType.resource}
               onDeleteTask={handleDeleteTask}
-              onToggleInbox={handleToggleInbox}
               isAddingItem={addingToType === 'resource'}
               newItemTitle={addingToType === 'resource' ? newItemTitle : ''}
               onNewItemTitleChange={setNewItemTitle}
@@ -1133,7 +1130,6 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
                   id={itemType}
                   tasks={tasksByType[itemType]}
                   onDeleteTask={handleDeleteTask}
-                  onToggleInbox={handleToggleInbox}
                   isAddingItem={addingToType === itemType}
                   newItemTitle={addingToType === itemType ? newItemTitle : ''}
                   onNewItemTitleChange={setNewItemTitle}
@@ -1158,28 +1154,48 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
                 key={phase.name}
                 phase={phase}
                 tasks={tasksByPhase[phase.name] || []}
-                isExpanded={expandedPhases.has(phase.name)}
+                isExpanded={expandedPhases.has(phase.name) || addingToPhase === phase.name}
                 onToggle={() => togglePhase(phase.name)}
                 onDeleteTask={handleDeleteTask}
-                onToggleInbox={handleToggleInbox}
+                onAddTask={() => {
+                  setAddingToPhase(phase.name);
+                  setExpandedPhases((prev) => new Set(prev).add(phase.name));
+                }}
+                isAddingTask={addingToPhase === phase.name}
+                newTaskTitle={addingToPhase === phase.name ? newItemTitle : ''}
+                onNewTaskTitleChange={setNewItemTitle}
+                onCreateTask={handleCreatePhaseTask}
+                onCancelAddTask={() => {
+                  setAddingToPhase(null);
+                  setNewItemTitle('');
+                }}
               />
             ))}
 
-            {/* Unassigned tasks (tasks not assigned to a phase) */}
-            {tasksByPhase['Unassigned']?.length > 0 && (
-              <PhaseGroup
-                phase={{
-                  name: 'Unassigned',
-                  order: 999,
-                  description: 'Tasks not assigned to a phase',
-                }}
-                tasks={tasksByPhase['Unassigned']}
-                isExpanded={expandedPhases.has('Unassigned')}
-                onToggle={() => togglePhase('Unassigned')}
-                onDeleteTask={handleDeleteTask}
-                onToggleInbox={handleToggleInbox}
-              />
-            )}
+            {/* Unassigned tasks */}
+            <PhaseGroup
+              phase={{
+                name: 'Unassigned',
+                order: 999,
+                description: 'Tasks not assigned to a phase',
+              }}
+              tasks={tasksByPhase['Unassigned'] || []}
+              isExpanded={expandedPhases.has('Unassigned') || addingToPhase === 'Unassigned'}
+              onToggle={() => togglePhase('Unassigned')}
+              onDeleteTask={handleDeleteTask}
+              onAddTask={() => {
+                setAddingToPhase('Unassigned');
+                setExpandedPhases((prev) => new Set(prev).add('Unassigned'));
+              }}
+              isAddingTask={addingToPhase === 'Unassigned'}
+              newTaskTitle={addingToPhase === 'Unassigned' ? newItemTitle : ''}
+              onNewTaskTitleChange={setNewItemTitle}
+              onCreateTask={handleCreatePhaseTask}
+              onCancelAddTask={() => {
+                setAddingToPhase(null);
+                setNewItemTitle('');
+              }}
+            />
           </div>
         )}
       </div>
