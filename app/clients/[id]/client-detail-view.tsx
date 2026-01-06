@@ -1,14 +1,16 @@
 'use client';
 
+import { useState } from 'react';
 import type { Client } from '@/types/database';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Phone, Globe, MapPin, Folder, User } from 'lucide-react';
+import { Building2, Phone, Globe, MapPin, Folder, User, Pencil } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
+import { EditClientModal } from '@/components/edit-client-modal';
 
 const statusConfig = {
   dropped: { label: 'Dropped', bg: 'bg-gray-100', color: 'text-gray-600' },
@@ -38,7 +40,7 @@ function getClientWorkItems(clientName: string | null): Array<{
   description?: string;
 }> {
   const normalizedName = clientName?.toLowerCase().trim().replace(/\s+/g, '') || '';
-  
+
   // Match InrVo (case-insensitive, allows variations)
   if (normalizedName.includes('inrvo')) {
     return [
@@ -60,12 +62,13 @@ function getClientWorkItems(clientName: string | null): Array<{
       },
     ];
   }
-  
+
   // Add more client work items here as needed
   return [];
 }
 
 export function ClientDetailView({ client }: ClientDetailViewProps) {
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const status = statusConfig[client.lead_status || 'cold'] || statusConfig.cold;
   const workItems = getClientWorkItems(client.display_name);
 
@@ -77,24 +80,36 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
           <div className="flex items-center gap-5">
             <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500 via-qualia-600 to-qualia-700 shadow-lg shadow-qualia-500/20 transition-transform duration-300 hover:scale-105">
               <Building2 className="h-10 w-10 text-white" />
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-qualia-400/20 to-qualia-600/20 blur-xl opacity-50" />
+              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-qualia-400/20 to-qualia-600/20 opacity-50 blur-xl" />
             </div>
             <div className="flex-1">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">
+              <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
                 {client.display_name}
               </h1>
-              <Badge className={cn(status.bg, status.color, 'text-xs font-medium px-3 py-1')} variant="secondary">
+              <Badge
+                className={cn(status.bg, status.color, 'px-3 py-1 text-xs font-medium')}
+                variant="secondary"
+              >
                 {status.label}
               </Badge>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditModalOpen(true)}
+              className="gap-2"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Contact Information */}
-          <Card className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Phone className="h-4 w-4 text-qualia-500" />
                 Contact Information
               </CardTitle>
@@ -135,15 +150,17 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
                 </div>
               )}
               {!client.phone && !client.website && !client.billing_address && (
-                <p className="text-sm text-muted-foreground py-4 text-center">No contact information available</p>
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  No contact information available
+                </p>
               )}
             </CardContent>
           </Card>
 
           {/* Account Details */}
-          <Card className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <User className="h-4 w-4 text-qualia-500" />
                 Account Details
               </CardTitle>
@@ -153,14 +170,16 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
               {client.assigned && (
                 <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5">
                   <Avatar className="h-10 w-10 ring-2 ring-qualia-500/20">
-                    <AvatarFallback className="bg-qualia-500/10 text-qualia-600 dark:text-qualia-400 font-semibold">
+                    <AvatarFallback className="bg-qualia-500/10 font-semibold text-qualia-600 dark:text-qualia-400">
                       {getInitials(client.assigned.full_name || 'U')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
                     <p className="text-sm font-semibold">{client.assigned.full_name}</p>
                     {client.assigned.email && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{client.assigned.email}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {client.assigned.email}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -185,7 +204,8 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
                   <User className="h-4 w-4" />
                 </div>
                 <span className="text-sm font-medium">
-                  Client since {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
+                  Client since{' '}
+                  {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
             </CardContent>
@@ -194,13 +214,15 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
 
         {/* Notes */}
         {client.notes && (
-          <Card className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg font-semibold">Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-xl bg-gradient-to-br from-muted/50 to-muted/30 border border-border/40 p-4 backdrop-blur-sm">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{client.notes}</p>
+              <div className="rounded-xl border border-border/40 bg-gradient-to-br from-muted/50 to-muted/30 p-4 backdrop-blur-sm">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
+                  {client.notes}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -208,9 +230,9 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
 
         {/* Projects List */}
         {client.projects && client.projects.length > 0 && (
-          <Card className="group hover:shadow-lg transition-all duration-300">
+          <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardHeader>
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                 <Folder className="h-4 w-4 text-qualia-500" />
                 Projects ({client.projects.length})
               </CardTitle>
@@ -225,12 +247,17 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
                   >
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{project.name}</p>
-                      <p className="text-sm capitalize text-muted-foreground mt-1">
+                      <p className="mt-1 text-sm capitalize text-muted-foreground">
                         {project.project_type?.replace('_', ' ')} •{' '}
                         <span className="capitalize">{project.status}</span>
                       </p>
                     </div>
-                    <Button variant="outline" size="sm" asChild className="ml-4 hover:bg-qualia-500/10 hover:border-qualia-500/40 hover:text-qualia-600 dark:hover:text-qualia-400">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="ml-4 hover:border-qualia-500/40 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
+                    >
                       <a href={`/projects/${project.id}`}>View Project</a>
                     </Button>
                   </div>
@@ -242,13 +269,16 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
 
         {/* Work Showcase */}
         {workItems.length > 0 && (
-          <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+          <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
             <CardContent className="pt-6">
               <WorkShowcase clientName={client.display_name || 'Client'} workItems={workItems} />
             </CardContent>
           </Card>
         )}
       </div>
+
+      {/* Edit Client Modal */}
+      <EditClientModal client={client} open={editModalOpen} onOpenChange={setEditModalOpen} />
     </div>
   );
 }
