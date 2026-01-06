@@ -45,6 +45,7 @@ export const createTaskSchema = z.object({
   custom_project_name: z.string().max(200, 'Project name too long').optional(),
   show_in_inbox: z.boolean().default(false),
   item_type: z.enum(['task', 'issue', 'note', 'resource'] as const).default('task'),
+  phase_name: z.string().max(100, 'Phase name too long').optional().nullable(),
 });
 
 export const updateTaskSchema = z.object({

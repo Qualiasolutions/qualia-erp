@@ -104,6 +104,7 @@ async function getDashboardData(userId: string, workspaceId?: string) {
     // Add required fields with defaults
     description: null,
     item_type: 'task',
+    phase_name: (t.phase_name as string | null) || null,
     show_in_inbox: false,
     sort_order: 0,
     workspace_id: workspaceId || '',

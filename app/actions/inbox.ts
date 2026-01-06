@@ -24,6 +24,7 @@ export type Task = {
   status: 'Todo' | 'In Progress' | 'Done';
   priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
   item_type: 'task' | 'issue' | 'note' | 'resource';
+  phase_name: string | null;
   sort_order: number;
   due_date: string | null;
   completed_at: string | null;
@@ -97,6 +98,7 @@ export async function getTasks(
       status,
       priority,
       item_type,
+      phase_name,
       sort_order,
       due_date,
       completed_at,
@@ -177,6 +179,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     custom_project_name,
     show_in_inbox,
     item_type,
+    phase_name,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -233,6 +236,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       status,
       priority: 'No Priority',
       item_type: item_type || 'task',
+      phase_name: phase_name || null,
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,
@@ -439,6 +443,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       status,
       priority,
       item_type,
+      phase_name,
       sort_order,
       due_date,
       completed_at,

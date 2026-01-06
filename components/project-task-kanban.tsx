@@ -901,15 +901,28 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     return getPhasesForType(projectType);
   }, [projectType]);
 
-  // Group tasks by phase (currently all tasks go to Unassigned since milestone field not implemented)
+  // Group tasks by phase_name
   const tasksByPhase = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
     // Initialize with empty arrays for each phase
     availablePhases.forEach((phase) => {
       grouped[phase.name] = [];
     });
-    // All tasks go to Unassigned until milestone/phase assignment is implemented
-    grouped['Unassigned'] = [...tasks].sort((a, b) => a.sort_order - b.sort_order);
+    grouped['Unassigned'] = [];
+
+    // Group tasks by their phase_name
+    tasks.forEach((task) => {
+      const phaseName = task.phase_name || 'Unassigned';
+      if (!grouped[phaseName]) {
+        grouped[phaseName] = [];
+      }
+      grouped[phaseName].push(task);
+    });
+
+    // Sort each group by sort_order
+    Object.keys(grouped).forEach((key) => {
+      grouped[key].sort((a, b) => a.sort_order - b.sort_order);
+    });
 
     return grouped;
   }, [tasks, availablePhases]);
@@ -1016,7 +1029,10 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     formData.set('project_id', projectId);
     formData.set('show_in_inbox', 'true');
     formData.set('item_type', 'task');
-    // Note: phase_name is stored temporarily - will need backend support for phase_id
+    // Set phase_name (use null for Unassigned)
+    if (addingToPhase !== 'Unassigned') {
+      formData.set('phase_name', addingToPhase);
+    }
 
     await createTask(formData);
     setNewItemTitle('');

@@ -107,6 +107,7 @@ export async function getTimelineDashboardData(): Promise<TimelineDashboardData>
         status,
         priority,
         item_type,
+        phase_name,
         sort_order,
         due_date,
         completed_at,
