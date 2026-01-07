@@ -41,10 +41,10 @@ export default async function TodayPage() {
     })),
   }));
 
-  // Get ALL tasks from all projects - show everything except Done tasks
-  // Users can hide individual tasks using the hide button (sets show_in_inbox to false)
+  // Get only TASKS (not resources/notes/issues) from all projects
+  // Filter out Done tasks and non-task items
   const tasks = tasksRaw
-    .filter((t) => t.status !== 'Done')
+    .filter((t) => t.status !== 'Done' && t.item_type === 'task')
     .map((t) => ({
       id: t.id,
       title: t.title,

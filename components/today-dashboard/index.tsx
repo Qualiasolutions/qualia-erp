@@ -155,7 +155,7 @@ export function TodayDashboard({
           </div>
 
           {/* Right column - All Tasks from Projects (wider) */}
-          <div className="h-[400px] shrink-0 lg:h-full lg:w-[420px]">
+          <div className="h-[400px] shrink-0 lg:h-full lg:w-[520px]">
             <TasksWidget tasks={tasks} teamMembers={teamMembers} />
           </div>
         </div>

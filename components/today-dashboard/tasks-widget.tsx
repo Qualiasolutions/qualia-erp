@@ -102,33 +102,35 @@ const TaskItem = React.memo(function TaskItem({
         >
           {task.title}
         </label>
-        {/* Project name and assignee info */}
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
-          {task.project && (
-            <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-              <FolderOpen className="h-3 w-3" />
-              {task.project.name}
-            </span>
-          )}
+        {/* Project name (left/green) and assignee (right/purple) */}
+        <div className="mt-1 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {task.project && (
+              <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                <FolderOpen className="h-3 w-3" />
+                {task.project.name}
+              </span>
+            )}
+            {task.due_date && !isCompleted && (
+              <span
+                className={cn(
+                  'flex items-center gap-1 text-xs',
+                  overdue ? 'text-red-500' : dueToday ? 'text-amber-500' : 'text-muted-foreground'
+                )}
+              >
+                <Clock className="h-3 w-3" />
+                {overdue
+                  ? 'Overdue'
+                  : dueToday
+                    ? `Due ${formatDueTime(task.due_date)}`
+                    : formatDueTime(task.due_date)}
+              </span>
+            )}
+          </div>
           {task.assignee && (
             <span className="flex items-center gap-1 text-xs font-medium text-purple-600 dark:text-purple-400">
               <User className="h-3 w-3" />
               {task.assignee.full_name || 'Unknown'}
-            </span>
-          )}
-          {task.due_date && !isCompleted && (
-            <span
-              className={cn(
-                'flex items-center gap-1 text-xs',
-                overdue ? 'text-red-500' : dueToday ? 'text-amber-500' : 'text-muted-foreground'
-              )}
-            >
-              <Clock className="h-3 w-3" />
-              {overdue
-                ? 'Overdue'
-                : dueToday
-                  ? `Due ${formatDueTime(task.due_date)}`
-                  : formatDueTime(task.due_date)}
             </span>
           )}
         </div>
