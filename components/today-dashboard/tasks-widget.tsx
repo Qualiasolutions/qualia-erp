@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ListTodo, Circle, Clock, EyeOff, FolderOpen, User, Users } from 'lucide-react';
+import { ListTodo, Circle, Clock, EyeOff, FolderOpen, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
@@ -48,6 +48,14 @@ const PRIORITY_CONFIG = {
   'No Priority': 'fill-slate-400 text-slate-400',
 };
 
+// User colors - alternating colors for team members
+const USER_COLORS = [
+  { text: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-500' },
+  { text: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500' },
+  { text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500' },
+  { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500' },
+];
+
 function formatDueTime(dueDate: string): string {
   const date = parseISO(dueDate);
   if (isToday(date)) {
@@ -73,11 +81,13 @@ const TaskItem = React.memo(function TaskItem({
   onToggle,
   onHide,
   isPending,
+  userColorMap,
 }: {
   task: Task;
   onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
   isPending: boolean;
+  userColorMap: Map<string, { text: string; bg: string }>;
 }) {
   const isCompleted = task.status === 'Done';
   const overdue = isOverdue(task.due_date);
@@ -128,8 +138,18 @@ const TaskItem = React.memo(function TaskItem({
             )}
           </div>
           {task.assignee && (
-            <span className="flex items-center gap-1 text-xs font-medium text-purple-600 dark:text-purple-400">
-              <User className="h-3 w-3" />
+            <span
+              className={cn(
+                'flex items-center gap-1.5 text-xs font-medium',
+                userColorMap.get(task.assignee.id)?.text || 'text-purple-600 dark:text-purple-400'
+              )}
+            >
+              <span
+                className={cn(
+                  'h-2 w-2 rounded-full',
+                  userColorMap.get(task.assignee.id)?.bg || 'bg-purple-500'
+                )}
+              />
               {task.assignee.full_name || 'Unknown'}
             </span>
           )}
@@ -165,6 +185,15 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const [isPending, startTransition] = useTransition();
   const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  // Create color map for each team member
+  const userColorMap = React.useMemo(() => {
+    const map = new Map<string, { text: string; bg: string }>();
+    teamMembers.forEach((member, index) => {
+      map.set(member.id, USER_COLORS[index % USER_COLORS.length]);
+    });
+    return map;
+  }, [teamMembers]);
 
   // Filter out hidden tasks and optionally by selected user
   const visibleTasks = tasks.filter((t) => {
@@ -219,17 +248,21 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
             >
               All
             </Button>
-            {teamMembers.map((member) => (
-              <Button
-                key={member.id}
-                variant={selectedUserId === member.id ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-7 px-2 text-xs"
-                onClick={() => setSelectedUserId(member.id)}
-              >
-                {member.full_name?.split(' ')[0] || 'Unknown'}
-              </Button>
-            ))}
+            {teamMembers.map((member) => {
+              const color = userColorMap.get(member.id);
+              return (
+                <Button
+                  key={member.id}
+                  variant={selectedUserId === member.id ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 gap-1.5 px-2 text-xs"
+                  onClick={() => setSelectedUserId(member.id)}
+                >
+                  <span className={cn('h-2 w-2 rounded-full', color?.bg)} />
+                  {member.full_name?.split(' ')[0] || 'Unknown'}
+                </Button>
+              );
+            })}
           </div>
         </div>
       </CardHeader>
@@ -249,6 +282,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
                 onToggle={handleToggleTask}
                 onHide={handleHideTask}
                 isPending={isPending}
+                userColorMap={userColorMap}
               />
             ))}
           </div>
