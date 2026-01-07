@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useTransition } from 'react';
+import React, { useTransition, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ListTodo, Circle, Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ListTodo, Circle, Clock, EyeOff, FolderOpen, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { updateTask } from '@/app/actions/inbox';
+import { quickUpdateTask, toggleTaskInbox } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 
 interface Task {
@@ -18,6 +19,7 @@ interface Task {
   status: 'Todo' | 'In Progress' | 'Done';
   priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
   due_date: string | null;
+  show_in_inbox?: boolean;
   assignee?: {
     id: string;
     full_name: string | null;
@@ -27,13 +29,6 @@ interface Task {
     id: string;
     name: string;
   } | null;
-}
-
-interface TeamMember {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-  tasks: Task[];
 }
 
 interface TasksWidgetProps {
@@ -52,16 +47,6 @@ const PRIORITY_CONFIG = {
   Low: 'fill-emerald-500 text-emerald-500',
   'No Priority': 'fill-slate-400 text-slate-400',
 };
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return '?';
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-}
 
 function formatDueTime(dueDate: string): string {
   const date = parseISO(dueDate);
@@ -82,125 +67,121 @@ function isOverdue(dueDate: string | null): boolean {
   return isPast(date) && !isToday(date);
 }
 
-// Single Task Item
+// Single Task Item - shows task with project name and assignee
 const TaskItem = React.memo(function TaskItem({
   task,
   onToggle,
+  onHide,
+  isPending,
 }: {
   task: Task;
   onToggle: (taskId: string, completed: boolean) => void;
+  onHide: (taskId: string) => void;
+  isPending: boolean;
 }) {
   const isCompleted = task.status === 'Done';
   const overdue = isOverdue(task.due_date);
   const dueToday = isDueToday(task.due_date);
 
   return (
-    <div className="flex items-start gap-3 py-1.5">
+    <div className="group flex items-start gap-2 rounded-md px-2 py-2 transition-colors hover:bg-muted/50">
       <Checkbox
         id={task.id}
         checked={isCompleted}
         onCheckedChange={(checked) => onToggle(task.id, checked as boolean)}
-        className="mt-0.5"
+        className="mt-0.5 shrink-0"
+        disabled={isPending}
       />
       <div className="min-w-0 flex-1">
         <label
           htmlFor={task.id}
           className={cn(
-            'cursor-pointer text-sm',
+            'block cursor-pointer text-sm leading-tight',
             isCompleted && 'text-muted-foreground line-through'
           )}
         >
           {task.title}
         </label>
-        {task.due_date && !isCompleted && (
-          <div className="mt-0.5 flex items-center gap-1">
-            <Clock
-              className={cn(
-                'h-3 w-3',
-                overdue ? 'text-red-500' : dueToday ? 'text-amber-500' : 'text-muted-foreground'
-              )}
-            />
+        {/* Project name and assignee info */}
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+          {task.project && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <FolderOpen className="h-3 w-3" />
+              {task.project.name}
+            </span>
+          )}
+          {task.assignee && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <User className="h-3 w-3" />
+              {task.assignee.full_name || 'Unknown'}
+            </span>
+          )}
+          {task.due_date && !isCompleted && (
             <span
               className={cn(
-                'text-xs',
+                'flex items-center gap-1 text-xs',
                 overdue ? 'text-red-500' : dueToday ? 'text-amber-500' : 'text-muted-foreground'
               )}
             >
+              <Clock className="h-3 w-3" />
               {overdue
                 ? 'Overdue'
                 : dueToday
                   ? `Due ${formatDueTime(task.due_date)}`
                   : formatDueTime(task.due_date)}
             </span>
-          </div>
-        )}
-        {task.project && (
-          <span className="text-xs text-muted-foreground/70">{task.project.name}</span>
-        )}
+          )}
+        </div>
       </div>
-      <Circle className={cn('h-2 w-2 shrink-0', PRIORITY_CONFIG[task.priority])} />
+      <div className="flex shrink-0 items-center gap-1">
+        <Circle className={cn('h-2 w-2', PRIORITY_CONFIG[task.priority])} />
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={() => onHide(task.id)}
+                disabled={isPending}
+              >
+                <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>Hide from dashboard</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
   );
 });
 
-export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
+export function TasksWidget({ tasks }: TasksWidgetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
 
-  // Group tasks by assignee
-  const tasksByMember: TeamMember[] = React.useMemo(() => {
-    const memberMap = new Map<string, TeamMember>();
-
-    // Initialize with team members
-    teamMembers.forEach((member) => {
-      memberMap.set(member.id, {
-        ...member,
-        tasks: [],
-      });
-    });
-
-    // Add unassigned bucket
-    memberMap.set('unassigned', {
-      id: 'unassigned',
-      full_name: 'Unassigned',
-      avatar_url: null,
-      tasks: [],
-    });
-
-    // Group tasks
-    tasks.forEach((task) => {
-      const assigneeId = task.assignee?.id || 'unassigned';
-      const member = memberMap.get(assigneeId);
-      if (member) {
-        member.tasks.push(task);
-      } else {
-        // Create member entry if not found
-        memberMap.set(assigneeId, {
-          id: assigneeId,
-          full_name: task.assignee?.full_name || 'Unknown',
-          avatar_url: task.assignee?.avatar_url || null,
-          tasks: [task],
-        });
-      }
-    });
-
-    // Filter out members with no tasks and sort by task count
-    return Array.from(memberMap.values())
-      .filter((m) => m.tasks.length > 0)
-      .sort((a, b) => b.tasks.length - a.tasks.length);
-  }, [tasks, teamMembers]);
-
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t) => t.status === 'Done').length;
-  const pendingTasks = totalTasks - completedTasks;
+  // Filter out hidden tasks locally for immediate feedback
+  const visibleTasks = tasks.filter((t) => !hiddenTasks.has(t.id));
+  const pendingTasks = visibleTasks.filter((t) => t.status !== 'Done').length;
 
   const handleToggleTask = (taskId: string, completed: boolean) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.set('id', taskId);
-      formData.set('status', completed ? 'Done' : 'Todo');
+      await quickUpdateTask(taskId, { status: completed ? 'Done' : 'Todo' });
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+      router.refresh();
+    });
+  };
 
-      await updateTask(formData);
+  const handleHideTask = (taskId: string) => {
+    // Optimistic update - hide immediately
+    setHiddenTasks((prev) => new Set(prev).add(taskId));
+
+    startTransition(async () => {
+      await toggleTaskInbox(taskId, false);
       invalidateInboxTasks(true);
       invalidateDailyFlow(true);
       router.refresh();
@@ -213,44 +194,30 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <ListTodo className="h-4 w-4 text-muted-foreground" />
-            Tasks
+            All Tasks
           </CardTitle>
           <Badge variant="secondary" className="font-normal">
             {pendingTasks} pending
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto px-3 pb-4">
-        {tasksByMember.length === 0 ? (
+      <CardContent className="flex-1 overflow-y-auto px-2 pb-4">
+        {visibleTasks.length === 0 ? (
           <div className="flex h-32 flex-col items-center justify-center text-center">
             <ListTodo className="mb-2 h-8 w-8 text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">No tasks for today</p>
+            <p className="text-sm text-muted-foreground">No tasks</p>
             <p className="text-xs text-muted-foreground/70">All caught up!</p>
           </div>
         ) : (
-          <div className="space-y-5">
-            {tasksByMember.map((member) => (
-              <div key={member.id}>
-                {/* Team member header */}
-                <div className="mb-2 flex items-center gap-2">
-                  <Avatar className="h-6 w-6">
-                    <AvatarFallback className="bg-primary/10 text-[10px] text-primary">
-                      {getInitials(member.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium">{member.full_name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {member.tasks.filter((t) => t.status !== 'Done').length} pending
-                  </span>
-                </div>
-
-                {/* Tasks list */}
-                <div className="space-y-1 pl-8">
-                  {member.tasks.map((task) => (
-                    <TaskItem key={task.id} task={task} onToggle={handleToggleTask} />
-                  ))}
-                </div>
-              </div>
+          <div className="space-y-1">
+            {visibleTasks.map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                onToggle={handleToggleTask}
+                onHide={handleHideTask}
+                isPending={isPending}
+              />
             ))}
           </div>
         )}

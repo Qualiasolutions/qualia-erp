@@ -1,7 +1,6 @@
 import { getCurrentWorkspaceId, getMeetings, getClients, getProfiles } from '@/app/actions';
 import { getTasks } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
-import { isToday, parseISO, isPast } from 'date-fns';
 
 // Normalize FK arrays to single objects
 function normalizeFK<T>(value: T | T[] | null): T | null {
@@ -21,9 +20,10 @@ export default async function TodayPage() {
   }
 
   // Fetch all data in parallel
+  // Fetch ALL tasks from all projects (not just inbox)
   const [meetingsRaw, tasksRaw, clientsRaw, profilesRaw] = await Promise.all([
     getMeetings(workspaceId),
-    getTasks(workspaceId, { status: ['Todo', 'In Progress'] }),
+    getTasks(workspaceId, { status: ['Todo', 'In Progress'], limit: 100 }),
     getClients(workspaceId),
     getProfiles(),
   ]);
@@ -41,27 +41,17 @@ export default async function TodayPage() {
     })),
   }));
 
-  // Filter tasks due today or overdue, limit to active ones
+  // Get ALL tasks from all projects - show everything except Done tasks
+  // Users can hide individual tasks using the hide button (sets show_in_inbox to false)
   const tasks = tasksRaw
-    .filter((t) => {
-      // Include tasks that are:
-      // 1. Due today or overdue
-      // 2. Or in progress
-      // 3. Or recently created (last 7 days) with no due date
-      if (t.status === 'Done') return false;
-      if (t.due_date) {
-        const dueDate = parseISO(t.due_date);
-        return isToday(dueDate) || isPast(dueDate);
-      }
-      return t.status === 'In Progress';
-    })
-    .slice(0, 20)
+    .filter((t) => t.status !== 'Done')
     .map((t) => ({
       id: t.id,
       title: t.title,
       status: t.status as 'Todo' | 'In Progress' | 'Done',
       priority: t.priority as 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low',
       due_date: t.due_date,
+      show_in_inbox: t.show_in_inbox,
       assignee: t.assignee
         ? {
             id: t.assignee.id,

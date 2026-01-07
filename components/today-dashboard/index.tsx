@@ -28,6 +28,7 @@ interface Task {
   status: 'Todo' | 'In Progress' | 'Done';
   priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
   due_date: string | null;
+  show_in_inbox?: boolean;
   assignee?: {
     id: string;
     full_name: string | null;
@@ -153,7 +154,7 @@ export function TodayDashboard({
             <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
           </div>
 
-          {/* Right column - Tasks */}
+          {/* Right column - All Tasks from Projects */}
           <div className="h-[400px] shrink-0 lg:h-full lg:w-80">
             <TasksWidget tasks={tasks} teamMembers={teamMembers} />
           </div>
