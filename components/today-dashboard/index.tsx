@@ -154,8 +154,8 @@ export function TodayDashboard({
             <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
           </div>
 
-          {/* Right column - All Tasks from Projects */}
-          <div className="h-[400px] shrink-0 lg:h-full lg:w-80">
+          {/* Right column - All Tasks from Projects (wider) */}
+          <div className="h-[400px] shrink-0 lg:h-full lg:w-[420px]">
             <TasksWidget tasks={tasks} teamMembers={teamMembers} />
           </div>
         </div>

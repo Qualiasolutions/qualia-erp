@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ListTodo, Circle, Clock, EyeOff, FolderOpen, User } from 'lucide-react';
+import { ListTodo, Circle, Clock, EyeOff, FolderOpen, User, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
@@ -84,7 +84,7 @@ const TaskItem = React.memo(function TaskItem({
   const dueToday = isDueToday(task.due_date);
 
   return (
-    <div className="group flex items-start gap-2 rounded-md px-2 py-2 transition-colors hover:bg-muted/50">
+    <div className="group flex items-start gap-2 px-1 py-3 transition-colors hover:bg-muted/30">
       <Checkbox
         id={task.id}
         checked={isCompleted}
@@ -105,13 +105,13 @@ const TaskItem = React.memo(function TaskItem({
         {/* Project name and assignee info */}
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           {task.project && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
               <FolderOpen className="h-3 w-3" />
               {task.project.name}
             </span>
           )}
           {task.assignee && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-xs font-medium text-purple-600 dark:text-purple-400">
               <User className="h-3 w-3" />
               {task.assignee.full_name || 'Unknown'}
             </span>
@@ -158,13 +158,18 @@ const TaskItem = React.memo(function TaskItem({
   );
 });
 
-export function TasksWidget({ tasks }: TasksWidgetProps) {
+export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-  // Filter out hidden tasks locally for immediate feedback
-  const visibleTasks = tasks.filter((t) => !hiddenTasks.has(t.id));
+  // Filter out hidden tasks and optionally by selected user
+  const visibleTasks = tasks.filter((t) => {
+    if (hiddenTasks.has(t.id)) return false;
+    if (selectedUserId && t.assignee?.id !== selectedUserId) return false;
+    return true;
+  });
   const pendingTasks = visibleTasks.filter((t) => t.status !== 'Done').length;
 
   const handleToggleTask = (taskId: string, completed: boolean) => {
@@ -190,7 +195,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
 
   return (
     <Card className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
-      <CardHeader className="pb-3">
+      <CardHeader className="space-y-3 pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <ListTodo className="h-4 w-4 text-muted-foreground" />
@@ -200,8 +205,33 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
             {pendingTasks} pending
           </Badge>
         </div>
+        {/* User filter */}
+        <div className="flex items-center gap-2">
+          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+          <div className="flex gap-1">
+            <Button
+              variant={selectedUserId === null ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={() => setSelectedUserId(null)}
+            >
+              All
+            </Button>
+            {teamMembers.map((member) => (
+              <Button
+                key={member.id}
+                variant={selectedUserId === member.id ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setSelectedUserId(member.id)}
+              >
+                {member.full_name?.split(' ')[0] || 'Unknown'}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto px-2 pb-4">
+      <CardContent className="flex-1 overflow-y-auto px-3 pb-4">
         {visibleTasks.length === 0 ? (
           <div className="flex h-32 flex-col items-center justify-center text-center">
             <ListTodo className="mb-2 h-8 w-8 text-muted-foreground/50" />
@@ -209,7 +239,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
             <p className="text-xs text-muted-foreground/70">All caught up!</p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="divide-y divide-border">
             {visibleTasks.map((task) => (
               <TaskItem
                 key={task.id}
