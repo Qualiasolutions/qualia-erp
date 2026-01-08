@@ -3,8 +3,8 @@ import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { NewProjectModal } from '@/components/new-project-modal';
-import { Folder } from 'lucide-react';
-import { ProjectTableView } from '@/components/project-table-view';
+import { Folder, Beaker, Briefcase } from 'lucide-react';
+import { ProjectColumnView } from '@/components/project-column-view';
 import type { ProjectType } from '@/types/database';
 
 export interface ProjectData {
@@ -43,7 +43,22 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectTableView projects={[]} />;
+    return (
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ProjectColumnView
+          title="Demos"
+          icon={<Beaker className="h-4 w-4" />}
+          projects={[]}
+          emptyMessage="No demos yet"
+        />
+        <ProjectColumnView
+          title="Projects"
+          icon={<Briefcase className="h-4 w-4" />}
+          projects={[]}
+          emptyMessage="No projects yet"
+        />
+      </div>
+    );
   }
 
   // Map RPC result to Project interface
@@ -74,52 +89,56 @@ async function ProjectListLoader() {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  return <ProjectTableView projects={projects} />;
+  // Split projects: Demos status goes to demos column, rest to projects column
+  const demos = projects.filter((p) => p.status === 'Demos');
+  const activeProjects = projects.filter((p) => p.status !== 'Demos');
+
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <ProjectColumnView
+        title="Demos"
+        icon={<Beaker className="h-4 w-4" />}
+        projects={demos}
+        emptyMessage="No demos yet"
+      />
+      <ProjectColumnView
+        title="Projects"
+        icon={<Briefcase className="h-4 w-4" />}
+        projects={activeProjects}
+        emptyMessage="No projects yet"
+      />
+    </div>
+  );
 }
 
-function ProjectTableSkeleton() {
+function ColumnSkeleton() {
   return (
-    <div className="space-y-4">
-      {/* Filter skeleton */}
-      <div className="flex gap-3">
-        <div className="h-9 w-48 animate-pulse rounded-lg bg-muted" />
-        <div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
-        <div className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
-        <div className="h-9 w-36 animate-pulse rounded-lg bg-muted" />
+    <div className="rounded-lg border border-border bg-card">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+        <div className="h-4 w-4 animate-pulse rounded bg-muted" />
+        <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+        <div className="ml-auto h-5 w-6 animate-pulse rounded-full bg-muted" />
       </div>
-
-      {/* Table skeleton */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        {/* Header */}
-        <div className="flex items-center gap-4 border-b border-border bg-secondary/50 px-4 py-3">
-          <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-8 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-14 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-14 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-        </div>
-        {/* Rows */}
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
-          >
-            <div className="h-4 w-6 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-36 animate-pulse rounded bg-muted" />
-            <div className="h-2 w-16 animate-pulse rounded-full bg-muted" />
-            <div className="h-6 w-6 animate-pulse rounded-full bg-muted" />
-            <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
-            <div className="h-4 w-10 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-4 w-16 animate-pulse rounded bg-muted" />
-            <div className="h-5 w-12 animate-pulse rounded bg-muted" />
+      <div className="divide-y divide-border">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-3">
+            <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
+            <div className="flex-1">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="mt-1 h-3 w-20 animate-pulse rounded bg-muted" />
+            </div>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function ProjectColumnsSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <ColumnSkeleton />
+      <ColumnSkeleton />
     </div>
   );
 }
@@ -138,7 +157,7 @@ export default function ProjectsPage() {
               Projects
             </h1>
             <p className="hidden text-xs text-muted-foreground sm:block">
-              Track progress and manage deliverables
+              Demos and active projects
             </p>
           </div>
         </div>
@@ -147,7 +166,7 @@ export default function ProjectsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <Suspense fallback={<ProjectTableSkeleton />}>
+        <Suspense fallback={<ProjectColumnsSkeleton />}>
           <ProjectListLoader />
         </Suspense>
       </div>
