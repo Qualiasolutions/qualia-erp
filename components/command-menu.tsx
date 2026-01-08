@@ -331,13 +331,15 @@ export function CommandMenu() {
                     >
                       <div
                         className={cn(
-                          'max-w-[85%] rounded-lg px-3 py-2 text-[13px]',
+                          'max-w-[75%] rounded-lg px-2.5 py-1.5 text-[13px]',
                           message.role === 'user'
                             ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-foreground'
                         )}
                       >
-                        <p className="whitespace-pre-wrap">{getMessageContent(message)}</p>
+                        <p className="whitespace-pre-wrap leading-snug">
+                          {getMessageContent(message)}
+                        </p>
                       </div>
                     </div>
                   ))}

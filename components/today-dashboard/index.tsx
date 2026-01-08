@@ -174,36 +174,22 @@ export function TodayDashboard({
         </div>
       </motion.header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 lg:px-8">
+      {/* Main Content - Fixed 100vh layout */}
+      <main className="min-h-0 flex-1 overflow-hidden">
+        <div className="mx-auto h-full max-w-[1800px] px-4 py-4 sm:px-6">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="space-y-6"
+            className="h-full"
           >
-            {/* Bento Grid Layout - fits in viewport */}
-            <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
-              {/* Left Column - Projects */}
-              <motion.div variants={itemVariants} className="lg:col-span-4">
-                <div className="h-[400px] lg:h-[calc(100vh-220px)]">
-                  <ProjectsWidget projects={projects} />
-                </div>
-              </motion.div>
-
-              {/* Middle Column - Tasks */}
-              <motion.div variants={itemVariants} className="lg:col-span-5">
-                <div className="h-[400px] lg:h-[calc(100vh-220px)]">
-                  <TasksWidget tasks={tasks} teamMembers={teamMembers} />
-                </div>
-              </motion.div>
-
-              {/* Right Column - Meetings & Leads stacked */}
+            {/* Bento Grid Layout - fits in viewport without scroll */}
+            <div className="grid h-full gap-4 lg:grid-cols-12 lg:gap-5">
+              {/* Left Column - Projects + Leads stacked */}
               <div className="flex flex-col gap-4 lg:col-span-3">
-                {/* Meetings */}
-                <motion.div variants={itemVariants} className="h-[280px]">
-                  <MeetingsWrapper initialMeetings={meetings} />
+                {/* Projects - shorter */}
+                <motion.div variants={itemVariants} className="h-[45%] min-h-[200px]">
+                  <ProjectsWidget projects={projects} />
                 </motion.div>
 
                 {/* Leads - scrollable */}
@@ -211,6 +197,20 @@ export function TodayDashboard({
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>
               </div>
+
+              {/* Middle Column - Tasks (full height) */}
+              <motion.div variants={itemVariants} className="lg:col-span-6">
+                <div className="h-full">
+                  <TasksWidget tasks={tasks} teamMembers={teamMembers} />
+                </div>
+              </motion.div>
+
+              {/* Right Column - Meetings (full height) */}
+              <motion.div variants={itemVariants} className="lg:col-span-3">
+                <div className="h-full">
+                  <MeetingsWrapper initialMeetings={meetings} />
+                </div>
+              </motion.div>
             </div>
           </motion.div>
         </div>
