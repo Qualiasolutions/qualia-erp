@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/client-utils';
-import { PROJECT_STATUS_COLORS, type ProjectStatusKey } from '@/lib/color-constants';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,15 +96,7 @@ const PROJECT_STATUSES = [
 ] as const;
 const PROJECT_TYPES: ProjectType[] = ['ai_agent', 'voice_agent', 'web_design', 'seo', 'ads'];
 
-type SortField =
-  | 'name'
-  | 'progress'
-  | 'owner'
-  | 'status'
-  | 'tasks'
-  | 'start_date'
-  | 'end_date'
-  | 'type';
+type SortField = 'name' | 'progress' | 'owner' | 'start_date' | 'end_date' | 'type';
 type SortDirection = 'asc' | 'desc';
 
 // Helper: Calculate progress
@@ -217,7 +208,6 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
     });
   };
 
-  const statusColors = PROJECT_STATUS_COLORS[project.status as ProjectStatusKey];
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
 
@@ -257,26 +247,6 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
         ) : (
           <span className="text-sm text-muted-foreground/50">-</span>
         )}
-      </td>
-
-      {/* Project Status */}
-      <td className="px-4 py-3">
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium',
-            statusColors?.bg || 'bg-slate-500/10',
-            statusColors?.text || 'text-slate-400'
-          )}
-        >
-          {project.status}
-        </span>
-      </td>
-
-      {/* Tasks Progress */}
-      <td className="px-4 py-3">
-        <span className="text-sm tabular-nums text-muted-foreground">
-          {project.issue_stats?.done || 0}/{project.issue_stats?.total || 0}
-        </span>
       </td>
 
       {/* End Date with relative indicator */}
@@ -411,12 +381,6 @@ export function ProjectTableView({ projects }: ProjectTableViewProps) {
           break;
         case 'owner':
           comparison = (a.lead?.full_name || '').localeCompare(b.lead?.full_name || '');
-          break;
-        case 'status':
-          comparison = (a.status || '').localeCompare(b.status || '');
-          break;
-        case 'tasks':
-          comparison = (a.issue_stats?.total || 0) - (b.issue_stats?.total || 0);
           break;
         case 'start_date':
           comparison =
@@ -557,24 +521,6 @@ export function ProjectTableView({ projects }: ProjectTableViewProps) {
                 <SortableHeader
                   field="owner"
                   label="Person:"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-24 px-4 py-3 text-left">
-                <SortableHeader
-                  field="status"
-                  label="Status"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-20 px-4 py-3 text-left">
-                <SortableHeader
-                  field="tasks"
-                  label="Tasks"
                   currentField={sortField}
                   direction={sortDirection}
                   onSort={handleSort}
