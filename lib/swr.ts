@@ -7,6 +7,8 @@ import {
   getProfiles,
   getCurrentWorkspaceId,
   getMeetings,
+  getNotifications,
+  getUnreadNotificationCount,
 } from '@/app/actions';
 import { getTasks, getProjectTasks } from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
@@ -38,6 +40,8 @@ export const cacheKeys = {
   todaysMeetings: 'todays-meetings',
   projectPhases: (projectId: string) => `project-phases-${projectId}`,
   meetings: 'all-meetings',
+  notifications: (workspaceId: string) => `notifications-${workspaceId}`,
+  unreadCount: (workspaceId: string) => `unread-count-${workspaceId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -509,5 +513,70 @@ export function invalidateMeetings(immediate = true) {
     mutate(cacheKeys.todaysMeetings);
     mutate('daily-flow');
     mutate('timeline-dashboard');
+  }
+}
+
+/**
+ * Hook to fetch notifications with auto-refresh
+ */
+export function useNotifications(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.notifications(workspaceId) : null,
+    () => (workspaceId ? getNotifications(workspaceId) : Promise.resolve([])),
+    autoRefreshConfig
+  );
+
+  return {
+    notifications: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch unread notification count
+ */
+export function useUnreadNotificationCount(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.unreadCount(workspaceId) : null,
+    () => (workspaceId ? getUnreadNotificationCount(workspaceId) : Promise.resolve(0)),
+    autoRefreshConfig
+  );
+
+  return {
+    count: data || 0,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate notifications cache
+ */
+export function invalidateNotifications(workspaceId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.notifications(workspaceId), undefined, { revalidate: true });
+    mutate(cacheKeys.unreadCount(workspaceId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.notifications(workspaceId));
+    mutate(cacheKeys.unreadCount(workspaceId));
   }
 }

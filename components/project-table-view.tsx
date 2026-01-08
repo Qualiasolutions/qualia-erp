@@ -222,7 +222,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
       )}
     >
       {/* ID Column */}
-      <td className="px-4 py-3 text-sm text-muted-foreground">#{rowIndex + 1}</td>
+      <td className="px-2 py-3 text-xs tabular-nums text-muted-foreground">{rowIndex + 1}</td>
 
       {/* Project Name */}
       <td className="px-4 py-3">
@@ -505,8 +505,8 @@ export function ProjectTableView({ projects }: ProjectTableViewProps) {
         <table className="w-full min-w-[950px] table-fixed">
           <thead className="border-b border-border bg-secondary/50">
             <tr>
-              <th className="w-14 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                ID
+              <th className="w-10 px-2 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                #
               </th>
               <th className="w-[200px] px-4 py-3 text-left">
                 <SortableHeader

@@ -2735,7 +2735,9 @@ export async function getNotifications(workspaceId: string, limit = 50) {
 
   const { data, error } = await supabase
     .from('notifications')
-    .select('id, type, title, message, read, created_at, workspace_id, user_id, entity_id')
+    .select(
+      'id, type, title, message, is_read, read_at, created_at, workspace_id, user_id, link, metadata'
+    )
     .eq('workspace_id', workspaceId)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })

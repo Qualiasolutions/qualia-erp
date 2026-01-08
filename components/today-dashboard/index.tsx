@@ -8,6 +8,8 @@ import { Plus, Video, RefreshCw, Loader2 } from 'lucide-react';
 import { MeetingsWrapper } from './meetings-wrapper';
 import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
+import { ProjectsWidget } from './projects-widget';
+import type { ProjectType } from '@/types/database';
 import { useTransition } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { motion } from 'framer-motion';
@@ -49,11 +51,24 @@ interface TeamMember {
   avatar_url: string | null;
 }
 
+interface Project {
+  id: string;
+  name: string;
+  status: string;
+  project_type: ProjectType | null;
+  target_date: string | null;
+  issue_stats: {
+    total: number;
+    done: number;
+  };
+}
+
 interface TodayDashboardProps {
   meetings: Meeting[];
   tasks: Task[];
   leads: Lead[];
   teamMembers: TeamMember[];
+  projects: Project[];
   workspaceId: string;
 }
 
@@ -86,6 +101,7 @@ export function TodayDashboard({
   tasks,
   leads,
   teamMembers,
+  projects,
   workspaceId,
 }: TodayDashboardProps) {
   const router = useRouter();
@@ -168,15 +184,22 @@ export function TodayDashboard({
           >
             {/* Bento Grid Layout */}
             <div className="grid gap-6 lg:grid-cols-12">
-              {/* Tasks - Primary Focus (takes more space) */}
-              <motion.div variants={itemVariants} className="lg:col-span-7 xl:col-span-8">
+              {/* Tasks - Narrower width */}
+              <motion.div variants={itemVariants} className="lg:col-span-5">
                 <div className="h-[500px] lg:h-[600px]">
                   <TasksWidget tasks={tasks} teamMembers={teamMembers} />
                 </div>
               </motion.div>
 
+              {/* Middle Column - Projects */}
+              <motion.div variants={itemVariants} className="lg:col-span-4">
+                <div className="h-[500px] lg:h-[600px]">
+                  <ProjectsWidget projects={projects} />
+                </div>
+              </motion.div>
+
               {/* Right Column - Meetings & Leads stacked */}
-              <div className="flex flex-col gap-6 lg:col-span-5 xl:col-span-4">
+              <div className="flex flex-col gap-6 lg:col-span-3">
                 {/* Meetings */}
                 <motion.div variants={itemVariants} className="h-[350px] lg:h-[290px]">
                   <MeetingsWrapper initialMeetings={meetings} />
@@ -200,3 +223,4 @@ export { MeetingsTimeline } from './meetings-timeline';
 export { MeetingsWrapper } from './meetings-wrapper';
 export { ActiveLeadsList } from './active-leads-list';
 export { TasksWidget } from './tasks-widget';
+export { ProjectsWidget } from './projects-widget';

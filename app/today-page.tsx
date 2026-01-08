@@ -1,6 +1,8 @@
 import { getCurrentWorkspaceId, getMeetings, getClients, getProfiles } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
+import { createClient } from '@/lib/supabase/server';
+import type { ProjectType } from '@/types/database';
 
 // Normalize FK arrays to single objects
 function normalizeFK<T>(value: T | T[] | null): T | null {
@@ -20,12 +22,13 @@ export default async function TodayPage() {
   }
 
   // Fetch all data in parallel
-  // Fetch ALL tasks from all projects (not just inbox)
-  const [meetingsRaw, tasksRaw, clientsRaw, profilesRaw] = await Promise.all([
+  const supabase = await createClient();
+  const [meetingsRaw, tasksRaw, clientsRaw, profilesRaw, projectsRaw] = await Promise.all([
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150 }),
     getClients(workspaceId),
     getProfiles(),
+    supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
   ]);
 
   const meetings = meetingsRaw.map((m) => ({
@@ -101,12 +104,28 @@ export default async function TodayPage() {
     avatar_url: p.avatar_url,
   }));
 
+  // Get active projects (filter out Archived/Canceled)
+  const projects = (projectsRaw.data || [])
+    .filter((p: Record<string, unknown>) => !['Archived', 'Canceled'].includes(p.status as string))
+    .map((p: Record<string, unknown>) => ({
+      id: p.id as string,
+      name: p.name as string,
+      status: p.status as string,
+      project_type: p.project_type as ProjectType | null,
+      target_date: p.target_date as string | null,
+      issue_stats: {
+        total: Number(p.total_issues) || 0,
+        done: Number(p.done_issues) || 0,
+      },
+    }));
+
   return (
     <TodayDashboard
       meetings={meetings}
       tasks={tasks}
       leads={leads}
       teamMembers={teamMembers}
+      projects={projects}
       workspaceId={workspaceId}
     />
   );
