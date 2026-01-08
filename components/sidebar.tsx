@@ -10,7 +10,7 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
 const navigation = [
-  { name: 'Today', href: '/', icon: Sun },
+  { name: 'Dashboard', href: '/', icon: Sun },
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
