@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Plus, Video, RefreshCw, Loader2, Calendar, Users, ListTodo, Flame } from 'lucide-react';
+import { Plus, Video, RefreshCw, Loader2 } from 'lucide-react';
 import { MeetingsWrapper } from './meetings-wrapper';
 import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
@@ -81,46 +81,6 @@ const itemVariants = {
   },
 };
 
-// Stat card component
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  sublabel,
-  color = 'primary',
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  sublabel?: string;
-  color?: 'primary' | 'violet' | 'amber' | 'emerald';
-}) {
-  const colorClasses = {
-    primary: 'text-primary bg-primary/10 group-hover:bg-primary/15',
-    violet: 'text-violet-500 bg-violet-500/10 group-hover:bg-violet-500/15',
-    amber: 'text-amber-500 bg-amber-500/10 group-hover:bg-amber-500/15',
-    emerald: 'text-emerald-500 bg-emerald-500/10 group-hover:bg-emerald-500/15',
-  };
-
-  return (
-    <motion.div
-      variants={itemVariants}
-      className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card p-5 transition-all duration-300 hover:border-border hover:shadow-lg hover:shadow-black/5"
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <p className="mt-1 text-3xl font-light tracking-tight">{value}</p>
-          {sublabel && <p className="mt-0.5 text-xs text-muted-foreground/70">{sublabel}</p>}
-        </div>
-        <div className={`rounded-xl p-2.5 transition-colors ${colorClasses[color]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export function TodayDashboard({
   meetings,
   tasks,
@@ -132,10 +92,6 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
 
   const now = new Date();
-  const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
-  const completedToday = tasks.filter((t) => t.status === 'Done').length;
-  const hotLeads = leads.filter((l) => l.lead_status === 'hot').length;
-  const todayMeetings = meetings.length;
 
   const handleRefresh = () => {
     startRefresh(() => {
@@ -210,38 +166,6 @@ export function TodayDashboard({
             animate="visible"
             className="space-y-6"
           >
-            {/* Stats Row */}
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <StatCard
-                icon={ListTodo}
-                label="Pending Tasks"
-                value={pendingTasks}
-                sublabel={`${completedToday} done today`}
-                color="primary"
-              />
-              <StatCard
-                icon={Calendar}
-                label="Meetings"
-                value={todayMeetings}
-                sublabel="scheduled today"
-                color="violet"
-              />
-              <StatCard
-                icon={Flame}
-                label="Hot Leads"
-                value={hotLeads}
-                sublabel="need attention"
-                color="amber"
-              />
-              <StatCard
-                icon={Users}
-                label="Team"
-                value={teamMembers.length}
-                sublabel="active members"
-                color="emerald"
-              />
-            </div>
-
             {/* Bento Grid Layout */}
             <div className="grid gap-6 lg:grid-cols-12">
               {/* Tasks - Primary Focus (takes more space) */}
