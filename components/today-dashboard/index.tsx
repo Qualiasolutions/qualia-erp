@@ -10,6 +10,7 @@ import { MeetingsWrapper } from './meetings-wrapper';
 import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
 import { useTransition } from 'react';
+import { type Task } from '@/app/actions/inbox';
 
 interface Meeting {
   id: string;
@@ -20,24 +21,6 @@ interface Meeting {
   project?: { id: string; name: string } | null;
   client?: { id: string; display_name: string } | null;
   attendees?: Array<{ profile: { id: string; full_name: string | null } }>;
-}
-
-interface Task {
-  id: string;
-  title: string;
-  status: 'Todo' | 'In Progress' | 'Done';
-  priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
-  due_date: string | null;
-  show_in_inbox?: boolean;
-  assignee?: {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-  } | null;
-  project?: {
-    id: string;
-    name: string;
-  } | null;
 }
 
 interface Lead {

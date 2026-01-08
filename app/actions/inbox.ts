@@ -42,6 +42,7 @@ export type Task = {
     full_name: string | null;
     email: string | null;
     avatar_url: string | null;
+    isLead?: boolean;
   } | null;
   project?: {
     id: string;

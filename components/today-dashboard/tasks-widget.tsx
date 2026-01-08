@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ListTodo, Circle, Clock, EyeOff, FolderOpen, Users, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox, type Task } from '@/app/actions/inbox';
-import { invalidateInboxTasks, invalidateDailyFlow, useProfiles } from '@/lib/swr';
+import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 
 interface TasksWidgetProps {
@@ -63,9 +63,12 @@ const TaskItem = React.memo(function TaskItem({
   task,
   onToggle,
   onHide,
+  onEdit,
   isPending,
   userColorMap,
 }: {
+  task: Task;
+  onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
   onEdit: (task: Task) => void;
   isPending: boolean;
@@ -189,7 +192,6 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const { profiles } = useProfiles();
 
   // Create color map for each team member
   const userColorMap = React.useMemo(() => {
@@ -298,10 +300,8 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
       {editingTask && (
         <EditTaskModal
           task={editingTask as Task}
-          profiles={profiles}
           open={!!editingTask}
           onOpenChange={(open: boolean) => !open && setEditingTask(null)}
-          onSuccess={handleTaskUpdated}
         />
       )}
     </Card>

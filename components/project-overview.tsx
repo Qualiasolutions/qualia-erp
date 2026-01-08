@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { quickUpdateTask } from '@/app/actions/inbox';
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 interface Issue {
   id: string;

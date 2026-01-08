@@ -40,7 +40,13 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { createTask, deleteTask, reorderTasks } from '@/app/actions/inbox';
+import {
+  createTask,
+  deleteTask,
+  reorderTasks,
+  quickUpdateTask,
+  type Task,
+} from '@/app/actions/inbox';
 import { createProjectPhase, deleteProjectPhase, updateProjectPhase } from '@/app/actions/phases';
 import {
   useProjectTasks,
@@ -195,7 +201,7 @@ const SortableItemCard = memo(function SortableItemCard({ task, onDelete }: Sort
             const isDone = task.status === 'Done';
             const newStatus = isDone ? 'Todo' : 'Done';
             quickUpdateTask(task.id, { status: newStatus as 'Todo' | 'Done' }).then(() => {
-              revalidate();
+              invalidateProjectTasks(task.project_id || '');
               invalidateInboxTasks();
             });
           }}
@@ -873,7 +879,7 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
           e.stopPropagation();
           const newStatus = isDone ? 'Todo' : 'Done';
           quickUpdateTask(task.id, { status: newStatus as 'Todo' | 'Done' }).then(() => {
-            revalidate();
+            invalidateProjectTasks(task.project_id || '');
             invalidateInboxTasks();
           });
         }}

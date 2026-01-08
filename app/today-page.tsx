@@ -1,5 +1,5 @@
 import { getCurrentWorkspaceId, getMeetings, getClients, getProfiles } from '@/app/actions';
-import { getTasks } from '@/app/actions/inbox';
+import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
 
 // Normalize FK arrays to single objects
@@ -52,12 +52,9 @@ export default async function TodayPage() {
       return t.completed_at?.startsWith(today);
     })
     .map((t) => ({
-      id: t.id,
-      title: t.title,
+      ...t,
       status: t.status as 'Todo' | 'In Progress' | 'Done',
       priority: t.priority as 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low',
-      due_date: t.due_date,
-      show_in_inbox: t.show_in_inbox,
       assignee: t.assignee
         ? {
             id: t.assignee.id,
@@ -74,11 +71,12 @@ export default async function TodayPage() {
           : null,
       project: t.project
         ? {
+            ...t.project,
             id: t.project.id,
             name: t.project.name,
           }
         : null,
-    }));
+    })) as Task[];
 
   // Filter leads (hot and cold only for Active Leads)
   const leads = clientsRaw
