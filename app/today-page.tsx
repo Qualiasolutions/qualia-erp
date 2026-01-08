@@ -23,7 +23,7 @@ export default async function TodayPage() {
   // Fetch ALL tasks from all projects (not just inbox)
   const [meetingsRaw, tasksRaw, clientsRaw, profilesRaw] = await Promise.all([
     getMeetings(workspaceId),
-    getTasks(workspaceId, { status: ['Todo', 'In Progress'], limit: 100 }),
+    getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150 }),
     getClients(workspaceId),
     getProfiles(),
   ]);
@@ -42,9 +42,15 @@ export default async function TodayPage() {
   }));
 
   // Get only TASKS (not resources/notes/issues) from all projects
-  // Filter out Done tasks and non-task items
+  // Filter for Todo/In Progress OR Done today
+  const today = new Date().toISOString().split('T')[0];
   const tasks = tasksRaw
-    .filter((t) => t.status !== 'Done' && t.item_type === 'task')
+    .filter((t) => {
+      if (t.item_type !== 'task') return false;
+      if (t.status !== 'Done') return true;
+      // If done, only show if completed today
+      return t.completed_at?.startsWith(today);
+    })
     .map((t) => ({
       id: t.id,
       title: t.title,
@@ -58,7 +64,14 @@ export default async function TodayPage() {
             full_name: t.assignee.full_name,
             avatar_url: t.assignee.avatar_url,
           }
-        : null,
+        : t.project?.lead
+          ? {
+              id: t.project.lead.id,
+              full_name: t.project.lead.full_name,
+              avatar_url: t.project.lead.avatar_url,
+              isLead: true,
+            }
+          : null,
       project: t.project
         ? {
             id: t.project.id,

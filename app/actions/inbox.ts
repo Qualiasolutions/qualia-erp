@@ -47,6 +47,11 @@ export type Task = {
     id: string;
     name: string;
     project_type: string | null;
+    lead?: {
+      id: string;
+      full_name: string | null;
+      avatar_url: string | null;
+    } | null;
   } | null;
 };
 
@@ -107,7 +112,7 @@ export async function getTasks(
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects (id, name, project_type)
+      project:projects (id, name, project_type, lead:profiles!projects_lead_id_fkey (id, full_name, avatar_url))
     `
     )
     .eq('workspace_id', wsId)
@@ -452,7 +457,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects (id, name, project_type)
+      project:projects (id, name, project_type, lead:profiles!projects_lead_id_fkey (id, full_name, avatar_url))
     `
     )
     .eq('project_id', projectId)
