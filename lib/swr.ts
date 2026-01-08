@@ -53,8 +53,8 @@ const isDocumentVisible = () => {
 // Exponential backoff for error retries (reduces API hammering on failures)
 const onErrorRetry = (
   error: Error,
-  key: string,
-  config: SWRConfiguration,
+  _key: string,
+  _config: SWRConfiguration,
   revalidate: (opts?: { retryCount?: number }) => void,
   { retryCount }: { retryCount: number }
 ) => {
@@ -76,13 +76,22 @@ const onErrorRetry = (
 
 // SWR config with auto-refresh for real-time task updates
 // Stops refreshing when tab is hidden to save resources
-// Increased polling interval from 10s to 30s to reduce API calls
+// Optimized: 45s refresh (was 30s) to reduce API calls by 33%
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
   revalidateOnFocus: true,
-  refreshInterval: () => (isDocumentVisible() ? 30000 : 0), // 30s refresh when visible, stop when hidden
-  dedupingInterval: 15000, // 15s dedup for tasks (was 8s)
+  refreshInterval: () => (isDocumentVisible() ? 45000 : 0), // 45s refresh when visible, stop when hidden
+  dedupingInterval: 20000, // 20s dedup for tasks (was 15s)
   onErrorRetry, // Use exponential backoff
+};
+
+// Less frequent refresh for semi-static data (projects, teams, profiles)
+const slowRefreshConfig: SWRConfiguration = {
+  ...swrConfig,
+  revalidateOnFocus: true,
+  refreshInterval: () => (isDocumentVisible() ? 90000 : 0), // 90s refresh for less critical data
+  dedupingInterval: 45000, // 45s dedup
+  onErrorRetry,
 };
 
 /**
@@ -96,7 +105,7 @@ export function useTeams() {
     isLoading,
     isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.teams, () => getTeams(), swrConfig);
+  } = useSWR(cacheKeys.teams, () => getTeams(), slowRefreshConfig);
 
   return {
     teams: data || [],
@@ -119,7 +128,7 @@ export function useProjects() {
     isLoading,
     isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.projects, () => getProjects(), swrConfig);
+  } = useSWR(cacheKeys.projects, () => getProjects(), slowRefreshConfig);
 
   return {
     projects: data || [],
@@ -142,7 +151,7 @@ export function useProfiles() {
     isLoading,
     isValidating,
     mutate: revalidate,
-  } = useSWR(cacheKeys.profiles, () => getProfiles(), swrConfig);
+  } = useSWR(cacheKeys.profiles, () => getProfiles(), slowRefreshConfig);
 
   return {
     profiles: data || [],

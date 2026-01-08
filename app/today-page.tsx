@@ -27,7 +27,7 @@ export default async function TodayPage() {
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150 }),
     getClients(workspaceId),
-    getProfiles(),
+    getProfiles(workspaceId),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
   ]);
 
