@@ -187,6 +187,37 @@ const SortableItemCard = memo(function SortableItemCard({ task, onDelete }: Sort
           <GripVertical className="h-3.5 w-3.5" />
         </div>
 
+        {/* Status Toggle / Checkbox */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            const isDone = task.status === 'Done';
+            const newStatus = isDone ? 'Todo' : 'Done';
+            quickUpdateTask(task.id, { status: newStatus as 'Todo' | 'Done' }).then(() => {
+              revalidate();
+              invalidateInboxTasks();
+            });
+          }}
+          className={cn(
+            'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-all duration-200',
+            isDone
+              ? 'border-emerald-500 bg-emerald-500 text-white'
+              : 'border-muted-foreground/30 hover:border-primary/50'
+          )}
+          title={
+            task.item_type === 'issue'
+              ? isDone
+                ? 'Mark as Open'
+                : 'Mark as Fixed'
+              : isDone
+                ? 'Mark as Todo'
+                : 'Mark as Done'
+          }
+        >
+          {isDone && <CheckCircle2 className="h-3 w-3" />}
+        </button>
+
         {/* Content */}
         <div className="min-w-0 flex-1">
           <span
@@ -301,16 +332,15 @@ const ResourceCard = memo(function ResourceCard({
   );
 
   return (
-    <div
+    <button
       ref={setNodeRef}
       style={style}
       onClick={handleContainerClick}
       className={cn(
         'group relative flex items-center gap-3 rounded-xl border bg-card/90 px-4 py-3 backdrop-blur-sm transition-all',
-        'hover:border-primary/40 hover:shadow-md',
+        'hover:border-primary/40 hover:bg-primary/5 hover:shadow-md active:scale-[0.98]',
         config.borderColor,
-        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50',
-        hasLink && 'cursor-pointer'
+        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50'
       )}
     >
       {/* Drag Handle */}
@@ -338,19 +368,13 @@ const ResourceCard = memo(function ResourceCard({
       </div>
 
       {/* Content */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 text-left">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm font-medium">{task.title}</span>
           {hasLink && linkUrl && (
-            <a
-              href={linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="shrink-0 rounded-full bg-primary/10 p-1.5 text-primary transition-colors hover:bg-primary/20"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="shrink-0 rounded-full bg-primary/10 p-1.5 text-primary transition-colors group-hover:bg-primary/20">
               <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+            </div>
           )}
         </div>
         {task.description && !hasLink && (
@@ -360,23 +384,22 @@ const ResourceCard = memo(function ResourceCard({
       </div>
 
       {/* Actions */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary group-hover:opacity-100"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+      <div onClick={(e) => e.stopPropagation()}>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="rounded p-1 text-muted-foreground/40 opacity-0 transition-opacity hover:bg-secondary group-hover:opacity-100">
+              <MoreVertical className="h-4 w-4" />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </button>
   );
 });
 
@@ -640,7 +663,6 @@ const PhaseGroup = memo(function PhaseGroup({
 }: PhaseGroupProps) {
   const doneCount = tasks.filter((t) => t.status === 'Done').length;
   const totalCount = tasks.length;
-  const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(phase.name);
 
@@ -659,13 +681,6 @@ const PhaseGroup = memo(function PhaseGroup({
     not_started: 'border-border/50 bg-card/50',
     in_progress: 'border-primary/30 bg-primary/5',
     completed: 'border-emerald-500/30 bg-emerald-500/5',
-  };
-
-  const progressColors = {
-    empty: 'bg-secondary',
-    not_started: 'bg-muted-foreground/30',
-    in_progress: 'bg-primary',
-    completed: 'bg-emerald-500',
   };
 
   const handleUpdate = () => {
@@ -729,28 +744,6 @@ const PhaseGroup = memo(function PhaseGroup({
 
         {/* Header Actions */}
         <div className="flex items-center gap-3">
-          {/* Progress bar */}
-          <div className="flex items-center gap-3">
-            <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary/50">
-              <div
-                className={cn('h-full transition-all', progressColors[status])}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span
-              className={cn(
-                'min-w-[3rem] text-right text-sm font-medium',
-                status === 'completed'
-                  ? 'text-emerald-500'
-                  : status === 'in_progress'
-                    ? 'text-primary'
-                    : 'text-muted-foreground'
-              )}
-            >
-              {progress}%
-            </span>
-          </div>
-
           <div className="flex items-center gap-1">
             <button
               onClick={(e) => {
@@ -874,15 +867,33 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
         isDone && 'opacity-60'
       )}
     >
-      {/* Status Icon */}
-      <div
+      {/* Status Icon / Toggle */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          const newStatus = isDone ? 'Todo' : 'Done';
+          quickUpdateTask(task.id, { status: newStatus as 'Todo' | 'Done' }).then(() => {
+            revalidate();
+            invalidateInboxTasks();
+          });
+        }}
         className={cn(
-          'flex h-6 w-6 items-center justify-center rounded-full',
-          statusConfig.bgColor
+          'flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-200',
+          statusConfig.bgColor,
+          'hover:scale-110 active:scale-95'
         )}
+        title={
+          itemType === 'issue'
+            ? isDone
+              ? 'Mark as Open'
+              : 'Mark as Fixed'
+            : isDone
+              ? 'Mark as Todo'
+              : 'Mark as Done'
+        }
       >
-        <StatusIcon className={cn('h-3 w-3', statusConfig.color)} />
-      </div>
+        <StatusIcon className={cn('h-3.5 w-3.5', statusConfig.color)} />
+      </button>
 
       {/* Content */}
       <div className="min-w-0 flex-1">
@@ -1042,9 +1053,6 @@ export function ProjectTaskKanban({
   }, []);
 
   // Progress
-  const totalTasks = tasks.length;
-  const doneTasks = tasks.filter((t) => t.status === 'Done').length;
-  const progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -1178,33 +1186,7 @@ export function ProjectTaskKanban({
     >
       <div className="space-y-6">
         {/* Progress Bar & View Toggle */}
-        <div className="flex items-center gap-4 rounded-xl border border-border/50 bg-card/50 p-4">
-          <div className="flex-1">
-            <div className="mb-2 flex items-center justify-between text-sm">
-              <span className="font-medium">Progress</span>
-              <span className="text-muted-foreground">
-                {doneTasks}/{totalTasks} completed
-              </span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-secondary/50">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-500',
-                  progress === 100 ? 'bg-emerald-500' : 'bg-primary'
-                )}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-          <div
-            className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-xl text-lg font-bold',
-              progress === 100 ? 'bg-emerald-500/20 text-emerald-500' : 'bg-primary/20 text-primary'
-            )}
-          >
-            {progress}%
-          </div>
-
+        <div className="flex items-center justify-end">
           {/* View Toggle - Only show if project has phases */}
           {availablePhases.length > 0 && (
             <div className="flex rounded-lg border border-border/50 bg-secondary/30 p-1">

@@ -259,28 +259,6 @@ function ProjectCard({
         >
           {project.name}
         </Link>
-        {project.project_type !== 'seo' && project.project_type !== 'ads' && (
-          <div className="flex items-center gap-2.5">
-            <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary/40 shadow-inner">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-500',
-                  isComplete ? 'bg-emerald-500' : typeConfig ? 'bg-current' : 'bg-primary',
-                  typeConfig?.color
-                )}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span
-              className={cn(
-                'text-xs font-semibold tabular-nums',
-                isComplete ? 'text-emerald-500' : 'text-muted-foreground/80'
-              )}
-            >
-              {progress}%
-            </span>
-          </div>
-        )}
         {isPartnership && <span className="text-xs">🤝</span>}
       </div>
     );
@@ -374,42 +352,6 @@ function ProjectCard({
               </div>
             </div>
           </div>
-
-          {/* Progress section - enhanced design */}
-          {project.project_type !== 'seo' && project.project_type !== 'ads' && (
-            <div className="mt-5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-medium text-muted-foreground/70">Progress</span>
-                <span
-                  className={cn(
-                    'font-bold tabular-nums',
-                    isComplete
-                      ? 'text-emerald-500'
-                      : progress >= 50
-                        ? 'text-amber-500'
-                        : typeConfig?.color || 'text-primary'
-                  )}
-                >
-                  {progress}%
-                </span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary/40 shadow-inner">
-                <div
-                  className={cn(
-                    'h-full rounded-full transition-all duration-700 ease-out',
-                    isComplete
-                      ? 'bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-400'
-                      : progress >= 50
-                        ? 'bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400'
-                        : typeConfig
-                          ? `bg-gradient-to-r ${typeConfig.gradientFrom.replace('/20', '')} ${typeConfig.gradientTo.replace('/5', '')}`
-                          : 'bg-primary'
-                  )}
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          )}
 
           {/* Completion badge - premium */}
           {isComplete && (
@@ -601,10 +543,6 @@ export function ProjectList({
         {columns.map(({ type, projects: typeProjects }, columnIndex) => {
           const config = PROJECT_TYPE_CONFIG[type];
           const TypeIcon = config.icon;
-          const activeCount = typeProjects.filter((p) => {
-            const prog = getProgress(p);
-            return prog < 100;
-          }).length;
 
           return (
             <div
@@ -678,11 +616,6 @@ export function ProjectList({
                       >
                         {typeProjects.length}
                       </div>
-                      {activeCount > 0 && activeCount !== typeProjects.length && (
-                        <div className="text-xs font-medium text-muted-foreground/70">
-                          {activeCount} active
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

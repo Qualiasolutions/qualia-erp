@@ -168,41 +168,6 @@ function ProjectRow({ project }: { project: ProjectData }) {
         </div>
       </div>
 
-      {/* Progress bar - hidden for SEO/Ads */}
-      {project.project_type !== 'seo' && project.project_type !== 'ads' && (
-        <div className="hidden w-32 items-center gap-2 sm:flex">
-          <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary/60">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all duration-500',
-                isComplete ? 'bg-emerald-500' : progress >= 50 ? 'bg-amber-500' : 'bg-qualia-500'
-              )}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span
-            className={cn(
-              'w-9 text-right text-xs font-semibold tabular-nums',
-              isComplete ? 'text-emerald-500' : 'text-muted-foreground'
-            )}
-          >
-            {progress}%
-          </span>
-        </div>
-      )}
-
-      {/* Mobile progress */}
-      {project.project_type !== 'seo' && project.project_type !== 'ads' && (
-        <span
-          className={cn(
-            'text-sm font-semibold tabular-nums sm:hidden',
-            isComplete ? 'text-emerald-500' : 'text-muted-foreground'
-          )}
-        >
-          {progress}%
-        </span>
-      )}
-
       {/* Actions */}
       {isSuperAdmin && (
         <DropdownMenu>

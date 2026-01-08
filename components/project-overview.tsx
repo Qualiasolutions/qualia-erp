@@ -4,7 +4,9 @@ import { Folder, Calendar, CheckCircle2, Circle, AlertCircle, ListTodo } from 'l
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { quickUpdateTask } from '@/app/actions/inbox';
+import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Issue {
   id: string;
@@ -45,10 +47,16 @@ const StatusIcon = ({ status }: { status: string }) => {
 };
 
 export function ProjectOverview({ project }: ProjectOverviewProps) {
-  const progress =
-    project.issue_stats.total > 0
-      ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-      : 0;
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  const handleToggleIssue = (issueId: string, currentStatus: string) => {
+    startTransition(async () => {
+      const newStatus = currentStatus === 'Done' ? 'Todo' : 'Done';
+      await quickUpdateTask(issueId, { status: newStatus as 'Todo' | 'Done' });
+      router.refresh();
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -66,17 +74,6 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
           </div>
         </div>
       </div>
-
-      {/* Progress */}
-      {project.issue_stats.total > 0 && (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Overall Progress</span>
-            <span className="text-sm font-medium">{progress}%</span>
-          </div>
-          <Progress value={progress} className="h-2" />
-        </div>
-      )}
 
       {/* Description */}
       {project.description && (
@@ -134,15 +131,32 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
         ) : (
           <div className="space-y-2">
             {project.issues.slice(0, 10).map((issue) => (
-              <Link
+              <div
                 key={issue.id}
-                href={`/issues/${issue.id}`}
-                className="flex items-center gap-2 rounded-lg border border-border bg-background p-3 transition-colors hover:bg-muted"
+                className={cn(
+                  'group/issue flex items-center gap-2 rounded-lg border border-border bg-background p-3 transition-colors hover:bg-muted',
+                  issue.status === 'Done' && 'opacity-60'
+                )}
               >
-                <StatusIcon status={issue.status} />
-                <span className="flex-1 text-sm">{issue.title}</span>
+                <button
+                  onClick={() => handleToggleIssue(issue.id, issue.status)}
+                  disabled={isPending}
+                  className="shrink-0"
+                  title={issue.status === 'Done' ? 'Mark as Open' : 'Mark as Fixed'}
+                >
+                  <StatusIcon status={issue.status} />
+                </button>
+                <Link
+                  href={`/issues/${issue.id}`}
+                  className={cn(
+                    'flex-1 text-sm transition-colors hover:text-qualia-500',
+                    issue.status === 'Done' && 'text-muted-foreground line-through'
+                  )}
+                >
+                  {issue.title}
+                </Link>
                 <span className="text-xs text-muted-foreground">{issue.priority}</span>
-              </Link>
+              </div>
             ))}
             {project.issues.length > 10 && (
               <p className="pt-2 text-center text-xs text-muted-foreground">

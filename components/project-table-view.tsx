@@ -212,12 +212,11 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
       if (result.success) {
         router.refresh();
       } else {
-        alert(result.error || 'Failed to delete project');
+        alert((result.error as string) || 'Failed to delete project');
       }
     });
   };
 
-  const progress = getProgress(project);
   const statusColors = PROJECT_STATUS_COLORS[project.status as ProjectStatusKey];
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
@@ -242,35 +241,17 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
         </span>
       </td>
 
-      {/* Progress */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-12 overflow-hidden rounded-full bg-secondary">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all',
-                progress === 100 ? 'bg-emerald-500' : 'bg-qualia-500'
-              )}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className="w-8 text-right text-xs font-medium tabular-nums text-muted-foreground">
-            {progress}%
-          </span>
-        </div>
-      </td>
-
-      {/* Owner */}
+      {/* Project Owner */}
       <td className="px-4 py-3">
         {project.lead ? (
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarFallback className="bg-qualia-500/10 text-xs text-qualia-500">
-                {getInitials(project.lead.full_name || 'U')}
+              <AvatarFallback className="bg-qualia-500/10 text-[10px] text-qualia-500">
+                {getInitials(project.lead.full_name || '')}
               </AvatarFallback>
             </Avatar>
-            <span className="max-w-[80px] truncate text-sm text-muted-foreground">
-              {project.lead.full_name?.split(' ')[0]}
+            <span className="max-w-[120px] truncate text-sm text-foreground">
+              {project.lead.full_name}
             </span>
           </div>
         ) : (
@@ -278,7 +259,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
         )}
       </td>
 
-      {/* Status Badge */}
+      {/* Project Status */}
       <td className="px-4 py-3">
         <span
           className={cn(
@@ -291,17 +272,10 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
         </span>
       </td>
 
-      {/* Tasks */}
+      {/* Tasks Progress */}
       <td className="px-4 py-3">
         <span className="text-sm tabular-nums text-muted-foreground">
           {project.issue_stats?.done || 0}/{project.issue_stats?.total || 0}
-        </span>
-      </td>
-
-      {/* Start Date */}
-      <td className="px-4 py-3">
-        <span className="text-sm text-muted-foreground">
-          {project.start_date ? format(new Date(project.start_date), 'MMM d, yy') : '-'}
         </span>
       </td>
 
@@ -534,13 +508,12 @@ export function ProjectTableView({ projects }: ProjectTableViewProps) {
           </SelectContent>
         </Select>
 
-        {/* Owner Filter */}
         <Select value={ownerFilter} onValueChange={setOwnerFilter}>
           <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Owner" />
+            <SelectValue placeholder="Person:" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Owners</SelectItem>
+            <SelectItem value="all">All Persons</SelectItem>
             {owners.map((owner) => (
               <SelectItem key={owner.id} value={owner.id}>
                 {owner.full_name || 'Unnamed'}
@@ -580,19 +553,10 @@ export function ProjectTableView({ projects }: ProjectTableViewProps) {
                   onSort={handleSort}
                 />
               </th>
-              <th className="w-24 px-4 py-3 text-left">
-                <SortableHeader
-                  field="progress"
-                  label="%"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
               <th className="w-28 px-4 py-3 text-left">
                 <SortableHeader
                   field="owner"
-                  label="Owner"
+                  label="Person:"
                   currentField={sortField}
                   direction={sortDirection}
                   onSort={handleSort}
@@ -611,15 +575,6 @@ export function ProjectTableView({ projects }: ProjectTableViewProps) {
                 <SortableHeader
                   field="tasks"
                   label="Tasks"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-24 px-4 py-3 text-left">
-                <SortableHeader
-                  field="start_date"
-                  label="Start"
                   currentField={sortField}
                   direction={sortDirection}
                   onSort={handleSort}
