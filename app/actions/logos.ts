@@ -15,8 +15,8 @@ const MAX_LOGO_SIZE = 5 * 1024 * 1024;
 // Allowed image MIME types
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// Storage bucket name
-const STORAGE_BUCKET = 'logos';
+// Storage bucket name - use existing project-files bucket
+const STORAGE_BUCKET = 'project-files';
 
 /**
  * Upload a logo for a project
@@ -66,7 +66,7 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
 
   // Generate storage path with extension from mime type
   const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1];
-  const storagePath = `projects/${projectId}/logo.${ext}`;
+  const storagePath = `logos/projects/${projectId}/logo.${ext}`;
 
   // Upload to storage (upsert to replace existing)
   const { error: uploadError } = await supabase.storage
@@ -137,7 +137,7 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
   // Delete from storage (try common extensions)
   const extensions = ['jpg', 'png', 'webp', 'gif'];
   for (const ext of extensions) {
-    await supabase.storage.from(STORAGE_BUCKET).remove([`projects/${projectId}/logo.${ext}`]);
+    await supabase.storage.from(STORAGE_BUCKET).remove([`logos/projects/${projectId}/logo.${ext}`]);
   }
 
   // Clear logo URL in database
@@ -206,7 +206,7 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
 
   // Generate storage path with extension from mime type
   const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1];
-  const storagePath = `clients/${clientId}/logo.${ext}`;
+  const storagePath = `logos/clients/${clientId}/logo.${ext}`;
 
   // Upload to storage (upsert to replace existing)
   const { error: uploadError } = await supabase.storage
@@ -276,7 +276,7 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
   // Delete from storage (try common extensions)
   const extensions = ['jpg', 'png', 'webp', 'gif'];
   for (const ext of extensions) {
-    await supabase.storage.from(STORAGE_BUCKET).remove([`clients/${clientId}/logo.${ext}`]);
+    await supabase.storage.from(STORAGE_BUCKET).remove([`logos/clients/${clientId}/logo.${ext}`]);
   }
 
   // Clear logo URL in database
