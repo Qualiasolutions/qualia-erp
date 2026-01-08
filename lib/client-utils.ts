@@ -13,6 +13,7 @@ export type Client = {
   notes: string | null;
   last_contacted_at: string | null;
   created_at: string;
+  logo_url: string | null;
   creator: { id: string; full_name: string | null; email: string | null } | null;
   assigned: { id: string; full_name: string | null; email: string | null } | null;
   projects?: { id: string }[];

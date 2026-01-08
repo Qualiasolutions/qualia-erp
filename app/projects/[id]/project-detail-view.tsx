@@ -36,6 +36,8 @@ import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
 import { ProjectTaskKanban } from '@/components/project-task-kanban';
 import { ProjectFiles } from '@/components/project-files';
+import { LogoUpload } from '@/components/logo-upload';
+import { EntityAvatar } from '@/components/entity-avatar';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 import { motion } from 'framer-motion';
 
@@ -79,6 +81,7 @@ interface Project {
   target_date: string | null;
   created_at: string;
   updated_at: string;
+  logo_url: string | null;
   lead: Profile | null;
   team: { id: string; name: string; key: string } | null;
   client: { id: string; name: string } | null;
@@ -194,14 +197,16 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                 <ArrowLeft className="h-4 w-4" />
               </Link>
               <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    'flex h-11 w-11 items-center justify-center rounded-xl',
-                    selectedProjectType?.color || 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <ProjectTypeIcon className="h-5 w-5" />
-                </div>
+                <EntityAvatar
+                  src={project.logo_url}
+                  fallbackIcon={<ProjectTypeIcon className="h-5 w-5" />}
+                  fallbackBgColor={selectedProjectType?.color.split(' ')[1] || 'bg-muted'}
+                  fallbackIconColor={
+                    selectedProjectType?.color.split(' ')[0] || 'text-muted-foreground'
+                  }
+                  size="lg"
+                  className="h-11 w-11"
+                />
                 <div>
                   <h1 className="text-xl font-semibold tracking-tight">{project.name}</h1>
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -395,6 +400,27 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
 
                       {/* Right: Meta & Actions */}
                       <div className="space-y-4">
+                        {/* Project Logo */}
+                        <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
+                          <h4 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            Project Logo
+                          </h4>
+                          <LogoUpload
+                            entityType="project"
+                            entityId={project.id}
+                            currentLogoUrl={project.logo_url}
+                            fallbackIcon={<ProjectTypeIcon className="h-10 w-10" />}
+                            fallbackBgColor={selectedProjectType?.color.split(' ')[1] || 'bg-muted'}
+                            fallbackIconColor={
+                              selectedProjectType?.color.split(' ')[0] || 'text-muted-foreground'
+                            }
+                            size="xl"
+                            onLogoChange={(newUrl) => {
+                              setProject((prev) => ({ ...prev, logo_url: newUrl }));
+                            }}
+                          />
+                        </div>
+
                         {/* Meta Info */}
                         <div className="rounded-xl border border-border/50 bg-muted/30 p-4">
                           <h4 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">

@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAdminContext } from '@/components/admin-provider';
 import { deleteProject } from '@/app/actions';
+import { EntityAvatar } from '@/components/entity-avatar';
 import type { ProjectData } from '@/app/projects/page';
 import type { ProjectType } from '@/types/database';
 
@@ -226,9 +227,18 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
 
       {/* Project Name */}
       <td className="px-4 py-3">
-        <span className="font-medium text-foreground transition-colors group-hover:text-qualia-500">
-          {project.name}
-        </span>
+        <div className="flex items-center gap-2">
+          <EntityAvatar
+            src={project.logo_url}
+            fallbackIcon={<TypeIcon className="h-3 w-3" />}
+            fallbackBgColor={typeConfig?.bgColor || 'bg-muted'}
+            fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
+            size="sm"
+          />
+          <span className="font-medium text-foreground transition-colors group-hover:text-qualia-500">
+            {project.name}
+          </span>
+        </div>
       </td>
 
       {/* Project Owner */}

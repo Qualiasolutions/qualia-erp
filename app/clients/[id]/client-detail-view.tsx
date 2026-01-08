@@ -11,6 +11,7 @@ import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
 import { EditClientModal } from '@/components/edit-client-modal';
+import { LogoUpload } from '@/components/logo-upload';
 
 const statusConfig = {
   dropped: { label: 'Dropped', bg: 'bg-gray-100', color: 'text-gray-600' },
@@ -67,7 +68,8 @@ function getClientWorkItems(clientName: string | null): Array<{
   return [];
 }
 
-export function ClientDetailView({ client }: ClientDetailViewProps) {
+export function ClientDetailView({ client: initialClient }: ClientDetailViewProps) {
+  const [client, setClient] = useState(initialClient);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const status = statusConfig[client.lead_status || 'cold'] || statusConfig.cold;
   const workItems = getClientWorkItems(client.display_name);
@@ -78,10 +80,18 @@ export function ClientDetailView({ client }: ClientDetailViewProps) {
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-center gap-5">
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500 via-qualia-600 to-qualia-700 shadow-lg shadow-qualia-500/20 transition-transform duration-300 hover:scale-105">
-              <Building2 className="h-10 w-10 text-white" />
-              <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-qualia-400/20 to-qualia-600/20 opacity-50 blur-xl" />
-            </div>
+            <LogoUpload
+              entityType="client"
+              entityId={client.id}
+              currentLogoUrl={client.logo_url}
+              fallbackIcon={<Building2 className="h-10 w-10" />}
+              fallbackBgColor="bg-gradient-to-br from-qualia-500 via-qualia-600 to-qualia-700"
+              fallbackIconColor="text-white"
+              size="xl"
+              onLogoChange={(newUrl) => {
+                setClient((prev) => ({ ...prev, logo_url: newUrl }));
+              }}
+            />
             <div className="flex-1">
               <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">
                 {client.display_name}

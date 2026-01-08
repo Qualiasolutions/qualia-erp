@@ -113,6 +113,7 @@ export default async function TodayPage() {
       status: p.status as string,
       project_type: p.project_type as ProjectType | null,
       target_date: p.target_date as string | null,
+      logo_url: (p.logo_url as string | null) || null,
       issue_stats: {
         total: Number(p.total_issues) || 0,
         done: Number(p.done_issues) || 0,

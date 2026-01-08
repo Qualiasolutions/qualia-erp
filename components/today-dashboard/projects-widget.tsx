@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Folder, Bot, Globe, Phone, TrendingUp, Megaphone, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { EntityAvatar } from '@/components/entity-avatar';
 import type { ProjectType } from '@/types/database';
 
 interface Project {
@@ -12,6 +13,7 @@ interface Project {
   status: string;
   project_type: ProjectType | null;
   target_date: string | null;
+  logo_url: string | null;
   issue_stats: {
     total: number;
     done: number;
@@ -93,16 +95,13 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
                     className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all hover:bg-muted/50"
                   >
                     {/* Icon */}
-                    <div
-                      className={cn(
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                        typeConfig?.bg || 'bg-muted'
-                      )}
-                    >
-                      <TypeIcon
-                        className={cn('h-4 w-4', typeConfig?.color || 'text-muted-foreground')}
-                      />
-                    </div>
+                    <EntityAvatar
+                      src={project.logo_url}
+                      fallbackIcon={<TypeIcon className="h-4 w-4" />}
+                      fallbackBgColor={typeConfig?.bg || 'bg-muted'}
+                      fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
+                      size="md"
+                    />
 
                     {/* Content */}
                     <div className="min-w-0 flex-1">

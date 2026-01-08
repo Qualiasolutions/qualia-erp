@@ -18,6 +18,7 @@ export interface ProjectData {
   deployment_platform: string | null;
   client_id: string | null;
   client_name: string | null;
+  logo_url: string | null;
   lead: {
     id: string;
     full_name: string | null;
@@ -57,6 +58,7 @@ async function ProjectListLoader() {
     deployment_platform: p.deployment_platform as string | null,
     client_id: p.client_id as string | null,
     client_name: p.client_name as string | null,
+    logo_url: (p.logo_url as string | null) || null,
     lead: p.lead_id
       ? {
           id: p.lead_id as string,

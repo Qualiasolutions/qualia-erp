@@ -1417,6 +1417,7 @@ export async function getClients(workspaceId?: string | null, leadStatus?: LeadS
             notes,
             last_contacted_at,
             created_at,
+            logo_url,
             creator:profiles!clients_created_by_fkey (id, full_name, email),
             assigned:profiles!clients_assigned_to_fkey (id, full_name, email),
             projects:projects!projects_client_id_fkey (id)

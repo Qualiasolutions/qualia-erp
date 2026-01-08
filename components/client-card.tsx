@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { type Client, type ClientStatus, getInitials, getStatusConfig } from '@/lib/client-utils';
+import { EntityAvatar } from '@/components/entity-avatar';
 
 interface ClientCardProps {
   client: Client;
@@ -56,16 +57,14 @@ export const ClientCard = memo(function ClientCard({
     >
       {/* Header: Avatar + Name + Status */}
       <div className="flex items-start gap-3">
-        <div className="relative">
-          <div
-            className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br',
-              statusConfig.iconBg
-            )}
-          >
-            <Building2 className={cn('h-5 w-5', statusConfig.color)} />
-          </div>
-        </div>
+        <EntityAvatar
+          src={client.logo_url}
+          fallbackIcon={<Building2 className="h-5 w-5" />}
+          fallbackBgColor={`bg-gradient-to-br ${statusConfig.iconBg}`}
+          fallbackIconColor={statusConfig.color}
+          size="lg"
+          className="h-11 w-11"
+        />
 
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-semibold text-foreground">

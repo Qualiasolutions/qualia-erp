@@ -57,6 +57,7 @@ interface Project {
   status: string;
   project_type: ProjectType | null;
   target_date: string | null;
+  logo_url: string | null;
   issue_stats: {
     total: number;
     done: number;
