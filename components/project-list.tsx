@@ -27,6 +27,7 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
+  Edit2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -36,6 +37,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ProjectWizard } from '@/components/project-wizard';
 import { useWorkspace } from '@/components/workspace-provider';
@@ -441,6 +443,13 @@ function ProjectCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem asChild>
+                <Link href={`/projects/${project.id}`} className="flex w-full items-center">
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  Edit project
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
                 onClick={handleDelete}

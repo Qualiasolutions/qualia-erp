@@ -9,6 +9,7 @@ import {
   getMeetings,
 } from '@/app/actions';
 import { getTasks, getProjectTasks } from '@/app/actions/inbox';
+import { getProjectPhases } from '@/app/actions/phases';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
 // Type for meetings with all relations
@@ -35,6 +36,7 @@ export const cacheKeys = {
   projectTasks: (projectId: string) => `project-tasks-${projectId}`,
   todaysTasks: 'todays-tasks',
   todaysMeetings: 'todays-meetings',
+  projectPhases: (projectId: string) => `project-phases-${projectId}`,
   meetings: 'all-meetings',
 } as const;
 
@@ -214,6 +216,39 @@ export function useInboxTasks() {
     error,
     revalidate,
   };
+}
+
+/**
+ * Hook to fetch custom project phases
+ */
+export function useProjectPhases(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.projectPhases(projectId) : null,
+    () => (projectId ? getProjectPhases(projectId) : Promise.resolve([])),
+    swrConfig
+  );
+
+  return {
+    phases: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate project phases cache
+ */
+export function invalidateProjectPhases(projectId: string) {
+  mutate(cacheKeys.projectPhases(projectId));
 }
 
 /**

@@ -41,8 +41,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createTask, deleteTask, reorderTasks } from '@/app/actions/inbox';
-import type { Task } from '@/app/actions/inbox';
-import { useProjectTasks, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
+import { createProjectPhase, deleteProjectPhase, updateProjectPhase } from '@/app/actions/phases';
+import {
+  useProjectTasks,
+  invalidateProjectTasks,
+  invalidateInboxTasks,
+  useProjectPhases,
+  invalidateProjectPhases,
+} from '@/lib/swr';
 import { cn } from '@/lib/utils';
 import { renderTextWithLinks, extractFirstUrl } from '@/lib/render-links';
 import { getPhasesForType, type Phase } from '@/lib/project-phases';
@@ -50,6 +56,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -612,6 +619,8 @@ interface PhaseGroupProps {
   onNewTaskTitleChange?: (value: string) => void;
   onCreateTask?: () => void;
   onCancelAddTask?: () => void;
+  onDeletePhase?: () => void;
+  onUpdatePhase?: (name: string) => void;
 }
 
 const PhaseGroup = memo(function PhaseGroup({
@@ -626,10 +635,14 @@ const PhaseGroup = memo(function PhaseGroup({
   onNewTaskTitleChange,
   onCreateTask,
   onCancelAddTask,
+  onDeletePhase,
+  onUpdatePhase,
 }: PhaseGroupProps) {
   const doneCount = tasks.filter((t) => t.status === 'Done').length;
   const totalCount = tasks.length;
   const progress = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(phase.name);
 
   // Determine phase status
   const status =
@@ -655,11 +668,18 @@ const PhaseGroup = memo(function PhaseGroup({
     completed: 'bg-emerald-500',
   };
 
+  const handleUpdate = () => {
+    if (editedName.trim() && editedName !== phase.name && onUpdatePhase) {
+      onUpdatePhase(editedName.trim());
+    }
+    setIsEditing(false);
+  };
+
   return (
     <div className={cn('rounded-xl border transition-all', statusColors[status])}>
       {/* Phase Header */}
-      <button onClick={onToggle} className="flex w-full items-center justify-between p-4 text-left">
-        <div className="flex items-center gap-3">
+      <div className="flex w-full items-center justify-between p-4 text-left">
+        <div className="flex flex-1 cursor-pointer items-center gap-3" onClick={onToggle}>
           {isExpanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
@@ -667,19 +687,39 @@ const PhaseGroup = memo(function PhaseGroup({
           )}
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold">{phase.name}</span>
-              <span
-                className={cn(
-                  'rounded-full px-2 py-0.5 text-xs font-medium',
-                  status === 'completed'
-                    ? 'bg-emerald-500/20 text-emerald-500'
-                    : status === 'in_progress'
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-secondary text-muted-foreground'
-                )}
-              >
-                {doneCount}/{totalCount}
-              </span>
+              {isEditing ? (
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Input
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleUpdate();
+                      if (e.key === 'Escape') setIsEditing(false);
+                    }}
+                    className="h-7 py-0 text-sm font-semibold"
+                  />
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleUpdate}>
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <span className="font-semibold">{phase.name}</span>
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-xs font-medium',
+                      status === 'completed'
+                        ? 'bg-emerald-500/20 text-emerald-500'
+                        : status === 'in_progress'
+                          ? 'bg-primary/20 text-primary'
+                          : 'bg-secondary text-muted-foreground'
+                    )}
+                  >
+                    {doneCount}/{totalCount}
+                  </span>
+                </>
+              )}
             </div>
             {phase.description && (
               <p className="mt-0.5 text-xs text-muted-foreground">{phase.description}</p>
@@ -687,28 +727,77 @@ const PhaseGroup = memo(function PhaseGroup({
           </div>
         </div>
 
-        {/* Progress bar */}
+        {/* Header Actions */}
         <div className="flex items-center gap-3">
-          <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary/50">
-            <div
-              className={cn('h-full transition-all', progressColors[status])}
-              style={{ width: `${progress}%` }}
-            />
+          {/* Progress bar */}
+          <div className="flex items-center gap-3">
+            <div className="h-2 w-24 overflow-hidden rounded-full bg-secondary/50">
+              <div
+                className={cn('h-full transition-all', progressColors[status])}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span
+              className={cn(
+                'min-w-[3rem] text-right text-sm font-medium',
+                status === 'completed'
+                  ? 'text-emerald-500'
+                  : status === 'in_progress'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
+              )}
+            >
+              {progress}%
+            </span>
           </div>
-          <span
-            className={cn(
-              'min-w-[3rem] text-right text-sm font-medium',
-              status === 'completed'
-                ? 'text-emerald-500'
-                : status === 'in_progress'
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
-            )}
-          >
-            {progress}%
-          </span>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddTask();
+                if (!isExpanded) onToggle();
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem onClick={() => setIsEditing(true)}>
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  Rename Phase
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {onDeletePhase && (
+                  <DropdownMenuItem
+                    className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (confirm('Are you sure you want to delete this phase?')) {
+                        onDeletePhase();
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Phase
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </button>
+      </div>
 
       {/* Tasks List */}
       {isExpanded && (
@@ -848,15 +937,38 @@ type ViewMode = 'type' | 'phase';
 
 interface ProjectTaskKanbanProps {
   projectId: string;
+  projectType?: string | null;
 }
 
-export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
+export function ProjectTaskKanban({
+  projectId,
+  projectType: initialProjectType,
+}: ProjectTaskKanbanProps) {
   const { tasks, isLoading, revalidate } = useProjectTasks(projectId);
+  const { phases: customPhases } = useProjectPhases(projectId);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [addingToType, setAddingToType] = useState<ItemType | null>(null);
   const [addingToPhase, setAddingToPhase] = useState<string | null>(null);
   const [newItemTitle, setNewItemTitle] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('type');
+  const [isAddingPhase, setIsAddingPhase] = useState(false);
+  const [newPhaseName, setNewPhaseName] = useState('');
+
+  // Get project type from first task's project relation if not passed
+  const projectType = useMemo(() => {
+    if (initialProjectType) return initialProjectType;
+    const firstTaskWithProject = tasks.find((t) => t.project?.project_type);
+    return firstTaskWithProject?.project?.project_type || null;
+  }, [tasks, initialProjectType]);
+
+  // Combined phases (custom first, then default if no custom)
+  const availablePhases = useMemo(() => {
+    if (customPhases && customPhases.length > 0) {
+      return customPhases;
+    }
+    return getPhasesForType(projectType);
+  }, [projectType, customPhases]);
+
+  const [viewMode, setViewMode] = useState<ViewMode>(availablePhases.length > 0 ? 'phase' : 'type');
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set());
 
   const sensors = useSensors(
@@ -890,17 +1002,6 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
 
   const activeTask = useMemo(() => tasks.find((t) => t.id === activeId), [tasks, activeId]);
 
-  // Get project type from first task's project relation
-  const projectType = useMemo(() => {
-    const firstTaskWithProject = tasks.find((t) => t.project?.project_type);
-    return firstTaskWithProject?.project?.project_type || null;
-  }, [tasks]);
-
-  // Get available phases for this project type
-  const availablePhases = useMemo(() => {
-    return getPhasesForType(projectType);
-  }, [projectType]);
-
   // Group tasks by phase_name
   const tasksByPhase = useMemo(() => {
     const grouped: Record<string, Task[]> = {};
@@ -908,11 +1009,11 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     availablePhases.forEach((phase) => {
       grouped[phase.name] = [];
     });
-    grouped['Unassigned'] = [];
 
     // Group tasks by their phase_name
     tasks.forEach((task) => {
       const phaseName = task.phase_name || 'Unassigned';
+      if (phaseName === 'Unassigned') return; // User requested to remove unassigned phase from view
       if (!grouped[phaseName]) {
         grouped[phaseName] = [];
       }
@@ -1020,6 +1121,24 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     [newItemTitle, projectId, revalidate]
   );
 
+  const handleAddPhase = async () => {
+    if (!newPhaseName.trim()) return;
+    await createProjectPhase(projectId, newPhaseName.trim());
+    setNewPhaseName('');
+    setIsAddingPhase(false);
+    invalidateProjectPhases(projectId);
+  };
+
+  const handleDeletePhase = async (phaseId: string) => {
+    await deleteProjectPhase(phaseId, projectId);
+    invalidateProjectPhases(projectId);
+  };
+
+  const handleUpdatePhase = async (phaseId: string, name: string) => {
+    await updateProjectPhase(phaseId, name, projectId);
+    invalidateProjectPhases(projectId);
+  };
+
   const handleCreatePhaseTask = useCallback(async () => {
     if (!newItemTitle.trim() || !addingToPhase) return;
 
@@ -1029,10 +1148,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
     formData.set('project_id', projectId);
     formData.set('show_in_inbox', 'true');
     formData.set('item_type', 'task');
-    // Set phase_name (use null for Unassigned)
-    if (addingToPhase !== 'Unassigned') {
-      formData.set('phase_name', addingToPhase);
-    }
+    formData.set('phase_name', addingToPhase);
 
     await createTask(formData);
     setNewItemTitle('');
@@ -1167,7 +1283,7 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
             {/* Predefined phases in order */}
             {availablePhases.map((phase) => (
               <PhaseGroup
-                key={phase.name}
+                key={phase.id || phase.name}
                 phase={phase}
                 tasks={tasksByPhase[phase.name] || []}
                 isExpanded={expandedPhases.has(phase.name) || addingToPhase === phase.name}
@@ -1185,33 +1301,43 @@ export function ProjectTaskKanban({ projectId }: ProjectTaskKanbanProps) {
                   setAddingToPhase(null);
                   setNewItemTitle('');
                 }}
+                onDeletePhase={phase.id ? () => handleDeletePhase(phase.id) : undefined}
+                onUpdatePhase={phase.id ? (name) => handleUpdatePhase(phase.id, name) : undefined}
               />
             ))}
 
-            {/* Unassigned tasks */}
-            <PhaseGroup
-              phase={{
-                name: 'Unassigned',
-                order: 999,
-                description: 'Tasks not assigned to a phase',
-              }}
-              tasks={tasksByPhase['Unassigned'] || []}
-              isExpanded={expandedPhases.has('Unassigned') || addingToPhase === 'Unassigned'}
-              onToggle={() => togglePhase('Unassigned')}
-              onDeleteTask={handleDeleteTask}
-              onAddTask={() => {
-                setAddingToPhase('Unassigned');
-                setExpandedPhases((prev) => new Set(prev).add('Unassigned'));
-              }}
-              isAddingTask={addingToPhase === 'Unassigned'}
-              newTaskTitle={addingToPhase === 'Unassigned' ? newItemTitle : ''}
-              onNewTaskTitleChange={setNewItemTitle}
-              onCreateTask={handleCreatePhaseTask}
-              onCancelAddTask={() => {
-                setAddingToPhase(null);
-                setNewItemTitle('');
-              }}
-            />
+            {/* Add Phase UI */}
+            <div className="pt-2">
+              {isAddingPhase ? (
+                <div className="flex items-center gap-2 rounded-xl border border-dashed border-border p-3">
+                  <Input
+                    value={newPhaseName}
+                    onChange={(e) => setNewPhaseName(e.target.value)}
+                    placeholder="Enter phase name..."
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleAddPhase();
+                      if (e.key === 'Escape') setIsAddingPhase(false);
+                    }}
+                    className="h-8 py-0"
+                  />
+                  <Button size="sm" onClick={handleAddPhase}>
+                    Add
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setIsAddingPhase(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAddingPhase(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/50 py-3 text-sm text-muted-foreground transition-all hover:border-primary/50 hover:bg-secondary/20 hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Custom Phase
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

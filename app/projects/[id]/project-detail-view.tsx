@@ -224,7 +224,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
       <div className="flex flex-1 overflow-hidden">
         {/* Main Content - Tasks */}
         <div className="flex-1 overflow-y-auto p-6">
-          <ProjectTaskKanban projectId={project.id} />
+          <ProjectTaskKanban projectId={project.id} projectType={project.project_type} />
         </div>
 
         {/* Side Panel */}

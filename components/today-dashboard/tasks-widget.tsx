@@ -8,28 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ListTodo, Circle, Clock, EyeOff, FolderOpen, Users } from 'lucide-react';
+import { ListTodo, Circle, Clock, EyeOff, FolderOpen, Users, Edit2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { quickUpdateTask, toggleTaskInbox } from '@/app/actions/inbox';
-import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
-
-interface Task {
-  id: string;
-  title: string;
-  status: 'Todo' | 'In Progress' | 'Done';
-  priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
-  due_date: string | null;
-  show_in_inbox?: boolean;
-  assignee?: {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-  } | null;
-  project?: {
-    id: string;
-    name: string;
-  } | null;
-}
+import { quickUpdateTask, toggleTaskInbox, type Task } from '@/app/actions/inbox';
+import { invalidateInboxTasks, invalidateDailyFlow, useProfiles } from '@/lib/swr';
+import { EditTaskModal } from '@/components/edit-task-modal';
 
 interface TasksWidgetProps {
   tasks: Task[];
@@ -83,9 +66,8 @@ const TaskItem = React.memo(function TaskItem({
   isPending,
   userColorMap,
 }: {
-  task: Task;
-  onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
+  onEdit: (task: Task) => void;
   isPending: boolean;
   userColorMap: Map<string, { text: string; bg: string }>;
 }) {
@@ -150,6 +132,11 @@ const TaskItem = React.memo(function TaskItem({
                   userColorMap.get(task.assignee.id)?.bg || 'bg-purple-500'
                 )}
               />
+              {task.assignee.isLead && (
+                <span className="mr-1 rounded bg-muted px-1 py-0 text-[9px] uppercase tracking-wider text-muted-foreground">
+                  Owner
+                </span>
+              )}
               {task.assignee.full_name || 'Unknown'}
             </span>
           )}
@@ -158,6 +145,22 @@ const TaskItem = React.memo(function TaskItem({
       <div className="flex shrink-0 items-center gap-1">
         <Circle className={cn('h-2 w-2', PRIORITY_CONFIG[task.priority])} />
         <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={() => onEdit(task)}
+                disabled={isPending}
+              >
+                <Edit2 className="h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              <p>Edit task</p>
+            </TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
@@ -185,6 +188,8 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const [isPending, startTransition] = useTransition();
   const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const { profiles } = useProfiles();
 
   // Create color map for each team member
   const userColorMap = React.useMemo(() => {
@@ -281,6 +286,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
                 task={task}
                 onToggle={handleToggleTask}
                 onHide={handleHideTask}
+                onEdit={setEditingTask}
                 isPending={isPending}
                 userColorMap={userColorMap}
               />
@@ -288,6 +294,16 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
           </div>
         )}
       </CardContent>
+
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask as Task}
+          profiles={profiles}
+          open={!!editingTask}
+          onOpenChange={(open: boolean) => !open && setEditingTask(null)}
+          onSuccess={handleTaskUpdated}
+        />
+      )}
     </Card>
   );
 }

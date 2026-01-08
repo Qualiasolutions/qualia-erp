@@ -18,6 +18,7 @@ import {
   Inbox,
   MoreVertical,
   Trash2,
+  Edit2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/client-utils';
@@ -37,6 +38,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useAdminContext } from '@/components/admin-provider';
 import { deleteProject } from '@/app/actions';
@@ -347,6 +349,11 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={handleRowClick}>
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit project
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
                 onClick={handleDelete}
