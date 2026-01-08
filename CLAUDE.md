@@ -40,13 +40,16 @@ type ActionResult = { success: boolean; error?: string; data?: unknown };
 Action files:
 
 - `app/actions.ts` - Main actions (issues, projects, clients, meetings, workspaces)
+- `app/actions/index.ts` - Re-exports + authorization helpers (`isUserAdmin`, `canDelete*`)
+- `app/actions/shared.ts` - `ActionResult` type, permission helpers
 - `app/actions/inbox.ts` - Task CRUD with inbox filtering
+- `app/actions/phases.ts` - Project roadmap phases (`getProjectPhases`, etc.)
 - `app/actions/daily-flow.ts` - Dashboard data aggregation
 - `app/actions/timeline-dashboard.ts` - Timeline view data
 - `app/actions/project-files.ts` - Project file upload/download
 - `app/actions/learning.ts` - Mentorship/training features
 - `app/actions/payments.ts` - Payment tracking
-- `app/actions/health.ts` - Health check endpoint
+- `app/actions/health.ts` - Health monitoring + insights
 
 ### Key Directories
 
@@ -64,12 +67,14 @@ app/
 lib/
 ├── validation.ts           # Zod schemas for all entities
 ├── swr.ts                  # SWR hooks + cache invalidation
+├── server-utils.ts         # normalizeFKResponse() for Supabase FK arrays
 ├── supabase/server.ts      # Server-side Supabase client
 ├── supabase/client.ts      # Browser Supabase client
 ├── color-constants.ts      # Centralized theme colors
 ├── schedule-utils.ts       # Date/time filtering utilities
 ├── project-phases.ts       # Phase/milestone helpers
 ├── email.ts                # Resend email notifications
+├── rate-limit.ts           # In-memory rate limiting (Redis TODO)
 
 components/
 ├── ui/                     # shadcn/ui primitives
@@ -116,10 +121,15 @@ invalidateTodaysSchedule(true);
 
 ### Supabase FK Pattern
 
-Supabase returns FKs as arrays. Always normalize:
+Supabase returns FKs as arrays. Use the helper or normalize manually:
 
 ```typescript
-// In server actions
+import { normalizeFKResponse } from '@/lib/server-utils';
+
+// Preferred: Use the helper
+const normalized = normalizeFKResponse(data, ['project', 'client', 'assigned_to']);
+
+// Manual: For simple cases
 return {
   ...data,
   project: Array.isArray(data.project) ? data.project[0] || null : data.project,
@@ -132,20 +142,22 @@ return {
 
 ### Key Tables
 
-| Table            | Purpose                                                    |
-| ---------------- | ---------------------------------------------------------- |
-| `tasks`          | Tasks with `show_in_inbox`, `item_type`, `due_date`        |
-| `issues`         | Legacy issues (being migrated to tasks)                    |
-| `projects`       | Projects with `project_type`, `project_group`, `client_id` |
-| `project_phases` | Phase milestones for project roadmaps                      |
-| `phase_items`    | Items within phases                                        |
-| `clients`        | CRM with `lead_status`, `last_contacted_at`                |
-| `meetings`       | Calendar with `meeting_link`, `client_id`, attendees       |
-| `profiles`       | Users with `role` (admin/employee)                         |
-| `workspaces`     | Multi-tenant isolation                                     |
-| `notifications`  | In-app notifications                                       |
-| `activities`     | Activity feed                                              |
-| `documents`      | Project file storage                                       |
+| Table             | Purpose                                                    |
+| ----------------- | ---------------------------------------------------------- |
+| `tasks`           | Tasks with `show_in_inbox`, `item_type`, `due_date`        |
+| `issues`          | Legacy issues (being migrated to tasks)                    |
+| `projects`        | Projects with `project_type`, `project_group`, `client_id` |
+| `project_phases`  | Phase milestones for project roadmaps                      |
+| `phase_items`     | Items within phases                                        |
+| `clients`         | CRM with `lead_status`, `last_contacted_at`                |
+| `meetings`        | Calendar with `meeting_link`, `client_id`, attendees       |
+| `profiles`        | Users with `role` (admin/employee)                         |
+| `workspaces`      | Multi-tenant isolation                                     |
+| `notifications`   | In-app notifications                                       |
+| `activities`      | Activity feed                                              |
+| `documents`       | Project file storage (pgvector for RAG)                    |
+| `project_health`  | Health metrics snapshots                                   |
+| `health_insights` | AI-generated health insights                               |
 
 ### Type Helpers
 
@@ -168,6 +180,22 @@ import { TASK_STATUSES, PROJECT_TYPES, LEAD_STATUSES, PROJECT_STATUSES } from '@
 - `lead_status`: `dropped`, `cold`, `hot`, `active_client`, `inactive_client`, `dead_lead`
 - `user_role`: `admin`, `employee`
 - `deployment_platform`: `vercel`, `squarespace`, `railway`, `meta`, `instagram`, `google_ads`, `tiktok`, `linkedin`, `none`
+
+## Routes
+
+| Route                    | Page                | Description                                |
+| ------------------------ | ------------------- | ------------------------------------------ |
+| `/`                      | `today-page.tsx`    | Dashboard with tasks, meetings, daily flow |
+| `/projects`              | List all projects   |                                            |
+| `/projects/[id]`         | Project detail      | Tasks, team, activity                      |
+| `/projects/[id]/roadmap` | Project roadmap     | Phases, milestones                         |
+| `/clients`               | CRM list            |                                            |
+| `/clients/[id]`          | Client detail       | Contacts, activities                       |
+| `/schedule`              | Team schedule       | Calendar view                              |
+| `/team`                  | Team members        |                                            |
+| `/payments`              | Payment tracking    |                                            |
+| `/documents`             | Document management |                                            |
+| `/settings`              | User settings       |                                            |
 
 ## Auth & Middleware
 
@@ -210,3 +238,9 @@ Required (see `.env.example`):
 
 - **Production**: https://qualia-erp.vercel.app (auto-deploy from master)
 - **Pre-commit hooks**: ESLint, Prettier, TypeScript (via husky + lint-staged)
+
+## API Routes
+
+- `app/api/chat/route.ts` - AI chat endpoint (Gemini via AI SDK)
+- `app/api/vapi/webhook/route.ts` - Voice AI webhooks (11+ tools)
+- `app/api/embeddings/route.ts` - Document embedding generation (RAG)
