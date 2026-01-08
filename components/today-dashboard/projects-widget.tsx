@@ -80,10 +80,6 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
                 ? PROJECT_TYPE_CONFIG[project.project_type]
                 : null;
               const TypeIcon = typeConfig?.icon || Folder;
-              const progress =
-                project.issue_stats.total > 0
-                  ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-                  : 0;
 
               return (
                 <motion.div
@@ -110,31 +106,17 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
 
                     {/* Content */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
-                          {project.name}
-                        </span>
-                        <span
-                          className={cn(
-                            'h-1.5 w-1.5 shrink-0 rounded-full',
-                            STATUS_COLORS[project.status] || 'bg-muted-foreground'
-                          )}
-                        />
-                      </div>
-                      {/* Progress bar */}
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
-                          <div
-                            className="h-full rounded-full bg-primary/60 transition-all"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] tabular-nums text-muted-foreground">
-                          {project.issue_stats.done}/{project.issue_stats.total}
-                        </span>
-                      </div>
+                      <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                        {project.name}
+                      </span>
                     </div>
 
+                    <span
+                      className={cn(
+                        'h-2 w-2 shrink-0 rounded-full',
+                        STATUS_COLORS[project.status] || 'bg-muted-foreground'
+                      )}
+                    />
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
                   </Link>
                 </motion.div>

@@ -182,31 +182,31 @@ export function TodayDashboard({
             animate="visible"
             className="space-y-6"
           >
-            {/* Bento Grid Layout */}
-            <div className="grid gap-6 lg:grid-cols-12">
-              {/* Tasks - Narrower width */}
-              <motion.div variants={itemVariants} className="lg:col-span-5">
-                <div className="h-[500px] lg:h-[600px]">
-                  <TasksWidget tasks={tasks} teamMembers={teamMembers} />
-                </div>
-              </motion.div>
-
-              {/* Middle Column - Projects */}
+            {/* Bento Grid Layout - fits in viewport */}
+            <div className="grid gap-4 lg:grid-cols-12 lg:gap-5">
+              {/* Left Column - Projects */}
               <motion.div variants={itemVariants} className="lg:col-span-4">
-                <div className="h-[500px] lg:h-[600px]">
+                <div className="h-[400px] lg:h-[calc(100vh-220px)]">
                   <ProjectsWidget projects={projects} />
                 </div>
               </motion.div>
 
+              {/* Middle Column - Tasks */}
+              <motion.div variants={itemVariants} className="lg:col-span-5">
+                <div className="h-[400px] lg:h-[calc(100vh-220px)]">
+                  <TasksWidget tasks={tasks} teamMembers={teamMembers} />
+                </div>
+              </motion.div>
+
               {/* Right Column - Meetings & Leads stacked */}
-              <div className="flex flex-col gap-6 lg:col-span-3">
+              <div className="flex flex-col gap-4 lg:col-span-3">
                 {/* Meetings */}
-                <motion.div variants={itemVariants} className="h-[350px] lg:h-[290px]">
+                <motion.div variants={itemVariants} className="h-[280px]">
                   <MeetingsWrapper initialMeetings={meetings} />
                 </motion.div>
 
-                {/* Leads */}
-                <motion.div variants={itemVariants} className="h-[350px] lg:flex-1">
+                {/* Leads - scrollable */}
+                <motion.div variants={itemVariants} className="min-h-0 flex-1">
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>
               </div>

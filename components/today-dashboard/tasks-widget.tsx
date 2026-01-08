@@ -158,11 +158,6 @@ const TaskItem = React.memo(function TaskItem({
                   userColorMap.get(task.assignee.id)?.bg || 'bg-purple-500'
                 )}
               />
-              {task.assignee.isLead && (
-                <span className="rounded bg-muted px-1 py-0 text-[9px] uppercase tracking-wider text-muted-foreground">
-                  Owner
-                </span>
-              )}
               {task.assignee.full_name || 'Unknown'}
             </span>
           )}
