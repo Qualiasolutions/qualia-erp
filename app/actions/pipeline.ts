@@ -531,13 +531,10 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
 export async function resetAllPhaseTasks(): Promise<ActionResult> {
   const supabase = await createClient();
 
-  // Get all phases with their project's workspace_id
-  const { data: phases, error: phasesError } = await supabase.from('project_phases').select(`
-      id,
-      name,
-      project_id,
-      projects!inner(workspace_id)
-    `);
+  // Get all phases
+  const { data: phases, error: phasesError } = await supabase
+    .from('project_phases')
+    .select('id, name, project_id');
 
   if (phasesError) {
     console.error('[resetAllPhaseTasks] Error fetching phases:', phasesError);
@@ -547,6 +544,18 @@ export async function resetAllPhaseTasks(): Promise<ActionResult> {
   if (!phases || phases.length === 0) {
     return { success: true, data: { message: 'No phases found', count: 0 } };
   }
+
+  // Get all projects to get workspace_ids
+  const projectIds = [...new Set(phases.map((p) => p.project_id))];
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('id, workspace_id')
+    .in('id', projectIds);
+
+  const projectWorkspaceMap: Record<string, string> = {};
+  (projects || []).forEach((p) => {
+    projectWorkspaceMap[p.id] = p.workspace_id;
+  });
 
   // Delete all existing phase-linked tasks
   const phaseIds = phases.map((p) => p.id);
@@ -571,10 +580,7 @@ export async function resetAllPhaseTasks(): Promise<ActionResult> {
   for (const phase of phases) {
     const phaseDef = UNIVERSAL_PIPELINE.find((p) => p.name === phase.name);
     if (phaseDef) {
-      const projectData = phase.projects as { workspace_id: string } | { workspace_id: string }[];
-      const workspaceId = Array.isArray(projectData)
-        ? projectData[0]?.workspace_id
-        : projectData?.workspace_id;
+      const workspaceId = projectWorkspaceMap[phase.project_id];
       if (!workspaceId) continue;
 
       phaseDef.tasks.forEach((taskTitle, index) => {
