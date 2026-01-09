@@ -1,0 +1,22 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "example_tool",
+      "description": "An example tool - replace with your actual tools",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The query to process"
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    "server": {
+      "url": "https://your-worker.workers.dev/webhook"
+    }
+  }
+]

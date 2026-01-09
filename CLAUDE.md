@@ -6,6 +6,17 @@ Qualia Internal Suite - Project management platform built with Next.js 16+, Supa
 
 **Design**: Clean, professional UI like Linear/Plane. No flashy effects.
 
+## Trainee Resources
+
+- **Trainee Onboarding Guide**: `docs/trainee-onboarding.md` - Step-by-step project workflow
+- **Starter Templates**: `templates/` - Boilerplate for new projects
+  - `ai-agent-starter/` - Next.js + Gemini + Supabase
+  - `platform-starter/` - Server Actions + SWR pattern
+  - `voice-starter/` - Cloudflare Workers + VAPI
+  - `website-starter/` - React + Vite + Tailwind
+
+Each template includes a `PROGRESS.md` for tracking tasks through phases.
+
 ## Commands
 
 ```bash
