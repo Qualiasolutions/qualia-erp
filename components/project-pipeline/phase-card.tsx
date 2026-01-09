@@ -7,7 +7,6 @@ import {
   getPhaseStatusConfig,
   type PhaseStatus,
 } from '@/lib/pipeline-constants';
-import { PhaseResources } from './phase-resources';
 import { PhaseTasks } from './phase-tasks';
 import { Button } from '@/components/ui/button';
 import {
@@ -27,12 +26,7 @@ import {
   SkipForward,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  getPhaseResources,
-  getPhaseTasks,
-  updatePhaseStatus,
-  type PhaseResource,
-} from '@/app/actions/pipeline';
+import { getPhaseTasks, updatePhaseStatus } from '@/app/actions/pipeline';
 
 interface Task {
   id: string;
@@ -76,7 +70,6 @@ export function PhaseCard({
   onDataChange,
 }: PhaseCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [resources, setResources] = useState<PhaseResource[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [, startTransition] = useTransition();
@@ -85,17 +78,16 @@ export function PhaseCard({
   const statusConfig = getPhaseStatusConfig(phase.status);
   const PhaseIcon = phaseConfig?.icon || Circle;
 
-  // Load resources and tasks when expanded
+  // Load tasks when expanded
   useEffect(() => {
     if (!isExpanded) return;
 
     let cancelled = false;
     setIsLoading(true);
 
-    Promise.all([getPhaseResources(phase.id), getPhaseTasks(phase.id)])
-      .then(([resourcesData, tasksData]) => {
+    getPhaseTasks(phase.id)
+      .then((tasksData) => {
         if (!cancelled) {
-          setResources(resourcesData);
           setTasks(tasksData as Task[]);
         }
       })
@@ -109,13 +101,10 @@ export function PhaseCard({
   }, [isExpanded, phase.id]);
 
   const refreshData = () => {
-    Promise.all([getPhaseResources(phase.id), getPhaseTasks(phase.id)]).then(
-      ([resourcesData, tasksData]) => {
-        setResources(resourcesData);
-        setTasks(tasksData as Task[]);
-        onDataChange?.();
-      }
-    );
+    getPhaseTasks(phase.id).then((tasksData) => {
+      setTasks(tasksData as Task[]);
+      onDataChange?.();
+    });
   };
 
   const handleStatusChange = (newStatus: PhaseStatus) => {
@@ -251,27 +240,14 @@ export function PhaseCard({
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                 </div>
               ) : (
-                <>
-                  {/* Resources */}
-                  <PhaseResources
-                    phaseId={phase.id}
-                    resources={resources}
-                    onResourcesChange={refreshData}
-                  />
-
-                  {/* Divider */}
-                  <div className="h-px bg-border/50" />
-
-                  {/* Tasks */}
-                  <PhaseTasks
-                    phaseId={phase.id}
-                    phaseName={phase.name}
-                    projectId={projectId}
-                    workspaceId={workspaceId}
-                    tasks={tasks}
-                    onTasksChange={refreshData}
-                  />
-                </>
+                <PhaseTasks
+                  phaseId={phase.id}
+                  phaseName={phase.name}
+                  projectId={projectId}
+                  workspaceId={workspaceId}
+                  tasks={tasks}
+                  onTasksChange={refreshData}
+                />
               )}
             </div>
           </motion.div>

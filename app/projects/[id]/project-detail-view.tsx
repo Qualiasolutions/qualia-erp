@@ -34,9 +34,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
 import { ProjectPipeline } from '@/components/project-pipeline';
-import { ProjectFiles } from '@/components/project-files';
 import { ProjectNotes } from '@/components/project-notes';
-import { ProjectTeamView } from '@/components/project-team-view';
+import { ProjectResources } from '@/components/project-resources';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import type { ProjectType, ProjectGroup } from '@/types/database';
@@ -70,6 +69,13 @@ interface Issue {
   created_at: string;
 }
 
+interface ProjectResource {
+  id: string;
+  type: string;
+  label: string;
+  url: string;
+}
+
 interface Project {
   id: string;
   name: string;
@@ -90,6 +96,9 @@ interface Project {
   issue_stats: {
     total: number;
     done: number;
+  };
+  metadata?: {
+    resources?: ProjectResource[];
   };
 }
 
@@ -178,9 +187,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
 
   const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
   const ProjectTypeIcon = selectedProjectType?.icon || Folder;
-
-  // Get lead profile for team view
-  const leadProfile = project.lead;
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -446,33 +452,26 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
               <ProjectPipeline projectId={project.id} workspaceId={project.workspace_id} />
             </motion.div>
 
-            {/* Supporting Sections */}
+            {/* Supporting Sections - Notes & Resources */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="grid gap-4 lg:grid-cols-3"
+              className="grid gap-4 lg:grid-cols-2"
             >
               {/* Notes */}
-              <div className="lg:col-span-1">
-                <ProjectNotes
-                  projectId={project.id}
-                  workspaceId={project.workspace_id}
-                  className="h-[350px]"
-                />
-              </div>
+              <ProjectNotes
+                projectId={project.id}
+                workspaceId={project.workspace_id}
+                className="h-[300px]"
+              />
 
-              {/* Files */}
-              <div className="lg:col-span-1">
-                <div className="h-[350px] rounded-xl border border-border/50 bg-card p-4">
-                  <ProjectFiles projectId={project.id} />
-                </div>
-              </div>
-
-              {/* Team */}
-              <div className="lg:col-span-1">
-                <ProjectTeamView projectId={project.id} lead={leadProfile} className="h-[350px]" />
-              </div>
+              {/* Resources */}
+              <ProjectResources
+                projectId={project.id}
+                initialResources={project.metadata?.resources || []}
+                className="h-[300px]"
+              />
             </motion.div>
           </div>
         </div>

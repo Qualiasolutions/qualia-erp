@@ -267,12 +267,63 @@ export async function deleteProjectNote(noteId: string): Promise<ActionResult> {
 // PIPELINE HELPERS
 // ============================================================================
 
+// Default pipeline phases with tasks
 const UNIVERSAL_PIPELINE = [
-  { name: 'Plan', order: 1, description: 'Define scope, requirements, and approach' },
-  { name: 'Design', order: 2, description: 'Create specifications and architecture' },
-  { name: 'Build', order: 3, description: 'Implement the solution' },
-  { name: 'Test', order: 4, description: 'Verify quality and functionality' },
-  { name: 'Ship', order: 5, description: 'Deploy and deliver' },
+  {
+    name: 'Plan',
+    order: 1,
+    description: 'Define scope and requirements',
+    tasks: [
+      'Define project scope and goals',
+      'List core features (MVP)',
+      'Identify tech stack',
+      'Set up project resources (GitHub, Supabase, Vercel)',
+    ],
+  },
+  {
+    name: 'Design',
+    order: 2,
+    description: 'Create specifications and mockups',
+    tasks: [
+      'Create wireframes/mockups',
+      'Define database schema',
+      'Plan API structure',
+      'Review with client/team',
+    ],
+  },
+  {
+    name: 'Build',
+    order: 3,
+    description: 'Implement the solution',
+    tasks: [
+      'Set up project boilerplate',
+      'Build core functionality',
+      'Implement UI components',
+      'Connect to backend/database',
+    ],
+  },
+  {
+    name: 'Test',
+    order: 4,
+    description: 'Verify quality and functionality',
+    tasks: [
+      'Test all features manually',
+      'Fix bugs and issues',
+      'Test on different devices',
+      'Get feedback and iterate',
+    ],
+  },
+  {
+    name: 'Ship',
+    order: 5,
+    description: 'Deploy and deliver',
+    tasks: [
+      'Deploy to production',
+      'Set up domain/DNS',
+      'Final client review',
+      'Handover documentation',
+    ],
+  },
 ];
 
 export async function initializeProjectPipeline(projectId: string): Promise<ActionResult> {
@@ -289,7 +340,18 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
     return { success: true, data: { message: 'Pipeline already initialized' } };
   }
 
-  // Create all 5 phases (using sort_order, not display_order)
+  // Get project to get workspace_id
+  const { data: project } = await supabase
+    .from('projects')
+    .select('workspace_id')
+    .eq('id', projectId)
+    .single();
+
+  if (!project) {
+    return { success: false, error: 'Project not found' };
+  }
+
+  // Create all 5 phases
   const phases = UNIVERSAL_PIPELINE.map((phase) => ({
     project_id: projectId,
     name: phase.name,
@@ -298,11 +360,50 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
     status: 'not_started',
   }));
 
-  const { error } = await supabase.from('project_phases').insert(phases);
+  const { data: createdPhases, error: phasesError } = await supabase
+    .from('project_phases')
+    .insert(phases)
+    .select('id, name');
 
-  if (error) {
-    console.error('[initializeProjectPipeline] Error:', error);
-    return { success: false, error: error.message };
+  if (phasesError || !createdPhases) {
+    console.error('[initializeProjectPipeline] Error creating phases:', phasesError);
+    return { success: false, error: phasesError?.message || 'Failed to create phases' };
+  }
+
+  // Create default tasks for each phase
+  const tasks: Array<{
+    workspace_id: string;
+    project_id: string;
+    phase_id: string;
+    phase_name: string;
+    title: string;
+    status: string;
+    sort_order: number;
+  }> = [];
+
+  for (const createdPhase of createdPhases) {
+    const phaseDef = UNIVERSAL_PIPELINE.find((p) => p.name === createdPhase.name);
+    if (phaseDef) {
+      phaseDef.tasks.forEach((taskTitle, index) => {
+        tasks.push({
+          workspace_id: project.workspace_id,
+          project_id: projectId,
+          phase_id: createdPhase.id,
+          phase_name: createdPhase.name,
+          title: taskTitle,
+          status: 'Todo',
+          sort_order: index,
+        });
+      });
+    }
+  }
+
+  if (tasks.length > 0) {
+    const { error: tasksError } = await supabase.from('tasks').insert(tasks);
+    if (tasksError) {
+      console.error('[initializeProjectPipeline] Error creating tasks:', tasksError);
+      // Don't fail the whole operation, phases are created
+    }
   }
 
   revalidatePath(`/projects/${projectId}`);
