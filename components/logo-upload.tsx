@@ -136,7 +136,7 @@ export function LogoUpload({
               src={localLogoUrl!}
               alt="Logo"
               fill
-              className="object-cover"
+              className="object-contain"
               onError={() => setImageError(true)}
               unoptimized
             />
