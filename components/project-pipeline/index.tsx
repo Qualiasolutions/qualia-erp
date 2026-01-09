@@ -32,7 +32,7 @@ export function ProjectPipeline({ projectId, workspaceId, className }: ProjectPi
 
       // If no phases exist, initialize the pipeline
       if (data.length === 0) {
-        const result = await initializeProjectPipeline(projectId, workspaceId);
+        const result = await initializeProjectPipeline(projectId);
         if (result.success) {
           data = await getProjectPhasesWithDetails(projectId);
         }
@@ -50,7 +50,7 @@ export function ProjectPipeline({ projectId, workspaceId, className }: ProjectPi
     } finally {
       setIsLoading(false);
     }
-  }, [projectId, workspaceId]);
+  }, [projectId]);
 
   useEffect(() => {
     loadPhases();

@@ -38,12 +38,10 @@ export interface ProjectNote {
 export interface PhaseWithDetails {
   id: string;
   project_id: string;
-  workspace_id: string;
   name: string;
   description: string | null;
   status: 'not_started' | 'in_progress' | 'completed' | 'skipped';
-  display_order: number;
-  helper_text: string | null;
+  sort_order: number;
   created_at: string;
   // Computed fields
   task_count: number;
@@ -63,7 +61,7 @@ export async function getPhaseResources(phaseId: string): Promise<PhaseResource[
     .from('phase_resources')
     .select('*')
     .eq('phase_id', phaseId)
-    .order('display_order', { ascending: true });
+    .order('sort_order', { ascending: true });
 
   if (error) {
     console.error('[getPhaseResources] Error:', error);
@@ -277,10 +275,7 @@ const UNIVERSAL_PIPELINE = [
   { name: 'Ship', order: 5, description: 'Deploy and deliver' },
 ];
 
-export async function initializeProjectPipeline(
-  projectId: string,
-  workspaceId: string
-): Promise<ActionResult> {
+export async function initializeProjectPipeline(projectId: string): Promise<ActionResult> {
   const supabase = await createClient();
 
   // Check if phases already exist
@@ -294,20 +289,13 @@ export async function initializeProjectPipeline(
     return { success: true, data: { message: 'Pipeline already initialized' } };
   }
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Create all 5 phases
+  // Create all 5 phases (using sort_order, not display_order)
   const phases = UNIVERSAL_PIPELINE.map((phase) => ({
     project_id: projectId,
-    workspace_id: workspaceId,
     name: phase.name,
     description: phase.description,
-    display_order: phase.order,
+    sort_order: phase.order,
     status: 'not_started',
-    created_by: user?.id || null,
   }));
 
   const { error } = await supabase.from('project_phases').insert(phases);
@@ -351,7 +339,7 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
     .from('project_phases')
     .select('*')
     .eq('project_id', projectId)
-    .order('display_order', { ascending: true });
+    .order('sort_order', { ascending: true });
 
   if (phasesError || !phases) {
     console.error('[getProjectPhasesWithDetails] Error:', phasesError);
@@ -399,12 +387,10 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
     return {
       id: phase.id,
       project_id: phase.project_id,
-      workspace_id: phase.workspace_id,
       name: phase.name,
       description: phase.description,
       status: phase.status || 'not_started',
-      display_order: phase.display_order || phase.sort_order || 0,
-      helper_text: phase.helper_text,
+      sort_order: phase.sort_order || 0,
       created_at: phase.created_at,
       task_count: taskStats.total,
       completed_task_count: taskStats.completed,
