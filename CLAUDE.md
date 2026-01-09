@@ -261,6 +261,21 @@ Required (see `.env.example`):
 - **Production**: https://qualia-erp.vercel.app (auto-deploy from master)
 - **Pre-commit hooks**: ESLint, Prettier, TypeScript (via husky + lint-staged)
 
+## Technical Debt & Remediation
+
+**Active Plan**: `~/.claude/plans/encapsulated-wibbling-fox.md`
+
+| Priority | Issue                                              | Status  |
+| -------- | -------------------------------------------------- | ------- |
+| P0       | IDOR in file downloads (`project-files.ts`)        | Pending |
+| P0       | Missing auth in `deleteTask()`                     | Pending |
+| P0       | Webhook secret enforcement in prod                 | Pending |
+| P1       | Split `actions.ts` (2,940 lines) into domain files | Pending |
+| P1       | Increase test coverage (1.68% → 50%)               | Pending |
+| P2       | Fix N+1 query in `getProjectById`                  | Pending |
+| P2       | Add virtualization to TasksWidget                  | Pending |
+| P2       | Implement Redis rate limiting                      | Pending |
+
 ## API Routes
 
 - `app/api/chat/route.ts` - AI chat endpoint (Gemini via AI SDK)
