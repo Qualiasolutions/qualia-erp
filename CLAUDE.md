@@ -23,7 +23,7 @@ npm test -- path/to/test # Run single test file
 - **Framework**: Next.js 16+ (App Router, React 19, TypeScript)
 - **Database**: Supabase (PostgreSQL, pgvector for RAG)
 - **Styling**: Tailwind CSS + shadcn/ui
-- **State**: SWR (30s auto-refresh when tab visible)
+- **State**: SWR (45s auto-refresh when tab visible, stops when hidden)
 - **AI**: Google Gemini via AI SDK, VAPI voice, Resend email
 - **DnD**: @dnd-kit for drag-and-drop, @tanstack/react-virtual for virtualization
 
@@ -47,6 +47,7 @@ Action files:
 - `app/actions/daily-flow.ts` - Dashboard data aggregation
 - `app/actions/timeline-dashboard.ts` - Timeline view data
 - `app/actions/project-files.ts` - Project file upload/download
+- `app/actions/logos.ts` - Logo upload for projects/clients (Supabase Storage)
 - `app/actions/learning.ts` - Mentorship/training features
 - `app/actions/payments.ts` - Payment tracking
 - `app/actions/health.ts` - Health monitoring + insights
@@ -75,6 +76,10 @@ lib/
 ├── project-phases.ts       # Phase/milestone helpers
 ├── email.ts                # Resend email notifications
 ├── rate-limit.ts           # In-memory rate limiting (Redis TODO)
+├── ai/                     # AI tools for chat/voice
+│   ├── tools/read-tools.ts # Read-only AI tools (search, stats)
+│   ├── tools/write-tools.ts# Mutation AI tools (create, update)
+│   └── system-prompt.ts    # AI system prompt
 
 components/
 ├── ui/                     # shadcn/ui primitives
@@ -93,17 +98,28 @@ types/database.ts           # Auto-generated Supabase types + enum constants
 ### SWR Hooks (lib/swr.ts)
 
 ```typescript
-// Available hooks with auto-refresh
-useInboxTasks(); // Tasks with show_in_inbox=true
-useProjectTasks(id); // All tasks for a project
-useDailyFlow(); // Dashboard aggregated data
-useTimelineDashboard(); // Timeline with assignments
-useTodaysTasks(); // Tasks due today/overdue
-useTodaysMeetings(); // Meetings for today
-useMeetings(); // All meetings
-useTeams(); // Cached teams list
-useProjects(); // Cached projects list
-useProfiles(); // Cached user profiles
+// Task hooks (45s auto-refresh when visible)
+useInboxTasks();           // Tasks with show_in_inbox=true
+useProjectTasks(id);       // All tasks for a project
+useTodaysTasks();          // Tasks due today/overdue
+
+// Meeting hooks
+useTodaysMeetings();       // Meetings for today
+useMeetings(initialData?); // All meetings with optional SSR data
+
+// Dashboard hooks
+useDailyFlow();            // Dashboard aggregated data
+useTimelineDashboard();    // Timeline with assignments
+
+// Reference data (90s slower refresh)
+useTeams();
+useProjects();
+useProfiles();
+
+// Notifications
+useNotifications(workspaceId);
+useUnreadNotificationCount(workspaceId);
+useProjectPhases(projectId);
 ```
 
 ### Cache Invalidation
@@ -117,6 +133,8 @@ invalidateDailyFlow(true);
 invalidateTimeline(true);
 invalidateMeetings(true);
 invalidateTodaysSchedule(true);
+invalidateNotifications(workspaceId, true);
+invalidateProjectPhases(projectId);
 ```
 
 ### Supabase FK Pattern
@@ -176,10 +194,14 @@ import { TASK_STATUSES, PROJECT_TYPES, LEAD_STATUSES, PROJECT_STATUSES } from '@
 
 - `project_type`: `web_design`, `ai_agent`, `voice_agent`, `seo`, `ads`
 - `project_status`: `Demos`, `Active`, `Launched`, `Delayed`, `Archived`, `Canceled`
+- `project_group`: `salman_kuwait`, `tasos_kyriakides`, `finished`, `inactive`, `active`, `demos`, `other`
 - `task_status`: `Todo`, `In Progress`, `Done`, `Canceled`
+- `task_priority`: `No Priority`, `Urgent`, `High`, `Medium`, `Low`
 - `lead_status`: `dropped`, `cold`, `hot`, `active_client`, `inactive_client`, `dead_lead`
 - `user_role`: `admin`, `employee`
 - `deployment_platform`: `vercel`, `squarespace`, `railway`, `meta`, `instagram`, `google_ads`, `tiktok`, `linkedin`, `none`
+
+Use exported constants for type safety: `TASK_STATUSES`, `PROJECT_TYPES`, `LEAD_STATUSES`, `PROJECT_STATUSES`, `PROJECT_GROUPS`, `DEPLOYMENT_PLATFORMS`
 
 ## Routes
 
@@ -244,3 +266,21 @@ Required (see `.env.example`):
 - `app/api/chat/route.ts` - AI chat endpoint (Gemini via AI SDK)
 - `app/api/vapi/webhook/route.ts` - Voice AI webhooks (11+ tools)
 - `app/api/embeddings/route.ts` - Document embedding generation (RAG)
+- `app/api/cron/reminders/route.ts` - Scheduled reminder notifications
+- `app/api/health/route.ts` - Health check endpoint
+
+## File Storage
+
+Logos and project files use Supabase Storage bucket `project-files`:
+
+```typescript
+// Upload pattern (see app/actions/logos.ts)
+const storagePath = `logos/projects/${projectId}/logo.${ext}`;
+await supabase.storage.from('project-files').upload(storagePath, file, { upsert: true });
+
+// Get public URL with cache-busting
+const {
+  data: { publicUrl },
+} = supabase.storage.from('project-files').getPublicUrl(storagePath);
+const logoUrl = `${publicUrl}?t=${Date.now()}`;
+```

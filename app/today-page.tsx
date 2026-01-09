@@ -25,7 +25,7 @@ export default async function TodayPage() {
   const supabase = await createClient();
   const [meetingsRaw, tasksRaw, clientsRaw, profilesRaw, projectsRaw] = await Promise.all([
     getMeetings(workspaceId),
-    getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150 }),
+    getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
     getClients(workspaceId),
     getProfiles(workspaceId),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
