@@ -185,12 +185,12 @@ export function TodayDashboard({
             <div className="grid h-full gap-4 lg:grid-cols-12 lg:gap-5">
               {/* Left Column - Projects + Leads stacked */}
               <div className="flex h-full flex-col gap-3 lg:col-span-3">
-                {/* Projects - fixed height */}
-                <motion.div variants={itemVariants} className="shrink-0">
+                {/* Projects - fills most of the height */}
+                <motion.div variants={itemVariants} className="min-h-0 flex-[2]">
                   <ProjectsWidget projects={projects} />
                 </motion.div>
 
-                {/* Leads - fills remaining height */}
+                {/* Leads - smaller fixed portion */}
                 <motion.div variants={itemVariants} className="min-h-0 flex-1">
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>

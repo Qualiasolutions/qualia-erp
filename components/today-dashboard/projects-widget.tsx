@@ -41,11 +41,11 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
-  // Limit to show max 5 projects, rest behind "View all"
-  const visibleProjects = projects.slice(0, 5);
+  // Show more projects since container is taller
+  const visibleProjects = projects.slice(0, 8);
 
   return (
-    <div className="flex max-h-[280px] flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
         <div className="flex items-center gap-3">
