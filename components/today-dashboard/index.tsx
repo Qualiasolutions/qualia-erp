@@ -186,14 +186,17 @@ export function TodayDashboard({
             {/* Bento Grid Layout - fits in viewport without scroll */}
             <div className="grid h-full gap-4 lg:grid-cols-12 lg:gap-5">
               {/* Left Column - Projects + Leads stacked */}
-              <div className="flex flex-col gap-4 lg:col-span-3">
-                {/* Projects - shorter */}
-                <motion.div variants={itemVariants} className="h-[45%] min-h-[200px]">
+              <div className="flex flex-col gap-3 lg:col-span-3">
+                {/* Projects - compact, no scroll */}
+                <motion.div variants={itemVariants} className="shrink-0">
                   <ProjectsWidget projects={projects} />
                 </motion.div>
 
-                {/* Leads - scrollable */}
-                <motion.div variants={itemVariants} className="min-h-0 flex-1">
+                {/* Leads - scrollable container */}
+                <motion.div
+                  variants={itemVariants}
+                  className="min-h-[180px] flex-1 overflow-hidden"
+                >
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>
               </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useTodaysMeetings, invalidateMeetings } from '@/lib/swr';
+import { useMeetings, invalidateMeetings } from '@/lib/swr';
 import { MeetingsTimeline } from './meetings-timeline';
 
 interface Meeting {
@@ -19,7 +19,7 @@ interface MeetingsWrapperProps {
 }
 
 export function MeetingsWrapper({ initialMeetings }: MeetingsWrapperProps) {
-  const { meetings: swrMeetings } = useTodaysMeetings();
+  const { meetings: swrMeetings } = useMeetings();
 
   // Use SWR data if available, otherwise fall back to initial SSR data
   const meetings = swrMeetings.length > 0 ? swrMeetings : initialMeetings;

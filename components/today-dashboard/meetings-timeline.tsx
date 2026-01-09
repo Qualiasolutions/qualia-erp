@@ -1,8 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { format, parseISO, isToday } from 'date-fns';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { format, parseISO, isToday, isTomorrow, addDays, startOfDay, isSameDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Video, ExternalLink, Plus, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,16 +22,6 @@ interface Meeting {
 interface MeetingsTimelineProps {
   meetings: Meeting[];
   onMeetingCreated?: (meeting: Meeting) => void;
-}
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return '?';
-  return name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
 }
 
 function formatMeetingTime(startTime: string): string {
@@ -61,14 +50,54 @@ function isCurrentOrUpcoming(startTime: string, endTime: string): 'current' | 'u
   return 'past';
 }
 
+// Group meetings by day
+interface MeetingGroup {
+  label: string;
+  date: Date;
+  meetings: Meeting[];
+}
+
+function getDayLabel(date: Date): string {
+  if (isToday(date)) return 'Today';
+  if (isTomorrow(date)) return 'Tomorrow';
+  return format(date, 'EEEE, MMM d');
+}
+
 export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelineProps) {
   const [showModal, setShowModal] = useState(false);
 
-  // Filter to today's meetings only and sort by time
-  const todayMeetings = useMemo(() => {
-    return meetings
-      .filter((m) => isToday(parseISO(m.start_time)))
+  // Group meetings by day - today and next 7 days
+  const groupedMeetings = useMemo(() => {
+    const now = new Date();
+    const endDate = addDays(now, 7);
+
+    // Filter future meetings within range and sort
+    const futureMeetings = meetings
+      .filter((m) => {
+        const meetingDate = parseISO(m.start_time);
+        return meetingDate >= startOfDay(now) && meetingDate <= endDate;
+      })
       .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
+
+    // Group by day
+    const groups: MeetingGroup[] = [];
+    let currentGroup: MeetingGroup | null = null;
+
+    for (const meeting of futureMeetings) {
+      const meetingDate = startOfDay(parseISO(meeting.start_time));
+
+      if (!currentGroup || !isSameDay(currentGroup.date, meetingDate)) {
+        currentGroup = {
+          label: getDayLabel(meetingDate),
+          date: meetingDate,
+          meetings: [],
+        };
+        groups.push(currentGroup);
+      }
+      currentGroup.meetings.push(meeting);
+    }
+
+    return groups;
   }, [meetings]);
 
   // Handle meeting creation
@@ -76,6 +105,8 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
     onMeetingCreated?.(meeting);
     setShowModal(false);
   };
+
+  const totalMeetings = groupedMeetings.reduce((sum, g) => sum + g.meetings.length, 0);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
@@ -87,7 +118,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
           </div>
           <div>
             <h3 className="font-semibold">Meetings</h3>
-            <p className="text-xs text-muted-foreground">{todayMeetings.length} scheduled</p>
+            <p className="text-xs text-muted-foreground">{totalMeetings} scheduled</p>
           </div>
         </div>
         <Button
@@ -102,118 +133,119 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
 
       {/* Meeting List */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        {todayMeetings.length === 0 ? (
+        {totalMeetings === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <div className="rounded-2xl bg-muted/50 p-4">
               <Clock className="h-8 w-8 text-muted-foreground/50" />
             </div>
-            <p className="mt-4 font-medium text-foreground">No meetings today</p>
+            <p className="mt-4 font-medium text-foreground">No meetings scheduled</p>
             <p className="mt-1 text-sm text-muted-foreground">Enjoy your focus time</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
-            <div className="space-y-2">
-              {todayMeetings.map((meeting, index) => {
-                const status = isCurrentOrUpcoming(meeting.start_time, meeting.end_time);
-                const isCurrent = status === 'current';
-                const isPast = status === 'past';
+            <div className="space-y-4">
+              {groupedMeetings.map((group, groupIndex) => (
+                <div key={group.label}>
+                  {/* Day Header */}
+                  <div className="mb-2 flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-xs font-semibold uppercase tracking-wide',
+                        isToday(group.date) ? 'text-violet-500' : 'text-muted-foreground'
+                      )}
+                    >
+                      {group.label}
+                    </span>
+                    <div className="h-px flex-1 bg-border/50" />
+                  </div>
 
-                return (
-                  <motion.div
-                    key={meeting.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ delay: index * 0.05 }}
-                    className={cn(
-                      'group relative rounded-xl p-3 transition-all duration-200',
-                      isCurrent
-                        ? 'border border-violet-500/30 bg-violet-500/10'
-                        : isPast
-                          ? 'bg-muted/30 opacity-60'
-                          : 'hover:bg-muted/50'
-                    )}
-                  >
-                    {/* Time indicator for current meeting */}
-                    {isCurrent && (
-                      <div className="absolute -left-1 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-violet-500 ring-4 ring-violet-500/20" />
-                    )}
+                  {/* Meetings for this day */}
+                  <div className="space-y-1">
+                    {group.meetings.map((meeting, index) => {
+                      const status = isCurrentOrUpcoming(meeting.start_time, meeting.end_time);
+                      const isCurrent = status === 'current';
+                      const isPast = status === 'past';
 
-                    <div className="flex items-start gap-3">
-                      {/* Time */}
-                      <div className="w-14 shrink-0 text-center">
-                        <p
+                      return (
+                        <motion.div
+                          key={meeting.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{
+                            delay: (groupIndex * group.meetings.length + index) * 0.03,
+                          }}
                           className={cn(
-                            'text-sm font-medium',
-                            isCurrent ? 'text-violet-500' : 'text-foreground'
+                            'group relative rounded-lg px-2 py-2 transition-all duration-200',
+                            isCurrent
+                              ? 'border border-violet-500/30 bg-violet-500/10'
+                              : isPast
+                                ? 'opacity-50'
+                                : 'hover:bg-muted/50'
                           )}
                         >
-                          {formatMeetingTime(meeting.start_time)}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {getDuration(meeting.start_time, meeting.end_time)}
-                        </p>
-                      </div>
+                          {/* Time indicator for current meeting */}
+                          {isCurrent && (
+                            <div className="absolute -left-0.5 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-violet-500 ring-2 ring-violet-500/20" />
+                          )}
 
-                      {/* Content */}
-                      <div className="min-w-0 flex-1">
-                        {meeting.client && (
-                          <p
-                            className={cn(
-                              'truncate font-medium',
-                              isCurrent ? 'text-violet-500' : 'text-foreground'
-                            )}
-                          >
-                            {meeting.client.display_name}
-                          </p>
-                        )}
-                        {meeting.title && !meeting.client && (
-                          <p className="truncate font-medium text-foreground">{meeting.title}</p>
-                        )}
-                        {meeting.project && (
-                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                            {meeting.project.name}
-                          </p>
-                        )}
-                      </div>
+                          <div className="flex items-start gap-3">
+                            {/* Time - Left aligned */}
+                            <div className="w-16 shrink-0">
+                              <p
+                                className={cn(
+                                  'text-sm font-medium tabular-nums',
+                                  isCurrent ? 'text-violet-500' : 'text-foreground'
+                                )}
+                              >
+                                {formatMeetingTime(meeting.start_time)}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground">
+                                {getDuration(meeting.start_time, meeting.end_time)}
+                              </p>
+                            </div>
 
-                      {/* Actions */}
-                      <div className="flex shrink-0 items-center gap-1">
-                        {meeting.attendees?.[0]?.profile && (
-                          <Avatar className="h-7 w-7">
-                            <AvatarFallback
-                              className={cn(
-                                'text-[10px]',
-                                isCurrent
-                                  ? 'bg-violet-500/20 text-violet-500'
-                                  : 'bg-muted text-muted-foreground'
+                            {/* Content */}
+                            <div className="min-w-0 flex-1">
+                              <p
+                                className={cn(
+                                  'truncate text-sm font-medium',
+                                  isCurrent ? 'text-violet-500' : 'text-foreground'
+                                )}
+                              >
+                                {meeting.client?.display_name || meeting.title}
+                              </p>
+                              {meeting.project && (
+                                <p className="truncate text-[10px] text-muted-foreground">
+                                  {meeting.project.name}
+                                </p>
                               )}
-                            >
-                              {getInitials(meeting.attendees[0].profile.full_name)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        {meeting.meeting_link && (
-                          <a
-                            href={meeting.meeting_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                              'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
-                              isCurrent
-                                ? 'bg-violet-500/20 text-violet-500 hover:bg-violet-500/30'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            </div>
+
+                            {/* Join button */}
+                            {meeting.meeting_link && (
+                              <a
+                                href={meeting.meeting_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={cn(
+                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded transition-colors',
+                                  isCurrent
+                                    ? 'bg-violet-500/20 text-violet-500 hover:bg-violet-500/30'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                )}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
                             )}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           </AnimatePresence>
         )}
