@@ -126,22 +126,20 @@ export function TodayDashboard({
 
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Premium Header */}
+      {/* Compact Header */}
       <motion.header
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="border-b border-border/50 bg-gradient-to-b from-card to-background"
+        className="shrink-0 border-b border-border/50 bg-gradient-to-b from-card to-background"
       >
-        <div className="mx-auto max-w-[1800px] px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="mx-auto max-w-[1800px] px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-light tracking-tight text-foreground sm:text-3xl">
+              <h1 className="text-xl font-light tracking-tight text-foreground sm:text-2xl">
                 {getGreeting()}
               </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {format(now, 'EEEE, MMMM d, yyyy')}
-              </p>
+              <p className="text-xs text-muted-foreground">{format(now, 'EEEE, MMMM d, yyyy')}</p>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="gap-2" asChild>
@@ -174,45 +172,38 @@ export function TodayDashboard({
         </div>
       </motion.header>
 
-      {/* Main Content - Fixed 100vh layout */}
-      <main className="min-h-0 flex-1 overflow-hidden">
-        <div className="mx-auto h-full max-w-[1800px] px-4 py-4 sm:px-6">
+      {/* Main Content - fits exactly in remaining viewport */}
+      <main className="min-h-0 flex-1">
+        <div className="mx-auto h-full max-w-[1800px] px-4 py-3 sm:px-6">
           <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className="h-full"
           >
-            {/* Bento Grid Layout - fits in viewport without scroll */}
+            {/* Bento Grid Layout - all containers same height */}
             <div className="grid h-full gap-4 lg:grid-cols-12 lg:gap-5">
               {/* Left Column - Projects + Leads stacked */}
-              <div className="flex flex-col gap-3 lg:col-span-3">
-                {/* Projects - compact, no scroll */}
+              <div className="flex h-full flex-col gap-3 lg:col-span-3">
+                {/* Projects - fixed height */}
                 <motion.div variants={itemVariants} className="shrink-0">
                   <ProjectsWidget projects={projects} />
                 </motion.div>
 
-                {/* Leads - scrollable container */}
-                <motion.div
-                  variants={itemVariants}
-                  className="min-h-[180px] flex-1 overflow-hidden"
-                >
+                {/* Leads - fills remaining height */}
+                <motion.div variants={itemVariants} className="min-h-0 flex-1">
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>
               </div>
 
               {/* Middle Column - Tasks (full height) */}
-              <motion.div variants={itemVariants} className="lg:col-span-6">
-                <div className="h-full">
-                  <TasksWidget tasks={tasks} teamMembers={teamMembers} />
-                </div>
+              <motion.div variants={itemVariants} className="h-full lg:col-span-6">
+                <TasksWidget tasks={tasks} teamMembers={teamMembers} />
               </motion.div>
 
               {/* Right Column - Meetings (full height) */}
-              <motion.div variants={itemVariants} className="lg:col-span-3">
-                <div className="h-full">
-                  <MeetingsWrapper initialMeetings={meetings} />
-                </div>
+              <motion.div variants={itemVariants} className="h-full lg:col-span-3">
+                <MeetingsWrapper initialMeetings={meetings} />
               </motion.div>
             </div>
           </motion.div>
