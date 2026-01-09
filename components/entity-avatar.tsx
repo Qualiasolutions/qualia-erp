@@ -76,7 +76,7 @@ export function EntityAvatar({
         src={src}
         alt="Logo"
         fill
-        className="object-cover"
+        className="object-contain"
         onError={() => setImageError(true)}
         unoptimized // Allow external URLs from Supabase storage
       />
