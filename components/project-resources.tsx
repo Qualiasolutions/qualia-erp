@@ -24,8 +24,6 @@ import {
   Plus,
   Trash2,
   Database,
-  Figma,
-  FileText,
   Globe,
   Cloud,
 } from 'lucide-react';
@@ -37,9 +35,8 @@ const RESOURCE_TYPES = [
   { value: 'github', label: 'GitHub', icon: Github, color: 'text-gray-400' },
   { value: 'vercel', label: 'Vercel', icon: Cloud, color: 'text-white' },
   { value: 'supabase', label: 'Supabase', icon: Database, color: 'text-emerald-500' },
-  { value: 'figma', label: 'Figma', icon: Figma, color: 'text-pink-500' },
-  { value: 'notion', label: 'Notion', icon: FileText, color: 'text-gray-300' },
-  { value: 'website', label: 'Live Site', icon: Globe, color: 'text-sky-500' },
+  { value: 'railway', label: 'Railway', icon: Cloud, color: 'text-violet-500' },
+  { value: 'social', label: 'Social Media', icon: Globe, color: 'text-sky-500' },
   { value: 'other', label: 'Other', icon: LinkIcon, color: 'text-muted-foreground' },
 ] as const;
 
@@ -135,7 +132,7 @@ export function ProjectResources({
   };
 
   const getTypeConfig = (type: ResourceType) => {
-    return RESOURCE_TYPES.find((t) => t.value === type) || RESOURCE_TYPES[6];
+    return RESOURCE_TYPES.find((t) => t.value === type) || RESOURCE_TYPES[5];
   };
 
   return (

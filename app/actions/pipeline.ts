@@ -277,7 +277,11 @@ const UNIVERSAL_PIPELINE = [
       'Define project scope and goals',
       'List core features (MVP)',
       'Identify tech stack',
-      'Set up project resources (GitHub, Supabase, Vercel)',
+      'Create GitHub repository',
+      'Set up Supabase project',
+      'Create Vercel project',
+      'Document project requirements',
+      'Set timeline and milestones',
     ],
   },
   {
@@ -286,9 +290,14 @@ const UNIVERSAL_PIPELINE = [
     description: 'Create specifications and mockups',
     tasks: [
       'Create wireframes/mockups',
+      'Design UI components',
+      'Define color scheme and typography',
+      'Plan user flows',
       'Define database schema',
-      'Plan API structure',
-      'Review with client/team',
+      'Plan API endpoints',
+      'Create component hierarchy',
+      'Review designs with client',
+      'Get design approval',
     ],
   },
   {
@@ -297,9 +306,15 @@ const UNIVERSAL_PIPELINE = [
     description: 'Implement the solution',
     tasks: [
       'Set up project boilerplate',
-      'Build core functionality',
-      'Implement UI components',
-      'Connect to backend/database',
+      'Configure environment variables',
+      'Create database tables and RLS',
+      'Build authentication flow',
+      'Implement core features',
+      'Build UI components',
+      'Connect frontend to backend',
+      'Add form validation',
+      'Implement error handling',
+      'Add loading states',
     ],
   },
   {
@@ -308,9 +323,13 @@ const UNIVERSAL_PIPELINE = [
     description: 'Verify quality and functionality',
     tasks: [
       'Test all features manually',
+      'Test on mobile devices',
+      'Test on different browsers',
       'Fix bugs and issues',
-      'Test on different devices',
-      'Get feedback and iterate',
+      'Test edge cases',
+      'Performance check',
+      'Security review',
+      'Get client feedback',
     ],
   },
   {
@@ -319,9 +338,13 @@ const UNIVERSAL_PIPELINE = [
     description: 'Deploy and deliver',
     tasks: [
       'Deploy to production',
-      'Set up domain/DNS',
-      'Final client review',
-      'Handover documentation',
+      'Set up custom domain',
+      'Configure DNS settings',
+      'Set up SSL certificate',
+      'Final client walkthrough',
+      'Create handover documentation',
+      'Train client on usage',
+      'Set up monitoring/analytics',
     ],
   },
 ];
@@ -499,6 +522,91 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
       progress,
     };
   });
+}
+
+// ============================================================================
+// RESET AND ADD DEFAULT TASKS TO ALL PHASES
+// ============================================================================
+
+export async function resetAllPhaseTasks(): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Get all phases with their project's workspace_id
+  const { data: phases, error: phasesError } = await supabase.from('project_phases').select(`
+      id,
+      name,
+      project_id,
+      projects!inner(workspace_id)
+    `);
+
+  if (phasesError) {
+    console.error('[resetAllPhaseTasks] Error fetching phases:', phasesError);
+    return { success: false, error: phasesError.message };
+  }
+
+  if (!phases || phases.length === 0) {
+    return { success: true, data: { message: 'No phases found', count: 0 } };
+  }
+
+  // Delete all existing phase-linked tasks
+  const phaseIds = phases.map((p) => p.id);
+  const { error: deleteError } = await supabase.from('tasks').delete().in('phase_id', phaseIds);
+
+  if (deleteError) {
+    console.error('[resetAllPhaseTasks] Error deleting tasks:', deleteError);
+    return { success: false, error: deleteError.message };
+  }
+
+  // Create new default tasks for each phase
+  const tasks: Array<{
+    workspace_id: string;
+    project_id: string;
+    phase_id: string;
+    phase_name: string;
+    title: string;
+    status: string;
+    sort_order: number;
+  }> = [];
+
+  for (const phase of phases) {
+    const phaseDef = UNIVERSAL_PIPELINE.find((p) => p.name === phase.name);
+    if (phaseDef) {
+      const projectData = phase.projects as { workspace_id: string } | { workspace_id: string }[];
+      const workspaceId = Array.isArray(projectData)
+        ? projectData[0]?.workspace_id
+        : projectData?.workspace_id;
+      if (!workspaceId) continue;
+
+      phaseDef.tasks.forEach((taskTitle, index) => {
+        tasks.push({
+          workspace_id: workspaceId,
+          project_id: phase.project_id,
+          phase_id: phase.id,
+          phase_name: phase.name,
+          title: taskTitle,
+          status: 'Todo',
+          sort_order: index,
+        });
+      });
+    }
+  }
+
+  if (tasks.length > 0) {
+    const { error: insertError } = await supabase.from('tasks').insert(tasks);
+    if (insertError) {
+      console.error('[resetAllPhaseTasks] Error inserting tasks:', insertError);
+      return { success: false, error: insertError.message };
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      message: `Reset tasks for ${phases.length} phases`,
+      phasesUpdated: phases.length,
+      tasksCreated: tasks.length,
+    },
+  };
 }
 
 // ============================================================================
