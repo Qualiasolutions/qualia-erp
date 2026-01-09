@@ -502,6 +502,263 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
 }
 
 // ============================================================================
+// LINK TASKS TO PHASES BY phase_name
+// ============================================================================
+
+export async function linkTasksToPhases(): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Get tasks that have phase_name but no phase_id
+  const { data: unlinkedTasks, error: tasksError } = await supabase
+    .from('tasks')
+    .select('id, project_id, phase_name')
+    .is('phase_id', null)
+    .not('phase_name', 'is', null);
+
+  if (tasksError) {
+    console.error('[linkTasksToPhases] Error fetching tasks:', tasksError);
+    return { success: false, error: tasksError.message };
+  }
+
+  if (!unlinkedTasks || unlinkedTasks.length === 0) {
+    return { success: true, data: { message: 'No unlinked tasks found', count: 0 } };
+  }
+
+  // Get all phases
+  const { data: phases } = await supabase.from('project_phases').select('id, project_id, name');
+
+  if (!phases) {
+    return { success: true, data: { message: 'No phases found', count: 0 } };
+  }
+
+  // Build lookup map: project_id -> phase_name -> phase_id
+  const phaseMap: Record<string, Record<string, string>> = {};
+  for (const phase of phases) {
+    if (!phaseMap[phase.project_id]) {
+      phaseMap[phase.project_id] = {};
+    }
+    phaseMap[phase.project_id][phase.name] = phase.id;
+  }
+
+  // Update tasks with their phase_id
+  let linkedCount = 0;
+  for (const task of unlinkedTasks) {
+    const phaseId = phaseMap[task.project_id]?.[task.phase_name || ''];
+    if (phaseId) {
+      const { error: updateError } = await supabase
+        .from('tasks')
+        .update({ phase_id: phaseId })
+        .eq('id', task.id);
+
+      if (!updateError) {
+        linkedCount++;
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      message: `Linked ${linkedCount} tasks to phases`,
+      tasksLinked: linkedCount,
+      totalUnlinked: unlinkedTasks.length,
+    },
+  };
+}
+
+// ============================================================================
+// INITIALIZE PIPELINES FOR ALL PROJECTS
+// ============================================================================
+
+export async function initializePipelinesForAllProjects(): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Get all projects
+  const { data: projects, error: projectsError } = await supabase
+    .from('projects')
+    .select('id, workspace_id');
+
+  if (projectsError) {
+    console.error('[initializePipelinesForAll] Error fetching projects:', projectsError);
+    return { success: false, error: projectsError.message };
+  }
+
+  // Get projects that already have phases
+  const { data: existingPhases } = await supabase.from('project_phases').select('project_id');
+
+  const projectsWithPhases = new Set((existingPhases || []).map((p) => p.project_id));
+
+  // Filter to projects without phases
+  const projectsWithoutPhases = (projects || []).filter((p) => !projectsWithPhases.has(p.id));
+
+  if (projectsWithoutPhases.length === 0) {
+    return { success: true, data: { message: 'All projects already have pipelines', count: 0 } };
+  }
+
+  let phasesCreated = 0;
+  let tasksCreated = 0;
+
+  for (const project of projectsWithoutPhases) {
+    // Create phases for this project
+    const phases = UNIVERSAL_PIPELINE.map((phase) => ({
+      project_id: project.id,
+      name: phase.name,
+      description: phase.description,
+      sort_order: phase.order,
+      status: 'not_started',
+    }));
+
+    const { data: createdPhases, error: phasesError } = await supabase
+      .from('project_phases')
+      .insert(phases)
+      .select('id, name');
+
+    if (phasesError || !createdPhases) {
+      console.error(
+        `[initializePipelinesForAll] Error creating phases for project ${project.id}:`,
+        phasesError
+      );
+      continue;
+    }
+
+    phasesCreated += createdPhases.length;
+
+    // Create default tasks for each phase
+    const tasks: Array<{
+      workspace_id: string;
+      project_id: string;
+      phase_id: string;
+      phase_name: string;
+      title: string;
+      status: string;
+      sort_order: number;
+    }> = [];
+
+    for (const createdPhase of createdPhases) {
+      const phaseDef = UNIVERSAL_PIPELINE.find((p) => p.name === createdPhase.name);
+      if (phaseDef) {
+        phaseDef.tasks.forEach((taskTitle, index) => {
+          tasks.push({
+            workspace_id: project.workspace_id,
+            project_id: project.id,
+            phase_id: createdPhase.id,
+            phase_name: createdPhase.name,
+            title: taskTitle,
+            status: 'Todo',
+            sort_order: index,
+          });
+        });
+      }
+    }
+
+    if (tasks.length > 0) {
+      const { error: tasksError } = await supabase.from('tasks').insert(tasks);
+      if (!tasksError) {
+        tasksCreated += tasks.length;
+      }
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      message: `Initialized ${projectsWithoutPhases.length} projects`,
+      projectsInitialized: projectsWithoutPhases.length,
+      phasesCreated,
+      tasksCreated,
+    },
+  };
+}
+
+// ============================================================================
+// POPULATE DEFAULT TASKS FOR EXISTING PROJECTS
+// ============================================================================
+
+export async function populateDefaultTasksForAllProjects(): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Get all phases that have no tasks
+  const { data: phasesWithoutTasks, error: phasesError } = await supabase.from('project_phases')
+    .select(`
+      id,
+      name,
+      project_id,
+      projects!inner(workspace_id)
+    `);
+
+  if (phasesError) {
+    console.error('[populateDefaultTasks] Error fetching phases:', phasesError);
+    return { success: false, error: phasesError.message };
+  }
+
+  // Get existing task counts per phase
+  const { data: existingTasks } = await supabase
+    .from('tasks')
+    .select('phase_id')
+    .not('phase_id', 'is', null);
+
+  const phasesWithTasks = new Set((existingTasks || []).map((t) => t.phase_id));
+
+  // Filter to phases without tasks
+  const emptyPhases = (phasesWithoutTasks || []).filter((p) => !phasesWithTasks.has(p.id));
+
+  if (emptyPhases.length === 0) {
+    return { success: true, data: { message: 'All phases already have tasks', count: 0 } };
+  }
+
+  // Create tasks for empty phases
+  const tasks: Array<{
+    workspace_id: string;
+    project_id: string;
+    phase_id: string;
+    phase_name: string;
+    title: string;
+    status: string;
+    sort_order: number;
+  }> = [];
+
+  for (const phase of emptyPhases) {
+    const phaseDef = UNIVERSAL_PIPELINE.find((p) => p.name === phase.name);
+    if (phaseDef) {
+      // Handle both array and object FK response from Supabase
+      const projectData = phase.projects as { workspace_id: string } | { workspace_id: string }[];
+      const workspaceId = Array.isArray(projectData)
+        ? projectData[0]?.workspace_id
+        : projectData?.workspace_id;
+      if (!workspaceId) continue;
+      phaseDef.tasks.forEach((taskTitle, index) => {
+        tasks.push({
+          workspace_id: workspaceId,
+          project_id: phase.project_id,
+          phase_id: phase.id,
+          phase_name: phase.name,
+          title: taskTitle,
+          status: 'Todo',
+          sort_order: index,
+        });
+      });
+    }
+  }
+
+  if (tasks.length > 0) {
+    const { error: insertError } = await supabase.from('tasks').insert(tasks);
+    if (insertError) {
+      console.error('[populateDefaultTasks] Error inserting tasks:', insertError);
+      return { success: false, error: insertError.message };
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      message: `Created ${tasks.length} tasks for ${emptyPhases.length} phases`,
+      phasesUpdated: emptyPhases.length,
+      tasksCreated: tasks.length,
+    },
+  };
+}
+
+// ============================================================================
 // GET TASKS FOR PHASE
 // ============================================================================
 
