@@ -52,9 +52,17 @@ interface Resource {
   url: string;
 }
 
+// Input type for initialResources - allows any string type that will be normalized
+interface ResourceInput {
+  id: string;
+  type: string;
+  label: string;
+  url: string;
+}
+
 interface ProjectResourcesProps {
   projectId: string;
-  initialResources?: Resource[];
+  initialResources?: ResourceInput[];
   className?: string;
 }
 
@@ -63,7 +71,18 @@ export function ProjectResources({
   initialResources = [],
   className,
 }: ProjectResourcesProps) {
-  const [resources, setResources] = useState<Resource[]>(initialResources);
+  // Normalize input resources to ensure valid type
+  const normalizeResources = (inputs: ResourceInput[]): Resource[] => {
+    const validTypes = RESOURCE_TYPES.map((t) => t.value);
+    return inputs.map((r) => ({
+      ...r,
+      type: (validTypes.includes(r.type as ResourceType) ? r.type : 'other') as ResourceType,
+    }));
+  };
+
+  const [resources, setResources] = useState<Resource[]>(() =>
+    normalizeResources(initialResources)
+  );
   const [isPending, startTransition] = useTransition();
   const [dialogOpen, setDialogOpen] = useState(false);
 

@@ -69,13 +69,6 @@ interface Issue {
   created_at: string;
 }
 
-interface ProjectResource {
-  id: string;
-  type: string;
-  label: string;
-  url: string;
-}
-
 interface Project {
   id: string;
   name: string;
@@ -98,7 +91,12 @@ interface Project {
     done: number;
   };
   metadata?: {
-    resources?: ProjectResource[];
+    resources?: Array<{
+      id: string;
+      type: string;
+      label: string;
+      url: string;
+    }>;
   };
 }
 
