@@ -457,6 +457,100 @@ export async function updatePhaseStatus(
   return { success: true };
 }
 
+export async function updatePhaseName(
+  phaseId: string,
+  name: string,
+  projectId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);
+
+  if (error) {
+    console.error('[updatePhaseName] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  // Also update phase_name on all linked tasks
+  await supabase.from('tasks').update({ phase_name: name }).eq('phase_id', phaseId);
+
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
+export async function deletePhase(phaseId: string, projectId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Delete all tasks linked to this phase first
+  const { error: tasksError } = await supabase.from('tasks').delete().eq('phase_id', phaseId);
+
+  if (tasksError) {
+    console.error('[deletePhase] Error deleting tasks:', tasksError);
+    return { success: false, error: tasksError.message };
+  }
+
+  // Delete all resources linked to this phase
+  const { error: resourcesError } = await supabase
+    .from('phase_resources')
+    .delete()
+    .eq('phase_id', phaseId);
+
+  if (resourcesError) {
+    console.error('[deletePhase] Error deleting resources:', resourcesError);
+    // Continue anyway, resources might not exist
+  }
+
+  // Delete the phase
+  const { error } = await supabase.from('project_phases').delete().eq('id', phaseId);
+
+  if (error) {
+    console.error('[deletePhase] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
+export async function createPhase(
+  projectId: string,
+  name: string,
+  description?: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Get current max sort_order for this project
+  const { data: existingPhases } = await supabase
+    .from('project_phases')
+    .select('sort_order')
+    .eq('project_id', projectId)
+    .order('sort_order', { ascending: false })
+    .limit(1);
+
+  const nextOrder =
+    existingPhases && existingPhases.length > 0 ? (existingPhases[0].sort_order || 0) + 1 : 1;
+
+  const { data, error } = await supabase
+    .from('project_phases')
+    .insert({
+      project_id: projectId,
+      name,
+      description: description || null,
+      sort_order: nextOrder,
+      status: 'not_started',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[createPhase] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true, data };
+}
+
 // ============================================================================
 // DETAILED PHASE FETCH (with counts)
 // ============================================================================

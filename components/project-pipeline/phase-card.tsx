@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import {
   getPipelinePhaseConfig,
@@ -9,6 +9,7 @@ import {
 } from '@/lib/pipeline-constants';
 import { PhaseTasks } from './phase-tasks';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,9 +25,18 @@ import {
   CheckCircle2,
   Circle,
   SkipForward,
+  Pencil,
+  Trash2,
+  Check,
+  X,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPhaseTasks, updatePhaseStatus } from '@/app/actions/pipeline';
+import {
+  getPhaseTasks,
+  updatePhaseStatus,
+  updatePhaseName,
+  deletePhase,
+} from '@/app/actions/pipeline';
 
 interface Task {
   id: string;
@@ -72,11 +82,22 @@ export function PhaseCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingName, setEditingName] = useState(phase.name);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const phaseConfig = getPipelinePhaseConfig(phase.name);
   const statusConfig = getPhaseStatusConfig(phase.status);
   const PhaseIcon = phaseConfig?.icon || Circle;
+
+  // Focus name input when editing starts
+  useEffect(() => {
+    if (isEditingName && nameInputRef.current) {
+      nameInputRef.current.focus();
+      nameInputRef.current.select();
+    }
+  }, [isEditingName]);
 
   // Load tasks when expanded
   useEffect(() => {
@@ -114,6 +135,48 @@ export function PhaseCard({
     });
   };
 
+  const handleStartEditName = () => {
+    setEditingName(phase.name);
+    setIsEditingName(true);
+  };
+
+  const handleSaveEditName = () => {
+    if (!editingName.trim()) {
+      setIsEditingName(false);
+      return;
+    }
+
+    startTransition(async () => {
+      await updatePhaseName(phase.id, editingName.trim(), projectId);
+      setIsEditingName(false);
+      onDataChange?.();
+    });
+  };
+
+  const handleCancelEditName = () => {
+    setIsEditingName(false);
+    setEditingName(phase.name);
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveEditName();
+    }
+    if (e.key === 'Escape') {
+      handleCancelEditName();
+    }
+  };
+
+  const handleDeletePhase = () => {
+    if (!confirm(`Delete phase "${phase.name}" and all its tasks?`)) return;
+
+    startTransition(async () => {
+      await deletePhase(phase.id, projectId);
+      onDataChange?.();
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -146,9 +209,40 @@ export function PhaseCard({
         {/* Name & Progress */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold">{phase.name}</span>
-            {phase.status === 'completed' && (
-              <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+            {isEditingName ? (
+              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <Input
+                  ref={nameInputRef}
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
+                  className="h-6 w-40 text-sm font-semibold"
+                />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-green-600"
+                  onClick={handleSaveEditName}
+                  disabled={isPending}
+                >
+                  <Check className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-muted-foreground"
+                  onClick={handleCancelEditName}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                <span className="truncate text-sm font-semibold">{phase.name}</span>
+                {phase.status === 'completed' && (
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                )}
+              </>
             )}
           </div>
           <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
@@ -193,6 +287,11 @@ export function PhaseCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleStartEditName}>
+                <Pencil className="mr-2 h-3.5 w-3.5" />
+                Edit Name
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleStatusChange('not_started')}>
                 <Circle className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 Not Started
@@ -205,10 +304,14 @@ export function PhaseCard({
                 <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-500" />
                 Completed
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleStatusChange('skipped')}>
                 <SkipForward className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 Skip
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleDeletePhase} className="text-red-500">
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                Delete Phase
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

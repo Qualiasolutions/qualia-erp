@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -8,9 +8,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, MoreHorizontal, Trash2, Calendar } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash2, Calendar, Pencil, Check, X } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import { createTask, updateTask, deleteTask } from '@/app/actions/inbox';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,10 +53,21 @@ export function PhaseTasks({
 }: PhaseTasksProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
   const [isPending, startTransition] = useTransition();
+  const editInputRef = useRef<HTMLInputElement>(null);
 
   const completedCount = tasks.filter((t) => t.status === 'Done').length;
   const totalCount = tasks.length;
+
+  // Focus edit input when editing starts
+  useEffect(() => {
+    if (editingTaskId && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingTaskId]);
 
   const handleAdd = () => {
     if (!newTitle.trim()) return;
@@ -97,6 +109,44 @@ export function PhaseTasks({
       await deleteTask(taskId);
       onTasksChange();
     });
+  };
+
+  const handleStartEdit = (task: Task) => {
+    setEditingTaskId(task.id);
+    setEditingTitle(task.title);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingTaskId || !editingTitle.trim()) {
+      setEditingTaskId(null);
+      return;
+    }
+
+    const formData = new FormData();
+    formData.set('id', editingTaskId);
+    formData.set('title', editingTitle.trim());
+
+    startTransition(async () => {
+      await updateTask(formData);
+      setEditingTaskId(null);
+      setEditingTitle('');
+      onTasksChange();
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingTaskId(null);
+    setEditingTitle('');
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSaveEdit();
+    }
+    if (e.key === 'Escape') {
+      handleCancelEdit();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -153,6 +203,7 @@ export function PhaseTasks({
       <AnimatePresence mode="popLayout">
         {sortedTasks.map((task) => {
           const isDone = task.status === 'Done';
+          const isEditing = editingTaskId === task.id;
 
           return (
             <motion.div
@@ -169,56 +220,104 @@ export function PhaseTasks({
                 checked={isDone}
                 onCheckedChange={() => handleToggle(task.id, task.status)}
                 className="mt-0.5 h-4 w-4 rounded"
+                disabled={isEditing}
               />
 
               <div className="min-w-0 flex-1">
-                <p
-                  className={cn(
-                    'text-xs font-medium',
-                    isDone && 'text-muted-foreground line-through'
-                  )}
-                >
-                  {task.title}
-                </p>
-
-                {/* Meta row */}
-                {(task.due_date || task.assignee) && (
-                  <div className="mt-0.5 flex items-center gap-2">
-                    {task.due_date && (
-                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <Calendar className="h-2.5 w-2.5" />
-                        {formatDate(task.due_date)}
-                      </span>
-                    )}
-                    {task.assignee && (
-                      <Avatar className="h-4 w-4">
-                        <AvatarImage src={task.assignee.avatar_url || undefined} />
-                        <AvatarFallback className="text-[8px]">
-                          {task.assignee.full_name?.[0] || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
+                {isEditing ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      ref={editInputRef}
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onKeyDown={handleEditKeyDown}
+                      className="h-6 flex-1 text-xs"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-green-600"
+                      onClick={handleSaveEdit}
+                      disabled={isPending}
+                    >
+                      <Check className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 text-muted-foreground"
+                      onClick={handleCancelEdit}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
                   </div>
+                ) : (
+                  <>
+                    <p
+                      className={cn(
+                        'cursor-pointer text-xs font-medium hover:text-primary',
+                        isDone && 'text-muted-foreground line-through'
+                      )}
+                      onClick={() => !isDone && handleStartEdit(task)}
+                      title="Click to edit"
+                    >
+                      {task.title}
+                    </p>
+
+                    {/* Meta row */}
+                    {(task.due_date || task.assignee) && (
+                      <div className="mt-0.5 flex items-center gap-2">
+                        {task.due_date && (
+                          <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {formatDate(task.due_date)}
+                          </span>
+                        )}
+                        {task.assignee && (
+                          <Avatar className="h-4 w-4">
+                            <AvatarImage src={task.assignee.avatar_url || undefined} />
+                            <AvatarFallback className="text-[8px]">
+                              {task.assignee.full_name?.[0] || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 shrink-0 p-0 opacity-0 group-hover:opacity-100"
-                  >
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleDelete(task.id)} className="text-red-500">
-                    <Trash2 className="mr-2 h-3 w-3" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {!isEditing && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 shrink-0 p-0 opacity-0 group-hover:opacity-100"
+                    >
+                      <MoreHorizontal className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleStartEdit(task)}>
+                      <Pencil className="mr-2 h-3 w-3" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleToggle(task.id, task.status)}>
+                      <Check className="mr-2 h-3 w-3" />
+                      {isDone ? 'Mark as Todo' : 'Mark as Done'}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => handleDelete(task.id)}
+                      className="text-red-500"
+                    >
+                      <Trash2 className="mr-2 h-3 w-3" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </motion.div>
           );
         })}
