@@ -35,6 +35,22 @@ export interface ProjectNote {
   };
 }
 
+export interface DashboardNote {
+  id: string;
+  content: string;
+  created_at: string;
+  user_id: string;
+  project_id: string;
+  profile?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
+  project?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 export interface PhaseWithDetails {
   id: string;
   project_id: string;
@@ -287,10 +303,11 @@ const UNIVERSAL_PIPELINE = [
     order: 2,
     description: 'Create specifications and mockups',
     tasks: [
-      'Sketch wireframes',
-      'Pick colors and fonts',
-      'Design database tables',
-      'Get client approval',
+      'MANUAL: Sketch wireframes in Excalidraw or paper, save to /docs',
+      'Claude: "Suggest color palette and fonts for [client industry]"',
+      'Claude: "Design database schema for MVP features. Output Mermaid ERD"',
+      'MANUAL: Share wireframes + schema with client for approval',
+      'Check: Client approved design before moving to Build',
     ],
   },
   {
@@ -298,32 +315,47 @@ const UNIVERSAL_PIPELINE = [
     order: 3,
     description: 'Implement the solution',
     tasks: [
-      'Run /qualia-workflow skill',
-      'Set up .env.local',
-      'Create Supabase tables',
-      'Add RLS policies',
-      'Build main pages',
-      'Build components',
-      'Connect to Supabase',
-      'Test locally',
+      'Run: npx create-next-app@latest [name] --typescript --tailwind --app',
+      'Claude: "Set up Supabase client in lib/supabase/ with server.ts and client.ts"',
+      'Claude: /supabase "Create tables from the ERD in /docs"',
+      'Claude: /supabase "Add RLS policies - users access own data only"',
+      'Claude: /workflows:plan "[Feature 1 from MVP]"',
+      'Claude: /workflows:work plans/[feature-1].md',
+      'Claude: /workflows:plan "[Feature 2 from MVP]"',
+      'Claude: /workflows:work plans/[feature-2].md',
+      'Run: npm run build (must succeed)',
+      'Run: npm run dev - test locally',
     ],
   },
   {
     name: 'Test',
     order: 4,
     description: 'Verify quality and functionality',
-    tasks: ['Test all features', 'Test on mobile', 'Fix bugs', 'Show client demo'],
+    tasks: [
+      'Claude: "Write integration tests for critical user flows"',
+      'Run: npm test (all tests must pass)',
+      'MANUAL: Test full flow: signup → core feature → logout',
+      'MANUAL: Test responsive on mobile (Chrome DevTools)',
+      'Claude: /responsive "Check key pages for mobile issues"',
+      'Claude: /smart-fix "[any bugs found]"',
+      'MANUAL: Schedule and run demo with client',
+      'MANUAL: Collect and address client feedback',
+    ],
   },
   {
     name: 'Ship',
     order: 5,
     description: 'Deploy and deliver',
     tasks: [
-      'Push to GitHub',
-      'Deploy on Vercel',
-      'Add custom domain',
-      'Final client review',
-      'Handover to client',
+      'Run: git add . && git commit -m "feat: MVP complete"',
+      'Run: git push origin main',
+      'Claude: /vercel-deploy "Deploy with env vars from .env.local"',
+      'Check: Site loads on Vercel preview URL',
+      'MANUAL: Add custom domain in Vercel dashboard',
+      'MANUAL: Update DNS at domain registrar',
+      'Check: Site loads on custom domain with HTTPS',
+      'MANUAL: Final walkthrough with client',
+      'MANUAL: Send handover doc with credentials',
     ],
   },
 ];
@@ -884,4 +916,96 @@ export async function getPhaseTasks(phaseId: string) {
     ...task,
     assignee: Array.isArray(task.assignee) ? task.assignee[0] : task.assignee,
   }));
+}
+
+// ============================================================================
+// UPDATE ALL PROJECT PHASE TASKS TO NEW TEMPLATE
+// ============================================================================
+
+/**
+ * Updates tasks for phases 2-5 (Design, Build, Test, Ship) on all existing projects
+ * to use the new Claude workflow format. Preserves completion status where titles match.
+ */
+export async function updateAllProjectPhaseTasks(): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  // Get all phases for Design, Build, Test, Ship
+  const { data: phases, error: phasesError } = await supabase
+    .from('project_phases')
+    .select('id, name, project_id')
+    .in('name', ['Design', 'Build', 'Test', 'Ship']);
+
+  if (phasesError) {
+    console.error('[updateAllProjectPhaseTasks] Error fetching phases:', phasesError);
+    return { success: false, error: phasesError.message };
+  }
+
+  if (!phases || phases.length === 0) {
+    return { success: true, data: { message: 'No phases to update', updated: 0 } };
+  }
+
+  let updated = 0;
+  const errors: string[] = [];
+
+  for (const phase of phases) {
+    // Find matching template
+    const template = UNIVERSAL_PIPELINE.find((p) => p.name === phase.name);
+    if (!template) continue;
+
+    // Get existing tasks to preserve completion status
+    const { data: existingTasks } = await supabase
+      .from('tasks')
+      .select('title, status, completed_at')
+      .eq('phase_id', phase.id);
+
+    const completedTitles = new Set(
+      existingTasks?.filter((t) => t.status === 'Done').map((t) => t.title) || []
+    );
+
+    // Delete old tasks for this phase
+    const { error: deleteError } = await supabase.from('tasks').delete().eq('phase_id', phase.id);
+
+    if (deleteError) {
+      errors.push(`Phase ${phase.id} delete: ${deleteError.message}`);
+      continue;
+    }
+
+    // Get workspace_id from project
+    const { data: project } = await supabase
+      .from('projects')
+      .select('workspace_id')
+      .eq('id', phase.project_id)
+      .single();
+
+    if (!project) {
+      errors.push(`Phase ${phase.id}: project not found`);
+      continue;
+    }
+
+    // Create new tasks from template
+    const newTasks = template.tasks.map((title, index) => ({
+      workspace_id: project.workspace_id,
+      project_id: phase.project_id,
+      phase_id: phase.id,
+      phase_name: phase.name,
+      title,
+      status: completedTitles.has(title) ? 'Done' : 'Todo',
+      sort_order: index,
+      show_in_inbox: false,
+    }));
+
+    const { error: insertError } = await supabase.from('tasks').insert(newTasks);
+
+    if (insertError) {
+      errors.push(`Phase ${phase.id} insert: ${insertError.message}`);
+    } else {
+      updated++;
+    }
+  }
+
+  return {
+    success: errors.length === 0,
+    data: { phasesUpdated: updated, totalPhases: phases.length, errors },
+    error: errors.length > 0 ? `${errors.length} phases failed to update` : undefined,
+  };
 }
