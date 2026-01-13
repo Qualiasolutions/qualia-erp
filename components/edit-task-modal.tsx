@@ -17,7 +17,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { updateTask, type Task } from '@/app/actions/inbox';
@@ -69,7 +68,6 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         description: (formData.get('description') as string) || null,
         status: (formData.get('status') as Task['status']) || task.status,
         assignee_id: (formData.get('assignee_id') as string) || null,
-        show_in_inbox: formData.get('show_in_inbox') === 'on',
         due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
       };
       updateOptimisticTask(updates);
@@ -213,23 +211,6 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
               <FolderOpen className="h-4 w-4 text-primary" />
               <span>{task.project?.name || 'Unknown Project'}</span>
             </div>
-          </div>
-
-          {/* Show in Inbox toggle */}
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div className="space-y-0.5">
-              <Label htmlFor="edit-show_in_inbox" className="text-sm font-medium">
-                Show in Inbox
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Task will appear in your inbox for quick access
-              </p>
-            </div>
-            <Switch
-              id="edit-show_in_inbox"
-              name="show_in_inbox"
-              defaultChecked={optimisticTask.show_in_inbox}
-            />
           </div>
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
