@@ -44,18 +44,18 @@ async function ProjectListLoader() {
   if (error) {
     console.error('Error fetching projects:', error);
     return (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ProjectColumnView
-          title="Demos"
-          icon={<Beaker className="h-4 w-4" />}
-          projects={[]}
-          emptyMessage="No demos yet"
-        />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         <ProjectColumnView
           title="Projects"
           icon={<Briefcase className="h-4 w-4" />}
           projects={[]}
           emptyMessage="No projects yet"
+        />
+        <ProjectColumnView
+          title="Demos"
+          icon={<Beaker className="h-4 w-4" />}
+          projects={[]}
+          emptyMessage="No demos yet"
         />
       </div>
     );
@@ -94,18 +94,18 @@ async function ProjectListLoader() {
   const activeProjects = projects.filter((p) => p.status !== 'Demos');
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <ProjectColumnView
-        title="Demos"
-        icon={<Beaker className="h-4 w-4" />}
-        projects={demos}
-        emptyMessage="No demos yet"
-      />
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <ProjectColumnView
         title="Projects"
         icon={<Briefcase className="h-4 w-4" />}
         projects={activeProjects}
         emptyMessage="No projects yet"
+      />
+      <ProjectColumnView
+        title="Demos"
+        icon={<Beaker className="h-4 w-4" />}
+        projects={demos}
+        emptyMessage="No demos yet"
       />
     </div>
   );
@@ -136,7 +136,7 @@ function ColumnSkeleton() {
 
 function ProjectColumnsSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
       <ColumnSkeleton />
       <ColumnSkeleton />
     </div>
