@@ -53,8 +53,8 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
             <Folder className="h-4 w-4 text-emerald-500" />
           </div>
           <div>
-            <h3 className="font-semibold">Projects</h3>
-            <p className="text-xs text-muted-foreground">{projects.length} active</p>
+            <h3 className="font-semibold">Live Projects</h3>
+            <p className="text-xs text-muted-foreground">{projects.length} live</p>
           </div>
         </div>
         <Link
@@ -73,9 +73,9 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
             <div className="rounded-2xl bg-muted/50 p-4">
               <Folder className="h-8 w-8 text-muted-foreground/50" />
             </div>
-            <p className="mt-4 font-medium text-foreground">No active projects</p>
+            <p className="mt-4 font-medium text-foreground">No live projects</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Create a new project to get started
+              Mark a project as live in its settings
             </p>
           </div>
         ) : (

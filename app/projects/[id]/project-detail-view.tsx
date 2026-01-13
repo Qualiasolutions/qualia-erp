@@ -19,6 +19,7 @@ import {
   Calendar,
   Settings,
   Save,
+  Radio,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,7 +32,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { getProjectById, updateProject, deleteProject } from '@/app/actions';
+import { Switch } from '@/components/ui/switch';
+import { getProjectById, updateProject, deleteProject, toggleProjectLive } from '@/app/actions';
 import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
 import { ProjectPipeline } from '@/components/project-pipeline';
 import { ProjectNotes } from '@/components/project-notes';
@@ -82,6 +84,7 @@ interface Project {
   created_at: string;
   updated_at: string;
   logo_url: string | null;
+  is_live: boolean;
   lead: Profile | null;
   team: { id: string; name: string; key: string } | null;
   client: { id: string; name: string } | null;
@@ -124,6 +127,8 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
   );
   const [leadId, setLeadId] = useState<string | null>(initialProject.lead?.id || null);
   const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
+  const [isLive, setIsLive] = useState(initialProject.is_live || false);
+  const [togglingLive, setTogglingLive] = useState(false);
 
   // Track changes
   useEffect(() => {
@@ -181,6 +186,18 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
         setError(result.error || 'Failed to delete project');
       }
     });
+  };
+
+  const handleToggleLive = async (checked: boolean) => {
+    setTogglingLive(true);
+    const result = await toggleProjectLive(project.id, checked);
+    if (result.success) {
+      setIsLive(checked);
+      setProject((prev) => ({ ...prev, is_live: checked }));
+    } else {
+      setError(result.error || 'Failed to update live status');
+    }
+    setTogglingLive(false);
   };
 
   const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
@@ -272,6 +289,31 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                       onLogoChange={(newUrl) => {
                         setProject((prev) => ({ ...prev, logo_url: newUrl }));
                       }}
+                    />
+                  </div>
+
+                  {/* Live Status Toggle */}
+                  <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          'rounded-lg p-2',
+                          isLive
+                            ? 'bg-emerald-500/10 text-emerald-500'
+                            : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        <Radio className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Live Project</p>
+                        <p className="text-sm text-muted-foreground">Show on homepage dashboard</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={isLive}
+                      onCheckedChange={handleToggleLive}
+                      disabled={togglingLive}
                     />
                   </div>
 

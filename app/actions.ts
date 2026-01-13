@@ -1061,6 +1061,39 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
   return { success: true, data };
 }
 
+/**
+ * Toggle the is_live flag for a project
+ * When true, project appears in "Live Projects" widget on homepage
+ */
+export async function toggleProjectLive(projectId: string, isLive: boolean): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      is_live: isLive,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('[toggleProjectLive] Error toggling project live status:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/');
+  revalidatePath('/projects');
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
 // ============ DELETE ACTIONS ============
 
 export async function deleteIssue(id: string): Promise<ActionResult> {

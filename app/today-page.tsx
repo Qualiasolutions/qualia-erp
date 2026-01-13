@@ -104,9 +104,17 @@ export default async function TodayPage() {
     avatar_url: p.avatar_url,
   }));
 
-  // Get active projects (filter out Archived/Canceled)
+  // Get LIVE projects only (filter by is_live = true)
+  // Falls back to Active projects if is_live column doesn't exist yet
   const projects = (projectsRaw.data || [])
-    .filter((p: Record<string, unknown>) => !['Archived', 'Canceled'].includes(p.status as string))
+    .filter((p: Record<string, unknown>) => {
+      // If is_live exists, use it; otherwise fall back to Active status
+      if (typeof p.is_live === 'boolean') {
+        return p.is_live === true;
+      }
+      // Fallback for before migration: show Active projects
+      return !['Archived', 'Canceled'].includes(p.status as string);
+    })
     .map((p: Record<string, unknown>) => ({
       id: p.id as string,
       name: p.name as string,

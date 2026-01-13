@@ -16,9 +16,10 @@ import {
   Users,
   Edit2,
   CheckCircle2,
+  Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { quickUpdateTask, toggleTaskInbox, type Task } from '@/app/actions/inbox';
+import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -212,6 +213,30 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [quickAddValue, setQuickAddValue] = useState('');
+  const [isAddingTask, setIsAddingTask] = useState(false);
+
+  // Handle quick add task
+  const handleQuickAdd = async () => {
+    const title = quickAddValue.trim();
+    if (!title) return;
+
+    setIsAddingTask(true);
+    const formData = new FormData();
+    formData.set('title', title);
+    formData.set('status', 'Todo');
+    formData.set('show_in_inbox', 'true');
+    // No project_id - standalone task
+
+    const result = await createTask(formData);
+    if (result.success) {
+      setQuickAddValue('');
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+      router.refresh();
+    }
+    setIsAddingTask(false);
+  };
 
   // Create color map for each team member
   const userColorMap = React.useMemo(() => {
@@ -310,6 +335,32 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
               );
             })}
           </div>
+        </div>
+
+        {/* Quick Add Task */}
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="text"
+            value={quickAddValue}
+            onChange={(e) => setQuickAddValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !isAddingTask) {
+                e.preventDefault();
+                handleQuickAdd();
+              }
+            }}
+            placeholder="Add a task..."
+            disabled={isAddingTask}
+            className="h-9 flex-1 rounded-lg border border-border/50 bg-secondary/30 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+          />
+          <Button
+            size="sm"
+            onClick={handleQuickAdd}
+            disabled={!quickAddValue.trim() || isAddingTask}
+            className="h-9 w-9 shrink-0 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
