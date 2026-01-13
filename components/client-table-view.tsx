@@ -17,6 +17,7 @@ import {
   UserCheck,
   UserMinus,
   Skull,
+  Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials, getStatusConfig, type Client, type ClientStatus } from '@/lib/client-utils';
@@ -39,6 +40,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { deleteClientRecord, toggleClientStatus } from '@/app/actions';
 import { ClientDetailModal } from '@/components/client-detail-modal';
+import { EditClientModal } from '@/components/edit-client-modal';
 
 type SortField = 'name' | 'status' | 'projects' | 'assigned' | 'last_contact' | 'created';
 type SortDirection = 'asc' | 'desc';
@@ -97,6 +99,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleRowClick = () => {
     onOpenDetail(client);
@@ -274,6 +277,11 @@ const ClientTableRow = React.memo(function ClientTableRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit client
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => handleStatusChange('active_client')}>
               <UserCheck className="mr-2 h-4 w-4 text-emerald-500" />
               Mark Active
@@ -296,6 +304,11 @@ const ClientTableRow = React.memo(function ClientTableRow({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <EditClientModal
+          client={client as unknown as import('@/types/database').Client}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+        />
       </td>
     </tr>
   );
