@@ -180,6 +180,7 @@ export default {
         modal: '50',
         popover: '55',
         overlay: '60',
+        assistant: '65', // AI assistant widget
         toast: '70',
         tooltip: '80',
         command: '90',
