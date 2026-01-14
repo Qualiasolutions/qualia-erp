@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 export type AssistantMode = 'chat' | 'voice' | 'document';
+export type GuidedTask = 'create-project' | 'create-client' | null;
 
 interface Message {
   id: string;
@@ -16,6 +17,7 @@ interface AIAssistantContextType {
   isMinimized: boolean;
   mode: AssistantMode;
   showTemplates: boolean;
+  guidedTask: GuidedTask;
 
   // Conversation State
   messages: Message[];
@@ -39,6 +41,7 @@ interface AIAssistantContextType {
   setListening: (listening: boolean) => void;
   setSpeaking: (speaking: boolean) => void;
   setError: (error: string | null) => void;
+  startGuidedTask: (task: GuidedTask) => void;
 }
 
 const AIAssistantContext = createContext<AIAssistantContextType | undefined>(undefined);
@@ -100,6 +103,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [mode, setModeState] = useState<AssistantMode>('chat');
   const [showTemplates, setShowTemplates] = useState(false);
+  const [guidedTask, setGuidedTask] = useState<GuidedTask>(null);
 
   // Conversation State
   const [messages, setMessages] = useState<Message[]>([]);
@@ -168,6 +172,119 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const toggleVoice = useCallback(() => {
     setVoiceEnabled((prev) => !prev);
   }, []);
+
+  // Start a guided task (like create project or create client)
+  const startGuidedTask = useCallback((task: GuidedTask) => {
+    setGuidedTask(task);
+    setIsOpen(true);
+    setIsMinimized(false);
+    setModeState('chat');
+    setShowTemplates(false);
+
+    // Clear any existing conversation
+    setMessages([]);
+    setError(null);
+
+    // Send initial prompt based on task
+    if (task === 'create-project') {
+      const initialPrompt = `I want to create a new project. Please help me by asking the necessary questions one by one:
+1. Project name
+2. Client (or create new)
+3. Project type (web design, ai agent, voice agent, seo, ads)
+4. Description
+5. Any other relevant details
+
+Start by asking for the project name.`;
+
+      // Trigger the sendMessage after state is set
+      setTimeout(() => {
+        sendMessageInternal(initialPrompt);
+      }, 100);
+    } else if (task === 'create-client') {
+      const initialPrompt = `I want to add a new client. Please help me by asking the necessary questions one by one:
+1. Client/Company name
+2. Contact person name
+3. Email
+4. Phone (optional)
+5. Lead status
+6. Any notes
+
+Start by asking for the company name.`;
+
+      setTimeout(() => {
+        sendMessageInternal(initialPrompt);
+      }, 100);
+    }
+  }, []);
+
+  // Internal send message function (used by startGuidedTask)
+  const sendMessageInternal = useCallback(
+    async (text: string) => {
+      if (!text.trim() || isStreaming) return;
+
+      const userMessage: Message = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: text.trim(),
+      };
+
+      setMessages((prev) => [...prev, userMessage]);
+      setIsStreaming(true);
+      setError(null);
+
+      try {
+        const chatMessages = [
+          {
+            role: 'user' as const,
+            content: text.trim(),
+          },
+        ];
+
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: chatMessages }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to send message');
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let assistantContent = '';
+        const assistantId = `assistant-${Date.now()}`;
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            assistantContent += decoder.decode(value);
+
+            setMessages((prev) => {
+              const newMessages = [...prev];
+              const lastMessage = newMessages[newMessages.length - 1];
+              if (lastMessage?.id === assistantId) {
+                lastMessage.content = assistantContent;
+              } else {
+                newMessages.push({
+                  id: assistantId,
+                  role: 'assistant',
+                  content: assistantContent,
+                });
+              }
+              return newMessages;
+            });
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong');
+      } finally {
+        setIsStreaming(false);
+      }
+    },
+    [isStreaming]
+  );
 
   const clearConversation = useCallback(() => {
     setMessages([]);
@@ -280,6 +397,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         isMinimized,
         mode,
         showTemplates,
+        guidedTask,
         messages,
         isStreaming,
         error,
@@ -297,6 +415,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         setListening,
         setSpeaking,
         setError,
+        startGuidedTask,
       }}
     >
       {children}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Wand2, ChevronDown } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,8 +21,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { createClientRecord, type LeadStatus } from '@/app/actions';
 import { useWorkspace } from '@/components/workspace-provider';
+import { useAIAssistant } from '@/components/ai-assistant';
 import { useRouter } from 'next/navigation';
 
 interface NewClientModalProps {
@@ -45,7 +52,12 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { currentWorkspace } = useWorkspace();
+  const { startGuidedTask } = useAIAssistant();
   const router = useRouter();
+
+  const handleAICreate = () => {
+    startGuidedTask('create-client');
+  };
 
   // Support both controlled and uncontrolled modes
   const isControlled = open !== undefined;
@@ -96,12 +108,27 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       {!isControlled && (
-        <DialogTrigger asChild>
-          <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-700">
-            <Plus className="h-4 w-4" />
-            <span>Add Client</span>
-          </Button>
-        </DialogTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-700">
+              <Plus className="h-4 w-4" />
+              <span>Add Client</span>
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DialogTrigger asChild>
+              <DropdownMenuItem>
+                <Plus className="mr-2 h-4 w-4" />
+                Use Form
+              </DropdownMenuItem>
+            </DialogTrigger>
+            <DropdownMenuItem onClick={handleAICreate}>
+              <Wand2 className="mr-2 h-4 w-4" />
+              Ask AI Assistant
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
