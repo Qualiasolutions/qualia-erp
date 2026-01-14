@@ -37,7 +37,9 @@ RETURNS TABLE (
   total_issues bigint,
   done_issues bigint,
   roadmap_progress integer,
-  is_live boolean
+  is_live boolean,
+  logo_url text,
+  metadata jsonb
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -58,7 +60,9 @@ BEGIN
     COUNT(i.id) AS total_issues,
     COUNT(CASE WHEN i.status = 'Done' THEN 1 END) AS done_issues,
     calculate_roadmap_progress(p.id) AS roadmap_progress,
-    p.is_live
+    p.is_live,
+    p.logo_url,
+    p.metadata
   FROM
     public.projects p
     LEFT JOIN public.profiles pr ON p.lead_id = pr.id
@@ -68,7 +72,7 @@ BEGIN
     (p_workspace_id IS NULL OR p.workspace_id = p_workspace_id)
   GROUP BY
     p.id, p.name, p.status, p.start_date, p.target_date, p.project_group,
-    p.project_type, p.deployment_platform, c.id, c.name, pr.id, pr.full_name, pr.email, p.is_live
+    p.project_type, p.deployment_platform, c.id, c.name, pr.id, pr.full_name, pr.email, p.is_live, p.logo_url, p.metadata
   ORDER BY
     p.created_at DESC;
 END;
