@@ -8,6 +8,8 @@ import { ArrowLeft, ArrowRight, Check, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
 import { useWorkspace } from '@/components/workspace-provider';
+import { invalidateCache, invalidateDailyFlow, invalidateTimeline } from '@/lib/swr';
+import { toast } from '@/components/ui/use-toast';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
 import { StepBasicInfo } from './step-basic-info';
@@ -125,11 +127,38 @@ export function ProjectWizard({
       });
 
       if (result.success) {
+        // Invalidate SWR caches so project appears immediately
+        invalidateCache('projects');
+        invalidateDailyFlow(true);
+        invalidateTimeline(true);
+
+        // Show success toast
+        toast({ title: `Project "${wizardData.name}" created` });
+
+        // Reset form state
+        setCurrentStep(1);
+        setWizardData({
+          name: '',
+          description: '',
+          project_type: null,
+          deployment_platform: null,
+          client_id: '',
+          custom_client_name: '',
+        });
+
         onOpenChange(false);
-        router.push(`/projects/${(result.data as { id: string }).id}`);
+        const projectData = result.data as { id: string } | undefined;
+        if (projectData?.id) {
+          router.push(`/projects/${projectData.id}`);
+        }
         router.refresh();
       } else {
         setError(result.error || 'Failed to create project');
+        toast({
+          title: 'Failed to create project',
+          description: result.error,
+          variant: 'destructive',
+        });
       }
     } catch (err) {
       console.error('Error creating project:', err);
