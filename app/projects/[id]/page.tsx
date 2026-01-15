@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getProjectById, getProfiles } from '@/app/actions';
 import { ProjectDetailView } from './project-detail-view';
@@ -32,6 +32,11 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
 
   if (!project) {
     notFound();
+  }
+
+  // Demos don't have a detail page - redirect back to projects list
+  if (project.status === 'Demos') {
+    redirect('/projects');
   }
 
   return <ProjectDetailView project={project} profiles={profiles} />;

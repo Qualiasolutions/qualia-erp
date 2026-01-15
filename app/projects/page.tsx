@@ -3,8 +3,8 @@ import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { NewProjectModal } from '@/components/new-project-modal';
-import { Folder, Beaker, Briefcase } from 'lucide-react';
-import { ProjectColumnView } from '@/components/project-column-view';
+import { Folder } from 'lucide-react';
+import { ProjectsClient } from './projects-client';
 import type { ProjectType } from '@/types/database';
 
 export interface ProjectData {
@@ -43,22 +43,7 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return (
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        <ProjectColumnView
-          title="Projects"
-          icon={<Briefcase className="h-4 w-4" />}
-          projects={[]}
-          emptyMessage="No projects yet"
-        />
-        <ProjectColumnView
-          title="Demos"
-          icon={<Beaker className="h-4 w-4" />}
-          projects={[]}
-          emptyMessage="No demos yet"
-        />
-      </div>
-    );
+    return <ProjectsClient projects={[]} demos={[]} />;
   }
 
   // Map RPC result to Project interface
@@ -93,22 +78,7 @@ async function ProjectListLoader() {
   const demos = projects.filter((p) => p.status === 'Demos');
   const activeProjects = projects.filter((p) => p.status !== 'Demos');
 
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-      <ProjectColumnView
-        title="Projects"
-        icon={<Briefcase className="h-4 w-4" />}
-        projects={activeProjects}
-        emptyMessage="No projects yet"
-      />
-      <ProjectColumnView
-        title="Demos"
-        icon={<Beaker className="h-4 w-4" />}
-        projects={demos}
-        emptyMessage="No demos yet"
-      />
-    </div>
-  );
+  return <ProjectsClient projects={activeProjects} demos={demos} />;
 }
 
 function ColumnSkeleton() {

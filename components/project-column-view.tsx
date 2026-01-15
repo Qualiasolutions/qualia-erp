@@ -61,11 +61,21 @@ const PROJECT_TYPE_CONFIG: Record<
 };
 
 // Project row component
-const ProjectRow = React.memo(function ProjectRow({ project }: { project: ProjectData }) {
+const ProjectRow = React.memo(function ProjectRow({
+  project,
+  onProjectClick,
+}: {
+  project: ProjectData;
+  onProjectClick?: (project: ProjectData) => void;
+}) {
   const router = useRouter();
 
   const handleClick = () => {
-    router.push(`/projects/${project.id}`);
+    if (onProjectClick) {
+      onProjectClick(project);
+    } else {
+      router.push(`/projects/${project.id}`);
+    }
   };
 
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
@@ -108,9 +118,16 @@ interface ProjectColumnViewProps {
   icon: React.ReactNode;
   projects: ProjectData[];
   emptyMessage: string;
+  onProjectClick?: (project: ProjectData) => void;
 }
 
-export function ProjectColumnView({ title, icon, projects, emptyMessage }: ProjectColumnViewProps) {
+export function ProjectColumnView({
+  title,
+  icon,
+  projects,
+  emptyMessage,
+  onProjectClick,
+}: ProjectColumnViewProps) {
   return (
     <div className="flex flex-col rounded-lg border border-border bg-card">
       {/* Column header */}
@@ -133,7 +150,7 @@ export function ProjectColumnView({ title, icon, projects, emptyMessage }: Proje
       ) : (
         <div className="divide-y divide-border">
           {projects.map((project) => (
-            <ProjectRow key={project.id} project={project} />
+            <ProjectRow key={project.id} project={project} onProjectClick={onProjectClick} />
           ))}
         </div>
       )}
