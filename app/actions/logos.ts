@@ -13,7 +13,7 @@ export type ActionResult = {
 const MAX_LOGO_SIZE = 5 * 1024 * 1024;
 
 // Allowed image MIME types
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
 // Storage bucket name - use existing project-files bucket
 const STORAGE_BUCKET = 'project-files';
@@ -135,7 +135,7 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
   }
 
   // Delete from storage (try common extensions)
-  const extensions = ['jpg', 'png', 'webp', 'gif'];
+  const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
   for (const ext of extensions) {
     await supabase.storage.from(STORAGE_BUCKET).remove([`logos/projects/${projectId}/logo.${ext}`]);
   }
@@ -274,7 +274,7 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
   }
 
   // Delete from storage (try common extensions)
-  const extensions = ['jpg', 'png', 'webp', 'gif'];
+  const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
   for (const ext of extensions) {
     await supabase.storage.from(STORAGE_BUCKET).remove([`logos/clients/${clientId}/logo.${ext}`]);
   }
