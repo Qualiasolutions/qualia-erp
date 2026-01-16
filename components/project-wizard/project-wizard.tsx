@@ -6,7 +6,19 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Check, Loader2, X, Globe, Bot, Phone, Search, Megaphone, Building } from 'lucide-react';
+import {
+  Check,
+  Loader2,
+  X,
+  Globe,
+  Bot,
+  Phone,
+  Search,
+  Megaphone,
+  Building,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
 import { startProvisioning, checkIntegrationsConfigured } from '@/app/actions/integrations';
@@ -39,28 +51,44 @@ const PROJECT_TYPES: Array<{
   value: ProjectType;
   label: string;
   icon: React.ReactNode;
-  color: string;
+  gradient: string;
+  bgGradient: string;
 }> = [
   {
     value: 'web_design',
     label: 'Website',
     icon: <Globe className="h-5 w-5" />,
-    color: 'text-blue-500',
+    gradient: 'from-blue-500 to-cyan-500',
+    bgGradient: 'from-blue-500/10 to-cyan-500/10',
   },
   {
     value: 'ai_agent',
     label: 'AI Agent',
     icon: <Bot className="h-5 w-5" />,
-    color: 'text-purple-500',
+    gradient: 'from-violet-500 to-purple-500',
+    bgGradient: 'from-violet-500/10 to-purple-500/10',
   },
   {
     value: 'voice_agent',
-    label: 'Voice Agent',
+    label: 'Voice',
     icon: <Phone className="h-5 w-5" />,
-    color: 'text-pink-500',
+    gradient: 'from-pink-500 to-rose-500',
+    bgGradient: 'from-pink-500/10 to-rose-500/10',
   },
-  { value: 'seo', label: 'SEO', icon: <Search className="h-5 w-5" />, color: 'text-green-500' },
-  { value: 'ads', label: 'Ads', icon: <Megaphone className="h-5 w-5" />, color: 'text-orange-500' },
+  {
+    value: 'seo',
+    label: 'SEO',
+    icon: <Search className="h-5 w-5" />,
+    gradient: 'from-emerald-500 to-green-500',
+    bgGradient: 'from-emerald-500/10 to-green-500/10',
+  },
+  {
+    value: 'ads',
+    label: 'Ads',
+    icon: <Megaphone className="h-5 w-5" />,
+    gradient: 'from-orange-500 to-amber-500',
+    bgGradient: 'from-orange-500/10 to-amber-500/10',
+  },
 ];
 
 // Auto-select deployment platform based on project type
@@ -87,6 +115,7 @@ export function ProjectWizard({
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   const [hasIntegrations, setHasIntegrations] = useState(false);
   const [showProvisioning, setShowProvisioning] = useState(false);
+  const [mode, setMode] = useState<'full' | 'demo'>('full');
 
   const [wizardData, setWizardData] = useState<WizardData>({
     name: '',
@@ -118,6 +147,13 @@ export function ProjectWizard({
     }
   }, [open, defaultType]);
 
+  // Reset mode when dialog opens
+  useEffect(() => {
+    if (open) {
+      setMode('full');
+    }
+  }, [open]);
+
   const updateWizardData = useCallback((updates: Partial<WizardData>) => {
     setWizardData((prev) => ({ ...prev, ...updates }));
   }, []);
@@ -126,13 +162,16 @@ export function ProjectWizard({
   const needsProvisioning =
     hasIntegrations &&
     wizardData.project_type &&
-    PROVISIONING_TYPES.includes(wizardData.project_type);
+    PROVISIONING_TYPES.includes(wizardData.project_type) &&
+    mode !== 'demo';
 
-  // Form validation
+  // Form validation - Demo mode only needs name, full mode needs name + type + client
   const isValid =
-    wizardData.name.trim().length > 0 &&
-    wizardData.project_type !== null &&
-    (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0);
+    mode === 'demo'
+      ? wizardData.name.trim().length > 0
+      : wizardData.name.trim().length > 0 &&
+        wizardData.project_type !== null &&
+        (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0);
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -141,18 +180,20 @@ export function ProjectWizard({
     setError(null);
 
     try {
-      const deploymentPlatform = getDeploymentPlatform(wizardData.project_type);
+      const deploymentPlatform =
+        mode === 'demo' ? 'none' : getDeploymentPlatform(wizardData.project_type);
+      const projectType = mode === 'demo' ? 'web_design' : wizardData.project_type!;
 
       const result = await createProjectWithRoadmap({
         name: wizardData.name,
         description: wizardData.description || null,
-        project_type: wizardData.project_type!,
+        project_type: projectType,
         deployment_platform: deploymentPlatform,
         client_id: wizardData.client_id || undefined,
         custom_client_name: wizardData.custom_client_name || undefined,
         team_id: null,
         workspace_id: currentWorkspace?.id,
-        is_demo: false,
+        is_demo: mode === 'demo',
       });
 
       if (result.success) {
@@ -173,7 +214,8 @@ export function ProjectWizard({
 
           toast({ title: `Creating ${wizardData.name}...` });
         } else {
-          toast({ title: `Project "${wizardData.name}" created` });
+          const label = mode === 'demo' ? 'Demo' : 'Project';
+          toast({ title: `${label} "${wizardData.name}" created` });
           handleFinish(projectData?.id);
         }
       } else {
@@ -204,6 +246,7 @@ export function ProjectWizard({
   const resetForm = () => {
     setCreatedProjectId(null);
     setShowProvisioning(false);
+    setMode('full');
     setWizardData({
       name: '',
       description: '',
@@ -223,34 +266,71 @@ export function ProjectWizard({
     }
   };
 
+  const selectedType = PROJECT_TYPES.find((t) => t.value === wizardData.project_type);
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-lg gap-0 overflow-hidden rounded-2xl border border-border/50 bg-card p-0 shadow-2xl"
+        className="w-full max-w-md gap-0 overflow-hidden rounded-2xl border-0 bg-gradient-to-b from-card to-card/95 p-0 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)]"
       >
         <DialogTitle className="sr-only">Create New Project</DialogTitle>
         <DialogDescription className="sr-only">Create a new project</DialogDescription>
 
-        {/* Header */}
-        <div className="relative border-b border-border/50 bg-muted/30 px-6 py-5">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClose}
-            disabled={isSubmitting || showProvisioning}
-            className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-          <h2 className="text-xl font-semibold text-foreground">New Project</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
-            {showProvisioning ? 'Setting up resources...' : 'Fill in the details below'}
-          </p>
+        {/* Header with gradient accent */}
+        <div className="relative overflow-hidden">
+          {/* Background gradient */}
+          <div
+            className={cn(
+              'absolute inset-0 opacity-50 transition-all duration-500',
+              selectedType
+                ? `bg-gradient-to-br ${selectedType.bgGradient}`
+                : 'bg-gradient-to-br from-qualia-500/10 to-transparent'
+            )}
+          />
+
+          <div className="relative px-6 py-5">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              disabled={isSubmitting || showProvisioning}
+              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg',
+                  selectedType ? selectedType.gradient : 'from-qualia-500 to-qualia-600'
+                )}
+              >
+                {selectedType ? (
+                  <span className="text-white">{selectedType.icon}</span>
+                ) : (
+                  <Sparkles className="h-5 w-5 text-white" />
+                )}
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  {showProvisioning ? 'Setting Up' : mode === 'demo' ? 'Quick Demo' : 'New Project'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {showProvisioning
+                    ? 'Creating resources...'
+                    : mode === 'demo'
+                      ? 'Just enter a name'
+                      : 'Configure your project'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-6 pt-4">
           {showProvisioning && createdProjectId ? (
             <StepProvisioning
               projectId={createdProjectId}
@@ -261,7 +341,7 @@ export function ProjectWizard({
               onSkip={() => handleFinish(createdProjectId)}
             />
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5">
               {error && (
                 <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
                   <X className="h-4 w-4 shrink-0" />
@@ -269,88 +349,162 @@ export function ProjectWizard({
                 </div>
               )}
 
+              {/* Mode Toggle */}
+              <div className="flex gap-2 rounded-xl bg-muted/50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setMode('full')}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                    mode === 'full'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Full Project
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('demo')}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
+                    mode === 'demo'
+                      ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 shadow-sm dark:text-amber-400'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  <Zap className="h-4 w-4" />
+                  Quick Demo
+                </button>
+              </div>
+
               {/* Project Name */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">
-                  Project Name <span className="text-qualia-500">*</span>
+                <Label htmlFor="name" className="text-sm font-medium text-foreground/80">
+                  {mode === 'demo' ? 'Demo Name' : 'Project Name'}{' '}
+                  <span className="text-qualia-500">*</span>
                 </Label>
                 <Input
                   id="name"
                   value={wizardData.name}
                   onChange={(e) => updateWizardData({ name: e.target.value })}
-                  placeholder="e.g. Acme Corp Website"
-                  className="h-11 rounded-xl border-border/50 bg-muted/30"
+                  placeholder={mode === 'demo' ? 'e.g. Acme Corp Demo' : 'e.g. Acme Corp Website'}
+                  className="h-12 rounded-xl border-border/30 bg-muted/30 text-base transition-all focus:border-qualia-500/50 focus:bg-background focus:ring-2 focus:ring-qualia-500/20"
                   autoFocus
                 />
               </div>
 
-              {/* Project Type */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Type <span className="text-qualia-500">*</span>
-                </Label>
-                <div className="grid grid-cols-5 gap-2">
-                  {PROJECT_TYPES.map((type) => {
-                    const isSelected = wizardData.project_type === type.value;
-                    return (
-                      <button
-                        key={type.value}
-                        type="button"
-                        onClick={() => updateWizardData({ project_type: type.value })}
-                        className={cn(
-                          'flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all',
-                          isSelected
-                            ? 'border-qualia-500 bg-qualia-500/5'
-                            : 'border-border/50 bg-muted/20 hover:border-border hover:bg-muted/40'
-                        )}
-                      >
-                        <div className={cn(isSelected ? 'text-qualia-500' : type.color)}>
-                          {type.icon}
-                        </div>
-                        <span
-                          className={cn('text-xs font-medium', isSelected && 'text-qualia-500')}
-                        >
-                          {type.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              {/* Full mode fields */}
+              {mode === 'full' && (
+                <>
+                  {/* Project Type */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground/80">
+                      Type <span className="text-qualia-500">*</span>
+                    </Label>
+                    <div className="grid grid-cols-5 gap-2">
+                      {PROJECT_TYPES.map((type) => {
+                        const isSelected = wizardData.project_type === type.value;
+                        return (
+                          <button
+                            key={type.value}
+                            type="button"
+                            onClick={() => updateWizardData({ project_type: type.value })}
+                            className={cn(
+                              'group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all duration-200',
+                              isSelected
+                                ? 'border-transparent bg-gradient-to-br shadow-lg ' +
+                                    type.bgGradient
+                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                            )}
+                          >
+                            {/* Selection indicator */}
+                            {isSelected && (
+                              <div
+                                className={cn(
+                                  'absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br shadow-md',
+                                  type.gradient
+                                )}
+                              >
+                                <Check className="h-3 w-3 text-white" />
+                              </div>
+                            )}
 
-              {/* Client */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">
-                  Client <span className="text-qualia-500">*</span>
-                </Label>
-                <SelectWithOther
-                  options={clients.map((client) => ({
-                    value: client.id,
-                    label: client.display_name || 'Unnamed Client',
-                    icon: <Building className="h-4 w-4 text-muted-foreground" />,
-                  }))}
-                  value={wizardData.custom_client_name || wizardData.client_id}
-                  onChange={(value, isCustom) => {
-                    if (isCustom) {
-                      updateWizardData({ client_id: '', custom_client_name: value });
-                    } else {
-                      updateWizardData({ client_id: value, custom_client_name: '' });
-                    }
-                  }}
-                  placeholder="Select or type client name"
-                  otherLabel="New client..."
-                  otherPlaceholder="Client name"
-                  icon={<Building className="h-4 w-4 text-muted-foreground" />}
-                  className="w-full"
-                  triggerClassName="h-11 w-full rounded-xl border-border/50 bg-muted/30"
-                />
-              </div>
+                            <div
+                              className={cn(
+                                'transition-transform duration-200 group-hover:scale-110',
+                                isSelected
+                                  ? `bg-gradient-to-br bg-clip-text text-transparent ${type.gradient}`
+                                  : 'text-muted-foreground group-hover:text-foreground'
+                              )}
+                            >
+                              {type.icon}
+                            </div>
+                            <span
+                              className={cn(
+                                'text-xs font-medium transition-colors',
+                                isSelected ? 'text-foreground' : 'text-muted-foreground'
+                              )}
+                            >
+                              {type.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Client */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium text-foreground/80">
+                      Client <span className="text-qualia-500">*</span>
+                    </Label>
+                    <SelectWithOther
+                      options={clients.map((client) => ({
+                        value: client.id,
+                        label: client.display_name || 'Unnamed Client',
+                        icon: <Building className="h-4 w-4 text-muted-foreground" />,
+                      }))}
+                      value={wizardData.custom_client_name || wizardData.client_id}
+                      onChange={(value, isCustom) => {
+                        if (isCustom) {
+                          updateWizardData({ client_id: '', custom_client_name: value });
+                        } else {
+                          updateWizardData({ client_id: value, custom_client_name: '' });
+                        }
+                      }}
+                      placeholder="Select or type client name"
+                      otherLabel="New client..."
+                      otherPlaceholder="Client name"
+                      icon={<Building className="h-4 w-4 text-muted-foreground" />}
+                      className="w-full"
+                      triggerClassName="h-12 w-full rounded-xl border-border/30 bg-muted/30 transition-all hover:bg-muted/50 focus:border-qualia-500/50 focus:ring-2 focus:ring-qualia-500/20"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Demo mode hint */}
+              {mode === 'demo' && (
+                <div className="rounded-xl bg-gradient-to-r from-amber-500/5 to-orange-500/5 px-4 py-3">
+                  <p className="text-center text-sm text-muted-foreground">
+                    Demo projects are for quick presentations. You can convert to a full project
+                    later.
+                  </p>
+                </div>
+              )}
 
               {/* Submit Button */}
               <Button
                 onClick={handleSubmit}
                 disabled={!isValid || isSubmitting}
-                className="h-11 w-full rounded-xl bg-qualia-600 hover:bg-qualia-500 disabled:opacity-50"
+                className={cn(
+                  'h-12 w-full rounded-xl text-base font-medium shadow-lg transition-all hover:shadow-xl disabled:opacity-50',
+                  mode === 'demo'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400'
+                    : 'bg-gradient-to-r from-qualia-600 to-qualia-500 hover:from-qualia-500 hover:to-qualia-400'
+                )}
               >
                 {isSubmitting ? (
                   <>
@@ -359,14 +513,18 @@ export function ProjectWizard({
                   </>
                 ) : (
                   <>
-                    <Check className="mr-2 h-4 w-4" />
-                    Create Project
+                    {mode === 'demo' ? (
+                      <Zap className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
+                    )}
+                    {mode === 'demo' ? 'Create Demo' : 'Create Project'}
                   </>
                 )}
               </Button>
 
               {/* Auto-provisioning note */}
-              {needsProvisioning && (
+              {needsProvisioning && mode === 'full' && (
                 <p className="text-center text-xs text-muted-foreground">
                   GitHub repo + Vercel project will be created automatically
                 </p>
