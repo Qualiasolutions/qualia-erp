@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ArrowRight, Check, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
+import { startProvisioning, checkIntegrationsConfigured } from '@/app/actions/integrations';
 import { useWorkspace } from '@/components/workspace-provider';
 import { invalidateCache, invalidateDailyFlow, invalidateTimeline } from '@/lib/swr';
 import { toast } from '@/components/ui/use-toast';
@@ -15,6 +16,7 @@ import type { ProjectType, DeploymentPlatform } from '@/types/database';
 import { StepBasicInfo } from './step-basic-info';
 import { StepConfiguration } from './step-configuration';
 import { StepReview } from './step-review';
+import { StepProvisioning } from './step-provisioning';
 import { WizardProgress } from './wizard-progress';
 
 export interface WizardData {
@@ -39,8 +41,12 @@ interface ProjectWizardProps {
 const STEPS = [
   { id: 1, name: 'Basic Info', description: 'Name and description' },
   { id: 2, name: 'Configuration', description: 'Type, platform, client' },
-  { id: 3, name: 'Review', description: 'Confirm and create' },
+  { id: 3, name: 'Review', description: 'Confirm details' },
+  { id: 4, name: 'Setup', description: 'Create resources' },
 ];
+
+// Project types that need provisioning
+const PROVISIONING_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'voice_agent'];
 
 export function ProjectWizard({
   open,
@@ -53,6 +59,8 @@ export function ProjectWizard({
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
+  const [hasIntegrations, setHasIntegrations] = useState(false);
 
   const [wizardData, setWizardData] = useState<WizardData>({
     name: '',
@@ -63,6 +71,19 @@ export function ProjectWizard({
     client_id: '',
     custom_client_name: '',
   });
+
+  // Check if integrations are configured when workspace changes
+  useEffect(() => {
+    async function checkIntegrations() {
+      if (currentWorkspace?.id) {
+        const result = await checkIntegrationsConfigured(currentWorkspace.id);
+        if (result.success && result.data) {
+          setHasIntegrations(result.data.github || result.data.vercel || result.data.vapi);
+        }
+      }
+    }
+    checkIntegrations();
+  }, [currentWorkspace?.id]);
 
   // Set default type when wizard opens with a defaultType
   useEffect(() => {
@@ -78,6 +99,15 @@ export function ProjectWizard({
     setWizardData((prev) => ({ ...prev, ...updates }));
   }, []);
 
+  // Check if this project type needs provisioning
+  const needsProvisioning =
+    hasIntegrations &&
+    wizardData.project_type &&
+    PROVISIONING_TYPES.includes(wizardData.project_type);
+
+  // Determine visible steps based on project type
+  const visibleSteps = needsProvisioning ? STEPS : STEPS.slice(0, 3);
+
   // Validation for each step
   const isStepValid = (step: number): boolean => {
     switch (step) {
@@ -91,6 +121,8 @@ export function ProjectWizard({
         );
       case 3:
         return true;
+      case 4:
+        return true;
       default:
         return false;
     }
@@ -99,14 +131,14 @@ export function ProjectWizard({
   const canProceed = isStepValid(currentStep);
 
   const handleNext = () => {
-    if (currentStep < STEPS.length && canProceed) {
+    if (currentStep < visibleSteps.length && canProceed) {
       setCurrentStep((prev) => prev + 1);
       setError(null);
     }
   };
 
   const handleBack = () => {
-    if (currentStep > 1) {
+    if (currentStep > 1 && currentStep !== 4) {
       setCurrentStep((prev) => prev - 1);
       setError(null);
     }
@@ -135,27 +167,24 @@ export function ProjectWizard({
         invalidateDailyFlow(true);
         invalidateTimeline(true);
 
-        // Show success toast
-        toast({ title: `Project "${wizardData.name}" created` });
-
-        // Reset form state
-        setCurrentStep(1);
-        setWizardData({
-          name: '',
-          description: '',
-          is_demo: false,
-          project_type: null,
-          deployment_platform: null,
-          client_id: '',
-          custom_client_name: '',
-        });
-
-        onOpenChange(false);
         const projectData = result.data as { id: string } | undefined;
-        if (projectData?.id) {
-          router.push(`/projects/${projectData.id}`);
+
+        if (projectData?.id && needsProvisioning) {
+          // Store project ID and move to provisioning step
+          setCreatedProjectId(projectData.id);
+          setCurrentStep(4);
+
+          // Start provisioning in the background
+          startProvisioning(projectData.id).catch((err) => {
+            console.error('[ProjectWizard] Provisioning error:', err);
+          });
+
+          toast({ title: `Project "${wizardData.name}" created - setting up resources...` });
+        } else {
+          // No provisioning needed, finish immediately
+          toast({ title: `Project "${wizardData.name}" created` });
+          handleFinish(projectData?.id);
         }
-        router.refresh();
       } else {
         setError(result.error || 'Failed to create project');
         toast({
@@ -172,9 +201,42 @@ export function ProjectWizard({
     }
   };
 
+  const handleFinish = (projectId?: string) => {
+    // Reset form state
+    setCurrentStep(1);
+    setCreatedProjectId(null);
+    setWizardData({
+      name: '',
+      description: '',
+      is_demo: false,
+      project_type: null,
+      deployment_platform: null,
+      client_id: '',
+      custom_client_name: '',
+    });
+    setError(null);
+
+    onOpenChange(false);
+
+    if (projectId) {
+      router.push(`/projects/${projectId}`);
+    }
+    router.refresh();
+  };
+
+  const handleProvisioningComplete = () => {
+    handleFinish(createdProjectId || undefined);
+  };
+
+  const handleSkipProvisioning = () => {
+    toast({ title: 'Provisioning skipped - you can retry later from the project page' });
+    handleFinish(createdProjectId || undefined);
+  };
+
   const handleClose = () => {
-    if (!isSubmitting) {
+    if (!isSubmitting && currentStep !== 4) {
       setCurrentStep(1);
+      setCreatedProjectId(null);
       setWizardData({
         name: '',
         description: '',
@@ -207,7 +269,7 @@ export function ProjectWizard({
             variant="ghost"
             size="icon"
             onClick={handleClose}
-            disabled={isSubmitting}
+            disabled={isSubmitting || currentStep === 4}
             className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" />
@@ -217,17 +279,19 @@ export function ProjectWizard({
           <div className="mb-5 pr-8">
             <h2 className="text-xl font-semibold text-foreground">Create New Project</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Set up your project in a few simple steps
+              {currentStep === 4
+                ? 'Setting up your development infrastructure'
+                : 'Set up your project in a few simple steps'}
             </p>
           </div>
 
           {/* Progress */}
-          <WizardProgress steps={STEPS} currentStep={currentStep} />
+          <WizardProgress steps={visibleSteps} currentStep={currentStep} />
         </div>
 
         {/* Step Content */}
         <div className="max-h-[55vh] min-h-[380px] overflow-y-auto px-6 py-6">
-          {error && (
+          {error && currentStep !== 4 && (
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/10">
                 <X className="h-3.5 w-3.5" />
@@ -244,69 +308,82 @@ export function ProjectWizard({
             )}
 
             {currentStep === 3 && <StepReview data={wizardData} clients={clients} />}
-          </div>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-6 py-4">
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            disabled={currentStep === 1 || isSubmitting}
-            className={cn(
-              'gap-2 rounded-xl px-4 text-muted-foreground hover:text-foreground',
-              currentStep === 1 && 'invisible'
-            )}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-
-          <div className="flex items-center gap-1.5">
-            {STEPS.map((step) => (
-              <div
-                key={step.id}
-                className={cn(
-                  'h-1.5 w-1.5 rounded-full transition-all duration-300',
-                  currentStep === step.id
-                    ? 'w-6 bg-qualia-500'
-                    : currentStep > step.id
-                      ? 'bg-qualia-500/50'
-                      : 'bg-muted-foreground/30'
-                )}
+            {currentStep === 4 && createdProjectId && (
+              <StepProvisioning
+                projectId={createdProjectId}
+                projectName={wizardData.name}
+                projectType={wizardData.project_type!}
+                deploymentPlatform={wizardData.deployment_platform!}
+                onComplete={handleProvisioningComplete}
+                onSkip={handleSkipProvisioning}
               />
-            ))}
+            )}
           </div>
-
-          {currentStep < STEPS.length ? (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceed}
-              className="gap-2 rounded-xl bg-qualia-600 px-6 shadow-lg shadow-qualia-600/20 transition-all hover:bg-qualia-500 hover:shadow-qualia-500/30 disabled:opacity-50 disabled:shadow-none"
-            >
-              Continue
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !canProceed}
-              className="gap-2 rounded-xl bg-gradient-to-r from-qualia-600 to-qualia-500 px-6 shadow-lg shadow-qualia-600/25 transition-all hover:from-qualia-500 hover:to-qualia-400 hover:shadow-qualia-500/35 disabled:opacity-50 disabled:shadow-none"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Check className="h-4 w-4" />
-                  Create Project
-                </>
-              )}
-            </Button>
-          )}
         </div>
+
+        {/* Footer - Hidden during provisioning step */}
+        {currentStep !== 4 && (
+          <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-6 py-4">
+            <Button
+              variant="ghost"
+              onClick={handleBack}
+              disabled={currentStep === 1 || isSubmitting}
+              className={cn(
+                'gap-2 rounded-xl px-4 text-muted-foreground hover:text-foreground',
+                currentStep === 1 && 'invisible'
+              )}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+
+            <div className="flex items-center gap-1.5">
+              {visibleSteps.map((step) => (
+                <div
+                  key={step.id}
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full transition-all duration-300',
+                    currentStep === step.id
+                      ? 'w-6 bg-qualia-500'
+                      : currentStep > step.id
+                        ? 'bg-qualia-500/50'
+                        : 'bg-muted-foreground/30'
+                  )}
+                />
+              ))}
+            </div>
+
+            {currentStep < 3 ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canProceed}
+                className="gap-2 rounded-xl bg-qualia-600 px-6 shadow-lg shadow-qualia-600/20 transition-all hover:bg-qualia-500 hover:shadow-qualia-500/30 disabled:opacity-50 disabled:shadow-none"
+              >
+                Continue
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitting || !canProceed}
+                className="gap-2 rounded-xl bg-gradient-to-r from-qualia-600 to-qualia-500 px-6 shadow-lg shadow-qualia-600/25 transition-all hover:from-qualia-500 hover:to-qualia-400 hover:shadow-qualia-500/35 disabled:opacity-50 disabled:shadow-none"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Create Project
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

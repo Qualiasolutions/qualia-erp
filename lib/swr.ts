@@ -42,6 +42,7 @@ export const cacheKeys = {
   meetings: 'all-meetings',
   notifications: (workspaceId: string) => `notifications-${workspaceId}`,
   unreadCount: (workspaceId: string) => `unread-count-${workspaceId}`,
+  provisioningStatus: (projectId: string) => `provisioning-${projectId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -587,5 +588,57 @@ export function invalidateNotifications(workspaceId: string, immediate = true) {
   } else {
     mutate(cacheKeys.notifications(workspaceId));
     mutate(cacheKeys.unreadCount(workspaceId));
+  }
+}
+
+// Fast polling config for provisioning status (2s refresh)
+const provisioningRefreshConfig: SWRConfiguration = {
+  ...swrConfig,
+  revalidateOnFocus: true,
+  refreshInterval: () => (isDocumentVisible() ? 2000 : 0), // 2s refresh when visible
+  dedupingInterval: 1000, // 1s dedup
+  onErrorRetry,
+};
+
+/**
+ * Hook to fetch project provisioning status with fast polling
+ * Used during project creation to show real-time provisioning progress
+ */
+export function useProvisioningStatus(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.provisioningStatus(projectId) : null,
+    async () => {
+      if (!projectId) return null;
+      const { getProjectProvisioningStatus } = await import('@/app/actions/integrations');
+      const result = await getProjectProvisioningStatus(projectId);
+      return result.success ? result.data : null;
+    },
+    provisioningRefreshConfig
+  );
+
+  return {
+    status: data || null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate provisioning status cache
+ */
+export function invalidateProvisioningStatus(projectId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.provisioningStatus(projectId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.provisioningStatus(projectId));
   }
 }

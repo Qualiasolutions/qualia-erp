@@ -900,6 +900,90 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_integrations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          provider: Database['public']['Enums']['integration_provider'];
+          encrypted_token: string;
+          config: Json;
+          is_connected: boolean;
+          last_verified_at: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          provider: Database['public']['Enums']['integration_provider'];
+          encrypted_token: string;
+          config?: Json;
+          is_connected?: boolean;
+          last_verified_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          provider?: Database['public']['Enums']['integration_provider'];
+          encrypted_token?: string;
+          config?: Json;
+          is_connected?: boolean;
+          last_verified_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      project_provisioning: {
+        Row: {
+          id: string;
+          project_id: string;
+          status: Database['public']['Enums']['provisioning_status'];
+          github_repo_url: string | null;
+          github_error: string | null;
+          vercel_project_url: string | null;
+          vercel_project_id: string | null;
+          vercel_error: string | null;
+          vapi_assistant_id: string | null;
+          vapi_error: string | null;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          status?: Database['public']['Enums']['provisioning_status'];
+          github_repo_url?: string | null;
+          github_error?: string | null;
+          vercel_project_url?: string | null;
+          vercel_project_id?: string | null;
+          vercel_error?: string | null;
+          vapi_assistant_id?: string | null;
+          vapi_error?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          status?: Database['public']['Enums']['provisioning_status'];
+          github_repo_url?: string | null;
+          github_error?: string | null;
+          vercel_project_url?: string | null;
+          vercel_project_id?: string | null;
+          vercel_error?: string | null;
+          vapi_assistant_id?: string | null;
+          vapi_error?: string | null;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -965,6 +1049,13 @@ export type Database = {
       task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       task_status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
       user_role: 'admin' | 'employee';
+      integration_provider: 'github' | 'vercel' | 'vapi';
+      provisioning_status:
+        | 'not_started'
+        | 'in_progress'
+        | 'completed'
+        | 'partial_failure'
+        | 'failed';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1291,3 +1382,18 @@ export interface ProjectFile {
   // Joined data
   uploader?: Profile;
 }
+
+// Integration types
+export type WorkspaceIntegration = Tables<'workspace_integrations'>;
+export type ProjectProvisioning = Tables<'project_provisioning'>;
+export type IntegrationProvider = Enums<'integration_provider'>;
+export type ProvisioningStatus = Enums<'provisioning_status'>;
+
+export const INTEGRATION_PROVIDERS: IntegrationProvider[] = ['github', 'vercel', 'vapi'];
+export const PROVISIONING_STATUSES: ProvisioningStatus[] = [
+  'not_started',
+  'in_progress',
+  'completed',
+  'partial_failure',
+  'failed',
+];
