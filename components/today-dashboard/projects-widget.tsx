@@ -45,15 +45,15 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
   const visibleProjects = projects.slice(0, 8);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
+    <div className="widget">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
+      <div className="widget-header">
+        <div className="widget-title">
+          <div className="widget-icon bg-emerald-500/10">
             <Folder className="h-4 w-4 text-emerald-500" />
           </div>
           <div>
-            <h3 className="font-semibold">Live Projects</h3>
+            <h3 className="text-sm font-semibold">Live Projects</h3>
             <p className="text-xs text-muted-foreground">{projects.length} live</p>
           </div>
         </div>
@@ -67,19 +67,16 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
       </div>
 
       {/* Project List */}
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      <div className="widget-content overflow-y-auto p-2">
         {projects.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="rounded-2xl bg-muted/50 p-4">
-              <Folder className="h-8 w-8 text-muted-foreground/50" />
+          <div className="flex h-full flex-col items-center justify-center py-8 text-center">
+            <div className="mb-3 rounded-lg bg-muted p-3">
+              <Folder className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="mt-4 font-medium text-foreground">No live projects</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Mark a project as live in its settings
-            </p>
+            <p className="text-sm text-muted-foreground">No live projects</p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {visibleProjects.map((project, index) => {
               const typeConfig = project.project_type
                 ? PROJECT_TYPE_CONFIG[project.project_type]
@@ -93,11 +90,7 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.03 }}
                 >
-                  <Link
-                    href={`/projects/${project.id}`}
-                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all hover:bg-muted/50"
-                  >
-                    {/* Icon */}
+                  <Link href={`/projects/${project.id}`} className="group list-item">
                     <EntityAvatar
                       src={project.logo_url}
                       fallbackIcon={<TypeIcon className="h-4 w-4" />}
@@ -105,21 +98,18 @@ export function ProjectsWidget({ projects }: ProjectsWidgetProps) {
                       fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
                       size="md"
                     />
-
-                    {/* Content */}
                     <div className="min-w-0 flex-1">
                       <span className="truncate text-sm font-medium text-foreground group-hover:text-primary">
                         {project.name}
                       </span>
                     </div>
-
                     <span
                       className={cn(
-                        'h-2 w-2 shrink-0 rounded-full',
+                        'status-dot shrink-0',
                         STATUS_COLORS[project.status] || 'bg-muted-foreground'
                       )}
                     />
-                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                 </motion.div>
               );

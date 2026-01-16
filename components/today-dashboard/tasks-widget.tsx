@@ -278,43 +278,36 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   };
 
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card',
-        isPending && 'pointer-events-none opacity-70'
-      )}
-    >
+    <div className={cn('widget', isPending && 'pointer-events-none opacity-70')}>
       {/* Header */}
-      <div className="border-b border-border/50 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-              <ListTodo className="h-4 w-4 text-primary" />
-            </div>
-            <div>
-              <h3 className="font-semibold">Tasks</h3>
-              <p className="text-xs text-muted-foreground">
-                {pendingTasks} pending · {completedTasks} done today
-              </p>
-            </div>
+      <div className="widget-header">
+        <div className="widget-title">
+          <div className="widget-icon bg-primary/10">
+            <ListTodo className="h-4 w-4 text-primary" />
           </div>
-          <Badge
-            variant="outline"
-            className="gap-1.5 border-primary/30 bg-primary/5 font-normal text-primary"
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            {pendingTasks} to do
-          </Badge>
+          <div>
+            <h3 className="text-sm font-semibold">Tasks</h3>
+            <p className="text-xs text-muted-foreground">
+              {pendingTasks} pending · {completedTasks} done today
+            </p>
+          </div>
         </div>
+        <Badge variant="outline" className="gap-1.5 text-xs font-normal">
+          <CheckCircle2 className="h-3 w-3" />
+          {pendingTasks} to do
+        </Badge>
+      </div>
 
+      {/* Filters and Quick Add */}
+      <div className="border-b border-border px-4 py-3">
         {/* User filter pills */}
-        <div className="mt-4 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Users className="h-3.5 w-3.5 text-muted-foreground" />
           <div className="flex flex-wrap gap-1.5">
             <Button
               variant={selectedUserId === null ? 'secondary' : 'ghost'}
               size="sm"
-              className="h-7 rounded-lg px-2.5 text-xs"
+              className="h-7 px-2.5 text-xs"
               onClick={() => setSelectedUserId(null)}
             >
               All
@@ -326,7 +319,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
                   key={member.id}
                   variant={selectedUserId === member.id ? 'secondary' : 'ghost'}
                   size="sm"
-                  className="h-7 gap-1.5 rounded-lg px-2.5 text-xs"
+                  className="h-7 gap-1.5 px-2.5 text-xs"
                   onClick={() => setSelectedUserId(member.id)}
                 >
                   <span className={cn('h-2 w-2 rounded-full', color?.bg)} />
@@ -351,7 +344,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
             }}
             placeholder="Add a task..."
             disabled={isAddingTask}
-            className="h-9 flex-1 rounded-lg border border-border/50 bg-secondary/30 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20 disabled:opacity-50"
+            className="input-search flex-1"
           />
           <Button
             size="sm"

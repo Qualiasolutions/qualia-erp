@@ -3,7 +3,6 @@
 import React, { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -332,44 +331,39 @@ export function ActiveLeadsList({ leads, workspaceId }: ActiveLeadsListProps) {
   };
 
   return (
-    <Card className="flex h-full flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            Active Leads
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 text-xs">
-              <span className="flex items-center gap-1 text-orange-500">
-                <Flame className="h-3 w-3" />
-                {hotCount}
-              </span>
-              <span className="text-muted-foreground">/</span>
-              <span className="flex items-center gap-1 text-blue-500">
-                <Snowflake className="h-3 w-3" />
-                {coldCount}
-              </span>
-            </div>
-            <QuickAddLeadDialog workspaceId={workspaceId} onSuccess={handleRefresh} />
+    <div className="widget">
+      <div className="widget-header">
+        <div className="widget-title">
+          <div className="widget-icon bg-orange-500/10">
+            <Users className="h-4 w-4 text-orange-500" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">Active Leads</h3>
+            <p className="text-xs text-muted-foreground">
+              <span className="text-orange-500">{hotCount} hot</span>
+              {' · '}
+              <span className="text-blue-500">{coldCount} cold</span>
+            </p>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto px-3 pb-4">
+        <QuickAddLeadDialog workspaceId={workspaceId} onSuccess={handleRefresh} />
+      </div>
+      <div className="widget-content overflow-y-auto p-2">
         {activeLeads.length === 0 ? (
-          <div className="flex h-32 flex-col items-center justify-center text-center">
-            <Users className="mb-2 h-8 w-8 text-muted-foreground/50" />
+          <div className="flex h-full flex-col items-center justify-center py-6 text-center">
+            <div className="mb-3 rounded-lg bg-muted p-3">
+              <Users className="h-5 w-5 text-muted-foreground" />
+            </div>
             <p className="text-sm text-muted-foreground">No active leads</p>
-            <p className="text-xs text-muted-foreground/70">Add your first lead to get started</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {activeLeads.map((lead) => (
               <LeadRow key={lead.id} lead={lead} onRefresh={handleRefresh} />
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

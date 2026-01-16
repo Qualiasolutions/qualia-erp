@@ -343,44 +343,120 @@ Start by asking for the company name.`;
         });
 
         if (!response.ok) {
-          throw new Error('Failed to send message');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to send message');
         }
 
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         let assistantContent = '';
         const assistantId = `assistant-${Date.now()}`;
+        let buffer = '';
 
         if (reader) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
-            assistantContent += decoder.decode(value);
 
-            setMessages((prev) => {
-              const newMessages = [...prev];
-              const lastMessage = newMessages[newMessages.length - 1];
-              if (lastMessage?.id === assistantId) {
-                lastMessage.content = assistantContent;
-              } else {
-                newMessages.push({
-                  id: assistantId,
-                  role: 'assistant',
-                  content: assistantContent,
-                });
+            buffer += decoder.decode(value, { stream: true });
+
+            // Parse the AI SDK streaming format
+            // Format: 0:"text chunk" or other prefixed data
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+              if (!line.trim()) continue;
+
+              // AI SDK format: number:data
+              const colonIndex = line.indexOf(':');
+              if (colonIndex === -1) continue;
+
+              const prefix = line.substring(0, colonIndex);
+              const data = line.substring(colonIndex + 1);
+
+              // 0 = text delta, 2 = tool call, 3 = tool result, etc.
+              if (prefix === '0') {
+                try {
+                  // Data is JSON-encoded string
+                  const textChunk = JSON.parse(data);
+                  if (typeof textChunk === 'string') {
+                    assistantContent += textChunk;
+                  }
+                } catch {
+                  // Not valid JSON, skip
+                }
               }
-              return newMessages;
-            });
+            }
+
+            // Update the message with accumulated content
+            if (assistantContent) {
+              setMessages((prev) => {
+                const newMessages = [...prev];
+                const lastMessage = newMessages[newMessages.length - 1];
+                if (lastMessage?.id === assistantId) {
+                  lastMessage.content = assistantContent;
+                } else {
+                  newMessages.push({
+                    id: assistantId,
+                    role: 'assistant',
+                    content: assistantContent,
+                  });
+                }
+                return newMessages;
+              });
+            }
+          }
+
+          // Process any remaining buffer
+          if (buffer.trim()) {
+            const colonIndex = buffer.indexOf(':');
+            if (colonIndex !== -1) {
+              const prefix = buffer.substring(0, colonIndex);
+              const data = buffer.substring(colonIndex + 1);
+              if (prefix === '0') {
+                try {
+                  const textChunk = JSON.parse(data);
+                  if (typeof textChunk === 'string') {
+                    assistantContent += textChunk;
+                    setMessages((prev) => {
+                      const newMessages = [...prev];
+                      const lastMessage = newMessages[newMessages.length - 1];
+                      if (lastMessage?.id === assistantId) {
+                        lastMessage.content = assistantContent;
+                      }
+                      return newMessages;
+                    });
+                  }
+                } catch {
+                  // Skip invalid data
+                }
+              }
+            }
           }
         }
+
+        // If no content was extracted, show a fallback message
+        if (!assistantContent) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: assistantId,
+              role: 'assistant',
+              content:
+                'I received your message but could not generate a response. Please try again.',
+            },
+          ]);
+        }
       } catch (err) {
+        console.error('Chat error:', err);
         setError(err instanceof Error ? err.message : 'Something went wrong');
         setMessages((prev) => [
           ...prev,
           {
             id: `error-${Date.now()}`,
             role: 'assistant',
-            content: 'Something went wrong. Please try again.',
+            content: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
           },
         ]);
       } finally {

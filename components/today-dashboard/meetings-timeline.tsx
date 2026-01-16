@@ -109,22 +109,22 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
   const totalMeetings = groupedMeetings.reduce((sum, g) => sum + g.meetings.length, 0);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
+    <div className="widget">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-5 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/10">
+      <div className="widget-header">
+        <div className="widget-title">
+          <div className="widget-icon bg-violet-500/10">
             <Video className="h-4 w-4 text-violet-500" />
           </div>
           <div>
-            <h3 className="font-semibold">Meetings</h3>
+            <h3 className="text-sm font-semibold">Meetings</h3>
             <p className="text-xs text-muted-foreground">{totalMeetings} scheduled</p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-violet-500/10 hover:text-violet-500"
+          className="btn-icon text-muted-foreground hover:bg-violet-500/10 hover:text-violet-500"
           onClick={() => setShowModal(true)}
         >
           <Plus className="h-4 w-4" />
@@ -132,14 +132,13 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
       </div>
 
       {/* Meeting List */}
-      <div className="flex-1 overflow-y-auto px-4 py-3">
+      <div className="widget-content overflow-y-auto p-3">
         {totalMeetings === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="rounded-2xl bg-muted/50 p-4">
-              <Clock className="h-8 w-8 text-muted-foreground/50" />
+          <div className="flex h-full flex-col items-center justify-center py-8 text-center">
+            <div className="mb-3 rounded-lg bg-muted p-3">
+              <Clock className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="mt-4 font-medium text-foreground">No meetings scheduled</p>
-            <p className="mt-1 text-sm text-muted-foreground">Enjoy your focus time</p>
+            <p className="text-sm text-muted-foreground">No meetings scheduled</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
