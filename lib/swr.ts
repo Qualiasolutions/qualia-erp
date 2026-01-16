@@ -44,6 +44,9 @@ export const cacheKeys = {
   notifications: (workspaceId: string) => `notifications-${workspaceId}`,
   unreadCount: (workspaceId: string) => `unread-count-${workspaceId}`,
   provisioningStatus: (projectId: string) => `provisioning-${projectId}`,
+  projectDeployments: (projectId: string) => `project-deployments-${projectId}`,
+  projectEnvironments: (projectId: string) => `project-environments-${projectId}`,
+  projectHealth: (projectId: string) => `project-health-${projectId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -715,5 +718,123 @@ export function invalidateProvisioningStatus(projectId: string, immediate = true
     mutate(cacheKeys.provisioningStatus(projectId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.provisioningStatus(projectId));
+  }
+}
+
+// ============================================================================
+// DEPLOYMENT & HEALTH HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch project deployments
+ */
+export function useProjectDeployments(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.projectDeployments(projectId) : null,
+    async () => {
+      if (!projectId) return [];
+      const { getProjectDeployments } = await import('@/app/actions/deployments');
+      return getProjectDeployments(projectId);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    deployments: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch project environments
+ */
+export function useProjectEnvironments(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.projectEnvironments(projectId) : null,
+    async () => {
+      if (!projectId) return [];
+      const { getProjectEnvironments } = await import('@/app/actions/deployments');
+      return getProjectEnvironments(projectId);
+    },
+    slowRefreshConfig // Environments change less frequently
+  );
+
+  return {
+    environments: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch project health metrics
+ */
+export function useProjectHealth(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.projectHealth(projectId) : null,
+    async () => {
+      if (!projectId) return null;
+      const { getProjectHealth } = await import('@/app/actions/health');
+      return getProjectHealth(projectId);
+    },
+    slowRefreshConfig
+  );
+
+  return {
+    health: data || null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate deployment caches
+ */
+export function invalidateDeployments(projectId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.projectDeployments(projectId), undefined, { revalidate: true });
+    mutate(cacheKeys.projectEnvironments(projectId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.projectDeployments(projectId));
+    mutate(cacheKeys.projectEnvironments(projectId));
+  }
+}
+
+/**
+ * Invalidate project health cache
+ */
+export function invalidateProjectHealth(projectId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.projectHealth(projectId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.projectHealth(projectId));
   }
 }

@@ -336,3 +336,95 @@ export async function dismissInsight(insightId: string): Promise<ActionResult> {
     return { success: false, error: 'Failed to dismiss insight' };
   }
 }
+
+// Simple health summary for a project (used by SWR hook)
+export interface ProjectHealthSummary {
+  overall_score: number;
+  schedule: number;
+  velocity: number;
+  quality: number;
+  communication: number;
+  trend: 'improving' | 'declining' | 'stable';
+  active_insights: number;
+  critical_insights: number;
+  last_updated: string | null;
+}
+
+export async function getProjectHealth(projectId: string): Promise<ProjectHealthSummary | null> {
+  try {
+    const supabase = await createClient();
+
+    // Get latest health metrics
+    const { data: metrics, error: metricsError } = await supabase
+      .from('project_health_metrics')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('measured_at', { ascending: false })
+      .limit(2);
+
+    if (metricsError) {
+      console.error('[getProjectHealth] Metrics error:', metricsError);
+      return null;
+    }
+
+    // Get active insights count
+    const { count: activeInsights, error: insightsError } = await supabase
+      .from('project_health_insights')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', projectId)
+      .eq('status', 'active');
+
+    if (insightsError) {
+      console.error('[getProjectHealth] Insights error:', insightsError);
+    }
+
+    // Get critical insights count
+    const { count: criticalInsights } = await supabase
+      .from('project_health_insights')
+      .select('*', { count: 'exact', head: true })
+      .eq('project_id', projectId)
+      .eq('status', 'active')
+      .eq('severity', 'critical');
+
+    if (!metrics || metrics.length === 0) {
+      // No health data yet, return defaults
+      return {
+        overall_score: 0,
+        schedule: 0,
+        velocity: 0,
+        quality: 0,
+        communication: 0,
+        trend: 'stable',
+        active_insights: activeInsights || 0,
+        critical_insights: criticalInsights || 0,
+        last_updated: null,
+      };
+    }
+
+    const latest = metrics[0];
+    const previous = metrics[1];
+
+    // Determine trend
+    let trend: 'improving' | 'declining' | 'stable' = 'stable';
+    if (previous) {
+      const diff = (latest.overall_health_score || 0) - (previous.overall_health_score || 0);
+      if (diff > 5) trend = 'improving';
+      else if (diff < -5) trend = 'declining';
+    }
+
+    return {
+      overall_score: latest.overall_health_score || 0,
+      schedule: latest.schedule_health || 0,
+      velocity: latest.velocity_health || 0,
+      quality: latest.quality_health || 0,
+      communication: latest.communication_health || 0,
+      trend,
+      active_insights: activeInsights || 0,
+      critical_insights: criticalInsights || 0,
+      last_updated: latest.measured_at,
+    };
+  } catch (error) {
+    console.error('[getProjectHealth] Error:', error);
+    return null;
+  }
+}
