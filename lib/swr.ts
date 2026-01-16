@@ -33,6 +33,7 @@ export const cacheKeys = {
   teams: 'teams',
   projects: 'projects',
   projectStats: 'project-stats',
+  projectPipeline: 'project-pipeline',
   profiles: 'profiles',
   workspaceId: 'workspace-id',
   inboxTasks: 'inbox-tasks',
@@ -284,6 +285,65 @@ export function invalidateProjectStats(immediate = true) {
     mutate(cacheKeys.projectStats, undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.projectStats);
+  }
+}
+
+// Type for project pipeline data
+export type { ProjectsByPhase, ProjectPipelineData } from '@/app/actions/project-pipeline';
+
+/**
+ * Hook to fetch project pipeline data with auto-refresh
+ * Groups projects by their current phase for kanban view
+ */
+export function useProjectPipeline(
+  initialData?: Awaited<
+    ReturnType<typeof import('@/app/actions/project-pipeline').getProjectsByPhase>
+  >
+) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.projectPipeline,
+    async () => {
+      const { getProjectsByPhase } = await import('@/app/actions/project-pipeline');
+      return getProjectsByPhase();
+    },
+    {
+      ...autoRefreshConfig,
+      fallbackData: initialData,
+    }
+  );
+
+  return {
+    projectsByPhase: data || {
+      setup: [],
+      plan: [],
+      frontend: [],
+      backend: [],
+      ship: [],
+      launched: [],
+      demos: [],
+    },
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate project pipeline cache (immediate revalidation)
+ */
+export function invalidateProjectPipeline(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.projectPipeline, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.projectPipeline);
   }
 }
 
