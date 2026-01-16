@@ -81,34 +81,46 @@ async function ProjectListLoader() {
   return <ProjectsClient projects={activeProjects} demos={demos} />;
 }
 
-function ColumnSkeleton() {
+function ProjectsSkeleton() {
   return (
-    <div className="rounded-lg border border-border bg-card">
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <div className="h-4 w-4 animate-pulse rounded bg-muted" />
-        <div className="h-5 w-24 animate-pulse rounded bg-muted" />
-        <div className="ml-auto h-5 w-6 animate-pulse rounded-full bg-muted" />
+    <div className="space-y-6">
+      {/* Toolbar skeleton */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="h-9 w-64 animate-pulse rounded-lg bg-muted" />
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-64 animate-pulse rounded-lg bg-muted" />
+          <div className="h-9 w-20 animate-pulse rounded-lg bg-muted" />
+          <div className="h-9 w-16 animate-pulse rounded-lg bg-muted" />
+        </div>
       </div>
-      <div className="divide-y divide-border">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="flex items-center gap-3 px-4 py-3">
-            <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-            <div className="flex-1">
-              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-              <div className="mt-1 h-3 w-20 animate-pulse rounded bg-muted" />
+      {/* Grid skeleton */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-5 w-3/4 animate-pulse rounded bg-muted" />
+                <div className="flex gap-2">
+                  <div className="h-4 w-12 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-16 animate-pulse rounded bg-muted" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between">
+                <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-8 animate-pulse rounded bg-muted" />
+              </div>
+              <div className="h-1.5 animate-pulse rounded-full bg-muted" />
+            </div>
+            <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
+              <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-12 animate-pulse rounded bg-muted" />
             </div>
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function ProjectColumnsSkeleton() {
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-      <ColumnSkeleton />
-      <ColumnSkeleton />
     </div>
   );
 }
@@ -119,15 +131,15 @@ export default function ProjectsPage() {
       {/* Header */}
       <header className="flex items-center justify-between border-b border-border px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 sm:h-9 sm:w-9">
-            <Folder className="h-4 w-4 text-primary" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10 sm:h-9 sm:w-9">
+            <Folder className="h-4 w-4 text-qualia-500" />
           </div>
           <div>
             <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
               Projects
             </h1>
             <p className="hidden text-xs text-muted-foreground sm:block">
-              Demos and active projects
+              Manage all your projects and demos
             </p>
           </div>
         </div>
@@ -136,7 +148,7 @@ export default function ProjectsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <Suspense fallback={<ProjectColumnsSkeleton />}>
+        <Suspense fallback={<ProjectsSkeleton />}>
           <ProjectListLoader />
         </Suspense>
       </div>

@@ -12,8 +12,6 @@ import {
   ChevronUp,
   LogOut,
   Info,
-  FileText,
-  Shield,
   HelpCircle,
   Settings,
 } from 'lucide-react';
@@ -114,15 +112,6 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
           How it Works
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleMenuItemClick('/terms')}>
-          <FileText className="h-4 w-4" />
-          Terms of Service
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleMenuItemClick('/privacy')}>
-          <Shield className="h-4 w-4" />
-          Privacy Policy
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={handleSignOut}
           className="text-destructive focus:text-destructive"
@@ -140,21 +129,19 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Logo - 3x size but contained */}
-      <div className="flex h-14 items-center overflow-hidden border-b border-border/50 px-3">
-        <Link href="/" className="flex items-center gap-2" onClick={onLinkClick}>
-          <div className="relative h-10 w-10 shrink-0">
+      {/* Logo */}
+      <div className="flex h-14 items-center border-b border-border/50 px-3">
+        <Link href="/" className="flex items-center" onClick={onLinkClick}>
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg">
             <Image
               src="/logo.webp"
               alt="Qualia"
-              width={120}
-              height={120}
-              className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded"
-              style={{ width: 120, height: 120 }}
+              width={40}
+              height={40}
+              className="h-full w-full object-cover"
               priority
             />
           </div>
-          <span className="text-sm font-semibold text-foreground">Qualia</span>
         </Link>
       </div>
 

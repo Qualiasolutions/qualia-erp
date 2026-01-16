@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Plus, Video, RefreshCw, Loader2 } from 'lucide-react';
+import { Video, RefreshCw, Loader2 } from 'lucide-react';
 import { MeetingsWrapper } from './meetings-wrapper';
 import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
@@ -133,7 +133,7 @@ export function TodayDashboard({
         transition={{ duration: 0.4 }}
         className="shrink-0 border-b border-border/50 bg-gradient-to-b from-card to-background"
       >
-        <div className="mx-auto max-w-[1800px] px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1800px] px-4 py-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-light tracking-tight text-foreground sm:text-2xl">
@@ -142,12 +142,6 @@ export function TodayDashboard({
               <p className="text-xs text-muted-foreground">{format(now, 'EEEE, MMMM d, yyyy')}</p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-2" asChild>
-                <Link href="/projects">
-                  <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">New Task</span>
-                </Link>
-              </Button>
               <Button variant="outline" size="sm" className="gap-2" asChild>
                 <Link href="/schedule?new=1">
                   <Video className="h-4 w-4" />
@@ -173,8 +167,8 @@ export function TodayDashboard({
       </motion.header>
 
       {/* Main Content - fits exactly in remaining viewport */}
-      <main className="min-h-0 flex-1">
-        <div className="mx-auto h-full max-w-[1800px] px-4 py-3 sm:px-6">
+      <main className="min-h-0 flex-1 overflow-hidden">
+        <div className="mx-auto h-full max-w-[1800px] px-4 py-2 sm:px-6">
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -182,9 +176,9 @@ export function TodayDashboard({
             className="h-full"
           >
             {/* Bento Grid Layout - all containers same height */}
-            <div className="grid h-full gap-4 lg:grid-cols-12 lg:gap-5">
+            <div className="grid h-full gap-3 lg:grid-cols-12 lg:gap-4">
               {/* Left Column - Projects + Leads stacked */}
-              <div className="flex h-full flex-col gap-3 lg:col-span-3">
+              <div className="flex h-full flex-col gap-2 lg:col-span-3">
                 {/* Projects - fills most of the height */}
                 <motion.div variants={itemVariants} className="min-h-0 flex-[2]">
                   <ProjectsWidget projects={projects} />
