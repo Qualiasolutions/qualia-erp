@@ -173,50 +173,6 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     setVoiceEnabled((prev) => !prev);
   }, []);
 
-  // Start a guided task (like create project or create client)
-  const startGuidedTask = useCallback((task: GuidedTask) => {
-    setGuidedTask(task);
-    setIsOpen(true);
-    setIsMinimized(false);
-    setModeState('chat');
-    setShowTemplates(false);
-
-    // Clear any existing conversation
-    setMessages([]);
-    setError(null);
-
-    // Send initial prompt based on task
-    if (task === 'create-project') {
-      const initialPrompt = `I want to create a new project. Please help me by asking the necessary questions one by one:
-1. Project name
-2. Client (or create new)
-3. Project type (web design, ai agent, voice agent, seo, ads)
-4. Description
-5. Any other relevant details
-
-Start by asking for the project name.`;
-
-      // Trigger the sendMessage after state is set
-      setTimeout(() => {
-        sendMessageInternal(initialPrompt);
-      }, 100);
-    } else if (task === 'create-client') {
-      const initialPrompt = `I want to add a new client. Please help me by asking the necessary questions one by one:
-1. Client/Company name
-2. Contact person name
-3. Email
-4. Phone (optional)
-5. Lead status
-6. Any notes
-
-Start by asking for the company name.`;
-
-      setTimeout(() => {
-        sendMessageInternal(initialPrompt);
-      }, 100);
-    }
-  }, []);
-
   // Internal send message function (used by startGuidedTask)
   const sendMessageInternal = useCallback(
     async (text: string) => {
@@ -464,6 +420,53 @@ Start by asking for the company name.`;
       }
     },
     [messages, mode, isStreaming]
+  );
+
+  // Start a guided task (like create project or create client)
+  const startGuidedTask = useCallback(
+    (task: GuidedTask) => {
+      setGuidedTask(task);
+      setIsOpen(true);
+      setIsMinimized(false);
+      setModeState('chat');
+      setShowTemplates(false);
+
+      // Clear any existing conversation
+      setMessages([]);
+      setError(null);
+
+      // Send initial prompt based on task
+      if (task === 'create-project') {
+        const initialPrompt = `I want to create a new project. Please help me by asking the necessary questions one by one:
+1. Project name
+2. Client (or create new)
+3. Project type (web design, ai agent, voice agent, seo, ads)
+4. Description
+5. Any other relevant details
+
+Start by asking for the project name.`;
+
+        // Trigger the sendMessage after state is set
+        setTimeout(() => {
+          sendMessageInternal(initialPrompt);
+        }, 100);
+      } else if (task === 'create-client') {
+        const initialPrompt = `I want to add a new client. Please help me by asking the necessary questions one by one:
+1. Client/Company name
+2. Contact person name
+3. Email
+4. Phone (optional)
+5. Lead status
+6. Any notes
+
+Start by asking for the company name.`;
+
+        setTimeout(() => {
+          sendMessageInternal(initialPrompt);
+        }, 100);
+      }
+    },
+    [sendMessageInternal]
   );
 
   return (
