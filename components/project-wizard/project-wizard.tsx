@@ -4,27 +4,24 @@ import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Check, Loader2, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Check, Loader2, X, Globe, Bot, Phone, Search, Megaphone, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
 import { startProvisioning, checkIntegrationsConfigured } from '@/app/actions/integrations';
 import { useWorkspace } from '@/components/workspace-provider';
 import { invalidateProjectStats, invalidateDailyFlow, invalidateTimeline } from '@/lib/swr';
 import { toast } from '@/components/ui/use-toast';
+import { SelectWithOther } from '@/components/ui/select-with-other';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
-import { StepBasicInfo } from './step-basic-info';
-import { StepConfiguration } from './step-configuration';
-import { StepReview } from './step-review';
 import { StepProvisioning } from './step-provisioning';
-import { WizardProgress } from './wizard-progress';
 
 export interface WizardData {
-  // Step 1: Basic Info
   name: string;
   description: string;
   is_demo: boolean;
-  // Step 2: Configuration
   project_type: ProjectType | null;
   deployment_platform: DeploymentPlatform | null;
   client_id: string;
@@ -38,12 +35,41 @@ interface ProjectWizardProps {
   defaultType?: ProjectType | null;
 }
 
-const STEPS = [
-  { id: 1, name: 'Basic Info', description: 'Name and description' },
-  { id: 2, name: 'Configuration', description: 'Type, platform, client' },
-  { id: 3, name: 'Review', description: 'Confirm details' },
-  { id: 4, name: 'Setup', description: 'Create resources' },
+const PROJECT_TYPES: Array<{
+  value: ProjectType;
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+}> = [
+  {
+    value: 'web_design',
+    label: 'Website',
+    icon: <Globe className="h-5 w-5" />,
+    color: 'text-blue-500',
+  },
+  {
+    value: 'ai_agent',
+    label: 'AI Agent',
+    icon: <Bot className="h-5 w-5" />,
+    color: 'text-purple-500',
+  },
+  {
+    value: 'voice_agent',
+    label: 'Voice Agent',
+    icon: <Phone className="h-5 w-5" />,
+    color: 'text-pink-500',
+  },
+  { value: 'seo', label: 'SEO', icon: <Search className="h-5 w-5" />, color: 'text-green-500' },
+  { value: 'ads', label: 'Ads', icon: <Megaphone className="h-5 w-5" />, color: 'text-orange-500' },
 ];
+
+// Auto-select deployment platform based on project type
+function getDeploymentPlatform(projectType: ProjectType | null): DeploymentPlatform {
+  if (projectType === 'web_design' || projectType === 'ai_agent' || projectType === 'voice_agent') {
+    return 'vercel';
+  }
+  return 'none';
+}
 
 // Project types that need provisioning
 const PROVISIONING_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'voice_agent'];
@@ -56,17 +82,17 @@ export function ProjectWizard({
 }: ProjectWizardProps) {
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
-  const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
   const [hasIntegrations, setHasIntegrations] = useState(false);
+  const [showProvisioning, setShowProvisioning] = useState(false);
 
   const [wizardData, setWizardData] = useState<WizardData>({
     name: '',
     description: '',
     is_demo: false,
-    project_type: null,
+    project_type: defaultType,
     deployment_platform: null,
     client_id: '',
     custom_client_name: '',
@@ -88,10 +114,7 @@ export function ProjectWizard({
   // Set default type when wizard opens with a defaultType
   useEffect(() => {
     if (open && defaultType) {
-      setWizardData((prev) => ({
-        ...prev,
-        project_type: defaultType,
-      }));
+      setWizardData((prev) => ({ ...prev, project_type: defaultType }));
     }
   }, [open, defaultType]);
 
@@ -105,87 +128,34 @@ export function ProjectWizard({
     wizardData.project_type &&
     PROVISIONING_TYPES.includes(wizardData.project_type);
 
-  // Demos skip configuration step (step 2)
-  const isDemoProject = wizardData.is_demo;
-
-  // Determine visible steps based on project type and demo status
-  const visibleSteps = isDemoProject
-    ? [STEPS[0], STEPS[2]] // Demo: Basic Info -> Review (skip Configuration)
-    : needsProvisioning
-      ? STEPS
-      : STEPS.slice(0, 3);
-
-  // Validation for each step
-  const isStepValid = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return wizardData.name.trim().length > 0;
-      case 2:
-        // For demos, step 2 is skipped, so always valid
-        if (isDemoProject) return true;
-        return (
-          wizardData.project_type !== null &&
-          wizardData.deployment_platform !== null &&
-          (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0)
-        );
-      case 3:
-        return true;
-      case 4:
-        return true;
-      default:
-        return false;
-    }
-  };
-
-  const canProceed = isStepValid(currentStep);
-
-  const handleNext = () => {
-    if (canProceed) {
-      if (isDemoProject && currentStep === 1) {
-        // Demo: skip step 2 (config), go straight to step 3 (review)
-        setCurrentStep(3);
-      } else if (currentStep < (isDemoProject ? 3 : visibleSteps.length)) {
-        setCurrentStep((prev) => prev + 1);
-      }
-      setError(null);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1 && currentStep !== 4) {
-      if (isDemoProject && currentStep === 3) {
-        // Demo: go back from review (3) to basic info (1)
-        setCurrentStep(1);
-      } else {
-        setCurrentStep((prev) => prev - 1);
-      }
-      setError(null);
-    }
-  };
+  // Form validation
+  const isValid =
+    wizardData.name.trim().length > 0 &&
+    wizardData.project_type !== null &&
+    (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0);
 
   const handleSubmit = async () => {
+    if (!isValid) return;
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // For demos, use defaults - no client or complex config needed
-      const projectType = isDemoProject ? 'web_design' : wizardData.project_type!;
-      const deploymentPlatform = isDemoProject ? 'none' : wizardData.deployment_platform!;
+      const deploymentPlatform = getDeploymentPlatform(wizardData.project_type);
 
       const result = await createProjectWithRoadmap({
         name: wizardData.name,
         description: wizardData.description || null,
-        project_type: projectType,
+        project_type: wizardData.project_type!,
         deployment_platform: deploymentPlatform,
-        client_id: isDemoProject ? undefined : wizardData.client_id || undefined,
-        custom_client_name: isDemoProject ? undefined : wizardData.custom_client_name || undefined,
+        client_id: wizardData.client_id || undefined,
+        custom_client_name: wizardData.custom_client_name || undefined,
         team_id: null,
         workspace_id: currentWorkspace?.id,
-        is_demo: wizardData.is_demo,
+        is_demo: false,
       });
 
       if (result.success) {
-        // Invalidate SWR caches so project appears immediately
         invalidateProjectStats(true);
         invalidateDailyFlow(true);
         invalidateTimeline(true);
@@ -193,18 +163,16 @@ export function ProjectWizard({
         const projectData = result.data as { id: string } | undefined;
 
         if (projectData?.id && needsProvisioning) {
-          // Store project ID and move to provisioning step
           setCreatedProjectId(projectData.id);
-          setCurrentStep(4);
+          setShowProvisioning(true);
 
           // Start provisioning in the background
           startProvisioning(projectData.id).catch((err) => {
             console.error('[ProjectWizard] Provisioning error:', err);
           });
 
-          toast({ title: `Project "${wizardData.name}" created - setting up resources...` });
+          toast({ title: `Creating ${wizardData.name}...` });
         } else {
-          // No provisioning needed, finish immediately
           toast({ title: `Project "${wizardData.name}" created` });
           handleFinish(projectData?.id);
         }
@@ -225,9 +193,17 @@ export function ProjectWizard({
   };
 
   const handleFinish = (projectId?: string) => {
-    // Reset form state
-    setCurrentStep(1);
+    resetForm();
+    onOpenChange(false);
+    if (projectId) {
+      router.push(`/projects/${projectId}`);
+    }
+    router.refresh();
+  };
+
+  const resetForm = () => {
     setCreatedProjectId(null);
+    setShowProvisioning(false);
     setWizardData({
       name: '',
       description: '',
@@ -238,38 +214,11 @@ export function ProjectWizard({
       custom_client_name: '',
     });
     setError(null);
-
-    onOpenChange(false);
-
-    if (projectId) {
-      router.push(`/projects/${projectId}`);
-    }
-    router.refresh();
-  };
-
-  const handleProvisioningComplete = () => {
-    handleFinish(createdProjectId || undefined);
-  };
-
-  const handleSkipProvisioning = () => {
-    toast({ title: 'Provisioning skipped - you can retry later from the project page' });
-    handleFinish(createdProjectId || undefined);
   };
 
   const handleClose = () => {
-    if (!isSubmitting && currentStep !== 4) {
-      setCurrentStep(1);
-      setCreatedProjectId(null);
-      setWizardData({
-        name: '',
-        description: '',
-        is_demo: false,
-        project_type: null,
-        deployment_platform: null,
-        client_id: '',
-        custom_client_name: '',
-      });
-      setError(null);
+    if (!isSubmitting && !showProvisioning) {
+      resetForm();
       onOpenChange(false);
     }
   };
@@ -278,135 +227,153 @@ export function ProjectWizard({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-[90vw] gap-0 overflow-hidden rounded-2xl border border-border/50 bg-card p-0 shadow-2xl sm:max-w-2xl md:max-w-3xl"
+        className="w-full max-w-lg gap-0 overflow-hidden rounded-2xl border border-border/50 bg-card p-0 shadow-2xl"
       >
         <DialogTitle className="sr-only">Create New Project</DialogTitle>
-        <DialogDescription className="sr-only">
-          Create a new project by filling out the project details in the wizard steps
-        </DialogDescription>
+        <DialogDescription className="sr-only">Create a new project</DialogDescription>
 
         {/* Header */}
-        <div className="relative border-b border-border/50 bg-muted/30 px-6 pb-5 pt-6">
-          {/* Close button */}
+        <div className="relative border-b border-border/50 bg-muted/30 px-6 py-5">
           <Button
             variant="ghost"
             size="icon"
             onClick={handleClose}
-            disabled={isSubmitting || currentStep === 4}
+            disabled={isSubmitting || showProvisioning}
             className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </Button>
-
-          {/* Title */}
-          <div className="mb-5 pr-8">
-            <h2 className="text-xl font-semibold text-foreground">Create New Project</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {currentStep === 4
-                ? 'Setting up your development infrastructure'
-                : 'Set up your project in a few simple steps'}
-            </p>
-          </div>
-
-          {/* Progress */}
-          <WizardProgress steps={visibleSteps} currentStep={currentStep} />
+          <h2 className="text-xl font-semibold text-foreground">New Project</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {showProvisioning ? 'Setting up resources...' : 'Fill in the details below'}
+          </p>
         </div>
 
-        {/* Step Content */}
-        <div className="max-h-[55vh] min-h-[380px] overflow-y-auto px-6 py-6">
-          {error && currentStep !== 4 && (
-            <div className="mb-6 flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-destructive/10">
-                <X className="h-3.5 w-3.5" />
-              </div>
-              {error}
-            </div>
-          )}
-
-          <div className="duration-300 animate-in fade-in-0 slide-in-from-right-4">
-            {currentStep === 1 && <StepBasicInfo data={wizardData} onChange={updateWizardData} />}
-
-            {currentStep === 2 && (
-              <StepConfiguration data={wizardData} clients={clients} onChange={updateWizardData} />
-            )}
-
-            {currentStep === 3 && <StepReview data={wizardData} clients={clients} />}
-
-            {currentStep === 4 && createdProjectId && (
-              <StepProvisioning
-                projectId={createdProjectId}
-                projectName={wizardData.name}
-                projectType={wizardData.project_type!}
-                deploymentPlatform={wizardData.deployment_platform!}
-                onComplete={handleProvisioningComplete}
-                onSkip={handleSkipProvisioning}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Footer - Hidden during provisioning step */}
-        {currentStep !== 4 && (
-          <div className="flex items-center justify-between border-t border-border/50 bg-muted/30 px-6 py-4">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              disabled={currentStep === 1 || isSubmitting}
-              className={cn(
-                'gap-2 rounded-xl px-4 text-muted-foreground hover:text-foreground',
-                currentStep === 1 && 'invisible'
+        {/* Content */}
+        <div className="p-6">
+          {showProvisioning && createdProjectId ? (
+            <StepProvisioning
+              projectId={createdProjectId}
+              projectName={wizardData.name}
+              projectType={wizardData.project_type!}
+              deploymentPlatform={getDeploymentPlatform(wizardData.project_type)}
+              onComplete={() => handleFinish(createdProjectId)}
+              onSkip={() => handleFinish(createdProjectId)}
+            />
+          ) : (
+            <div className="space-y-6">
+              {error && (
+                <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  <X className="h-4 w-4 shrink-0" />
+                  {error}
+                </div>
               )}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
 
-            <div className="flex items-center gap-1.5">
-              {visibleSteps.map((step) => (
-                <div
-                  key={step.id}
-                  className={cn(
-                    'h-1.5 w-1.5 rounded-full transition-all duration-300',
-                    currentStep === step.id
-                      ? 'w-6 bg-qualia-500'
-                      : currentStep > step.id
-                        ? 'bg-qualia-500/50'
-                        : 'bg-muted-foreground/30'
-                  )}
+              {/* Project Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Project Name <span className="text-qualia-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  value={wizardData.name}
+                  onChange={(e) => updateWizardData({ name: e.target.value })}
+                  placeholder="e.g. Acme Corp Website"
+                  className="h-11 rounded-xl border-border/50 bg-muted/30"
+                  autoFocus
                 />
-              ))}
-            </div>
+              </div>
 
-            {currentStep < 3 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed}
-                className="gap-2 rounded-xl bg-qualia-600 px-6 shadow-lg shadow-qualia-600/20 transition-all hover:bg-qualia-500 hover:shadow-qualia-500/30 disabled:opacity-50 disabled:shadow-none"
-              >
-                Continue
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
+              {/* Project Type */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Type <span className="text-qualia-500">*</span>
+                </Label>
+                <div className="grid grid-cols-5 gap-2">
+                  {PROJECT_TYPES.map((type) => {
+                    const isSelected = wizardData.project_type === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => updateWizardData({ project_type: type.value })}
+                        className={cn(
+                          'flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 transition-all',
+                          isSelected
+                            ? 'border-qualia-500 bg-qualia-500/5'
+                            : 'border-border/50 bg-muted/20 hover:border-border hover:bg-muted/40'
+                        )}
+                      >
+                        <div className={cn(isSelected ? 'text-qualia-500' : type.color)}>
+                          {type.icon}
+                        </div>
+                        <span
+                          className={cn('text-xs font-medium', isSelected && 'text-qualia-500')}
+                        >
+                          {type.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Client */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  Client <span className="text-qualia-500">*</span>
+                </Label>
+                <SelectWithOther
+                  options={clients.map((client) => ({
+                    value: client.id,
+                    label: client.display_name || 'Unnamed Client',
+                    icon: <Building className="h-4 w-4 text-muted-foreground" />,
+                  }))}
+                  value={wizardData.custom_client_name || wizardData.client_id}
+                  onChange={(value, isCustom) => {
+                    if (isCustom) {
+                      updateWizardData({ client_id: '', custom_client_name: value });
+                    } else {
+                      updateWizardData({ client_id: value, custom_client_name: '' });
+                    }
+                  }}
+                  placeholder="Select or type client name"
+                  otherLabel="New client..."
+                  otherPlaceholder="Client name"
+                  icon={<Building className="h-4 w-4 text-muted-foreground" />}
+                  className="w-full"
+                  triggerClassName="h-11 w-full rounded-xl border-border/50 bg-muted/30"
+                />
+              </div>
+
+              {/* Submit Button */}
               <Button
                 onClick={handleSubmit}
-                disabled={isSubmitting || !canProceed}
-                className="gap-2 rounded-xl bg-gradient-to-r from-qualia-600 to-qualia-500 px-6 shadow-lg shadow-qualia-600/25 transition-all hover:from-qualia-500 hover:to-qualia-400 hover:shadow-qualia-500/35 disabled:opacity-50 disabled:shadow-none"
+                disabled={!isValid || isSubmitting}
+                className="h-11 w-full rounded-xl bg-qualia-600 hover:bg-qualia-500 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Check className="h-4 w-4" />
+                    <Check className="mr-2 h-4 w-4" />
                     Create Project
                   </>
                 )}
               </Button>
-            )}
-          </div>
-        )}
+
+              {/* Auto-provisioning note */}
+              {needsProvisioning && (
+                <p className="text-center text-xs text-muted-foreground">
+                  GitHub repo + Vercel project will be created automatically
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );
