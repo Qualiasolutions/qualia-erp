@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
 import { startProvisioning, checkIntegrationsConfigured } from '@/app/actions/integrations';
 import { useWorkspace } from '@/components/workspace-provider';
-import { invalidateCache, invalidateDailyFlow, invalidateTimeline } from '@/lib/swr';
+import { invalidateProjectStats, invalidateDailyFlow, invalidateTimeline } from '@/lib/swr';
 import { toast } from '@/components/ui/use-toast';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
@@ -186,7 +186,7 @@ export function ProjectWizard({
 
       if (result.success) {
         // Invalidate SWR caches so project appears immediately
-        invalidateCache('projects');
+        invalidateProjectStats(true);
         invalidateDailyFlow(true);
         invalidateTimeline(true);
 

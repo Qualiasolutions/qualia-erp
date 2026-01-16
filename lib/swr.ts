@@ -32,6 +32,7 @@ export const swrConfig: SWRConfiguration = {
 export const cacheKeys = {
   teams: 'teams',
   projects: 'projects',
+  projectStats: 'project-stats',
   profiles: 'profiles',
   workspaceId: 'workspace-id',
   inboxTasks: 'inbox-tasks',
@@ -200,12 +201,86 @@ export function invalidateAllCaches() {
  * Invalidate specific cache
  */
 export function invalidateCache(
-  key: 'teams' | 'projects' | 'profiles' | 'workspaceId' | 'inboxTasks'
+  key: 'teams' | 'projects' | 'projectStats' | 'profiles' | 'workspaceId' | 'inboxTasks'
 ) {
   if (key === 'inboxTasks') {
     mutate(cacheKeys.inboxTasks);
   } else {
     mutate(cacheKeys[key]);
+  }
+}
+
+/**
+ * Hook to fetch project stats for /projects page with auto-refresh
+ * Returns both active projects and demos separately
+ */
+export function useProjectStats(initialData?: {
+  projects: ProjectStatsData[];
+  demos: ProjectStatsData[];
+}) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.projectStats,
+    async () => {
+      const { getProjectStats } = await import('@/app/actions');
+      return getProjectStats();
+    },
+    {
+      ...autoRefreshConfig,
+      fallbackData: initialData,
+    }
+  );
+
+  return {
+    projects: data?.projects || [],
+    demos: data?.demos || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+// Type for project stats data
+export interface ProjectStatsData {
+  id: string;
+  name: string;
+  status: string;
+  start_date: string | null;
+  target_date: string | null;
+  project_group: string | null;
+  project_type: string | null;
+  deployment_platform: string | null;
+  client_id: string | null;
+  client_name: string | null;
+  logo_url: string | null;
+  lead: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+  } | null;
+  issue_stats: {
+    total: number;
+    done: number;
+  };
+  roadmap_progress: number;
+  metadata: { is_partnership?: boolean; partner_name?: string } | null;
+}
+
+/**
+ * Invalidate project stats cache (immediate revalidation)
+ */
+export function invalidateProjectStats(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.projectStats, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.projectStats);
   }
 }
 

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Briefcase, Beaker } from 'lucide-react';
 import { ProjectColumnView } from '@/components/project-column-view';
 import { DemoSheet } from '@/components/demo-sheet';
+import { useProjectStats, type ProjectStatsData } from '@/lib/swr';
 import type { ProjectData } from './page';
 
 interface ProjectsClientProps {
@@ -11,12 +12,21 @@ interface ProjectsClientProps {
   demos: ProjectData[];
 }
 
-export function ProjectsClient({ projects, demos }: ProjectsClientProps) {
+export function ProjectsClient({
+  projects: initialProjects,
+  demos: initialDemos,
+}: ProjectsClientProps) {
+  // Use SWR for real-time updates, with server data as initial/fallback
+  const { projects, demos } = useProjectStats({
+    projects: initialProjects as ProjectStatsData[],
+    demos: initialDemos as ProjectStatsData[],
+  });
+
   const [selectedDemo, setSelectedDemo] = useState<ProjectData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const handleDemoClick = (demo: ProjectData) => {
-    setSelectedDemo(demo);
+  const handleDemoClick = (demo: ProjectStatsData) => {
+    setSelectedDemo(demo as ProjectData);
     setSheetOpen(true);
   };
 
@@ -26,13 +36,13 @@ export function ProjectsClient({ projects, demos }: ProjectsClientProps) {
         <ProjectColumnView
           title="Projects"
           icon={<Briefcase className="h-4 w-4" />}
-          projects={projects}
+          projects={projects as ProjectData[]}
           emptyMessage="No projects yet"
         />
         <ProjectColumnView
           title="Demos"
           icon={<Beaker className="h-4 w-4" />}
-          projects={demos}
+          projects={demos as ProjectData[]}
           emptyMessage="No demos yet"
           onProjectClick={handleDemoClick}
         />
