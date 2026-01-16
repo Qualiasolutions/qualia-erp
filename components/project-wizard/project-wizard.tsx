@@ -21,6 +21,7 @@ export interface WizardData {
   // Step 1: Basic Info
   name: string;
   description: string;
+  is_demo: boolean;
   // Step 2: Configuration
   project_type: ProjectType | null;
   deployment_platform: DeploymentPlatform | null;
@@ -56,6 +57,7 @@ export function ProjectWizard({
   const [wizardData, setWizardData] = useState<WizardData>({
     name: '',
     description: '',
+    is_demo: false,
     project_type: null,
     deployment_platform: null,
     client_id: '',
@@ -124,6 +126,7 @@ export function ProjectWizard({
         custom_client_name: wizardData.custom_client_name || undefined,
         team_id: null,
         workspace_id: currentWorkspace?.id,
+        is_demo: wizardData.is_demo,
       });
 
       if (result.success) {
@@ -140,6 +143,7 @@ export function ProjectWizard({
         setWizardData({
           name: '',
           description: '',
+          is_demo: false,
           project_type: null,
           deployment_platform: null,
           client_id: '',
@@ -174,6 +178,7 @@ export function ProjectWizard({
       setWizardData({
         name: '',
         description: '',
+        is_demo: false,
         project_type: null,
         deployment_platform: null,
         client_id: '',

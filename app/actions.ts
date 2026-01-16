@@ -2656,6 +2656,7 @@ export async function createProjectWithRoadmap(
     custom_client_name,
     team_id,
     workspace_id,
+    is_demo,
   } = validation.data;
 
   // Get workspace ID from input or from user's default
@@ -2702,8 +2703,8 @@ export async function createProjectWithRoadmap(
       team_id,
       lead_id: user.id,
       workspace_id: wsId,
-      status: 'Active',
-      project_group: 'active', // Default to active group
+      status: is_demo ? 'Demos' : 'Active',
+      project_group: is_demo ? 'demos' : 'active',
     })
     .select()
     .single();

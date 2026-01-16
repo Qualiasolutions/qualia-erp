@@ -16,6 +16,7 @@ import {
   Linkedin,
   CircleDot,
   Ban,
+  Sparkles,
 } from 'lucide-react';
 import type { WizardData } from './project-wizard';
 
@@ -72,7 +73,15 @@ export function StepReview({ data, clients }: StepReviewProps) {
             </div>
           )}
           <div className="flex-1">
-            <h4 className="text-xl font-semibold">{data.name || 'Untitled Project'}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xl font-semibold">{data.name || 'Untitled Project'}</h4>
+              {data.is_demo && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <Sparkles className="h-3 w-3" />
+                  Demo
+                </span>
+              )}
+            </div>
             {data.description && (
               <p className="mt-1 text-sm text-muted-foreground">{data.description}</p>
             )}

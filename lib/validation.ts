@@ -134,6 +134,7 @@ export const createProjectWizardSchema = z
     custom_client_name: z.string().max(200, 'Client name too long').optional(),
     team_id: z.string().uuid('Invalid team ID').optional().nullable(),
     workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
+    is_demo: z.boolean().optional().default(false),
   })
   .refine((data) => data.client_id || data.custom_client_name, {
     message: 'Either client or custom client name is required',

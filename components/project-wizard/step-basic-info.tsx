@@ -3,7 +3,8 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Folder } from 'lucide-react';
+import { Folder, Sparkles, Rocket } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { WizardData } from './project-wizard';
 
 interface StepBasicInfoProps {
@@ -31,6 +32,44 @@ export function StepBasicInfo({ data, onChange }: StepBasicInfoProps) {
 
       {/* Form fields */}
       <div className="space-y-6">
+        {/* Project Type: Demo or Full Project */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Project Type</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => onChange({ is_demo: true })}
+              className={cn(
+                'flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all',
+                data.is_demo
+                  ? 'border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'border-border/50 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/50'
+              )}
+            >
+              <Sparkles className="h-6 w-6" />
+              <div className="text-center">
+                <div className="font-medium">Demo</div>
+                <div className="text-xs opacity-70">For showcasing</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange({ is_demo: false })}
+              className={cn(
+                'flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all',
+                !data.is_demo
+                  ? 'border-qualia-500 bg-qualia-500/10 text-qualia-600 dark:text-qualia-400'
+                  : 'border-border/50 bg-muted/30 text-muted-foreground hover:border-border hover:bg-muted/50'
+              )}
+            >
+              <Rocket className="h-6 w-6" />
+              <div className="text-center">
+                <div className="font-medium">Full Project</div>
+                <div className="text-xs opacity-70">Active development</div>
+              </div>
+            </button>
+          </div>
+        </div>
         {/* Project Name */}
         <div className="space-y-3">
           <Label htmlFor="name" className="text-sm font-medium">
