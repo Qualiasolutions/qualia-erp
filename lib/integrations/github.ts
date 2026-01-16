@@ -177,24 +177,50 @@ export async function createRepository(
       };
     }
 
-    // 2. Create repo from template
-    const { data: newRepo } = await client.octokit.repos.createUsingTemplate({
-      template_owner: client.org,
-      template_repo: templateName,
-      owner: client.org,
-      name: repoName,
-      description: config.description || `${config.projectType} project`,
-      private: config.isPrivate ?? true,
-      include_all_branches: false,
-    });
+    // 2. Try to create repo from template, fallback to empty repo
+    let newRepo;
+    let usedTemplate = false;
 
-    // 3. Wait for repo to be ready (template copy can take a moment)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Try template first
+      const { data: templateRepo } = await client.octokit.repos.createUsingTemplate({
+        template_owner: client.org,
+        template_repo: templateName,
+        owner: client.org,
+        name: repoName,
+        description: config.description || `${config.projectType} project`,
+        private: config.isPrivate ?? true,
+        include_all_branches: false,
+      });
+      newRepo = templateRepo;
+      usedTemplate = true;
+      // Wait for template copy to complete
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    } catch (templateError: unknown) {
+      // Template doesn't exist - create empty repo instead
+      if ((templateError as { status?: number }).status === 404) {
+        const { data: emptyRepo } = await client.octokit.repos.createInOrg({
+          org: client.org,
+          name: repoName,
+          description: config.description || `${config.projectType} project`,
+          private: config.isPrivate ?? true,
+          auto_init: true, // Creates with README
+        });
+        newRepo = emptyRepo;
+      } else {
+        throw templateError;
+      }
+    }
 
-    // 4. Update README with project-specific content
+    // 3. Update README with project-specific content
     try {
       const readmeContent = generateReadme(config, clientName);
       const base64Content = Buffer.from(readmeContent).toString('base64');
+
+      // Wait a moment for repo to be ready
+      if (!usedTemplate) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
 
       // Get current README to get its SHA
       const { data: currentReadme } = await client.octokit.repos.getContent({
@@ -237,7 +263,7 @@ export async function createRepository(
       return { success: false, error: 'GitHub rate limit exceeded. Please try again later.' };
     }
     if (err.status === 404) {
-      return { success: false, error: `Template repository "${templateName}" not found.` };
+      return { success: false, error: `Organization "${client.org}" not found or inaccessible.` };
     }
     if (err.status === 422) {
       return { success: false, error: 'Repository name already exists or is invalid.' };
