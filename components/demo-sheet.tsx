@@ -8,10 +8,10 @@ import { ProjectResources } from '@/components/project-resources';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { Beaker, MessageSquare, Link as LinkIcon } from 'lucide-react';
 import { getProjectById } from '@/app/actions';
-import type { ProjectPipelineData } from '@/app/actions/project-pipeline';
+import type { ProjectData } from '@/app/projects/page';
 
 interface DemoSheetProps {
-  demo: ProjectPipelineData | null;
+  demo: ProjectData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
