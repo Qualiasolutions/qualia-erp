@@ -136,7 +136,7 @@ export const createProjectWizardSchema = z
     workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
     is_demo: z.boolean().optional().default(false),
   })
-  .refine((data) => data.client_id || data.custom_client_name, {
+  .refine((data) => data.is_demo || data.client_id || data.custom_client_name, {
     message: 'Either client or custom client name is required',
     path: ['client_id'],
   });

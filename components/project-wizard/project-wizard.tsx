@@ -105,8 +105,15 @@ export function ProjectWizard({
     wizardData.project_type &&
     PROVISIONING_TYPES.includes(wizardData.project_type);
 
-  // Determine visible steps based on project type
-  const visibleSteps = needsProvisioning ? STEPS : STEPS.slice(0, 3);
+  // Demos skip configuration step (step 2)
+  const isDemoProject = wizardData.is_demo;
+
+  // Determine visible steps based on project type and demo status
+  const visibleSteps = isDemoProject
+    ? [STEPS[0], STEPS[2]] // Demo: Basic Info -> Review (skip Configuration)
+    : needsProvisioning
+      ? STEPS
+      : STEPS.slice(0, 3);
 
   // Validation for each step
   const isStepValid = (step: number): boolean => {
@@ -114,6 +121,8 @@ export function ProjectWizard({
       case 1:
         return wizardData.name.trim().length > 0;
       case 2:
+        // For demos, step 2 is skipped, so always valid
+        if (isDemoProject) return true;
         return (
           wizardData.project_type !== null &&
           wizardData.deployment_platform !== null &&
@@ -131,15 +140,25 @@ export function ProjectWizard({
   const canProceed = isStepValid(currentStep);
 
   const handleNext = () => {
-    if (currentStep < visibleSteps.length && canProceed) {
-      setCurrentStep((prev) => prev + 1);
+    if (canProceed) {
+      if (isDemoProject && currentStep === 1) {
+        // Demo: skip step 2 (config), go straight to step 3 (review)
+        setCurrentStep(3);
+      } else if (currentStep < (isDemoProject ? 3 : visibleSteps.length)) {
+        setCurrentStep((prev) => prev + 1);
+      }
       setError(null);
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1 && currentStep !== 4) {
-      setCurrentStep((prev) => prev - 1);
+      if (isDemoProject && currentStep === 3) {
+        // Demo: go back from review (3) to basic info (1)
+        setCurrentStep(1);
+      } else {
+        setCurrentStep((prev) => prev - 1);
+      }
       setError(null);
     }
   };
@@ -149,13 +168,17 @@ export function ProjectWizard({
     setError(null);
 
     try {
+      // For demos, use defaults - no client or complex config needed
+      const projectType = isDemoProject ? 'web_design' : wizardData.project_type!;
+      const deploymentPlatform = isDemoProject ? 'none' : wizardData.deployment_platform!;
+
       const result = await createProjectWithRoadmap({
         name: wizardData.name,
         description: wizardData.description || null,
-        project_type: wizardData.project_type!,
-        deployment_platform: wizardData.deployment_platform!,
-        client_id: wizardData.client_id || undefined,
-        custom_client_name: wizardData.custom_client_name || undefined,
+        project_type: projectType,
+        deployment_platform: deploymentPlatform,
+        client_id: isDemoProject ? undefined : wizardData.client_id || undefined,
+        custom_client_name: isDemoProject ? undefined : wizardData.custom_client_name || undefined,
         team_id: null,
         workspace_id: currentWorkspace?.id,
         is_demo: wizardData.is_demo,

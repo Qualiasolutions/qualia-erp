@@ -52,6 +52,48 @@ export function StepReview({ data, clients }: StepReviewProps) {
     ? PLATFORM_CONFIG[data.deployment_platform]
     : null;
 
+  // Demo projects have a simplified review
+  if (data.is_demo) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="mb-1 text-lg font-medium">Ready to Create Demo</h3>
+          <p className="text-sm text-muted-foreground">Your demo project is ready to be created.</p>
+        </div>
+
+        {/* Demo Summary Card */}
+        <div className="space-y-4 rounded-lg border p-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+              <Sparkles className="h-7 w-7" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="text-xl font-semibold">{data.name || 'Untitled Demo'}</h4>
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <Sparkles className="h-3 w-3" />
+                  Demo
+                </span>
+              </div>
+              {data.description ? (
+                <p className="mt-1 text-sm text-muted-foreground">{data.description}</p>
+              ) : (
+                <p className="mt-1 text-sm italic text-muted-foreground/60">No description</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Info message */}
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
+          <p className="text-center text-sm text-amber-700 dark:text-amber-300">
+            Demo projects are for showcasing work. You can add details later.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -75,12 +117,6 @@ export function StepReview({ data, clients }: StepReviewProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h4 className="text-xl font-semibold">{data.name || 'Untitled Project'}</h4>
-              {data.is_demo && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600 dark:text-amber-400">
-                  <Sparkles className="h-3 w-3" />
-                  Demo
-                </span>
-              )}
             </div>
             {data.description && (
               <p className="mt-1 text-sm text-muted-foreground">{data.description}</p>
