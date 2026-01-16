@@ -78,3 +78,184 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
   revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
+
+/**
+ * Mark a phase as complete and auto-unlock the next phase
+ */
+export async function completePhase(phaseId: string) {
+  const supabase = await createClient();
+
+  // Get the phase and its project
+  const { data: phase, error: fetchError } = await supabase
+    .from('project_phases')
+    .select('id, project_id, sort_order')
+    .eq('id', phaseId)
+    .single();
+
+  if (fetchError || !phase) {
+    console.error('[completePhase] Error fetching phase:', fetchError);
+    return { success: false, error: 'Phase not found' };
+  }
+
+  // Mark the phase as complete
+  const { error: updateError } = await supabase
+    .from('project_phases')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    })
+    .eq('id', phaseId);
+
+  if (updateError) {
+    console.error('[completePhase] Error updating phase:', updateError);
+    return { success: false, error: updateError.message };
+  }
+
+  // Find and unlock the next phase (by sort_order)
+  const { data: nextPhase } = await supabase
+    .from('project_phases')
+    .select('id')
+    .eq('project_id', phase.project_id)
+    .eq('is_locked', true)
+    .gt('sort_order', phase.sort_order)
+    .order('sort_order', { ascending: true })
+    .limit(1)
+    .single();
+
+  if (nextPhase) {
+    await supabase.from('project_phases').update({ is_locked: false }).eq('id', nextPhase.id);
+  }
+
+  revalidatePath(`/projects/${phase.project_id}`);
+  revalidatePath(`/projects/${phase.project_id}/roadmap`);
+  return { success: true };
+}
+
+/**
+ * Check if all tasks in a phase are complete and auto-progress if enabled
+ */
+export async function checkPhaseProgress(phaseId: string) {
+  const supabase = await createClient();
+
+  // Get the phase with its auto_progress setting
+  const { data: phase, error: fetchError } = await supabase
+    .from('project_phases')
+    .select('id, project_id, auto_progress, status')
+    .eq('id', phaseId)
+    .single();
+
+  if (fetchError || !phase) {
+    return { success: false, error: 'Phase not found' };
+  }
+
+  // If already completed or auto-progress disabled, skip
+  if (phase.status === 'completed' || !phase.auto_progress) {
+    return { success: true, autoCompleted: false };
+  }
+
+  // Count total and completed tasks in this phase
+  const { data: taskCounts, error: countError } = await supabase
+    .from('phase_items')
+    .select('id, status')
+    .eq('phase_id', phaseId);
+
+  if (countError) {
+    console.error('[checkPhaseProgress] Error counting tasks:', countError);
+    return { success: false, error: countError.message };
+  }
+
+  const totalTasks = taskCounts?.length || 0;
+  const completedTasks = taskCounts?.filter((t) => t.status === 'Done').length || 0;
+
+  // If all tasks are complete, auto-complete the phase
+  if (totalTasks > 0 && completedTasks === totalTasks) {
+    const result = await completePhase(phaseId);
+    return { ...result, autoCompleted: true };
+  }
+
+  return {
+    success: true,
+    autoCompleted: false,
+    progress: { total: totalTasks, completed: completedTasks },
+  };
+}
+
+/**
+ * Unlock a phase manually (admin override)
+ */
+export async function unlockPhase(phaseId: string) {
+  const supabase = await createClient();
+
+  const { data: phase, error: fetchError } = await supabase
+    .from('project_phases')
+    .select('project_id')
+    .eq('id', phaseId)
+    .single();
+
+  if (fetchError || !phase) {
+    return { success: false, error: 'Phase not found' };
+  }
+
+  const { error } = await supabase
+    .from('project_phases')
+    .update({ is_locked: false })
+    .eq('id', phaseId);
+
+  if (error) {
+    console.error('[unlockPhase] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath(`/projects/${phase.project_id}`);
+  revalidatePath(`/projects/${phase.project_id}/roadmap`);
+  return { success: true };
+}
+
+/**
+ * Get phase progress stats for a project
+ */
+export async function getPhaseProgressStats(projectId: string) {
+  const supabase = await createClient();
+
+  const { data: phases, error } = await supabase
+    .from('project_phases')
+    .select(
+      `
+      id,
+      name,
+      status,
+      is_locked,
+      completed_at,
+      sort_order,
+      phase_items (id, status)
+    `
+    )
+    .eq('project_id', projectId)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('[getPhaseProgressStats] Error:', error);
+    return [];
+  }
+
+  return phases.map((phase) => {
+    const items = phase.phase_items || [];
+    const total = items.length;
+    const completed = items.filter((item: { status: string }) => item.status === 'Done').length;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+      id: phase.id,
+      name: phase.name,
+      status: phase.status,
+      isLocked: phase.is_locked,
+      completedAt: phase.completed_at,
+      sortOrder: phase.sort_order,
+      progress: {
+        total,
+        completed,
+        percentage,
+      },
+    };
+  });
+}

@@ -14,6 +14,7 @@ import {
 import { Plus, MoreHorizontal, Trash2, Calendar, Pencil, Check, X } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 import { createTask, updateTask, deleteTask } from '@/app/actions/inbox';
+import { checkPhaseProgress } from '@/app/actions/phases';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -101,6 +102,11 @@ export function PhaseTasks({
     startTransition(async () => {
       await updateTask(formData);
       onTasksChange();
+
+      // Check for auto-progression when marking task as Done
+      if (newStatus === 'Done') {
+        await checkPhaseProgress(phaseId);
+      }
     });
   };
 

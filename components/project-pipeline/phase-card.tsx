@@ -29,6 +29,8 @@ import {
   Trash2,
   Check,
   X,
+  Lock,
+  Unlock,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -37,6 +39,7 @@ import {
   updatePhaseName,
   deletePhase,
 } from '@/app/actions/pipeline';
+import { unlockPhase } from '@/app/actions/phases';
 
 interface Task {
   id: string;
@@ -63,6 +66,7 @@ interface PhaseCardProps {
     task_count: number;
     completed_task_count: number;
     resource_count: number;
+    is_locked?: boolean;
   };
   projectId: string;
   workspaceId: string;
@@ -177,13 +181,23 @@ export function PhaseCard({
     });
   };
 
+  const handleUnlockPhase = () => {
+    startTransition(async () => {
+      await unlockPhase(phase.id);
+      onDataChange?.();
+    });
+  };
+
+  const isLocked = phase.is_locked ?? false;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'flex flex-col rounded-xl border transition-all',
+        'relative flex flex-col rounded-xl border transition-all',
         isActive && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background',
+        isLocked && 'opacity-60',
         statusConfig.borderColor,
         statusConfig.bgColor
       )}
@@ -239,6 +253,7 @@ export function PhaseCard({
             ) : (
               <>
                 <span className="truncate text-sm font-semibold">{phase.name}</span>
+                {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
                 {phase.status === 'completed' && (
                   <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                 )}
@@ -291,6 +306,12 @@ export function PhaseCard({
                 <Pencil className="mr-2 h-3.5 w-3.5" />
                 Edit Name
               </DropdownMenuItem>
+              {isLocked && (
+                <DropdownMenuItem onClick={handleUnlockPhase}>
+                  <Unlock className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                  Unlock Phase
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleStatusChange('not_started')}>
                 <Circle className="mr-2 h-3.5 w-3.5 text-muted-foreground" />

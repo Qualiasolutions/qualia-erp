@@ -59,6 +59,7 @@ export interface PhaseWithDetails {
   status: 'not_started' | 'in_progress' | 'completed' | 'skipped';
   sort_order: number;
   created_at: string;
+  is_locked: boolean;
   // Computed fields
   task_count: number;
   completed_task_count: number;
@@ -380,23 +381,36 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
     return { success: false, error: 'Project not found' };
   }
 
-  // Create all 5 phases
-  const phases = UNIVERSAL_PIPELINE.map((phase) => ({
+  // Create all 5 phases (first phase unlocked, rest locked)
+  const phases = UNIVERSAL_PIPELINE.map((phase, index) => ({
     project_id: projectId,
     name: phase.name,
     description: phase.description,
     sort_order: phase.order,
     status: 'not_started',
+    is_locked: index > 0, // First phase (Setup) is unlocked, rest are locked
+    auto_progress: true,
   }));
 
   const { data: createdPhases, error: phasesError } = await supabase
     .from('project_phases')
     .insert(phases)
-    .select('id, name');
+    .select('id, name, sort_order');
 
   if (phasesError || !createdPhases) {
     console.error('[initializeProjectPipeline] Error creating phases:', phasesError);
     return { success: false, error: phasesError?.message || 'Failed to create phases' };
+  }
+
+  // Set up prerequisite links (each phase depends on the previous one)
+  const sortedPhases = [...createdPhases].sort((a, b) => a.sort_order - b.sort_order);
+  for (let i = 1; i < sortedPhases.length; i++) {
+    const currentPhase = sortedPhases[i];
+    const previousPhase = sortedPhases[i - 1];
+    await supabase
+      .from('project_phases')
+      .update({ prerequisite_phase_id: previousPhase.id })
+      .eq('id', currentPhase.id);
   }
 
   // Create default tasks for each phase
@@ -616,6 +630,7 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
       status: phase.status || 'not_started',
       sort_order: phase.sort_order || 0,
       created_at: phase.created_at,
+      is_locked: phase.is_locked ?? false,
       task_count: taskStats.total,
       completed_task_count: taskStats.completed,
       resource_count: resourceCountMap[phase.id] || 0,
