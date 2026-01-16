@@ -146,16 +146,6 @@ export async function createRepository(
 
   const repoName = sanitizeRepoName(config.name);
 
-  // Get template name from config or use default
-  const defaultTemplates: Record<ProjectType, string> = {
-    web_design: 'qualia-website-template',
-    ai_agent: 'qualia-ai-agent-template',
-    voice_agent: 'qualia-voice-agent-template',
-    seo: 'qualia-website-template',
-    ads: 'qualia-website-template',
-  };
-  const templateName = client.templates[config.projectType] || defaultTemplates[config.projectType];
-
   try {
     // 1. Check if repo already exists (idempotency)
     const exists = await checkRepoExists(workspaceId, repoName);
@@ -177,50 +167,39 @@ export async function createRepository(
       };
     }
 
-    // 2. Try to create repo from template, fallback to empty repo
+    // 2. Create empty repo (works for both personal accounts and orgs)
     let newRepo;
-    let usedTemplate = false;
-
     try {
-      // Try template first
-      const { data: templateRepo } = await client.octokit.repos.createUsingTemplate({
-        template_owner: client.org,
-        template_repo: templateName,
-        owner: client.org,
+      const { data: emptyRepo } = await client.octokit.repos.createForAuthenticatedUser({
         name: repoName,
         description: config.description || `${config.projectType} project`,
         private: config.isPrivate ?? true,
-        include_all_branches: false,
+        auto_init: true, // Creates with README
       });
-      newRepo = templateRepo;
-      usedTemplate = true;
-      // Wait for template copy to complete
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    } catch (templateError: unknown) {
-      // Template doesn't exist - create empty repo instead
-      if ((templateError as { status?: number }).status === 404) {
-        const { data: emptyRepo } = await client.octokit.repos.createInOrg({
+      newRepo = emptyRepo;
+    } catch (createError: unknown) {
+      // If personal account fails, try org method
+      if ((createError as { status?: number }).status === 422) {
+        const { data: orgRepo } = await client.octokit.repos.createInOrg({
           org: client.org,
           name: repoName,
           description: config.description || `${config.projectType} project`,
           private: config.isPrivate ?? true,
-          auto_init: true, // Creates with README
+          auto_init: true,
         });
-        newRepo = emptyRepo;
+        newRepo = orgRepo;
       } else {
-        throw templateError;
+        throw createError;
       }
     }
+
+    // Wait for repo to be ready
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // 3. Update README with project-specific content
     try {
       const readmeContent = generateReadme(config, clientName);
       const base64Content = Buffer.from(readmeContent).toString('base64');
-
-      // Wait a moment for repo to be ready
-      if (!usedTemplate) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
 
       // Get current README to get its SHA
       const { data: currentReadme } = await client.octokit.repos.getContent({
