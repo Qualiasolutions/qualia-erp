@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   ChevronDown,
-  ChevronUp,
   MoreHorizontal,
   Play,
   CheckCircle2,
@@ -195,29 +194,33 @@ export function PhaseCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'relative flex flex-col rounded-xl border transition-all',
+        'relative flex flex-col overflow-hidden rounded-xl border transition-all',
+        'shadow-sm hover:shadow-md',
         isActive && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background',
         isLocked && 'opacity-60',
         statusConfig.borderColor,
         statusConfig.bgColor
       )}
     >
+      {/* Status indicator strip at top */}
+      <div className={cn('h-1 w-full', statusConfig.stripColor)} />
+
       {/* Header - always visible */}
       <div
-        className="flex cursor-pointer items-center gap-3 p-3"
+        className="flex cursor-pointer items-center gap-4 p-4"
         onClick={() => {
           setIsExpanded(!isExpanded);
           onSelect?.();
         }}
       >
-        {/* Phase Icon */}
+        {/* Phase Icon - larger */}
         <div
           className={cn(
-            'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
             phaseConfig?.bgColor || 'bg-muted'
           )}
         >
-          <PhaseIcon className={cn('h-4 w-4', phaseConfig?.color || 'text-muted-foreground')} />
+          <PhaseIcon className={cn('h-5 w-5', phaseConfig?.color || 'text-muted-foreground')} />
         </div>
 
         {/* Name & Progress */}
@@ -230,37 +233,37 @@ export function PhaseCard({
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   onKeyDown={handleNameKeyDown}
-                  className="h-6 w-40 text-sm font-semibold"
+                  className="h-7 w-40 text-base font-semibold"
                 />
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-green-600"
+                  className="h-7 w-7 p-0 text-green-600"
                   onClick={handleSaveEditName}
                   disabled={isPending}
                 >
-                  <Check className="h-3 w-3" />
+                  <Check className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground"
+                  className="h-7 w-7 p-0 text-muted-foreground"
                   onClick={handleCancelEditName}
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
               <>
-                <span className="truncate text-sm font-semibold">{phase.name}</span>
-                {isLocked && <Lock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                <span className="truncate text-base font-semibold">{phase.name}</span>
+                {isLocked && <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />}
                 {phase.status === 'completed' && (
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                 )}
               </>
             )}
           </div>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span>
               {phase.completed_task_count}/{phase.task_count} tasks
             </span>
@@ -273,74 +276,31 @@ export function PhaseCard({
           </div>
         </div>
 
-        {/* Progress */}
+        {/* Progress - wider bar */}
         {phase.task_count > 0 && (
           <div className="flex items-center gap-2">
-            <div className="h-1.5 w-12 overflow-hidden rounded-full bg-border/50">
+            <div className="h-2 w-16 overflow-hidden rounded-full bg-border/30">
               <div
                 className={cn(
-                  'h-full rounded-full transition-all',
+                  'h-full rounded-full transition-all duration-500',
                   phase.status === 'completed' ? 'bg-emerald-500' : 'bg-primary'
                 )}
                 style={{ width: `${phase.progress}%` }}
               />
             </div>
-            <span className="text-xs font-medium tabular-nums">{phase.progress}%</span>
+            <span className="text-sm font-medium tabular-nums text-muted-foreground">
+              {phase.progress}%
+            </span>
           </div>
         )}
 
-        {/* Expand/Status Menu */}
-        <div className="flex items-center gap-1">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 opacity-60 hover:opacity-100"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleStartEditName}>
-                <Pencil className="mr-2 h-3.5 w-3.5" />
-                Edit Name
-              </DropdownMenuItem>
-              {isLocked && (
-                <DropdownMenuItem onClick={handleUnlockPhase}>
-                  <Unlock className="mr-2 h-3.5 w-3.5 text-amber-500" />
-                  Unlock Phase
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleStatusChange('not_started')}>
-                <Circle className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                Not Started
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('in_progress')}>
-                <Play className="mr-2 h-3.5 w-3.5 text-primary" />
-                In Progress
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('completed')}>
-                <CheckCircle2 className="mr-2 h-3.5 w-3.5 text-emerald-500" />
-                Completed
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleStatusChange('skipped')}>
-                <SkipForward className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                Skip
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDeletePhase} className="text-red-500">
-                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Delete Phase
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
-        </div>
+        {/* Chevron only - cleaner */}
+        <ChevronDown
+          className={cn(
+            'h-5 w-5 shrink-0 text-muted-foreground transition-transform duration-200',
+            isExpanded && 'rotate-180'
+          )}
+        />
       </div>
 
       {/* Expanded Content */}
@@ -353,26 +313,101 @@ export function PhaseCard({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="space-y-4 border-t border-border/50 p-3">
+            <div className="border-t border-border/50">
+              {/* Quick Action Bar */}
+              <div className="flex items-center justify-between border-b border-border/30 bg-muted/30 px-4 py-2">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {phase.completed_task_count}/{phase.task_count} tasks completed
+                </span>
+                <div className="flex items-center gap-1">
+                  {phase.status !== 'in_progress' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusChange('in_progress');
+                      }}
+                      disabled={isPending}
+                    >
+                      <Play className="h-3.5 w-3.5" />
+                      Start
+                    </Button>
+                  )}
+                  {phase.status !== 'completed' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs text-emerald-600 hover:text-emerald-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusChange('completed');
+                      }}
+                      disabled={isPending}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Complete
+                    </Button>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleStartEditName}>
+                        <Pencil className="mr-2 h-3.5 w-3.5" />
+                        Edit Name
+                      </DropdownMenuItem>
+                      {isLocked && (
+                        <DropdownMenuItem onClick={handleUnlockPhase}>
+                          <Unlock className="mr-2 h-3.5 w-3.5 text-amber-500" />
+                          Unlock Phase
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => handleStatusChange('not_started')}>
+                        <Circle className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                        Not Started
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleStatusChange('skipped')}>
+                        <SkipForward className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                        Skip
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleDeletePhase} className="text-red-500">
+                        <Trash2 className="mr-2 h-3.5 w-3.5" />
+                        Delete Phase
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+
               {/* Description */}
               {phase.description && (
-                <p className="text-xs text-muted-foreground">{phase.description}</p>
+                <p className="px-4 pt-3 text-sm text-muted-foreground">{phase.description}</p>
               )}
 
-              {isLoading ? (
-                <div className="flex items-center justify-center py-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                </div>
-              ) : (
-                <PhaseTasks
-                  phaseId={phase.id}
-                  phaseName={phase.name}
-                  projectId={projectId}
-                  workspaceId={workspaceId}
-                  tasks={tasks}
-                  onTasksChange={refreshData}
-                />
-              )}
+              {/* Tasks */}
+              <div className="p-4">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                  </div>
+                ) : (
+                  <PhaseTasks
+                    phaseId={phase.id}
+                    phaseName={phase.name}
+                    projectId={projectId}
+                    workspaceId={workspaceId}
+                    tasks={tasks}
+                    onTasksChange={refreshData}
+                  />
+                )}
+              </div>
             </div>
           </motion.div>
         )}

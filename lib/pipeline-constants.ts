@@ -86,35 +86,40 @@ export const PHASE_STATUS_CONFIG: Record<
     bgColor: string;
     borderColor: string;
     dotColor: string;
+    stripColor: string;
   }
 > = {
   not_started: {
     label: 'Not Started',
     color: 'text-muted-foreground',
-    bgColor: 'bg-muted/50',
-    borderColor: 'border-border/50',
+    bgColor: 'bg-muted/30',
+    borderColor: 'border-border/40',
     dotColor: 'bg-muted-foreground/50',
+    stripColor: 'bg-border/50',
   },
   in_progress: {
     label: 'In Progress',
     color: 'text-primary',
-    bgColor: 'bg-primary/10',
-    borderColor: 'border-primary/30',
+    bgColor: 'bg-primary/5',
+    borderColor: 'border-primary/40',
     dotColor: 'bg-primary',
+    stripColor: 'bg-primary',
   },
   completed: {
     label: 'Completed',
     color: 'text-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-    borderColor: 'border-emerald-500/30',
+    bgColor: 'bg-emerald-500/5',
+    borderColor: 'border-emerald-500/40',
     dotColor: 'bg-emerald-500',
+    stripColor: 'bg-emerald-500',
   },
   skipped: {
     label: 'Skipped',
     color: 'text-muted-foreground',
-    bgColor: 'bg-muted/30',
+    bgColor: 'bg-muted/20',
     borderColor: 'border-border/30',
     dotColor: 'bg-muted-foreground/30',
+    stripColor: 'bg-muted-foreground/30',
   },
 };
 
