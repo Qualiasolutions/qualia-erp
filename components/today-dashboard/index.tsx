@@ -125,7 +125,7 @@ export function TodayDashboard({
   };
 
   return (
-    <div className="flex h-full flex-col bg-background">
+    <div className="flex h-full max-h-full flex-col overflow-hidden bg-background">
       {/* Compact Header */}
       <motion.header
         initial={{ opacity: 0, y: -10 }}
@@ -178,25 +178,25 @@ export function TodayDashboard({
             {/* Bento Grid Layout - all containers same height */}
             <div className="grid h-full gap-3 lg:grid-cols-12 lg:gap-4">
               {/* Left Column - Projects + Leads stacked */}
-              <div className="flex h-full flex-col gap-2 lg:col-span-3">
-                {/* Projects - fills most of the height */}
-                <motion.div variants={itemVariants} className="min-h-0 flex-[2]">
+              <div className="flex h-full min-h-0 flex-col gap-2 lg:col-span-3">
+                {/* Projects - fills 60% of the height */}
+                <motion.div variants={itemVariants} className="h-[60%] min-h-0 shrink-0">
                   <ProjectsWidget projects={projects} />
                 </motion.div>
 
-                {/* Leads - smaller fixed portion */}
-                <motion.div variants={itemVariants} className="min-h-0 flex-1">
+                {/* Leads - fills 40% of the height */}
+                <motion.div variants={itemVariants} className="h-[40%] min-h-0">
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>
               </div>
 
               {/* Middle Column - Tasks (full height) */}
-              <motion.div variants={itemVariants} className="h-full lg:col-span-6">
+              <motion.div variants={itemVariants} className="h-full min-h-0 lg:col-span-6">
                 <TasksWidget tasks={tasks} teamMembers={teamMembers} />
               </motion.div>
 
               {/* Right Column - Meetings (full height) */}
-              <motion.div variants={itemVariants} className="h-full lg:col-span-3">
+              <motion.div variants={itemVariants} className="h-full min-h-0 lg:col-span-3">
                 <MeetingsWrapper initialMeetings={meetings} />
               </motion.div>
             </div>
