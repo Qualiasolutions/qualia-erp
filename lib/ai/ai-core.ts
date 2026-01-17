@@ -70,9 +70,9 @@ export async function processStreamingAI(options: ProcessOptions) {
   return streamText({
     model: geminiModel,
     system: systemPrompt,
-    messages: await convertToModelMessages(options.messages),
+    messages: convertToModelMessages(options.messages),
     tools,
-    stopWhen: stepCountIs(12),
+    stopWhen: stepCountIs(10),
   });
 }
 
@@ -94,9 +94,9 @@ export async function processNonStreamingAI(options: ProcessOptions) {
   return generateText({
     model: geminiModel,
     system: systemPrompt,
-    messages: await convertToModelMessages(options.messages),
+    messages: convertToModelMessages(options.messages),
     tools,
-    stopWhen: stepCountIs(5), // Fewer steps for faster voice response
+    stopWhen: stepCountIs(5),
   });
 }
 
