@@ -499,21 +499,21 @@ export function ProjectWizard({
                     />
                   </div>
 
-                  {/* Optional Integrations */}
+                  {/* Optional Integrations - Compact Row */}
                   {hasAnyIntegrations && (
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <Label className="text-sm font-medium text-foreground/80">
                         Auto-Setup{' '}
                         <span className="font-normal text-muted-foreground">(optional)</span>
                       </Label>
-                      <div className="grid grid-cols-1 gap-2">
+                      <div className="flex flex-wrap gap-2">
                         {configuredIntegrations.github && (
                           <label
                             className={cn(
-                              'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all',
+                              'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
                               selectedIntegrations.github
-                                ? 'border-transparent bg-gradient-to-r from-gray-500/10 to-gray-600/10 shadow-sm'
-                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                                ? 'border-gray-500/50 bg-gray-500/10'
+                                : 'border-border/50 bg-muted/30 hover:bg-muted/50'
                             )}
                           >
                             <Checkbox
@@ -521,25 +521,21 @@ export function ProjectWizard({
                               onCheckedChange={(checked) =>
                                 setSelectedIntegrations((prev) => ({ ...prev, github: !!checked }))
                               }
-                              className="data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
+                              className="h-4 w-4 data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
                             />
-                            <Github className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium">Create GitHub Repo</span>
-                              <p className="text-xs text-muted-foreground">
-                                Empty repository with README
-                              </p>
-                            </div>
+                            <Github className="h-4 w-4" />
+                            <span className="text-sm font-medium">GitHub</span>
                           </label>
                         )}
 
                         {configuredIntegrations.vercel && (
                           <label
                             className={cn(
-                              'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all',
+                              'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
                               selectedIntegrations.vercel
-                                ? 'border-transparent bg-gradient-to-r from-black/5 to-gray-900/5 shadow-sm dark:from-white/5 dark:to-gray-100/5'
-                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                                ? 'border-black/30 bg-black/5 dark:border-white/30 dark:bg-white/5'
+                                : 'border-border/50 bg-muted/30 hover:bg-muted/50',
+                              !selectedIntegrations.github && 'cursor-not-allowed opacity-50'
                             )}
                           >
                             <Checkbox
@@ -548,27 +544,20 @@ export function ProjectWizard({
                                 setSelectedIntegrations((prev) => ({ ...prev, vercel: !!checked }))
                               }
                               disabled={!selectedIntegrations.github}
-                              className="data-[state=checked]:border-black data-[state=checked]:bg-black dark:data-[state=checked]:border-white dark:data-[state=checked]:bg-white"
+                              className="h-4 w-4 data-[state=checked]:border-black data-[state=checked]:bg-black dark:data-[state=checked]:border-white dark:data-[state=checked]:bg-white"
                             />
-                            <Globe className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium">Create Vercel Project</span>
-                              <p className="text-xs text-muted-foreground">
-                                {selectedIntegrations.github
-                                  ? 'Connected to GitHub repo'
-                                  : 'Requires GitHub repo'}
-                              </p>
-                            </div>
+                            <Globe className="h-4 w-4" />
+                            <span className="text-sm font-medium">Vercel</span>
                           </label>
                         )}
 
                         {configuredIntegrations.vapi && (
                           <label
                             className={cn(
-                              'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all',
+                              'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
                               selectedIntegrations.vapi
-                                ? 'border-transparent bg-gradient-to-r from-pink-500/10 to-rose-500/10 shadow-sm'
-                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                                ? 'border-pink-500/50 bg-pink-500/10'
+                                : 'border-border/50 bg-muted/30 hover:bg-muted/50'
                             )}
                           >
                             <Checkbox
@@ -576,13 +565,10 @@ export function ProjectWizard({
                               onCheckedChange={(checked) =>
                                 setSelectedIntegrations((prev) => ({ ...prev, vapi: !!checked }))
                               }
-                              className="data-[state=checked]:border-pink-500 data-[state=checked]:bg-pink-500"
+                              className="h-4 w-4 data-[state=checked]:border-pink-500 data-[state=checked]:bg-pink-500"
                             />
-                            <Phone className="h-4 w-4 text-muted-foreground" />
-                            <div className="flex-1">
-                              <span className="text-sm font-medium">Create VAPI Assistant</span>
-                              <p className="text-xs text-muted-foreground">Voice AI assistant</p>
-                            </div>
+                            <Phone className="h-4 w-4" />
+                            <span className="text-sm font-medium">VAPI</span>
                           </label>
                         )}
                       </div>
