@@ -1,6 +1,6 @@
 /**
  * AI Client Configuration
- * Uses OpenRouter with Gemini 2.5 Flash
+ * Uses OpenRouter with Gemini 2.0 Flash (FREE)
  */
 
 import { createOpenAI } from '@ai-sdk/openai';
@@ -12,11 +12,12 @@ const openrouter = createOpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
 });
 
-// Gemini 3 Flash - Latest and fastest
-export const geminiModel = openrouter('google/gemini-3-flash-preview');
+// Gemini 2.0 Flash Thinking (Free) - Latest reasoning model
+// https://openrouter.ai/google/gemini-2.0-flash-thinking-exp:free
+export const geminiModel = openrouter('google/gemini-2.0-flash-thinking-exp:free');
 
-// Same model for simpler tasks
-export const geminiFlashModel = openrouter('google/gemini-3-flash-preview');
+// Gemini 2.0 Flash (Free) - Faster for simple tasks
+export const geminiFlashModel = openrouter('google/gemini-2.0-flash-exp:free');
 
 // Keep Google embeddings for RAG
 export const geminiEmbeddingModel = google.textEmbeddingModel('text-embedding-004');

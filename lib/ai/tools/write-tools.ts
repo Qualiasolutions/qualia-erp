@@ -25,7 +25,7 @@ export function createWriteTools(
   return {
     createTask: tool({
       description:
-        'Create a new task/issue. Use when user says "create task", "add issue", "remind me to", "add todo", etc.',
+        'Create a new task. Use when user says "create task", "add task", "remind me to", "add todo", etc. This creates tasks in the modern tasks table.',
       inputSchema: z.object({
         title: z.string().describe('Task title (required)'),
         description: z.string().optional().describe('Task description'),
@@ -34,17 +34,23 @@ export function createWriteTools(
           .optional()
           .describe('Task priority'),
         project_id: z.string().uuid().optional().describe('Project ID to assign to'),
+        due_date: z.string().optional().describe('Due date (ISO format)'),
+        show_in_inbox: z.boolean().optional().describe('Show in inbox (default: true)'),
       }),
       execute: async ({
         title,
         description,
         priority,
         project_id,
+        due_date,
+        show_in_inbox = true,
       }: {
         title: string;
         description?: string;
         priority?: 'Urgent' | 'High' | 'Medium' | 'Low' | 'No Priority';
         project_id?: string;
+        due_date?: string;
+        show_in_inbox?: boolean;
       }) => {
         if (!workspaceId) {
           return { error: 'No workspace found for user' };
@@ -67,15 +73,18 @@ export function createWriteTools(
         }
 
         const { data, error } = await supabase
-          .from('issues')
+          .from('tasks')
           .insert({
             title,
             description: description || null,
             priority: priority || 'No Priority',
             status: 'Todo',
+            item_type: 'task',
             project_id: project_id || null,
-            creator_id: user.id,
+            assigned_to: user.id,
             workspace_id: workspaceId,
+            show_in_inbox,
+            due_date: due_date || null,
           })
           .select('id, title, status, priority')
           .single();
@@ -85,8 +94,8 @@ export function createWriteTools(
         // Log activity
         await supabase.from('activities').insert({
           actor_id: user.id,
-          type: 'issue_created',
-          issue_id: data.id,
+          type: 'task_created',
+          task_id: data.id,
           project_id: project_id || null,
           workspace_id: workspaceId,
           metadata: { title: data.title, priority: data.priority, created_by_ai: true },
@@ -100,32 +109,60 @@ export function createWriteTools(
             status: data.status,
             priority: data.priority,
           },
-          message: `Created task: "${data.title}"`,
+          message: `Created task: "${data.title}"${due_date ? ` (due: ${new Date(due_date).toLocaleDateString()})` : ''}`,
         };
       },
     }),
 
     updateTaskStatus: tool({
       description:
-        'Update a task status. Use when user says "mark X as done", "complete task", "start working on", "cancel task"',
+        'Update a task status. Use when user says "mark X as done", "complete task", "start working on", "cancel task". Works with both modern tasks and legacy issues.',
       inputSchema: z.object({
-        issue_id: z.string().uuid().describe('The issue ID to update'),
-        status: z
-          .enum(['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'])
-          .describe('New status'),
+        task_id: z.string().uuid().describe('The task ID to update'),
+        status: z.enum(['Todo', 'In Progress', 'Done', 'Canceled']).describe('New status'),
+        task_name: z.string().optional().describe('Task name to search for (if ID not known)'),
       }),
       execute: async ({
-        issue_id,
+        task_id,
         status,
+        task_name,
       }: {
-        issue_id: string;
-        status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+        task_id: string;
+        status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+        task_name?: string;
       }) => {
+        let targetTaskId = task_id;
+
+        // If task_name provided, try to find the task
+        if (task_name && !task_id) {
+          const { data: tasks } = await supabase
+            .from('tasks')
+            .select('id, title')
+            .eq('workspace_id', workspaceId)
+            .ilike('title', `%${task_name}%`)
+            .limit(5);
+
+          if (!tasks || tasks.length === 0) {
+            return {
+              error: `No task found matching "${task_name}". Try searching for tasks first.`,
+            };
+          }
+
+          if (tasks.length > 1) {
+            return {
+              error: `Multiple tasks match "${task_name}". Please be more specific.`,
+              matches: tasks.map((t) => ({ id: t.id, title: t.title })),
+            };
+          }
+
+          targetTaskId = tasks[0].id;
+        }
+
         // Get current task info
         const { data: currentTask } = await supabase
-          .from('issues')
-          .select('title, status')
-          .eq('id', issue_id)
+          .from('tasks')
+          .select('title, status, project_id')
+          .eq('id', targetTaskId)
           .single();
 
         if (!currentTask) {
@@ -133,9 +170,9 @@ export function createWriteTools(
         }
 
         const { error } = await supabase
-          .from('issues')
+          .from('tasks')
           .update({ status, updated_at: new Date().toISOString() })
-          .eq('id', issue_id);
+          .eq('id', targetTaskId);
 
         if (error) return { error: error.message };
 
@@ -143,8 +180,9 @@ export function createWriteTools(
         if (status === 'Done') {
           await supabase.from('activities').insert({
             actor_id: user.id,
-            type: 'issue_completed',
-            issue_id,
+            type: 'task_completed',
+            task_id: targetTaskId,
+            project_id: currentTask.project_id,
             workspace_id: workspaceId,
             metadata: { title: currentTask.title, updated_by_ai: true },
           });
@@ -153,6 +191,12 @@ export function createWriteTools(
         return {
           success: true,
           message: `Updated "${currentTask.title}" from ${currentTask.status} to ${status}`,
+          task: {
+            id: targetTaskId,
+            title: currentTask.title,
+            oldStatus: currentTask.status,
+            newStatus: status,
+          },
         };
       },
     }),

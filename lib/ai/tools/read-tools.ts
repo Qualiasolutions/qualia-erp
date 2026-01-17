@@ -49,8 +49,78 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
       },
     }),
 
+    searchTasks: tool({
+      description:
+        'Search and list tasks with filters. Use when user asks "what are my tasks", "show tasks", "list todos", etc.',
+      inputSchema: z.object({
+        query: z.string().optional().describe('Search in title'),
+        status: z
+          .enum(['Todo', 'In Progress', 'Done', 'Canceled'])
+          .optional()
+          .describe('Filter by status'),
+        priority: z
+          .enum(['Urgent', 'High', 'Medium', 'Low', 'No Priority'])
+          .optional()
+          .describe('Filter by priority'),
+        show_inbox_only: z.boolean().optional().describe('Show only inbox tasks (default: false)'),
+        project_id: z.string().uuid().optional().describe('Filter by project'),
+        limit: z.number().optional().describe('Max results (default 20)'),
+      }),
+      execute: async ({
+        query,
+        status,
+        priority,
+        show_inbox_only = false,
+        project_id,
+        limit = 20,
+      }: {
+        query?: string;
+        status?: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
+        priority?: 'Urgent' | 'High' | 'Medium' | 'Low' | 'No Priority';
+        show_inbox_only?: boolean;
+        project_id?: string;
+        limit?: number;
+      }) => {
+        let q = supabase
+          .from('tasks')
+          .select(
+            `id, title, status, priority, due_date, created_at, show_in_inbox,
+            assigned:profiles!tasks_assigned_to_fkey(full_name),
+            project:projects(name)`
+          )
+          .eq('workspace_id', workspaceId)
+          .order('created_at', { ascending: false })
+          .limit(limit);
+
+        if (query) q = q.ilike('title', `%${query}%`);
+        if (status) q = q.eq('status', status);
+        if (priority) q = q.eq('priority', priority);
+        if (show_inbox_only) q = q.eq('show_in_inbox', true);
+        if (project_id) q = q.eq('project_id', project_id);
+
+        const { data, error } = await q;
+        if (error) return { error: error.message };
+
+        return {
+          count: data?.length || 0,
+          tasks:
+            data?.map((t) => ({
+              id: t.id,
+              title: t.title,
+              status: t.status,
+              priority: t.priority,
+              dueDate: t.due_date,
+              assignedTo: Array.isArray(t.assigned) ? t.assigned[0]?.full_name : null,
+              project: Array.isArray(t.project) ? t.project[0]?.name : null,
+              inInbox: t.show_in_inbox,
+            })) || [],
+        };
+      },
+    }),
+
     searchIssues: tool({
-      description: 'Search/list issues with optional filters',
+      description:
+        'Search legacy issues (DEPRECATED - use searchTasks for new tasks). Only use if specifically asked about issues.',
       inputSchema: z.object({
         query: z.string().optional().describe('Search in title'),
         status: z.string().optional().describe('Filter by status'),
