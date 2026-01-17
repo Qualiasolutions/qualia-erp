@@ -17,6 +17,7 @@ import { useAIAssistant } from '@/components/ai-assistant';
 interface Client {
   id: string;
   display_name: string | null;
+  business_name?: string | null;
 }
 
 export function NewProjectModal() {

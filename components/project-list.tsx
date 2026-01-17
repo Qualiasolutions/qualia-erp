@@ -410,6 +410,7 @@ function ProjectCard({
 interface Client {
   id: string;
   display_name: string | null;
+  business_name?: string | null;
 }
 
 const COLLAPSED_PROJECTS_KEY = 'qualia-collapsed-projects';

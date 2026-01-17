@@ -46,7 +46,7 @@ export interface WizardData {
 interface ProjectWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  clients: Array<{ id: string; display_name: string | null }>;
+  clients: Array<{ id: string; display_name: string | null; business_name?: string | null }>;
   defaultType?: ProjectType | null;
 }
 
@@ -479,6 +479,7 @@ export function ProjectWizard({
                       options={clients.map((client) => ({
                         value: client.id,
                         label: client.display_name || 'Unnamed Client',
+                        description: client.business_name || undefined,
                         icon: <Building className="h-4 w-4 text-muted-foreground" />,
                       }))}
                       value={wizardData.custom_client_name || wizardData.client_id}
@@ -489,9 +490,9 @@ export function ProjectWizard({
                           updateWizardData({ client_id: value, custom_client_name: '' });
                         }
                       }}
-                      placeholder="Select or type client name"
-                      otherLabel="New client..."
-                      otherPlaceholder="Client name"
+                      placeholder="Search or add client..."
+                      otherLabel="Add new client"
+                      otherPlaceholder="Enter client name"
                       icon={<Building className="h-4 w-4 text-muted-foreground" />}
                       className="w-full"
                       triggerClassName="h-12 w-full rounded-xl border-border/30 bg-muted/30 transition-all hover:bg-muted/50 focus:border-qualia-500/50 focus:ring-2 focus:ring-qualia-500/20"

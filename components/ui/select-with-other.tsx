@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Check, ChevronDown, PenLine, X } from 'lucide-react';
+import { Check, ChevronDown, Plus, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ export interface SelectOption {
   value: string;
   label: string;
   icon?: React.ReactNode;
+  description?: string;
 }
 
 interface SelectWithOtherProps {
@@ -27,16 +28,15 @@ interface SelectWithOtherProps {
 }
 
 /**
- * A select component that includes an "Other" option allowing custom text input.
- * When a user selects "Other", an inline text input appears to type a custom value.
+ * A modern select component with search, scrollable list, and prominent "Add new" option.
  */
 export function SelectWithOther({
   options,
   value,
   onChange,
   placeholder = 'Select...',
-  otherLabel = 'Other...',
-  otherPlaceholder = 'Type custom value...',
+  otherLabel = 'Add new...',
+  otherPlaceholder = 'Type name...',
   icon,
   className,
   triggerClassName,
@@ -46,11 +46,23 @@ export function SelectWithOther({
   const [open, setOpen] = React.useState(false);
   const [isCustomMode, setIsCustomMode] = React.useState(false);
   const [customValue, setCustomValue] = React.useState('');
+  const [searchQuery, setSearchQuery] = React.useState('');
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Check if the current value is from the options list or is custom
   const selectedOption = options.find((opt) => opt.value === value);
   const isCurrentValueCustom = value && !selectedOption;
+
+  // Filter options based on search
+  const filteredOptions = React.useMemo(() => {
+    if (!searchQuery.trim()) return options;
+    const query = searchQuery.toLowerCase();
+    return options.filter(
+      (opt) =>
+        opt.label.toLowerCase().includes(query) || opt.description?.toLowerCase().includes(query)
+    );
+  }, [options, searchQuery]);
 
   // Initialize custom mode if value is custom on mount
   React.useEffect(() => {
@@ -60,12 +72,29 @@ export function SelectWithOther({
     }
   }, []);
 
-  // Focus input when entering custom mode
+  // Focus search input when popover opens
+  React.useEffect(() => {
+    if (open && !isCustomMode && searchInputRef.current) {
+      setTimeout(() => searchInputRef.current?.focus(), 0);
+    }
+  }, [open, isCustomMode]);
+
+  // Focus custom input when entering custom mode
   React.useEffect(() => {
     if (isCustomMode && inputRef.current) {
-      inputRef.current.focus();
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [isCustomMode]);
+
+  // Reset search when closing
+  React.useEffect(() => {
+    if (!open) {
+      setSearchQuery('');
+      if (!isCurrentValueCustom) {
+        setIsCustomMode(false);
+      }
+    }
+  }, [open, isCurrentValueCustom]);
 
   const handleSelectOption = (optionValue: string) => {
     setIsCustomMode(false);
@@ -76,7 +105,7 @@ export function SelectWithOther({
 
   const handleSelectOther = () => {
     setIsCustomMode(true);
-    // Keep popover open so user can type
+    setCustomValue(searchQuery); // Pre-fill with search query
   };
 
   const handleCustomSubmit = () => {
@@ -96,10 +125,11 @@ export function SelectWithOther({
     }
   };
 
-  const handleClearCustom = () => {
-    setIsCustomMode(false);
-    setCustomValue('');
-    onChange('', false);
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && filteredOptions.length === 0 && searchQuery.trim()) {
+      // If no results and user presses enter, switch to add new mode
+      handleSelectOther();
+    }
   };
 
   // Display value logic
@@ -128,7 +158,7 @@ export function SelectWithOther({
           className={cn(
             'h-9 w-auto min-w-[140px] justify-between gap-2 border-border/50 bg-secondary/50 px-3 text-sm font-normal transition-all hover:bg-secondary',
             value && 'border-primary/30 bg-primary/5',
-            (isCurrentValueCustom || isCustomMode) && 'border-amber-500/30 bg-amber-500/5',
+            (isCurrentValueCustom || isCustomMode) && 'border-qualia-500/30 bg-qualia-500/5',
             triggerClassName,
             className
           )}
@@ -138,7 +168,7 @@ export function SelectWithOther({
             {displayValue ? (
               <span className="flex items-center gap-1.5">
                 {(isCurrentValueCustom || (isCustomMode && customValue)) && (
-                  <PenLine className="h-3 w-3 text-amber-500" />
+                  <Plus className="h-3 w-3 text-qualia-500" />
                 )}
                 <span className="truncate">{displayValue}</span>
               </span>
@@ -151,81 +181,145 @@ export function SelectWithOther({
       </PopoverTrigger>
       <PopoverContent
         className={cn(
-          'w-[220px] border-border/50 bg-card/95 p-1 backdrop-blur-xl',
+          'bg-card/98 w-[var(--radix-popover-trigger-width)] min-w-[280px] border-border/50 p-0 shadow-xl backdrop-blur-xl',
           contentClassName
         )}
         align="start"
+        sideOffset={4}
       >
-        {/* Options list */}
-        <div className="max-h-[200px] overflow-y-auto">
-          {options.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleSelectOption(option.value)}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-                value === option.value && !isCustomMode
-                  ? 'bg-primary/10 text-primary'
-                  : 'hover:bg-secondary'
-              )}
-            >
-              {option.icon && <span className="shrink-0">{option.icon}</span>}
-              <span className="flex-1 truncate text-left">{option.label}</span>
-              {value === option.value && !isCustomMode && <Check className="h-4 w-4 shrink-0" />}
-            </button>
-          ))}
-        </div>
-
-        {/* Separator */}
-        <div className="my-1 h-px bg-border/50" />
-
-        {/* Other option / Custom input */}
         {isCustomMode ? (
-          <div className="flex items-center gap-1 p-1">
-            <input
-              ref={inputRef}
-              type="text"
-              value={customValue}
-              onChange={(e) => setCustomValue(e.target.value)}
-              onKeyDown={handleCustomKeyDown}
-              placeholder={otherPlaceholder}
-              className="h-8 flex-1 rounded-md border border-border/50 bg-secondary/50 px-2 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
-            />
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={handleClearCustom}
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleCustomSubmit}
-              disabled={!customValue.trim()}
-              className="h-8 px-2"
-            >
-              <Check className="h-4 w-4" />
-            </Button>
+          /* Add new mode */
+          <div className="p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+              <Plus className="h-4 w-4 text-qualia-500" />
+              <span>Add new</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                onKeyDown={handleCustomKeyDown}
+                placeholder={otherPlaceholder}
+                className="h-10 flex-1 rounded-lg border border-border/50 bg-muted/50 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:outline-none focus:ring-2 focus:ring-qualia-500/20"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setIsCustomMode(false);
+                  setCustomValue('');
+                }}
+                className="h-10 w-10 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleCustomSubmit}
+                disabled={!customValue.trim()}
+                className="h-10 shrink-0 bg-qualia-500 px-4 hover:bg-qualia-600"
+              >
+                Add
+              </Button>
+            </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={handleSelectOther}
-            className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
-              isCurrentValueCustom
-                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
-            )}
-          >
-            <PenLine className="h-4 w-4" />
-            <span>{otherLabel}</span>
-            {isCurrentValueCustom && <Check className="ml-auto h-4 w-4" />}
-          </button>
+          <>
+            {/* Search input */}
+            <div className="border-b border-border/30 p-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder="Search..."
+                  className="h-9 w-full rounded-lg border-0 bg-muted/50 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-qualia-500/20"
+                />
+              </div>
+            </div>
+
+            {/* Add new button - prominent at top */}
+            <div className="border-b border-border/30 p-2">
+              <button
+                type="button"
+                onClick={handleSelectOther}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                  'bg-gradient-to-r from-qualia-500/10 to-qualia-600/10 text-qualia-600 dark:text-qualia-400',
+                  'hover:from-qualia-500/20 hover:to-qualia-600/20',
+                  'border border-qualia-500/20'
+                )}
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/20">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <span>{otherLabel}</span>
+              </button>
+            </div>
+
+            {/* Options list */}
+            <div className="max-h-[280px] overflow-y-auto p-2">
+              {filteredOptions.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  {searchQuery ? (
+                    <div className="space-y-2">
+                      <p>No results for &quot;{searchQuery}&quot;</p>
+                      <button
+                        type="button"
+                        onClick={handleSelectOther}
+                        className="text-qualia-500 hover:underline"
+                      >
+                        Add &quot;{searchQuery}&quot; as new
+                      </button>
+                    </div>
+                  ) : (
+                    <p>No options available</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  {filteredOptions.map((option) => {
+                    const isSelected = value === option.value && !isCustomMode;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleSelectOption(option.value)}
+                        className={cn(
+                          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all',
+                          isSelected
+                            ? 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400'
+                            : 'hover:bg-muted/80'
+                        )}
+                      >
+                        {option.icon && (
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                            {option.icon}
+                          </span>
+                        )}
+                        <div className="flex-1 text-left">
+                          <div className="font-medium">{option.label}</div>
+                          {option.description && (
+                            <div className="text-xs text-muted-foreground">
+                              {option.description}
+                            </div>
+                          )}
+                        </div>
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-qualia-500" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
         )}
       </PopoverContent>
     </Popover>
