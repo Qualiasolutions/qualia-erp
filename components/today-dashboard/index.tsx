@@ -125,7 +125,7 @@ export function TodayDashboard({
   };
 
   return (
-    <div className="flex h-full max-h-full flex-col overflow-hidden bg-background">
+    <div className="flex h-full max-h-full min-h-0 flex-col overflow-hidden bg-background">
       {/* Compact Header */}
       <motion.header
         initial={{ opacity: 0, y: -10 }}

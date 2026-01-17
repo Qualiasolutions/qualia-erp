@@ -348,7 +348,7 @@ export function ActiveLeadsList({ leads, workspaceId }: ActiveLeadsListProps) {
         </div>
         <QuickAddLeadDialog workspaceId={workspaceId} onSuccess={handleRefresh} />
       </div>
-      <div className="widget-content overflow-y-auto p-2">
+      <div className="widget-content min-h-0 overflow-y-auto p-2">
         {activeLeads.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-6 text-center">
             <div className="mb-3 rounded-lg bg-muted p-3">
