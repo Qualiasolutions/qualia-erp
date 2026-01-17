@@ -8,6 +8,7 @@ import type {
   GitHubConfig,
   VercelConfig,
   VAPIConfig,
+  IntegrationSelections,
 } from '@/lib/integrations/types';
 import {
   testGitHubConnection,
@@ -343,9 +344,12 @@ export async function updateGitHubTemplates(
 
 /**
  * Start provisioning for a project
+ * @param projectId - The project to provision
+ * @param selectedIntegrations - Optional user-selected integrations (if not provided, uses automatic selection)
  */
 export async function startProvisioning(
-  projectId: string
+  projectId: string,
+  selectedIntegrations?: IntegrationSelections
 ): Promise<ActionResult & { data?: { jobStarted: boolean } }> {
   const supabase = await createClient();
 
@@ -373,6 +377,7 @@ export async function startProvisioning(
     description: project.description || undefined,
     clientName: clientName || undefined,
     workspaceId: project.workspace_id,
+    selectedIntegrations,
   }).catch((err) => {
     console.error('[startProvisioning] Error:', err);
   });

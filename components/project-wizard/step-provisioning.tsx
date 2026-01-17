@@ -14,8 +14,8 @@ import {
   Phone,
   SkipForward,
 } from 'lucide-react';
-import type { ProjectType, DeploymentPlatform } from '@/types/database';
-import type { ProvisioningStatus } from '@/lib/integrations/types';
+import type { ProjectType } from '@/types/database';
+import type { ProvisioningStatus, IntegrationSelections } from '@/lib/integrations/types';
 import { getProjectProvisioningStatus, retryProvisioning } from '@/app/actions/integrations';
 
 interface ProvisioningStep {
@@ -32,18 +32,10 @@ interface StepProvisioningProps {
   projectId: string;
   projectName: string;
   projectType: ProjectType;
-  deploymentPlatform: DeploymentPlatform;
+  selectedIntegrations: IntegrationSelections;
   onComplete: () => void;
   onSkip: () => void;
 }
-
-const STEPS_BY_TYPE: Record<ProjectType, Array<'github' | 'vercel' | 'vapi'>> = {
-  web_design: ['github', 'vercel'],
-  ai_agent: ['github', 'vercel'],
-  voice_agent: ['github', 'vercel', 'vapi'],
-  seo: [],
-  ads: [],
-};
 
 const STEP_CONFIG: Record<
   'github' | 'vercel' | 'vapi',
@@ -70,7 +62,7 @@ export function StepProvisioning({
   projectId,
   projectName,
   projectType,
-  deploymentPlatform,
+  selectedIntegrations,
   onComplete,
   onSkip,
 }: StepProvisioningProps) {
@@ -78,24 +70,21 @@ export function StepProvisioning({
   const [isPolling, setIsPolling] = useState(true);
   const [retrying, setRetrying] = useState<string | null>(null);
 
-  // Initialize steps based on project type
+  // Initialize steps based on user-selected integrations
   useEffect(() => {
-    const requiredSteps = STEPS_BY_TYPE[projectType] || [];
+    const selectedSteps: Array<'github' | 'vercel' | 'vapi'> = [];
+    if (selectedIntegrations.github) selectedSteps.push('github');
+    if (selectedIntegrations.vercel) selectedSteps.push('vercel');
+    if (selectedIntegrations.vapi) selectedSteps.push('vapi');
 
-    // Filter out Vercel if not using Vercel deployment
-    const filteredSteps = requiredSteps.filter((step) => {
-      if (step === 'vercel' && deploymentPlatform !== 'vercel') return false;
-      return true;
-    });
-
-    const initialSteps: ProvisioningStep[] = filteredSteps.map((stepId) => ({
+    const initialSteps: ProvisioningStep[] = selectedSteps.map((stepId) => ({
       id: stepId,
       ...STEP_CONFIG[stepId],
       status: 'pending',
     }));
 
     setSteps(initialSteps);
-  }, [projectType, deploymentPlatform]);
+  }, [selectedIntegrations]);
 
   // Poll for status updates
   useEffect(() => {

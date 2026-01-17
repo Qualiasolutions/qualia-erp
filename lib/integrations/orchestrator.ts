@@ -18,8 +18,10 @@ import { createVAPIAssistant } from './vapi';
 /**
  * Create all integrations for a new project
  *
- * This orchestrates the creation of GitHub repos, Vercel projects, and VAPI assistants
- * based on the project type. Handles partial failures gracefully.
+ * This orchestrates the creation of GitHub repos, Vercel projects, and VAPI assistants.
+ * If selectedIntegrations is provided, only the selected integrations will be provisioned.
+ * Otherwise, it falls back to automatic selection based on project type.
+ * Handles partial failures gracefully.
  */
 export async function setupProjectIntegrations(
   config: ProjectProvisioningConfig
@@ -30,18 +32,28 @@ export async function setupProjectIntegrations(
 
   const supabase = await createClient();
 
-  // Determine which providers are needed based on project type
-  const provisioningMap: Record<string, string[]> = {
-    web_design: ['github', 'vercel'],
-    ai_agent: ['github', 'vercel'],
-    voice_agent: ['github', 'vercel', 'vapi'],
-    seo: [],
-    ads: [],
-  };
+  // Determine which providers to use
+  let requiredProviders: string[];
 
-  const requiredProviders = provisioningMap[config.projectType] || [];
+  if (config.selectedIntegrations) {
+    // User explicitly selected integrations - use their choices
+    requiredProviders = [];
+    if (config.selectedIntegrations.github) requiredProviders.push('github');
+    if (config.selectedIntegrations.vercel) requiredProviders.push('vercel');
+    if (config.selectedIntegrations.vapi) requiredProviders.push('vapi');
+  } else {
+    // Fallback to automatic selection based on project type
+    const provisioningMap: Record<string, string[]> = {
+      web_design: ['github', 'vercel'],
+      ai_agent: ['github', 'vercel'],
+      voice_agent: ['github', 'vercel', 'vapi'],
+      seo: [],
+      ads: [],
+    };
+    requiredProviders = provisioningMap[config.projectType] || [];
+  }
 
-  // Skip provisioning for project types that don't need it
+  // Skip provisioning if no integrations selected/needed
   if (requiredProviders.length === 0) {
     return {
       success: true,
@@ -112,10 +124,12 @@ export async function setupProjectIntegrations(
     }
   }
 
-  // 2. Create Vercel project (only if platform is vercel and we have a GitHub repo)
+  // 2. Create Vercel project (if selected and we have a GitHub repo)
+  // When user explicitly selects Vercel, we don't require deployment_platform to be 'vercel'
+  const vercelExplicitlySelected = config.selectedIntegrations?.vercel === true;
   if (
     requiredProviders.includes('vercel') &&
-    config.deploymentPlatform === 'vercel' &&
+    (vercelExplicitlySelected || config.deploymentPlatform === 'vercel') &&
     result.github?.repoUrl
   ) {
     const vercelResult = await createVercelProject(config.workspaceId, {

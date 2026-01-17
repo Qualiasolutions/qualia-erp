@@ -137,6 +137,16 @@ export const VAPI_VOICE_CONFIGS: Record<
 // Orchestrator Types
 // =====================================================
 
+/**
+ * Optional integration selections from the user
+ * When undefined, defaults to automatic selection based on project type
+ */
+export interface IntegrationSelections {
+  github?: boolean;
+  vercel?: boolean;
+  vapi?: boolean;
+}
+
 export interface ProjectProvisioningConfig {
   projectId: string;
   projectName: string;
@@ -145,6 +155,8 @@ export interface ProjectProvisioningConfig {
   description?: string;
   clientName?: string;
   workspaceId: string;
+  /** Optional user-selected integrations. If provided, only selected integrations will run. */
+  selectedIntegrations?: IntegrationSelections;
 }
 
 export interface ProjectProvisioningResult {

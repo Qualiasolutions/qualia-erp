@@ -18,10 +18,13 @@ import {
   Building,
   Sparkles,
   Zap,
+  Github,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
 import { startProvisioning, checkIntegrationsConfigured } from '@/app/actions/integrations';
+import type { IntegrationSelections } from '@/lib/integrations/types';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkspace } from '@/components/workspace-provider';
 import { invalidateProjectStats, invalidateDailyFlow, invalidateTimeline } from '@/lib/swr';
 import { toast } from '@/components/ui/use-toast';
@@ -99,9 +102,6 @@ function getDeploymentPlatform(projectType: ProjectType | null): DeploymentPlatf
   return 'none';
 }
 
-// Project types that need provisioning
-const PROVISIONING_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'voice_agent'];
-
 export function ProjectWizard({
   open,
   onOpenChange,
@@ -113,7 +113,16 @@ export function ProjectWizard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null);
-  const [hasIntegrations, setHasIntegrations] = useState(false);
+  const [configuredIntegrations, setConfiguredIntegrations] = useState<{
+    github: boolean;
+    vercel: boolean;
+    vapi: boolean;
+  }>({ github: false, vercel: false, vapi: false });
+  const [selectedIntegrations, setSelectedIntegrations] = useState<IntegrationSelections>({
+    github: false,
+    vercel: false,
+    vapi: false,
+  });
   const [showProvisioning, setShowProvisioning] = useState(false);
   const [mode, setMode] = useState<'full' | 'demo'>('full');
 
@@ -127,18 +136,26 @@ export function ProjectWizard({
     custom_client_name: '',
   });
 
-  // Check if integrations are configured when workspace changes
+  // Check which integrations are configured when workspace changes
   useEffect(() => {
     async function checkIntegrations() {
       if (currentWorkspace?.id) {
         const result = await checkIntegrationsConfigured(currentWorkspace.id);
         if (result.success && result.data) {
-          setHasIntegrations(result.data.github || result.data.vercel || result.data.vapi);
+          setConfiguredIntegrations(result.data);
         }
       }
     }
     checkIntegrations();
   }, [currentWorkspace?.id]);
+
+  // Helper to check if any integrations are configured
+  const hasAnyIntegrations =
+    configuredIntegrations.github || configuredIntegrations.vercel || configuredIntegrations.vapi;
+
+  // Helper to check if any integrations are selected
+  const hasSelectedIntegrations =
+    selectedIntegrations.github || selectedIntegrations.vercel || selectedIntegrations.vapi;
 
   // Set default type when wizard opens with a defaultType
   useEffect(() => {
@@ -158,12 +175,9 @@ export function ProjectWizard({
     setWizardData((prev) => ({ ...prev, ...updates }));
   }, []);
 
-  // Check if this project type needs provisioning
-  const needsProvisioning =
-    hasIntegrations &&
-    wizardData.project_type &&
-    PROVISIONING_TYPES.includes(wizardData.project_type) &&
-    mode !== 'demo';
+  // Check if this project should show provisioning step
+  // Now based on user selection, not forced by project type
+  const needsProvisioning = hasSelectedIntegrations && mode !== 'demo';
 
   // Form validation - Demo mode only needs name, full mode needs name + type + client
   const isValid =
@@ -207,8 +221,8 @@ export function ProjectWizard({
           setCreatedProjectId(projectData.id);
           setShowProvisioning(true);
 
-          // Start provisioning in the background
-          startProvisioning(projectData.id).catch((err) => {
+          // Start provisioning with user-selected integrations
+          startProvisioning(projectData.id, selectedIntegrations).catch((err) => {
             console.error('[ProjectWizard] Provisioning error:', err);
           });
 
@@ -256,6 +270,7 @@ export function ProjectWizard({
       client_id: '',
       custom_client_name: '',
     });
+    setSelectedIntegrations({ github: false, vercel: false, vapi: false });
     setError(null);
   };
 
@@ -336,7 +351,7 @@ export function ProjectWizard({
               projectId={createdProjectId}
               projectName={wizardData.name}
               projectType={wizardData.project_type!}
-              deploymentPlatform={getDeploymentPlatform(wizardData.project_type)}
+              selectedIntegrations={selectedIntegrations}
               onComplete={() => handleFinish(createdProjectId)}
               onSkip={() => handleFinish(createdProjectId)}
             />
@@ -482,6 +497,96 @@ export function ProjectWizard({
                       triggerClassName="h-12 w-full rounded-xl border-border/30 bg-muted/30 transition-all hover:bg-muted/50 focus:border-qualia-500/50 focus:ring-2 focus:ring-qualia-500/20"
                     />
                   </div>
+
+                  {/* Optional Integrations */}
+                  {hasAnyIntegrations && (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium text-foreground/80">
+                        Auto-Setup{' '}
+                        <span className="font-normal text-muted-foreground">(optional)</span>
+                      </Label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {configuredIntegrations.github && (
+                          <label
+                            className={cn(
+                              'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all',
+                              selectedIntegrations.github
+                                ? 'border-transparent bg-gradient-to-r from-gray-500/10 to-gray-600/10 shadow-sm'
+                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                            )}
+                          >
+                            <Checkbox
+                              checked={selectedIntegrations.github}
+                              onCheckedChange={(checked) =>
+                                setSelectedIntegrations((prev) => ({ ...prev, github: !!checked }))
+                              }
+                              className="data-[state=checked]:border-gray-700 data-[state=checked]:bg-gray-700"
+                            />
+                            <Github className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">Create GitHub Repo</span>
+                              <p className="text-xs text-muted-foreground">
+                                Empty repository with README
+                              </p>
+                            </div>
+                          </label>
+                        )}
+
+                        {configuredIntegrations.vercel && (
+                          <label
+                            className={cn(
+                              'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all',
+                              selectedIntegrations.vercel
+                                ? 'border-transparent bg-gradient-to-r from-black/5 to-gray-900/5 shadow-sm dark:from-white/5 dark:to-gray-100/5'
+                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                            )}
+                          >
+                            <Checkbox
+                              checked={selectedIntegrations.vercel}
+                              onCheckedChange={(checked) =>
+                                setSelectedIntegrations((prev) => ({ ...prev, vercel: !!checked }))
+                              }
+                              disabled={!selectedIntegrations.github}
+                              className="data-[state=checked]:border-black data-[state=checked]:bg-black dark:data-[state=checked]:border-white dark:data-[state=checked]:bg-white"
+                            />
+                            <Globe className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">Create Vercel Project</span>
+                              <p className="text-xs text-muted-foreground">
+                                {selectedIntegrations.github
+                                  ? 'Connected to GitHub repo'
+                                  : 'Requires GitHub repo'}
+                              </p>
+                            </div>
+                          </label>
+                        )}
+
+                        {configuredIntegrations.vapi && (
+                          <label
+                            className={cn(
+                              'flex cursor-pointer items-center gap-3 rounded-xl border-2 p-3 transition-all',
+                              selectedIntegrations.vapi
+                                ? 'border-transparent bg-gradient-to-r from-pink-500/10 to-rose-500/10 shadow-sm'
+                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                            )}
+                          >
+                            <Checkbox
+                              checked={selectedIntegrations.vapi}
+                              onCheckedChange={(checked) =>
+                                setSelectedIntegrations((prev) => ({ ...prev, vapi: !!checked }))
+                              }
+                              className="data-[state=checked]:border-pink-500 data-[state=checked]:bg-pink-500"
+                            />
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex-1">
+                              <span className="text-sm font-medium">Create VAPI Assistant</span>
+                              <p className="text-xs text-muted-foreground">Voice AI assistant</p>
+                            </div>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
 
@@ -526,7 +631,14 @@ export function ProjectWizard({
               {/* Auto-provisioning note */}
               {needsProvisioning && mode === 'full' && (
                 <p className="text-center text-xs text-muted-foreground">
-                  GitHub repo + Vercel project will be created automatically
+                  {[
+                    selectedIntegrations.github && 'GitHub repo',
+                    selectedIntegrations.vercel && 'Vercel project',
+                    selectedIntegrations.vapi && 'VAPI assistant',
+                  ]
+                    .filter(Boolean)
+                    .join(' + ')}{' '}
+                  will be created after project setup
                 </p>
               )}
             </div>
