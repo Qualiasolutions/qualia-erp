@@ -7,6 +7,7 @@ import { useAIAssistant, AssistantMode } from './ai-assistant-provider';
 import { AIAssistantChat } from './ai-assistant-chat';
 import { AIAssistantVoice } from './ai-assistant-voice';
 import { AIAssistantTemplates } from './ai-assistant-templates';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 const modeConfig: Record<AssistantMode, { label: string; icon: typeof MessageSquare }> = {
   chat: { label: 'Chat', icon: MessageSquare },
@@ -17,6 +18,8 @@ const modeConfig: Record<AssistantMode, { label: string; icon: typeof MessageSqu
 export function AIAssistantWidget() {
   const { isOpen, mode, showTemplates, open, close, minimize, setMode, toggleTemplates } =
     useAIAssistant();
+  const { user } = useCurrentUser();
+  const userName = user?.fullName?.split(' ')[0] || 'User';
 
   // Keyboard shortcut: Cmd/Ctrl + J to toggle
   useEffect(() => {
@@ -151,7 +154,7 @@ export function AIAssistantWidget() {
 
             {/* Mode Content */}
             <div className={cn('h-full', showTemplates && 'invisible')}>
-              {mode === 'voice' ? <AIAssistantVoice /> : <AIAssistantChat />}
+              {mode === 'voice' ? <AIAssistantVoice userName={userName} /> : <AIAssistantChat />}
             </div>
           </div>
         </div>
