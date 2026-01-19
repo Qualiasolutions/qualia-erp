@@ -45,7 +45,7 @@ export function DashboardAIChat() {
 
   // Speak the last assistant message when it's complete
   useEffect(() => {
-    if (!voiceEnabled || !messages.length || isStreaming) return;
+    if (!voiceEnabled || !messages?.length || isStreaming) return;
 
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.role === 'assistant') {
@@ -139,7 +139,7 @@ export function DashboardAIChat() {
     [sendMessage, stopSpeaking]
   );
 
-  const hasMessages = messages.length > 0;
+  const hasMessages = (messages?.length || 0) > 0;
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card/50">
@@ -237,7 +237,7 @@ export function DashboardAIChat() {
               className="flex-1 overflow-y-auto p-2.5"
             >
               <div className="space-y-2">
-                {messages.map((message) => (
+                {(messages || []).map((message) => (
                   <motion.div
                     key={message.id}
                     initial={{ opacity: 0, y: 6 }}
@@ -261,15 +261,17 @@ export function DashboardAIChat() {
                 ))}
 
                 {/* Typing dots */}
-                {isStreaming && messages[messages.length - 1]?.role === 'user' && (
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex">
-                    <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-muted/70 px-3 py-2">
-                      <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
-                      <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
-                      <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
-                    </div>
-                  </motion.div>
-                )}
+                {isStreaming &&
+                  messages?.length > 0 &&
+                  messages[messages.length - 1]?.role === 'user' && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex">
+                      <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-muted/70 px-3 py-2">
+                        <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
+                        <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
+                        <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
+                      </div>
+                    </motion.div>
+                  )}
 
                 <div ref={messagesEndRef} />
               </div>

@@ -22,10 +22,10 @@ export function MeetingsWrapper({ initialMeetings }: MeetingsWrapperProps) {
   const { meetings: swrMeetings } = useMeetings();
 
   // Use SWR data if available, otherwise fall back to initial SSR data
-  const meetings = swrMeetings.length > 0 ? swrMeetings : initialMeetings;
+  const meetings = (swrMeetings?.length || 0) > 0 ? swrMeetings : initialMeetings || [];
 
   // Transform SWR data to match the expected Meeting interface
-  const normalizedMeetings: Meeting[] = meetings.map((m) => ({
+  const normalizedMeetings: Meeting[] = (meetings || []).map((m) => ({
     id: m.id,
     title: m.title,
     start_time: m.start_time,
