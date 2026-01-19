@@ -3,7 +3,7 @@
  * Shared AI processing for both chat and voice interfaces
  */
 
-import { streamText, generateText, stepCountIs, type UIMessage, convertToModelMessages } from 'ai';
+import { streamText, generateText, stepCountIs } from 'ai';
 import { geminiModel } from './gemini-client';
 import { createAllTools, type UserInfo } from './tools';
 import { buildSystemPrompt } from './system-prompt';
@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { UserContext } from '@/lib/voice-assistant-intelligence';
 
 export interface ProcessOptions {
-  messages: UIMessage[];
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
   user: UserInfo;
   workspaceId: string | null;
   mode: 'chat' | 'voice';
@@ -67,10 +67,16 @@ export async function processStreamingAI(options: ProcessOptions) {
 
   const tools = createAllTools(supabase, options.workspaceId, options.user);
 
+  // Convert to CoreMessage format
+  const coreMessages = options.messages.map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
+
   return streamText({
     model: geminiModel,
     system: systemPrompt,
-    messages: convertToModelMessages(options.messages),
+    messages: coreMessages,
     tools,
     stopWhen: stepCountIs(10),
   });
@@ -91,10 +97,16 @@ export async function processNonStreamingAI(options: ProcessOptions) {
 
   const tools = createAllTools(supabase, options.workspaceId, options.user);
 
+  // Convert to CoreMessage format
+  const coreMessages = options.messages.map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+  }));
+
   return generateText({
     model: geminiModel,
     system: systemPrompt,
-    messages: convertToModelMessages(options.messages),
+    messages: coreMessages,
     tools,
     stopWhen: stepCountIs(5),
   });
