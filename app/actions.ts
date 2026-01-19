@@ -1116,8 +1116,18 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, name, description, project_group, project_type, lead_id, target_date } =
+  const { id, name, description, project_group, project_type, lead_id, target_date, metadata } =
     validation.data;
+
+  // Parse metadata JSON if provided
+  let parsedMetadata: Record<string, unknown> | undefined;
+  if (metadata) {
+    try {
+      parsedMetadata = JSON.parse(metadata);
+    } catch {
+      return { success: false, error: 'Invalid metadata JSON' };
+    }
+  }
 
   const { data, error } = await supabase
     .from('projects')
@@ -1128,6 +1138,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
       ...(project_type !== undefined && { project_type: project_type || null }),
       ...(lead_id !== undefined && { lead_id: lead_id || null }),
       ...(target_date !== undefined && { target_date: target_date || null }),
+      ...(parsedMetadata !== undefined && { metadata: parsedMetadata }),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)

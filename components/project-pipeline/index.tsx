@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { cn } from '@/lib/utils';
-import { PipelineProgress } from './progress';
 import { PhaseCard } from './phase-card';
 import {
   getProjectPhasesWithDetails,
@@ -10,7 +9,7 @@ import {
   createPhase,
   type PhaseWithDetails,
 } from '@/app/actions/pipeline';
-import { type PhaseStatus } from '@/lib/pipeline-constants';
+import { type PhaseStatus } from '@/lib/pipeline-constants'; // Used in PhaseCard
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, RefreshCw, Plus, Check, X } from 'lucide-react';
@@ -109,29 +108,8 @@ export function ProjectPipeline({ projectId, workspaceId, className }: ProjectPi
     );
   }
 
-  // Map phases to progress format
-  const progressPhases = phases.map((p) => ({
-    id: p.id,
-    name: p.name,
-    status: p.status as PhaseStatus,
-    progress: p.progress,
-  }));
-
   return (
     <div className={cn('space-y-6', className)}>
-      {/* Progress Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border border-border/50 bg-card/50 p-4"
-      >
-        <PipelineProgress
-          phases={progressPhases}
-          activePhaseId={activePhaseId || undefined}
-          onPhaseClick={(id) => setActivePhaseId(id)}
-        />
-      </motion.div>
-
       {/* Phase Cards Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {phases.map((phase, index) => (

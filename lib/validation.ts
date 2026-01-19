@@ -184,6 +184,7 @@ export const updateProjectSchema = z.object({
   lead_id: z.string().uuid().optional().nullable(),
   start_date: z.string().optional().nullable(),
   target_date: z.string().optional().nullable(),
+  metadata: z.string().optional(), // JSON string for resources and other metadata
 });
 
 // =====================
