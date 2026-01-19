@@ -146,18 +146,27 @@ export function DashboardAIChat() {
       {/* Minimal header - thin bar */}
       <div className="flex h-8 items-center justify-between border-b border-border/30 px-3">
         <div className="flex items-center gap-2">
-          <div
-            className={cn(
-              'h-1.5 w-1.5 rounded-full transition-colors',
-              isStreaming
-                ? 'animate-pulse bg-amber-500'
-                : isSpeaking
-                  ? 'bg-emerald-500'
-                  : isListening
-                    ? 'bg-red-500'
-                    : 'bg-primary/40'
-            )}
-          />
+          {/* Animated sphere/orb icon */}
+          <div className="relative flex h-5 w-5 items-center justify-center">
+            <div
+              className={cn(
+                'absolute h-4 w-4 rounded-full transition-all duration-500',
+                isStreaming
+                  ? 'animate-pulse bg-gradient-to-br from-amber-400 to-orange-500 shadow-[0_0_12px_rgba(251,191,36,0.6)]'
+                  : isSpeaking
+                    ? 'bg-gradient-to-br from-emerald-400 to-teal-500 shadow-[0_0_12px_rgba(52,211,153,0.6)]'
+                    : isListening
+                      ? 'animate-pulse bg-gradient-to-br from-red-400 to-rose-500 shadow-[0_0_12px_rgba(248,113,113,0.6)]'
+                      : 'bg-gradient-to-br from-primary/80 to-primary shadow-[0_0_8px_rgba(var(--primary),0.3)]'
+              )}
+            />
+            <div
+              className={cn(
+                'absolute h-2 w-2 rounded-full bg-white/30',
+                'translate-x-[-2px] translate-y-[-2px]'
+              )}
+            />
+          </div>
           <span className="text-[11px] text-muted-foreground">
             {isStreaming
               ? 'Thinking...'

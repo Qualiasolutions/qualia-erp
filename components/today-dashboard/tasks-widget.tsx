@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ListTodo,
@@ -17,6 +16,7 @@ import {
   Edit2,
   CheckCircle2,
   Plus,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
@@ -48,6 +48,10 @@ const USER_COLORS = [
   { text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500' },
   { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500' },
 ];
+
+// Moayad's special purple color
+const MOAYAD_COLOR = { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500' };
+const MOAYAD_ID = 'moayad-special';
 
 function formatDueTime(dueDate: string): string {
   const date = parseISO(dueDate);
@@ -100,23 +104,34 @@ const TaskItem = React.memo(function TaskItem({
         isCompleted && 'opacity-60'
       )}
     >
-      <Checkbox
-        id={task.id}
-        checked={isCompleted}
-        onCheckedChange={(checked) => onToggle(task.id, checked as boolean)}
-        className="mt-0.5 shrink-0 rounded-md border-border/60 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+      {/* Custom circle checkbox with animation */}
+      <button
+        onClick={() => onToggle(task.id, !isCompleted)}
         disabled={isPending}
-      />
+        className={cn(
+          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300',
+          isCompleted
+            ? 'border-primary bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]'
+            : 'border-muted-foreground/40 hover:border-primary/60 dark:border-muted-foreground/60'
+        )}
+      >
+        <motion.div
+          initial={false}
+          animate={isCompleted ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+        >
+          <Check className="h-3 w-3 text-primary-foreground" />
+        </motion.div>
+      </button>
       <div className="min-w-0 flex-1">
-        <label
-          htmlFor={task.id}
+        <span
           className={cn(
-            'block cursor-pointer text-sm font-medium leading-tight',
+            'block text-sm font-medium leading-tight',
             isCompleted && 'text-muted-foreground line-through'
           )}
         >
           {task.title}
-        </label>
+        </span>
         {/* Project name (left/green) and assignee (right/purple) */}
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -250,7 +265,13 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   // Filter out hidden tasks and optionally by selected user
   const visibleTasks = tasks.filter((t) => {
     if (hiddenTasks.has(t.id)) return false;
-    if (selectedUserId && t.assignee?.id !== selectedUserId) return false;
+    if (selectedUserId) {
+      // Special case for Moayad filter
+      if (selectedUserId === MOAYAD_ID) {
+        return t.assignee?.full_name?.toLowerCase().includes('moayad');
+      }
+      if (t.assignee?.id !== selectedUserId) return false;
+    }
     return true;
   });
   const pendingTasks = visibleTasks.filter((t) => t.status !== 'Done').length;
@@ -311,6 +332,16 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
               onClick={() => setSelectedUserId(null)}
             >
               All
+            </Button>
+            {/* Moayad first with purple circle */}
+            <Button
+              variant={selectedUserId === MOAYAD_ID ? 'secondary' : 'ghost'}
+              size="sm"
+              className="h-7 gap-1.5 px-2.5 text-xs"
+              onClick={() => setSelectedUserId(MOAYAD_ID)}
+            >
+              <span className={cn('h-2 w-2 rounded-full', MOAYAD_COLOR.bg)} />
+              Moayad
             </Button>
             {teamMembers.map((member) => {
               const color = userColorMap.get(member.id);
