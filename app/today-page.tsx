@@ -1,4 +1,4 @@
-import { getCurrentWorkspaceId, getMeetings, getClients, getProfiles } from '@/app/actions';
+import { getCurrentWorkspaceId, getMeetings, getProfiles } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
 import { createClient } from '@/lib/supabase/server';
@@ -23,10 +23,9 @@ export default async function TodayPage() {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [meetingsRaw, tasksRaw, clientsRaw, profilesRaw, projectsRaw] = await Promise.all([
+  const [meetingsRaw, tasksRaw, profilesRaw, projectsRaw] = await Promise.all([
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
-    getClients(workspaceId),
     getProfiles(workspaceId),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
   ]);
@@ -80,22 +79,6 @@ export default async function TodayPage() {
           }
         : null,
     })) as Task[];
-
-  // Filter leads (hot and cold only for Active Leads)
-  const leads = clientsRaw
-    .filter((c) => c.lead_status === 'hot' || c.lead_status === 'cold')
-    .map((c) => ({
-      id: c.id,
-      name: c.display_name || 'Unnamed',
-      display_name: c.display_name,
-      phone: c.phone,
-      website: c.website,
-      lead_status: c.lead_status,
-      last_contacted_at: c.last_contacted_at,
-      created_at: c.created_at,
-      assigned_to: c.assigned?.id || null,
-      projects: c.projects?.map((p) => ({ id: p.id, name: '' })),
-    }));
 
   // Get team members for task grouping
   const teamMembers = profilesRaw.map((p) => ({
@@ -154,11 +137,9 @@ export default async function TodayPage() {
     <TodayDashboard
       meetings={meetings}
       tasks={tasks}
-      leads={leads}
       teamMembers={teamMembers}
       projects={projects}
       finishedProjects={finishedProjects}
-      workspaceId={workspaceId}
     />
   );
 }
