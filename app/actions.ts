@@ -1188,6 +1188,42 @@ export async function toggleProjectLive(projectId: string, isLive: boolean): Pro
   return { success: true };
 }
 
+/**
+ * Toggle the is_finished flag for a project
+ * When true, project appears in "Finished Projects" widget on homepage
+ */
+export async function toggleProjectFinished(
+  projectId: string,
+  isFinished: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      is_finished: isFinished,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('[toggleProjectFinished] Error toggling project finished status:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/');
+  revalidatePath('/projects');
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
 // ============ DELETE ACTIONS ============
 
 export async function deleteIssue(id: string): Promise<ActionResult> {

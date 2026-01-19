@@ -85,7 +85,7 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
           .from('tasks')
           .select(
             `id, title, status, priority, due_date, created_at, show_in_inbox,
-            assigned:profiles!tasks_assigned_to_fkey(full_name),
+            assignee:profiles!tasks_assignee_id_fkey(full_name),
             project:projects(name)`
           )
           .eq('workspace_id', workspaceId)
@@ -110,7 +110,7 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
               status: t.status,
               priority: t.priority,
               dueDate: t.due_date,
-              assignedTo: Array.isArray(t.assigned) ? t.assigned[0]?.full_name : null,
+              assignedTo: Array.isArray(t.assignee) ? t.assignee[0]?.full_name : null,
               project: Array.isArray(t.project) ? t.project[0]?.name : null,
               inInbox: t.show_in_inbox,
             })) || [],

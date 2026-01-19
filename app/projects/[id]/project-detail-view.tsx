@@ -85,6 +85,7 @@ interface Project {
   updated_at: string;
   logo_url: string | null;
   is_live: boolean;
+  is_finished: boolean;
   lead: Profile | null;
   team: { id: string; name: string; key: string } | null;
   client: { id: string; name: string } | null;
@@ -292,29 +293,32 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                     />
                   </div>
 
-                  {/* Live Status Toggle */}
-                  <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          'rounded-lg p-2',
-                          isLive
-                            ? 'bg-emerald-500/10 text-emerald-500'
-                            : 'bg-muted text-muted-foreground'
-                        )}
-                      >
-                        <Radio className="h-5 w-5" />
+                  {/* Status Toggles */}
+                  <div className="space-y-3">
+                    {/* Live Status Toggle */}
+                    <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'rounded-lg p-2',
+                            isLive
+                              ? 'bg-emerald-500/10 text-emerald-500'
+                              : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          <Radio className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Live Project</p>
+                          <p className="text-sm text-muted-foreground">Show in Live Projects widget</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">Live Project</p>
-                        <p className="text-sm text-muted-foreground">Show on homepage dashboard</p>
-                      </div>
+                      <Switch
+                        checked={isLive}
+                        onCheckedChange={handleToggleLive}
+                        disabled={togglingLive}
+                      />
                     </div>
-                    <Switch
-                      checked={isLive}
-                      onCheckedChange={handleToggleLive}
-                      disabled={togglingLive}
-                    />
                   </div>
 
                   {/* Name */}
