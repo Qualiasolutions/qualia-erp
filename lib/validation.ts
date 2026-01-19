@@ -187,6 +187,11 @@ export const updateProjectSchema = z.object({
   metadata: z.string().optional(), // JSON string for resources and other metadata
 });
 
+export const updateProjectProgressSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  progress: z.record(z.string(), z.array(z.number())),
+});
+
 // =====================
 // Team Schemas
 // =====================
