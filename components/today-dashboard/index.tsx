@@ -131,8 +131,8 @@ export function TodayDashboard({
   };
 
   // Calculate stats for the header
-  const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
-  const todayMeetings = meetings.filter((m) => {
+  const pendingTasks = (tasks || []).filter((t) => t.status !== 'Done').length;
+  const todayMeetings = (meetings || []).filter((m) => {
     const meetingDate = new Date(m.start_time).toDateString();
     return meetingDate === now.toDateString();
   }).length;
