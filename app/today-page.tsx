@@ -128,6 +128,28 @@ export default async function TodayPage() {
       },
     }));
 
+  // Get FINISHED projects (filter by is_finished = true)
+  const finishedProjects = (projectsRaw.data || [])
+    .filter((p: Record<string, unknown>) => {
+      if (typeof p.is_finished === 'boolean') {
+        return p.is_finished === true;
+      }
+      // Fallback for before migration: show Launched projects
+      return p.status === 'Launched';
+    })
+    .map((p: Record<string, unknown>) => ({
+      id: p.id as string,
+      name: p.name as string,
+      status: p.status as string,
+      project_type: p.project_type as ProjectType | null,
+      target_date: p.target_date as string | null,
+      logo_url: (p.logo_url as string | null) || null,
+      issue_stats: {
+        total: Number(p.total_issues) || 0,
+        done: Number(p.done_issues) || 0,
+      },
+    }));
+
   return (
     <TodayDashboard
       meetings={meetings}
@@ -135,6 +157,7 @@ export default async function TodayPage() {
       leads={leads}
       teamMembers={teamMembers}
       projects={projects}
+      finishedProjects={finishedProjects}
       workspaceId={workspaceId}
     />
   );

@@ -43,7 +43,7 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectsClient projects={[]} demos={[]} />;
+    return <ProjectsClient projects={[]} demos={[]} archivedDemos={[]} archivedProjects={[]} />;
   }
 
   // Map RPC result to Project interface
@@ -74,11 +74,35 @@ async function ProjectListLoader() {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Split projects: Demos status goes to demos column, rest to projects column
+  // Split projects into categories:
+  // - Active demos: status = 'Demos'
+  // - Archived demos: Any project where project_group includes 'demos' but status is Archived/Canceled
+  // - Active projects: Not demos, not archived/canceled
+  // - Archived projects: status = 'Archived' or 'Canceled' (not demos)
   const demos = projects.filter((p) => p.status === 'Demos');
-  const activeProjects = projects.filter((p) => p.status !== 'Demos');
+  const archivedDemos = projects.filter(
+    (p) =>
+      ['Archived', 'Canceled'].includes(p.status) &&
+      (p.project_group === 'demos' || p.metadata?.is_partnership === true)
+  );
+  const activeProjects = projects.filter(
+    (p) => p.status !== 'Demos' && !['Archived', 'Canceled'].includes(p.status)
+  );
+  const archivedProjects = projects.filter(
+    (p) =>
+      ['Archived', 'Canceled'].includes(p.status) &&
+      p.project_group !== 'demos' &&
+      !p.metadata?.is_partnership
+  );
 
-  return <ProjectsClient projects={activeProjects} demos={demos} />;
+  return (
+    <ProjectsClient
+      projects={activeProjects}
+      demos={demos}
+      archivedDemos={archivedDemos}
+      archivedProjects={archivedProjects}
+    />
+  );
 }
 
 function ProjectsSkeleton() {

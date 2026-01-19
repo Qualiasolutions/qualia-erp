@@ -20,6 +20,7 @@ import {
   Settings,
   Save,
   Radio,
+  Trophy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,7 +34,13 @@ import {
 } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { getProjectById, updateProject, deleteProject, toggleProjectLive } from '@/app/actions';
+import {
+  getProjectById,
+  updateProject,
+  deleteProject,
+  toggleProjectLive,
+  toggleProjectFinished,
+} from '@/app/actions';
 import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
 import { ProjectPipeline } from '@/components/project-pipeline';
 import { ProjectNotes } from '@/components/project-notes';
@@ -130,6 +137,8 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
   const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
   const [isLive, setIsLive] = useState(initialProject.is_live || false);
   const [togglingLive, setTogglingLive] = useState(false);
+  const [isFinished, setIsFinished] = useState(initialProject.is_finished || false);
+  const [togglingFinished, setTogglingFinished] = useState(false);
 
   // Track changes
   useEffect(() => {
@@ -199,6 +208,18 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
       setError(result.error || 'Failed to update live status');
     }
     setTogglingLive(false);
+  };
+
+  const handleToggleFinished = async (checked: boolean) => {
+    setTogglingFinished(true);
+    const result = await toggleProjectFinished(project.id, checked);
+    if (result.success) {
+      setIsFinished(checked);
+      setProject((prev) => ({ ...prev, is_finished: checked }));
+    } else {
+      setError(result.error || 'Failed to update finished status');
+    }
+    setTogglingFinished(false);
   };
 
   const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
@@ -317,6 +338,31 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                         checked={isLive}
                         onCheckedChange={handleToggleLive}
                         disabled={togglingLive}
+                      />
+                    </div>
+
+                    {/* Finished Status Toggle */}
+                    <div className="flex items-center justify-between rounded-lg border border-border/50 bg-muted/30 p-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'rounded-lg p-2',
+                            isFinished
+                              ? 'bg-amber-500/10 text-amber-500'
+                              : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          <Trophy className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Finished Project</p>
+                          <p className="text-sm text-muted-foreground">Show in Finished Projects widget</p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={isFinished}
+                        onCheckedChange={handleToggleFinished}
+                        disabled={togglingFinished}
                       />
                     </div>
                   </div>

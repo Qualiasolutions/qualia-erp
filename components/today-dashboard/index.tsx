@@ -9,6 +9,7 @@ import { MeetingsWrapper } from './meetings-wrapper';
 import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
 import { ProjectsWidget } from './projects-widget';
+import { FinishedProjectsWidget } from './finished-projects-widget';
 import type { ProjectType } from '@/types/database';
 import { useTransition } from 'react';
 import { type Task } from '@/app/actions/inbox';
@@ -70,6 +71,7 @@ interface TodayDashboardProps {
   leads: Lead[];
   teamMembers: TeamMember[];
   projects: Project[];
+  finishedProjects: Project[];
   workspaceId: string;
 }
 
@@ -103,6 +105,7 @@ export function TodayDashboard({
   leads,
   teamMembers,
   projects,
+  finishedProjects,
   workspaceId,
 }: TodayDashboardProps) {
   const router = useRouter();
@@ -177,15 +180,20 @@ export function TodayDashboard({
           >
             {/* Bento Grid Layout - all containers same height */}
             <div className="grid h-full gap-3 lg:grid-cols-12 lg:gap-4">
-              {/* Left Column - Projects + Leads stacked */}
+              {/* Left Column - Live Projects + Finished Projects + Leads stacked */}
               <div className="flex h-full min-h-0 flex-col gap-2 lg:col-span-3">
-                {/* Projects - fills 60% of the height */}
-                <motion.div variants={itemVariants} className="h-[60%] min-h-0 shrink-0">
+                {/* Live Projects - 40% */}
+                <motion.div variants={itemVariants} className="h-[40%] min-h-0 shrink-0">
                   <ProjectsWidget projects={projects} />
                 </motion.div>
 
-                {/* Leads - fills 40% of the height */}
-                <motion.div variants={itemVariants} className="h-[40%] min-h-0">
+                {/* Finished Projects - 30% */}
+                <motion.div variants={itemVariants} className="h-[30%] min-h-0 shrink-0">
+                  <FinishedProjectsWidget projects={finishedProjects} />
+                </motion.div>
+
+                {/* Leads - 30% */}
+                <motion.div variants={itemVariants} className="h-[30%] min-h-0">
                   <ActiveLeadsList leads={leads} workspaceId={workspaceId} />
                 </motion.div>
               </div>
@@ -213,3 +221,4 @@ export { MeetingsWrapper } from './meetings-wrapper';
 export { ActiveLeadsList } from './active-leads-list';
 export { TasksWidget } from './tasks-widget';
 export { ProjectsWidget } from './projects-widget';
+export { FinishedProjectsWidget } from './finished-projects-widget';
