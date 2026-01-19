@@ -10,7 +10,6 @@ import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
 import { AdminProvider } from '@/components/admin-provider';
-import { HeaderActions } from '@/components/header-actions';
 import { AIAssistantProvider } from '@/components/ai-assistant';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
@@ -137,9 +136,6 @@ export default function RootLayout({
                       <Sidebar />
                     </Suspense>
                     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                      <header className="flex h-14 items-center justify-between gap-2 border-b border-border/60 bg-card/80 px-3 shadow-sm backdrop-blur-sm sm:justify-end sm:px-4">
-                        <HeaderActions />
-                      </header>
                       <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
                     </div>
                   </AIAssistantProvider>

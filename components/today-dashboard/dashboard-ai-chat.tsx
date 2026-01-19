@@ -1,275 +1,272 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import {
-  Send,
-  Bot,
-  User,
-  Sparkles,
-  Trash2,
-  ListTodo,
-  Calendar,
-  FolderKanban,
-  Zap,
-  MessageCircle,
-} from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Quick actions with icons and colors
-const quickActions = [
-  { text: 'Show my tasks', icon: ListTodo, color: 'text-amber-500' },
-  { text: 'Create a task', icon: Zap, color: 'text-emerald-500' },
-  { text: 'Project status', icon: FolderKanban, color: 'text-blue-500' },
-  { text: 'Schedule meeting', icon: Calendar, color: 'text-purple-500' },
-];
+// Web Speech API types
+type SpeechRecognitionInstance = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: Event) => void) | null;
+  onend: (() => void) | null;
+};
 
-// Fun greetings for the AI
-const greetings = [
-  "What's on your mind?",
-  'How can I help?',
-  'Ready when you are',
-  "Let's get things done",
-  'Ask me anything',
+// Conversational suggestions - natural questions
+const suggestions = [
+  "What's on my plate today?",
+  'Create a quick task',
+  'How are projects going?',
+  'Any meetings coming up?',
 ];
-
-// Fun placeholders
-const placeholders = [
-  'Ask me anything...',
-  'What do you need?',
-  'Type a message...',
-  "I'm all ears...",
-  'How can I help?',
-];
-
-// Typing indicator dots
-function TypingIndicator() {
-  return (
-    <div className="flex items-center gap-1">
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="h-1.5 w-1.5 rounded-full bg-primary"
-          animate={{
-            y: [0, -4, 0],
-            opacity: [0.4, 1, 0.4],
-          }}
-          transition={{
-            duration: 0.6,
-            repeat: Infinity,
-            delay: i * 0.15,
-            ease: 'easeInOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export function DashboardAIChat() {
   const { messages, isStreaming, sendMessage, clearConversation } = useAIAssistant();
 
   const [input, setInput] = useState('');
-  const [greeting] = useState(() => greetings[Math.floor(Math.random() * greetings.length)]);
-  const [placeholder] = useState(
-    () => placeholders[Math.floor(Math.random() * placeholders.length)]
-  );
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Speak the last assistant message when it's complete
+  useEffect(() => {
+    if (!voiceEnabled || !messages.length || isStreaming) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role === 'assistant') {
+      speakText(lastMessage.content);
+    }
+  }, [messages, isStreaming, voiceEnabled]);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win = window as any;
+    const SpeechRecognitionAPI = win.SpeechRecognition || win.webkitSpeechRecognition;
+
+    if (SpeechRecognitionAPI) {
+      const recognition = new SpeechRecognitionAPI() as SpeechRecognitionInstance;
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
+        const transcript = Array.from(event.results)
+          .map((result) => result[0].transcript)
+          .join('');
+        setInput(transcript);
+
+        if (event.results[0].isFinal) {
+          setIsListening(false);
+          if (transcript.trim()) {
+            sendMessage(transcript.trim());
+            setInput('');
+          }
+        }
+      };
+
+      recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+  }, [sendMessage]);
+
+  const speakText = useCallback((text: string) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text.slice(0, 500)); // Limit length
+    utterance.rate = 1.05;
+    utterance.pitch = 1;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  const stopSpeaking = useCallback(() => {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  }, []);
+
+  const toggleListening = useCallback(() => {
+    if (!recognitionRef.current) return;
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      stopSpeaking();
+      setInput('');
+      recognitionRef.current.start();
+      setIsListening(true);
+    }
+  }, [isListening, stopSpeaking]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
 
+    stopSpeaking();
     const text = input.trim();
     setInput('');
     await sendMessage(text);
   };
 
-  const handleQuickAction = useCallback(
-    (action: string) => {
-      sendMessage(action);
+  const handleSuggestion = useCallback(
+    (text: string) => {
+      stopSpeaking();
+      sendMessage(text);
     },
-    [sendMessage]
+    [sendMessage, stopSpeaking]
   );
-
-  const handleClear = useCallback(() => {
-    clearConversation();
-  }, [clearConversation]);
 
   const hasMessages = messages.length > 0;
 
   return (
-    <div className="widget relative flex flex-col overflow-hidden">
-      {/* Subtle gradient background */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-primary/[0.03]" />
-
-      {/* Header */}
-      <div className="relative flex items-center justify-between border-b border-border/50 bg-gradient-to-r from-card via-card to-primary/[0.02] px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/10">
-              <Bot className="h-4.5 w-4.5 text-primary" />
-            </div>
-            {/* Online indicator */}
-            <motion.div
-              className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-card"
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">Qualia AI</h3>
-            <p className="text-[11px] text-muted-foreground">
-              {isStreaming ? (
-                <span className="flex items-center gap-1.5">
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary" />
-                  Thinking...
-                </span>
-              ) : (
-                'Online & ready'
-              )}
-            </p>
-          </div>
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card/50">
+      {/* Minimal header - thin bar */}
+      <div className="flex h-8 items-center justify-between border-b border-border/30 px-3">
+        <div className="flex items-center gap-2">
+          <div
+            className={cn(
+              'h-1.5 w-1.5 rounded-full transition-colors',
+              isStreaming
+                ? 'animate-pulse bg-amber-500'
+                : isSpeaking
+                  ? 'bg-emerald-500'
+                  : isListening
+                    ? 'bg-red-500'
+                    : 'bg-primary/40'
+            )}
+          />
+          <span className="text-[11px] text-muted-foreground">
+            {isStreaming
+              ? 'Thinking...'
+              : isSpeaking
+                ? 'Speaking...'
+                : isListening
+                  ? 'Listening...'
+                  : 'Ask me anything'}
+          </span>
         </div>
-        {hasMessages && (
-          <motion.button
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            onClick={handleClear}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+        <div className="flex items-center gap-0.5">
+          {isSpeaking && (
+            <button
+              onClick={stopSpeaking}
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+              title="Stop speaking"
+            >
+              <VolumeX className="h-3 w-3" />
+            </button>
+          )}
+          <button
+            onClick={() => setVoiceEnabled(!voiceEnabled)}
+            className={cn(
+              'flex h-6 w-6 items-center justify-center rounded transition-colors',
+              voiceEnabled ? 'text-primary' : 'text-muted-foreground/50'
+            )}
+            title={voiceEnabled ? 'Mute voice' : 'Enable voice'}
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Clear
-          </motion.button>
-        )}
+            {voiceEnabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
+          </button>
+          {hasMessages && (
+            <button
+              onClick={clearConversation}
+              className="ml-1 px-1.5 text-[10px] text-muted-foreground/60 hover:text-foreground"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Content Area */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      {/* Content */}
+      <div className="flex min-h-0 flex-1 flex-col">
         <AnimatePresence mode="wait">
           {!hasMessages ? (
-            // Empty state with personality
+            // Empty - conversational prompt
             <motion.div
-              key="empty-state"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-1 flex-col p-4"
-            >
-              {/* Greeting section */}
-              <div className="mb-4 flex flex-col items-center">
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', stiffness: 200 }}
-                  className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 ring-1 ring-primary/20"
-                >
-                  <Sparkles className="h-6 w-6 text-primary" />
-                </motion.div>
-                <p className="text-center text-sm font-medium text-foreground">{greeting}</p>
-                <p className="mt-1 text-center text-xs text-muted-foreground">
-                  I can help with tasks, projects & more
-                </p>
-              </div>
-
-              {/* Quick actions grid */}
-              <div className="grid grid-cols-2 gap-2">
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon;
-                  return (
-                    <motion.button
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      onClick={() => handleQuickAction(action.text)}
-                      className={cn(
-                        'group flex items-center gap-2 rounded-xl border border-border/50 bg-card/80 px-3 py-2.5 text-left transition-all',
-                        'hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-sm'
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'flex h-7 w-7 items-center justify-center rounded-lg bg-muted/50 transition-colors',
-                          'group-hover:bg-primary/10'
-                        )}
-                      >
-                        <Icon className={cn('h-3.5 w-3.5', action.color)} />
-                      </div>
-                      <span className="text-xs font-medium text-foreground">{action.text}</span>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          ) : (
-            // Chat messages
-            <motion.div
-              key="chat-messages"
+              key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3"
+              className="flex flex-1 flex-col items-center justify-center p-3"
             >
-              <div className="space-y-3">
-                {messages.map((message, index) => (
+              <p className="mb-3 text-sm text-foreground">Hey, what do you need?</p>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {suggestions.map((text, i) => (
+                  <motion.button
+                    key={i}
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    onClick={() => handleSuggestion(text)}
+                    className="rounded-full border border-border/50 bg-background/60 px-2.5 py-1 text-[11px] text-muted-foreground transition-all hover:border-primary/30 hover:text-foreground"
+                  >
+                    {text}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          ) : (
+            // Messages - clean bubbles
+            <motion.div
+              key="messages"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 overflow-y-auto p-2.5"
+            >
+              <div className="space-y-2">
+                {messages.map((message) => (
                   <motion.div
                     key={message.id}
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.2, delay: index === messages.length - 1 ? 0 : 0 }}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
                     className={cn(
-                      'flex gap-2.5',
-                      message.role === 'user' ? 'flex-row-reverse' : ''
+                      'flex',
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
                     )}
                   >
                     <div
                       className={cn(
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg',
+                        'max-w-[88%] rounded-2xl px-3 py-1.5 text-xs leading-relaxed',
                         message.role === 'user'
-                          ? 'bg-gradient-to-br from-primary to-primary/80'
-                          : 'bg-gradient-to-br from-muted to-muted/80 ring-1 ring-border/50'
+                          ? 'rounded-br-md bg-primary text-primary-foreground'
+                          : 'rounded-bl-md bg-muted/70 text-foreground'
                       )}
                     >
-                      {message.role === 'user' ? (
-                        <User className="h-3.5 w-3.5 text-primary-foreground" />
-                      ) : (
-                        <MessageCircle className="h-3.5 w-3.5 text-primary" />
-                      )}
-                    </div>
-                    <div
-                      className={cn(
-                        'max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed',
-                        message.role === 'user'
-                          ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground'
-                          : 'bg-muted/80 text-foreground ring-1 ring-border/30'
-                      )}
-                    >
-                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {message.content}
                     </div>
                   </motion.div>
                 ))}
 
-                {/* Typing indicator */}
+                {/* Typing dots */}
                 {isStreaming && messages[messages.length - 1]?.role === 'user' && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex gap-2.5"
-                  >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-muted to-muted/80 ring-1 ring-border/50">
-                      <MessageCircle className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                    <div className="flex items-center gap-2 rounded-xl bg-muted/80 px-3 py-2.5 ring-1 ring-border/30">
-                      <TypingIndicator />
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex">
+                    <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-muted/70 px-3 py-2">
+                      <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:0ms]" />
+                      <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:150ms]" />
+                      <span className="h-1 w-1 animate-bounce rounded-full bg-muted-foreground/50 [animation-delay:300ms]" />
                     </div>
                   </motion.div>
                 )}
@@ -280,59 +277,55 @@ export function DashboardAIChat() {
           )}
         </AnimatePresence>
 
-        {/* Input Area */}
-        <form
-          onSubmit={handleSubmit}
-          className="relative border-t border-border/50 bg-gradient-to-r from-card to-card/80 p-3"
-        >
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={placeholder}
-                disabled={isStreaming}
-                className={cn(
-                  'h-10 w-full rounded-xl border border-border/60 bg-background/80 px-4 pr-10 text-sm',
-                  'placeholder:text-muted-foreground/50',
-                  'focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20',
-                  'disabled:opacity-50',
-                  'transition-all'
-                )}
-              />
-            </div>
-            <motion.button
+        {/* Input - minimal */}
+        <form onSubmit={handleSubmit} className="border-t border-border/30 p-2">
+          <div className="flex items-center gap-1.5">
+            {/* Voice button */}
+            <button
+              type="button"
+              onClick={toggleListening}
+              disabled={!recognitionRef.current}
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all',
+                isListening
+                  ? 'bg-red-500 text-white'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                !recognitionRef.current && 'cursor-not-allowed opacity-40'
+              )}
+              title={isListening ? 'Stop' : 'Speak'}
+            >
+              {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+            </button>
+
+            {/* Input */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={isListening ? 'Listening...' : 'Type or speak...'}
+              disabled={isStreaming || isListening}
+              className={cn(
+                'h-8 flex-1 rounded-full border-0 bg-muted/40 px-3 text-xs',
+                'placeholder:text-muted-foreground/40',
+                'focus:bg-muted/60 focus:outline-none',
+                'disabled:opacity-50'
+              )}
+            />
+
+            {/* Send */}
+            <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-xl',
-                'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground',
-                'shadow-md shadow-primary/20',
-                'hover:shadow-lg hover:shadow-primary/30',
-                'disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none',
-                'transition-all'
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all',
+                input.trim() ? 'bg-primary text-primary-foreground' : 'text-muted-foreground/40',
+                'disabled:cursor-not-allowed'
               )}
             >
-              <Send className="h-4 w-4" />
-            </motion.button>
+              <Send className="h-3.5 w-3.5" />
+            </button>
           </div>
-
-          {/* Keyboard hint */}
-          {!hasMessages && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mt-2 text-center text-[10px] text-muted-foreground/60"
-            >
-              Press <kbd className="rounded border border-border/50 bg-muted/50 px-1">Enter</kbd> to
-              send
-            </motion.p>
-          )}
         </form>
       </div>
     </div>
