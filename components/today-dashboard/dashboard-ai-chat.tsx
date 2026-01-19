@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { Mic, MicOff, Send, X, Bot, VolumeX, Loader2 } from 'lucide-react';
-import { useAIAssistant } from '@/components/ai-assistant/ai-assistant-context';
+import { useAIAssistant } from '@/components/ai-assistant';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import Vapi from '@vapi-ai/web';

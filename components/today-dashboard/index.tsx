@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Video, RefreshCw, Settings, Menu, LayoutDashboard } from 'lucide-react';
 import { MeetingsWrapper } from './meetings-wrapper';
 import { TasksWidget } from './tasks-widget';
@@ -73,7 +74,7 @@ const itemVariants = {
     y: 0,
     transition: {
       duration: 0.6,
-      ease: [0.16, 1, 0.3, 1],
+      ease: [0.16, 1, 0.3, 1] as const,
     },
   },
 };
