@@ -10,6 +10,7 @@ import { ActiveLeadsList } from './active-leads-list';
 import { TasksWidget } from './tasks-widget';
 import { ProjectsWidget } from './projects-widget';
 import { FinishedProjectsWidget } from './finished-projects-widget';
+import { DashboardAIChat } from './dashboard-ai-chat';
 import type { ProjectType } from '@/types/database';
 import { useTransition } from 'react';
 import { type Task } from '@/app/actions/inbox';
@@ -198,10 +199,18 @@ export function TodayDashboard({
                 </motion.div>
               </div>
 
-              {/* Middle Column - Tasks (full height) */}
-              <motion.div variants={itemVariants} className="h-full min-h-0 lg:col-span-6">
-                <TasksWidget tasks={tasks} teamMembers={teamMembers} />
-              </motion.div>
+              {/* Middle Column - Tasks + AI Chat stacked */}
+              <div className="flex h-full min-h-0 flex-col gap-2 lg:col-span-6">
+                {/* Tasks - 65% */}
+                <motion.div variants={itemVariants} className="h-[65%] min-h-0 shrink-0">
+                  <TasksWidget tasks={tasks} teamMembers={teamMembers} />
+                </motion.div>
+
+                {/* AI Chat - 35% */}
+                <motion.div variants={itemVariants} className="h-[35%] min-h-0">
+                  <DashboardAIChat />
+                </motion.div>
+              </div>
 
               {/* Right Column - Meetings (full height) */}
               <motion.div variants={itemVariants} className="h-full min-h-0 lg:col-span-3">
@@ -222,3 +231,4 @@ export { ActiveLeadsList } from './active-leads-list';
 export { TasksWidget } from './tasks-widget';
 export { ProjectsWidget } from './projects-widget';
 export { FinishedProjectsWidget } from './finished-projects-widget';
+export { DashboardAIChat } from './dashboard-ai-chat';

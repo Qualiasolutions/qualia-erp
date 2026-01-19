@@ -11,7 +11,7 @@ import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
 import { AdminProvider } from '@/components/admin-provider';
 import { HeaderActions } from '@/components/header-actions';
-import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
+import { AIAssistantProvider } from '@/components/ai-assistant';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
 
@@ -142,7 +142,6 @@ export default function RootLayout({
                       </header>
                       <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
                     </div>
-                    <AIAssistantWidget />
                   </AIAssistantProvider>
                 </SidebarProvider>
               </WorkspaceProvider>
