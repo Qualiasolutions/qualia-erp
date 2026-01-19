@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Send, Mic, MicOff, Volume2, VolumeX, Sparkles, X } from 'lucide-react';
+import { Send, Mic, MicOff, Volume2, VolumeX, X, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,14 +18,6 @@ type SpeechRecognitionInstance = {
   onerror: ((event: Event) => void) | null;
   onend: (() => void) | null;
 };
-
-// Quick actions - conversational prompts
-const quickActions = [
-  { text: "What's my focus today?", icon: '🎯' },
-  { text: 'Project status update', icon: '📊' },
-  { text: 'Create a task', icon: '✨' },
-  { text: 'Upcoming meetings', icon: '📅' },
-];
 
 export function DashboardAIChat() {
   const { messages, isStreaming, sendMessage, clearConversation } = useAIAssistant();
@@ -127,107 +119,34 @@ export function DashboardAIChat() {
     await sendMessage(text);
   };
 
-  const handleQuickAction = useCallback(
-    (text: string) => {
-      stopSpeaking();
-      sendMessage(text);
-    },
-    [sendMessage, stopSpeaking]
-  );
-
   const hasMessages = (messages?.length || 0) > 0;
 
-  // Status for the orb
-  const getOrbStatus = () => {
-    if (isStreaming) return 'thinking';
-    if (isSpeaking) return 'speaking';
-    if (isListening) return 'listening';
-    return 'idle';
+  // Status text
+  const getStatusText = () => {
+    if (isStreaming) return 'Thinking...';
+    if (isSpeaking) return 'Speaking...';
+    if (isListening) return 'Listening...';
+    return 'Ask me anything';
   };
-
-  const orbStatus = getOrbStatus();
 
   return (
     <div
       className={cn(
-        'group/chat relative flex h-full flex-col overflow-hidden rounded-xl',
-        'border border-border/40 bg-gradient-to-b from-card/90 to-card/70 backdrop-blur-md',
-        'transition-all duration-500',
-        isFocused && 'border-primary/30 shadow-[0_0_30px_-10px_hsl(var(--primary)/0.2)]'
+        'flex h-full flex-col overflow-hidden rounded-xl',
+        'border bg-card',
+        'transition-all duration-300',
+        isFocused ? 'border-primary/50' : 'border-border'
       )}
     >
-      {/* Ambient glow background */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700',
-          (isStreaming || isSpeaking || isListening) && 'opacity-100'
-        )}
-      >
-        <div
-          className={cn(
-            'absolute -left-1/4 -top-1/4 h-1/2 w-1/2 rounded-full blur-3xl',
-            orbStatus === 'thinking' && 'bg-amber-500/10',
-            orbStatus === 'speaking' && 'bg-emerald-500/10',
-            orbStatus === 'listening' && 'bg-rose-500/10'
-          )}
-        />
-      </div>
-
       {/* Header */}
-      <div className="relative flex items-center justify-between border-b border-border/30 px-4 py-2.5">
-        <div className="flex items-center gap-3">
-          {/* Animated Orb */}
-          <div className="relative">
-            <motion.div
-              animate={{
-                scale: orbStatus !== 'idle' ? [1, 1.1, 1] : 1,
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: orbStatus !== 'idle' ? Infinity : 0,
-                ease: 'easeInOut',
-              }}
-              className="relative flex h-8 w-8 items-center justify-center"
-            >
-              {/* Outer ring */}
-              <div
-                className={cn(
-                  'absolute inset-0 rounded-full transition-all duration-500',
-                  orbStatus === 'idle' && 'bg-gradient-to-br from-primary/20 to-primary/5',
-                  orbStatus === 'thinking' &&
-                    'animate-spin-slow bg-gradient-conic from-amber-500/40 via-orange-500/20 to-amber-500/40',
-                  orbStatus === 'speaking' &&
-                    'bg-gradient-to-br from-emerald-500/30 to-teal-500/10',
-                  orbStatus === 'listening' &&
-                    'animate-pulse bg-gradient-to-br from-rose-500/30 to-pink-500/10'
-                )}
-              />
-              {/* Inner orb */}
-              <div
-                className={cn(
-                  'relative h-5 w-5 rounded-full transition-all duration-500',
-                  'shadow-[inset_0_-2px_4px_rgba(0,0,0,0.2)]',
-                  orbStatus === 'idle' && 'bg-gradient-to-br from-primary to-primary/80',
-                  orbStatus === 'thinking' && 'bg-gradient-to-br from-amber-400 to-orange-500',
-                  orbStatus === 'speaking' && 'bg-gradient-to-br from-emerald-400 to-teal-500',
-                  orbStatus === 'listening' && 'bg-gradient-to-br from-rose-400 to-pink-500'
-                )}
-              >
-                {/* Highlight */}
-                <div className="absolute left-1 top-1 h-2 w-2 rounded-full bg-white/40" />
-              </div>
-            </motion.div>
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <MessageSquare className="h-4 w-4 text-primary" />
           </div>
-
-          {/* Status text */}
           <div className="flex flex-col">
-            <span className="text-xs font-medium text-foreground">Qualia AI</span>
-            <span className="text-[10px] text-muted-foreground">
-              {orbStatus === 'thinking' && 'Processing...'}
-              {orbStatus === 'speaking' && 'Speaking...'}
-              {orbStatus === 'listening' && 'Listening...'}
-              {orbStatus === 'idle' && 'Ready to assist'}
-            </span>
+            <span className="text-sm font-medium text-foreground">Qualia AI</span>
+            <span className="text-[11px] text-muted-foreground">{getStatusText()}</span>
           </div>
         </div>
 
@@ -273,42 +192,20 @@ export function DashboardAIChat() {
       </div>
 
       {/* Content */}
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         <AnimatePresence mode="wait">
           {!hasMessages ? (
-            // Empty state - Quick actions
+            // Empty state - simple message
             <motion.div
               key="empty"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               className="flex flex-1 flex-col items-center justify-center p-4"
             >
-              <Sparkles className="mb-3 h-6 w-6 text-primary/60" />
-              <p className="mb-4 text-center text-sm text-muted-foreground">
-                How can I help you today?
+              <p className="text-center text-sm text-muted-foreground">
+                Ask me about your tasks, projects, or meetings
               </p>
-              <div className="grid w-full max-w-[280px] grid-cols-2 gap-2">
-                {quickActions.map((action, i) => (
-                  <motion.button
-                    key={action.text}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => handleQuickAction(action.text)}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 rounded-xl border border-border/50 bg-muted/30 p-3',
-                      'text-xs text-muted-foreground transition-all duration-200',
-                      'hover:border-primary/30 hover:bg-primary/5 hover:text-foreground',
-                      'active:scale-[0.98]'
-                    )}
-                  >
-                    <span className="text-base">{action.icon}</span>
-                    <span className="text-center leading-tight">{action.text}</span>
-                  </motion.button>
-                ))}
-              </div>
             </motion.div>
           ) : (
             // Messages
@@ -336,7 +233,7 @@ export function DashboardAIChat() {
                         'max-w-[85%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed',
                         message.role === 'user'
                           ? 'rounded-br-md bg-primary text-primary-foreground'
-                          : 'rounded-bl-md border border-border/50 bg-muted/50 text-foreground'
+                          : 'rounded-bl-md border border-border bg-muted text-foreground'
                       )}
                     >
                       {message.content}
@@ -353,7 +250,7 @@ export function DashboardAIChat() {
                       animate={{ opacity: 1, y: 0 }}
                       className="flex"
                     >
-                      <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-border/50 bg-muted/50 px-4 py-2.5">
+                      <div className="flex items-center gap-1.5 rounded-2xl rounded-bl-md border border-border bg-muted/50 px-4 py-2.5">
                         <motion.span
                           animate={{ scale: [1, 1.2, 1] }}
                           transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
@@ -380,13 +277,11 @@ export function DashboardAIChat() {
         </AnimatePresence>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="relative border-t border-border/30 p-3">
+        <form onSubmit={handleSubmit} className="border-t border-border p-3">
           <div
             className={cn(
-              'flex items-center gap-2 rounded-xl border bg-muted/30 px-2 transition-all duration-300',
-              isFocused
-                ? 'border-primary/40 bg-background shadow-[0_0_0_3px_hsl(var(--primary)/0.1)]'
-                : 'border-border/50'
+              'flex items-center gap-2 rounded-lg border bg-background px-2 transition-all duration-200',
+              isFocused ? 'border-primary' : 'border-border'
             )}
           >
             {/* Voice button */}
@@ -395,9 +290,9 @@ export function DashboardAIChat() {
               onClick={toggleListening}
               disabled={!recognitionRef.current}
               className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all',
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
                 isListening
-                  ? 'bg-rose-500 text-white shadow-[0_0_12px_rgba(244,63,94,0.4)]'
+                  ? 'bg-rose-500 text-white'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 !recognitionRef.current && 'cursor-not-allowed opacity-40'
               )}
@@ -424,21 +319,19 @@ export function DashboardAIChat() {
             />
 
             {/* Send button */}
-            <motion.button
+            <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              whileHover={{ scale: input.trim() ? 1.05 : 1 }}
-              whileTap={{ scale: input.trim() ? 0.95 : 1 }}
               className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all',
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
                 input.trim()
-                  ? 'bg-primary text-primary-foreground shadow-[0_0_12px_hsl(var(--primary)/0.3)]'
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                   : 'text-muted-foreground/40',
                 'disabled:cursor-not-allowed'
               )}
             >
               <Send className="h-4 w-4" />
-            </motion.button>
+            </button>
           </div>
         </form>
       </div>
