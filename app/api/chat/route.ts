@@ -59,14 +59,19 @@ export async function POST(req: Request) {
     const workspaceId = await getWorkspaceId(user.id);
 
     // Process with AI
-    const result = await processStreamingAI({
-      messages,
-      user,
-      workspaceId,
-      mode: 'chat',
-    });
+    try {
+      const result = await processStreamingAI({
+        messages,
+        user,
+        workspaceId,
+        mode: 'chat',
+      });
 
-    return result.toUIMessageStreamResponse();
+      return result.toUIMessageStreamResponse();
+    } catch (streamError) {
+      console.error('AI streaming error:', streamError);
+      throw streamError;
+    }
   } catch (error) {
     console.error('Chat API error:', error);
 
