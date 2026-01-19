@@ -57,26 +57,27 @@ interface TodayDashboardProps {
   finishedProjects: Project[];
 }
 
-// Animation variants
+// Premium animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.1,
+      staggerChildren: 0.06,
+      delayChildren: 0.05,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 16, scale: 0.98 },
   visible: {
     opacity: 1,
     y: 0,
+    scale: 1,
     transition: {
-      duration: 0.4,
-      ease: [0.25, 0.1, 0.25, 1] as const,
+      duration: 0.5,
+      ease: [0.16, 1, 0.3, 1] as [number, number, number, number],
     },
   },
 };
@@ -128,55 +129,73 @@ export function TodayDashboard({
   }).length;
 
   return (
-    <div className="flex h-full max-h-full min-h-0 flex-col overflow-hidden">
-      {/* Single Compact Header - Everything in one line */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 bg-card/50 px-3 backdrop-blur-sm sm:px-4">
+    <div className="flex h-full max-h-full min-h-0 flex-col overflow-hidden bg-gradient-to-b from-background to-background/95">
+      {/* Premium Header */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/30 bg-card/30 px-4 backdrop-blur-md sm:px-6">
         {/* Left: Mobile menu + Greeting + Date */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            className="h-8 w-8 md:hidden"
+            className="h-9 w-9 rounded-xl md:hidden"
             onClick={toggleMobile}
           >
             <Menu className="h-4 w-4" />
           </Button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">{greeting || 'Hello'}</span>
-            <span className="hidden text-muted-foreground/40 sm:inline">·</span>
-            <span className="hidden text-xs text-muted-foreground sm:inline">
-              {format(now, 'EEE, MMM d')}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold tracking-tight text-foreground">
+                {greeting || 'Hello'}
+              </span>
+              <span className="text-[11px] text-muted-foreground">
+                {format(now, 'EEEE, MMMM d')}
+              </span>
+            </div>
           </div>
 
-          {/* Mini stats - visible on md+ */}
-          <div className="hidden items-center gap-2 text-xs md:flex">
-            <span className="text-muted-foreground/40">·</span>
-            <span className="text-amber-600 dark:text-amber-400">{pendingTasks} tasks</span>
-            <span className="text-muted-foreground/40">·</span>
-            <span className="text-emerald-600 dark:text-emerald-400">{todayMeetings} meetings</span>
+          {/* Stats pills - visible on md+ */}
+          <div className="hidden items-center gap-2 md:flex">
+            <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                {pendingTasks} tasks
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                {todayMeetings} meetings
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="hidden h-8 gap-1.5 px-2 sm:flex" asChild>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden h-9 gap-2 rounded-xl px-3 sm:flex"
+            asChild
+          >
             <Link href="/schedule?new=1">
-              <Video className="h-3.5 w-3.5" />
-              <span className="text-xs">Schedule</span>
+              <Video className="h-4 w-4" />
+              <span className="text-xs font-medium">New Meeting</span>
             </Link>
           </Button>
 
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-9 w-9 rounded-xl"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 transition-transform ${isRefreshing ? 'animate-spin' : ''}`}
+            />
           </Button>
 
           <HeaderOnlineIndicator />
@@ -184,9 +203,9 @@ export function TodayDashboard({
 
           <Link
             href="/settings"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <Settings className="h-3.5 w-3.5" />
+            <Settings className="h-4 w-4" />
           </Link>
 
           <ThemeSwitcher />
