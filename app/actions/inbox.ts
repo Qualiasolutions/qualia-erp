@@ -186,6 +186,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     show_in_inbox,
     item_type,
     phase_name,
+    phase_id,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -243,6 +244,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       priority: 'No Priority',
       item_type: item_type || 'task',
       phase_name: phase_name || null,
+      phase_id: phase_id || null,
       workspace_id: wsId,
       creator_id: user.id,
       assignee_id: assignee_id || null,

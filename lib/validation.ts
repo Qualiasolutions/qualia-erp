@@ -46,6 +46,7 @@ export const createTaskSchema = z.object({
   show_in_inbox: z.boolean().default(false),
   item_type: z.enum(['task', 'issue', 'note', 'resource'] as const).default('task'),
   phase_name: z.string().max(100, 'Phase name too long').optional().nullable(),
+  phase_id: z.string().uuid('Invalid phase ID').optional().nullable(),
 });
 
 export const updateTaskSchema = z.object({
