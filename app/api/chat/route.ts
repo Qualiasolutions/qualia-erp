@@ -67,7 +67,7 @@ export async function POST(req: Request) {
         mode: 'chat',
       });
 
-      return result.toUIMessageStreamResponse();
+      return result.toTextStreamResponse();
     } catch (streamError) {
       console.error('AI streaming error:', streamError);
       throw streamError;
