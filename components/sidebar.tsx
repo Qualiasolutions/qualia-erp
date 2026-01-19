@@ -48,14 +48,22 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'flex h-9 items-center gap-3 rounded-md px-3 text-sm transition-colors',
+        'group relative flex h-10 items-center gap-3 overflow-hidden rounded-xl px-4 text-sm transition-all duration-300',
         isActive
-          ? 'bg-muted text-foreground'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+          ? 'bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(var(--primary),0.05)]'
+          : 'text-muted-foreground/70 hover:bg-white/5 hover:text-foreground'
       )}
     >
-      <item.icon className="h-4 w-4 flex-shrink-0" />
-      <span className="font-medium">{item.name}</span>
+      {isActive && (
+        <div className="absolute left-0 top-1/4 h-1/2 w-1 rounded-r-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+      )}
+      <item.icon
+        className={cn(
+          'h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110',
+          isActive ? 'text-primary' : 'text-muted-foreground/50 group-hover:text-foreground'
+        )}
+      />
+      <span className="font-semibold tracking-tight">{item.name}</span>
     </Link>
   );
 }
@@ -130,18 +138,23 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center border-b border-border/50 px-3">
-        <Link href="/" className="flex items-center" onClick={onLinkClick}>
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg">
-            <Image
-              src="/logo.webp"
-              alt="Qualia"
-              width={40}
-              height={40}
-              className="h-full w-full object-cover"
-              priority
-            />
+      <div className="flex h-20 items-center px-6">
+        <Link href="/" className="group flex items-center" onClick={onLinkClick}>
+          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-foreground p-[1px] shadow-glow-sm transition-transform group-hover:scale-105">
+            <div className="flex h-full w-full items-center justify-center rounded-xl bg-background">
+              <Image
+                src="/logo.webp"
+                alt="Qualia"
+                width={32}
+                height={32}
+                className="h-8 w-8 object-contain"
+                priority
+              />
+            </div>
           </div>
+          <span className="ml-3 text-lg font-bold tracking-tighter text-foreground transition-colors group-hover:text-primary">
+            QUALIA
+          </span>
         </Link>
       </div>
 
@@ -175,7 +188,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-52 flex-shrink-0 border-r border-border/50 bg-background md:block">
+      <aside className="hidden h-full w-60 flex-shrink-0 border-r border-white/5 bg-background md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

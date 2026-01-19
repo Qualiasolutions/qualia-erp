@@ -4,6 +4,16 @@ import { DashboardClient, type Meeting } from '@/components/dashboard-client';
 import { getCurrentUserProfile } from './actions';
 import type { Task } from './actions/inbox';
 
+export interface DashboardProject {
+  id: string;
+  name: string;
+  status: string;
+  project_type: string | null;
+  project_group: string | null;
+  target_date: string | null;
+  client?: { id: string; display_name: string } | null;
+}
+
 // Helper function to get user's dashboard data
 async function getDashboardData(userId: string, workspaceId?: string) {
   const supabase = await createClient();
@@ -39,6 +49,25 @@ async function getDashboardData(userId: string, workspaceId?: string) {
     .eq('workspace_id', workspaceId)
     .order('start_time', { ascending: true })
     .limit(10);
+
+  // Get active projects
+  const { data: projects } = await supabase
+    .from('projects')
+    .select(
+      `
+      id,
+      name,
+      status,
+      project_type,
+      project_group,
+      target_date,
+      client:clients(id, display_name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .neq('status', 'Completed')
+    .neq('status', 'Finished')
+    .order('updated_at', { ascending: false });
 
   // Get today's tasks (due today or overdue, not done)
   const { data: todaysTasks } = await supabase
@@ -93,6 +122,18 @@ async function getDashboardData(userId: string, workspaceId?: string) {
     creator: Array.isArray(m.creator) ? m.creator[0] || null : (m.creator as Meeting['creator']),
   });
 
+  const normalizeProject = (p: Record<string, unknown>): DashboardProject => ({
+    id: p.id as string,
+    name: p.name as string,
+    status: p.status as string,
+    project_type: p.project_type as string | null,
+    project_group: p.project_group as string | null,
+    target_date: p.target_date as string | null,
+    client: Array.isArray(p.client)
+      ? p.client[0] || null
+      : (p.client as DashboardProject['client']),
+  });
+
   const normalizeTask = (t: Record<string, unknown>): Task => ({
     id: t.id as string,
     title: t.title as string,
@@ -117,6 +158,7 @@ async function getDashboardData(userId: string, workspaceId?: string) {
 
   return {
     meetings: (meetings || []).map((m) => normalizeMeeting(m as Record<string, unknown>)),
+    projects: (projects || []).map((p) => normalizeProject(p as Record<string, unknown>)),
     todaysTasks: (todaysTasks || []).map((t) => normalizeTask(t as Record<string, unknown>)),
     pendingTasks: (pendingTasks || []).map((t) => normalizeTask(t as Record<string, unknown>)),
   };
@@ -146,7 +188,7 @@ export default async function DashboardPage() {
   const workspaceId = await getCurrentWorkspaceId();
 
   // Fetch dashboard data if user is logged in
-  let dashboardData = { meetings: [], todaysTasks: [], pendingTasks: [] } as Awaited<
+  let dashboardData = { meetings: [], projects: [], todaysTasks: [], pendingTasks: [] } as Awaited<
     ReturnType<typeof getDashboardData>
   >;
 
@@ -174,6 +216,7 @@ export default async function DashboardPage() {
       }
       todaysTasks={dashboardData.todaysTasks}
       upcomingMeetings={dashboardData.meetings}
+      projects={dashboardData.projects}
       pendingTasks={dashboardData.pendingTasks}
     />
   );
