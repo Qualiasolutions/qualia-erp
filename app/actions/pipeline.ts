@@ -3,6 +3,23 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
+import {
+  getTemplateForType,
+  WEB_DESIGN_TEMPLATE,
+  type GSDProjectTemplate,
+} from '@/lib/gsd-templates';
+import type { Database } from '@/types/database';
+
+type ProjectType = Database['public']['Enums']['project_type'];
+
+// Legacy fallback for backwards compatibility with existing code
+// Maps GSD template to old format
+const UNIVERSAL_PIPELINE = WEB_DESIGN_TEMPLATE.phases.map((phase) => ({
+  name: phase.name,
+  order: phase.tasks.length,
+  description: phase.description,
+  tasks: phase.tasks.map((t) => t.title),
+}));
 
 // ============================================================================
 // TYPES
@@ -60,6 +77,8 @@ export interface PhaseWithDetails {
   sort_order: number;
   created_at: string;
   is_locked: boolean;
+  helper_text: string | null;
+  template_key: string | null;
   // Computed fields
   task_count: number;
   completed_task_count: number;
@@ -284,79 +303,17 @@ export async function deleteProjectNote(noteId: string): Promise<ActionResult> {
 // PIPELINE HELPERS
 // ============================================================================
 
-// Default pipeline phases with tasks
-// Format: "Prompt Claude to..." for AI tasks, plain text for manual tasks
-const UNIVERSAL_PIPELINE = [
-  {
-    name: 'Setup',
-    order: 1,
-    description: 'Get everything ready before coding',
-    tasks: [
-      'Create project folder locally',
-      'Create GitHub repo',
-      'Create Supabase project',
-      'Create Vercel project',
-      'Get client requirements',
-      'List MVP features',
-    ],
-  },
-  {
-    name: 'Plan',
-    order: 2,
-    description: 'Create the build plan',
-    tasks: [
-      '/workflows:plan "[project] - [MVP features]"',
-      'Review plans/[project].md',
-      'Refine or approve plan',
-    ],
-  },
-  {
-    name: 'Frontend',
-    order: 3,
-    description: 'Build UI first, preview deploy',
-    tasks: [
-      '/frontend-master --design "[main UI]"',
-      '/frontend-master --build "[component]"',
-      'Prompt Claude to commit and push',
-      'Prompt Claude to deploy preview with Vercel CLI',
-      'Test preview URL',
-      '/responsive (if needed)',
-      'Repeat for remaining UI',
-    ],
-  },
-  {
-    name: 'Backend',
-    order: 4,
-    description: 'Supabase MCP - prompt what you need',
-    tasks: [
-      'Prompt Claude to plan tables with Supabase MCP',
-      'Prompt Claude to create tables with RLS using Supabase MCP',
-      'Prompt Claude to generate TypeScript types with Supabase MCP',
-      'Connect frontend to backend',
-      'Prompt Claude to commit and push',
-      'Prompt Claude to deploy preview with Vercel CLI',
-      'Test full flow',
-    ],
-  },
-  {
-    name: 'Ship',
-    order: 5,
-    description: 'Test, review, production deploy',
-    tasks: [
-      'Prompt Claude to run tests',
-      '/workflows:review',
-      '/pr (production audit)',
-      'Verify env vars in Vercel dashboard',
-      'Prompt Claude to deploy production with Vercel CLI',
-      'Setup custom domain (if needed)',
-      'Test production URL',
-      'Send client production URL',
-      '/workflows:compound',
-    ],
-  },
-];
-
-export async function initializeProjectPipeline(projectId: string): Promise<ActionResult> {
+/**
+ * Initialize project pipeline with GSD phases.
+ * Now type-aware: uses different templates for web_design, ai_agent, voice_agent, etc.
+ *
+ * @param projectId - The project ID to initialize
+ * @param projectType - Optional project type override (defaults to project's type or web_design)
+ */
+export async function initializeProjectPipeline(
+  projectId: string,
+  projectType?: ProjectType
+): Promise<ActionResult> {
   const supabase = await createClient();
 
   // Check if phases already exist
@@ -370,10 +327,10 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
     return { success: true, data: { message: 'Pipeline already initialized' } };
   }
 
-  // Get project to get workspace_id
+  // Get project to get workspace_id and type
   const { data: project } = await supabase
     .from('projects')
-    .select('workspace_id')
+    .select('workspace_id, project_type')
     .eq('id', projectId)
     .single();
 
@@ -381,21 +338,31 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
     return { success: false, error: 'Project not found' };
   }
 
-  // Create all 5 phases (first phase unlocked, rest locked)
-  const phases = UNIVERSAL_PIPELINE.map((phase, index) => ({
+  // Determine effective project type
+  const effectiveType: ProjectType = projectType || project.project_type || 'web_design';
+
+  // Get type-specific template
+  const template: GSDProjectTemplate = getTemplateForType(effectiveType);
+
+  // Create all 6 GSD phases (first phase unlocked, rest locked)
+  const phases = template.phases.map((phase, index) => ({
     project_id: projectId,
+    workspace_id: project.workspace_id,
     name: phase.name,
     description: phase.description,
-    sort_order: phase.order,
+    helper_text: phase.prompt, // Store the "perfect prompt" in helper_text
+    template_key: `${effectiveType}_${phase.name.toLowerCase()}`,
+    display_order: index + 1,
     status: 'not_started',
-    is_locked: index > 0, // First phase (Setup) is unlocked, rest are locked
+    is_locked: index > 0, // First phase (SETUP) is unlocked, rest are locked
     auto_progress: true,
+    is_custom: false,
   }));
 
   const { data: createdPhases, error: phasesError } = await supabase
     .from('project_phases')
     .insert(phases)
-    .select('id, name, sort_order');
+    .select('id, name, display_order');
 
   if (phasesError || !createdPhases) {
     console.error('[initializeProjectPipeline] Error creating phases:', phasesError);
@@ -403,7 +370,7 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
   }
 
   // Set up prerequisite links (each phase depends on the previous one)
-  const sortedPhases = [...createdPhases].sort((a, b) => a.sort_order - b.sort_order);
+  const sortedPhases = [...createdPhases].sort((a, b) => a.display_order - b.display_order);
   for (let i = 1; i < sortedPhases.length; i++) {
     const currentPhase = sortedPhases[i];
     const previousPhase = sortedPhases[i - 1];
@@ -413,27 +380,31 @@ export async function initializeProjectPipeline(projectId: string): Promise<Acti
       .eq('id', currentPhase.id);
   }
 
-  // Create default tasks for each phase
+  // Create tasks from type-specific template
   const tasks: Array<{
     workspace_id: string;
     project_id: string;
     phase_id: string;
     phase_name: string;
     title: string;
+    description: string | null;
     status: string;
     sort_order: number;
   }> = [];
 
   for (const createdPhase of createdPhases) {
-    const phaseDef = UNIVERSAL_PIPELINE.find((p) => p.name === createdPhase.name);
+    const phaseDef = template.phases.find(
+      (p) => p.name.toUpperCase() === createdPhase.name.toUpperCase()
+    );
     if (phaseDef) {
-      phaseDef.tasks.forEach((taskTitle, index) => {
+      phaseDef.tasks.forEach((task, index) => {
         tasks.push({
           workspace_id: project.workspace_id,
           project_id: projectId,
           phase_id: createdPhase.id,
           phase_name: createdPhase.name,
-          title: taskTitle,
+          title: task.title,
+          description: task.helperText, // Store helper text in description
           status: 'Todo',
           sort_order: index,
         });
@@ -631,6 +602,8 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
       sort_order: phase.sort_order || 0,
       created_at: phase.created_at,
       is_locked: phase.is_locked ?? false,
+      helper_text: phase.helper_text ?? null,
+      template_key: phase.template_key ?? null,
       task_count: taskStats.total,
       completed_task_count: taskStats.completed,
       resource_count: resourceCountMap[phase.id] || 0,
@@ -1031,85 +1004,173 @@ export async function getPhaseTasks(phaseId: string) {
  * to use the new Claude workflow format. Preserves completion status where titles match.
  */
 export async function updateAllProjectPhaseTasks(): Promise<ActionResult> {
+  // Redirect to the new GSD migration
+  return migrateAllProjectsToGSD();
+}
+
+// ============================================================================
+// MIGRATE ALL PROJECTS TO GSD 6-PHASE WORKFLOW
+// ============================================================================
+
+/**
+ * Full migration to GSD 6-phase workflow:
+ * SETUP → DISCUSS → PLAN → EXECUTE → VERIFY → SHIP
+ *
+ * This will:
+ * 1. Delete all existing phases and phase-linked tasks
+ * 2. Recreate phases using project_type-specific templates
+ * 3. Create type-appropriate tasks for each phase
+ */
+export async function migrateAllProjectsToGSD(): Promise<ActionResult> {
   const supabase = await createClient();
 
-  // Get all phases for Design, Build, Test, Ship
-  const { data: phases, error: phasesError } = await supabase
-    .from('project_phases')
-    .select('id, name, project_id')
-    .in('name', ['Design', 'Build', 'Test', 'Ship']);
+  // Get all projects with their types
+  const { data: projects, error: projectsError } = await supabase
+    .from('projects')
+    .select('id, workspace_id, project_type, name');
 
-  if (phasesError) {
-    console.error('[updateAllProjectPhaseTasks] Error fetching phases:', phasesError);
-    return { success: false, error: phasesError.message };
+  if (projectsError) {
+    console.error('[migrateAllProjectsToGSD] Error fetching projects:', projectsError);
+    return { success: false, error: projectsError.message };
   }
 
-  if (!phases || phases.length === 0) {
-    return { success: true, data: { message: 'No phases to update', updated: 0 } };
+  if (!projects || projects.length === 0) {
+    return { success: true, data: { message: 'No projects found', count: 0 } };
   }
 
-  let updated = 0;
+  let projectsUpdated = 0;
+  let phasesCreated = 0;
+  let tasksCreated = 0;
   const errors: string[] = [];
 
-  for (const phase of phases) {
-    // Find matching template
-    const template = UNIVERSAL_PIPELINE.find((p) => p.name === phase.name);
-    if (!template) continue;
+  for (const project of projects) {
+    try {
+      // Delete existing phases (cascades to tasks via phase_id)
+      const { data: existingPhases } = await supabase
+        .from('project_phases')
+        .select('id')
+        .eq('project_id', project.id);
 
-    // Get existing tasks to preserve completion status
-    const { data: existingTasks } = await supabase
-      .from('tasks')
-      .select('title, status, completed_at')
-      .eq('phase_id', phase.id);
+      if (existingPhases && existingPhases.length > 0) {
+        const phaseIds = existingPhases.map((p) => p.id);
 
-    const completedTitles = new Set(
-      existingTasks?.filter((t) => t.status === 'Done').map((t) => t.title) || []
-    );
+        // Delete tasks linked to these phases
+        await supabase.from('tasks').delete().in('phase_id', phaseIds);
 
-    // Delete old tasks for this phase
-    const { error: deleteError } = await supabase.from('tasks').delete().eq('phase_id', phase.id);
+        // Delete phase resources
+        await supabase.from('phase_resources').delete().in('phase_id', phaseIds);
 
-    if (deleteError) {
-      errors.push(`Phase ${phase.id} delete: ${deleteError.message}`);
-      continue;
-    }
+        // Delete the phases
+        await supabase.from('project_phases').delete().eq('project_id', project.id);
+      }
 
-    // Get workspace_id from project
-    const { data: project } = await supabase
-      .from('projects')
-      .select('workspace_id')
-      .eq('id', phase.project_id)
-      .single();
+      // Also delete any orphaned tasks with phase_name but no phase_id
+      await supabase
+        .from('tasks')
+        .delete()
+        .eq('project_id', project.id)
+        .not('phase_name', 'is', null);
 
-    if (!project) {
-      errors.push(`Phase ${phase.id}: project not found`);
-      continue;
-    }
+      // Get the type-specific template
+      const effectiveType: ProjectType = project.project_type || 'web_design';
+      const template = getTemplateForType(effectiveType);
 
-    // Create new tasks from template
-    const newTasks = template.tasks.map((title, index) => ({
-      workspace_id: project.workspace_id,
-      project_id: phase.project_id,
-      phase_id: phase.id,
-      phase_name: phase.name,
-      title,
-      status: completedTitles.has(title) ? 'Done' : 'Todo',
-      sort_order: index,
-      show_in_inbox: false,
-    }));
+      // Create new GSD phases
+      const phases = template.phases.map((phase, index) => ({
+        project_id: project.id,
+        workspace_id: project.workspace_id,
+        name: phase.name,
+        description: phase.description,
+        helper_text: phase.prompt,
+        template_key: `${effectiveType}_${phase.name.toLowerCase()}`,
+        display_order: index + 1,
+        status: 'not_started',
+        is_locked: index > 0, // First phase unlocked
+        auto_progress: true,
+        is_custom: false,
+      }));
 
-    const { error: insertError } = await supabase.from('tasks').insert(newTasks);
+      const { data: createdPhases, error: phasesError } = await supabase
+        .from('project_phases')
+        .insert(phases)
+        .select('id, name, display_order');
 
-    if (insertError) {
-      errors.push(`Phase ${phase.id} insert: ${insertError.message}`);
-    } else {
-      updated++;
+      if (phasesError || !createdPhases) {
+        errors.push(
+          `Project ${project.name}: ${phasesError?.message || 'Failed to create phases'}`
+        );
+        continue;
+      }
+
+      phasesCreated += createdPhases.length;
+
+      // Set up prerequisite links
+      const sortedPhases = [...createdPhases].sort((a, b) => a.display_order - b.display_order);
+      for (let i = 1; i < sortedPhases.length; i++) {
+        await supabase
+          .from('project_phases')
+          .update({ prerequisite_phase_id: sortedPhases[i - 1].id })
+          .eq('id', sortedPhases[i].id);
+      }
+
+      // Create tasks from template
+      const tasks: Array<{
+        workspace_id: string;
+        project_id: string;
+        phase_id: string;
+        phase_name: string;
+        title: string;
+        description: string | null;
+        status: string;
+        sort_order: number;
+        show_in_inbox: boolean;
+      }> = [];
+
+      for (const createdPhase of createdPhases) {
+        const phaseDef = template.phases.find(
+          (p) => p.name.toUpperCase() === createdPhase.name.toUpperCase()
+        );
+        if (phaseDef) {
+          phaseDef.tasks.forEach((task, index) => {
+            tasks.push({
+              workspace_id: project.workspace_id,
+              project_id: project.id,
+              phase_id: createdPhase.id,
+              phase_name: createdPhase.name,
+              title: task.title,
+              description: task.helperText,
+              status: 'Todo',
+              sort_order: index,
+              show_in_inbox: false,
+            });
+          });
+        }
+      }
+
+      if (tasks.length > 0) {
+        const { error: tasksError } = await supabase.from('tasks').insert(tasks);
+        if (tasksError) {
+          errors.push(`Project ${project.name} tasks: ${tasksError.message}`);
+        } else {
+          tasksCreated += tasks.length;
+        }
+      }
+
+      projectsUpdated++;
+    } catch (err) {
+      errors.push(`Project ${project.name}: ${err}`);
     }
   }
 
   return {
     success: errors.length === 0,
-    data: { phasesUpdated: updated, totalPhases: phases.length, errors },
-    error: errors.length > 0 ? `${errors.length} phases failed to update` : undefined,
+    data: {
+      message: `Migrated ${projectsUpdated} projects to GSD workflow`,
+      projectsUpdated,
+      phasesCreated,
+      tasksCreated,
+      errors: errors.length > 0 ? errors : undefined,
+    },
+    error: errors.length > 0 ? `${errors.length} errors occurred` : undefined,
   };
 }

@@ -130,6 +130,8 @@ export function ProjectPipeline({ projectId, workspaceId, className }: ProjectPi
                 completed_task_count: phase.completed_task_count,
                 resource_count: phase.resource_count,
                 is_locked: phase.is_locked,
+                helper_text: phase.helper_text,
+                template_key: phase.template_key,
               }}
               projectId={projectId}
               workspaceId={workspaceId}

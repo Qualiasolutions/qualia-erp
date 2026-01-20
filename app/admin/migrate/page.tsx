@@ -2,44 +2,19 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  initializePipelinesForAllProjects,
-  resetAllPhaseTasks,
-  updateAllProjectPhaseTasks,
-} from '@/app/actions/pipeline';
+import { migrateAllProjectsToGSD } from '@/app/actions/pipeline';
 
 export default function MigratePage() {
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const runMigration = async () => {
+  const runGSDMigration = async () => {
     setLoading(true);
     setResult(null);
 
     try {
-      // Initialize pipelines for projects without phases
-      const initResult = await initializePipelinesForAllProjects();
-
-      // Reset and add default tasks
-      const resetResult = await resetAllPhaseTasks();
-
-      setResult(JSON.stringify({ init: initResult, reset: resetResult }, null, 2));
-    } catch (error) {
-      setResult(`Error: ${error}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const runClaudeWorkflowMigration = async () => {
-    setLoading(true);
-    setResult(null);
-
-    try {
-      // Update phases 2-5 with new Claude workflow tasks
-      const updateResult = await updateAllProjectPhaseTasks();
-
-      setResult(JSON.stringify({ update: updateResult }, null, 2));
+      const migrationResult = await migrateAllProjectsToGSD();
+      setResult(JSON.stringify(migrationResult, null, 2));
     } catch (error) {
       setResult(`Error: ${error}`);
     } finally {
@@ -49,27 +24,42 @@ export default function MigratePage() {
 
   return (
     <div className="mx-auto max-w-2xl p-8">
-      <h1 className="mb-4 text-2xl font-bold">Pipeline Migration</h1>
+      <h1 className="mb-4 text-2xl font-bold">GSD Pipeline Migration</h1>
 
       <div className="space-y-6">
-        <div className="rounded-lg border p-4">
-          <h2 className="mb-2 font-semibold">Full Reset Migration</h2>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Reset all pipeline tasks and add default tasks (4-10 per phase).
-          </p>
-          <Button onClick={runMigration} disabled={loading} variant="outline">
-            {loading ? 'Running...' : 'Run Full Reset'}
-          </Button>
-        </div>
-
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
-          <h2 className="mb-2 font-semibold text-emerald-600">Claude Workflow Migration</h2>
-          <p className="mb-4 text-sm text-muted-foreground">
-            Update phases 2-5 (Design, Build, Test, Ship) with new Claude workflow tasks. Phase 1
-            (Plan) remains unchanged.
+          <h2 className="mb-2 font-semibold text-emerald-600">
+            Migrate All Projects to GSD Workflow
+          </h2>
+          <p className="mb-2 text-sm text-muted-foreground">
+            This will reset ALL projects to use the 6-phase GSD workflow:
           </p>
-          <Button onClick={runClaudeWorkflowMigration} disabled={loading}>
-            {loading ? 'Running...' : 'Run Claude Workflow Migration'}
+          <ul className="mb-4 ml-4 list-disc text-sm text-muted-foreground">
+            <li>
+              <strong>SETUP</strong> → Gather requirements and configure environment
+            </li>
+            <li>
+              <strong>DISCUSS</strong> → Clarify scope and align with stakeholders
+            </li>
+            <li>
+              <strong>PLAN</strong> → Create detailed implementation plan
+            </li>
+            <li>
+              <strong>EXECUTE</strong> → Build and implement the solution
+            </li>
+            <li>
+              <strong>VERIFY</strong> → Test and validate the implementation
+            </li>
+            <li>
+              <strong>SHIP</strong> → Deploy to production and hand off
+            </li>
+          </ul>
+          <p className="mb-4 text-sm text-amber-600">
+            ⚠️ This will DELETE all existing phases and tasks, then recreate them using
+            type-specific templates (web_design, ai_agent, voice_agent, seo, ads).
+          </p>
+          <Button onClick={runGSDMigration} disabled={loading}>
+            {loading ? 'Migrating...' : 'Run GSD Migration'}
           </Button>
         </div>
       </div>

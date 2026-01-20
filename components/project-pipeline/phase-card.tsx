@@ -30,6 +30,7 @@ import {
   X,
   Lock,
   Unlock,
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -39,6 +40,7 @@ import {
   deletePhase,
 } from '@/app/actions/pipeline';
 import { unlockPhase } from '@/app/actions/phases';
+import { PhasePromptModal } from './phase-prompt-modal';
 
 interface Task {
   id: string;
@@ -66,6 +68,8 @@ interface PhaseCardProps {
     completed_task_count: number;
     resource_count: number;
     is_locked?: boolean;
+    helper_text?: string | null;
+    template_key?: string | null;
   };
   projectId: string;
   workspaceId: string;
@@ -88,6 +92,7 @@ export function PhaseCard({
   const [isPending, startTransition] = useTransition();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(phase.name);
+  const [showPromptModal, setShowPromptModal] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const phaseConfig = getPipelinePhaseConfig(phase.name);
@@ -350,6 +355,20 @@ export function PhaseCard({
                       Complete
                     </Button>
                   )}
+                  {phase.helper_text && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 text-xs text-primary hover:text-primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowPromptModal(true);
+                      }}
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Prompt
+                    </Button>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
@@ -412,6 +431,14 @@ export function PhaseCard({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Perfect Prompt Modal */}
+      <PhasePromptModal
+        open={showPromptModal}
+        onOpenChange={setShowPromptModal}
+        phaseName={phase.name}
+        prompt={phase.helper_text || ''}
+      />
     </motion.div>
   );
 }

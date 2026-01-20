@@ -10,14 +10,15 @@ import {
   Github,
   MoreHorizontal,
   Lightbulb,
-  PenTool,
   Hammer,
-  FlaskConical,
   Rocket,
+  Settings,
+  MessageCircle,
+  CheckCircle2,
 } from 'lucide-react';
 
 // ============================================================================
-// UNIVERSAL 5-STAGE PIPELINE
+// GSD 6-STAGE PIPELINE (Get Shit Done)
 // ============================================================================
 
 export interface PipelinePhase {
@@ -29,48 +30,66 @@ export interface PipelinePhase {
   bgColor: string;
 }
 
+/**
+ * GSD Workflow Phases:
+ * SETUP → DISCUSS → PLAN → EXECUTE → VERIFY → SHIP
+ *
+ * This is the universal pipeline applied to all projects.
+ * Type-specific tasks are loaded from gsd-templates.ts
+ */
 export const UNIVERSAL_PIPELINE: PipelinePhase[] = [
   {
-    name: 'Plan',
+    name: 'SETUP',
     order: 1,
-    description: 'Define scope, requirements, and approach',
-    icon: Lightbulb,
+    description: 'Gather requirements and configure environment',
+    icon: Settings,
+    color: 'text-slate-500',
+    bgColor: 'bg-slate-500/10',
+  },
+  {
+    name: 'DISCUSS',
+    order: 2,
+    description: 'Clarify scope and align with stakeholders',
+    icon: MessageCircle,
     color: 'text-amber-500',
     bgColor: 'bg-amber-500/10',
   },
   {
-    name: 'Design',
-    order: 2,
-    description: 'Create specifications and architecture',
-    icon: PenTool,
+    name: 'PLAN',
+    order: 3,
+    description: 'Create detailed implementation plan',
+    icon: Lightbulb,
     color: 'text-violet-500',
     bgColor: 'bg-violet-500/10',
   },
   {
-    name: 'Build',
-    order: 3,
-    description: 'Implement the solution',
+    name: 'EXECUTE',
+    order: 4,
+    description: 'Build and implement the solution',
     icon: Hammer,
     color: 'text-sky-500',
     bgColor: 'bg-sky-500/10',
   },
   {
-    name: 'Test',
-    order: 4,
-    description: 'Verify quality and functionality',
-    icon: FlaskConical,
+    name: 'VERIFY',
+    order: 5,
+    description: 'Test and validate the implementation',
+    icon: CheckCircle2,
     color: 'text-pink-500',
     bgColor: 'bg-pink-500/10',
   },
   {
-    name: 'Ship',
-    order: 5,
-    description: 'Deploy and deliver',
+    name: 'SHIP',
+    order: 6,
+    description: 'Deploy to production and hand off',
     icon: Rocket,
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-500/10',
   },
 ];
+
+// Legacy alias for backwards compatibility
+export const GSD_PHASES = UNIVERSAL_PIPELINE;
 
 // ============================================================================
 // PHASE STATUS
