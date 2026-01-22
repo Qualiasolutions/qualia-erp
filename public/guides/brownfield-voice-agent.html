@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Existing Voice Agent - Qualia Training</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="nav-links">
+    <a href="index.html">← Back</a>
+  </nav>
+
+  <div class="logo">QUALIA SOLUTIONS</div>
+  <span class="badge badge-brownfield">Existing</span>
+  <span class="badge badge-voice">Voice</span>
+  <h1>Modify Existing Voice Agent</h1>
+  <p class="subtitle">Change VAPI agent behavior or add features</p>
+
+  <!-- Step 1 -->
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">Go to the Project Folder</span>
+    <div class="prompt">cd ~/Desktop/Projects/voice/existing-voice-agent</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">Check Git Status</span>
+    <div class="prompt">git status && git branch</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">Start Claude Code</span>
+    <div class="prompt">claude</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">Explore the Webhook Code</span>
+    <div class="prompt">/brownfield-explore</div>
+    <div class="prompt">"Show me how this voice agent works. What VAPI webhooks does it handle? What functions does the agent have?"</div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step">
+    <span class="step-number">5</span>
+    <span class="step-title">Check VAPI Dashboard</span>
+    <p class="step-desc">Go to VAPI dashboard and note:</p>
+    <ul style="margin: 0.75rem 0; padding-left: 1.5rem; color: #4b5563; font-size: 0.9rem;">
+      <li>Assistant name and ID</li>
+      <li>Current system prompt</li>
+      <li>Functions defined</li>
+      <li>Voice settings</li>
+    </ul>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="step">
+    <span class="step-number">6</span>
+    <span class="step-title">Create Feature Branch</span>
+    <div class="prompt">git checkout -b feature/add-transfer</div>
+  </div>
+
+  <!-- Common Changes -->
+  <div class="step">
+    <span class="step-number">7</span>
+    <span class="step-title">Make Your Changes</span>
+
+    <p class="step-desc"><strong>To change what the agent says:</strong></p>
+    <p class="step-desc">Edit the system prompt in VAPI Dashboard → Assistant → Edit</p>
+
+    <p class="step-desc"><strong>To add a new function:</strong></p>
+    <div class="prompt">/gsd:quick</div>
+    <div class="prompt">"Add a transfer_to_human function to the VAPI agent. When called, it should transfer the call to +1234567890. Add the handler in the webhook."</div>
+
+    <p class="step-desc"><strong>To change the voice:</strong></p>
+    <p class="step-desc">VAPI Dashboard → Assistant → Voice → Choose new voice</p>
+
+    <p class="step-desc"><strong>To add a new webhook handler:</strong></p>
+    <div class="prompt">/supabase-edge</div>
+    <div class="prompt">"Add a handler for the 'transcript' event that saves each message in realtime to Supabase."</div>
+  </div>
+
+  <!-- Step 8 -->
+  <div class="step">
+    <span class="step-number">8</span>
+    <span class="step-title">Test in VAPI Dashboard First</span>
+    <p class="step-desc">VAPI Dashboard → Your Assistant → Test tab → Make a web call</p>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="step">
+    <span class="step-number">9</span>
+    <span class="step-title">Test with Real Phone Call</span>
+    <p class="step-desc">Call your number and test:</p>
+    <ul style="margin: 0.75rem 0; padding-left: 1.5rem; color: #4b5563; font-size: 0.9rem;">
+      <li>New feature works</li>
+      <li>Old features still work</li>
+      <li>No awkward pauses</li>
+      <li>Functions respond quickly</li>
+    </ul>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="step">
+    <span class="step-number">10</span>
+    <span class="step-title">If Something Doesn't Work</span>
+    <div class="prompt">/sf</div>
+    <div class="prompt">"The transfer_to_human function isn't working. The agent says it will transfer but nothing happens. Here's what I see in the logs: [paste logs]"</div>
+  </div>
+
+  <!-- Step 11 -->
+  <div class="step">
+    <span class="step-number">11</span>
+    <span class="step-title">Deploy Webhook Changes</span>
+    <div class="prompt">/git-flow
+/quick-deploy</div>
+    <p class="step-desc">Note: VAPI dashboard changes are instant. Only webhook code needs deploying.</p>
+  </div>
+
+  <div class="checklist">
+    <h3>Before You Go Live - Check These</h3>
+    <ul>
+      <li>Web call test passed</li>
+      <li>Real phone call test passed</li>
+      <li>All functions work</li>
+      <li>No awkward silences</li>
+      <li>Webhook URL is correct</li>
+      <li>Calls save to database</li>
+    </ul>
+  </div>
+
+  <footer>
+    Qualia Solutions &copy; 2025 | <a href="index.html">Back to Guides</a>
+  </footer>
+</body>
+</html>

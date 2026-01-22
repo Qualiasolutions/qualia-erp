@@ -14,6 +14,7 @@ import {
   Info,
   HelpCircle,
   Settings,
+  BookOpen,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Guides', href: '/guides', icon: BookOpen },
 ];
 
 function NavLink({

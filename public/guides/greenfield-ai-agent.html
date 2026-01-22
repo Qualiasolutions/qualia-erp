@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New AI Agent - Qualia Training</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="nav-links">
+    <a href="index.html">← Back</a>
+  </nav>
+
+  <div class="logo">QUALIA SOLUTIONS</div>
+  <span class="badge badge-greenfield">New</span>
+  <span class="badge badge-agent">AI Agent</span>
+  <h1>Build a New AI Chat Agent</h1>
+  <p class="subtitle">Chatbot with Supabase backend</p>
+
+  <!-- Step 1 -->
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">Open Terminal & Go to Project Folder</span>
+    <div class="prompt">cd ~/Desktop/Projects/aiagents
+mkdir my-chatbot
+cd my-chatbot</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">Start Claude Code</span>
+    <div class="prompt">claude</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">Initialize Your Project</span>
+    <div class="prompt">/gsd:new-project</div>
+    <p class="step-desc">Example answer:</p>
+    <div class="prompt">"I'm building a customer support chatbot for a SaaS product. It should answer questions about pricing, features, and troubleshooting. It needs to save conversation history in Supabase. Use OpenAI GPT-4o for the AI. Build a simple chat interface with Next.js."</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">Work Through Each Phase</span>
+    <p class="step-desc">For each phase in your roadmap:</p>
+    <div class="prompt">/gsd:discuss-phase 1
+/gsd:plan-phase 1
+/gsd:execute-phase 1</div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step">
+    <span class="step-number">5</span>
+    <span class="step-title">Set Up Your Database</span>
+    <div class="prompt">/sb</div>
+    <p class="step-desc">Tell Claude:</p>
+    <div class="prompt">"Create tables for conversations and messages. Conversations should have id, user_id, created_at, title. Messages should have id, conversation_id, role (user or assistant), content, created_at."</div>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="step">
+    <span class="step-number">6</span>
+    <span class="step-title">Build the Chat UI</span>
+    <div class="prompt">/fd</div>
+    <p class="step-desc">Tell Claude:</p>
+    <div class="prompt">"Design a clean chat interface with a message list, input box at the bottom, and a typing indicator. Make it look modern like ChatGPT."</div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step">
+    <span class="step-number">7</span>
+    <span class="step-title">Test the Agent</span>
+    <p class="step-desc">Run your app locally and have a few test conversations. Make sure:</p>
+    <ul style="margin: 0.75rem 0; padding-left: 1.5rem; color: #4b5563; font-size: 0.9rem;">
+      <li>Messages save to database</li>
+      <li>Agent responds correctly</li>
+      <li>Conversation history works</li>
+    </ul>
+  </div>
+
+  <!-- Step 8 -->
+  <div class="step">
+    <span class="step-number">8</span>
+    <span class="step-title">Verify Everything</span>
+    <div class="prompt">/gsd:verify-work</div>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="step">
+    <span class="step-number">9</span>
+    <span class="step-title">Save & Deploy</span>
+    <div class="prompt">/git-flow</div>
+    <div class="prompt">/quick-deploy</div>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="step">
+    <span class="step-number">10</span>
+    <span class="step-title">Done!</span>
+    <div class="prompt">/gsd:complete-milestone</div>
+  </div>
+
+  <div class="checklist">
+    <h3>Before You Deploy - Check These</h3>
+    <ul>
+      <li>OPENAI_API_KEY in Vercel</li>
+      <li>Supabase keys in Vercel</li>
+      <li>Agent responds correctly</li>
+      <li>Messages save to DB</li>
+      <li>No API key in frontend code</li>
+      <li>Rate limiting works</li>
+    </ul>
+  </div>
+
+  <footer>
+    Qualia Solutions &copy; 2025 | <a href="index.html">Back to Guides</a>
+  </footer>
+</body>
+</html>

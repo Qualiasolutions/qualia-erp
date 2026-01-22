@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Existing AI Agent - Qualia Training</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="nav-links">
+    <a href="index.html">← Back</a>
+  </nav>
+
+  <div class="logo">QUALIA SOLUTIONS</div>
+  <span class="badge badge-brownfield">Existing</span>
+  <span class="badge badge-agent">AI Agent</span>
+  <h1>Modify Existing AI Agent</h1>
+  <p class="subtitle">Add features or improve behavior</p>
+
+  <!-- Step 1 -->
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">Go to the Project Folder</span>
+    <div class="prompt">cd ~/Desktop/Projects/aiagents/existing-agent</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">Check Git Status</span>
+    <div class="prompt">git status && git branch</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">Start Claude Code</span>
+    <div class="prompt">claude</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">Explore the Agent Code</span>
+    <div class="prompt">/brownfield-explore</div>
+    <p class="step-desc">Tell Claude:</p>
+    <div class="prompt">"Show me how this agent works. Where is the system prompt? What tools/functions does it have? How does it save conversations?"</div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step">
+    <span class="step-number">5</span>
+    <span class="step-title">Create Feature Branch</span>
+    <div class="prompt">git checkout -b feature/add-calendar-tool</div>
+  </div>
+
+  <!-- Common Changes -->
+  <div class="step">
+    <span class="step-number">6</span>
+    <span class="step-title">Make Your Changes</span>
+
+    <p class="step-desc"><strong>To change agent behavior:</strong></p>
+    <div class="prompt">/gsd:quick</div>
+    <div class="prompt">"Update the system prompt so the agent is more concise and always asks clarifying questions before giving long answers."</div>
+
+    <p class="step-desc"><strong>To add a new tool:</strong></p>
+    <div class="prompt">/gsd:quick</div>
+    <div class="prompt">"Add a new tool called 'check_calendar' that lets the agent look up available meeting slots. It should query the Supabase 'calendar_slots' table."</div>
+
+    <p class="step-desc"><strong>To add a new integration:</strong></p>
+    <div class="prompt">/channel-integration</div>
+    <div class="prompt">"Add Slack integration so this agent can respond to messages in Slack channels."</div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step">
+    <span class="step-number">7</span>
+    <span class="step-title">Test the Agent</span>
+    <p class="step-desc">Have test conversations:</p>
+    <ul style="margin: 0.75rem 0; padding-left: 1.5rem; color: #4b5563; font-size: 0.9rem;">
+      <li>Test the new feature works</li>
+      <li>Test old features still work</li>
+      <li>Test edge cases (weird inputs)</li>
+      <li>Test same scenario multiple times</li>
+    </ul>
+  </div>
+
+  <!-- Step 8 -->
+  <div class="step">
+    <span class="step-number">8</span>
+    <span class="step-title">If Agent Misbehaves</span>
+    <div class="prompt">/sf</div>
+    <div class="prompt">"The agent isn't using the new calendar tool. It just says 'I can't check calendars' even though I added the tool."</div>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="step">
+    <span class="step-number">9</span>
+    <span class="step-title">Save & Deploy</span>
+    <div class="prompt">/git-flow
+/quick-deploy</div>
+  </div>
+
+  <div class="checklist">
+    <h3>Before You Deploy - Check These</h3>
+    <ul>
+      <li>Explored code first</li>
+      <li>New feature works</li>
+      <li>Old features work</li>
+      <li>Tested multiple times</li>
+      <li>No API keys exposed</li>
+      <li>Error handling works</li>
+    </ul>
+  </div>
+
+  <footer>
+    Qualia Solutions &copy; 2025 | <a href="index.html">Back to Guides</a>
+  </footer>
+</body>
+</html>

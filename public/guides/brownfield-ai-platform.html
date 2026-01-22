@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Existing AI Platform - Qualia Training</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="nav-links">
+    <a href="index.html">← Back</a>
+  </nav>
+
+  <div class="logo">QUALIA SOLUTIONS</div>
+  <span class="badge badge-brownfield">Existing</span>
+  <span class="badge badge-platform">Platform</span>
+  <h1>Modify Existing AI Platform</h1>
+  <p class="subtitle">Add features to multi-user platform (be careful!)</p>
+
+  <div class="step" style="border-left-color: #ef4444; background: #fef2f2;">
+    <span class="step-number" style="background: #ef4444;">!</span>
+    <span class="step-title">WARNING: Platform Changes Affect Everyone</span>
+    <p class="step-desc">Platforms have multiple users. A bug affects ALL of them. Always test thoroughly and deploy during low-traffic times.</p>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">Go to the Project Folder</span>
+    <div class="prompt">cd ~/Desktop/Projects/platforms/existing-platform</div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">Check Git Status</span>
+    <div class="prompt">git status && git branch</div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">Start Claude Code</span>
+    <div class="prompt">claude</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">Explore the Codebase Thoroughly</span>
+    <div class="prompt">/brownfield-explore</div>
+    <div class="prompt">"I need to add a usage analytics dashboard. Show me how the platform is structured, how data is isolated per organization, and where analytics might fit."</div>
+    <p class="step-desc">For deeper understanding:</p>
+    <div class="prompt">/gsd:analyze-codebase</div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step">
+    <span class="step-number">5</span>
+    <span class="step-title">Create Feature Branch</span>
+    <div class="prompt">git checkout -b feature/usage-analytics</div>
+  </div>
+
+  <!-- Step 6 - Small -->
+  <div class="step">
+    <span class="step-number">6a</span>
+    <span class="step-title">For Small Changes (UI tweaks, admin features)</span>
+    <div class="prompt">/gsd:quick</div>
+    <div class="prompt">"Add a usage chart to the admin dashboard showing messages per day for the last 30 days. Only super admins should see this."</div>
+  </div>
+
+  <!-- Step 6 - Medium -->
+  <div class="step">
+    <span class="step-number">6b</span>
+    <span class="step-title">For Medium Changes (new features)</span>
+    <div class="prompt">/gsd:new-milestone</div>
+    <div class="prompt">"Add usage analytics feature. Each organization should see their own usage stats. Include: messages sent, API calls made, and cost estimate."</div>
+    <p class="step-desc">Then work through phases:</p>
+    <div class="prompt">/gsd:discuss-phase 1
+/gsd:plan-phase 1
+/gsd:execute-phase 1</div>
+  </div>
+
+  <!-- Step 6 - Big -->
+  <div class="step" style="border-left-color: #f59e0b;">
+    <span class="step-number" style="background: #f59e0b;">6c</span>
+    <span class="step-title">For Big Changes (database, auth, billing)</span>
+    <p class="step-desc">Do extra planning and run production audit first:</p>
+    <div class="prompt">/pr</div>
+    <p class="step-desc">Then use full GSD with careful testing.</p>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step">
+    <span class="step-number">7</span>
+    <span class="step-title">If You Need Database Changes</span>
+    <div class="prompt">/sb</div>
+    <div class="prompt">"Add a usage_logs table to track API calls per organization. Include: org_id, endpoint, tokens_used, cost, created_at. Add RLS so each org only sees their own data."</div>
+  </div>
+
+  <!-- Step 8 -->
+  <div class="step">
+    <span class="step-number">8</span>
+    <span class="step-title">Test As Different Users</span>
+    <p class="step-desc">Test your changes as:</p>
+    <ul style="margin: 0.75rem 0; padding-left: 1.5rem; color: #4b5563; font-size: 0.9rem;">
+      <li>Super admin</li>
+      <li>Organization admin</li>
+      <li>Regular user</li>
+      <li>User from DIFFERENT organization (check isolation!)</li>
+    </ul>
+  </div>
+
+  <!-- Step 9 -->
+  <div class="step">
+    <span class="step-number">9</span>
+    <span class="step-title">Verify Data Isolation</span>
+    <p class="step-desc">Ask Claude to check:</p>
+    <div class="prompt">"Check if User A from Organization 1 can see any data from Organization 2. Test the new usage_logs table specifically."</div>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="step">
+    <span class="step-number">10</span>
+    <span class="step-title">Deploy to Staging First</span>
+    <div class="prompt">/git-flow</div>
+    <p class="step-desc">Deploy to staging and test there before production.</p>
+  </div>
+
+  <!-- Step 11 -->
+  <div class="step">
+    <span class="step-number">11</span>
+    <span class="step-title">Deploy to Production (Off-Peak Hours)</span>
+    <div class="prompt">/full-deploy</div>
+    <p class="step-desc">Monitor for 24 hours. Be ready to rollback.</p>
+  </div>
+
+  <div class="checklist">
+    <h3>Platform Change Checklist</h3>
+    <ul>
+      <li>Explored codebase first</li>
+      <li>Understood multi-tenant structure</li>
+      <li>RLS policies correct</li>
+      <li>Tested as all user types</li>
+      <li>Data isolation verified</li>
+      <li>Deployed to staging first</li>
+      <li>Production deploy off-peak</li>
+      <li>Monitoring active</li>
+    </ul>
+  </div>
+
+  <footer>
+    Qualia Solutions &copy; 2025 | <a href="index.html">Back to Guides</a>
+  </footer>
+</body>
+</html>
