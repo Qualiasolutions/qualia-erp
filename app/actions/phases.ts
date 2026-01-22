@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getWorkflowTemplate, type ProjectType } from '@/lib/workflow-templates';
 
 export async function getProjectPhases(projectId: string) {
   const supabase = await createClient();
@@ -258,4 +259,122 @@ export async function getPhaseProgressStats(projectId: string) {
       },
     };
   });
+}
+
+/**
+ * Prefill project workflow based on project_type
+ * Creates phases and tasks from workflow templates
+ */
+export async function prefillProjectWorkflow(
+  projectId: string,
+  workspaceId: string,
+  projectType: ProjectType | string | null
+) {
+  const supabase = await createClient();
+
+  // Check if phases already exist for this project
+  const { data: existingPhases } = await supabase
+    .from('project_phases')
+    .select('id')
+    .eq('project_id', projectId)
+    .limit(1);
+
+  if (existingPhases && existingPhases.length > 0) {
+    return { success: true, message: 'Phases already exist', skipped: true };
+  }
+
+  // Get workflow template for this project type
+  const phases = getWorkflowTemplate(projectType);
+
+  // Create phases and their tasks
+  for (let phaseIndex = 0; phaseIndex < phases.length; phaseIndex++) {
+    const phaseTemplate = phases[phaseIndex];
+
+    // Create the phase
+    const { data: phase, error: phaseError } = await supabase
+      .from('project_phases')
+      .insert({
+        project_id: projectId,
+        workspace_id: workspaceId,
+        name: phaseTemplate.name,
+        description: phaseTemplate.description,
+        sort_order: phaseIndex,
+        status: phaseIndex === 0 ? 'in_progress' : 'pending',
+        is_locked: phaseIndex > 0, // Lock all phases except the first
+        auto_progress: true,
+      })
+      .select('id')
+      .single();
+
+    if (phaseError) {
+      console.error(
+        `[prefillProjectWorkflow] Error creating phase ${phaseTemplate.name}:`,
+        phaseError
+      );
+      continue;
+    }
+
+    // Create phase items (tasks)
+    if (phaseTemplate.tasks.length > 0) {
+      const phaseItems = phaseTemplate.tasks.map((task, taskIndex) => ({
+        phase_id: phase.id,
+        title: task.title,
+        description: task.description || null,
+        helper_text: task.helperText || null,
+        display_order: taskIndex,
+        is_completed: false,
+        status: 'Todo',
+      }));
+
+      const { error: itemsError } = await supabase.from('phase_items').insert(phaseItems);
+
+      if (itemsError) {
+        console.error(
+          `[prefillProjectWorkflow] Error creating items for phase ${phaseTemplate.name}:`,
+          itemsError
+        );
+      }
+    }
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${projectId}/roadmap`);
+  return { success: true, phasesCreated: phases.length };
+}
+
+/**
+ * Apply workflow templates to all projects that don't have phases
+ */
+export async function applyWorkflowToExistingProjects() {
+  const supabase = await createClient();
+
+  // Get all projects
+  const { data: projects, error: projectsError } = await supabase
+    .from('projects')
+    .select('id, workspace_id, project_type');
+
+  if (projectsError) {
+    console.error('[applyWorkflowToExistingProjects] Error fetching projects:', projectsError);
+    return { success: false, error: projectsError.message };
+  }
+
+  let applied = 0;
+  let skipped = 0;
+
+  for (const project of projects || []) {
+    const result = await prefillProjectWorkflow(
+      project.id,
+      project.workspace_id,
+      project.project_type
+    );
+
+    if (result.skipped) {
+      skipped++;
+    } else if (result.success) {
+      applied++;
+    }
+  }
+
+  revalidatePath('/projects');
+  return { success: true, applied, skipped, total: (projects || []).length };
 }

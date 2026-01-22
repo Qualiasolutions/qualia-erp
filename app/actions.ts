@@ -26,6 +26,7 @@ import {
   notifyClientCreated,
   notifyIssueCreated,
 } from '@/lib/email';
+import { prefillProjectWorkflow } from '@/app/actions/phases';
 
 export type ActionResult = {
   success: boolean;
@@ -2899,6 +2900,9 @@ export async function createProjectWithRoadmap(
     },
     { name: project.name, project_type, deployment_platform }
   );
+
+  // Prefill workflow phases based on project type
+  await prefillProjectWorkflow(project.id, wsId, project_type);
 
   revalidatePath('/projects');
   revalidatePath('/');
