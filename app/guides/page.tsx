@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -10,118 +10,93 @@ import {
   Layers,
   Sprout,
   TreeDeciduous,
-  ExternalLink,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { guides, type Guide, type GuideCategory, type ProjectType } from '@/lib/guides-data';
 
-type GuideCategory = 'greenfield' | 'brownfield';
+const PROJECT_TYPE_CONFIG: Record<
+  ProjectType,
+  { icon: React.ComponentType<{ className?: string }>; color: string }
+> = {
+  website: { icon: Globe, color: 'text-sky-400 bg-sky-400/10' },
+  'ai-agent': { icon: Bot, color: 'text-violet-400 bg-violet-400/10' },
+  'voice-agent': { icon: Phone, color: 'text-pink-400 bg-pink-400/10' },
+  'ai-platform': { icon: Layers, color: 'text-amber-400 bg-amber-400/10' },
+};
 
-interface Guide {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  href: string;
-  category: GuideCategory;
+function getProgress(slug: string): { completed: number; total: number } {
+  if (typeof window === 'undefined') return { completed: 0, total: 0 };
+  try {
+    const stored = localStorage.getItem(`guide-progress-${slug}`);
+    const guide = guides.find((g) => g.slug === slug);
+    if (!guide) return { completed: 0, total: 0 };
+    const completed = stored ? JSON.parse(stored).length : 0;
+    return { completed, total: guide.steps.length };
+  } catch {
+    return { completed: 0, total: 0 };
+  }
 }
 
-const guides: Guide[] = [
-  // Greenfield guides
-  {
-    id: 'greenfield-website',
-    title: 'Website',
-    description: 'Build a new website from scratch with Next.js, React, and Tailwind',
-    icon: Globe,
-    href: '/guides/greenfield-website.html',
-    category: 'greenfield',
-  },
-  {
-    id: 'greenfield-ai-agent',
-    title: 'AI Agent',
-    description: 'Create a new AI chatbot or assistant with Gemini and Supabase',
-    icon: Bot,
-    href: '/guides/greenfield-ai-agent.html',
-    category: 'greenfield',
-  },
-  {
-    id: 'greenfield-voice-agent',
-    title: 'Voice Agent',
-    description: 'Build a new voice AI agent with VAPI and ElevenLabs',
-    icon: Phone,
-    href: '/guides/greenfield-voice-agent.html',
-    category: 'greenfield',
-  },
-  {
-    id: 'greenfield-ai-platform',
-    title: 'AI Platform',
-    description: 'Create a full-featured AI platform with auth, database, and integrations',
-    icon: Layers,
-    href: '/guides/greenfield-ai-platform.html',
-    category: 'greenfield',
-  },
-  // Brownfield guides
-  {
-    id: 'brownfield-website',
-    title: 'Website',
-    description: 'Add features to an existing website codebase',
-    icon: Globe,
-    href: '/guides/brownfield-website.html',
-    category: 'brownfield',
-  },
-  {
-    id: 'brownfield-ai-agent',
-    title: 'AI Agent',
-    description: 'Extend an existing AI agent with new capabilities',
-    icon: Bot,
-    href: '/guides/brownfield-ai-agent.html',
-    category: 'brownfield',
-  },
-  {
-    id: 'brownfield-voice-agent',
-    title: 'Voice Agent',
-    description: 'Enhance an existing voice agent with new features',
-    icon: Phone,
-    href: '/guides/brownfield-voice-agent.html',
-    category: 'brownfield',
-  },
-  {
-    id: 'brownfield-ai-platform',
-    title: 'AI Platform',
-    description: 'Add functionality to an existing AI platform',
-    icon: Layers,
-    href: '/guides/brownfield-ai-platform.html',
-    category: 'brownfield',
-  },
-];
-
 function GuideCard({ guide }: { guide: Guide }) {
+  const [progress, setProgress] = useState({ completed: 0, total: 0 });
+  const typeConfig = PROJECT_TYPE_CONFIG[guide.projectType];
+  const TypeIcon = typeConfig.icon;
+
+  useEffect(() => {
+    setProgress(getProgress(guide.slug));
+  }, [guide.slug]);
+
+  const progressPercent = progress.total > 0 ? (progress.completed / progress.total) * 100 : 0;
+  const isComplete = progress.completed === progress.total && progress.total > 0;
+  const hasProgress = progress.completed > 0;
+
   return (
-    <a
-      href={guide.href}
-      target="_blank"
-      rel="noopener noreferrer"
+    <Link
+      href={`/guides/${guide.slug}`}
       className={cn(
         'group relative flex flex-col gap-3 rounded-xl border p-5 transition-all',
         'border-border/50 bg-card/50 hover:border-primary/30 hover:bg-card',
-        'hover:shadow-[0_0_30px_rgba(var(--primary),0.1)]'
+        'hover:shadow-[0_0_30px_rgba(var(--primary),0.1)]',
+        isComplete && 'border-emerald-500/30'
       )}
     >
+      {/* Progress indicator */}
+      {hasProgress && (
+        <div className="absolute bottom-0 left-0 h-1 overflow-hidden rounded-b-xl bg-muted">
+          <div
+            className={cn('h-full transition-all', isComplete ? 'bg-emerald-500' : 'bg-primary')}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      )}
+
       <div className="flex items-start justify-between">
         <div
-          className={cn(
-            'flex h-10 w-10 items-center justify-center rounded-lg',
-            'bg-primary/10 text-primary'
-          )}
+          className={cn('flex h-10 w-10 items-center justify-center rounded-lg', typeConfig.color)}
         >
-          <guide.icon className="h-5 w-5" />
+          <TypeIcon className="h-5 w-5" />
         </div>
-        <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+
+        {isComplete && <CheckCircle2 className="h-5 w-5 text-emerald-400" />}
       </div>
+
       <div>
-        <h3 className="font-semibold text-foreground">{guide.title}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">{guide.description}</p>
+        <h3 className="font-semibold text-foreground transition-colors group-hover:text-primary">
+          {guide.title
+            .replace('Build a New ', '')
+            .replace('Work on Existing ', '')
+            .replace('Modify Existing ', '')}
+        </h3>
+        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{guide.subtitle}</p>
       </div>
-    </a>
+
+      {hasProgress && (
+        <div className="text-xs text-muted-foreground">
+          {progress.completed}/{progress.total} steps
+        </div>
+      )}
+    </Link>
   );
 }
 
@@ -145,7 +120,8 @@ export default function GuidesPage() {
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">Qualia Guide Book</h1>
           <p className="mt-2 text-muted-foreground">
-            Step-by-step guides for building projects at Qualia Solutions
+            Step-by-step guides for building projects. Click any guide to start - your progress is
+            saved automatically.
           </p>
         </div>
       </div>
@@ -165,7 +141,9 @@ export default function GuidesPage() {
             >
               <Sprout className="h-4 w-4" />
               Greenfield
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs">New Projects</span>
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+                New Projects
+              </span>
             </button>
             <button
               onClick={() => setActiveCategory('brownfield')}
@@ -178,7 +156,9 @@ export default function GuidesPage() {
             >
               <TreeDeciduous className="h-4 w-4" />
               Brownfield
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">Existing Projects</span>
+              <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
+                Existing Projects
+              </span>
             </button>
           </div>
         </div>
@@ -199,7 +179,7 @@ export default function GuidesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {greenfieldGuides.map((guide) => (
-                <GuideCard key={guide.id} guide={guide} />
+                <GuideCard key={guide.slug} guide={guide} />
               ))}
             </div>
           </div>
@@ -218,41 +198,33 @@ export default function GuidesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {brownfieldGuides.map((guide) => (
-                <GuideCard key={guide.id} guide={guide} />
+                <GuideCard key={guide.slug} guide={guide} />
               ))}
             </div>
           </div>
         )}
 
-        {/* Quick Links */}
+        {/* Tips */}
         <div className="mt-12 rounded-xl border border-border/50 bg-card/30 p-6">
-          <h3 className="font-semibold">Resources</h3>
-          <div className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-            <a
-              href="/guides/index.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Full Guide Index
-            </a>
-            <Link
-              href="/projects"
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              View Active Projects
-            </Link>
-            <a
-              href="https://github.com/qualia-solutions"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
-            >
-              <ExternalLink className="h-4 w-4" />
-              GitHub Templates
-            </a>
-          </div>
+          <h3 className="font-semibold">Tips for Trainees</h3>
+          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/50" />
+              Click the circle on each step to mark it complete - your progress is saved locally
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/50" />
+              Click the copy button on code blocks to copy commands to your clipboard
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/50" />
+              Yellow tips show example prompts - customize them for your specific project
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary/50" />
+              If stuck, ask in the team chat or message Fawzi
+            </li>
+          </ul>
         </div>
       </div>
     </div>
