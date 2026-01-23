@@ -58,7 +58,7 @@ export function ProjectPulseSidebar({
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="flex items-center justify-between border-b border-white/20 px-4 py-3">
           <div>
-            <h3 className="text-sm font-medium">Active Projects</h3>
+            <h3 className="text-sm font-medium">Currently Building</h3>
             <p className="text-xs text-muted-foreground">{activeProjects.length} in progress</p>
           </div>
           <Link

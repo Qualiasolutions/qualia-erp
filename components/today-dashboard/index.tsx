@@ -131,7 +131,7 @@ export function TodayDashboard({
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-xs font-bold text-emerald-400">
                 {projects.length}
               </span>
-              <span className="text-xs text-zinc-500">projects</span>
+              <span className="text-xs text-zinc-500">building</span>
             </div>
           </div>
         </div>
