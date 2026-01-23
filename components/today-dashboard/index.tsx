@@ -127,6 +127,12 @@ export function TodayDashboard({
               </span>
               <span className="text-xs text-zinc-500">meetings</span>
             </div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-500/20 px-1.5 text-xs font-bold text-emerald-400">
+                {projects.length}
+              </span>
+              <span className="text-xs text-zinc-500">projects</span>
+            </div>
           </div>
         </div>
 
@@ -168,68 +174,48 @@ export function TodayDashboard({
         </div>
       </header>
 
-      {/* Main - Bento Grid */}
-      <main className="min-h-0 flex-1 overflow-auto p-4 lg:p-5">
-        <div className="mx-auto grid h-full max-w-[1600px] gap-4 lg:grid-cols-12 lg:grid-rows-2">
-          {/* Meetings - Top Left */}
+      {/* Main - 3 Column Layout */}
+      <main className="min-h-0 flex-1 overflow-hidden p-4 lg:p-5">
+        <div className="mx-auto grid h-full max-w-[1800px] grid-cols-1 gap-4 lg:grid-cols-3">
+          {/* Tasks */}
           <motion.div
             custom={0}
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-zinc-900 to-zinc-900 ring-1 ring-white/10 lg:col-span-5 lg:row-span-1"
+            className="relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-amber-500/5 via-zinc-900 to-zinc-900 ring-1 ring-white/10"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-violet-500/10 via-transparent to-transparent" />
-            <div className="relative h-full">
-              <MeetingsWrapper initialMeetings={meetings} />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent" />
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <TasksWidget tasks={tasks} teamMembers={teamMembers} />
             </div>
           </motion.div>
 
-          {/* Projects - Top Right */}
+          {/* Meetings */}
           <motion.div
             custom={1}
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-zinc-900 to-zinc-900 ring-1 ring-white/10 lg:col-span-4 lg:row-span-2"
+            className="relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-violet-500/5 via-zinc-900 to-zinc-900 ring-1 ring-white/10"
           >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
-            <div className="relative h-full">
-              <ProjectPulseSidebar activeProjects={projects} finishedProjects={finishedProjects} />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-500/10 via-transparent to-transparent" />
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <MeetingsWrapper initialMeetings={meetings} />
             </div>
           </motion.div>
 
-          {/* Quick Stats - Top Far Right */}
+          {/* Projects */}
           <motion.div
             custom={2}
             variants={cardVariants}
             initial="hidden"
             animate="visible"
-            className="flex flex-col gap-3 lg:col-span-3 lg:row-span-1"
+            className="relative flex flex-col overflow-hidden rounded-2xl bg-gradient-to-b from-emerald-500/5 via-zinc-900 to-zinc-900 ring-1 ring-white/10"
           >
-            {/* Active count */}
-            <div className="flex flex-1 flex-col justify-center rounded-2xl bg-gradient-to-br from-sky-500/20 via-zinc-900 to-zinc-900 p-4 ring-1 ring-white/10">
-              <span className="text-3xl font-bold text-white">{projects.length}</span>
-              <span className="text-xs text-zinc-500">Active projects</span>
-            </div>
-            {/* Completed */}
-            <div className="flex flex-1 flex-col justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 via-zinc-900 to-zinc-900 p-4 ring-1 ring-white/10">
-              <span className="text-3xl font-bold text-white">{finishedProjects.length}</span>
-              <span className="text-xs text-zinc-500">Completed</span>
-            </div>
-          </motion.div>
-
-          {/* Tasks - Bottom Full Width */}
-          <motion.div
-            custom={3}
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/5 via-zinc-900 to-zinc-900 ring-1 ring-white/10 lg:col-span-8 lg:row-span-1"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-amber-500/5 via-transparent to-transparent" />
-            <div className="relative h-full">
-              <TasksWidget tasks={tasks} teamMembers={teamMembers} />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-500/10 via-transparent to-transparent" />
+            <div className="relative flex min-h-0 flex-1 flex-col">
+              <ProjectPulseSidebar activeProjects={projects} finishedProjects={finishedProjects} />
             </div>
           </motion.div>
         </div>
