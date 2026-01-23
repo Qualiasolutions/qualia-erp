@@ -99,7 +99,7 @@ export function TodayDashboard({
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Minimal Header */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 px-4 lg:px-6">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/20 px-4 lg:px-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={toggleMobile}>
             <Menu className="h-4 w-4" />
@@ -161,12 +161,12 @@ export function TodayDashboard({
             {/* Main Column: Meetings + Tasks */}
             <motion.div {...fadeIn} className="flex min-h-0 flex-col gap-4 lg:col-span-8 lg:gap-6">
               {/* Meetings - Compact */}
-              <div className="h-[280px] shrink-0 overflow-hidden rounded-xl border border-border/50 bg-card">
+              <div className="h-[280px] shrink-0 overflow-hidden rounded-xl border border-white/20 bg-card">
                 <MeetingsWrapper initialMeetings={meetings} />
               </div>
 
               {/* Tasks - Fills remaining space */}
-              <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-border/50 bg-card">
+              <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-white/20 bg-card">
                 <TasksWidget tasks={tasks} teamMembers={teamMembers} />
               </div>
             </motion.div>
@@ -175,7 +175,7 @@ export function TodayDashboard({
             <motion.div
               {...fadeIn}
               transition={{ ...fadeIn.transition, delay: 0.1 }}
-              className="min-h-0 overflow-hidden rounded-xl border border-border/50 bg-card lg:col-span-4"
+              className="min-h-0 overflow-hidden rounded-xl border border-white/20 bg-card lg:col-span-4"
             >
               <ProjectPulseSidebar activeProjects={projects} finishedProjects={finishedProjects} />
             </motion.div>

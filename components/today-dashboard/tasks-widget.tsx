@@ -261,7 +261,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   return (
     <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-white/20 px-4 py-3">
         <div>
           <h3 className="text-sm font-medium">Tasks</h3>
           <p className="text-xs text-muted-foreground">
@@ -315,7 +315,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
       </div>
 
       {/* Quick Add */}
-      <div className="flex items-center gap-2 border-b border-border/50 px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-white/20 px-4 py-2">
         <input
           type="text"
           value={quickAddValue}

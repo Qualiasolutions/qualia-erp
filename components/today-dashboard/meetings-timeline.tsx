@@ -95,7 +95,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-white/20 px-4 py-3">
         <div>
           <h3 className="text-sm font-medium">Meetings</h3>
           <p className="text-xs text-muted-foreground">{totalMeetings} this week</p>
