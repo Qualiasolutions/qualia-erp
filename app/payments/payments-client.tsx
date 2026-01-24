@@ -16,6 +16,9 @@ import {
   ChevronDown,
   TrendingUp,
   TrendingDown,
+  AlertCircle,
+  Filter,
+  Percent,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -84,6 +87,7 @@ function SummaryCard({
   type,
   icon: Icon,
   currency = 'EUR',
+  profitMargin,
 }: {
   title: string;
   amount: number;
@@ -91,6 +95,7 @@ function SummaryCard({
   type: 'income' | 'expense' | 'balance';
   icon?: typeof TrendingUp;
   currency?: string;
+  profitMargin?: number;
 }) {
   const config = {
     income: { color: 'text-emerald-500', bg: 'bg-emerald-500/10', iconColor: 'text-emerald-500' },
@@ -123,12 +128,86 @@ function SummaryCard({
               pending
             </p>
           )}
+          {profitMargin !== undefined && (
+            <p className="mt-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <Percent className="h-3 w-3" />
+              <span
+                className={cn(
+                  'font-medium',
+                  profitMargin >= 0 ? 'text-emerald-500' : 'text-red-500'
+                )}
+              >
+                {profitMargin.toFixed(1)}%
+              </span>{' '}
+              margin
+            </p>
+          )}
         </div>
         {Icon && (
           <div className={cn('rounded-xl p-2.5', config[type].bg)}>
             <Icon className={cn('h-5 w-5', config[type].iconColor)} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function QuickInsights({
+  pendingPayments,
+  onFilterPending,
+}: {
+  pendingPayments: Payment[];
+  onFilterPending: () => void;
+}) {
+  if (pendingPayments.length === 0) return null;
+
+  const pendingIncome = pendingPayments
+    .filter((p) => p.type === 'incoming')
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  const pendingExpenses = pendingPayments
+    .filter((p) => p.type === 'outgoing')
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+          <AlertCircle className="h-4 w-4 text-amber-500" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-foreground">
+            {pendingPayments.length} pending payment{pendingPayments.length !== 1 ? 's' : ''} need
+            attention
+          </p>
+          <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            {pendingIncome > 0 && (
+              <span>
+                <span className="font-medium text-emerald-500">
+                  €{pendingIncome.toLocaleString()}
+                </span>{' '}
+                to collect
+              </span>
+            )}
+            {pendingExpenses > 0 && (
+              <span>
+                <span className="font-medium text-red-500">
+                  €{pendingExpenses.toLocaleString()}
+                </span>{' '}
+                to pay
+              </span>
+            )}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onFilterPending}
+          className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
+        >
+          <Filter className="h-3 w-3" />
+          View
+        </button>
       </div>
     </div>
   );
@@ -566,9 +645,20 @@ function ClientSection({ group }: { group: ClientGroup }) {
 export function PaymentsClient({ payments, summary, clients }: PaymentsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'client'>('timeline');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [isClearing, startClearTransition] = useTransition();
 
   const balance = summary.totalIncoming - summary.totalOutgoing;
+  const profitMargin = summary.totalIncoming > 0 ? (balance / summary.totalIncoming) * 100 : 0;
+
+  // Pending payments for quick insights
+  const pendingPayments = useMemo(() => payments.filter((p) => p.status === 'pending'), [payments]);
+
+  // Filtered payments based on status
+  const filteredPayments = useMemo(() => {
+    if (statusFilter === 'all') return payments;
+    return payments.filter((p) => p.status === statusFilter);
+  }, [payments, statusFilter]);
 
   const handleClearAll = () => {
     if (payments.length === 0) return;
@@ -593,7 +683,7 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
   const monthGroups = useMemo(() => {
     const groups: Record<string, MonthGroup> = {};
 
-    payments.forEach((payment) => {
+    filteredPayments.forEach((payment) => {
       const date = parseISO(payment.payment_date);
       const key = format(date, 'yyyy-MM');
       const isIncoming = payment.type === 'incoming';
@@ -633,14 +723,14 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
       if (a.year !== b.year) return a.year - b.year;
       return a.month - b.month;
     });
-  }, [payments]);
+  }, [filteredPayments]);
 
   // Group payments by client
   const clientGroups = useMemo(() => {
     const groups: Record<string, ClientGroup> = {};
 
     // Only incoming payments for client view
-    payments
+    filteredPayments
       .filter((p) => p.type === 'incoming')
       .forEach((payment) => {
         const clientId = payment.client_id || 'no-client';
@@ -670,12 +760,12 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
 
     // Sort groups by total (highest first)
     return Object.values(groups).sort((a, b) => b.total - a.total);
-  }, [payments]);
+  }, [filteredPayments]);
 
   return (
     <div className="space-y-6">
       {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <SummaryCard
           title="Total Income"
           amount={summary.totalIncoming}
@@ -690,13 +780,28 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
           type="expense"
           icon={TrendingDown}
         />
-        <SummaryCard title="Net Balance" amount={balance} type="balance" />
-        <div className="flex items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-5">
+        <SummaryCard
+          title="Net Balance"
+          amount={balance}
+          type="balance"
+          profitMargin={profitMargin}
+        />
+      </div>
+
+      {/* Quick insights for pending payments */}
+      <QuickInsights
+        pendingPayments={pendingPayments}
+        onFilterPending={() => setStatusFilter('pending')}
+      />
+
+      {/* Actions bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-2 rounded-xl bg-qualia-500 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-qualia-500/25 transition-all hover:bg-qualia-600 hover:shadow-xl hover:shadow-qualia-500/30"
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-all hover:bg-secondary"
               >
                 <Plus className="h-4 w-4" />
                 Add Payment
@@ -715,12 +820,31 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
               type="button"
               onClick={handleClearAll}
               disabled={isClearing}
-              className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-600 transition-all hover:bg-red-500/20 disabled:opacity-50 dark:text-red-400"
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground transition-all hover:bg-secondary hover:text-foreground disabled:opacity-50"
             >
               <Trash2 className="h-4 w-4" />
-              {isClearing ? 'Clearing...' : 'Clear All'}
+              {isClearing ? 'Clearing...' : 'Clear'}
             </button>
           )}
+        </div>
+
+        {/* Status filter */}
+        <div className="flex rounded-lg border border-border bg-card p-1">
+          {(['all', 'pending', 'completed'] as const).map((status) => (
+            <button
+              key={status}
+              type="button"
+              onClick={() => setStatusFilter(status)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-all',
+                statusFilter === status
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {status}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -734,7 +858,7 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
             className={cn(
               'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all',
               viewMode === 'timeline'
-                ? 'bg-qualia-500 text-white shadow-sm'
+                ? 'bg-secondary text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
@@ -747,7 +871,7 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
             className={cn(
               'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-all',
               viewMode === 'client'
-                ? 'bg-qualia-500 text-white shadow-sm'
+                ? 'bg-secondary text-foreground'
                 : 'text-muted-foreground hover:text-foreground'
             )}
           >
@@ -758,15 +882,28 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
       </div>
 
       {/* Payments grouped view */}
-      {payments.length === 0 ? (
+      {filteredPayments.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
           <div className="mb-4 rounded-2xl bg-muted p-5">
             <ArrowDownLeft className="h-8 w-8 text-muted-foreground" />
           </div>
-          <p className="text-lg font-semibold text-foreground">No payments yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Add your first payment to start tracking
+          <p className="text-lg font-semibold text-foreground">
+            {payments.length === 0 ? 'No payments yet' : `No ${statusFilter} payments`}
           </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {payments.length === 0
+              ? 'Add your first payment to start tracking'
+              : 'Try changing the filter to see more payments'}
+          </p>
+          {statusFilter !== 'all' && payments.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setStatusFilter('all')}
+              className="mt-4 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+            >
+              Show all payments
+            </button>
+          )}
         </div>
       ) : viewMode === 'timeline' ? (
         <div className="space-y-4">
