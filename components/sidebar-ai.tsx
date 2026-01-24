@@ -1,17 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  Sparkles,
-  Mic,
-  MicOff,
-  Send,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Minus,
-  MessageSquare,
-} from 'lucide-react';
+import { Sparkles, Mic, MicOff, Send, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,51 +16,8 @@ type Message = {
   actionType?: 'success' | 'error' | 'pending';
 };
 
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 10 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 400,
-      damping: 30,
-      staggerChildren: 0.05,
-    },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.95,
-    y: 10,
-    transition: { duration: 0.15, ease: 'easeOut' as const },
-  },
-};
-
-const messageVariants = {
-  hidden: { opacity: 0, y: 8, scale: 0.98 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { type: 'spring' as const, stiffness: 500, damping: 30 },
-  },
-};
-
-const buttonVariants = {
-  idle: { scale: 1 },
-  hover: { scale: 1.05 },
-  tap: { scale: 0.95 },
-};
-
-const pulseKeyframes = {
-  scale: [1, 1.05, 1],
-  opacity: [0.7, 1, 0.7],
-};
-
 export function SidebarAI() {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,12 +33,23 @@ export function SidebarAI() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input when expanded
+  // Focus input when opened
   useEffect(() => {
-    if (isExpanded && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+    if (isOpen && inputRef.current) {
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [isExpanded]);
+  }, [isOpen]);
+
+  // Keyboard shortcut: Escape to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -242,9 +200,6 @@ export function SidebarAI() {
       e.preventDefault();
       sendMessage(input);
     }
-    if (e.key === 'Escape') {
-      setIsExpanded(false);
-    }
   };
 
   const clearChat = () => {
@@ -252,261 +207,211 @@ export function SidebarAI() {
     setError(null);
   };
 
-  // Collapsed state - premium button
-  if (!isExpanded) {
-    return (
-      <motion.button
-        onClick={() => setIsExpanded(true)}
-        className="group relative flex w-full items-center gap-3 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-3 text-sm font-medium text-foreground backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:bg-white/[0.04]"
-        variants={buttonVariants}
-        initial="idle"
-        whileHover="hover"
-        whileTap="tap"
-      >
-        {/* Subtle gradient glow on hover */}
-        <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-primary/5" />
-        </div>
-
-        {/* Icon with subtle animation */}
-        <motion.div
-          className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-white/10"
-          animate={pulseKeyframes}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-        >
-          <Sparkles className="h-4 w-4 text-primary" />
-        </motion.div>
-
-        <div className="relative flex flex-col items-start">
-          <span className="font-semibold tracking-tight text-foreground/90">Ask AI</span>
-          <span className="text-[10px] font-medium text-muted-foreground/60">
-            Create, search, analyze
-          </span>
-        </div>
-
-        {/* Keyboard shortcut hint */}
-        <div className="relative ml-auto hidden rounded-md border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground/50 sm:block">
-          ⌘K
-        </div>
-      </motion.button>
-    );
-  }
-
-  // Expanded state - premium chat interface
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        className="flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] shadow-2xl shadow-black/20 backdrop-blur-xl"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        exit="exit"
+    <>
+      {/* Sidebar trigger button - clean minimal style */}
+      <motion.button
+        onClick={() => setIsOpen(true)}
+        className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition-all duration-200 hover:border-primary/20 hover:bg-white/[0.04]"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
-        {/* Header - minimal & elegant */}
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-white/10">
-              <Sparkles className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold tracking-tight text-foreground/90">
-                AI Assistant
-              </span>
-              <span className="text-[10px] text-muted-foreground/50">Powered by Gemini</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1">
-            {messages.length > 0 && (
-              <motion.button
-                onClick={clearChat}
-                className="rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground/70"
-                title="Clear chat"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <MessageSquare className="h-3.5 w-3.5" />
-              </motion.button>
-            )}
-            <motion.button
-              onClick={() => setIsExpanded(false)}
-              className="rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground/70"
-              title="Minimize"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </motion.button>
-          </div>
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-white/10 transition-all group-hover:ring-primary/30">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
         </div>
+        <span className="text-sm font-medium text-foreground/80 transition-colors group-hover:text-foreground">
+          Ask AI
+        </span>
+      </motion.button>
 
-        {/* Messages - clean scrollable area */}
-        <AnimatePresence mode="popLayout">
-          {messages.length > 0 && (
-            <motion.div
-              className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 max-h-56 overflow-y-auto px-3 py-3 sm:max-h-64"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-            >
-              <div className="space-y-2.5">
-                {messages.map((message, index) => (
-                  <motion.div
-                    key={message.id}
-                    variants={messageVariants}
-                    initial="hidden"
-                    animate="visible"
-                    custom={index}
-                    className={cn(
-                      'relative rounded-xl px-3 py-2 text-xs leading-relaxed',
-                      message.role === 'user'
-                        ? 'ml-6 bg-primary/10 text-foreground/90 ring-1 ring-primary/10 sm:ml-8'
-                        : message.isAction
-                          ? message.actionType === 'error'
-                            ? 'mr-6 bg-red-500/10 text-red-400/90 ring-1 ring-red-500/20 sm:mr-8'
-                            : 'mr-6 bg-emerald-500/10 text-emerald-400/90 ring-1 ring-emerald-500/20 sm:mr-8'
-                          : 'mr-6 bg-white/[0.03] text-foreground/80 ring-1 ring-white/[0.06] sm:mr-8'
-                    )}
+      {/* Bottom center popup - no overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.96 }}
+            transition={{ type: 'spring' as const, stiffness: 400, damping: 30 }}
+            className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 sm:w-full"
+          >
+            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-background/95 shadow-2xl shadow-black/40 backdrop-blur-xl">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-white/10">
+                    <Sparkles className="h-3 w-3 text-primary" />
+                  </div>
+                  <span className="text-sm font-medium text-foreground/90">AI Assistant</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  {messages.length > 0 && (
+                    <button
+                      onClick={clearChat}
+                      className="rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground/70"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <motion.button
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-md p-1.5 text-muted-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground/70"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
                   >
-                    {message.isAction && message.actionType === 'success' && (
-                      <CheckCircle2 className="mr-1.5 inline-block h-3 w-3" />
-                    )}
-                    {message.isAction && message.actionType === 'error' && (
-                      <AlertCircle className="mr-1.5 inline-block h-3 w-3" />
-                    )}
-                    <span className="whitespace-pre-wrap break-words">{message.content}</span>
-                  </motion.div>
-                ))}
+                    <X className="h-4 w-4" />
+                  </motion.button>
+                </div>
+              </div>
 
-                {/* Loading state - elegant dots */}
-                {isLoading && (
+              {/* Messages */}
+              <AnimatePresence mode="popLayout">
+                {messages.length > 0 && (
                   <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mr-6 flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2.5 ring-1 ring-white/[0.06] sm:mr-8"
+                    className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 max-h-64 overflow-y-auto px-4 py-3"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
                   >
-                    <div className="flex gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <motion.span
-                          key={i}
-                          className="h-1.5 w-1.5 rounded-full bg-primary/60"
-                          animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
-                          transition={{
-                            duration: 0.8,
-                            repeat: Infinity,
-                            delay: i * 0.15,
-                          }}
-                        />
+                    <div className="space-y-2.5">
+                      {messages.map((message) => (
+                        <motion.div
+                          key={message.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ type: 'spring' as const, stiffness: 500, damping: 30 }}
+                          className={cn(
+                            'rounded-xl px-3 py-2 text-sm leading-relaxed',
+                            message.role === 'user'
+                              ? 'ml-8 bg-primary/10 text-foreground/90 ring-1 ring-primary/10'
+                              : message.isAction
+                                ? message.actionType === 'error'
+                                  ? 'mr-8 bg-red-500/10 text-red-400/90 ring-1 ring-red-500/20'
+                                  : 'mr-8 bg-emerald-500/10 text-emerald-400/90 ring-1 ring-emerald-500/20'
+                                : 'mr-8 bg-white/[0.03] text-foreground/80 ring-1 ring-white/[0.06]'
+                          )}
+                        >
+                          {message.isAction && message.actionType === 'success' && (
+                            <CheckCircle2 className="mr-1.5 inline-block h-3 w-3" />
+                          )}
+                          {message.isAction && message.actionType === 'error' && (
+                            <AlertCircle className="mr-1.5 inline-block h-3 w-3" />
+                          )}
+                          <span className="whitespace-pre-wrap break-words">{message.content}</span>
+                        </motion.div>
                       ))}
+
+                      {/* Loading indicator */}
+                      {isLoading && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="mr-8 flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2.5 ring-1 ring-white/[0.06]"
+                        >
+                          <div className="flex gap-1">
+                            {[0, 1, 2].map((i) => (
+                              <motion.span
+                                key={i}
+                                className="h-1.5 w-1.5 rounded-full bg-primary/60"
+                                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                                transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground/50">Thinking...</span>
+                        </motion.div>
+                      )}
+                      <div ref={messagesEndRef} />
                     </div>
-                    <span className="text-[10px] text-muted-foreground/50">Thinking...</span>
                   </motion.div>
                 )}
-                <div ref={messagesEndRef} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </AnimatePresence>
 
-        {/* Error - subtle banner */}
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mx-3 mb-2 overflow-hidden rounded-lg bg-red-500/10 px-3 py-2 text-[11px] text-red-400/80 ring-1 ring-red-500/20"
-            >
-              {error}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              {/* Error */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mx-4 mb-2 overflow-hidden rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400/80 ring-1 ring-red-500/20"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-        {/* Input - premium minimal form */}
-        <form
-          onSubmit={handleSubmit}
-          className="flex items-center gap-2 border-t border-white/[0.06] p-3"
-        >
-          {/* Voice button */}
-          <motion.button
-            type="button"
-            onClick={toggleListening}
-            disabled={isLoading}
-            className={cn(
-              'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 sm:h-10 sm:w-10',
-              isListening
-                ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
-                : 'bg-white/[0.03] text-muted-foreground/50 ring-1 ring-white/[0.08] hover:bg-white/[0.06] hover:text-foreground/70'
-            )}
-            title={isListening ? 'Stop listening' : 'Start voice input'}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {isListening && (
-              <motion.div
-                className="absolute inset-0 rounded-xl bg-red-500/20"
-                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-            )}
-            {isListening ? (
-              <MicOff className="relative h-4 w-4" />
-            ) : (
-              <Mic className="relative h-4 w-4" />
-            )}
-          </motion.button>
+              {/* Input */}
+              <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3">
+                <motion.button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={isLoading}
+                  className={cn(
+                    'relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200',
+                    isListening
+                      ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
+                      : 'bg-white/[0.03] text-muted-foreground/50 ring-1 ring-white/[0.08] hover:bg-white/[0.06] hover:text-foreground/70'
+                  )}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isListening && (
+                    <motion.div
+                      className="absolute inset-0 rounded-xl bg-red-500/20"
+                      animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    />
+                  )}
+                  {isListening ? (
+                    <MicOff className="relative h-4 w-4" />
+                  ) : (
+                    <Mic className="relative h-4 w-4" />
+                  )}
+                </motion.button>
 
-          {/* Text input */}
-          <input
-            ref={inputRef}
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={isListening ? 'Listening...' : 'Ask anything...'}
-            disabled={isLoading}
-            className="h-9 flex-1 rounded-xl border-0 bg-white/[0.03] px-3 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50 sm:h-10 sm:px-4 sm:text-sm"
-          />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={isListening ? 'Listening...' : 'Ask anything...'}
+                  disabled={isLoading}
+                  className="h-10 flex-1 rounded-xl border-0 bg-white/[0.03] px-4 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
+                />
 
-          {/* Send button */}
-          <motion.button
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all duration-200 sm:h-10 sm:w-10',
-              input.trim() && !isLoading
-                ? 'bg-primary/20 text-primary ring-1 ring-primary/30 hover:bg-primary/30'
-                : 'bg-white/[0.03] text-muted-foreground/30 ring-1 ring-white/[0.06]'
-            )}
-            whileHover={input.trim() && !isLoading ? { scale: 1.05 } : {}}
-            whileTap={input.trim() && !isLoading ? { scale: 0.95 } : {}}
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-          </motion.button>
-        </form>
+                <motion.button
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200',
+                    input.trim() && !isLoading
+                      ? 'bg-primary/20 text-primary ring-1 ring-primary/30 hover:bg-primary/30'
+                      : 'bg-white/[0.03] text-muted-foreground/30 ring-1 ring-white/[0.06]'
+                  )}
+                  whileHover={input.trim() && !isLoading ? { scale: 1.05 } : {}}
+                  whileTap={input.trim() && !isLoading ? { scale: 0.95 } : {}}
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </motion.button>
+              </form>
 
-        {/* Quick actions hint - only when empty */}
-        <AnimatePresence>
-          {messages.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="border-t border-white/[0.04] px-4 py-2.5"
-            >
-              <p className="text-[10px] leading-relaxed text-muted-foreground/40">
-                <span className="font-medium text-muted-foreground/60">Try:</span> &quot;Create a
-                task for...&quot;, &quot;Schedule meeting with...&quot;, &quot;Show my pending
-                tasks&quot;
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </AnimatePresence>
+              {/* Hint when empty */}
+              {messages.length === 0 && (
+                <div className="border-t border-white/[0.04] px-4 py-2.5">
+                  <p className="text-[11px] text-muted-foreground/40">
+                    Create tasks, schedule meetings, search projects...
+                  </p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

@@ -9,7 +9,6 @@ import { Plus, RefreshCw, Settings, Menu } from 'lucide-react';
 import { MeetingsWrapper } from './meetings-wrapper';
 import { TasksWidget } from './tasks-widget';
 import { ProjectPulseSidebar } from './project-pulse-sidebar';
-import { AISpotlight } from './ai-spotlight';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
@@ -220,9 +219,6 @@ export function TodayDashboard({
           </motion.div>
         </div>
       </main>
-
-      {/* AI Spotlight */}
-      <AISpotlight />
     </div>
   );
 }
@@ -230,5 +226,4 @@ export function TodayDashboard({
 export { MeetingsTimeline } from './meetings-timeline';
 export { MeetingsWrapper } from './meetings-wrapper';
 export { TasksWidget } from './tasks-widget';
-export { AISpotlight } from './ai-spotlight';
 export { ProjectPulseSidebar } from './project-pulse-sidebar';
