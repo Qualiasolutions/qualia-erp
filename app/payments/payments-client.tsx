@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Filter,
   Percent,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -26,7 +27,10 @@ import {
   updatePayment,
   deletePayment,
   clearAllPayments,
+  createRecurringPayment,
+  deleteRecurringPayment,
   type Payment,
+  type RecurringPayment,
 } from '@/app/actions/payments';
 import {
   Dialog,
@@ -56,6 +60,12 @@ interface PaymentsClientProps {
     totalOutgoing: number;
     pendingIncoming: number;
     pendingOutgoing: number;
+  };
+  recurringPayments: RecurringPayment[];
+  recurringSummary: {
+    monthlyIncome: number;
+    monthlyExpenses: number;
+    netMonthly: number;
   };
   clients: Client[];
 }
@@ -209,6 +219,274 @@ function QuickInsights({
           View
         </button>
       </div>
+    </div>
+  );
+}
+
+function RecurringPaymentCard({
+  payment,
+  onDelete,
+}: {
+  payment: RecurringPayment;
+  onDelete: (id: string) => void;
+}) {
+  const isIncoming = payment.type === 'incoming';
+
+  return (
+    <div className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-sm">
+      <div
+        className={cn(
+          'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl',
+          isIncoming ? 'bg-emerald-500/10' : 'bg-red-500/10'
+        )}
+      >
+        {isIncoming ? (
+          <ArrowDownLeft className="h-5 w-5 text-emerald-500" />
+        ) : (
+          <ArrowUpRight className="h-5 w-5 text-red-500" />
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-medium text-foreground">
+          {isIncoming && payment.client
+            ? payment.client.display_name || payment.client.name
+            : payment.description}
+        </p>
+        <p className="text-xs text-muted-foreground">Day {payment.day_of_month} of each month</p>
+      </div>
+
+      <p
+        className={cn(
+          'text-lg font-bold tabular-nums',
+          isIncoming ? 'text-emerald-500' : 'text-red-500'
+        )}
+      >
+        {isIncoming ? '+' : '-'}€{Number(payment.amount).toLocaleString()}
+      </p>
+
+      <button
+        type="button"
+        onClick={() => onDelete(payment.id)}
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-red-500/10 hover:text-red-500 group-hover:opacity-100"
+      >
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+function RecurringPaymentsSection({
+  recurringPayments,
+  recurringSummary,
+  clients,
+}: {
+  recurringPayments: RecurringPayment[];
+  recurringSummary: { monthlyIncome: number; monthlyExpenses: number; netMonthly: number };
+  clients: Client[];
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [formType, setFormType] = useState<'incoming' | 'outgoing'>('incoming');
+
+  const handleDelete = (id: string) => {
+    if (!confirm('Remove this recurring payment?')) return;
+    startTransition(async () => {
+      await deleteRecurringPayment(id);
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      const result = await createRecurringPayment({
+        type: formType,
+        amount: parseFloat(formData.get('amount') as string),
+        description:
+          formType === 'incoming'
+            ? clients.find((c) => c.id === formData.get('client_id'))?.display_name ||
+              clients.find((c) => c.id === formData.get('client_id'))?.name ||
+              'Client retainer'
+            : (formData.get('description') as string),
+        client_id: formType === 'incoming' ? (formData.get('client_id') as string) : undefined,
+        day_of_month: parseInt(formData.get('day_of_month') as string) || 1,
+      });
+
+      if (result.success) {
+        setShowForm(false);
+      }
+    });
+  };
+
+  const incomePayments = recurringPayments.filter((p) => p.type === 'incoming');
+  const expensePayments = recurringPayments.filter((p) => p.type === 'outgoing');
+
+  return (
+    <div className="rounded-2xl border border-border bg-gradient-to-br from-card to-secondary/20 p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-qualia-500/10">
+            <RefreshCw className="h-5 w-5 text-qualia-500" />
+          </div>
+          <div>
+            <h2 className="font-semibold text-foreground">Monthly Recurring</h2>
+            <p className="text-xs text-muted-foreground">Fixed income & expenses each month</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="hidden text-right sm:block">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="font-medium text-emerald-500">
+                +€{recurringSummary.monthlyIncome.toLocaleString()}
+              </span>
+              <span className="font-medium text-red-500">
+                -€{recurringSummary.monthlyExpenses.toLocaleString()}
+              </span>
+            </div>
+            <p
+              className={cn(
+                'text-xs font-semibold',
+                recurringSummary.netMonthly >= 0 ? 'text-emerald-500' : 'text-red-500'
+              )}
+            >
+              Net: {recurringSummary.netMonthly >= 0 ? '+' : ''}€
+              {recurringSummary.netMonthly.toLocaleString()}/mo
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowForm(!showForm)}
+            className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </button>
+        </div>
+      </div>
+
+      {/* Add form */}
+      {showForm && (
+        <form onSubmit={handleSubmit} className="mb-4 rounded-xl border border-border bg-card p-4">
+          <div className="mb-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setFormType('incoming')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
+                formType === 'incoming'
+                  ? 'bg-emerald-500/10 text-emerald-500'
+                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+              )}
+            >
+              <ArrowDownLeft className="h-4 w-4" />
+              Income
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormType('outgoing')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
+                formType === 'outgoing'
+                  ? 'bg-red-500/10 text-red-500'
+                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
+              )}
+            >
+              <ArrowUpRight className="h-4 w-4" />
+              Expense
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {formType === 'incoming' ? (
+              <select
+                name="client_id"
+                required
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Select client...</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.display_name || client.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                name="description"
+                required
+                placeholder="Description"
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            )}
+            <input
+              type="number"
+              name="amount"
+              step="0.01"
+              min="0"
+              required
+              placeholder="Amount"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums"
+            />
+            <div className="flex gap-2">
+              <select
+                name="day_of_month"
+                className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              >
+                {[1, 5, 10, 15, 20, 25, 28].map((day) => (
+                  <option key={day} value={day}>
+                    Day {day}
+                  </option>
+                ))}
+              </select>
+              <Button type="submit" disabled={isPending} size="sm">
+                {isPending ? '...' : 'Add'}
+              </Button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* Recurring payments list */}
+      {recurringPayments.length === 0 ? (
+        <p className="py-4 text-center text-sm text-muted-foreground">
+          No recurring payments yet. Add retainers or fixed monthly expenses.
+        </p>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2">
+          {/* Income column */}
+          <div className="space-y-2">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Monthly Income ({incomePayments.length})
+            </p>
+            {incomePayments.map((payment) => (
+              <RecurringPaymentCard key={payment.id} payment={payment} onDelete={handleDelete} />
+            ))}
+            {incomePayments.length === 0 && (
+              <p className="py-3 text-center text-xs text-muted-foreground">No recurring income</p>
+            )}
+          </div>
+
+          {/* Expenses column */}
+          <div className="space-y-2">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Monthly Expenses ({expensePayments.length})
+            </p>
+            {expensePayments.map((payment) => (
+              <RecurringPaymentCard key={payment.id} payment={payment} onDelete={handleDelete} />
+            ))}
+            {expensePayments.length === 0 && (
+              <p className="py-3 text-center text-xs text-muted-foreground">
+                No recurring expenses
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -642,7 +920,13 @@ function ClientSection({ group }: { group: ClientGroup }) {
   );
 }
 
-export function PaymentsClient({ payments, summary, clients }: PaymentsClientProps) {
+export function PaymentsClient({
+  payments,
+  summary,
+  recurringPayments,
+  recurringSummary,
+  clients,
+}: PaymentsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'client'>('timeline');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
@@ -787,6 +1071,13 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
           profitMargin={profitMargin}
         />
       </div>
+
+      {/* Recurring payments section */}
+      <RecurringPaymentsSection
+        recurringPayments={recurringPayments}
+        recurringSummary={recurringSummary}
+        clients={clients}
+      />
 
       {/* Quick insights for pending payments */}
       <QuickInsights

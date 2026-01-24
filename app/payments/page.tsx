@@ -3,7 +3,12 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { getPayments, getPaymentsSummary } from '@/app/actions/payments';
+import {
+  getPayments,
+  getPaymentsSummary,
+  getRecurringPayments,
+  getRecurringSummary,
+} from '@/app/actions/payments';
 import { PaymentsClient } from './payments-client';
 import { Wallet } from 'lucide-react';
 
@@ -31,9 +36,22 @@ async function PaymentsLoader() {
     .eq('workspace_id', workspaceId)
     .order('name');
 
-  const [payments, summary] = await Promise.all([getPayments(), getPaymentsSummary()]);
+  const [payments, summary, recurringPayments, recurringSummary] = await Promise.all([
+    getPayments(),
+    getPaymentsSummary(),
+    getRecurringPayments(),
+    getRecurringSummary(),
+  ]);
 
-  return <PaymentsClient payments={payments} summary={summary} clients={clients || []} />;
+  return (
+    <PaymentsClient
+      payments={payments}
+      summary={summary}
+      recurringPayments={recurringPayments}
+      recurringSummary={recurringSummary}
+      clients={clients || []}
+    />
+  );
 }
 
 function PaymentsSkeleton() {

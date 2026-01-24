@@ -231,7 +231,7 @@ export const updateClientSchema = z.object({
   id: z.string().uuid('Invalid client ID'),
   display_name: z.string().min(1).max(200).optional(),
   description: z.string().max(2000).optional().nullable(),
-  website: z.string().url().optional().nullable().or(z.literal('')),
+  website: z.string().max(500).optional().nullable().or(z.literal('')),
   phone: z.string().max(50).optional().nullable(),
   billing_address: z.string().max(500).optional().nullable(),
   lead_status: z

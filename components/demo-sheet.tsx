@@ -18,10 +18,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { ProjectNotes } from '@/components/project-notes';
 import { ProjectResources } from '@/components/project-resources';
 import { EntityAvatar } from '@/components/entity-avatar';
-import { Beaker, MessageSquare, Link as LinkIcon, Pencil, Trash2, Loader2 } from 'lucide-react';
-import { getProjectById, updateProject, deleteProject } from '@/app/actions';
+import {
+  Beaker,
+  MessageSquare,
+  Link as LinkIcon,
+  Pencil,
+  Trash2,
+  Loader2,
+  Rocket,
+} from 'lucide-react';
+import { getProjectById, updateProject, deleteProject, updateProjectStatus } from '@/app/actions';
 import { invalidateProjectStats } from '@/lib/swr';
 import { toast } from '@/components/ui/use-toast';
+import { useRouter } from 'next/navigation';
 import type { ProjectData } from '@/app/projects/page';
 
 interface DemoSheetProps {
@@ -31,6 +40,7 @@ interface DemoSheetProps {
 }
 
 export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
+  const router = useRouter();
   const [resources, setResources] = useState<
     { id: string; type: string; label: string; url: string }[]
   >([]);
@@ -45,6 +55,10 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
   // Delete state
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Start Building state
+  const [startBuildingOpen, setStartBuildingOpen] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
 
   // Fetch full project data to get workspace_id and resources
   useEffect(() => {
@@ -110,6 +124,29 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
     setIsDeleting(false);
   };
 
+  const handleStartBuilding = async () => {
+    if (!demo) return;
+    setIsConverting(true);
+
+    const result = await updateProjectStatus(demo.id, 'Active');
+
+    if (result.success) {
+      toast({
+        title: 'Project activated!',
+        description: `"${demo.name}" is now in Currently Building.`,
+      });
+      invalidateProjectStats(true);
+      setStartBuildingOpen(false);
+      onOpenChange(false);
+      // Navigate to the project page
+      router.push(`/projects/${demo.id}`);
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+
+    setIsConverting(false);
+  };
+
   if (!demo) return null;
 
   return (
@@ -131,6 +168,15 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setStartBuildingOpen(true)}
+                className="h-8 gap-1.5 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600"
+              >
+                <Rocket className="h-4 w-4" />
+                <span className="hidden sm:inline">Start Building</span>
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
@@ -235,6 +281,35 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Start Building Confirmation Dialog */}
+      <Dialog open={startBuildingOpen} onOpenChange={setStartBuildingOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Rocket className="h-5 w-5 text-emerald-500" />
+              Start Building
+            </DialogTitle>
+            <DialogDescription>
+              Convert &quot;{demo.name}&quot; from a demo to an active project. This will move it to
+              the &quot;Currently Building&quot; section.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStartBuildingOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleStartBuilding}
+              disabled={isConverting}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Start Building
             </Button>
           </DialogFooter>
         </DialogContent>

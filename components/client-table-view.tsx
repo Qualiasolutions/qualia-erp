@@ -92,14 +92,15 @@ const ClientTableRow = React.memo(function ClientTableRow({
   client,
   rowIndex,
   onOpenDetail,
+  onOpenEdit,
 }: {
   client: Client;
   rowIndex: number;
   onOpenDetail: (client: Client) => void;
+  onOpenEdit: (client: Client) => void;
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const handleRowClick = () => {
     onOpenDetail(client);
@@ -277,7 +278,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => setIsEditModalOpen(true)}>
+            <DropdownMenuItem onClick={() => onOpenEdit(client)}>
               <Pencil className="mr-2 h-4 w-4" />
               Edit client
             </DropdownMenuItem>
@@ -304,11 +305,6 @@ const ClientTableRow = React.memo(function ClientTableRow({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <EditClientModal
-          client={client as unknown as import('@/types/database').Client}
-          open={isEditModalOpen}
-          onOpenChange={setIsEditModalOpen}
-        />
       </td>
     </tr>
   );
@@ -331,6 +327,10 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
   // Detail modal state
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // Edit modal state
+  const [editClient, setEditClient] = useState<Client | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Extract unique assigned users
   const assignedUsers = useMemo(() => {
@@ -428,6 +428,11 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
   const handleOpenDetail = (client: Client) => {
     setSelectedClient(client);
     setIsDetailModalOpen(true);
+  };
+
+  const handleOpenEdit = (client: Client) => {
+    setEditClient(client);
+    setIsEditModalOpen(true);
   };
 
   if (clients.length === 0) {
@@ -589,6 +594,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
                 client={client}
                 rowIndex={index}
                 onOpenDetail={handleOpenDetail}
+                onOpenEdit={handleOpenEdit}
               />
             ))}
           </tbody>
@@ -611,6 +617,15 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
         open={isDetailModalOpen}
         onOpenChange={setIsDetailModalOpen}
       />
+
+      {/* Edit Modal */}
+      {editClient && (
+        <EditClientModal
+          client={editClient as unknown as import('@/types/database').Client}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+        />
+      )}
     </div>
   );
 }
