@@ -43,7 +43,15 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectsClient projects={[]} demos={[]} archivedDemos={[]} archivedProjects={[]} />;
+    return (
+      <ProjectsClient
+        projects={[]}
+        demos={[]}
+        finishedProjects={[]}
+        archivedDemos={[]}
+        archivedProjects={[]}
+      />
+    );
   }
 
   // Map RPC result to Project interface
@@ -77,7 +85,8 @@ async function ProjectListLoader() {
   // Split projects into categories:
   // - Active demos: status = 'Demos'
   // - Archived demos: Any project where project_group includes 'demos' but status is Archived/Canceled
-  // - Active projects: Not demos, not archived/canceled
+  // - Active projects: Not demos, not archived/canceled, not finished
+  // - Finished projects: is_finished = true (displayed with distinct styling, sorted to bottom)
   // - Archived projects: status = 'Archived' or 'Canceled' (not demos)
   const demos = projects.filter((p) => p.status === 'Demos');
   const archivedDemos = projects.filter(
@@ -85,9 +94,41 @@ async function ProjectListLoader() {
       ['Archived', 'Canceled'].includes(p.status) &&
       (p.project_group === 'demos' || p.metadata?.is_partnership === true)
   );
-  const activeProjects = projects.filter(
-    (p) => p.status !== 'Demos' && !['Archived', 'Canceled'].includes(p.status)
+
+  // Check if is_finished exists in the raw data
+  const hasIsFinished = (rawProjects || []).some(
+    (p: Record<string, unknown>) => typeof p.is_finished === 'boolean'
   );
+
+  // Create a map of project id to is_finished value
+  const isFinishedMap = new Map<string, boolean>();
+  (rawProjects || []).forEach((p: Record<string, unknown>) => {
+    if (typeof p.is_finished === 'boolean') {
+      isFinishedMap.set(p.id as string, p.is_finished);
+    }
+  });
+
+  // Finished projects: is_finished = true OR status = 'Launched' (fallback)
+  const finishedProjects = projects.filter((p) => {
+    if (['Archived', 'Canceled', 'Demos'].includes(p.status)) return false;
+    if (hasIsFinished) {
+      return isFinishedMap.get(p.id) === true;
+    }
+    // Fallback: treat 'Launched' status as finished
+    return p.status === 'Launched';
+  });
+
+  // Active projects: Not demos, not archived/canceled, not finished
+  const activeProjects = projects.filter((p) => {
+    if (p.status === 'Demos') return false;
+    if (['Archived', 'Canceled'].includes(p.status)) return false;
+    if (hasIsFinished) {
+      return isFinishedMap.get(p.id) !== true;
+    }
+    // Fallback: exclude 'Launched' status
+    return p.status !== 'Launched';
+  });
+
   const archivedProjects = projects.filter(
     (p) =>
       ['Archived', 'Canceled'].includes(p.status) &&
@@ -99,6 +140,7 @@ async function ProjectListLoader() {
     <ProjectsClient
       projects={activeProjects}
       demos={demos}
+      finishedProjects={finishedProjects}
       archivedDemos={archivedDemos}
       archivedProjects={archivedProjects}
     />
