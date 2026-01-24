@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Settings,
   BookOpen,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -27,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
+import { useAIAssistant } from '@/components/ai-assistant/ai-assistant-provider';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Sun },
@@ -134,6 +136,29 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
+function AskAIButton({ onLinkClick }: { onLinkClick?: () => void }) {
+  const { open } = useAIAssistant();
+
+  const handleClick = () => {
+    open();
+    onLinkClick?.();
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="group flex w-full items-center gap-3 rounded-xl bg-gradient-to-r from-qualia-500/10 to-purple-500/10 px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:from-qualia-500/20 hover:to-purple-500/20"
+    >
+      <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500 to-purple-500 shadow-lg shadow-qualia-500/25">
+        <Sparkles className="h-3.5 w-3.5 text-white" />
+      </div>
+      <span className="bg-gradient-to-r from-qualia-500 to-purple-500 bg-clip-text font-semibold text-transparent">
+        Ask AI
+      </span>
+    </button>
+  );
+}
+
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
 
@@ -170,8 +195,9 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         })}
       </nav>
 
-      {/* User Menu */}
-      <div className="border-t border-border/50 p-3">
+      {/* Ask AI + User Menu */}
+      <div className="space-y-2 border-t border-border/50 p-3">
+        <AskAIButton onLinkClick={onLinkClick} />
         <UserMenu onLinkClick={onLinkClick} />
       </div>
     </div>
