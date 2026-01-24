@@ -18,7 +18,13 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createPayment, updatePayment, deletePayment, type Payment } from '@/app/actions/payments';
+import {
+  createPayment,
+  updatePayment,
+  deletePayment,
+  clearAllPayments,
+  type Payment,
+} from '@/app/actions/payments';
 import {
   Dialog,
   DialogContent,
@@ -560,8 +566,28 @@ function ClientSection({ group }: { group: ClientGroup }) {
 export function PaymentsClient({ payments, summary, clients }: PaymentsClientProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'timeline' | 'client'>('timeline');
+  const [isClearing, startClearTransition] = useTransition();
 
   const balance = summary.totalIncoming - summary.totalOutgoing;
+
+  const handleClearAll = () => {
+    if (payments.length === 0) return;
+    if (
+      !confirm(
+        `Are you sure you want to delete all ${payments.length} payments? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    startClearTransition(async () => {
+      const result = await clearAllPayments();
+      if (result.success) {
+        window.location.reload();
+      } else {
+        alert('Failed to clear payments: ' + result.error);
+      }
+    });
+  };
 
   // Group payments by month
   const monthGroups = useMemo(() => {
@@ -683,6 +709,18 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
               <NewPaymentForm onClose={() => setDialogOpen(false)} clients={clients} />
             </DialogContent>
           </Dialog>
+
+          {payments.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAll}
+              disabled={isClearing}
+              className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-600 transition-all hover:bg-red-500/20 disabled:opacity-50 dark:text-red-400"
+            >
+              <Trash2 className="h-4 w-4" />
+              {isClearing ? 'Clearing...' : 'Clear All'}
+            </button>
+          )}
         </div>
       </div>
 

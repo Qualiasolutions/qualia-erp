@@ -158,6 +158,36 @@ export async function deletePayment(id: string): Promise<{ success: boolean; err
   return { success: true };
 }
 
+export async function clearAllPayments(): Promise<{
+  success: boolean;
+  error?: string;
+  count?: number;
+}> {
+  if (!(await isAdminUser())) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
+
+  // First count how many will be deleted
+  const { count } = await supabase
+    .from('payments')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspaceId);
+
+  // Delete all payments for this workspace
+  const { error } = await supabase.from('payments').delete().eq('workspace_id', workspaceId);
+
+  if (error) {
+    console.error('Error clearing payments:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/payments');
+  return { success: true, count: count || 0 };
+}
+
 export async function getPaymentsSummary(): Promise<{
   totalIncoming: number;
   totalOutgoing: number;
