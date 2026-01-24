@@ -19,10 +19,7 @@ import {
   Radio,
   Trophy,
   LayoutDashboard,
-  GitBranch,
-  FileText,
   Share2,
-  Plus,
   ListTodo,
 } from 'lucide-react';
 import { ProjectWorkflow } from '@/components/project-workflow';
@@ -46,7 +43,6 @@ import {
   toggleProjectFinished,
 } from '@/app/actions';
 import { formatDate, formatTimeAgo, cn } from '@/lib/utils';
-import { ProjectPipeline } from '@/components/project-pipeline';
 import { ProjectNotes } from '@/components/project-notes';
 import { ProjectResources } from '@/components/project-resources';
 import { LogoUpload } from '@/components/logo-upload';
@@ -357,25 +353,11 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
-                    value="pipeline"
-                    className="h-full gap-2 rounded-lg font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                  >
-                    <GitBranch className="h-4 w-4" />
-                    Pipeline
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="timeline"
                     className="h-full gap-2 rounded-lg font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
                   >
                     <Calendar className="h-4 w-4" />
                     Timeline
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="resources"
-                    className="h-full gap-2 rounded-lg font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Resources
                   </TabsTrigger>
                   <TabsTrigger
                     value="settings"
@@ -422,10 +404,10 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                       <div className="grid gap-10 lg:grid-cols-2">
                         <section className="space-y-6">
                           <div className="flex items-center justify-between px-2">
-                            <h3 className="text-xl font-bold tracking-tight">Recent Notes</h3>
-                            <button className="text-xs font-bold text-primary transition-all hover:underline">
-                              View Full Log
-                            </button>
+                            <h3 className="text-xl font-bold tracking-tight">Activity Notes</h3>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                              Latest Updates
+                            </span>
                           </div>
                           <ProjectNotes
                             projectId={project.id}
@@ -436,14 +418,10 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
 
                         <section className="space-y-6">
                           <div className="flex items-center justify-between px-2">
-                            <h3 className="text-xl font-bold tracking-tight">Quick Resources</h3>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 rounded-lg font-bold text-primary hover:bg-primary/10"
-                            >
-                              <Plus className="mr-1 h-4 w-4" /> Add New
-                            </Button>
+                            <h3 className="text-xl font-bold tracking-tight">Project Resources</h3>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                              Links & Files
+                            </span>
                           </div>
                           <ProjectResources
                             projectId={project.id}
@@ -452,12 +430,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                           />
                         </section>
                       </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'pipeline' && (
-                    <div className="animate-fade-in">
-                      <ProjectPipeline projectId={project.id} workspaceId={project.workspace_id} />
                     </div>
                   )}
 
@@ -475,16 +447,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                             typeof ProjectTimeline
                           >[0]['projects'][number],
                         ]}
-                      />
-                    </div>
-                  )}
-
-                  {activeTab === 'resources' && (
-                    <div className="animate-fade-in">
-                      <ProjectResources
-                        projectId={project.id}
-                        initialResources={project.metadata?.resources || []}
-                        className="h-[750px] rounded-[2rem] border-white/5 bg-white/[0.02] shadow-2xl"
                       />
                     </div>
                   )}
