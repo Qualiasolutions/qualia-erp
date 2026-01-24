@@ -792,6 +792,14 @@ export async function getProjectStats(
     return { projects: [], demos: [] };
   }
 
+  // Create a map to track is_finished status from raw data
+  const isFinishedMap = new Map<string, boolean>();
+  (rawProjects || []).forEach((p: Record<string, unknown>) => {
+    if (typeof p.is_finished === 'boolean') {
+      isFinishedMap.set(p.id as string, p.is_finished);
+    }
+  });
+
   const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
     name: p.name as string,
@@ -819,9 +827,21 @@ export async function getProjectStats(
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Split: Demos status goes to demos, rest to projects
+  // Split into categories:
+  // - demos: status = 'Demos'
+  // - projects: active projects (not demos, not archived, not finished)
   const demos = allProjects.filter((p) => p.status === 'Demos');
-  const projects = allProjects.filter((p) => p.status !== 'Demos');
+  const projects = allProjects.filter((p) => {
+    // Exclude demos
+    if (p.status === 'Demos') return false;
+    // Exclude archived/canceled
+    if (['Archived', 'Canceled'].includes(p.status)) return false;
+    // Exclude finished projects (is_finished=true or status='Launched')
+    const isFinished = isFinishedMap.get(p.id);
+    if (isFinished === true) return false;
+    if (p.status === 'Launched') return false;
+    return true;
+  });
 
   return { projects, demos };
 }
