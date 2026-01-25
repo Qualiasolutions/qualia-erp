@@ -70,15 +70,13 @@ export interface Project {
   } | null;
 }
 
-type ViewMode = 'columns' | 'grid' | 'list' | 'timeline';
+type ViewMode = 'columns' | 'grid' | 'list';
 
 interface ProjectListProps {
   projects: Project[];
   filterType?: ProjectType | 'all';
   viewMode?: ViewMode;
 }
-
-import { ProjectTimeline } from '@/components/project-timeline';
 
 // Project type configuration with enhanced styling
 const PROJECT_TYPE_CONFIG: Record<
@@ -691,7 +689,6 @@ export function ProjectList({
       <div>
         {/* Content */}
         {viewMode === 'columns' && renderColumns()}
-        {viewMode === 'timeline' && <ProjectTimeline projects={sortedProjects} />}
       </div>
 
       {/* Project Creation Wizard */}

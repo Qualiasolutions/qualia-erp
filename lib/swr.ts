@@ -515,53 +515,6 @@ export function invalidateDailyFlow(immediate = true) {
 }
 
 /**
- * Hook for Timeline Dashboard data
- * Fetches meetings, tasks with phase info, team members, and assignment notifications
- * Auto-refreshes every 30s when tab is visible
- */
-export function useTimelineDashboard() {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    'timeline-dashboard',
-    async () => {
-      const { getTimelineDashboardData } = await import('@/app/actions/timeline-dashboard');
-      return getTimelineDashboardData();
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    data: data || null,
-    meetings: data?.meetings || [],
-    tasks: data?.tasks || [],
-    teamMembers: data?.teamMembers || [],
-    currentUserId: data?.currentUserId || null,
-    newAssignments: data?.newAssignments || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate timeline dashboard cache
- */
-export function invalidateTimeline(immediate = true) {
-  if (immediate) {
-    mutate('timeline-dashboard', undefined, { revalidate: true });
-  } else {
-    mutate('timeline-dashboard');
-  }
-}
-
-/**
  * Hook to fetch all meetings with caching and auto-refresh
  * Used by schedule page for real-time updates
  */
@@ -595,12 +548,10 @@ export function invalidateMeetings(immediate = true) {
     mutate(cacheKeys.meetings, undefined, { revalidate: true });
     mutate(cacheKeys.todaysMeetings, undefined, { revalidate: true });
     mutate('daily-flow', undefined, { revalidate: true });
-    mutate('timeline-dashboard', undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.meetings);
     mutate(cacheKeys.todaysMeetings);
     mutate('daily-flow');
-    mutate('timeline-dashboard');
   }
 }
 

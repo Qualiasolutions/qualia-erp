@@ -14,7 +14,6 @@ import {
   TrendingUp,
   Megaphone,
   Building2,
-  Calendar,
   Settings,
   Radio,
   Trophy,
@@ -48,7 +47,6 @@ import { ProjectResources } from '@/components/project-resources';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectMetricBar } from '@/components/project-metric-bar';
-import { ProjectTimeline } from '@/components/project-timeline';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 import { motion, AnimatePresence } from 'framer-motion';
 import { differenceInDays } from 'date-fns';
@@ -353,13 +351,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
-                    value="timeline"
-                    className="h-full gap-2 rounded-lg font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Timeline
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="settings"
                     className="h-full gap-2 rounded-lg font-bold transition-all data-[state=active]:bg-primary/10 data-[state=active]:text-primary"
                   >
@@ -392,7 +383,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                       <ProjectWorkflow
                         projectId={project.id}
                         projectType={project.project_type}
-                        initialProgress={project.phase_progress || null}
+                        workspaceId={project.workspace_id}
                       />
                     </div>
                   )}
@@ -430,24 +421,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                           />
                         </section>
                       </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'timeline' && (
-                    <div className="animate-fade-in rounded-[2rem] border border-white/5 bg-white/[0.02] p-10 shadow-2xl backdrop-blur-sm">
-                      <div className="mb-8">
-                        <h3 className="text-2xl font-bold tracking-tight">Project Roadmap</h3>
-                        <p className="mt-1 text-sm font-medium text-muted-foreground">
-                          Visual timeline of phases and milestones
-                        </p>
-                      </div>
-                      <ProjectTimeline
-                        projects={[
-                          project as unknown as Parameters<
-                            typeof ProjectTimeline
-                          >[0]['projects'][number],
-                        ]}
-                      />
                     </div>
                   )}
 
