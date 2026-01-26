@@ -816,10 +816,10 @@ export async function getProjectStats(
     logo_url: (p.logo_url as string | null) || null,
     lead: p.lead_id
       ? {
-          id: p.lead_id as string,
-          full_name: p.lead_full_name as string | null,
-          email: p.lead_email as string | null,
-        }
+        id: p.lead_id as string,
+        full_name: p.lead_full_name as string | null,
+        email: p.lead_email as string | null,
+      }
       : null,
     issue_stats: {
       total: Number(p.total_issues),
@@ -1941,14 +1941,14 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
   // Format times for email
   const formattedStart = start_time
     ? new Date(start_time).toLocaleString('en-US', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      })
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    })
     : undefined;
   const formattedEnd = end_time
     ? new Date(end_time).toLocaleString('en-US', {
-        timeStyle: 'short',
-      })
+      timeStyle: 'short',
+    })
     : undefined;
 
   notifyMeetingCreated(
@@ -3210,18 +3210,25 @@ export async function getScheduledIssues(workspaceId?: string | null) {
     return [];
   }
 
-  return (issues || []).map((issue) => ({
-    id: issue.id,
-    title: issue.title,
-    description: issue.description,
-    status: issue.status,
-    priority: issue.priority,
-    start_time: issue.scheduled_start_time,
-    end_time: issue.scheduled_end_time,
-    type: 'issue' as const,
-    project: Array.isArray(issue.project) ? issue.project[0] : issue.project,
-    assignee: issue.assignee?.[0]?.profile,
-  }));
+  return (issues || []).map((issue) => {
+    // Handle assignee relation - it comes as an array from the join
+    const assigneeData = Array.isArray(issue.assignee) && issue.assignee.length > 0
+      ? issue.assignee[0]?.profile
+      : null;
+
+    return {
+      id: issue.id,
+      title: issue.title,
+      description: issue.description,
+      status: issue.status,
+      priority: issue.priority,
+      start_time: issue.scheduled_start_time,
+      end_time: issue.scheduled_end_time,
+      type: 'issue' as const,
+      project: Array.isArray(issue.project) ? issue.project[0] : issue.project,
+      assignee: assigneeData,
+    };
+  });
 }
 
 export async function scheduleIssue(

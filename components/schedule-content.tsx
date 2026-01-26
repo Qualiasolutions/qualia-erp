@@ -28,7 +28,10 @@ export function ScheduleContent({
       <MeetingStats meetings={meetings} />
 
       {/* View content */}
-      <ViewComponent meetings={meetings} issues={initialIssues} />
+      <ViewComponent
+        meetings={meetings.map(m => ({ ...m, type: 'meeting' as const }))}
+        issues={initialIssues}
+      />
     </div>
   );
 }
