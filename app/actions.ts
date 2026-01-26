@@ -486,6 +486,8 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
       project_id: finalProjectId || null,
       creator_id: user.id,
       workspace_id: wsId,
+      scheduled_start_time: validation.data.scheduled_start_time || null,
+      scheduled_end_time: validation.data.scheduled_end_time || null,
     })
     .select()
     .single();
@@ -3168,4 +3170,100 @@ export async function loginAction(
       error: error instanceof Error ? error.message : 'An error occurred during login',
     };
   }
+}
+
+export async function getScheduledIssues(workspaceId?: string | null) {
+  const supabase = await createClient();
+
+  let wsId = workspaceId;
+  if (!wsId) {
+    wsId = await getCurrentWorkspaceId();
+  }
+
+  let query = supabase
+    .from('issues')
+    .select(
+      `
+            id,
+            title,
+            description,
+            status,
+            priority,
+            scheduled_start_time,
+            scheduled_end_time,
+            project:projects (id, name, project_group),
+            assignee:issue_assignees(profile:profiles(full_name, avatar_url))
+        `
+    )
+    .not('scheduled_start_time', 'is', null)
+    .not('scheduled_end_time', 'is', null)
+    .order('scheduled_start_time', { ascending: true });
+
+  if (wsId) {
+    query = query.eq('workspace_id', wsId);
+  }
+
+  const { data: issues, error } = await query;
+
+  if (error) {
+    console.error('Error fetching scheduled issues:', error);
+    return [];
+  }
+
+  return (issues || []).map((issue) => ({
+    id: issue.id,
+    title: issue.title,
+    description: issue.description,
+    status: issue.status,
+    priority: issue.priority,
+    start_time: issue.scheduled_start_time,
+    end_time: issue.scheduled_end_time,
+    type: 'issue' as const,
+    project: Array.isArray(issue.project) ? issue.project[0] : issue.project,
+    assignee: issue.assignee?.[0]?.profile,
+  }));
+}
+
+export async function scheduleIssue(
+  issueId: string,
+  startTime: string,
+  endTime: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('issues')
+    .update({
+      scheduled_start_time: startTime,
+      scheduled_end_time: endTime,
+    })
+    .eq('id', issueId);
+
+  if (error) {
+    console.error('Error scheduling issue:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/schedule');
+  return { success: true };
+}
+
+export async function unscheduleIssue(issueId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('issues')
+    .update({
+      scheduled_start_time: null,
+      scheduled_end_time: null,
+    })
+    .eq('id', issueId);
+
+  if (error) {
+    console.error('Error unscheduling issue:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/schedule');
+  return { success: true };
 }

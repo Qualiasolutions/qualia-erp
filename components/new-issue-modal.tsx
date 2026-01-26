@@ -30,14 +30,30 @@ interface Project {
   name: string;
 }
 
-export function NewIssueModal() {
-  const [open, setOpen] = useState(false);
+interface NewIssueModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  defaultStartTime?: Date | null;
+  defaultEndTime?: Date | null;
+}
+
+export function NewIssueModal({
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+  defaultStartTime,
+  defaultEndTime,
+}: NewIssueModalProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [customProjectName, setCustomProjectName] = useState<string>('');
   const { currentWorkspace } = useWorkspace();
+
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? controlledOnOpenChange! : setInternalOpen;
 
   useEffect(() => {
     if (open && currentWorkspace) {
@@ -64,6 +80,14 @@ export function NewIssueModal() {
       formData.set('custom_project_name', customProjectName);
     }
 
+    // Add scheduling info if provided
+    if (defaultStartTime) {
+      formData.set('scheduled_start_time', defaultStartTime.toISOString());
+    }
+    if (defaultEndTime) {
+      formData.set('scheduled_end_time', defaultEndTime.toISOString());
+    }
+
     const result = await createIssue(formData);
 
     if (result.success) {
@@ -77,15 +101,17 @@ export function NewIssueModal() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
-          <Plus className="h-4 w-4" />
-          <span>New Task</span>
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
+            <Plus className="h-4 w-4" />
+            <span>New Task</span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="border-border bg-card text-foreground">
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <DialogTitle>{defaultStartTime ? 'Schedule New Task' : 'Create New Task'}</DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">

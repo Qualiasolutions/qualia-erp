@@ -18,6 +18,8 @@ export const createIssueSchema = z.object({
   parent_id: z.string().uuid('Invalid parent ID').optional().nullable(),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
+  scheduled_start_time: z.string().optional().nullable(),
+  scheduled_end_time: z.string().optional().nullable(),
 });
 
 export const updateIssueSchema = z.object({
