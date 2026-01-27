@@ -16,20 +16,9 @@ import { NotificationPanel } from '@/components/notification-panel';
 import type { ProjectType } from '@/types/database';
 import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
+import { getScheduledIssues } from '@/app/actions';
+import { type MeetingWithRelations } from '@/lib/swr';
 import { motion } from 'framer-motion';
-
-interface Meeting {
-  id: string;
-  title: string;
-  start_time: string;
-  end_time: string;
-  meeting_link?: string | null;
-  project?: { id: string; name: string } | null;
-  client?: { id: string; display_name: string; logo_url?: string | null } | null;
-  attendees?: Array<{
-    profile: { id: string; full_name: string | null; avatar_url?: string | null };
-  }>;
-}
 
 interface TeamMember {
   id: string;
@@ -51,11 +40,12 @@ interface Project {
 }
 
 interface TodayDashboardProps {
-  meetings: Meeting[];
+  meetings: MeetingWithRelations[];
   tasks: Task[];
   teamMembers: TeamMember[];
   projects: Project[];
   finishedProjects: Project[];
+  issues?: Awaited<ReturnType<typeof getScheduledIssues>>;
 }
 
 const cardVariants = {
@@ -73,6 +63,7 @@ export function TodayDashboard({
   teamMembers,
   projects,
   finishedProjects,
+  issues = [],
 }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
@@ -200,7 +191,7 @@ export function TodayDashboard({
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-violet-500/10 via-transparent to-transparent" />
             <div className="relative flex min-h-0 flex-1 flex-col">
-              <MeetingsWrapper initialMeetings={meetings} />
+              <MeetingsWrapper initialMeetings={meetings} initialIssues={issues} />
             </div>
           </motion.div>
 

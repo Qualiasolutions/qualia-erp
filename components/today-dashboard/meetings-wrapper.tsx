@@ -1,49 +1,29 @@
-'use client';
-
-import { useMeetings, invalidateMeetings } from '@/lib/swr';
-import { MeetingsTimeline } from './meetings-timeline';
-
-interface Meeting {
-  id: string;
-  title: string;
-  start_time: string;
-  end_time: string;
-  meeting_link?: string | null;
-  project?: { id: string; name: string } | null;
-  client?: { id: string; display_name: string } | null;
-  attendees?: Array<{ profile: { id: string; full_name: string | null } }>;
-}
+import { useMeetings, type MeetingWithRelations } from '@/lib/swr';
+import { getScheduledIssues } from '@/app/actions';
+import { DayView } from '@/components/day-view';
 
 interface MeetingsWrapperProps {
-  initialMeetings: Meeting[];
+  initialMeetings: MeetingWithRelations[];
+  initialIssues?: Awaited<ReturnType<typeof getScheduledIssues>>;
 }
 
-export function MeetingsWrapper({ initialMeetings }: MeetingsWrapperProps) {
-  const { meetings: swrMeetings } = useMeetings();
+export function MeetingsWrapper({ initialMeetings, initialIssues = [] }: MeetingsWrapperProps) {
+  const { meetings } = useMeetings(initialMeetings);
 
-  // Use SWR data if available, otherwise fall back to initial SSR data
-  const meetings = (swrMeetings?.length || 0) > 0 ? swrMeetings : initialMeetings || [];
-
-  // Transform SWR data to match the expected Meeting interface
-  const normalizedMeetings: Meeting[] = (meetings || []).map((m) => ({
-    id: m.id,
-    title: m.title,
-    start_time: m.start_time,
-    end_time: m.end_time,
-    meeting_link: m.meeting_link,
-    project: m.project ? { id: m.project.id, name: m.project.name } : null,
-    client: m.client ? { id: m.client.id, display_name: m.client.display_name } : null,
-    attendees: m.attendees?.map((a) => ({
-      profile: a.profile
-        ? { id: a.profile.id, full_name: a.profile.full_name }
-        : { id: '', full_name: null },
-    })),
+  // Transform meetings to include type: 'meeting' for DayView AND normalize relations
+  const dayViewMeetings = meetings.map((m) => ({
+    ...m,
+    type: 'meeting' as const,
+    // Normalize arrays to single objects if needed (SWR/Actions return arrays for relations)
+    project: Array.isArray(m.project) ? m.project[0] || null : m.project,
+    client: Array.isArray(m.client) ? m.client[0] || null : m.client,
+    creator: Array.isArray(m.creator) ? m.creator[0] || null : m.creator,
   }));
 
-  // Handle meeting creation - refresh the data
-  const handleMeetingCreated = () => {
-    invalidateMeetings(true);
-  };
-
-  return <MeetingsTimeline meetings={normalizedMeetings} onMeetingCreated={handleMeetingCreated} />;
+  return (
+    <div className="flex h-full flex-col">
+      {/* Use DayView but we need to ensure it fits the container */}
+      <DayView meetings={dayViewMeetings} issues={initialIssues} />
+    </div>
+  );
 }

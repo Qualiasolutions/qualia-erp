@@ -1,14 +1,8 @@
-import { getCurrentWorkspaceId, getMeetings, getProfiles } from '@/app/actions';
+import { getCurrentWorkspaceId, getMeetings, getProfiles, getScheduledIssues } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
 import { createClient } from '@/lib/supabase/server';
 import type { ProjectType } from '@/types/database';
-
-// Normalize FK arrays to single objects
-function normalizeFK<T>(value: T | T[] | null): T | null {
-  if (Array.isArray(value)) return value[0] || null;
-  return value;
-}
 
 export default async function TodayPage() {
   const workspaceId = await getCurrentWorkspaceId();
@@ -23,25 +17,15 @@ export default async function TodayPage() {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [meetingsRaw, tasksRaw, profilesRaw, projectsRaw] = await Promise.all([
+  const [meetingsRaw, tasksRaw, profilesRaw, projectsRaw, issues] = await Promise.all([
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
     getProfiles(workspaceId),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
+    getScheduledIssues(workspaceId),
   ]);
 
-  const meetings = meetingsRaw.map((m) => ({
-    id: m.id,
-    title: m.title,
-    start_time: m.start_time,
-    end_time: m.end_time,
-    meeting_link: m.meeting_link,
-    project: normalizeFK(m.project),
-    client: normalizeFK(m.client),
-    attendees: m.attendees?.map((a) => ({
-      profile: normalizeFK(a.profile) || { id: '', full_name: null },
-    })),
-  }));
+  const meetings = meetingsRaw;
 
   // Get only TASKS (not resources/notes/issues) from all projects
   // Filter for Todo/In Progress OR Done today
@@ -140,6 +124,7 @@ export default async function TodayPage() {
       teamMembers={teamMembers}
       projects={projects}
       finishedProjects={finishedProjects}
+      issues={issues}
     />
   );
 }
