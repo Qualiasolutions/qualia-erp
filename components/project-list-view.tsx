@@ -231,6 +231,7 @@ export function ProjectListView({ projects }: ProjectListViewProps) {
     const groups: { type: ProjectType | 'other'; label: string; projects: ProjectData[] }[] = [
       { type: 'ai_agent', label: 'AI Agents', projects: [] },
       { type: 'voice_agent', label: 'Voice Agents', projects: [] },
+      { type: 'ai_platform', label: 'AI Platforms', projects: [] },
       { type: 'web_design', label: 'Websites', projects: [] },
       { type: 'seo', label: 'SEO', projects: [] },
       { type: 'ads', label: 'Ads', projects: [] },
