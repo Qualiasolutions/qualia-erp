@@ -172,6 +172,7 @@ export const PROVISIONING_MAP: Record<ProjectType, IntegrationProvider[]> = {
   web_design: ['github', 'vercel'],
   ai_agent: ['github', 'vercel'],
   voice_agent: ['github', 'vercel', 'vapi'],
+  ai_platform: ['github', 'vercel'], // Same as AI agent
   seo: [],
   ads: [],
 };
