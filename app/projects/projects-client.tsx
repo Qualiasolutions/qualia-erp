@@ -87,7 +87,7 @@ export function ProjectsClient({
             ]}
             projects={projects.filter((p) =>
               ['ai_agent', 'voice_agent', 'ai_platform'].includes(p.project_type || '')
-            )}
+            ) as ProjectData[]}
           />
 
           {/* SEO Row */}
@@ -102,7 +102,7 @@ export function ProjectsClient({
                 bgColor: 'bg-emerald-500/10',
               },
             ]}
-            projects={projects.filter((p) => p.project_type === 'seo')}
+            projects={projects.filter((p) => p.project_type === 'seo') as ProjectData[]}
           />
 
           {/* Web Design Row */}
@@ -117,7 +117,7 @@ export function ProjectsClient({
                 bgColor: 'bg-sky-500/10',
               },
             ]}
-            projects={projects.filter((p) => p.project_type === 'web_design')}
+            projects={projects.filter((p) => p.project_type === 'web_design') as ProjectData[]}
           />
 
           {/* Marketing Row */}
@@ -132,7 +132,7 @@ export function ProjectsClient({
                 bgColor: 'bg-amber-500/10',
               },
             ]}
-            projects={projects.filter((p) => p.project_type === 'ads')}
+            projects={projects.filter((p) => p.project_type === 'ads') as ProjectData[]}
           />
         </div>
 
