@@ -1324,6 +1324,7 @@ export const GSD_TEMPLATES: Record<ProjectType, GSDProjectTemplate> = {
   web_design: WEB_DESIGN_TEMPLATE,
   ai_agent: AI_AGENT_TEMPLATE,
   voice_agent: VOICE_AGENT_TEMPLATE,
+  ai_platform: AI_AGENT_TEMPLATE, // Reuse AI Agent template for now
   seo: SEO_TEMPLATE,
   ads: ADS_TEMPLATE,
 };
