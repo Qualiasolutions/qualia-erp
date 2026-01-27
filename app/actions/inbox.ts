@@ -352,7 +352,7 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Check if task exists and user can delete it (creator or admin via RLS)
+  // Get task with creator info for authorization
   const { data: task } = await supabase
     .from('tasks')
     .select('id, creator_id')
@@ -361,6 +361,22 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
 
   if (!task) {
     return { success: false, error: 'Task not found' };
+  }
+
+  // Authorization: Only task creator or admin can delete
+  const isCreator = task.creator_id === user.id;
+
+  if (!isCreator) {
+    // Check if user is admin
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.role !== 'admin') {
+      return { success: false, error: 'Only task creator or admin can delete this task' };
+    }
   }
 
   const { error } = await supabase.from('tasks').delete().eq('id', taskId);

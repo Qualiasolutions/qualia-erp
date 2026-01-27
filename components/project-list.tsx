@@ -112,6 +112,16 @@ const PROJECT_TYPE_CONFIG: Record<
     label: 'Voice Agents',
     description: 'Phone bots & voice AI',
   },
+  ai_platform: {
+    icon: Sparkles,
+    color: 'text-indigo-400',
+    bgColor: 'bg-indigo-500/10',
+    borderColor: 'border-indigo-500/20',
+    gradientFrom: 'from-indigo-500/20',
+    gradientTo: 'to-indigo-500/5',
+    label: 'AI Platforms',
+    description: 'Full AI solutions',
+  },
   web_design: {
     icon: Globe,
     color: 'text-sky-400',

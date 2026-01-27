@@ -13,7 +13,7 @@ import {
   Globe,
   Bot,
   Phone,
-  Search,
+  TrendingUp,
   Megaphone,
   Building,
   Sparkles,
@@ -57,46 +57,53 @@ const PROJECT_TYPES: Array<{
   gradient: string;
   bgGradient: string;
 }> = [
-  {
-    value: 'web_design',
-    label: 'Website',
-    icon: <Globe className="h-5 w-5" />,
-    gradient: 'from-blue-500 to-cyan-500',
-    bgGradient: 'from-blue-500/10 to-cyan-500/10',
-  },
-  {
-    value: 'ai_agent',
-    label: 'AI Agent',
-    icon: <Bot className="h-5 w-5" />,
-    gradient: 'from-violet-500 to-purple-500',
-    bgGradient: 'from-violet-500/10 to-purple-500/10',
-  },
-  {
-    value: 'voice_agent',
-    label: 'Voice',
-    icon: <Phone className="h-5 w-5" />,
-    gradient: 'from-pink-500 to-rose-500',
-    bgGradient: 'from-pink-500/10 to-rose-500/10',
-  },
-  {
-    value: 'seo',
-    label: 'SEO',
-    icon: <Search className="h-5 w-5" />,
-    gradient: 'from-emerald-500 to-green-500',
-    bgGradient: 'from-emerald-500/10 to-green-500/10',
-  },
-  {
-    value: 'ads',
-    label: 'Ads',
-    icon: <Megaphone className="h-5 w-5" />,
-    gradient: 'from-orange-500 to-amber-500',
-    bgGradient: 'from-orange-500/10 to-amber-500/10',
-  },
-];
+    {
+      value: 'web_design',
+      label: 'Website',
+      icon: <Globe className="h-5 w-5" />,
+      gradient: 'from-blue-500 to-cyan-500',
+      bgGradient: 'from-blue-500/10 to-cyan-500/10',
+    },
+    {
+      value: 'ai_agent',
+      label: 'AI Agent',
+      icon: <Bot className="h-5 w-5" />,
+      gradient: 'from-violet-500 to-purple-500',
+      bgGradient: 'from-violet-500/10 to-purple-500/10',
+    },
+    {
+      value: 'voice_agent',
+      label: 'Voice',
+      icon: <Phone className="h-5 w-5" />,
+      gradient: 'from-pink-500 to-rose-500',
+      bgGradient: 'from-pink-500/10 to-rose-500/10',
+    },
+    {
+      value: 'ai_platform',
+      label: 'AI Platform',
+      icon: <Sparkles className="h-5 w-5" />,
+      gradient: 'from-indigo-500 to-violet-500',
+      bgGradient: 'from-indigo-500/10 to-violet-500/10',
+    },
+    {
+      value: 'seo',
+      label: 'SEO',
+      icon: <TrendingUp className="h-5 w-5" />,
+      gradient: 'from-emerald-500 to-green-500',
+      bgGradient: 'from-emerald-500/10 to-green-500/10',
+    },
+    {
+      value: 'ads',
+      label: 'Ads',
+      icon: <Megaphone className="h-5 w-5" />,
+      gradient: 'from-orange-500 to-amber-500',
+      bgGradient: 'from-orange-500/10 to-amber-500/10',
+    },
+  ];
 
 // Auto-select deployment platform based on project type
 function getDeploymentPlatform(projectType: ProjectType | null): DeploymentPlatform {
-  if (projectType === 'web_design' || projectType === 'ai_agent' || projectType === 'voice_agent') {
+  if (projectType === 'web_design' || projectType === 'ai_agent' || projectType === 'voice_agent' || projectType === 'ai_platform') {
     return 'vercel';
   }
   return 'none';
@@ -184,8 +191,8 @@ export function ProjectWizard({
     mode === 'demo'
       ? wizardData.name.trim().length > 0
       : wizardData.name.trim().length > 0 &&
-        wizardData.project_type !== null &&
-        (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0);
+      wizardData.project_type !== null &&
+      (wizardData.client_id.length > 0 || wizardData.custom_client_name.length > 0);
 
   const handleSubmit = async () => {
     if (!isValid) return;
@@ -417,7 +424,7 @@ export function ProjectWizard({
                     <Label className="text-sm font-medium text-foreground/80">
                       Type <span className="text-qualia-500">*</span>
                     </Label>
-                    <div className="grid grid-cols-5 gap-2">
+                    <div className="grid grid-cols-6 gap-2">
                       {PROJECT_TYPES.map((type) => {
                         const isSelected = wizardData.project_type === type.value;
                         return (
@@ -429,7 +436,7 @@ export function ProjectWizard({
                               'group relative flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all duration-200',
                               isSelected
                                 ? 'border-transparent bg-gradient-to-br shadow-lg ' +
-                                    type.bgGradient
+                                type.bgGradient
                                 : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
                             )}
                           >

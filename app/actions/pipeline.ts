@@ -227,6 +227,44 @@ export async function getProjectNotes(projectId: string): Promise<ProjectNote[]>
   }));
 }
 
+// Extended type for dashboard notes with project info
+export interface DashboardNote extends ProjectNote {
+  project?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
+// Get all project notes for a workspace (for dashboard)
+export async function getAllProjectNotes(workspaceId: string): Promise<DashboardNote[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('project_notes')
+    .select(
+      `
+      *,
+      profile:profiles(full_name, avatar_url, email),
+      project:projects(id, name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error('[getAllProjectNotes] Error:', error);
+    return [];
+  }
+
+  // Normalize FK arrays
+  return (data || []).map((note) => ({
+    ...note,
+    profile: Array.isArray(note.profile) ? note.profile[0] : note.profile,
+    project: Array.isArray(note.project) ? note.project[0] : note.project,
+  }));
+}
+
 export async function createProjectNote(
   projectId: string,
   workspaceId: string,

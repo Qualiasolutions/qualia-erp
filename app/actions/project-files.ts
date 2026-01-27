@@ -246,15 +246,27 @@ export async function getFileDownloadUrl(fileId: string): Promise<ActionResult> 
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Get file record
+  // Get file record with workspace info for authorization check
   const { data: file, error: fetchError } = await supabase
     .from('project_files')
-    .select('storage_path, original_name')
+    .select('storage_path, original_name, workspace_id')
     .eq('id', fileId)
     .single();
 
   if (fetchError || !file) {
     return { success: false, error: 'File not found' };
+  }
+
+  // Authorization: Verify user is a member of the workspace
+  const { data: membership, error: membershipError } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('workspace_id', file.workspace_id)
+    .eq('profile_id', user.id)
+    .single();
+
+  if (membershipError || !membership) {
+    return { success: false, error: 'Access denied' };
   }
 
   // Generate signed URL (valid for 1 hour)

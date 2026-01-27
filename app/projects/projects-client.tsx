@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Hammer, Beaker, Archive, ChevronDown, CheckCircle2, Trophy } from 'lucide-react';
+import { Beaker, Archive, ChevronDown, CheckCircle2, Trophy, Bot, Phone, Sparkles, TrendingUp, Globe, Megaphone } from 'lucide-react';
 import { ProjectColumnView } from '@/components/project-column-view';
+import { ProjectCategoryRow } from '@/components/project-category-row';
 import { DemoSheet } from '@/components/demo-sheet';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { useProjectStats, type ProjectStatsData } from '@/lib/swr';
@@ -55,14 +56,87 @@ export function ProjectsClient({
 
   return (
     <div className="space-y-6">
-      {/* Main columns */}
+      {/* Main columns - Currently Building and Demos side by side */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
-        <ProjectColumnView
-          title="Currently Building"
-          icon={<Hammer className="h-4 w-4" />}
-          projects={projects as ProjectData[]}
-          emptyMessage="No active projects"
-        />
+        <div className="space-y-8">
+          {/* AI Technologies Row - AI Agents, Voice Agents, AI Platforms */}
+          <ProjectCategoryRow
+            title="AI Technologies"
+            types={[
+              {
+                type: 'ai_agent' as const,
+                label: 'AI Agents',
+                icon: Bot,
+                color: 'text-violet-400',
+                bgColor: 'bg-violet-500/10',
+              },
+              {
+                type: 'voice_agent' as const,
+                label: 'Voice Agents',
+                icon: Phone,
+                color: 'text-pink-400',
+                bgColor: 'bg-pink-500/10',
+              },
+              {
+                type: 'ai_platform' as const,
+                label: 'AI Platforms',
+                icon: Sparkles,
+                color: 'text-indigo-400',
+                bgColor: 'bg-indigo-500/10',
+              },
+            ]}
+            projects={projects.filter((p) =>
+              ['ai_agent', 'voice_agent', 'ai_platform'].includes(p.project_type || '')
+            )}
+          />
+
+          {/* SEO Row */}
+          <ProjectCategoryRow
+            title="SEO & Search Optimization"
+            types={[
+              {
+                type: 'seo' as const,
+                label: 'SEO',
+                icon: TrendingUp,
+                color: 'text-emerald-400',
+                bgColor: 'bg-emerald-500/10',
+              },
+            ]}
+            projects={projects.filter((p) => p.project_type === 'seo')}
+          />
+
+          {/* Web Design Row */}
+          <ProjectCategoryRow
+            title="Web Design & Development"
+            types={[
+              {
+                type: 'web_design' as const,
+                label: 'Websites',
+                icon: Globe,
+                color: 'text-sky-400',
+                bgColor: 'bg-sky-500/10',
+              },
+            ]}
+            projects={projects.filter((p) => p.project_type === 'web_design')}
+          />
+
+          {/* Marketing Row */}
+          <ProjectCategoryRow
+            title="Marketing & Advertising"
+            types={[
+              {
+                type: 'ads' as const,
+                label: 'Campaigns',
+                icon: Megaphone,
+                color: 'text-amber-400',
+                bgColor: 'bg-amber-500/10',
+              },
+            ]}
+            projects={projects.filter((p) => p.project_type === 'ads')}
+          />
+        </div>
+
+        {/* Demos column on the right */}
         <ProjectColumnView
           title="Demos"
           icon={<Beaker className="h-4 w-4" />}

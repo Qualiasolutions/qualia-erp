@@ -40,6 +40,12 @@ const PROJECT_TYPE_CONFIG: Record<
     bgColor: 'bg-pink-500/10',
     label: 'Voice',
   },
+  ai_platform: {
+    icon: Sparkles,
+    color: 'text-indigo-400',
+    bgColor: 'bg-indigo-500/10',
+    label: 'Platform',
+  },
   web_design: {
     icon: Globe,
     color: 'text-sky-400',
