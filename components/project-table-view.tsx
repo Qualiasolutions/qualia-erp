@@ -19,6 +19,7 @@ import {
   MoreVertical,
   Trash2,
   Edit2,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials } from '@/lib/client-utils';
@@ -101,7 +102,7 @@ const PROJECT_STATUSES = [
   'Archived',
   'Canceled',
 ] as const;
-const PROJECT_TYPES: ProjectType[] = ['ai_agent', 'voice_agent', 'web_design', 'seo', 'ads'];
+const PROJECT_TYPES: ProjectType[] = ['ai_agent', 'voice_agent', 'ai_platform', 'web_design', 'seo', 'ads'];
 
 type SortField = 'name' | 'progress' | 'owner' | 'start_date' | 'end_date' | 'type';
 type SortDirection = 'asc' | 'desc';
