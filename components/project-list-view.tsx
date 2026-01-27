@@ -118,6 +118,10 @@ function ProjectRow({ project }: { project: ProjectData }) {
     });
   };
 
+  const handleClick = () => {
+    router.push(`/projects/${project.id}`);
+  };
+
   return (
     <div
       onClick={handleClick}
