@@ -60,7 +60,8 @@ export const GITHUB_TEMPLATES: Record<ProjectType, string> = {
   web_design: 'qualia-website-template',
   ai_agent: 'qualia-ai-agent-template',
   voice_agent: 'qualia-voice-agent-template',
-  seo: 'qualia-website-template',
+  ai_platform: 'qualia-ai-agent-template', // Reuse AI agent template
+  seo: 'qualia-w ebsite-template',
   ads: 'qualia-website-template',
 };
 
