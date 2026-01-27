@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Globe, Phone, TrendingUp, Megaphone, Folder, Inbox, User } from 'lucide-react';
+import { Bot, Globe, Phone, TrendingUp, Megaphone, Folder, Inbox, User, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { USER_COLORS } from '@/lib/color-constants';
