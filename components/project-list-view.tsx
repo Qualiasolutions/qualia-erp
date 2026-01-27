@@ -26,6 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EntityAvatar } from '@/components/entity-avatar';
 import type { ProjectData } from '@/app/projects/page';
 import type { ProjectType } from '@/types/database';
 
@@ -119,6 +120,7 @@ function ProjectRow({ project }: { project: ProjectData }) {
 
   return (
     <div
+      onClick={handleClick}
       className={cn(
         'group relative flex items-center gap-4 rounded-xl border-2 bg-card p-4 transition-all duration-200',
         'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
@@ -127,17 +129,15 @@ function ProjectRow({ project }: { project: ProjectData }) {
         isPending && 'pointer-events-none opacity-50'
       )}
     >
-      {/* Type icon */}
-      <div
-        className={cn(
-          'flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl transition-transform group-hover:scale-105',
-          typeConfig ? typeConfig.bgColor : 'bg-muted'
-        )}
-      >
-        <TypeIcon
-          className={cn('h-5 w-5', typeConfig ? typeConfig.color : 'text-muted-foreground')}
-        />
-      </div>
+      {/* Project Logo/Avatar */}
+      <EntityAvatar
+        src={project.logo_url}
+        fallbackIcon={<TypeIcon className="h-4 w-4" />}
+        fallbackBgColor={typeConfig?.bgColor || 'bg-muted'}
+        fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
+        size="md"
+        className="flex-shrink-0"
+      />
 
       {/* Main content */}
       <div className="min-w-0 flex-1">
