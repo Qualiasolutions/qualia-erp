@@ -52,21 +52,6 @@ export interface ProjectNote {
   };
 }
 
-export interface DashboardNote {
-  id: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-  project_id: string;
-  profile?: {
-    full_name: string | null;
-    avatar_url: string | null;
-  } | null;
-  project?: {
-    id: string;
-    name: string;
-  } | null;
-}
 
 export interface PhaseWithDetails {
   id: string;

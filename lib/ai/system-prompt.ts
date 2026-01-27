@@ -72,9 +72,9 @@ export function buildSystemPrompt(options: PromptOptions): string {
 - Focus on efficiency and numbers
 - Skip obvious explanations
 - He knows the system well`
-      : firstName === 'moayad'
+      : firstName === 'tarek'
         ? `
-### Talking to Moayad
+### Talking to Tarek
 - Explain things clearly step by step
 - Be encouraging and patient
 - Celebrate progress

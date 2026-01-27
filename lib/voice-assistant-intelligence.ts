@@ -216,9 +216,9 @@ const PERSONALIZED_RESPONSES = {
     projectUpdate: 'خليني أجيبلك آخر تحديثات المشاريع',
     urgent: 'في إشي urgent لازم تشوفه',
   },
-  moayad: {
-    greeting: 'هلا مؤيد! كيف العملاء؟',
-    help: 'طبعاً مؤيد، شو اللي بدك تتعلمه اليوم؟',
+  tarek: {
+    greeting: 'هلا طارق! كيف العملاء؟',
+    help: 'طبعاً طارق، شو اللي بدك تتعلمه اليوم؟',
     explanation: 'خليني أشرحلك بالتفصيل',
     encouragement: 'ممتاز! عم تتطور بسرعة',
   },
@@ -259,8 +259,8 @@ export function generateGreeting(userContext?: UserContext): string {
   if (firstName === 'fawzi' && Math.random() > 0.3) {
     return PERSONALIZED_RESPONSES.fawzi.greeting;
   }
-  if (firstName === 'moayad' && Math.random() > 0.3) {
-    return PERSONALIZED_RESPONSES.moayad.greeting;
+  if (firstName === 'tarek' && Math.random() > 0.3) {
+    return PERSONALIZED_RESPONSES.tarek.greeting;
   }
 
   // Get random greeting for time period
@@ -299,8 +299,8 @@ export function getDynamicPhrase(
   if (firstName === 'fawzi' && context === 'help') {
     return PERSONALIZED_RESPONSES.fawzi.help;
   }
-  if (firstName === 'moayad' && context === 'help') {
-    return PERSONALIZED_RESPONSES.moayad.help;
+  if (firstName === 'tarek' && context === 'help') {
+    return PERSONALIZED_RESPONSES.tarek.help;
   }
 
   // Use unique phrase selector to avoid repetition
@@ -366,15 +366,15 @@ export function generateContextualResponse(
       ]);
 
     case 'encouragement':
-      if (firstName?.toLowerCase() === 'moayad') {
+      if (firstName?.toLowerCase() === 'tarek') {
         return getUniquePhrase([
-          'ممتاز مؤيد! عم تتعلم بسرعة',
+          'ممتاز طارق! عم تتعلم بسرعة',
           'برافو! شايف إنك فاهم الموضوع',
           'كثير منيح! استمر',
-          'يا سلام مؤيد! شاطر',
+          'يا سلام طارق! شاطر',
           'والله رهيب! كمّل هيك',
           'حلو! عم تتطور',
-          'برافو مؤيد، ماشي منيح!',
+          'برافو طارق، ماشي منيح!',
         ]);
       }
       return getUniquePhrase([
@@ -677,8 +677,8 @@ ${
     : ''
 }
 ${
-  firstName === 'moayad'
-    ? `**مؤيد موجود** 📚:
+  firstName === 'tarek'
+    ? `**طارق موجود** 📚:
 - اشرحي بوضوح خطوة بخطوة
 - شجعي وامدحي التقدم
 - كوني صبورة`
