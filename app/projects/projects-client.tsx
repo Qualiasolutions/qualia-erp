@@ -55,7 +55,6 @@ export function ProjectsClient({
   const hasArchivedProjects = archivedProjects.length > 0;
 
   return (
-  return (
     <div className="flex h-screen w-full flex-col gap-6 overflow-hidden p-6 md:p-8">
       {/* Top Section: Currently Building + Demos */}
       <div className="grid min-h-0 flex-[3] grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
