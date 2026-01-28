@@ -55,7 +55,7 @@ export function ProjectsClient({
   const hasArchivedProjects = archivedProjects.length > 0;
 
   return (
-    <div className="flex h-screen w-full flex-col gap-6 overflow-hidden p-6 md:p-8">
+    <div className="flex h-[90vh] w-full flex-col gap-6 overflow-hidden p-6 md:p-8">
       {/* Top Section: Currently Building + Demos */}
       <div className="grid min-h-0 flex-[3] grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
         {/* Active Projects */}
@@ -83,7 +83,7 @@ export function ProjectsClient({
 
       {/* Bottom Section: Completed Projects */}
       {hasFinishedProjects && (
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+        <div className="flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-lg border border-border bg-card">
           <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-4 py-3">
             <Trophy className="h-4 w-4 text-emerald-500" />
             <h2 className="font-semibold text-foreground">Recently Completed</h2>
@@ -91,8 +91,8 @@ export function ProjectsClient({
               {finishedProjects.length} completed
             </span>
           </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <ProjectListView projects={finishedProjects} />
+          <div className="overflow-x-auto p-4">
+            <ProjectListView projects={finishedProjects} horizontal={true} />
           </div>
         </div>
       )}

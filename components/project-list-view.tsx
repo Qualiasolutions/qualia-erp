@@ -207,9 +207,10 @@ function ProjectRow({ project }: { project: ProjectData }) {
 
 interface ProjectListViewProps {
   projects: ProjectData[];
+  horizontal?: boolean;
 }
 
-export function ProjectListView({ projects }: ProjectListViewProps) {
+export function ProjectListView({ projects, horizontal = false }: ProjectListViewProps) {
   // Sort projects: in-progress first (by progress desc), then completed
   const sortedProjects = useMemo(() => {
     const getProgress = (p: ProjectData) => {
@@ -265,6 +266,18 @@ export function ProjectListView({ projects }: ProjectListViewProps) {
         <p className="mt-1 text-sm text-muted-foreground">
           Create your first project to get started
         </p>
+      </div>
+    );
+  }
+
+  if (horizontal) {
+    return (
+      <div className="flex flex-row gap-4 overflow-x-auto pb-2">
+        {sortedProjects.map((project) => (
+          <div key={project.id} className="w-[300px] flex-shrink-0">
+            <ProjectRow project={project} />
+          </div>
+        ))}
       </div>
     );
   }
