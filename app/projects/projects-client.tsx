@@ -55,34 +55,54 @@ export function ProjectsClient({
   const hasArchivedProjects = archivedProjects.length > 0;
 
   return (
-    <div className="flex h-[100vh] flex-col overflow-hidden">
-      {/* Main columns - Currently Building and Demos side by side */}
-      <div className="grid h-full grid-cols-1 gap-6 overflow-hidden p-6 lg:grid-cols-[1fr_320px]">
-        {/* Projects column with scrollable content */}
+  return (
+    <div className="flex h-screen w-full flex-col gap-6 overflow-hidden p-6 md:p-8">
+      {/* Top Section: Currently Building + Demos */}
+      <div className="grid min-h-0 flex-[3] grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+        {/* Active Projects */}
         <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-card">
-          <div className="border-b border-border px-4 py-3">
+          <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+            <Beaker className="h-4 w-4 text-primary" />
             <h2 className="font-semibold text-foreground">Currently Building</h2>
-            <p className="text-xs text-muted-foreground">{projects.length} active projects</p>
+            <span className="ml-auto text-xs text-muted-foreground">{projects.length} active</span>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <ProjectListView projects={projects as ProjectData[]} />
           </div>
         </div>
 
-        {/* Demos column */}
+        {/* Demos Column */}
         <ProjectColumnView
           title="Demos"
-          icon={<Beaker className="h-4 w-4" />}
+          icon={<Beaker className="h-4 w-4" />} // Using Beaker for Demos too as per previous code, or maybe TestTube/Bot? Previous was Beaker.
           projects={demos as ProjectData[]}
           emptyMessage="No demos yet"
           onProjectClick={handleDemoClick}
+          className="h-full"
         />
       </div>
+
+      {/* Bottom Section: Completed Projects */}
+      {hasFinishedProjects && (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
+          <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+            <Trophy className="h-4 w-4 text-emerald-500" />
+            <h2 className="font-semibold text-foreground">Recently Completed</h2>
+            <span className="ml-auto text-xs text-muted-foreground">
+              {finishedProjects.length} completed
+            </span>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <ProjectListView projects={finishedProjects} />
+          </div>
+        </div>
+      )}
 
       {/* Demo Sheet */}
       {selectedDemo && (
         <DemoSheet open={sheetOpen} onOpenChange={setSheetOpen} demo={selectedDemo} />
       )}
     </div>
+  );
   );
 }
