@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
+import { canModifyTask, isUserAdmin } from './shared';
 
 export type ActionResult = {
   success: boolean;
@@ -308,6 +309,12 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: 'Task ID is required' };
   }
 
+  // Authorization: Only task creator, assignee, project lead, or admin can update
+  const canModify = await canModifyTask(user.id, id);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to update this task' };
+  }
+
   // Build update object (only include fields that are provided)
   const updateData: Record<string, unknown> = {};
 
@@ -404,6 +411,20 @@ export async function reorderTasks(
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Authorization: Verify user can modify all tasks in the batch
+  // For efficiency, only admins can batch reorder multiple tasks
+  // Non-admins can only reorder if they can modify all tasks
+  const isAdmin = await isUserAdmin(user.id);
+  if (!isAdmin) {
+    // Check each task - if any fails, reject the whole batch
+    for (const { id } of taskUpdates) {
+      const canModify = await canModifyTask(user.id, id);
+      if (!canModify) {
+        return { success: false, error: 'You do not have permission to reorder one or more tasks' };
+      }
+    }
   }
 
   // Batch update tasks
@@ -516,6 +537,12 @@ export async function toggleTaskInbox(taskId: string, showInInbox: boolean): Pro
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Authorization: Only task creator, assignee, project lead, or admin can toggle inbox
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to modify this task' };
+  }
+
   const { error } = await supabase
     .from('tasks')
     .update({ show_in_inbox: showInInbox })
@@ -552,6 +579,12 @@ export async function quickUpdateTask(
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Authorization: Only task creator, assignee, project lead, or admin can update
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to update this task' };
   }
 
   // Build update object

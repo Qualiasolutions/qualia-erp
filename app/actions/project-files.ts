@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ProjectFile } from '@/types/database';
+import { canAccessProject, canDeleteProjectFile } from './shared';
 
 export type ActionResult = {
   success: boolean;
@@ -51,6 +52,13 @@ export async function getProjectFiles(projectId: string): Promise<ProjectFile[]>
 
   if (!user) {
     console.error('[getProjectFiles] No authenticated user');
+    return [];
+  }
+
+  // Authorization: Only workspace members can access project files
+  const canAccess = await canAccessProject(user.id, projectId);
+  if (!canAccess) {
+    console.error('[getProjectFiles] User does not have access to this project');
     return [];
   }
 
@@ -196,6 +204,12 @@ export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Authorization: Only uploader, project lead, or admin can delete
+  const canDelete = await canDeleteProjectFile(user.id, fileId);
+  if (!canDelete) {
+    return { success: false, error: 'You do not have permission to delete this file' };
   }
 
   // Get file record

@@ -1,7 +1,10 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { normalizeFKResponse } from '@/lib/server-utils';
+import { normalizeFKResponse, type FKResponse } from '@/lib/server-utils';
+
+// Type alias for the Supabase client return type
+type SupabaseClientType = Awaited<ReturnType<typeof createClient>>;
 
 export type ActionResult = {
   success: boolean;
@@ -106,8 +109,8 @@ export async function canDeletePhase(userId: string, phaseId: string): Promise<b
     .eq('id', phaseId)
     .single();
 
-  const projectData = normalizeFKResponse(phase?.project as any);
-  return (projectData as { lead_id: string } | null)?.lead_id === userId;
+  const projectData = normalizeFKResponse(phase?.project as FKResponse<{ lead_id: string }>);
+  return projectData?.lead_id === userId;
 }
 
 // Check if user can delete a phase item (project lead or admin)
@@ -121,9 +124,126 @@ export async function canDeletePhaseItem(userId: string, itemId: string): Promis
     .eq('id', itemId)
     .single();
 
-  // Handle nested FK array normalization
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const phaseData = normalizeFKResponse(item?.phase as any);
-  const projectData = normalizeFKResponse(phaseData?.project as any);
+  // Handle nested FK array normalization - Supabase returns ambiguous types for nested relations
+  const phaseData = normalizeFKResponse(
+    item?.phase as FKResponse<{ project: FKResponse<{ lead_id: string }> }>
+  );
+  const projectData = normalizeFKResponse(phaseData?.project as FKResponse<{ lead_id: string }>);
   return projectData?.lead_id === userId;
+}
+
+// ============ TASK AUTHORIZATION HELPERS ============
+
+// Check if user can modify a task (creator, assignee, project lead, or admin)
+export async function canModifyTask(userId: string, taskId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('creator_id, assignee_id, project:projects(lead_id)')
+    .eq('id', taskId)
+    .single();
+
+  if (!task) return false;
+
+  // Creator can modify
+  if (task.creator_id === userId) return true;
+
+  // Assignee can modify
+  if (task.assignee_id === userId) return true;
+
+  // Project lead can modify
+  const project = Array.isArray(task.project) ? task.project[0] : task.project;
+  if (project?.lead_id === userId) return true;
+
+  return false;
+}
+
+// ============ PROJECT FILE AUTHORIZATION HELPERS ============
+
+// Check if user can access a project (workspace member)
+export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+
+  // Get project's workspace
+  const { data: project } = await supabase
+    .from('projects')
+    .select('workspace_id')
+    .eq('id', projectId)
+    .single();
+
+  if (!project?.workspace_id) return false;
+
+  // Check if user is a member of the workspace
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('workspace_id', project.workspace_id)
+    .eq('profile_id', userId)
+    .single();
+
+  return !!membership;
+}
+
+// Check if user can delete a project file (uploader, project lead, or admin)
+export async function canDeleteProjectFile(userId: string, fileId: string): Promise<boolean> {
+  if (await isUserAdmin(userId)) return true;
+
+  const supabase = await createClient();
+  const { data: file } = await supabase
+    .from('project_files')
+    .select('uploaded_by, project:projects(lead_id)')
+    .eq('id', fileId)
+    .single();
+
+  if (!file) return false;
+
+  // Uploader can delete
+  if (file.uploaded_by === userId) return true;
+
+  // Project lead can delete
+  const project = Array.isArray(file.project) ? file.project[0] : file.project;
+  if (project?.lead_id === userId) return true;
+
+  return false;
+}
+
+// ============ ACTIVITY LOGGING HELPERS ============
+
+/**
+ * Helper to create activity records (used by multiple domain modules)
+ */
+export async function createActivity(
+  supabase: SupabaseClientType,
+  actorId: string,
+  type: ActivityType,
+  refs: {
+    project_id?: string | null;
+    issue_id?: string | null;
+    team_id?: string | null;
+    comment_id?: string | null;
+    meeting_id?: string | null;
+    workspace_id?: string | null;
+  },
+  metadata?: Record<string, unknown>
+) {
+  try {
+    await supabase.from('activities').insert({
+      actor_id: actorId,
+      type,
+      project_id: refs.project_id || null,
+      issue_id: refs.issue_id || null,
+      team_id: refs.team_id || null,
+      comment_id: refs.comment_id || null,
+      meeting_id: refs.meeting_id || null,
+      workspace_id: refs.workspace_id || null,
+      metadata: metadata || {},
+    });
+  } catch (err) {
+    // Don't fail the main operation if activity logging fails
+    console.error('Failed to create activity:', err);
+  }
 }

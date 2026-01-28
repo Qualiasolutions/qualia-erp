@@ -412,15 +412,24 @@ async function getUserContext(payload: VapiToolCallPayload) {
 /**
  * Verify VAPI webhook request authenticity
  * Uses a shared secret token for authentication
+ * SECURITY: Fail-closed pattern - rejects requests if secret not configured (except in development)
  */
 function verifyVapiWebhook(request: NextRequest): boolean {
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
-  // If no secret is configured, allow requests (development mode)
-  // In production, VAPI_WEBHOOK_SECRET should be set
+  // SECURITY: Fail-closed in production - reject all requests if secret not configured
   if (!webhookSecret) {
-    console.warn('VAPI_WEBHOOK_SECRET not configured - webhook authentication disabled');
-    return true;
+    if (isDevelopment) {
+      console.warn(
+        '[VAPI Webhook] VAPI_WEBHOOK_SECRET not configured - allowing in development mode'
+      );
+      return true;
+    }
+    console.error(
+      '[VAPI Webhook] VAPI_WEBHOOK_SECRET not configured - rejecting request (production)'
+    );
+    return false;
   }
 
   // Check for the secret in the Authorization header or custom header
@@ -436,13 +445,7 @@ function verifyVapiWebhook(request: NextRequest): boolean {
     return true;
   }
 
-  // Also check query parameter for flexibility
-  const url = new URL(request.url);
-  const querySecret = url.searchParams.get('secret');
-  if (querySecret === webhookSecret) {
-    return true;
-  }
-
+  // SECURITY: Query parameter support removed - only header-based auth is allowed
   return false;
 }
 
