@@ -76,7 +76,10 @@ interface Issue extends BaseScheduleItem {
   type: 'issue';
   status: string;
   priority: string;
-  assignee?: { id: string; full_name?: string | null; avatar_url?: string | null } | null;
+  assignee?:
+    | { id: string; full_name?: string | null; avatar_url?: string | null }
+    | Array<{ full_name?: string | null; avatar_url?: string | null }>
+    | null;
 }
 
 type ScheduleItem = Meeting | Issue;
