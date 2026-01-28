@@ -125,6 +125,7 @@ interface ProjectColumnViewProps {
   projects: ProjectData[];
   emptyMessage: string;
   onProjectClick?: (project: ProjectData) => void;
+  className?: string;
 }
 
 export function ProjectColumnView({
@@ -133,11 +134,12 @@ export function ProjectColumnView({
   projects,
   emptyMessage,
   onProjectClick,
+  className,
 }: ProjectColumnViewProps) {
   return (
-    <div className="flex flex-col rounded-lg border border-border bg-card">
+    <div className={cn("flex flex-col overflow-hidden rounded-lg border border-border bg-card", className)}>
       {/* Column header */}
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-4 py-3">
         <span className="text-muted-foreground">{icon}</span>
         <h2 className="font-semibold text-foreground">{title}</h2>
         <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -146,20 +148,22 @@ export function ProjectColumnView({
       </div>
 
       {/* Project list */}
-      {projects.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-3 rounded-xl bg-secondary/50 p-4">
-            <Inbox className="h-6 w-6 text-muted-foreground" />
+      <div className="flex-1 overflow-y-auto">
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="mb-3 rounded-xl bg-secondary/50 p-4">
+              <Inbox className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">{emptyMessage}</p>
           </div>
-          <p className="text-sm text-muted-foreground">{emptyMessage}</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-border">
-          {projects.map((project) => (
-            <ProjectRow key={project.id} project={project} onProjectClick={onProjectClick} />
-          ))}
-        </div>
-      )}
+        ) : (
+          <div className="divide-y divide-border">
+            {projects.map((project) => (
+              <ProjectRow key={project.id} project={project} onProjectClick={onProjectClick} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
