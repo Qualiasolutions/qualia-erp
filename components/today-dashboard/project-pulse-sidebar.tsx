@@ -11,6 +11,7 @@ import {
   Sparkles,
   ChevronRight,
   Calendar,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
@@ -58,26 +59,35 @@ export function ProjectPulseSidebar({
     <div className="flex h-full flex-col">
       {/* Active Projects */}
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between border-b border-white/20 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
           <div>
-            <h3 className="text-sm font-medium">Currently Building</h3>
-            <p className="text-xs text-muted-foreground">{activeProjects.length} in progress</p>
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10">
+                <Folder className="h-3 w-3 text-emerald-500" />
+              </div>
+              <h3 className="text-sm font-semibold text-white">Currently Building</h3>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">{activeProjects.length} in progress</p>
           </div>
           <Link
             href="/projects"
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-all hover:bg-white/10 hover:text-white"
           >
             <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
           {activeProjects.length === 0 ? (
-            <div className="flex h-32 items-center justify-center px-4">
-              <p className="text-sm text-muted-foreground">No active projects</p>
+            <div className="flex h-32 flex-col items-center justify-center">
+              <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10">
+                <Folder className="h-5 w-5 text-emerald-500" />
+              </div>
+              <p className="text-sm font-medium text-white">No active projects</p>
+              <p className="mt-0.5 text-xs text-zinc-500">Start something new</p>
             </div>
           ) : (
-            <div className="p-2">
+            <div className="space-y-1">
               {activeProjects.map((project) => (
                 <ProjectCard key={project.id} project={project} />
               ))}
@@ -88,15 +98,22 @@ export function ProjectPulseSidebar({
 
       {/* Completed Projects */}
       {finishedProjects.length > 0 && (
-        <div className="flex flex-col border-t border-white/20">
-          <div className="px-4 py-3">
-            <h3 className="text-sm font-medium">Recently Completed</h3>
-            <p className="text-xs text-muted-foreground">{finishedProjects.length} launched</p>
+        <div className="flex flex-col border-t border-white/[0.06]">
+          <div className="px-5 py-4">
+            <div className="flex items-center gap-2">
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-sky-500/10">
+                <Sparkles className="h-3 w-3 text-sky-400" />
+              </div>
+              <h3 className="text-sm font-semibold text-white">Recently Completed</h3>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500">{finishedProjects.length} launched</p>
           </div>
-          <div className="max-h-[160px] overflow-y-auto p-2">
-            {finishedProjects.slice(0, 3).map((project) => (
-              <ProjectCard key={project.id} project={project} compact />
-            ))}
+          <div className="max-h-[180px] overflow-y-auto px-3 pb-3">
+            <div className="space-y-1">
+              {finishedProjects.slice(0, 4).map((project) => (
+                <ProjectCard key={project.id} project={project} compact />
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -117,51 +134,59 @@ function ProjectCard({ project, compact = false }: { project: Project; compact?:
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors',
-        'hover:bg-muted/50'
+        'group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200',
+        'hover:bg-white/[0.04]'
       )}
     >
       <EntityAvatar
         src={project.logo_url}
-        fallbackIcon={<TypeIcon className="h-3.5 w-3.5" />}
-        fallbackBgColor="bg-muted"
-        fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
+        fallbackIcon={<TypeIcon className="h-4 w-4" />}
+        fallbackBgColor="bg-zinc-800"
+        fallbackIconColor={typeConfig?.color || 'text-zinc-400'}
         size="sm"
-        className="rounded-lg"
+        className="rounded-xl ring-1 ring-white/10"
       />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-sm font-medium text-foreground group-hover:text-foreground">
+          <span className="truncate text-sm font-medium text-zinc-100 transition-colors group-hover:text-white">
             {project.name}
           </span>
           {!compact && (
             <span
               className={cn(
-                'h-1.5 w-1.5 shrink-0 rounded-full',
-                STATUS_COLORS[project.status] || 'bg-muted-foreground'
+                'h-2 w-2 shrink-0 rounded-full ring-2 ring-zinc-900',
+                STATUS_COLORS[project.status] || 'bg-zinc-500'
               )}
             />
           )}
+          {compact && <CheckCircle2 className="h-4 w-4 shrink-0 text-sky-500" />}
         </div>
 
         {!compact && (
-          <div className="mt-1.5 flex items-center gap-2">
+          <div className="mt-2 flex items-center gap-2">
             {/* Progress bar */}
-            <div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
               <div
-                className="h-full rounded-full bg-foreground/20 transition-all"
+                className={cn(
+                  'h-full rounded-full transition-all duration-500',
+                  progress >= 80
+                    ? 'bg-emerald-500'
+                    : progress >= 50
+                      ? 'bg-amber-500'
+                      : 'bg-zinc-600'
+                )}
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-[10px] tabular-nums text-muted-foreground">
+            <span className="text-[11px] font-medium tabular-nums text-zinc-400">
               {Math.round(progress)}%
             </span>
           </div>
         )}
 
         {!compact && project.target_date && (
-          <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-zinc-500">
             <Calendar className="h-3 w-3" />
             {new Date(project.target_date).toLocaleDateString(undefined, {
               month: 'short',

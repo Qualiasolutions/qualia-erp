@@ -78,12 +78,12 @@ const TaskItem = React.memo(function TaskItem({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: 4 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -10 }}
+      exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
       className={cn(
-        'group flex items-start gap-3 px-4 py-2.5 transition-colors',
-        'hover:bg-muted/30',
+        'group mx-1 flex items-start gap-3 rounded-xl px-3 py-3 transition-all duration-200',
+        'hover:bg-white/[0.04]',
         isCompleted && 'opacity-50'
       )}
     >
@@ -92,10 +92,10 @@ const TaskItem = React.memo(function TaskItem({
         onClick={() => onToggle(task.id, !isCompleted)}
         disabled={isPending}
         className={cn(
-          'mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-all',
+          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
           isCompleted
-            ? 'border-foreground/20 bg-foreground text-background'
-            : 'border-border hover:border-foreground/40'
+            ? 'border-amber-500/50 bg-amber-500 text-black'
+            : 'border-zinc-600 hover:border-amber-500/50 hover:bg-amber-500/10'
         )}
       >
         {isCompleted && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -105,27 +105,28 @@ const TaskItem = React.memo(function TaskItem({
       <div className="min-w-0 flex-1">
         <span
           className={cn(
-            'text-[13px] leading-tight',
-            isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+            'text-[13px] font-medium leading-tight',
+            isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-100'
           )}
         >
           {task.title}
         </span>
 
         {/* Meta row */}
-        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
           {task.project && (
-            <span className="flex items-center gap-1">
-              <FolderOpen className="h-3 w-3" />
-              {task.project.name}
+            <span className="flex items-center gap-1.5 rounded-md bg-zinc-800/50 px-2 py-0.5">
+              <FolderOpen className="h-3 w-3 text-zinc-400" />
+              <span className="max-w-[100px] truncate">{task.project.name}</span>
             </span>
           )}
           {task.due_date && !isCompleted && (
             <span
               className={cn(
-                'flex items-center gap-1',
-                overdue && 'text-red-500',
-                dueToday && !overdue && 'text-amber-500'
+                'flex items-center gap-1.5 rounded-md px-2 py-0.5',
+                overdue && 'bg-red-500/10 text-red-400',
+                dueToday && !overdue && 'bg-amber-500/10 text-amber-400',
+                !overdue && !dueToday && 'bg-zinc-800/50'
               )}
             >
               <Clock className="h-3 w-3" />
@@ -133,36 +134,46 @@ const TaskItem = React.memo(function TaskItem({
             </span>
           )}
           {task.assignee && (
-            <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1.5">
               <span
                 className={cn(
-                  'h-1.5 w-1.5 rounded-full',
+                  'h-2 w-2 rounded-full',
                   userColorMap.get(task.assignee.id)?.bg || 'bg-purple-500'
                 )}
               />
-              {task.assignee.full_name?.split(' ')[0]}
+              <span className="text-zinc-400">{task.assignee.full_name?.split(' ')[0]}</span>
             </span>
           )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1.5">
         {task.priority !== 'No Priority' && (
-          <Circle className={cn('h-2 w-2', PRIORITY_CONFIG[task.priority])} />
+          <div
+            className={cn(
+              'flex h-6 items-center rounded-md px-1.5',
+              task.priority === 'Urgent' && 'bg-red-500/10',
+              task.priority === 'High' && 'bg-orange-500/10',
+              task.priority === 'Medium' && 'bg-amber-500/10',
+              task.priority === 'Low' && 'bg-emerald-500/10'
+            )}
+          >
+            <Circle className={cn('h-2 w-2', PRIORITY_CONFIG[task.priority])} />
+          </div>
         )}
-        <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex items-center gap-0.5 opacity-0 transition-all duration-200 group-hover:opacity-100">
           <TooltipProvider delayDuration={300}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6"
+                  className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
                   onClick={() => onEdit(task)}
                   disabled={isPending}
                 >
-                  <Edit2 className="h-3 w-3" />
+                  <Edit2 className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left">Edit</TooltipContent>
@@ -172,11 +183,11 @@ const TaskItem = React.memo(function TaskItem({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6"
+                  className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
                   onClick={() => onHide(task.id)}
                   disabled={isPending}
                 >
-                  <EyeOff className="h-3 w-3" />
+                  <EyeOff className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="left">Hide</TooltipContent>
@@ -261,23 +272,28 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   return (
     <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/20 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
         <div>
-          <h3 className="text-sm font-medium">Tasks</h3>
-          <p className="text-xs text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/10">
+              <Circle className="h-3 w-3 fill-amber-500 text-amber-500" />
+            </div>
+            <h3 className="text-sm font-semibold text-white">Tasks</h3>
+          </div>
+          <p className="mt-1 text-xs text-zinc-500">
             {pendingTasks} pending{completedTasks > 0 && ` · ${completedTasks} done`}
           </p>
         </div>
 
         {/* User filter */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 rounded-lg bg-zinc-800/50 p-1">
           <button
             onClick={() => setSelectedUserId(null)}
             className={cn(
-              'rounded-md px-2 py-1 text-xs transition-colors',
+              'rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
               selectedUserId === null
-                ? 'bg-foreground text-background'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white/10 text-white shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             )}
           >
             All
@@ -285,13 +301,13 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
           <button
             onClick={() => setSelectedUserId(MOAYAD_ID)}
             className={cn(
-              'flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors',
+              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
               selectedUserId === MOAYAD_ID
-                ? 'bg-foreground text-background'
-                : 'text-muted-foreground hover:text-foreground'
+                ? 'bg-white/10 text-white shadow-sm'
+                : 'text-zinc-400 hover:text-white'
             )}
           >
-            <span className={cn('h-1.5 w-1.5 rounded-full', MOAYAD_COLOR.bg)} />M
+            <span className={cn('h-2 w-2 rounded-full', MOAYAD_COLOR.bg)} />M
           </button>
           {teamMembers.slice(0, 3).map((member) => {
             const color = userColorMap.get(member.id);
@@ -300,13 +316,13 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
                 key={member.id}
                 onClick={() => setSelectedUserId(member.id)}
                 className={cn(
-                  'flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors',
+                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                   selectedUserId === member.id
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-white/10 text-white shadow-sm'
+                    : 'text-zinc-400 hover:text-white'
                 )}
               >
-                <span className={cn('h-1.5 w-1.5 rounded-full', color?.bg)} />
+                <span className={cn('h-2 w-2 rounded-full', color?.bg)} />
                 {member.full_name?.split(' ')[0]?.[0]}
               </button>
             );
@@ -315,7 +331,7 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
       </div>
 
       {/* Quick Add */}
-      <div className="flex items-center gap-2 border-b border-white/20 px-4 py-2">
+      <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3">
         <input
           type="text"
           value={quickAddValue}
@@ -326,27 +342,29 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
               handleQuickAdd();
             }
           }}
-          placeholder="Add task..."
+          placeholder="Add a new task..."
           disabled={isAddingTask}
-          className="h-8 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/50"
+          className="h-9 flex-1 rounded-lg bg-zinc-800/50 px-3 text-sm text-white outline-none ring-1 ring-white/[0.06] transition-all placeholder:text-zinc-500 focus:ring-amber-500/50"
         />
         <Button
           size="sm"
-          variant="ghost"
           onClick={handleQuickAdd}
           disabled={!quickAddValue.trim() || isAddingTask}
-          className="h-7 w-7 p-0"
+          className="h-9 w-9 rounded-lg bg-amber-500/20 p-0 text-amber-400 transition-all hover:bg-amber-500/30 disabled:opacity-40"
         >
           <Plus className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Task List */}
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {visibleTasks.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm font-medium text-muted-foreground">All done!</p>
-            <p className="mt-1 text-xs text-muted-foreground/60">No pending tasks</p>
+          <div className="flex h-full flex-col items-center justify-center py-16 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
+              <Check className="h-6 w-6 text-amber-500" />
+            </div>
+            <p className="text-sm font-medium text-white">All done!</p>
+            <p className="mt-1 text-xs text-zinc-500">No pending tasks</p>
           </div>
         ) : (
           <AnimatePresence mode="popLayout">

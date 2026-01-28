@@ -68,15 +68,15 @@ interface Meeting extends BaseScheduleItem {
   type: 'meeting';
   location?: string | null;
   meeting_link?: string | null;
-  creator?: any; // Relaxed to avoid strict type mismatch with backend type
-  attendees?: any[]; // Relaxed for same reason
+  creator?: { id: string; full_name?: string | null; avatar_url?: string | null } | null;
+  attendees?: Array<{ id: string; profile?: { id: string; full_name?: string | null } | null }>;
 }
 
 interface Issue extends BaseScheduleItem {
   type: 'issue';
   status: string;
   priority: string;
-  assignee?: any; // Relaxed to avoid strict type mismatch with backend type
+  assignee?: { id: string; full_name?: string | null; avatar_url?: string | null } | null;
 }
 
 type ScheduleItem = Meeting | Issue;
@@ -89,6 +89,7 @@ function isMeeting(item: BaseScheduleItem): item is Meeting {
 interface DayViewProps {
   meetings: Meeting[];
   issues?: Issue[];
+  embedded?: boolean;
 }
 
 const HOUR_HEIGHT = 80; // Taller for better readability
@@ -168,10 +169,10 @@ function DraggableItem({
 
   const style = transform
     ? {
-      transform: CSS.Translate.toString(transform),
-      zIndex: isDragging ? 50 : 10,
-      opacity: isDragging ? 0.8 : 1,
-    }
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 50 : 10,
+        opacity: isDragging ? 0.8 : 1,
+      }
     : undefined;
 
   // Visual styles based on type
@@ -318,7 +319,7 @@ function TimeSlot({
   );
 }
 
-export function DayView({ meetings, issues = [] }: DayViewProps) {
+export function DayView({ meetings, issues = [], embedded = false }: DayViewProps) {
   const { timezone, setTimezone } = useTimezone();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
@@ -479,49 +480,89 @@ export function DayView({ meetings, issues = [] }: DayViewProps) {
 
   return (
     <>
-      <div className="flex h-full flex-col space-y-4">
+      <div className={cn('flex h-full flex-col', embedded ? 'gap-0' : 'space-y-4')}>
         {/* Header Controls */}
-        <div className="flex items-center justify-between">
+        <div
+          className={cn(
+            'flex items-center justify-between',
+            embedded ? 'border-b border-white/[0.06] px-5 py-4' : ''
+          )}
+        >
           <div className="flex items-center gap-4">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                {format(currentDate, 'EEEE, MMMM d')}
-              </h2>
-              <div className="mt-1 flex items-center gap-2">
-                <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-                <select
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                  className="bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none"
-                >
-                  <option value={TIMEZONE_CYPRUS}>Cyprus (Fawzi)</option>
-                  <option value={TIMEZONE_JORDAN}>Jordan (Moayad)</option>
-                </select>
+            {embedded && (
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-violet-500/10">
+                <Clock className="h-3 w-3 text-violet-500" />
               </div>
+            )}
+            <div>
+              <h2
+                className={cn(
+                  'font-bold tracking-tight',
+                  embedded ? 'text-sm text-white' : 'text-2xl text-foreground'
+                )}
+              >
+                {embedded ? 'Schedule' : format(currentDate, 'EEEE, MMMM d')}
+              </h2>
+              {embedded ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  {format(currentDate, 'MMM d')} · {dayItems.length} events
+                </p>
+              ) : (
+                <div className="mt-1 flex items-center gap-2">
+                  <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                  <select
+                    value={timezone}
+                    onChange={(e) => setTimezone(e.target.value)}
+                    className="bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none"
+                  >
+                    <option value={TIMEZONE_CYPRUS}>Cyprus (Fawzi)</option>
+                    <option value={TIMEZONE_JORDAN}>Jordan (Moayad)</option>
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-1">
+          <div
+            className={cn(
+              'flex items-center gap-1 rounded-lg p-1',
+              embedded ? 'bg-zinc-800/50' : 'gap-2 bg-secondary/50'
+            )}
+          >
             <button
               onClick={goToPreviousDay}
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className={cn(
+                'rounded-md p-2 transition-colors',
+                embedded
+                  ? 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                  : 'text-muted-foreground hover:bg-background hover:text-foreground'
+              )}
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={goToToday}
               className={cn(
-                'rounded-md px-4 py-2 text-sm font-medium transition-colors',
-                isToday
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                embedded
+                  ? isToday
+                    ? 'bg-white/10 text-white'
+                    : 'text-zinc-400 hover:text-white'
+                  : isToday
+                    ? 'bg-background px-4 py-2 text-sm text-foreground shadow-sm'
+                    : 'px-4 py-2 text-sm text-muted-foreground hover:text-foreground'
               )}
             >
               Today
             </button>
             <button
               onClick={goToNextDay}
-              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className={cn(
+                'rounded-md p-2 transition-colors',
+                embedded
+                  ? 'text-zinc-400 hover:bg-white/10 hover:text-white'
+                  : 'text-muted-foreground hover:bg-background hover:text-foreground'
+              )}
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -534,22 +575,44 @@ export function DayView({ meetings, issues = [] }: DayViewProps) {
           onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
-          <div className="flex-1 overflow-hidden rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur-xl">
+          <div
+            className={cn(
+              'flex-1 overflow-hidden',
+              embedded
+                ? ''
+                : 'rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur-xl'
+            )}
+          >
             {/* Time grid wrapper with Scroll Area if needed */}
             <div className="h-full overflow-y-auto">
               <div
-                className="grid grid-cols-[80px_1fr]"
+                className={cn('grid', embedded ? 'grid-cols-[60px_1fr]' : 'grid-cols-[80px_1fr]')}
                 style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT}px`, minHeight: '100%' }}
               >
                 {/* Time labels */}
-                <div className="relative border-r border-border/50 bg-secondary/20">
+                <div
+                  className={cn(
+                    'relative border-r',
+                    embedded
+                      ? 'border-white/[0.06] bg-zinc-900/50'
+                      : 'border-border/50 bg-secondary/20'
+                  )}
+                >
                   {hours.map((hour) => (
                     <div
                       key={hour}
-                      className="relative flex items-start justify-end pr-4 pt-2"
+                      className={cn(
+                        'relative flex items-start justify-end pt-2',
+                        embedded ? 'pr-3' : 'pr-4'
+                      )}
                       style={{ height: `${HOUR_HEIGHT}px` }}
                     >
-                      <span className="text-xs font-semibold text-muted-foreground/80">
+                      <span
+                        className={cn(
+                          'text-xs font-semibold',
+                          embedded ? 'text-zinc-500' : 'text-muted-foreground/80'
+                        )}
+                      >
                         {format(setHours(setMinutes(new Date(), 0), hour), 'h a')}
                       </span>
                     </div>
@@ -557,7 +620,12 @@ export function DayView({ meetings, issues = [] }: DayViewProps) {
                 </div>
 
                 {/* Day column with droppable slots */}
-                <div className={cn('relative', isToday && 'bg-primary/[0.01]')}>
+                <div
+                  className={cn(
+                    'relative',
+                    isToday && (embedded ? 'bg-violet-500/[0.02]' : 'bg-primary/[0.01]')
+                  )}
+                >
                   {/* Droppable time slots (30-minute intervals) */}
                   {hours.map((hour) => (
                     <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT}px` }}>
@@ -565,7 +633,12 @@ export function DayView({ meetings, issues = [] }: DayViewProps) {
                       <div className="absolute inset-0 z-10 opacity-0 transition-opacity hover:opacity-100">
                         <button
                           onClick={() => handleSlotClick(hour, 0)}
-                          className="absolute right-2 top-0 rounded-full bg-primary p-1.5 text-primary-foreground shadow-sm transition-transform hover:scale-110"
+                          className={cn(
+                            'absolute right-2 top-0 rounded-full p-1.5 shadow-sm transition-transform hover:scale-110',
+                            embedded
+                              ? 'bg-violet-500 text-white'
+                              : 'bg-primary text-primary-foreground'
+                          )}
                           title="Add Task"
                         >
                           <Plus className="h-3 w-3" />
@@ -595,8 +668,18 @@ export function DayView({ meetings, issues = [] }: DayViewProps) {
                         top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
                       }}
                     >
-                      <div className="-ml-1.5 h-3 w-3 rounded-full bg-red-500 shadow-sm ring-2 ring-background" />
-                      <div className="h-[2px] w-full bg-red-500 shadow-sm" />
+                      <div
+                        className={cn(
+                          '-ml-1.5 h-3 w-3 rounded-full shadow-sm ring-2',
+                          embedded ? 'bg-violet-500 ring-zinc-900' : 'bg-red-500 ring-background'
+                        )}
+                      />
+                      <div
+                        className={cn(
+                          'h-[2px] w-full shadow-sm',
+                          embedded ? 'bg-violet-500' : 'bg-red-500'
+                        )}
+                      />
                     </div>
                   )}
 

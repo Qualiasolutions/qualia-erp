@@ -551,6 +551,17 @@
   scrollbar-color: hsl(var(--muted-foreground) / 0.3) transparent;
 }
 
+/* Dashboard card scrollbars - more subtle */
+.bg-zinc-900\/80 ::-webkit-scrollbar-thumb,
+.bg-zinc-900 ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.bg-zinc-900\/80 ::-webkit-scrollbar-thumb:hover,
+.bg-zinc-900 ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* ============================================
    FOCUS & SELECTION
    ============================================ */

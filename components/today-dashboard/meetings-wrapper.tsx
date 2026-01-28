@@ -21,9 +21,8 @@ export function MeetingsWrapper({ initialMeetings, initialIssues = [] }: Meeting
   }));
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Use DayView but we need to ensure it fits the container */}
-      <DayView meetings={dayViewMeetings} issues={initialIssues} />
+    <div className="flex h-full flex-col overflow-hidden">
+      <DayView meetings={dayViewMeetings} issues={initialIssues} embedded />
     </div>
   );
 }
