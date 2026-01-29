@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Wand2, ChevronDown } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { Plus, Wand2, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,10 +10,25 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ProjectWizard } from '@/components/project-wizard';
 import { getClients } from '@/app/actions';
 import { useWorkspace } from '@/components/workspace-provider';
 import { useAIAssistant } from '@/components/ai-assistant';
+
+// Lazy load ProjectWizard - 951 lines, only needed when creating projects
+const ProjectWizard = dynamic(
+  () => import('@/components/project-wizard').then((mod) => mod.ProjectWizard),
+  {
+    loading: () => (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span>Loading wizard...</span>
+        </div>
+      </div>
+    ),
+    ssr: false,
+  }
+);
 
 interface Client {
   id: string;
