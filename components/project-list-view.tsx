@@ -78,7 +78,7 @@ const PROJECT_TYPE_CONFIG: Record<
   },
 };
 
-function ProjectRow({ project }: { project: ProjectData }) {
+function ProjectRow({ project, compact = false }: { project: ProjectData; compact?: boolean }) {
   const { isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -122,11 +122,101 @@ function ProjectRow({ project }: { project: ProjectData }) {
     router.push(`/projects/${project.id}`);
   };
 
+  // Compact row for dense display
+  if (compact) {
+    return (
+      <div
+        onClick={handleClick}
+        className={cn(
+          'group relative flex cursor-pointer items-center gap-2.5 rounded-lg border bg-card/50 px-3 py-2 transition-all duration-150',
+          'hover:bg-card hover:shadow-sm',
+          isPartnership ? 'border-orange-500/30' : 'border-border/50 hover:border-border',
+          isComplete && 'opacity-50',
+          isPending && 'pointer-events-none opacity-50'
+        )}
+      >
+        {/* Type icon */}
+        <div
+          className={cn(
+            'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md',
+            typeConfig?.bgColor || 'bg-muted'
+          )}
+        >
+          <TypeIcon className={cn('h-3.5 w-3.5', typeConfig?.color || 'text-muted-foreground')} />
+        </div>
+
+        {/* Name + client */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <span className="truncate text-sm font-medium text-foreground">{project.name}</span>
+            {isPartnership && <span className="text-xs">🤝</span>}
+          </div>
+          {project.client_name && (
+            <span className="block truncate text-xs text-muted-foreground">
+              {project.client_name}
+            </span>
+          )}
+        </div>
+
+        {/* Progress indicator */}
+        {progress > 0 && (
+          <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center">
+            <svg className="h-5 w-5 -rotate-90" viewBox="0 0 20 20">
+              <circle
+                cx="10"
+                cy="10"
+                r="8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="text-border/50"
+              />
+              <circle
+                cx="10"
+                cy="10"
+                r="8"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray={`${progress * 0.5} 50`}
+                className={isComplete ? 'text-emerald-500' : 'text-qualia-500'}
+              />
+            </svg>
+          </div>
+        )}
+
+        {/* Admin delete */}
+        {isSuperAdmin && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-3.5 w-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
       onClick={handleClick}
       className={cn(
-        'group relative flex items-center gap-4 rounded-xl border-2 bg-card p-4 transition-all duration-200',
+        'group relative flex cursor-pointer items-center gap-4 rounded-xl border-2 bg-card p-4 transition-all duration-200',
         'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
         isPartnership ? 'border-orange-500/40' : 'border-border hover:border-qualia-500/30',
         isComplete && 'opacity-60',
@@ -208,9 +298,14 @@ function ProjectRow({ project }: { project: ProjectData }) {
 interface ProjectListViewProps {
   projects: ProjectData[];
   horizontal?: boolean;
+  compact?: boolean;
 }
 
-export function ProjectListView({ projects, horizontal = false }: ProjectListViewProps) {
+export function ProjectListView({
+  projects,
+  horizontal = false,
+  compact = false,
+}: ProjectListViewProps) {
   // Sort projects: in-progress first (by progress desc), then completed
   const sortedProjects = useMemo(() => {
     const getProgress = (p: ProjectData) => {
@@ -282,8 +377,19 @@ export function ProjectListView({ projects, horizontal = false }: ProjectListVie
     );
   }
 
+  // Compact mode: 2-column grid, no grouping, minimal spacing
+  if (compact) {
+    return (
+      <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
+        {sortedProjects.map((project) => (
+          <ProjectRow key={project.id} project={project} compact />
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {groupedProjects.map((group) => {
         const config = group.type !== 'other' ? PROJECT_TYPE_CONFIG[group.type] : null;
         const GroupIcon = config?.icon || Folder;
@@ -291,25 +397,25 @@ export function ProjectListView({ projects, horizontal = false }: ProjectListVie
         return (
           <div key={group.type}>
             {/* Group header */}
-            <div className="mb-3 flex items-center gap-2">
+            <div className="mb-2 flex items-center gap-2">
               <div
                 className={cn(
-                  'flex h-7 w-7 items-center justify-center rounded-lg',
+                  'flex h-6 w-6 items-center justify-center rounded-md',
                   config ? config.bgColor : 'bg-muted'
                 )}
               >
                 <GroupIcon
-                  className={cn('h-4 w-4', config ? config.color : 'text-muted-foreground')}
+                  className={cn('h-3.5 w-3.5', config ? config.color : 'text-muted-foreground')}
                 />
               </div>
-              <h2 className="text-sm font-semibold text-foreground">{group.label}</h2>
-              <span className="text-sm text-muted-foreground">({group.projects.length})</span>
+              <h2 className="text-sm font-medium text-foreground">{group.label}</h2>
+              <span className="text-xs text-muted-foreground">({group.projects.length})</span>
             </div>
 
-            {/* Projects list */}
-            <div className="space-y-2">
+            {/* Projects grid - 2 columns on wider screens */}
+            <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
               {group.projects.map((project) => (
-                <ProjectRow key={project.id} project={project} />
+                <ProjectRow key={project.id} project={project} compact />
               ))}
             </div>
           </div>
