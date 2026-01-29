@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useTransition, useState } from 'react';
+import React, { useTransition, useState, useOptimistic, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,6 +12,33 @@ import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/a
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Optimistic action types for instant UI feedback
+type OptimisticAction =
+  | { type: 'toggle'; taskId: string; completed: boolean }
+  | { type: 'hide'; taskId: string }
+  | { type: 'add'; task: Task };
+
+function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
+  switch (action.type) {
+    case 'toggle':
+      return state.map((t) =>
+        t.id === action.taskId
+          ? {
+              ...t,
+              status: action.completed ? 'Done' : 'Todo',
+              completed_at: action.completed ? new Date().toISOString() : null,
+            }
+          : t
+      );
+    case 'hide':
+      return state.filter((t) => t.id !== action.taskId);
+    case 'add':
+      return [action.task, ...state];
+    default:
+      return state;
+  }
+}
 
 interface TasksWidgetProps {
   tasks: Task[];
@@ -202,6 +230,7 @@ const TaskItem = React.memo(function TaskItem({
 export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [optimisticTasks, dispatchOptimistic] = useOptimistic(tasks, tasksReducer);
   const [hiddenTasks, setHiddenTasks] = useState<Set<string>>(new Set());
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -212,20 +241,46 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
     const title = quickAddValue.trim();
     if (!title) return;
 
-    setIsAddingTask(true);
-    const formData = new FormData();
-    formData.set('title', title);
-    formData.set('status', 'Todo');
-    formData.set('show_in_inbox', 'true');
+    // Optimistic add - create temp task for instant feedback
+    const tempTask: Task = {
+      id: `temp-${Date.now()}`,
+      title,
+      status: 'Todo',
+      priority: 'No Priority',
+      show_in_inbox: true,
+      item_type: 'task',
+      workspace_id: '',
+      creator_id: null,
+      assignee_id: null,
+      project_id: null,
+      phase_name: null,
+      description: null,
+      sort_order: 0,
+      due_date: null,
+      completed_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      project: null,
+      assignee: null,
+    };
 
-    const result = await createTask(formData);
-    if (result.success) {
-      setQuickAddValue('');
+    setQuickAddValue('');
+    setIsAddingTask(true);
+
+    startTransition(async () => {
+      dispatchOptimistic({ type: 'add', task: tempTask });
+
+      const formData = new FormData();
+      formData.set('title', title);
+      formData.set('status', 'Todo');
+      formData.set('show_in_inbox', 'true');
+
+      await createTask(formData);
       invalidateInboxTasks(true);
       invalidateDailyFlow(true);
       router.refresh();
-    }
-    setIsAddingTask(false);
+      setIsAddingTask(false);
+    });
   };
 
   const userColorMap = React.useMemo(() => {
@@ -236,7 +291,8 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
     return map;
   }, [teamMembers]);
 
-  const visibleTasks = tasks.filter((t) => {
+  // Use optimistic tasks for filtering to show instant updates
+  const visibleTasks = optimisticTasks.filter((t) => {
     if (hiddenTasks.has(t.id)) return false;
     if (selectedUserId) {
       if (selectedUserId === MOAYAD_ID) {
@@ -250,24 +306,43 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
   const pendingTasks = visibleTasks.filter((t) => t.status !== 'Done').length;
   const completedTasks = visibleTasks.filter((t) => t.status === 'Done').length;
 
-  const handleToggleTask = (taskId: string, completed: boolean) => {
-    startTransition(async () => {
-      await quickUpdateTask(taskId, { status: completed ? 'Done' : 'Todo' });
-      invalidateInboxTasks(true);
-      invalidateDailyFlow(true);
-      router.refresh();
-    });
-  };
+  // Optimistic toggle - instant feedback, then sync with server
+  const handleToggleTask = useCallback(
+    (taskId: string, completed: boolean) => {
+      startTransition(async () => {
+        dispatchOptimistic({ type: 'toggle', taskId, completed });
+        await quickUpdateTask(taskId, { status: completed ? 'Done' : 'Todo' });
+        invalidateInboxTasks(true);
+        invalidateDailyFlow(true);
+        router.refresh();
+      });
+    },
+    [router, dispatchOptimistic]
+  );
 
-  const handleHideTask = (taskId: string) => {
-    setHiddenTasks((prev) => new Set(prev).add(taskId));
-    startTransition(async () => {
-      await toggleTaskInbox(taskId, false);
-      invalidateInboxTasks(true);
-      invalidateDailyFlow(true);
-      router.refresh();
-    });
-  };
+  // Optimistic hide - instant feedback, then sync with server
+  const handleHideTask = useCallback(
+    (taskId: string) => {
+      setHiddenTasks((prev) => new Set(prev).add(taskId));
+      startTransition(async () => {
+        dispatchOptimistic({ type: 'hide', taskId });
+        await toggleTaskInbox(taskId, false);
+        invalidateInboxTasks(true);
+        invalidateDailyFlow(true);
+        router.refresh();
+      });
+    },
+    [router, dispatchOptimistic]
+  );
+
+  // Virtualization for performance with large task lists
+  const parentRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: visibleTasks.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72, // Estimated row height
+    overscan: 5,
+  });
 
   return (
     <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
@@ -356,8 +431,8 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
         </Button>
       </div>
 
-      {/* Task List */}
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+      {/* Task List - Virtualized for performance */}
+      <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {visibleTasks.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-16 text-center">
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
@@ -367,19 +442,43 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
             <p className="mt-1 text-xs text-zinc-500">No pending tasks</p>
           </div>
         ) : (
-          <AnimatePresence mode="popLayout">
-            {visibleTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onToggle={handleToggleTask}
-                onHide={handleHideTask}
-                onEdit={setEditingTask}
-                isPending={isPending}
-                userColorMap={userColorMap}
-              />
-            ))}
-          </AnimatePresence>
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: '100%',
+              position: 'relative',
+            }}
+          >
+            <AnimatePresence mode="popLayout">
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const task = visibleTasks[virtualRow.index];
+                return (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <TaskItem
+                      task={task}
+                      onToggle={handleToggleTask}
+                      onHide={handleHideTask}
+                      onEdit={setEditingTask}
+                      isPending={isPending}
+                      userColorMap={userColorMap}
+                    />
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
         )}
       </div>
 
