@@ -377,13 +377,56 @@ export function ProjectListView({
     );
   }
 
-  // Compact mode: 2-column grid, no grouping, minimal spacing
+  // Compact mode: Split into AI (left) vs Web & Marketing (right)
   if (compact) {
+    const aiTypes: (ProjectType | null)[] = ['ai_agent', 'voice_agent', 'ai_platform'];
+    const aiProjects = sortedProjects.filter(
+      (p) => p.project_type && aiTypes.includes(p.project_type)
+    );
+    const otherProjects = sortedProjects.filter(
+      (p) => !p.project_type || !aiTypes.includes(p.project_type)
+    );
+
+    // If all projects are one category, show single column
+    if (aiProjects.length === 0 || otherProjects.length === 0) {
+      return (
+        <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
+          {sortedProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} compact />
+          ))}
+        </div>
+      );
+    }
+
     return (
-      <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
-        {sortedProjects.map((project) => (
-          <ProjectRow key={project.id} project={project} compact />
-        ))}
+      <div className="grid grid-cols-2 gap-4">
+        {/* AI Projects - Left Column */}
+        <div className="space-y-1.5">
+          <div className="mb-2 flex items-center gap-1.5 px-1">
+            <Bot className="h-3.5 w-3.5 text-violet-400" />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              AI
+            </span>
+            <span className="text-xs text-muted-foreground/60">({aiProjects.length})</span>
+          </div>
+          {aiProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} compact />
+          ))}
+        </div>
+
+        {/* Web & Marketing - Right Column */}
+        <div className="space-y-1.5">
+          <div className="mb-2 flex items-center gap-1.5 px-1">
+            <Globe className="h-3.5 w-3.5 text-sky-400" />
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Web & Marketing
+            </span>
+            <span className="text-xs text-muted-foreground/60">({otherProjects.length})</span>
+          </div>
+          {otherProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} compact />
+          ))}
+        </div>
       </div>
     );
   }
