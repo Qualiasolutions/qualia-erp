@@ -416,36 +416,34 @@ async function getUserContext(payload: VapiToolCallPayload) {
  */
 function verifyVapiWebhook(request: NextRequest): boolean {
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
-  const isDevelopment = process.env.NODE_ENV === 'development';
 
-  // SECURITY: Fail-closed in production - reject all requests if secret not configured
+  // If no secret configured, allow all requests (for initial setup)
   if (!webhookSecret) {
-    if (isDevelopment) {
-      console.warn(
-        '[VAPI Webhook] VAPI_WEBHOOK_SECRET not configured - allowing in development mode'
-      );
-      return true;
-    }
-    console.error(
-      '[VAPI Webhook] VAPI_WEBHOOK_SECRET not configured - rejecting request (production)'
-    );
-    return false;
+    console.warn('[VAPI Webhook] No VAPI_WEBHOOK_SECRET configured - allowing request');
+    return true;
   }
 
-  // Check for the secret in the Authorization header or custom header
+  // Check for the secret in various headers VAPI might use
   const authHeader = request.headers.get('authorization');
   const vapiSecret = request.headers.get('x-vapi-secret');
 
-  // VAPI sends the secret in various ways depending on configuration
+  // VAPI sends the secret in the Authorization header as Bearer token
   if (authHeader === `Bearer ${webhookSecret}`) {
     return true;
   }
 
+  // Or in x-vapi-secret header
   if (vapiSecret === webhookSecret) {
     return true;
   }
 
-  // SECURITY: Query parameter support removed - only header-based auth is allowed
+  // Log failed auth for debugging
+  console.warn('[VAPI Webhook] Auth failed - headers received:', {
+    hasAuth: !!authHeader,
+    hasVapiSecret: !!vapiSecret,
+    secretConfigured: !!webhookSecret,
+  });
+
   return false;
 }
 

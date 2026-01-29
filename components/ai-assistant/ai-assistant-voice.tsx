@@ -377,10 +377,11 @@ export function AIAssistantVoice({ userName = 'Fawzi' }: AIAssistantVoiceProps) 
       )}
 
       {/* Help text */}
-      <p className="mt-6 text-center text-[10px] text-muted-foreground">
-        Voice powered by VAPI
-        {meetingRemindersEnabled && ' - Meeting reminders in Arabic'}
-      </p>
+      {meetingRemindersEnabled && (
+        <p className="mt-6 text-center text-[10px] text-muted-foreground">
+          Meeting reminders enabled
+        </p>
+      )}
     </div>
   );
 }
