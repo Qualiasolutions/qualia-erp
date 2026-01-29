@@ -19,6 +19,7 @@ export interface ProjectData {
   client_id: string | null;
   client_name: string | null;
   logo_url: string | null;
+  is_building: boolean;
   lead: {
     id: string;
     full_name: string | null;
@@ -67,6 +68,7 @@ async function ProjectListLoader() {
     client_id: p.client_id as string | null,
     client_name: p.client_name as string | null,
     logo_url: (p.logo_url as string | null) || null,
+    is_building: (p.is_building as boolean) ?? false,
     lead: p.lead_id
       ? {
           id: p.lead_id as string,
@@ -118,14 +120,17 @@ async function ProjectListLoader() {
     return p.status === 'Launched';
   });
 
-  // Active projects: Not demos, not archived/canceled, not finished
+  // Active projects (Currently Building): Use is_building flag
+  // Fallback to old logic if is_building not set yet
   const activeProjects = projects.filter((p) => {
     if (p.status === 'Demos') return false;
     if (['Archived', 'Canceled'].includes(p.status)) return false;
+    // Use is_building flag if available
+    if (p.is_building) return true;
+    // Fallback: if no is_building flag set, use old logic
     if (hasIsFinished) {
       return isFinishedMap.get(p.id) !== true;
     }
-    // Fallback: exclude 'Launched' status
     return p.status !== 'Launched';
   });
 

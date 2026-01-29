@@ -446,6 +446,41 @@ export async function toggleProjectFinished(
 }
 
 /**
+ * Toggle project building status (appears in "Currently Building" section)
+ */
+export async function toggleProjectBuilding(
+  projectId: string,
+  isBuilding: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      is_building: isBuilding,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('[toggleProjectBuilding] Error toggling project building status:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/');
+  revalidatePath('/projects');
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
+/**
  * Update project phase progress
  */
 export async function updateProjectPhaseProgress(

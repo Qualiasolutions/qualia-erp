@@ -118,6 +118,7 @@ export {
   deleteProject,
   toggleProjectLive,
   toggleProjectFinished,
+  toggleProjectBuilding,
   updateProjectPhaseProgress,
   bulkDeleteProjects,
   updateProjectStatus,
