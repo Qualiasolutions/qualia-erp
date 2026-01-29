@@ -51,6 +51,9 @@ const STATUS_COLORS: Record<string, string> = {
   Delayed: 'bg-amber-500',
 };
 
+// AI project types go in the left column
+const AI_PROJECT_TYPES: ProjectType[] = ['ai_agent', 'voice_agent', 'ai_platform'];
+
 export function ProjectPulseSidebar({
   activeProjects,
   finishedProjects,
@@ -87,11 +90,7 @@ export function ProjectPulseSidebar({
               <p className="mt-0.5 text-xs text-zinc-500">Start something new</p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {activeProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
+            <ProjectColumns projects={activeProjects} />
           )}
         </div>
       </div>
@@ -196,5 +195,53 @@ function ProjectCard({ project, compact = false }: { project: Project; compact?:
         )}
       </div>
     </Link>
+  );
+}
+
+function ProjectColumns({ projects }: { projects: Project[] }) {
+  const aiProjects = projects.filter(
+    (p) => p.project_type && AI_PROJECT_TYPES.includes(p.project_type)
+  );
+  const otherProjects = projects.filter(
+    (p) => !p.project_type || !AI_PROJECT_TYPES.includes(p.project_type)
+  );
+
+  // If all projects are one type, show single column
+  if (aiProjects.length === 0 || otherProjects.length === 0) {
+    return (
+      <div className="space-y-1">
+        {projects.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {/* AI Projects - Left Column */}
+      <div className="space-y-1">
+        <div className="mb-2 flex items-center gap-1.5 px-1">
+          <Bot className="h-3 w-3 text-violet-400" />
+          <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">AI</span>
+        </div>
+        {aiProjects.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+      </div>
+
+      {/* Other Projects - Right Column */}
+      <div className="space-y-1">
+        <div className="mb-2 flex items-center gap-1.5 px-1">
+          <Globe className="h-3 w-3 text-sky-400" />
+          <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+            Web & Marketing
+          </span>
+        </div>
+        {otherProjects.map((project) => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+      </div>
+    </div>
   );
 }

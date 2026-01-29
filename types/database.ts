@@ -1013,37 +1013,37 @@ export type Database = {
     };
     Enums: {
       activity_type:
-      | 'project_created'
-      | 'project_updated'
-      | 'issue_created'
-      | 'issue_updated'
-      | 'issue_completed'
-      | 'issue_assigned'
-      | 'comment_added'
-      | 'team_created'
-      | 'member_added'
-      | 'meeting_created';
+        | 'project_created'
+        | 'project_updated'
+        | 'issue_created'
+        | 'issue_updated'
+        | 'issue_completed'
+        | 'issue_assigned'
+        | 'comment_added'
+        | 'team_created'
+        | 'member_added'
+        | 'meeting_created';
       deployment_platform:
-      | 'vercel'
-      | 'squarespace'
-      | 'railway'
-      | 'meta'
-      | 'instagram'
-      | 'google_ads'
-      | 'tiktok'
-      | 'linkedin'
-      | 'none';
+        | 'vercel'
+        | 'squarespace'
+        | 'railway'
+        | 'meta'
+        | 'instagram'
+        | 'google_ads'
+        | 'tiktok'
+        | 'linkedin'
+        | 'none';
       issue_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       issue_status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
       lead_status: 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';
       project_group:
-      | 'salman_kuwait'
-      | 'tasos_kyriakides'
-      | 'finished'
-      | 'inactive'
-      | 'active'
-      | 'demos'
-      | 'other';
+        | 'salman_kuwait'
+        | 'tasos_kyriakides'
+        | 'finished'
+        | 'inactive'
+        | 'active'
+        | 'demos'
+        | 'other';
       project_status: 'Demos' | 'Active' | 'Launched' | 'Delayed' | 'Archived' | 'Canceled';
       project_type: 'web_design' | 'ai_agent' | 'voice_agent' | 'ai_platform' | 'seo' | 'ads';
       task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
@@ -1051,11 +1051,11 @@ export type Database = {
       user_role: 'admin' | 'employee';
       integration_provider: 'github' | 'vercel' | 'vapi';
       provisioning_status:
-      | 'not_started'
-      | 'in_progress'
-      | 'completed'
-      | 'partial_failure'
-      | 'failed';
+        | 'not_started'
+        | 'in_progress'
+        | 'completed'
+        | 'partial_failure'
+        | 'failed';
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1169,7 +1169,14 @@ export const PROJECT_STATUSES: ProjectStatus[] = [
   'Archived',
   'Canceled',
 ];
-export const PROJECT_TYPES: ProjectType[] = ['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads'];
+export const PROJECT_TYPES: ProjectType[] = [
+  'web_design',
+  'ai_agent',
+  'voice_agent',
+  'ai_platform',
+  'seo',
+  'ads',
+];
 
 // =====================================================
 // MENTORSHIP, SKILLS & LEARNING TYPES
