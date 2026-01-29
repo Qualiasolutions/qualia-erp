@@ -10,7 +10,7 @@ import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
 import { AdminProvider } from '@/components/admin-provider';
-import { AIAssistantProvider } from '@/components/ai-assistant';
+import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
 
@@ -138,6 +138,9 @@ export default function RootLayout({
                     <AIAssistantProvider>
                       <Suspense fallback={null}>
                         <CommandMenu />
+                      </Suspense>
+                      <Suspense fallback={null}>
+                        <AIAssistantWidget />
                       </Suspense>
                       <Suspense fallback={<SidebarSkeleton />}>
                         <Sidebar />
