@@ -104,8 +104,8 @@ const TaskRow = React.memo(function TaskRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 border-b border-white/[0.04] px-4 py-3 transition-all',
-        'hover:bg-white/[0.02]',
+        'group flex items-center gap-3 border-b px-4 py-3 transition-all',
+        'hover:bg-accent/50',
         isCompleted && 'opacity-50'
       )}
     >
@@ -116,7 +116,7 @@ const TaskRow = React.memo(function TaskRow({
           'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all',
           isCompleted
             ? 'border-emerald-500/50 bg-emerald-500 text-white'
-            : 'border-zinc-600 hover:border-emerald-500/50 hover:bg-emerald-500/10'
+            : 'border-muted-foreground/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
         )}
       >
         {isCompleted && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -127,16 +127,16 @@ const TaskRow = React.memo(function TaskRow({
         <span
           className={cn(
             'text-sm font-medium',
-            isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-100'
+            isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
           )}
         >
           {task.title}
         </span>
 
         {/* Meta row */}
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {task.project && (
-            <span className="flex items-center gap-1 rounded bg-zinc-800/50 px-1.5 py-0.5">
+            <span className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
               <FolderOpen className="h-3 w-3" />
               <span className="max-w-[80px] truncate">{task.project.name}</span>
             </span>
@@ -145,8 +145,8 @@ const TaskRow = React.memo(function TaskRow({
             <span
               className={cn(
                 'flex items-center gap-1 rounded px-1.5 py-0.5',
-                overdue && 'bg-red-500/10 text-red-400',
-                dueToday && !overdue && 'bg-amber-500/10 text-amber-400'
+                overdue && 'bg-red-500/10 text-red-600 dark:text-red-400',
+                dueToday && !overdue && 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
               )}
             >
               <Clock className="h-3 w-3" />
@@ -156,7 +156,9 @@ const TaskRow = React.memo(function TaskRow({
           {task.assignee && (
             <span className="flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-qualia-500" />
-              <span className="text-zinc-400">{task.assignee.full_name?.split(' ')[0]}</span>
+              <span className="text-muted-foreground">
+                {task.assignee.full_name?.split(' ')[0]}
+              </span>
             </span>
           )}
         </div>
@@ -177,7 +179,7 @@ const TaskRow = React.memo(function TaskRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-lg"
                 onClick={() => onEdit(task)}
               >
                 <Edit2 className="h-3.5 w-3.5" />
@@ -190,7 +192,7 @@ const TaskRow = React.memo(function TaskRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
+                className="h-7 w-7 rounded-lg"
                 onClick={() => onHide(task.id)}
               >
                 <EyeOff className="h-3.5 w-3.5" />
@@ -332,14 +334,14 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
   return (
     <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
       {/* Header with filters */}
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-4 py-3">
+      <div className="flex items-center gap-3 border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
-            <Inbox className="h-4 w-4 text-amber-400" />
+            <Inbox className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <h2 className="text-sm font-semibold text-white">Inbox</h2>
+          <h2 className="text-sm font-semibold text-foreground">Inbox</h2>
           {stats.overdue > 0 && (
-            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
+            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400">
               {stats.overdue} overdue
             </span>
           )}
@@ -348,14 +350,16 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
         <div className="flex-1" />
 
         {/* Filter tabs */}
-        <div className="flex items-center gap-1 rounded-lg bg-zinc-800/50 p-1">
+        <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
           {(['all', 'mine', 'todo', 'done'] as FilterMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setFilterMode(mode)}
               className={cn(
                 'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all',
-                filterMode === mode ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'
+                filterMode === mode
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               {mode === 'mine' ? 'My Tasks' : mode}
@@ -365,19 +369,19 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       </div>
 
       {/* Search + Quick Add */}
-      <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-2">
+      <div className="flex items-center gap-2 border-b px-4 py-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 bg-zinc-900/50 pl-9 text-sm"
+            className="h-8 pl-9 text-sm"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -394,13 +398,13 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
                 handleQuickAdd();
               }
             }}
-            className="h-8 w-48 bg-zinc-900/50 text-sm"
+            className="h-8 w-48 text-sm"
           />
           <Button
             size="sm"
             onClick={handleQuickAdd}
             disabled={!quickAddValue.trim() || isPending}
-            className="h-8 w-8 bg-amber-500 p-0 text-black hover:bg-amber-400"
+            className="h-8 w-8 bg-amber-500 p-0 text-white hover:bg-amber-400 dark:text-black"
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -414,14 +418,14 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
               <CheckCircle2 className="h-7 w-7 text-emerald-500" />
             </div>
-            <p className="text-sm font-medium text-white">
+            <p className="text-sm font-medium text-foreground">
               {searchQuery
                 ? 'No matching tasks'
                 : filterMode === 'done'
                   ? 'No completed tasks'
                   : 'All clear!'}
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               {searchQuery ? 'Try a different search' : 'Add a task to get started'}
             </p>
           </div>

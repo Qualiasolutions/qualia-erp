@@ -38,9 +38,9 @@ const PROJECT_TYPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 const PROJECT_TYPE_COLORS: Record<string, string> = {
-  ai_agent: 'text-violet-400 bg-violet-500/10',
-  voice_agent: 'text-amber-400 bg-amber-500/10',
-  web_design: 'text-emerald-400 bg-emerald-500/10',
+  ai_agent: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
+  voice_agent: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+  web_design: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
 };
 
 function BuildingProjectsList({ projects }: { projects: Project[] }) {
@@ -63,7 +63,7 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
   if (buildingProjects.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-3 py-8 text-center">
-        <p className="text-xs text-zinc-500">No active builds</p>
+        <p className="text-xs text-muted-foreground">No active builds</p>
       </div>
     );
   }
@@ -77,10 +77,15 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
         return (
           <div key={type} className="mb-3">
             <div className="flex items-center gap-1.5 px-3 py-1">
-              <span className={cn('rounded p-0.5', PROJECT_TYPE_COLORS[type] || 'text-zinc-400')}>
+              <span
+                className={cn(
+                  'rounded p-0.5',
+                  PROJECT_TYPE_COLORS[type] || 'text-muted-foreground'
+                )}
+              >
                 {PROJECT_TYPE_ICONS[type] || <Globe className="h-3.5 w-3.5" />}
               </span>
-              <span className="text-[10px] font-medium uppercase tracking-wide text-zinc-500">
+              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 {type.replace('_', ' ')}
               </span>
             </div>
@@ -89,9 +94,9 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
                 <Link
                   key={project.id}
                   href={`/projects/${project.id}`}
-                  className="block rounded-lg px-2 py-1.5 transition-all hover:bg-white/5"
+                  className="block rounded-lg px-2 py-1.5 transition-all hover:bg-accent"
                 >
-                  <p className="truncate text-xs font-medium text-white">{project.name}</p>
+                  <p className="truncate text-xs font-medium text-foreground">{project.name}</p>
                 </Link>
               ))}
             </div>
@@ -128,40 +133,44 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   const buildingCount = projects.filter((p) => p.is_building).length;
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-zinc-950">
+    <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Compact Header */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-zinc-950/80 px-4 backdrop-blur-xl lg:px-6">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-xl lg:px-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={toggleMobile}>
             <Menu className="h-4 w-4" />
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-medium text-white">{greeting}</h1>
-            <span className="text-xs text-zinc-500">·</span>
-            <p className="text-xs text-zinc-500">{format(now, 'EEE, MMM d')}</p>
+            <h1 className="text-sm font-medium text-foreground">{greeting}</h1>
+            <span className="text-xs text-muted-foreground">·</span>
+            <p className="text-xs text-muted-foreground">{format(now, 'EEE, MMM d')}</p>
           </div>
 
           {/* Quick Stats */}
           <div className="ml-4 hidden items-center gap-2 lg:flex">
             <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1">
-              <span className="text-xs font-semibold tabular-nums text-amber-400">
+              <span className="text-xs font-semibold tabular-nums text-amber-600 dark:text-amber-400">
                 {pendingTasks}
               </span>
-              <span className="text-[10px] text-amber-400/70">tasks</span>
+              <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">tasks</span>
             </div>
             <div className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1">
-              <span className="text-xs font-semibold tabular-nums text-violet-400">
+              <span className="text-xs font-semibold tabular-nums text-violet-600 dark:text-violet-400">
                 {todaysMeetings.length}
               </span>
-              <span className="text-[10px] text-violet-400/70">meetings</span>
+              <span className="text-[10px] text-violet-600/70 dark:text-violet-400/70">
+                meetings
+              </span>
             </div>
             {buildingCount > 0 && (
               <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
-                <span className="text-xs font-semibold tabular-nums text-emerald-400">
+                <span className="text-xs font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                   {buildingCount}
                 </span>
-                <span className="text-[10px] text-emerald-400/70">building</span>
+                <span className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
+                  building
+                </span>
               </div>
             )}
           </div>
@@ -171,7 +180,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white"
+            className="h-8 w-8 rounded-lg"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
@@ -180,12 +189,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white"
-            asChild
-          >
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" asChild>
             <Link href="/settings">
               <Settings className="h-3.5 w-3.5" />
             </Link>
@@ -197,10 +201,10 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
       <main className="min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full">
           {/* Building Projects - Left Sidebar */}
-          <div className="hidden w-48 flex-col border-r border-white/[0.06] lg:flex">
-            <div className="flex h-12 items-center justify-between border-b border-white/[0.06] px-3">
-              <h2 className="text-xs font-medium text-white">Building</h2>
-              <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
+          <div className="hidden w-48 flex-col border-r lg:flex">
+            <div className="flex h-12 items-center justify-between border-b px-3">
+              <h2 className="text-xs font-medium text-foreground">Building</h2>
+              <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                 {buildingCount}
               </span>
             </div>
@@ -208,7 +212,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           </div>
 
           {/* Inbox - Primary (takes most space) */}
-          <div className="min-w-0 flex-1 border-r border-white/[0.06]">
+          <div className="min-w-0 flex-1 border-r">
             <InboxWidget tasks={tasks} />
           </div>
 
