@@ -11,6 +11,9 @@ import {
   X,
   MoreHorizontal,
   Trash2,
+  Pencil,
+  Users,
+  Building2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -19,6 +22,7 @@ import {
   deletePayment,
   type Payment,
   type RecurringPayment,
+  type ClientBalance,
 } from '@/app/actions/payments';
 import {
   DropdownMenu,
@@ -26,6 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export type Client = {
   id: string;
@@ -48,6 +53,7 @@ interface PaymentsClientProps {
     netMonthly: number;
   };
   clients: Client[];
+  clientBalances: ClientBalance[];
 }
 
 function formatCurrency(amount: number) {
@@ -59,8 +65,201 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-function PaymentRow({ payment }: { payment: Payment }) {
+// ============ EDIT PAYMENT MODAL ============
+
+function EditPaymentModal({
+  payment,
+  clients,
+  open,
+  onClose,
+}: {
+  payment: Payment;
+  clients: Client[];
+  open: boolean;
+  onClose: () => void;
+}) {
   const [isPending, startTransition] = useTransition();
+  const [type, setType] = useState<'incoming' | 'outgoing'>(payment.type);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    startTransition(async () => {
+      const result = await updatePayment(payment.id, {
+        type,
+        amount: parseFloat(formData.get('amount') as string),
+        description: formData.get('description') as string,
+        client_id: (formData.get('client_id') as string) || undefined,
+        category: (formData.get('category') as string) || undefined,
+        payment_date: formData.get('payment_date') as string,
+        status: formData.get('status') as 'pending' | 'completed' | 'cancelled',
+        notes: (formData.get('notes') as string) || undefined,
+      });
+
+      if (result.success) {
+        onClose();
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Payment</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Type toggle */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setType('incoming')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
+                type === 'incoming'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <ArrowDownLeft className="h-4 w-4" />
+              Income
+            </button>
+            <button
+              type="button"
+              onClick={() => setType('outgoing')}
+              className={cn(
+                'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
+                type === 'outgoing'
+                  ? 'bg-red-500 text-white'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <ArrowUpRight className="h-4 w-4" />
+              Expense
+            </button>
+          </div>
+
+          {/* Client select */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
+            <select
+              name="client_id"
+              defaultValue={payment.client_id || ''}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            >
+              <option value="">No client</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.display_name || client.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Description</label>
+            <input
+              type="text"
+              name="description"
+              defaultValue={payment.description}
+              required
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+          </div>
+
+          {/* Amount & Date */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Amount</label>
+              <input
+                type="number"
+                name="amount"
+                step="0.01"
+                min="0"
+                defaultValue={payment.amount}
+                required
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Date</label>
+              <input
+                type="date"
+                name="payment_date"
+                defaultValue={payment.payment_date}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              />
+            </div>
+          </div>
+
+          {/* Category & Status */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
+              <input
+                type="text"
+                name="category"
+                defaultValue={payment.category || ''}
+                placeholder="e.g. Software, Hosting"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">Status</label>
+              <select
+                name="status"
+                defaultValue={payment.status}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              >
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Notes</label>
+            <textarea
+              name="notes"
+              defaultValue={payment.notes || ''}
+              rows={2}
+              placeholder="Additional notes..."
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-lg bg-qualia-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-qualia-700 disabled:opacity-50"
+            >
+              {isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ PAYMENT ROW ============
+
+function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] }) {
+  const [isPending, startTransition] = useTransition();
+  const [editOpen, setEditOpen] = useState(false);
   const isIncoming = payment.type === 'incoming';
 
   const handleStatusChange = (newStatus: 'pending' | 'completed' | 'cancelled') => {
@@ -77,105 +276,122 @@ function PaymentRow({ payment }: { payment: Payment }) {
   };
 
   return (
-    <div
-      className={cn(
-        'group flex items-center gap-4 border-b border-border/50 px-1 py-4 last:border-0',
-        isPending && 'opacity-50'
-      )}
-    >
-      {/* Icon */}
+    <>
       <div
         className={cn(
-          'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full',
-          isIncoming ? 'bg-emerald-500/10' : 'bg-red-500/10'
+          'group flex items-center gap-3 border-b border-border/50 px-1 py-3 last:border-0',
+          isPending && 'opacity-50'
         )}
       >
-        {isIncoming ? (
-          <ArrowDownLeft className="h-5 w-5 text-emerald-500" />
-        ) : (
-          <ArrowUpRight className="h-5 w-5 text-red-500" />
-        )}
+        {/* Icon */}
+        <div
+          className={cn(
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full',
+            isIncoming ? 'bg-emerald-500/10' : 'bg-red-500/10'
+          )}
+        >
+          {isIncoming ? (
+            <ArrowDownLeft className="h-4 w-4 text-emerald-500" />
+          ) : (
+            <ArrowUpRight className="h-4 w-4 text-red-500" />
+          )}
+        </div>
+
+        {/* Details */}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">
+            {isIncoming && payment.client
+              ? payment.client.display_name || payment.client.name
+              : payment.description}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {format(parseISO(payment.payment_date), 'MMM d')}
+            {payment.category && (
+              <span className="ml-1.5 text-muted-foreground/60">• {payment.category}</span>
+            )}
+          </p>
+        </div>
+
+        {/* Status */}
+        <button
+          type="button"
+          onClick={() =>
+            handleStatusChange(payment.status === 'completed' ? 'pending' : 'completed')
+          }
+          className={cn(
+            'hidden rounded-full px-2 py-0.5 text-xs font-medium transition-colors sm:block',
+            payment.status === 'completed' &&
+              'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20',
+            payment.status === 'pending' && 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20',
+            payment.status === 'cancelled' && 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
+          )}
+        >
+          {payment.status === 'completed' && <Check className="mr-0.5 inline h-3 w-3" />}
+          {payment.status === 'pending' && <Clock className="mr-0.5 inline h-3 w-3" />}
+          {payment.status === 'cancelled' && <X className="mr-0.5 inline h-3 w-3" />}
+          {payment.status}
+        </button>
+
+        {/* Amount */}
+        <p
+          className={cn(
+            'min-w-[70px] text-right text-sm font-semibold tabular-nums',
+            isIncoming ? 'text-emerald-600' : 'text-red-500'
+          )}
+        >
+          {isIncoming ? '+' : '-'}
+          {formatCurrency(Number(payment.amount))}
+        </p>
+
+        {/* Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem onClick={() => setEditOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            {payment.status !== 'completed' && (
+              <DropdownMenuItem onClick={() => handleStatusChange('completed')}>
+                <Check className="mr-2 h-4 w-4 text-emerald-500" />
+                Complete
+              </DropdownMenuItem>
+            )}
+            {payment.status !== 'pending' && (
+              <DropdownMenuItem onClick={() => handleStatusChange('pending')}>
+                <Clock className="mr-2 h-4 w-4 text-amber-500" />
+                Pending
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Details */}
-      <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground">
-          {isIncoming && payment.client
-            ? payment.client.display_name || payment.client.name
-            : payment.description}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {format(parseISO(payment.payment_date), 'MMM d, yyyy')}
-          {payment.category && (
-            <span className="ml-2 text-muted-foreground/60">• {payment.category}</span>
-          )}
-        </p>
-      </div>
-
-      {/* Status */}
-      <button
-        type="button"
-        onClick={() => handleStatusChange(payment.status === 'completed' ? 'pending' : 'completed')}
-        className={cn(
-          'hidden rounded-full px-2.5 py-1 text-xs font-medium transition-colors sm:block',
-          payment.status === 'completed' &&
-            'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20',
-          payment.status === 'pending' && 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20',
-          payment.status === 'cancelled' && 'bg-red-500/10 text-red-600 hover:bg-red-500/20'
-        )}
-      >
-        {payment.status === 'completed' && <Check className="mr-1 inline h-3 w-3" />}
-        {payment.status === 'pending' && <Clock className="mr-1 inline h-3 w-3" />}
-        {payment.status === 'cancelled' && <X className="mr-1 inline h-3 w-3" />}
-        {payment.status}
-      </button>
-
-      {/* Amount */}
-      <p
-        className={cn(
-          'min-w-[90px] text-right text-lg font-semibold tabular-nums',
-          isIncoming ? 'text-emerald-600' : 'text-red-500'
-        )}
-      >
-        {isIncoming ? '+' : '-'}
-        {formatCurrency(Number(payment.amount))}
-      </p>
-
-      {/* Menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground group-hover:opacity-100"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-36">
-          {payment.status !== 'completed' && (
-            <DropdownMenuItem onClick={() => handleStatusChange('completed')}>
-              <Check className="mr-2 h-4 w-4 text-emerald-500" />
-              Complete
-            </DropdownMenuItem>
-          )}
-          {payment.status !== 'pending' && (
-            <DropdownMenuItem onClick={() => handleStatusChange('pending')}>
-              <Clock className="mr-2 h-4 w-4 text-amber-500" />
-              Pending
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem
-            onClick={handleDelete}
-            className="text-red-500 focus:bg-red-500/10 focus:text-red-500"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
+      <EditPaymentModal
+        payment={payment}
+        clients={clients}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
+    </>
   );
 }
+
+// ============ ADD PAYMENT FORM ============
 
 function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete: () => void }) {
   const [isPending, startTransition] = useTransition();
@@ -186,18 +402,21 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
     const formData = new FormData(e.currentTarget);
 
     startTransition(async () => {
+      const clientId = formData.get('client_id') as string;
+      const client = clients.find((c) => c.id === clientId);
+
       const result = await createPayment({
         type,
         amount: parseFloat(formData.get('amount') as string),
         description:
-          type === 'incoming'
-            ? clients.find((c) => c.id === formData.get('client_id'))?.display_name ||
-              clients.find((c) => c.id === formData.get('client_id'))?.name ||
-              'Payment'
+          type === 'incoming' && client
+            ? client.display_name || client.name
             : (formData.get('description') as string),
-        client_id: type === 'incoming' ? (formData.get('client_id') as string) : undefined,
+        client_id: type === 'incoming' ? clientId : undefined,
+        category: (formData.get('category') as string) || undefined,
         payment_date: (formData.get('payment_date') as string) || undefined,
-        status: 'pending',
+        status: (formData.get('status') as 'pending' | 'completed') || 'pending',
+        notes: (formData.get('notes') as string) || undefined,
       });
 
       if (result.success) {
@@ -214,7 +433,7 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
           type="button"
           onClick={() => setType('incoming')}
           className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all',
+            'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
             type === 'incoming'
               ? 'bg-emerald-500 text-white'
               : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -227,7 +446,7 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
           type="button"
           onClick={() => setType('outgoing')}
           className={cn(
-            'flex flex-1 items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium transition-all',
+            'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
             type === 'outgoing'
               ? 'bg-red-500 text-white'
               : 'bg-secondary text-muted-foreground hover:text-foreground'
@@ -238,65 +457,140 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
         </button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-4">
-        {type === 'incoming' ? (
-          <select
-            name="client_id"
+      <div className="space-y-3">
+        {/* Row 1: Client/Description + Amount */}
+        <div className="grid grid-cols-2 gap-3">
+          {type === 'incoming' ? (
+            <select
+              name="client_id"
+              required
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            >
+              <option value="">Select client</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.display_name || client.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              name="description"
+              required
+              placeholder="Description"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+          )}
+          <input
+            type="number"
+            name="amount"
+            step="0.01"
+            min="0"
             required
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
-          >
-            <option value="">Select client</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.display_name || client.name}
-              </option>
-            ))}
-          </select>
-        ) : (
+            placeholder="Amount"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          />
+        </div>
+
+        {/* Row 2: Date + Category + Status */}
+        <div className="grid grid-cols-3 gap-3">
+          <input
+            type="date"
+            name="payment_date"
+            defaultValue={new Date().toISOString().split('T')[0]}
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          />
           <input
             type="text"
-            name="description"
-            required
-            placeholder="Description"
-            className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            name="category"
+            placeholder="Category"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
           />
-        )}
+          <select
+            name="status"
+            defaultValue="pending"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          >
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
 
-        <input
-          type="number"
-          name="amount"
-          step="0.01"
-          min="0"
-          required
-          placeholder="Amount"
-          className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
-        />
-
-        <input
-          type="date"
-          name="payment_date"
-          defaultValue={new Date().toISOString().split('T')[0]}
-          className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
-        />
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className={cn(
-            'rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-50',
-            type === 'incoming'
-              ? 'bg-emerald-600 hover:bg-emerald-700'
-              : 'bg-red-600 hover:bg-red-700'
-          )}
-        >
-          {isPending ? 'Adding...' : 'Add'}
-        </button>
+        {/* Row 3: Notes + Submit */}
+        <div className="flex gap-3">
+          <input
+            type="text"
+            name="notes"
+            placeholder="Notes (optional)"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          />
+          <button
+            type="submit"
+            disabled={isPending}
+            className={cn(
+              'rounded-lg px-6 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50',
+              type === 'incoming'
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-red-600 hover:bg-red-700'
+            )}
+          >
+            {isPending ? 'Adding...' : 'Add'}
+          </button>
+        </div>
       </div>
     </form>
   );
 }
 
-export function PaymentsClient({ payments, summary, clients }: PaymentsClientProps) {
+// ============ CLIENT BALANCE ROW ============
+
+function ClientBalanceRow({ balance }: { balance: ClientBalance }) {
+  const hasActivity = balance.total_paid > 0 || balance.total_pending > 0;
+
+  return (
+    <div className="flex items-center gap-3 border-b border-border/50 px-2 py-3 last:border-0">
+      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-qualia-500/10">
+        <Building2 className="h-4 w-4 text-qualia-600" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-foreground">
+          {balance.display_name || balance.client_name}
+        </p>
+        {balance.last_payment_date && (
+          <p className="text-xs text-muted-foreground">
+            Last: {format(parseISO(balance.last_payment_date), 'MMM d')}
+          </p>
+        )}
+      </div>
+      <div className="text-right">
+        {hasActivity ? (
+          <>
+            <p className="text-sm font-semibold tabular-nums text-emerald-600">
+              {formatCurrency(balance.total_paid)}
+            </p>
+            {balance.total_pending > 0 && (
+              <p className="text-xs tabular-nums text-amber-600">
+                +{formatCurrency(balance.total_pending)} pending
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">No payments</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ============ MAIN COMPONENT ============
+
+export function PaymentsClient({
+  payments,
+  summary,
+  clients,
+  clientBalances,
+}: PaymentsClientProps) {
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
@@ -309,99 +603,163 @@ export function PaymentsClient({ payments, summary, clients }: PaymentsClientPro
     );
   }, [payments, filter]);
 
+  // Sort client balances by total owed descending
+  const sortedBalances = useMemo(() => {
+    return [...clientBalances].sort((a, b) => b.total_owed - a.total_owed);
+  }, [clientBalances]);
+
+  const totalClientPaid = clientBalances.reduce((sum, b) => sum + b.total_paid, 0);
+  const totalClientPending = clientBalances.reduce((sum, b) => sum + b.total_pending, 0);
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Income</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-600">
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Total Income</p>
+          <p className="mt-1 text-xl font-bold tabular-nums text-emerald-600">
             {formatCurrency(summary.totalIncoming)}
           </p>
           {summary.pendingIncoming > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {formatCurrency(summary.pendingIncoming)} pending
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Expenses</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-red-500">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Total Expenses</p>
+          <p className="mt-1 text-xl font-bold tabular-nums text-red-500">
             {formatCurrency(summary.totalOutgoing)}
           </p>
           {summary.pendingOutgoing > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {formatCurrency(summary.pendingOutgoing)} pending
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-border bg-card p-5">
-          <p className="text-sm text-muted-foreground">Balance</p>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Net Balance</p>
           <p
             className={cn(
-              'mt-1 text-2xl font-bold tabular-nums',
+              'mt-1 text-xl font-bold tabular-nums',
               balance >= 0 ? 'text-emerald-600' : 'text-red-500'
             )}
           >
             {formatCurrency(balance)}
           </p>
           {summary.totalIncoming > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {((balance / summary.totalIncoming) * 100).toFixed(0)}% margin
             </p>
           )}
         </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="text-xs text-muted-foreground">Client Revenue</p>
+          <p className="mt-1 text-xl font-bold tabular-nums text-qualia-600">
+            {formatCurrency(totalClientPaid + totalClientPending)}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {clientBalances.filter((b) => b.total_owed > 0).length} active clients
+          </p>
+        </div>
       </div>
 
-      {/* Add payment */}
-      {showForm ? (
-        <AddPaymentForm clients={clients} onComplete={() => setShowForm(false)} />
-      ) : (
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-4 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
-        >
-          <Plus className="h-4 w-4" />
-          Add Payment
-        </button>
-      )}
-
-      {/* Payments list */}
-      <div className="rounded-xl border border-border bg-card">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <h2 className="font-semibold text-foreground">Transactions</h2>
-          <div className="flex gap-1 rounded-lg bg-secondary/50 p-0.5">
-            {(['all', 'pending', 'completed'] as const).map((status) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() => setFilter(status)}
-                className={cn(
-                  'rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors',
-                  filter === status
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {status}
-              </button>
-            ))}
+      {/* Two Column Layout */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        {/* Left: Client Balances */}
+        <div className="lg:col-span-2">
+          <div className="rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <h2 className="font-semibold text-foreground">Client Balances</h2>
+              </div>
+              <span className="text-xs text-muted-foreground">{clientBalances.length} clients</span>
+            </div>
+            <div className="max-h-[500px] overflow-y-auto px-2">
+              {sortedBalances.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-muted-foreground">No clients yet</p>
+                </div>
+              ) : (
+                sortedBalances.map((balance) => (
+                  <ClientBalanceRow key={balance.client_id} balance={balance} />
+                ))
+              )}
+            </div>
+            {/* Summary footer */}
+            <div className="border-t border-border px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total Collected</span>
+                <span className="font-semibold tabular-nums text-emerald-600">
+                  {formatCurrency(totalClientPaid)}
+                </span>
+              </div>
+              {totalClientPending > 0 && (
+                <div className="mt-1 flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Pending</span>
+                  <span className="font-semibold tabular-nums text-amber-600">
+                    {formatCurrency(totalClientPending)}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* List */}
-        <div className="px-3">
-          {filteredPayments.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="text-muted-foreground">
-                {payments.length === 0 ? 'No payments yet' : `No ${filter} payments`}
-              </p>
-            </div>
+        {/* Right: Transactions */}
+        <div className="lg:col-span-3">
+          {/* Add payment */}
+          {showForm ? (
+            <AddPaymentForm clients={clients} onComplete={() => setShowForm(false)} />
           ) : (
-            filteredPayments.map((payment) => <PaymentRow key={payment.id} payment={payment} />)
+            <button
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
+            >
+              <Plus className="h-4 w-4" />
+              Add Payment
+            </button>
           )}
+
+          {/* Payments list */}
+          <div className="rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="font-semibold text-foreground">Transactions</h2>
+              <div className="flex gap-1 rounded-lg bg-secondary/50 p-0.5">
+                {(['all', 'pending', 'completed'] as const).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => setFilter(status)}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors',
+                      filter === status
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="max-h-[500px] overflow-y-auto px-2">
+              {filteredPayments.length === 0 ? (
+                <div className="py-8 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {payments.length === 0 ? 'No payments yet' : `No ${filter} payments`}
+                  </p>
+                </div>
+              ) : (
+                filteredPayments.map((payment) => (
+                  <PaymentRow key={payment.id} payment={payment} clients={clients} />
+                ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

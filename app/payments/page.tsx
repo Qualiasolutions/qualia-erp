@@ -8,6 +8,7 @@ import {
   getPaymentsSummary,
   getRecurringPayments,
   getRecurringSummary,
+  getClientBalances,
 } from '@/app/actions/payments';
 import { PaymentsClient } from './payments-client';
 import { Wallet } from 'lucide-react';
@@ -36,12 +37,14 @@ async function PaymentsLoader() {
     .eq('workspace_id', workspaceId)
     .order('name');
 
-  const [payments, summary, recurringPayments, recurringSummary] = await Promise.all([
-    getPayments(),
-    getPaymentsSummary(),
-    getRecurringPayments(),
-    getRecurringSummary(),
-  ]);
+  const [payments, summary, recurringPayments, recurringSummary, clientBalances] =
+    await Promise.all([
+      getPayments(),
+      getPaymentsSummary(),
+      getRecurringPayments(),
+      getRecurringSummary(),
+      getClientBalances(),
+    ]);
 
   return (
     <PaymentsClient
@@ -50,6 +53,7 @@ async function PaymentsLoader() {
       recurringPayments={recurringPayments}
       recurringSummary={recurringSummary}
       clients={clients || []}
+      clientBalances={clientBalances}
     />
   );
 }

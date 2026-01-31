@@ -16,9 +16,8 @@ import {
   Plus,
   Check,
   Inbox,
-  Search,
   CheckCircle2,
-  X,
+  Send,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
@@ -211,18 +210,30 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
   const [isPending, startTransition] = useTransition();
   const [optimisticTasks, dispatchOptimistic] = useOptimistic(tasks, tasksReducer);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [quickAddValue, setQuickAddValue] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [filterMode, setFilterMode] = useState<FilterMode>('all');
   const parentRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { userId: currentUserId } = useAdminContext();
 
-  // Filter tasks
+  // Check if input looks like a search (matches existing tasks)
+  const matchingTasks = useMemo(() => {
+    if (!inputValue.trim()) return [];
+    const query = inputValue.toLowerCase();
+    return optimisticTasks.filter(
+      (task) =>
+        task.title.toLowerCase().includes(query) || task.project?.name.toLowerCase().includes(query)
+    );
+  }, [optimisticTasks, inputValue]);
+
+  const isSearchMode = inputValue.trim() && matchingTasks.length > 0;
+
+  // Filter tasks based on input and filter mode
   const filteredTasks = useMemo(() => {
     return optimisticTasks.filter((task) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
+      // Search filter - only apply if there's input
+      if (inputValue.trim()) {
+        const query = inputValue.toLowerCase();
         const matchesTitle = task.title.toLowerCase().includes(query);
         const matchesProject = task.project?.name.toLowerCase().includes(query);
         if (!matchesTitle && !matchesProject) return false;
@@ -243,7 +254,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
 
       return true;
     });
-  }, [optimisticTasks, searchQuery, filterMode, currentUserId]);
+  }, [optimisticTasks, inputValue, filterMode, currentUserId]);
 
   // Virtual list
   const virtualizer = useVirtualizer({
@@ -253,8 +264,8 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
     overscan: 5,
   });
 
-  const handleQuickAdd = async () => {
-    const title = quickAddValue.trim();
+  const handleSubmit = async () => {
+    const title = inputValue.trim();
     if (!title) return;
 
     const tempTask: Task = {
@@ -279,7 +290,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       assignee: null,
     };
 
-    setQuickAddValue('');
+    setInputValue('');
 
     startTransition(async () => {
       dispatchOptimistic({ type: 'add', task: tempTask });
@@ -368,48 +379,60 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
         </div>
       </div>
 
-      {/* Search + Quick Add */}
+      {/* Smart Input - Search or Add */}
       <div className="flex items-center gap-2 border-b px-4 py-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Plus className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search tasks..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-9 text-sm"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Input
-            placeholder="Add task..."
-            value={quickAddValue}
-            onChange={(e) => setQuickAddValue(e.target.value)}
+            ref={inputRef}
+            placeholder="Type to search or add task... Press Enter to create"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleQuickAdd();
+                handleSubmit();
+              }
+              if (e.key === 'Escape') {
+                setInputValue('');
+                inputRef.current?.blur();
               }
             }}
-            className="h-8 w-48 text-sm"
+            className="h-9 pl-10 pr-10 text-sm"
           />
-          <Button
-            size="sm"
-            onClick={handleQuickAdd}
-            disabled={!quickAddValue.trim() || isPending}
-            className="h-8 w-8 bg-amber-500 p-0 text-white hover:bg-amber-400 dark:text-black"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          {inputValue && (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={handleSubmit}
+              disabled={!inputValue.trim() || isPending}
+              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500 dark:text-amber-400"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Hint when typing */}
+      {inputValue.trim() && (
+        <div className="border-b bg-muted/30 px-4 py-1.5">
+          <p className="text-xs text-muted-foreground">
+            {isSearchMode ? (
+              <>
+                <span className="font-medium">{matchingTasks.length}</span> matching tasks.{' '}
+                <span className="text-amber-600 dark:text-amber-400">Press Enter</span> to create
+                &quot;{inputValue.trim()}&quot;
+              </>
+            ) : (
+              <>
+                <span className="text-amber-600 dark:text-amber-400">Press Enter</span> to create
+                task
+              </>
+            )}
+          </p>
+        </div>
+      )}
 
       {/* Task List */}
       <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">
@@ -419,14 +442,14 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
               <CheckCircle2 className="h-7 w-7 text-emerald-500" />
             </div>
             <p className="text-sm font-medium text-foreground">
-              {searchQuery
+              {inputValue.trim()
                 ? 'No matching tasks'
                 : filterMode === 'done'
                   ? 'No completed tasks'
                   : 'All clear!'}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {searchQuery ? 'Try a different search' : 'Add a task to get started'}
+              {inputValue.trim() ? 'Press Enter to create this task' : 'Type above to add a task'}
             </p>
           </div>
         ) : (

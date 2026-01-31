@@ -302,8 +302,17 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, title, description, status, due_date, sort_order, assignee_id, show_in_inbox } =
-    validation.data;
+  const {
+    id,
+    title,
+    description,
+    status,
+    due_date,
+    sort_order,
+    assignee_id,
+    project_id,
+    show_in_inbox,
+  } = validation.data;
 
   if (!id) {
     return { success: false, error: 'Task ID is required' };
@@ -324,6 +333,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (due_date !== undefined) updateData.due_date = due_date || null;
   if (sort_order !== undefined) updateData.sort_order = sort_order;
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
+  if (project_id !== undefined) updateData.project_id = project_id || null;
   if (show_in_inbox !== undefined) updateData.show_in_inbox = show_in_inbox;
 
   // Set completed_at when status changes to Done

@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { updateTask, type Task } from '@/app/actions/inbox';
-import { useProfiles, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
+import { useProfiles, useProjects, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
 import { useLearnMode } from '@/components/providers/learn-mode-provider';
 
 interface EditTaskModalProps {
@@ -31,11 +31,17 @@ interface EditTaskModalProps {
 
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
   const { profiles } = useProfiles();
+  const { projects } = useProjects();
   const { learnModeEnabled, isTrainee } = useLearnMode();
 
   // Date picker state (controlled for calendar component)
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.due_date ? new Date(task.due_date) : undefined
+  );
+
+  // Project state
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    task.project_id || 'no-project'
   );
 
   // React 19: Optimistic task updates for instant UI feedback
@@ -61,6 +67,13 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
       }
 
+      // Add project_id to form data
+      if (selectedProjectId && selectedProjectId !== 'no-project') {
+        formData.set('project_id', selectedProjectId);
+      } else {
+        formData.set('project_id', '');
+      }
+
       // Add task ID for server action
       formData.set('id', task.id);
 
@@ -71,6 +84,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         status: (formData.get('status') as Task['status']) || task.status,
         assignee_id: (formData.get('assignee_id') as string) || null,
         due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
+        project_id: selectedProjectId !== 'no-project' ? selectedProjectId : null,
       };
       updateOptimisticTask(updates);
 
@@ -86,6 +100,13 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         if (task.project_id) {
           invalidateProjectTasks(task.project_id);
         }
+        if (
+          selectedProjectId &&
+          selectedProjectId !== 'no-project' &&
+          selectedProjectId !== task.project_id
+        ) {
+          invalidateProjectTasks(selectedProjectId);
+        }
 
         return { success: true, error: null };
       } else {
@@ -100,8 +121,9 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
   useEffect(() => {
     if (open) {
       setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setSelectedProjectId(task.project_id || 'no-project');
     }
-  }, [open, task.due_date]);
+  }, [open, task.due_date, task.project_id]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -134,49 +156,76 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="edit-status">Status</Label>
-            <Select name="status" defaultValue={optimisticTask.status}>
-              <SelectTrigger id="edit-status" className="border-border bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-card">
-                <SelectItem value="Todo">Todo</SelectItem>
-                <SelectItem value="In Progress">In Progress</SelectItem>
-                <SelectItem value="Done">Done</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-status">Status</Label>
+              <Select name="status" defaultValue={optimisticTask.status}>
+                <SelectTrigger id="edit-status" className="border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  <SelectItem value="Todo">Todo</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-assignee">Assignee</Label>
+              <Select name="assignee_id" defaultValue={optimisticTask.assignee_id || 'unassigned'}>
+                <SelectTrigger id="edit-assignee" className="border-border bg-background">
+                  <SelectValue placeholder="Select assignee" />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  <SelectItem value="unassigned">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-5 w-5">
+                        <AvatarFallback className="text-[10px]">
+                          <User className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>Unassigned</span>
+                    </div>
+                  </SelectItem>
+                  {profiles.map((profile) => (
+                    <SelectItem key={profile.id} value={profile.id}>
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-5 w-5">
+                          {profile.avatar_url ? (
+                            <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
+                          ) : null}
+                          <AvatarFallback className="bg-qualia-600 text-[10px] text-white">
+                            {getInitials(profile.full_name || profile.email || 'U')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{profile.full_name || profile.email}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-assignee">Assignee</Label>
-            <Select name="assignee_id" defaultValue={optimisticTask.assignee_id || 'unassigned'}>
-              <SelectTrigger id="edit-assignee" className="border-border bg-background">
-                <SelectValue placeholder="Select assignee" />
+            <Label htmlFor="edit-project">Project</Label>
+            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <SelectTrigger id="edit-project" className="border-border bg-background">
+                <SelectValue placeholder="Select project" />
               </SelectTrigger>
               <SelectContent className="border-border bg-card">
-                <SelectItem value="unassigned">
+                <SelectItem value="no-project">
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-5 w-5">
-                      <AvatarFallback className="text-[10px]">
-                        <User className="h-3 w-3" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>Unassigned</span>
+                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                    <span>No Project</span>
                   </div>
                 </SelectItem>
-                {profiles.map((profile) => (
-                  <SelectItem key={profile.id} value={profile.id}>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={project.id}>
                     <div className="flex items-center gap-2">
-                      <Avatar className="h-5 w-5">
-                        {profile.avatar_url ? (
-                          <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
-                        ) : null}
-                        <AvatarFallback className="bg-qualia-600 text-[10px] text-white">
-                          {getInitials(profile.full_name || profile.email || 'U')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{profile.full_name || profile.email}</span>
+                      <FolderOpen className="h-4 w-4 text-primary" />
+                      <span>{project.name}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -204,15 +253,6 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                 <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
               </PopoverContent>
             </Popover>
-          </div>
-
-          {/* Project display (read-only - tasks can't change projects) */}
-          <div className="space-y-2">
-            <Label>Project</Label>
-            <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
-              <FolderOpen className="h-4 w-4 text-primary" />
-              <span>{task.project?.name || 'Unknown Project'}</span>
-            </div>
           </div>
 
           {/* Learning mode section - visible when learning mode is enabled */}

@@ -59,6 +59,7 @@ export const updateTaskSchema = z.object({
   due_date: z.string().optional().nullable(),
   sort_order: z.number().optional(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
   show_in_inbox: z.boolean().optional(),
 });
 
@@ -114,9 +115,12 @@ export const createProjectWizardSchema = z
   .object({
     name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
     description: z.string().max(5000, 'Description too long').optional().nullable(),
-    project_type: z.enum(['web_design', 'ai_agent', 'voice_agent', 'ai_platform', 'seo', 'ads'] as const, {
-      message: 'Project type is required',
-    }),
+    project_type: z.enum(
+      ['web_design', 'ai_agent', 'voice_agent', 'ai_platform', 'seo', 'ads'] as const,
+      {
+        message: 'Project type is required',
+      }
+    ),
     deployment_platform: z.enum(
       [
         'vercel',

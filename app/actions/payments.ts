@@ -412,3 +412,130 @@ export async function getRecurringSummary(): Promise<{
   summary.netMonthly = summary.monthlyIncome - summary.monthlyExpenses;
   return summary;
 }
+
+// ============ CLIENT BALANCES ============
+
+export type ClientBalance = {
+  client_id: string;
+  client_name: string;
+  display_name: string | null;
+  total_paid: number;
+  total_pending: number;
+  total_owed: number;
+  last_payment_date: string | null;
+};
+
+export async function getClientBalances(): Promise<ClientBalance[]> {
+  if (!(await isAdminUser())) {
+    return [];
+  }
+
+  const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
+
+  // Get all clients
+  const { data: clients } = await supabase
+    .from('clients')
+    .select('id, name, display_name')
+    .eq('workspace_id', workspaceId)
+    .order('name');
+
+  if (!clients) return [];
+
+  // Get all incoming payments grouped by client
+  const { data: payments } = await supabase
+    .from('payments')
+    .select('client_id, amount, status, payment_date')
+    .eq('workspace_id', workspaceId)
+    .eq('type', 'incoming')
+    .not('client_id', 'is', null);
+
+  const balanceMap = new Map<string, { paid: number; pending: number; lastDate: string | null }>();
+
+  // Initialize all clients
+  clients.forEach((client) => {
+    balanceMap.set(client.id, { paid: 0, pending: 0, lastDate: null });
+  });
+
+  // Aggregate payments
+  payments?.forEach((p) => {
+    if (!p.client_id) return;
+    const current = balanceMap.get(p.client_id) || { paid: 0, pending: 0, lastDate: null };
+    const amount = Number(p.amount);
+
+    if (p.status === 'completed') {
+      current.paid += amount;
+    } else if (p.status === 'pending') {
+      current.pending += amount;
+    }
+
+    if (!current.lastDate || p.payment_date > current.lastDate) {
+      current.lastDate = p.payment_date;
+    }
+
+    balanceMap.set(p.client_id, current);
+  });
+
+  // Build result
+  return clients.map((client) => {
+    const balance = balanceMap.get(client.id) || { paid: 0, pending: 0, lastDate: null };
+    return {
+      client_id: client.id,
+      client_name: client.name,
+      display_name: client.display_name,
+      total_paid: balance.paid,
+      total_pending: balance.pending,
+      total_owed: balance.paid + balance.pending,
+      last_payment_date: balance.lastDate,
+    };
+  });
+}
+
+export async function updateClientOwed(
+  clientId: string,
+  amount: number,
+  notes?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Get client name
+  const { data: client } = await supabase
+    .from('clients')
+    .select('name, display_name')
+    .eq('id', clientId)
+    .single();
+
+  if (!client) {
+    return { success: false, error: 'Client not found' };
+  }
+
+  // Create a pending payment for the adjusted amount
+  const { error } = await supabase.from('payments').insert({
+    workspace_id: workspaceId,
+    type: 'incoming',
+    amount: Math.abs(amount),
+    currency: 'EUR',
+    description: `Balance adjustment for ${client.display_name || client.name}`,
+    client_id: clientId,
+    payment_date: new Date().toISOString().split('T')[0],
+    status: amount > 0 ? 'pending' : 'completed',
+    notes: notes || 'Manual balance adjustment',
+    created_by: user?.id,
+  });
+
+  if (error) {
+    console.error('Error updating client owed:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/payments');
+  return { success: true };
+}
