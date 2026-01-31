@@ -619,6 +619,39 @@ export async function quickUpdateTask(
     return { success: false, error: error.message };
   }
 
+  // Trigger skill learning when task is completed
+  if (updates.status === 'Done') {
+    try {
+      // Get task to find project type
+      const { data: task } = await supabase
+        .from('tasks')
+        .select('project:projects(project_type), assignee_id')
+        .eq('id', taskId)
+        .single();
+
+      // Handle Supabase FK array response
+      const projectRaw = task?.project;
+      const project = Array.isArray(projectRaw) ? projectRaw[0] : projectRaw;
+      const projectType = (project as { project_type: string } | null)?.project_type;
+      const assigneeId = task?.assignee_id || user.id;
+
+      // Call the skill learning function
+      const { data: learningResult } = await supabase.rpc('on_task_completed', {
+        p_task_id: taskId,
+        p_user_id: assigneeId,
+        p_project_type: projectType,
+      });
+
+      // Log any new achievements
+      if (learningResult?.[0]?.new_achievements?.length > 0) {
+        console.log('[quickUpdateTask] New achievements:', learningResult[0].new_achievements);
+      }
+    } catch (err) {
+      // Don't fail the task update if skill learning fails
+      console.error('[quickUpdateTask] Skill learning error:', err);
+    }
+  }
+
   revalidatePath('/inbox');
   return { success: true };
 }
