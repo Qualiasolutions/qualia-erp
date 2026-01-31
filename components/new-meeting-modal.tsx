@@ -91,10 +91,19 @@ interface Client {
   display_name: string;
 }
 
-export function NewMeetingModal() {
+interface NewMeetingModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeetingModalProps = {}) {
   const linkInputRef = useRef<HTMLInputElement>(null);
 
-  const [open, setOpen] = useState(false);
+  // Form state - support both controlled and uncontrolled modes
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => onOpenChange?.(v) : setInternalOpen;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -547,4 +556,14 @@ export function NewMeetingModal() {
       </DialogContent>
     </Dialog>
   );
+}
+
+// Controlled variant for use with global keyboard shortcuts
+interface NewMeetingModalControlledProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function NewMeetingModalControlled({ open, onOpenChange }: NewMeetingModalControlledProps) {
+  return <NewMeetingModal open={open} onOpenChange={onOpenChange} />;
 }

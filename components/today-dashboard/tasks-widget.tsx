@@ -12,6 +12,7 @@ import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/a
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAdminContext } from '@/components/admin-provider';
 
 // Optimistic action types for instant UI feedback
 type OptimisticAction =
@@ -42,11 +43,6 @@ function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
 
 interface TasksWidgetProps {
   tasks: Task[];
-  teamMembers: Array<{
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-  }>;
 }
 
 const PRIORITY_CONFIG = {
@@ -56,16 +52,6 @@ const PRIORITY_CONFIG = {
   Low: 'fill-emerald-500 text-emerald-500',
   'No Priority': 'fill-muted-foreground/30 text-muted-foreground/30',
 };
-
-const USER_COLORS = [
-  { text: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-500' },
-  { text: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-500' },
-  { text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500' },
-  { text: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500' },
-];
-
-const MOAYAD_COLOR = { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500' };
-const MOAYAD_ID = 'moayad-special';
 
 function formatDueTime(dueDate: string): string {
   const date = parseISO(dueDate);
@@ -90,14 +76,12 @@ const TaskItem = React.memo(function TaskItem({
   onHide,
   onEdit,
   isPending,
-  userColorMap,
 }: {
   task: Task;
   onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
   onEdit: (task: Task) => void;
   isPending: boolean;
-  userColorMap: Map<string, { text: string; bg: string }>;
 }) {
   const isCompleted = task.status === 'Done';
   const overdue = isOverdue(task.due_date);
@@ -163,12 +147,7 @@ const TaskItem = React.memo(function TaskItem({
           )}
           {task.assignee && (
             <span className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'h-2 w-2 rounded-full',
-                  userColorMap.get(task.assignee.id)?.bg || 'bg-purple-500'
-                )}
-              />
+              <span className="h-2 w-2 rounded-full bg-qualia-500" />
               <span className="text-zinc-400">{task.assignee.full_name?.split(' ')[0]}</span>
             </span>
           )}
@@ -227,7 +206,7 @@ const TaskItem = React.memo(function TaskItem({
   );
 });
 
-export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
+export function TasksWidget({ tasks }: TasksWidgetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [optimisticTasks, dispatchOptimistic] = useOptimistic(tasks, tasksReducer);
@@ -283,23 +262,14 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
     });
   };
 
-  const userColorMap = React.useMemo(() => {
-    const map = new Map<string, { text: string; bg: string }>();
-    teamMembers.forEach((member, index) => {
-      map.set(member.id, USER_COLORS[index % USER_COLORS.length]);
-    });
-    return map;
-  }, [teamMembers]);
+  // Get current user ID for "My Tasks" filter
+  const { userId: currentUserId } = useAdminContext();
 
   // Use optimistic tasks for filtering to show instant updates
   const visibleTasks = optimisticTasks.filter((t) => {
     if (hiddenTasks.has(t.id)) return false;
-    if (selectedUserId) {
-      if (selectedUserId === MOAYAD_ID) {
-        return t.assignee?.full_name?.toLowerCase().includes('moayad');
-      }
-      if (t.assignee?.id !== selectedUserId) return false;
-    }
+    // "My Tasks" filter - only show tasks assigned to current user
+    if (selectedUserId && t.assignee?.id !== selectedUserId) return false;
     return true;
   });
 
@@ -360,48 +330,28 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
           </p>
         </div>
 
-        {/* User filter */}
+        {/* Simplified user filter for 2-person team */}
         <div className="flex items-center gap-1 rounded-lg bg-zinc-800/50 p-1">
           <button
             onClick={() => setSelectedUserId(null)}
             className={cn(
-              'rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-              selectedUserId === null
-                ? 'bg-white/10 text-white shadow-sm'
-                : 'text-zinc-400 hover:text-white'
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+              !selectedUserId ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'
             )}
           >
-            All
+            All Tasks
           </button>
           <button
-            onClick={() => setSelectedUserId(MOAYAD_ID)}
+            onClick={() => setSelectedUserId(currentUserId)}
             className={cn(
-              'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-              selectedUserId === MOAYAD_ID
-                ? 'bg-white/10 text-white shadow-sm'
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+              selectedUserId === currentUserId
+                ? 'bg-white/10 text-white'
                 : 'text-zinc-400 hover:text-white'
             )}
           >
-            <span className={cn('h-2 w-2 rounded-full', MOAYAD_COLOR.bg)} />M
+            My Tasks
           </button>
-          {teamMembers.slice(0, 3).map((member) => {
-            const color = userColorMap.get(member.id);
-            return (
-              <button
-                key={member.id}
-                onClick={() => setSelectedUserId(member.id)}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
-                  selectedUserId === member.id
-                    ? 'bg-white/10 text-white shadow-sm'
-                    : 'text-zinc-400 hover:text-white'
-                )}
-              >
-                <span className={cn('h-2 w-2 rounded-full', color?.bg)} />
-                {member.full_name?.split(' ')[0]?.[0]}
-              </button>
-            );
-          })}
         </div>
       </div>
 
@@ -472,7 +422,6 @@ export function TasksWidget({ tasks, teamMembers }: TasksWidgetProps) {
                       onHide={handleHideTask}
                       onEdit={setEditingTask}
                       isPending={isPending}
-                      userColorMap={userColorMap}
                     />
                   </motion.div>
                 );

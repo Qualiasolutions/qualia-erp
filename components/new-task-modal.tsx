@@ -27,13 +27,21 @@ import { cn, getInitials } from '@/lib/utils';
 import { createTask } from '@/app/actions/inbox';
 import { useProfiles, useProjects, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
 
-export function NewTaskModal() {
+interface NewTaskModalProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModalProps = {}) {
   const { profiles } = useProfiles();
   const { projects } = useProjects();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Form state
-  const [open, setOpen] = useState(false);
+  // Form state - support both controlled and uncontrolled modes
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (v: boolean) => onOpenChange?.(v) : setInternalOpen;
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [projectId, setProjectId] = useState<string>('');
@@ -358,4 +366,14 @@ export function NewTaskModal() {
       </DialogContent>
     </Dialog>
   );
+}
+
+// Controlled variant for use with global keyboard shortcuts
+interface NewTaskModalControlledProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function NewTaskModalControlled({ open, onOpenChange }: NewTaskModalControlledProps) {
+  return <NewTaskModal open={open} onOpenChange={onOpenChange} />;
 }

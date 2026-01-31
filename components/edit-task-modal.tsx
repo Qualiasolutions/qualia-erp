@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useActionState, useOptimistic } from 'react';
-import { CalendarIcon, User, FolderOpen } from 'lucide-react';
+import { CalendarIcon, User, FolderOpen, GraduationCap } from 'lucide-react';
 import { format } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { updateTask, type Task } from '@/app/actions/inbox';
 import { useProfiles, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
+import { useLearnMode } from '@/components/providers/learn-mode-provider';
 
 interface EditTaskModalProps {
   task: Task;
@@ -30,6 +31,7 @@ interface EditTaskModalProps {
 
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
   const { profiles } = useProfiles();
+  const { learnModeEnabled, isTrainee } = useLearnMode();
 
   // Date picker state (controlled for calendar component)
   const [dueDate, setDueDate] = useState<Date | undefined>(
@@ -212,6 +214,20 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
               <span>{task.project?.name || 'Unknown Project'}</span>
             </div>
           </div>
+
+          {/* Learning mode section - visible when learning mode is enabled */}
+          {learnModeEnabled && isTrainee && (
+            <div className="space-y-2 rounded-lg border border-qualia-500/20 bg-qualia-500/5 p-3">
+              <div className="flex items-center gap-2 text-sm font-medium text-qualia-500">
+                <GraduationCap className="h-4 w-4" />
+                Learning Mode
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Complete this task to earn XP and improve your skills. Remember to check the project
+                documentation for guidance.
+              </p>
+            </div>
+          )}
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 

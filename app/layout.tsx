@@ -10,6 +10,7 @@ import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { LogoSplash } from '@/components/logo-splash';
 import { AdminProvider } from '@/components/admin-provider';
+import { LearnModeProvider } from '@/components/providers/learn-mode-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
@@ -132,31 +133,33 @@ export default function RootLayout({
           <SWRProvider>
             <AccessibilityAnnouncer>
               <AdminProvider>
-                <LogoSplash />
-                <WorkspaceProvider>
-                  <SidebarProvider>
-                    <AIAssistantProvider>
-                      <Suspense fallback={null}>
-                        <CommandMenu />
-                      </Suspense>
-                      <Suspense fallback={null}>
-                        <AIAssistantWidget />
-                      </Suspense>
-                      <Suspense fallback={<SidebarSkeleton />}>
-                        <Sidebar />
-                      </Suspense>
-                      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                        <main
-                          id="main-content"
-                          className="min-h-0 flex-1 overflow-y-auto"
-                          tabIndex={-1}
-                        >
-                          <PageTransition>{children}</PageTransition>
-                        </main>
-                      </div>
-                    </AIAssistantProvider>
-                  </SidebarProvider>
-                </WorkspaceProvider>
+                <LearnModeProvider>
+                  <LogoSplash />
+                  <WorkspaceProvider>
+                    <SidebarProvider>
+                      <AIAssistantProvider>
+                        <Suspense fallback={null}>
+                          <CommandMenu />
+                        </Suspense>
+                        <Suspense fallback={null}>
+                          <AIAssistantWidget />
+                        </Suspense>
+                        <Suspense fallback={<SidebarSkeleton />}>
+                          <Sidebar />
+                        </Suspense>
+                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                          <main
+                            id="main-content"
+                            className="min-h-0 flex-1 overflow-y-auto"
+                            tabIndex={-1}
+                          >
+                            <PageTransition>{children}</PageTransition>
+                          </main>
+                        </div>
+                      </AIAssistantProvider>
+                    </SidebarProvider>
+                  </WorkspaceProvider>
+                </LearnModeProvider>
               </AdminProvider>
             </AccessibilityAnnouncer>
           </SWRProvider>

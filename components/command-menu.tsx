@@ -16,16 +16,29 @@ import {
   Sparkles,
   ArrowUp,
   Loader2,
+  CheckSquare,
+  CalendarPlus,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { NewTaskModalControlled } from '@/components/new-task-modal';
+import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
 
 type CommandMode = 'normal' | 'ai';
+
+// Helper to check if an element is an input/editable
+function isInputElement(target: EventTarget | null): boolean {
+  if (!target) return false;
+  const el = target as HTMLElement;
+  return el.matches('input, textarea, select, [contenteditable="true"]');
+}
 
 export function CommandMenu() {
   const [open, setOpen] = React.useState(false);
   const [mode, setMode] = React.useState<CommandMode>('normal');
   const [inputValue, setInputValue] = React.useState('');
+  const [showNewTaskModal, setShowNewTaskModal] = React.useState(false);
+  const [showNewMeetingModal, setShowNewMeetingModal] = React.useState(false);
   const router = useRouter();
   const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -87,6 +100,20 @@ export function CommandMenu() {
       // Escape - Close
       if (e.key === 'Escape' && open) {
         handleClose();
+      }
+
+      // Global shortcuts (when not in command palette or input elements)
+      if (!open && !isInputElement(e.target)) {
+        // 'c' - Open New Task modal
+        if (e.key === 'c') {
+          e.preventDefault();
+          setShowNewTaskModal(true);
+        }
+        // 'm' - Open New Meeting modal
+        if (e.key === 'm') {
+          e.preventDefault();
+          setShowNewMeetingModal(true);
+        }
       }
     };
 
@@ -270,6 +297,41 @@ export function CommandMenu() {
                 </Command.Item>
               </Command.Group>
 
+              {/* Quick Actions */}
+              <Command.Group
+                heading="quick actions"
+                className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70"
+              >
+                <Command.Item
+                  onSelect={() =>
+                    runCommand(() => {
+                      setShowNewTaskModal(true);
+                    })
+                  }
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                >
+                  <CheckSquare className="h-4 w-4 text-amber-500" />
+                  <span>New Task</span>
+                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    c
+                  </kbd>
+                </Command.Item>
+                <Command.Item
+                  onSelect={() =>
+                    runCommand(() => {
+                      setShowNewMeetingModal(true);
+                    })
+                  }
+                  className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
+                >
+                  <CalendarPlus className="h-4 w-4 text-violet-500" />
+                  <span>New Meeting</span>
+                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    m
+                  </kbd>
+                </Command.Item>
+              </Command.Group>
+
               {/* Actions */}
               <Command.Group
                 heading="actions"
@@ -376,6 +438,10 @@ export function CommandMenu() {
           </div>
         )}
       </div>
+
+      {/* Quick Action Modals */}
+      <NewTaskModalControlled open={showNewTaskModal} onOpenChange={setShowNewTaskModal} />
+      <NewMeetingModalControlled open={showNewMeetingModal} onOpenChange={setShowNewMeetingModal} />
     </div>
   );
 }

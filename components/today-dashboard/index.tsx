@@ -20,12 +20,6 @@ import { getScheduledIssues } from '@/app/actions';
 import { type MeetingWithRelations } from '@/lib/swr';
 import { motion } from 'framer-motion';
 
-interface TeamMember {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-}
-
 interface Project {
   id: string;
   name: string;
@@ -42,7 +36,6 @@ interface Project {
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
   tasks: Task[];
-  teamMembers: TeamMember[];
   projects: Project[];
   finishedProjects: Project[];
   issues?: Awaited<ReturnType<typeof getScheduledIssues>>;
@@ -76,7 +69,6 @@ const containerVariants = {
 export function TodayDashboard({
   meetings,
   tasks,
-  teamMembers,
   projects,
   finishedProjects,
   issues = [],
@@ -204,7 +196,7 @@ export function TodayDashboard({
             {/* Top accent line */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
             <div className="relative flex min-h-0 flex-1 flex-col">
-              <TasksWidget tasks={tasks} teamMembers={teamMembers} />
+              <TasksWidget tasks={tasks} />
             </div>
           </motion.div>
 
