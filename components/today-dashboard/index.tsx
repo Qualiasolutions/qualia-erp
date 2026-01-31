@@ -2,77 +2,79 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+import { format, isToday, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Plus, RefreshCw, Settings, Menu, Sparkles } from 'lucide-react';
-import { MeetingsWrapper } from './meetings-wrapper';
-import { TasksWidget } from './tasks-widget';
-import { ProjectPulseSidebar } from './project-pulse-sidebar';
+import { RefreshCw, Settings, Menu, Video, Clock, MapPin, ExternalLink } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
-import type { ProjectType } from '@/types/database';
+import { InboxWidget } from './inbox-widget';
 import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
-import { getScheduledIssues } from '@/app/actions';
 import { type MeetingWithRelations } from '@/lib/swr';
-import { motion } from 'framer-motion';
-
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-  project_type: ProjectType | null;
-  target_date: string | null;
-  logo_url: string | null;
-  issue_stats: {
-    total: number;
-    done: number;
-  };
-}
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
   tasks: Task[];
-  projects: Project[];
-  finishedProjects: Project[];
-  issues?: Awaited<ReturnType<typeof getScheduledIssues>>;
+  projects: unknown[];
+  finishedProjects: unknown[];
+  issues?: unknown[];
 }
 
-const cardVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.98 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      delay: i * 0.1,
-      duration: 0.5,
-      ease: [0.25, 0.1, 0.25, 1] as const,
-    },
-  }),
-};
+function MeetingCard({ meeting }: { meeting: MeetingWithRelations }) {
+  const startTime = parseISO(meeting.start_time);
+  const endTime = parseISO(meeting.end_time);
+  const isNow = new Date() >= startTime && new Date() <= endTime;
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.1,
-    },
-  },
-};
+  return (
+    <div
+      className={cn(
+        'group rounded-xl border border-white/[0.06] bg-zinc-800/50 p-4 transition-all hover:bg-zinc-800/80',
+        isNow && 'border-violet-500/30 bg-violet-500/10'
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <h4 className="truncate text-sm font-medium text-white">{meeting.title}</h4>
+          <div className="mt-1.5 flex items-center gap-3 text-xs text-zinc-400">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {format(startTime, 'h:mm a')} - {format(endTime, 'h:mm a')}
+            </span>
+            {meeting.client && (
+              <span className="flex items-center gap-1 truncate">
+                <MapPin className="h-3 w-3" />
+                {meeting.client.display_name}
+              </span>
+            )}
+          </div>
+        </div>
+        {meeting.meeting_link && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              'h-8 gap-1.5 rounded-lg text-xs',
+              isNow
+                ? 'bg-violet-500 text-white hover:bg-violet-600'
+                : 'text-zinc-400 hover:bg-white/10 hover:text-white'
+            )}
+            asChild
+          >
+            <a href={meeting.meeting_link} target="_blank" rel="noopener noreferrer">
+              <Video className="h-3.5 w-3.5" />
+              {isNow ? 'Join' : 'Link'}
+            </a>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
 
-export function TodayDashboard({
-  meetings,
-  tasks,
-  projects,
-  finishedProjects,
-  issues = [],
-}: TodayDashboardProps) {
+export function TodayDashboard({ meetings, tasks }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
@@ -91,151 +93,126 @@ export function TodayDashboard({
     startRefresh(() => router.refresh());
   };
 
-  const pendingTasks = (tasks || []).filter((t) => t.status !== 'Done').length;
-  const todayMeetings = (meetings || []).filter((m) => {
-    const meetingDate = new Date(m.start_time).toDateString();
-    return meetingDate === now.toDateString();
-  }).length;
+  // Filter today's meetings and sort by time
+  const todaysMeetings = meetings
+    .filter((m) => isToday(parseISO(m.start_time)))
+    .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
+
+  const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-zinc-950">
-      {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.06] bg-zinc-950/80 px-5 backdrop-blur-xl lg:px-8">
-        <div className="flex items-center gap-5">
-          <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden" onClick={toggleMobile}>
+      {/* Compact Header */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-white/[0.06] bg-zinc-950/80 px-4 backdrop-blur-xl lg:px-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={toggleMobile}>
             <Menu className="h-4 w-4" />
           </Button>
 
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 ring-1 ring-white/10">
-              <Sparkles className="h-5 w-5 text-amber-400" />
-            </div>
-            <div>
-              <h1 className="text-base font-semibold tracking-tight text-white">{greeting}</h1>
-              <p className="text-xs text-zinc-500">{format(now, 'EEEE, MMMM d')}</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-medium text-white">{greeting}</h1>
+            <span className="text-xs text-zinc-500">·</span>
+            <p className="text-xs text-zinc-500">{format(now, 'EEE, MMM d')}</p>
           </div>
 
-          {/* Stats Pills */}
-          <div className="ml-6 hidden items-center gap-3 lg:flex">
-            <div className="flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 ring-1 ring-amber-500/20">
-              <span className="text-sm font-semibold tabular-nums text-amber-400">
+          {/* Quick Stats */}
+          <div className="ml-4 hidden items-center gap-2 lg:flex">
+            <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1">
+              <span className="text-xs font-semibold tabular-nums text-amber-400">
                 {pendingTasks}
               </span>
-              <span className="text-xs text-amber-400/70">tasks</span>
+              <span className="text-[10px] text-amber-400/70">tasks</span>
             </div>
-            <div className="flex items-center gap-2 rounded-full bg-violet-500/10 px-3 py-1.5 ring-1 ring-violet-500/20">
-              <span className="text-sm font-semibold tabular-nums text-violet-400">
-                {todayMeetings}
+            <div className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1">
+              <span className="text-xs font-semibold tabular-nums text-violet-400">
+                {todaysMeetings.length}
               </span>
-              <span className="text-xs text-violet-400/70">meetings</span>
-            </div>
-            <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5 ring-1 ring-emerald-500/20">
-              <span className="text-sm font-semibold tabular-nums text-emerald-400">
-                {projects.length}
-              </span>
-              <span className="text-xs text-emerald-400/70">building</span>
+              <span className="text-[10px] text-violet-400/70">meetings</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden h-9 gap-2 rounded-lg bg-white/5 px-4 text-xs font-medium text-zinc-300 transition-all hover:bg-white/10 hover:text-white lg:flex"
-            asChild
-          >
-            <Link href="/schedule?new=1">
-              <Plus className="h-3.5 w-3.5" />
-              New Event
-            </Link>
-          </Button>
+        <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="h-8 w-8 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
           </Button>
-          <div className="mx-2 h-5 w-px bg-white/10" />
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9 rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="h-8 w-8 rounded-lg text-zinc-400 hover:bg-white/5 hover:text-white"
             asChild
           >
             <Link href="/settings">
-              <Settings className="h-4 w-4" />
+              <Settings className="h-3.5 w-3.5" />
             </Link>
           </Button>
         </div>
       </header>
 
-      {/* Main - 3 Column Layout */}
-      <main className="min-h-0 flex-1 overflow-hidden p-4 lg:p-6">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="mx-auto grid h-full max-w-[1920px] grid-cols-1 gap-5 lg:grid-cols-3"
-        >
-          {/* Tasks Card */}
-          <motion.div
-            custom={0}
-            variants={cardVariants}
-            className="group relative flex flex-col overflow-hidden rounded-2xl bg-zinc-900/80 shadow-2xl shadow-amber-500/5 ring-1 ring-white/[0.08] backdrop-blur-xl transition-shadow duration-500 hover:shadow-amber-500/10"
-          >
-            {/* Gradient glow effect */}
-            <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-amber-500/20 opacity-60 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
-            {/* Top accent line */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/50 to-transparent" />
-            <div className="relative flex min-h-0 flex-1 flex-col">
-              <TasksWidget tasks={tasks} />
-            </div>
-          </motion.div>
+      {/* Main - 2 Column: Inbox (primary) + Meetings (secondary) */}
+      <main className="min-h-0 flex-1 overflow-hidden">
+        <div className="flex h-full">
+          {/* Inbox - Primary (takes most space) */}
+          <div className="min-w-0 flex-1 border-r border-white/[0.06]">
+            <InboxWidget tasks={tasks} />
+          </div>
 
-          {/* Meetings Card */}
-          <motion.div
-            custom={1}
-            variants={cardVariants}
-            className="group relative flex flex-col overflow-hidden rounded-2xl bg-zinc-900/80 shadow-2xl shadow-violet-500/5 ring-1 ring-white/[0.08] backdrop-blur-xl transition-shadow duration-500 hover:shadow-violet-500/10"
-          >
-            {/* Gradient glow effect */}
-            <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-violet-500/20 opacity-60 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
-            {/* Top accent line */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-500/50 to-transparent" />
-            <div className="relative flex min-h-0 flex-1 flex-col">
-              <MeetingsWrapper initialMeetings={meetings} initialIssues={issues} />
+          {/* Meetings Sidebar - Secondary */}
+          <div className="hidden w-80 flex-col overflow-hidden lg:flex xl:w-96">
+            <div className="flex h-12 items-center justify-between border-b border-white/[0.06] px-4">
+              <h2 className="text-sm font-medium text-white">Today&apos;s Meetings</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 gap-1 text-xs text-zinc-400 hover:text-white"
+                asChild
+              >
+                <Link href="/schedule">
+                  <ExternalLink className="h-3 w-3" />
+                  All
+                </Link>
+              </Button>
             </div>
-          </motion.div>
 
-          {/* Projects Card */}
-          <motion.div
-            custom={2}
-            variants={cardVariants}
-            className="group relative flex flex-col overflow-hidden rounded-2xl bg-zinc-900/80 shadow-2xl shadow-emerald-500/5 ring-1 ring-white/[0.08] backdrop-blur-xl transition-shadow duration-500 hover:shadow-emerald-500/10"
-          >
-            {/* Gradient glow effect */}
-            <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-emerald-500/20 opacity-60 blur-3xl transition-opacity duration-500 group-hover:opacity-100" />
-            {/* Top accent line */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
-            <div className="relative flex min-h-0 flex-1 flex-col">
-              <ProjectPulseSidebar activeProjects={projects} finishedProjects={finishedProjects} />
+            <div className="flex-1 overflow-y-auto p-4">
+              {todaysMeetings.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/10">
+                    <Video className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <p className="text-sm font-medium text-white">No meetings today</p>
+                  <p className="mt-1 text-xs text-zinc-500">Enjoy the focus time</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 h-8 text-xs text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
+                    asChild
+                  >
+                    <Link href="/schedule?new=1">Schedule meeting</Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {todaysMeetings.map((meeting) => (
+                    <MeetingCard key={meeting.id} meeting={meeting} />
+                  ))}
+                </div>
+              )}
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </main>
     </div>
   );
 }
 
-export { MeetingsTimeline } from './meetings-timeline';
-export { MeetingsWrapper } from './meetings-wrapper';
-export { TasksWidget } from './tasks-widget';
-export { ProjectPulseSidebar } from './project-pulse-sidebar';
+export { InboxWidget } from './inbox-widget';
