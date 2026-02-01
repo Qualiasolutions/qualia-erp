@@ -63,21 +63,22 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex h-12 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-2">
-          <h2 className="text-sm font-medium text-foreground">Today</h2>
-          <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-medium text-violet-600 dark:text-violet-400">
-            {meetingsCount} meetings
+      {/* Header - Unified with other sections */}
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex items-center gap-2.5">
+          <Clock className="size-4 text-muted-foreground" />
+          <h2 className="text-[13px] font-semibold text-foreground">Today</h2>
+          <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-violet-600 dark:text-violet-400">
+            {meetingsCount}
           </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="size-7"
           onClick={() => setShowMeetingModal(true)}
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" />
         </Button>
       </div>
 

@@ -342,36 +342,35 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
         isPending && 'pointer-events-none opacity-70'
       )}
     >
-      {/* Header with filters */}
-      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10">
-            <Inbox className="size-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <h2 className="text-sm font-semibold text-foreground">Inbox</h2>
+      {/* Header - Unified with other sections */}
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex items-center gap-2.5">
+          <Inbox className="size-4 text-muted-foreground" />
+          <h2 className="text-[13px] font-semibold text-foreground">Inbox</h2>
+          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-amber-600 dark:text-amber-400">
+            {stats.todo}
+          </span>
           {stats.overdue > 0 && (
-            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-600 dark:text-red-400">
+            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-red-600 dark:text-red-400">
               {stats.overdue} overdue
             </span>
           )}
         </div>
 
-        <div className="flex-1" />
-
         {/* Filter tabs */}
-        <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
+        <div className="flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
           {(['all', 'mine', 'todo', 'done'] as FilterMode[]).map((mode) => (
             <button
               key={mode}
               onClick={() => setFilterMode(mode)}
               className={cn(
-                'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all',
+                'rounded-md px-2 py-1 text-[11px] font-medium capitalize transition-all',
                 filterMode === mode
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              {mode === 'mine' ? 'My Tasks' : mode}
+              {mode === 'mine' ? 'Mine' : mode}
             </button>
           ))}
         </div>
