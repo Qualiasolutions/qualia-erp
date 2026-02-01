@@ -96,39 +96,47 @@ function SectionHeader({
 // PROJECT TYPE CONFIG
 // =============================================================================
 
-const PROJECT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> =
-  {
-    ai_agent: {
-      icon: <Bot className="size-3.5" />,
-      color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
-      label: 'AI Agents',
-    },
-    voice_agent: {
-      icon: <Mic2 className="size-3.5" />,
-      color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
-      label: 'Voice Agents',
-    },
-    web_design: {
-      icon: <Globe className="size-3.5" />,
-      color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
-      label: 'Web Design',
-    },
-    seo: {
-      icon: <Globe className="size-3.5" />,
-      color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
-      label: 'SEO',
-    },
-    ads: {
-      icon: <Globe className="size-3.5" />,
-      color: 'text-pink-600 dark:text-pink-400 bg-pink-500/10',
-      label: 'Ads',
-    },
-    other: {
-      icon: <Globe className="size-3.5" />,
-      color: 'text-foreground/60 bg-muted',
-      label: 'Other',
-    },
-  };
+const PROJECT_TYPE_CONFIG: Record<
+  string,
+  { icon: React.ReactNode; color: string; dotColor: string; label: string }
+> = {
+  ai_agent: {
+    icon: <Bot className="size-3.5" />,
+    color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
+    dotColor: 'bg-violet-500',
+    label: 'AI Agents',
+  },
+  voice_agent: {
+    icon: <Mic2 className="size-3.5" />,
+    color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+    dotColor: 'bg-amber-500',
+    label: 'Voice Agents',
+  },
+  web_design: {
+    icon: <Globe className="size-3.5" />,
+    color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+    dotColor: 'bg-emerald-500',
+    label: 'Web Design',
+  },
+  seo: {
+    icon: <Globe className="size-3.5" />,
+    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+    dotColor: 'bg-blue-500',
+    label: 'SEO',
+  },
+  ads: {
+    icon: <Globe className="size-3.5" />,
+    color: 'text-pink-600 dark:text-pink-400 bg-pink-500/10',
+    dotColor: 'bg-pink-500',
+    label: 'Ads',
+  },
+  other: {
+    icon: <Globe className="size-3.5" />,
+    color: 'text-foreground/60 bg-muted',
+    dotColor: 'bg-zinc-500',
+    label: 'Other',
+  },
+};
 
 // =============================================================================
 // BUILDING PROJECTS SIDEBAR
@@ -199,7 +207,7 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
                     href={`/projects/${project.id}`}
                     className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent"
                   >
-                    <span className="size-2 rounded-full bg-emerald-500" />
+                    <span className={cn('size-2 rounded-full', config.dotColor)} />
                     <span className="flex-1 truncate text-[13px] font-medium text-foreground">
                       {project.name}
                     </span>
