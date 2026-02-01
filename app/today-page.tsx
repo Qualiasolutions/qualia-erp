@@ -63,11 +63,12 @@ export default async function TodayPage() {
         : null,
     })) as Task[];
 
-  // Get LIVE projects only (filter by is_live = true)
-  // Falls back to Active projects if is_live column doesn't exist yet
+  // Get LIVE or BUILDING projects
+  // Building projects show in left sidebar regardless of is_live status
   const projects = (projectsRaw.data || [])
     .filter((p: Record<string, unknown>) => {
-      // If is_live exists, use it; otherwise fall back to Active status
+      // Include if building (for sidebar) or live
+      if (p.is_building === true) return true;
       if (typeof p.is_live === 'boolean') {
         return p.is_live === true;
       }
