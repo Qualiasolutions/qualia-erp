@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Settings,
   BookOpen,
-  Trophy,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -35,7 +35,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
-  { name: 'Skills', href: '/skills', icon: Trophy },
+  { name: 'SEO', href: '/seo', icon: Globe },
   { name: 'Guides', href: '/guides', icon: BookOpen },
 ];
 
