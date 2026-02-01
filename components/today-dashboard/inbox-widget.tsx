@@ -96,7 +96,7 @@ const TaskRow = React.memo(function TaskRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 border-b border-border px-4 py-3 transition-colors',
+        'group flex items-center gap-3 border-b border-border/40 px-4 py-3 transition-colors',
         'hover:bg-accent/50',
         isCompleted && 'opacity-50'
       )}
@@ -108,7 +108,7 @@ const TaskRow = React.memo(function TaskRow({
           'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all',
           isCompleted
             ? 'border-emerald-500/50 bg-emerald-500 text-white'
-            : 'border-muted-foreground/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
+            : 'border-foreground/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
         )}
       >
         {isCompleted && <Check className="size-3" strokeWidth={3} />}
@@ -119,14 +119,14 @@ const TaskRow = React.memo(function TaskRow({
         <span
           className={cn(
             'text-sm font-medium',
-            isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+            isCompleted ? 'text-foreground/50 line-through' : 'text-foreground'
           )}
         >
           {task.title}
         </span>
 
         {/* Meta row */}
-        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-foreground/60">
           {task.project && (
             <span className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
               <FolderOpen className="size-3" />
@@ -148,9 +148,7 @@ const TaskRow = React.memo(function TaskRow({
           {task.assignee && (
             <span className="flex items-center gap-1">
               <span className="size-1.5 rounded-full bg-qualia-500" />
-              <span className="text-muted-foreground">
-                {task.assignee.full_name?.split(' ')[0]}
-              </span>
+              <span className="text-foreground/60">{task.assignee.full_name?.split(' ')[0]}</span>
             </span>
           )}
         </div>
@@ -343,9 +341,9 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       )}
     >
       {/* Header - Unified with other sections */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
         <div className="flex items-center gap-2.5">
-          <Inbox className="size-4 text-muted-foreground" />
+          <Inbox className="size-4 text-foreground/70" />
           <h2 className="text-[13px] font-semibold text-foreground">Inbox</h2>
           <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-amber-600 dark:text-amber-400">
             {stats.todo}
@@ -367,7 +365,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
                 'rounded-md px-2 py-1 text-[11px] font-medium capitalize transition-all',
                 filterMode === mode
                   ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-foreground/60 hover:text-foreground'
               )}
             >
               {mode === 'mine' ? 'Mine' : mode}
@@ -377,9 +375,9 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       </div>
 
       {/* Smart Input - Search or Add */}
-      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2">
         <div className="relative flex-1">
-          <Plus className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Plus className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground/50" />
           <Input
             ref={inputRef}
             placeholder="Type to search or add task... Press Enter to create"
@@ -413,8 +411,8 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
 
       {/* Hint when typing */}
       {inputValue.trim() && (
-        <div className="border-b border-border bg-muted/30 px-4 py-1.5">
-          <p className="text-xs text-muted-foreground">
+        <div className="border-b border-border/60 bg-muted/30 px-4 py-1.5">
+          <p className="text-xs text-foreground/60">
             {isSearchMode ? (
               <>
                 <span className="font-medium">{matchingTasks.length}</span> matching tasks.{' '}
@@ -445,7 +443,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
                   ? 'No completed tasks'
                   : 'All clear!'}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-foreground/50">
               {inputValue.trim() ? 'Press Enter to create this task' : 'Type above to add a task'}
             </p>
           </div>

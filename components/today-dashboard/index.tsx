@@ -71,9 +71,9 @@ function SectionHeader({
   action,
 }: SectionHeaderProps) {
   return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
+    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
       <div className="flex items-center gap-2.5">
-        <span className="text-muted-foreground">{icon}</span>
+        <span className="text-foreground/70">{icon}</span>
         <h2 className="text-[13px] font-semibold text-foreground">{title}</h2>
         {typeof count === 'number' && (
           <span
@@ -125,7 +125,7 @@ const PROJECT_TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string
     },
     other: {
       icon: <Globe className="size-3.5" />,
-      color: 'text-muted-foreground bg-muted',
+      color: 'text-foreground/60 bg-muted',
       label: 'Other',
     },
   };
@@ -153,11 +153,11 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
   if (buildingProjects.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted">
-          <Hammer className="size-4 text-muted-foreground" />
+        <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted/50">
+          <Hammer className="size-4 text-foreground/40" />
         </div>
-        <p className="text-xs font-medium text-muted-foreground">No active builds</p>
-        <p className="mt-1 text-[11px] text-muted-foreground/60">
+        <p className="text-xs font-medium text-foreground/60">No active builds</p>
+        <p className="mt-1 text-center text-[11px] text-foreground/40">
           Projects marked as building will appear here
         </p>
       </div>
@@ -183,10 +183,10 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
               {/* Type Header */}
               <div className="mb-1 flex items-center gap-2 px-2 py-1.5">
                 <span className={cn('rounded-md p-1', config.color)}>{config.icon}</span>
-                <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/60">
                   {config.label}
                 </span>
-                <span className="text-[10px] tabular-nums text-muted-foreground/50">
+                <span className="text-[10px] tabular-nums text-foreground/40">
                   {typeProjects.length}
                 </span>
               </div>
@@ -197,13 +197,13 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
                   <Link
                     key={project.id}
                     href={`/projects/${project.id}`}
-                    className="group flex items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-accent"
+                    className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent"
                   >
-                    <span className="size-1.5 rounded-full bg-emerald-500" />
+                    <span className="size-2 rounded-full bg-emerald-500" />
                     <span className="flex-1 truncate text-[13px] font-medium text-foreground">
                       {project.name}
                     </span>
-                    <ChevronRight className="size-3.5 text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <ChevronRight className="size-3.5 text-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
                   </Link>
                 ))}
               </div>
@@ -246,7 +246,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== TOP HEADER ===== */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur-sm lg:px-6">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 bg-background/95 px-4 backdrop-blur-sm lg:px-6">
         {/* Left: Menu + Greeting */}
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
@@ -255,8 +255,8 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
 
           <div className="flex items-center gap-2">
             <h1 className="text-sm font-medium text-foreground">{greeting}</h1>
-            <span className="text-muted-foreground/50">·</span>
-            <p className="text-sm text-muted-foreground">{format(now, 'EEEE, MMM d')}</p>
+            <span className="text-foreground/30">·</span>
+            <p className="text-sm text-foreground/70">{format(now, 'EEEE, MMM d')}</p>
           </div>
 
           {/* Quick Stats Pills */}
@@ -314,7 +314,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
       <main className="min-h-0 flex-1">
         <div className="flex h-full">
           {/* ----- LEFT: Building Projects ----- */}
-          <aside className="hidden w-56 shrink-0 flex-col border-r border-border lg:flex xl:w-64">
+          <aside className="hidden w-56 shrink-0 flex-col border-r border-border/60 lg:flex xl:w-64">
             <SectionHeader
               icon={<Hammer className="size-4" />}
               title="Building"
@@ -332,7 +332,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           </aside>
 
           {/* ----- CENTER: Inbox (Primary) ----- */}
-          <section className="min-w-0 flex-1 border-r border-border">
+          <section className="min-w-0 flex-1 border-r border-border/60">
             <InboxWidget tasks={tasks} />
           </section>
 

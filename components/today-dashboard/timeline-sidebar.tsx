@@ -3,11 +3,10 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO, setHours, setMinutes, isToday } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Video, Plus, Clock } from 'lucide-react';
+import { Video, Clock, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type MeetingWithRelations } from '@/lib/swr';
 import { NewMeetingModalControlled } from '@/components/new-meeting-modal';
-import { NewTaskModalControlled } from '@/components/new-task-modal';
 
 interface TimelineSidebarProps {
   meetings: MeetingWithRelations[];
@@ -26,7 +25,6 @@ interface TimeSlot {
 
 export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
   const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
 
   const now = new Date();
   const currentHour = now.getHours();
@@ -55,18 +53,14 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
     });
   }, [meetings, currentHour]);
 
-  const handleSlotClick = () => {
-    setShowTaskModal(true);
-  };
-
   const meetingsCount = timeSlots.filter((s) => s.meeting).length;
 
   return (
     <div className="flex h-full flex-col">
       {/* Header - Unified with other sections */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
         <div className="flex items-center gap-2.5">
-          <Clock className="size-4 text-muted-foreground" />
+          <Clock className="size-4 text-foreground/70" />
           <h2 className="text-[13px] font-semibold text-foreground">Today</h2>
           <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-violet-600 dark:text-violet-400">
             {meetingsCount}
@@ -102,16 +96,17 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
           {timeSlots.map((slot) => (
             <div
               key={slot.hour}
-              className={cn('group relative flex h-16 border-b', slot.isPast && 'opacity-40')}
+              className={cn(
+                'group relative flex h-16 border-b border-border/40',
+                slot.isPast && 'opacity-40'
+              )}
             >
               {/* Hour label */}
               <div className="flex w-14 shrink-0 items-start justify-end pr-3 pt-1">
                 <span
                   className={cn(
                     'text-xs font-medium tabular-nums',
-                    slot.isCurrent
-                      ? 'text-violet-600 dark:text-violet-400'
-                      : 'text-muted-foreground'
+                    slot.isCurrent ? 'text-violet-600 dark:text-violet-400' : 'text-foreground/60'
                   )}
                 >
                   {slot.label}
@@ -120,14 +115,14 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
 
               {/* Slot content */}
               <div className="relative flex-1 pr-3">
-                {slot.meeting ? (
+                {slot.meeting && (
                   // Meeting card
                   <div
                     className={cn(
                       'absolute inset-x-0 top-1 rounded-lg border p-2 transition-all',
                       slot.isCurrent
-                        ? 'border-violet-500/30 bg-violet-500/10'
-                        : 'border-border bg-muted/50 hover:bg-muted'
+                        ? 'border-violet-500/40 bg-violet-500/10'
+                        : 'border-border/60 bg-muted/50 hover:bg-muted'
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -135,7 +130,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                         <p className="truncate text-xs font-medium text-foreground">
                           {slot.meeting.title}
                         </p>
-                        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/60">
                           <Clock className="h-2.5 w-2.5" />
                           <span>
                             {format(parseISO(slot.meeting.start_time), 'h:mm')} -{' '}
@@ -143,7 +138,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                           </span>
                         </div>
                         {slot.meeting.client && (
-                          <p className="mt-0.5 truncate text-[10px] text-muted-foreground/70">
+                          <p className="mt-0.5 truncate text-[10px] text-foreground/50">
                             {slot.meeting.client.display_name}
                           </p>
                         )}
@@ -157,7 +152,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                             'flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium transition-all',
                             slot.isCurrent
                               ? 'bg-violet-500 text-white hover:bg-violet-400'
-                              : 'bg-muted text-muted-foreground hover:bg-accent hover:text-foreground'
+                              : 'bg-muted text-foreground/70 hover:bg-accent hover:text-foreground'
                           )}
                         >
                           <Video className="h-3 w-3" />
@@ -166,16 +161,6 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                       )}
                     </div>
                   </div>
-                ) : (
-                  // Empty slot - clickable to add task
-                  !slot.isPast && (
-                    <button
-                      onClick={handleSlotClick}
-                      className="absolute inset-x-0 top-1 flex h-[calc(100%-8px)] items-center justify-center rounded-lg border border-dashed text-muted-foreground/50 opacity-0 transition-all hover:border-amber-500/30 hover:bg-amber-500/5 hover:text-amber-600 group-hover:opacity-100 dark:hover:text-amber-400"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  )
                 )}
               </div>
             </div>
@@ -185,7 +170,6 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
 
       {/* Modals */}
       <NewMeetingModalControlled open={showMeetingModal} onOpenChange={setShowMeetingModal} />
-      <NewTaskModalControlled open={showTaskModal} onOpenChange={setShowTaskModal} />
     </div>
   );
 }
