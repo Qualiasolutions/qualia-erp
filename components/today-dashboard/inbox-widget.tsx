@@ -25,20 +25,13 @@ import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAdminContext } from '@/components/admin-provider';
+import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 
 interface InboxWidgetProps {
   tasks: Task[];
 }
 
 type FilterMode = 'all' | 'mine' | 'todo' | 'done';
-
-const PRIORITY_CONFIG = {
-  Urgent: { color: 'fill-red-500 text-red-500', bg: 'bg-red-500/10' },
-  High: { color: 'fill-orange-500 text-orange-500', bg: 'bg-orange-500/10' },
-  Medium: { color: 'fill-amber-500 text-amber-500', bg: 'bg-amber-500/10' },
-  Low: { color: 'fill-emerald-500 text-emerald-500', bg: 'bg-emerald-500/10' },
-  'No Priority': { color: 'fill-zinc-500 text-zinc-500', bg: 'bg-zinc-500/10' },
-};
 
 function formatDueTime(dueDate: string): string {
   const date = parseISO(dueDate);
@@ -98,12 +91,12 @@ const TaskRow = React.memo(function TaskRow({
   const isCompleted = task.status === 'Done';
   const overdue = isOverdue(task.due_date);
   const dueToday = isDueToday(task.due_date);
-  const priorityConfig = PRIORITY_CONFIG[task.priority];
+  const priorityColors = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
 
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 border-b px-4 py-3 transition-all',
+        'group flex items-center gap-3 border-b border-border px-4 py-3 transition-colors',
         'hover:bg-accent/50',
         isCompleted && 'opacity-50'
       )}
@@ -112,13 +105,13 @@ const TaskRow = React.memo(function TaskRow({
       <button
         onClick={() => onToggle(task.id, !isCompleted)}
         className={cn(
-          'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all',
+          'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all',
           isCompleted
             ? 'border-emerald-500/50 bg-emerald-500 text-white'
             : 'border-muted-foreground/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
         )}
       >
-        {isCompleted && <Check className="h-3 w-3" strokeWidth={3} />}
+        {isCompleted && <Check className="size-3" strokeWidth={3} />}
       </button>
 
       {/* Content */}
@@ -135,26 +128,26 @@ const TaskRow = React.memo(function TaskRow({
         {/* Meta row */}
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {task.project && (
-            <span className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5">
-              <FolderOpen className="h-3 w-3" />
+            <span className="flex items-center gap-1 rounded-md bg-muted px-1.5 py-0.5">
+              <FolderOpen className="size-3" />
               <span className="max-w-[80px] truncate">{task.project.name}</span>
             </span>
           )}
           {task.due_date && !isCompleted && (
             <span
               className={cn(
-                'flex items-center gap-1 rounded px-1.5 py-0.5',
+                'flex items-center gap-1 rounded-md px-1.5 py-0.5',
                 overdue && 'bg-red-500/10 text-red-600 dark:text-red-400',
                 dueToday && !overdue && 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
               )}
             >
-              <Clock className="h-3 w-3" />
+              <Clock className="size-3" />
               {overdue ? 'Overdue' : formatDueTime(task.due_date)}
             </span>
           )}
           {task.assignee && (
             <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-qualia-500" />
+              <span className="size-1.5 rounded-full bg-qualia-500" />
               <span className="text-muted-foreground">
                 {task.assignee.full_name?.split(' ')[0]}
               </span>
@@ -165,8 +158,8 @@ const TaskRow = React.memo(function TaskRow({
 
       {/* Priority */}
       {task.priority !== 'No Priority' && (
-        <div className={cn('flex h-6 items-center rounded-md px-1.5', priorityConfig.bg)}>
-          <Circle className={cn('h-2 w-2', priorityConfig.color)} />
+        <div className={cn('flex h-6 items-center rounded-md px-1.5', priorityColors.bg)}>
+          <Circle className={cn('size-2 fill-current', priorityColors.text)} />
         </div>
       )}
 
@@ -178,10 +171,10 @@ const TaskRow = React.memo(function TaskRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg"
+                className="size-7 rounded-lg"
                 onClick={() => onEdit(task)}
               >
-                <Edit2 className="h-3.5 w-3.5" />
+                <Edit2 className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Edit</TooltipContent>
@@ -191,10 +184,10 @@ const TaskRow = React.memo(function TaskRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg"
+                className="size-7 rounded-lg"
                 onClick={() => onHide(task.id)}
               >
-                <EyeOff className="h-3.5 w-3.5" />
+                <EyeOff className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Hide</TooltipContent>
@@ -343,12 +336,17 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
   }, [optimisticTasks]);
 
   return (
-    <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
+    <div
+      className={cn(
+        'flex h-full flex-col bg-background',
+        isPending && 'pointer-events-none opacity-70'
+      )}
+    >
       {/* Header with filters */}
-      <div className="flex items-center gap-3 border-b px-4 py-3">
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
-            <Inbox className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <div className="flex size-8 items-center justify-center rounded-lg bg-amber-500/10">
+            <Inbox className="size-4 text-amber-600 dark:text-amber-400" />
           </div>
           <h2 className="text-sm font-semibold text-foreground">Inbox</h2>
           {stats.overdue > 0 && (
@@ -380,9 +378,9 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       </div>
 
       {/* Smart Input - Search or Add */}
-      <div className="flex items-center gap-2 border-b px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
         <div className="relative flex-1">
-          <Plus className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Plus className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             ref={inputRef}
             placeholder="Type to search or add task... Press Enter to create"
@@ -406,9 +404,9 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
               variant="ghost"
               onClick={handleSubmit}
               disabled={!inputValue.trim() || isPending}
-              className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500 dark:text-amber-400"
+              className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-amber-600 hover:bg-amber-500/10 hover:text-amber-500 dark:text-amber-400"
             >
-              <Send className="h-4 w-4" />
+              <Send className="size-4" />
             </Button>
           )}
         </div>
@@ -416,7 +414,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
 
       {/* Hint when typing */}
       {inputValue.trim() && (
-        <div className="border-b bg-muted/30 px-4 py-1.5">
+        <div className="border-b border-border bg-muted/30 px-4 py-1.5">
           <p className="text-xs text-muted-foreground">
             {isSearchMode ? (
               <>
@@ -437,9 +435,9 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       {/* Task List */}
       <div ref={parentRef} className="min-h-0 flex-1 overflow-auto">
         {filteredTasks.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10">
-              <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+          <div className="flex h-full flex-col items-center justify-center py-12">
+            <div className="mb-3 flex size-14 items-center justify-center rounded-full bg-emerald-500/10">
+              <CheckCircle2 className="size-7 text-emerald-500" />
             </div>
             <p className="text-sm font-medium text-foreground">
               {inputValue.trim()

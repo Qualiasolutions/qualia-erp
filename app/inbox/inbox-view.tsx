@@ -43,6 +43,7 @@ import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 
 interface InboxViewProps {
   initialTasks: Task[];
@@ -50,18 +51,6 @@ interface InboxViewProps {
 
 type FilterStatus = 'all' | 'todo' | 'in_progress' | 'done';
 type FilterPriority = 'all' | 'urgent' | 'high' | 'medium' | 'low';
-
-const PRIORITY_CONFIG = {
-  Urgent: { color: 'fill-red-500 text-red-500', bg: 'bg-red-500/10', label: 'Urgent' },
-  High: { color: 'fill-orange-500 text-orange-500', bg: 'bg-orange-500/10', label: 'High' },
-  Medium: { color: 'fill-amber-500 text-amber-500', bg: 'bg-amber-500/10', label: 'Medium' },
-  Low: { color: 'fill-emerald-500 text-emerald-500', bg: 'bg-emerald-500/10', label: 'Low' },
-  'No Priority': {
-    color: 'fill-muted-foreground/30 text-muted-foreground/30',
-    bg: 'bg-muted/30',
-    label: 'None',
-  },
-};
 
 function formatDueTime(dueDate: string): string {
   const date = parseISO(dueDate);
@@ -112,25 +101,22 @@ const TaskRow = React.memo(function TaskRow({
   onToggle,
   onHide,
   onEdit,
-  style,
 }: {
   task: Task;
   onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
   onEdit: (task: Task) => void;
-  style?: React.CSSProperties;
 }) {
   const isCompleted = task.status === 'Done';
   const overdue = isOverdue(task.due_date);
   const dueToday = isDueToday(task.due_date);
-  const priorityConfig = PRIORITY_CONFIG[task.priority];
+  const priorityColors = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
 
   return (
     <div
-      style={style}
       className={cn(
-        'group flex items-center gap-4 border-b border-white/[0.04] px-6 py-4 transition-all',
-        'hover:bg-white/[0.02]',
+        'group flex items-center gap-4 border-b border-border px-6 py-4 transition-colors',
+        'hover:bg-accent/50',
         isCompleted && 'opacity-50'
       )}
     >
@@ -138,13 +124,13 @@ const TaskRow = React.memo(function TaskRow({
       <button
         onClick={() => onToggle(task.id, !isCompleted)}
         className={cn(
-          'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
+          'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
           isCompleted
             ? 'border-emerald-500/50 bg-emerald-500 text-white'
-            : 'border-zinc-600 hover:border-emerald-500/50 hover:bg-emerald-500/10'
+            : 'border-muted-foreground/40 hover:border-emerald-500/50 hover:bg-emerald-500/10'
         )}
       >
-        {isCompleted && <Check className="h-3 w-3" strokeWidth={3} />}
+        {isCompleted && <Check className="size-3" strokeWidth={3} />}
       </button>
 
       {/* Title */}
@@ -152,25 +138,25 @@ const TaskRow = React.memo(function TaskRow({
         <span
           className={cn(
             'text-sm font-medium',
-            isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-100'
+            isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
           )}
         >
           {task.title}
         </span>
         {task.description && (
-          <p className="mt-0.5 truncate text-xs text-zinc-500">{task.description}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{task.description}</p>
         )}
       </div>
 
       {/* Project */}
       <div className="hidden w-40 shrink-0 md:block">
         {task.project ? (
-          <span className="flex items-center gap-1.5 text-xs text-zinc-400">
-            <FolderOpen className="h-3 w-3" />
+          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <FolderOpen className="size-3" />
             <span className="truncate">{task.project.name}</span>
           </span>
         ) : (
-          <span className="text-xs text-zinc-600">—</span>
+          <span className="text-xs text-muted-foreground/50">—</span>
         )}
       </div>
 
@@ -180,28 +166,28 @@ const TaskRow = React.memo(function TaskRow({
           <span
             className={cn(
               'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs',
-              overdue && 'bg-red-500/10 text-red-400',
-              dueToday && !overdue && 'bg-amber-500/10 text-amber-400',
-              !overdue && !dueToday && 'text-zinc-500'
+              overdue && 'bg-red-500/10 text-red-600 dark:text-red-400',
+              dueToday && !overdue && 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+              !overdue && !dueToday && 'text-muted-foreground'
             )}
           >
-            <Clock className="h-3 w-3" />
+            <Clock className="size-3" />
             {overdue ? 'Overdue' : formatDueTime(task.due_date)}
           </span>
         ) : (
-          <span className="text-xs text-zinc-600">—</span>
+          <span className="text-xs text-muted-foreground/50">—</span>
         )}
       </div>
 
       {/* Priority */}
       <div className="w-20 shrink-0">
         {task.priority !== 'No Priority' ? (
-          <div className={cn('flex items-center gap-1.5 rounded-md px-2 py-1', priorityConfig.bg)}>
-            <Circle className={cn('h-2 w-2', priorityConfig.color)} />
-            <span className="text-xs text-zinc-300">{priorityConfig.label}</span>
+          <div className={cn('flex items-center gap-1.5 rounded-md px-2 py-1', priorityColors.bg)}>
+            <Circle className={cn('size-2 fill-current', priorityColors.text)} />
+            <span className={cn('text-xs', priorityColors.text)}>{priorityColors.label}</span>
           </div>
         ) : (
-          <span className="text-xs text-zinc-600">—</span>
+          <span className="text-xs text-muted-foreground/50">—</span>
         )}
       </div>
 
@@ -213,10 +199,10 @@ const TaskRow = React.memo(function TaskRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
+                className="size-7 rounded-lg"
                 onClick={() => onEdit(task)}
               >
-                <Edit2 className="h-3.5 w-3.5" />
+                <Edit2 className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Edit</TooltipContent>
@@ -226,10 +212,10 @@ const TaskRow = React.memo(function TaskRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
+                className="size-7 rounded-lg"
                 onClick={() => onHide(task.id)}
               >
-                <EyeOff className="h-3.5 w-3.5" />
+                <EyeOff className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>Remove from inbox</TooltipContent>
@@ -392,23 +378,23 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   }, [optimisticTasks]);
 
   return (
-    <div className="flex h-screen flex-col bg-zinc-950">
+    <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.06] px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-6">
         <div className="flex items-center gap-4">
           <Link
             href="/"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="size-4" />
           </Link>
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 ring-1 ring-white/10">
-              <Inbox className="h-5 w-5 text-amber-400" />
+            <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 ring-1 ring-border">
+              <Inbox className="size-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-white">Inbox</h1>
-              <p className="text-xs text-zinc-500">{optimisticTasks.length} tasks</p>
+              <h1 className="text-lg font-semibold text-foreground">Inbox</h1>
+              <p className="text-xs text-muted-foreground">{optimisticTasks.length} tasks</p>
             </div>
           </div>
         </div>
@@ -416,51 +402,53 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         {/* Stats */}
         <div className="hidden items-center gap-3 md:flex">
           <div className="flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5">
-            <span className="text-sm font-semibold tabular-nums text-amber-400">{stats.todo}</span>
-            <span className="text-xs text-amber-400/70">todo</span>
+            <span className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+              {stats.todo}
+            </span>
+            <span className="text-xs text-amber-600/70 dark:text-amber-400/70">todo</span>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-blue-500/10 px-3 py-1.5">
-            <span className="text-sm font-semibold tabular-nums text-blue-400">
+            <span className="text-sm font-semibold tabular-nums text-blue-600 dark:text-blue-400">
               {stats.inProgress}
             </span>
-            <span className="text-xs text-blue-400/70">in progress</span>
+            <span className="text-xs text-blue-600/70 dark:text-blue-400/70">in progress</span>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1.5">
-            <span className="text-sm font-semibold tabular-nums text-emerald-400">
+            <span className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
               {stats.done}
             </span>
-            <span className="text-xs text-emerald-400/70">done</span>
+            <span className="text-xs text-emerald-600/70 dark:text-emerald-400/70">done</span>
           </div>
           {stats.overdue > 0 && (
             <div className="flex items-center gap-2 rounded-full bg-red-500/10 px-3 py-1.5">
-              <AlertCircle className="h-3.5 w-3.5 text-red-400" />
-              <span className="text-sm font-semibold tabular-nums text-red-400">
+              <AlertCircle className="size-3.5 text-red-600 dark:text-red-400" />
+              <span className="text-sm font-semibold tabular-nums text-red-600 dark:text-red-400">
                 {stats.overdue}
               </span>
-              <span className="text-xs text-red-400/70">overdue</span>
+              <span className="text-xs text-red-600/70 dark:text-red-400/70">overdue</span>
             </div>
           )}
         </div>
       </header>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-4 border-b border-white/[0.06] px-6 py-3">
+      <div className="flex flex-wrap items-center gap-4 border-b border-border px-6 py-3">
         {/* Search */}
-        <div className="relative max-w-md flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+        <div className="relative w-full max-w-md flex-1 sm:w-auto">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search tasks..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 bg-zinc-900 pl-9 text-sm"
+            className="h-9 pl-9 text-sm"
           />
         </div>
 
         {/* Filters */}
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-zinc-500" />
+          <Filter className="size-4 text-muted-foreground" />
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as FilterStatus)}>
-            <SelectTrigger className="h-9 w-32 bg-zinc-900 text-sm">
+            <SelectTrigger className="h-9 w-32 text-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -474,7 +462,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
             value={priorityFilter}
             onValueChange={(v) => setPriorityFilter(v as FilterPriority)}
           >
-            <SelectTrigger className="h-9 w-32 bg-zinc-900 text-sm">
+            <SelectTrigger className="h-9 w-32 text-sm">
               <SelectValue placeholder="Priority" />
             </SelectTrigger>
             <SelectContent>
@@ -488,7 +476,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         </div>
 
         {/* Quick Add */}
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           <Input
             id="quick-add-input"
             placeholder="Add task... (⌘N)"
@@ -500,22 +488,22 @@ export function InboxView({ initialTasks }: InboxViewProps) {
                 handleQuickAdd();
               }
             }}
-            className="h-9 w-64 bg-zinc-900 text-sm"
+            className="h-9 w-full text-sm sm:w-64"
           />
           <Button
             size="sm"
             onClick={handleQuickAdd}
             disabled={!quickAddValue.trim() || isPending}
-            className="h-9 bg-amber-500 text-black hover:bg-amber-400"
+            className="h-9"
           >
-            <Plus className="mr-1.5 h-4 w-4" />
+            <Plus className="mr-1.5 size-4" />
             Add
           </Button>
         </div>
       </div>
 
       {/* Table Header */}
-      <div className="flex items-center border-b border-white/[0.06] bg-zinc-900/50 px-6 py-2 text-xs font-medium uppercase tracking-wider text-zinc-500">
+      <div className="flex items-center border-b border-border bg-muted/50 px-6 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <div className="w-5 shrink-0" /> {/* Checkbox space */}
         <div className="ml-4 flex-1">Task</div>
         <div className="hidden w-40 shrink-0 md:block">Project</div>
@@ -530,16 +518,16 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         className={cn('min-h-0 flex-1 overflow-auto', isPending && 'opacity-70')}
       >
         {filteredTasks.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-              <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+          <div className="flex h-full flex-col items-center justify-center py-16">
+            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
+              <CheckCircle2 className="size-8 text-emerald-500" />
             </div>
-            <p className="text-lg font-medium text-white">
+            <p className="text-lg font-medium text-foreground">
               {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
                 ? 'No matching tasks'
                 : 'Inbox zero!'}
             </p>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all'
                 ? 'Try adjusting your filters'
                 : 'All tasks are complete'}
