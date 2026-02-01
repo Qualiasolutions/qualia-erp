@@ -123,11 +123,12 @@ export async function getSeoProjects(workspaceId?: string | null) {
     return [];
   }
 
+  // Get SEO projects + Qualia Solutions for blog tracking
   const { data, error } = await supabase
     .from('projects')
     .select('id, name, project_type, client:clients(id, name)')
     .eq('workspace_id', wsId)
-    .eq('project_type', 'seo')
+    .or('project_type.eq.seo,name.ilike.%Qualia Solutions%')
     .order('name');
 
   if (error) {
