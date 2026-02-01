@@ -412,14 +412,23 @@ async function getUserContext(payload: VapiToolCallPayload) {
 /**
  * Verify VAPI webhook request authenticity
  * Uses a shared secret token for authentication
- * SECURITY: Fail-closed pattern - rejects requests if secret not configured (except in development)
+ * SECURITY: Fail-closed pattern - rejects requests if secret not configured in production
  */
 function verifyVapiWebhook(request: NextRequest): boolean {
   const webhookSecret = process.env.VAPI_WEBHOOK_SECRET;
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // If no secret configured, allow all requests (for initial setup)
+  // SECURITY: Fail-closed in production - reject if no secret configured
   if (!webhookSecret) {
-    console.warn('[VAPI Webhook] No VAPI_WEBHOOK_SECRET configured - allowing request');
+    if (isProduction) {
+      console.error(
+        '[VAPI Webhook] SECURITY: No VAPI_WEBHOOK_SECRET configured in production - rejecting request'
+      );
+      return false;
+    }
+    console.warn(
+      '[VAPI Webhook] No VAPI_WEBHOOK_SECRET configured - allowing request (development only)'
+    );
     return true;
   }
 

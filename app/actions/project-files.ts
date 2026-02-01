@@ -146,6 +146,12 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     return { success: false, error: 'Project not found' };
   }
 
+  // Authorization: Only workspace members can upload to project
+  const canAccess = await canAccessProject(user.id, projectId);
+  if (!canAccess) {
+    return { success: false, error: 'You do not have permission to upload to this project' };
+  }
+
   // Generate unique filename
   const timestamp = Date.now();
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
