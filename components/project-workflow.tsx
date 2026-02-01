@@ -14,7 +14,7 @@ import {
   deleteProjectPhase,
 } from '@/app/actions/phases';
 import { getProjectTasks, createTask, updateTask, deleteTask } from '@/app/actions/inbox';
-import { invalidateProjectPhases, invalidateProjectTasks } from '@/lib/swr';
+import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { toast } from 'sonner';
 
 interface Phase {
@@ -171,6 +171,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     formData.set('phase_name', activePhase.name);
     formData.set('status', 'Todo');
     formData.set('priority', 'No Priority');
+    formData.set('show_in_inbox', 'true'); // Auto-show phase tasks in main inbox
 
     startTransition(async () => {
       const result = await createTask(formData);
@@ -178,6 +179,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
         setNewTaskTitle('');
         await fetchData();
         invalidateProjectTasks(projectId, true);
+        invalidateInboxTasks(true); // Update main inbox immediately
         newTaskInputRef.current?.focus();
       } else {
         toast.error('Failed to create task');
