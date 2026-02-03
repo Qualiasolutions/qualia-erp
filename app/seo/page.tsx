@@ -1,5 +1,5 @@
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { getBlogPosts, getSeoProjects } from '@/app/actions/seo';
+import { getBlogPosts, getSeoProjects, getBlogTasks } from '@/app/actions/seo';
 import { SeoPageClient } from './seo-page-client';
 
 export default async function SeoPage() {
@@ -13,10 +13,11 @@ export default async function SeoPage() {
     );
   }
 
-  const [blogPosts, seoProjects] = await Promise.all([
+  const [blogPosts, seoProjects, blogTasks] = await Promise.all([
     getBlogPosts(workspaceId),
     getSeoProjects(workspaceId),
+    getBlogTasks(workspaceId),
   ]);
 
-  return <SeoPageClient blogPosts={blogPosts} seoProjects={seoProjects} />;
+  return <SeoPageClient blogPosts={blogPosts} seoProjects={seoProjects} blogTasks={blogTasks} />;
 }

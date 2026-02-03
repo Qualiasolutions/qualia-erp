@@ -32,6 +32,21 @@ export type BlogPost = {
   } | null;
 };
 
+// Blog task from the tasks table (auto-generated daily)
+export type BlogTask = {
+  id: string;
+  title: string;
+  status: 'Todo' | 'In Progress' | 'Done';
+  due_date: string | null;
+  completed_at: string | null;
+  created_at: string;
+  project_id: string | null;
+  project?: {
+    id: string;
+    name: string;
+  } | null;
+};
+
 // Validation schemas
 const createBlogPostSchema = z.object({
   project_id: z.string().uuid('Invalid project ID'),
@@ -141,6 +156,55 @@ export async function getSeoProjects(workspaceId?: string | null) {
     ...p,
     client: Array.isArray(p.client) ? p.client[0] || null : p.client,
   }));
+}
+
+/**
+ * Get blog-related tasks (auto-generated daily tasks for blog writing)
+ */
+export async function getBlogTasks(workspaceId?: string | null): Promise<BlogTask[]> {
+  const supabase = await createClient();
+
+  let wsId = workspaceId;
+  if (!wsId) {
+    wsId = await getCurrentWorkspaceId();
+  }
+
+  if (!wsId) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      title,
+      status,
+      due_date,
+      completed_at,
+      created_at,
+      project_id,
+      project:projects (id, name)
+    `
+    )
+    .eq('workspace_id', wsId)
+    .ilike('title', '%blog post%')
+    .order('due_date', { ascending: false });
+
+  if (error) {
+    console.error('[getBlogTasks] Error:', error);
+    return [];
+  }
+
+  return (data || []).map((task) => {
+    const t = task as unknown as {
+      project: BlogTask['project'] | BlogTask['project'][];
+    };
+    return {
+      ...task,
+      project: Array.isArray(t.project) ? t.project[0] || null : t.project,
+    } as BlogTask;
+  });
 }
 
 /**
