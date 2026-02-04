@@ -3,9 +3,12 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO, isToday, isTomorrow, addDays, startOfDay, isSameDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Video, ExternalLink, Plus, Users } from 'lucide-react';
+import { Video, ExternalLink, Plus, Users, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { deleteMeeting } from '@/app/actions';
+import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
+import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface Meeting {
@@ -71,6 +74,19 @@ interface MeetingGroup {
 
 export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelineProps) {
   const [showModal, setShowModal] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!confirm('Delete this meeting?')) return;
+    setDeletingId(meetingId);
+    const result = await deleteMeeting(meetingId);
+    if (result.success) {
+      invalidateMeetings(true);
+      invalidateTodaysSchedule(true);
+    }
+    setDeletingId(null);
+  };
 
   const groupedMeetings = useMemo(() => {
     const now = new Date();
@@ -165,7 +181,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                       <div
                         key={meeting.id}
                         className={cn(
-                          'group relative flex items-center gap-3 rounded-xl p-3 transition-all',
+                          'group/meeting relative flex items-center gap-3 rounded-xl p-3 transition-all',
                           isCurrent && 'bg-violet-500/10 ring-1 ring-violet-500/30',
                           isPast && 'opacity-40',
                           !isCurrent && !isPast && 'hover:bg-white/5'
@@ -242,24 +258,54 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                           </div>
                         </div>
 
-                        {/* Join button */}
-                        {meeting.meeting_link && !isPast && (
-                          <a
-                            href={meeting.meeting_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={cn(
-                              'flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-all',
-                              isCurrent
-                                ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:bg-violet-400'
-                                : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-                            )}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                            Join
-                          </a>
-                        )}
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                          {/* Edit/Delete on hover */}
+                          {!isPast && (
+                            <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingMeeting(meeting);
+                                }}
+                                className="rounded p-1 text-zinc-500 hover:bg-white/10 hover:text-white"
+                                title="Edit meeting"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteMeeting(meeting.id);
+                                }}
+                                disabled={deletingId === meeting.id}
+                                className="rounded p-1 text-zinc-500 hover:bg-red-500/20 hover:text-red-400"
+                                title="Delete meeting"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Join button */}
+                          {meeting.meeting_link && !isPast && (
+                            <a
+                              href={meeting.meeting_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={cn(
+                                'flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-all',
+                                isCurrent
+                                  ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:bg-violet-400'
+                                  : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                              )}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Join
+                            </a>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -274,6 +320,29 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
         open={showModal}
         onOpenChange={setShowModal}
         onMeetingCreated={handleMeetingCreated}
+      />
+
+      <EditMeetingModal
+        meeting={
+          editingMeeting
+            ? {
+                id: editingMeeting.id,
+                title: editingMeeting.title,
+                description: null,
+                start_time: editingMeeting.start_time,
+                end_time: editingMeeting.end_time,
+                meeting_link: editingMeeting.meeting_link ?? null,
+                project: editingMeeting.project ?? null,
+              }
+            : null
+        }
+        open={editingMeeting !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingMeeting(null);
+            invalidateMeetings(true);
+          }
+        }}
       />
     </div>
   );

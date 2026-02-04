@@ -40,6 +40,7 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { deleteMeeting, updateMeeting, scheduleIssue, unscheduleIssue } from '@/app/actions';
+import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
 import { NewIssueModal } from './new-issue-modal';
 
@@ -222,19 +223,22 @@ function DraggableItem({
 
       {/* Action buttons */}
       <div className="absolute right-2 top-2 flex gap-1 rounded-md border border-border/50 bg-background/50 p-0.5 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100">
-        {!isItemMeeting && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(item);
-            }}
-            className="rounded-md p-1 text-muted-foreground hover:bg-blue-500/20 hover:text-blue-400"
-            title="Edit"
-          >
-            <Pencil className="h-3 w-3" />
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(item);
+          }}
+          className={cn(
+            'rounded-md p-1 text-muted-foreground',
+            isItemMeeting
+              ? 'hover:bg-violet-500/20 hover:text-violet-400'
+              : 'hover:bg-blue-500/20 hover:text-blue-400'
+          )}
+          title="Edit"
+        >
+          <Pencil className="h-3 w-3" />
+        </button>
         <button
           type="button"
           onClick={(e) => {
@@ -395,6 +399,8 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
       startTransition(async () => {
         if (type === 'meeting') {
           await deleteMeeting(id);
+          invalidateMeetings(true);
+          invalidateTodaysSchedule(true);
         } else {
           await unscheduleIssue(id);
         }
@@ -465,6 +471,8 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
             start_time: newStart.toISOString(),
             end_time: newEnd.toISOString(),
           });
+          invalidateMeetings(true);
+          invalidateTodaysSchedule(true);
         } else {
           await scheduleIssue(itemId, newStart.toISOString(), newEnd.toISOString());
         }

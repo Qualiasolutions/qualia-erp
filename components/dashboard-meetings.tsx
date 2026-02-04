@@ -10,6 +10,8 @@ import {
   Link2,
   Check,
   Loader2,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { format, isToday, isTomorrow, isWithinInterval, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,9 +19,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 import { createGoogleMeetLink } from '@/lib/google-meet';
-import { updateMeeting } from '@/app/actions';
+import { updateMeeting, deleteMeeting } from '@/app/actions';
+import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { cn } from '@/lib/utils';
 import { NewMeetingModalInline } from './new-meeting-modal-inline';
+import { EditMeetingModal } from './edit-meeting-modal';
 
 interface Meeting {
   id: string;
@@ -40,6 +44,8 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
   const [showNewMeetingModal, setShowNewMeetingModal] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const now = new Date();
 
   // Handle new meeting creation - adds meeting to local state instantly
@@ -53,6 +59,19 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
     });
     setShowNewMeetingModal(false);
     setPopoverOpen(false);
+  };
+
+  // Handle meeting delete
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!confirm('Delete this meeting?')) return;
+    setDeletingId(meetingId);
+    const result = await deleteMeeting(meetingId);
+    if (result.success) {
+      setMeetings((prev) => prev.filter((m) => m.id !== meetingId));
+      invalidateMeetings(true);
+      invalidateTodaysSchedule(true);
+    }
+    setDeletingId(null);
   };
 
   // Find current meeting (if any)
@@ -323,7 +342,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
           <div className="divide-y divide-border/30">
             {/* Current Meeting - Highlighted */}
             {currentMeeting && (
-              <div className="border-l-2 border-violet-500 bg-violet-500/5 p-3 sm:p-4">
+              <div className="group/meeting border-l-2 border-violet-500 bg-violet-500/5 p-3 sm:p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
@@ -332,6 +351,23 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                     <span className="text-[10px] text-muted-foreground sm:text-xs">
                       {getTimeRemaining(currentMeeting)}
                     </span>
+                    <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
+                      <button
+                        onClick={() => setEditingMeeting(currentMeeting)}
+                        className="rounded p-1 text-muted-foreground hover:bg-violet-500/20 hover:text-violet-400"
+                        title="Edit meeting"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMeeting(currentMeeting.id)}
+                        disabled={deletingId === currentMeeting.id}
+                        className="rounded p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-500"
+                        title="Delete meeting"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                   {currentMeeting.meeting_link ? (
                     <a
@@ -384,7 +420,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
             {/* Next Meeting - Emphasized */}
             {nextMeeting && !currentMeeting && (
-              <div className="border-l-2 border-qualia-500 bg-qualia-500/5 p-3 sm:p-4">
+              <div className="group/meeting border-l-2 border-qualia-500 bg-qualia-500/5 p-3 sm:p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold text-qualia-500">
@@ -393,6 +429,23 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                     <span className="text-[10px] text-muted-foreground sm:text-xs">
                       {getTimeUntil(nextMeeting.start_time)}
                     </span>
+                    <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
+                      <button
+                        onClick={() => setEditingMeeting(nextMeeting)}
+                        className="rounded p-1 text-muted-foreground hover:bg-qualia-500/20 hover:text-qualia-500"
+                        title="Edit meeting"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMeeting(nextMeeting.id)}
+                        disabled={deletingId === nextMeeting.id}
+                        className="rounded p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-500"
+                        title="Delete meeting"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                   {nextMeeting.meeting_link ? (
                     <a
@@ -441,7 +494,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
               <div
                 key={meeting.id}
                 className={cn(
-                  'p-3 transition-all duration-200 sm:p-4',
+                  'group/item p-3 transition-all duration-200 sm:p-4',
                   'active:bg-qualia-500/10 sm:hover:bg-qualia-500/5'
                 )}
               >
@@ -463,37 +516,56 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                       </p>
                     )}
                   </div>
-                  {meeting.meeting_link ? (
-                    <a
-                      href={meeting.meeting_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={cn(
-                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-emerald-500 transition-all sm:h-8 sm:w-8',
-                        'active:bg-emerald-500/20 sm:hover:bg-emerald-500/10'
-                      )}
-                      title="Join meeting"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  ) : (
-                    <button
-                      onClick={() => handleGenerateLink(meeting.id)}
-                      disabled={generatingFor === meeting.id}
-                      className={cn(
-                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-all sm:h-8 sm:w-8',
-                        'active:bg-accent sm:hover:bg-accent sm:hover:text-emerald-500',
-                        'disabled:opacity-50'
-                      )}
-                      title="Add meeting link"
-                    >
-                      {generatingFor === meeting.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Link2 className="h-4 w-4" />
-                      )}
-                    </button>
-                  )}
+                  <div className="flex shrink-0 items-center gap-1">
+                    <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/item:opacity-100">
+                      <button
+                        onClick={() => setEditingMeeting(meeting)}
+                        className="rounded p-1 text-muted-foreground hover:bg-violet-500/20 hover:text-violet-400"
+                        title="Edit meeting"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMeeting(meeting.id)}
+                        disabled={deletingId === meeting.id}
+                        className="rounded p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-500"
+                        title="Delete meeting"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    {meeting.meeting_link ? (
+                      <a
+                        href={meeting.meeting_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-lg text-emerald-500 transition-all sm:h-8 sm:w-8',
+                          'active:bg-emerald-500/20 sm:hover:bg-emerald-500/10'
+                        )}
+                        title="Join meeting"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => handleGenerateLink(meeting.id)}
+                        disabled={generatingFor === meeting.id}
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all sm:h-8 sm:w-8',
+                          'active:bg-accent sm:hover:bg-accent sm:hover:text-emerald-500',
+                          'disabled:opacity-50'
+                        )}
+                        title="Add meeting link"
+                      >
+                        {generatingFor === meeting.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Link2 className="h-4 w-4" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
@@ -519,6 +591,30 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
         open={showNewMeetingModal}
         onOpenChange={setShowNewMeetingModal}
         onMeetingCreated={handleMeetingCreated}
+      />
+
+      {/* Edit Meeting Modal */}
+      <EditMeetingModal
+        meeting={
+          editingMeeting
+            ? {
+                id: editingMeeting.id,
+                title: editingMeeting.title,
+                description: null,
+                start_time: editingMeeting.start_time,
+                end_time: editingMeeting.end_time,
+                meeting_link: editingMeeting.meeting_link,
+                project: editingMeeting.project ?? null,
+              }
+            : null
+        }
+        open={editingMeeting !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingMeeting(null);
+            invalidateMeetings(true);
+          }
+        }}
       />
     </Card>
   );
