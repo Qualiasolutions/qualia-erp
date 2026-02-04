@@ -368,7 +368,22 @@ export async function startProvisioning(
 
   const clientName = (project.client as { display_name?: string } | null)?.display_name;
 
-  // Start provisioning (fire-and-forget)
+  // Create the provisioning record first so polling has something to find
+  const { error: insertError } = await supabase.from('project_provisioning').upsert(
+    {
+      project_id: project.id,
+      workspace_id: project.workspace_id,
+      status: 'in_progress',
+      started_at: new Date().toISOString(),
+    },
+    { onConflict: 'project_id' }
+  );
+
+  if (insertError) {
+    return { success: false, error: 'Failed to start provisioning' };
+  }
+
+  // Now start the actual provisioning (fire-and-forget)
   setupProjectIntegrations({
     projectId: project.id,
     projectName: project.name,

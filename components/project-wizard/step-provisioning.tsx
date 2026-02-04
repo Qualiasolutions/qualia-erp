@@ -69,6 +69,7 @@ export function StepProvisioning({
   const [steps, setSteps] = useState<ProvisioningStep[]>([]);
   const [isPolling, setIsPolling] = useState(true);
   const [retrying, setRetrying] = useState<string | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
 
   // Initialize steps based on user-selected integrations
   useEffect(() => {
@@ -86,6 +87,23 @@ export function StepProvisioning({
     setSteps(initialSteps);
   }, [selectedIntegrations]);
 
+  // Timeout: stop polling after 2 minutes and mark as timed out
+  useEffect(() => {
+    if (!isPolling) return;
+    const timeout = setTimeout(() => {
+      setIsPolling(false);
+      setTimedOut(true);
+      setSteps((prev) =>
+        prev.map((s) =>
+          s.status === 'pending' || s.status === 'in_progress'
+            ? { ...s, status: 'failed', error: 'Timed out — you can retry or skip' }
+            : s
+        )
+      );
+    }, 120_000);
+    return () => clearTimeout(timeout);
+  }, [isPolling]);
+
   // Poll for status updates
   useEffect(() => {
     if (!isPolling || !projectId || steps.length === 0) return;
@@ -94,6 +112,13 @@ export function StepProvisioning({
       const result = await getProjectProvisioningStatus(projectId);
 
       if (result.success && result.data) {
+        const status = result.data.status as ProvisioningStatus;
+
+        // If still not_started after many polls, treat as failed
+        if (status === 'not_started') {
+          return; // Keep polling — record may not be created yet
+        }
+
         setSteps((prevSteps) =>
           prevSteps.map((step) => {
             if (step.id === 'github' && result.data?.github) {
@@ -140,12 +165,15 @@ export function StepProvisioning({
                 error: result.data.vapi.error,
               };
             }
+            // If status is in_progress and step has no specific data yet, show in_progress
+            if (status === 'in_progress' && step.status === 'pending') {
+              return { ...step, status: 'in_progress' };
+            }
             return step;
           })
         );
 
         // Check if all steps are done
-        const status = result.data.status as ProvisioningStatus;
         if (status === 'completed' || status === 'partial_failure' || status === 'failed') {
           setIsPolling(false);
         }
@@ -178,7 +206,6 @@ export function StepProvisioning({
 
   const allCompleted = steps.every((s) => s.status === 'completed' || s.status === 'skipped');
   const hasFailures = steps.some((s) => s.status === 'failed');
-  const isProcessing = steps.some((s) => s.status === 'in_progress' || s.status === 'pending');
 
   // Auto-complete if no steps needed
   useEffect(() => {
@@ -294,12 +321,12 @@ export function StepProvisioning({
       </div>
 
       <div className="flex items-center justify-between pt-4">
-        <Button variant="ghost" onClick={onSkip} disabled={isProcessing}>
+        <Button variant="ghost" onClick={onSkip}>
           <SkipForward className="mr-2 h-4 w-4" />
-          Skip & Finish Later
+          {timedOut ? 'Skip' : 'Skip & Finish Later'}
         </Button>
 
-        {(allCompleted || hasFailures) && (
+        {(allCompleted || hasFailures || timedOut) && (
           <Button onClick={onComplete}>{allCompleted ? 'Done' : 'Continue with Errors'}</Button>
         )}
       </div>

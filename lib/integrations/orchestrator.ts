@@ -61,29 +61,16 @@ export async function setupProjectIntegrations(
     };
   }
 
-  // Create or get provisioning record
-  const { data: existingProvisioning } = await supabase
-    .from('project_provisioning')
-    .select('id')
-    .eq('project_id', config.projectId)
-    .single();
-
-  if (!existingProvisioning) {
-    await supabase.from('project_provisioning').insert({
+  // Ensure provisioning record exists (upsert to handle both fresh + retry cases)
+  await supabase.from('project_provisioning').upsert(
+    {
       project_id: config.projectId,
       workspace_id: config.workspaceId,
       status: 'in_progress',
       started_at: new Date().toISOString(),
-    });
-  } else {
-    await supabase
-      .from('project_provisioning')
-      .update({
-        status: 'in_progress',
-        started_at: new Date().toISOString(),
-      })
-      .eq('project_id', config.projectId);
-  }
+    },
+    { onConflict: 'project_id' }
+  );
 
   // 1. Create GitHub repository (for web_design, ai_agent, voice_agent)
   if (requiredProviders.includes('github')) {
