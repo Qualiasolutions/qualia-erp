@@ -383,19 +383,26 @@ export async function startProvisioning(
     return { success: false, error: 'Failed to start provisioning' };
   }
 
-  // Now start the actual provisioning (fire-and-forget)
-  setupProjectIntegrations({
-    projectId: project.id,
-    projectName: project.name,
-    projectType: project.project_type,
-    deploymentPlatform: project.deployment_platform,
-    description: project.description || undefined,
-    clientName: clientName || undefined,
-    workspaceId: project.workspace_id,
-    selectedIntegrations,
-  }).catch((err) => {
+  // Run provisioning within this request context (createClient needs cookies())
+  try {
+    await setupProjectIntegrations({
+      projectId: project.id,
+      projectName: project.name,
+      projectType: project.project_type,
+      deploymentPlatform: project.deployment_platform,
+      description: project.description || undefined,
+      clientName: clientName || undefined,
+      workspaceId: project.workspace_id,
+      selectedIntegrations,
+    });
+  } catch (err) {
     console.error('[startProvisioning] Error:', err);
-  });
+    // Mark as failed so polling UI can show the error
+    await supabase
+      .from('project_provisioning')
+      .update({ status: 'failed', completed_at: new Date().toISOString() })
+      .eq('project_id', project.id);
+  }
 
   return { success: true, data: { jobStarted: true } };
 }

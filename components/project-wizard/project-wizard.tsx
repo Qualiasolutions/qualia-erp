@@ -230,15 +230,15 @@ export function ProjectWizard({
 
         if (projectData?.id && needsProvisioning) {
           setCreatedProjectId(projectData.id);
-
-          // Start provisioning first (creates DB record), then show UI
-          const provResult = await startProvisioning(projectData.id, selectedIntegrations);
-          if (!provResult.success) {
-            console.error('[ProjectWizard] Provisioning start error:', provResult.error);
-          }
-
           setShowProvisioning(true);
           toast({ title: `Creating ${wizardData.name}...` });
+
+          // Start provisioning as a separate server action call.
+          // The polling UI is already visible and will track progress.
+          // Must NOT be fire-and-forget inside the server action (needs request context for createClient).
+          startProvisioning(projectData.id, selectedIntegrations).catch((err) => {
+            console.error('[ProjectWizard] Provisioning error:', err);
+          });
         } else {
           const label = mode === 'demo' ? 'Demo' : 'Project';
           toast({ title: `${label} "${wizardData.name}" created` });
