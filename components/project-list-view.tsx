@@ -400,40 +400,60 @@ export function ProjectListView({
     );
   }
 
-  // Compact mode: Group by type so each type (web design, AI, voice) is listed under each other
+  // Compact mode: Split into AI (left) vs Web & Marketing (right)
   if (compact) {
-    return (
-      <div className="space-y-5">
-        {groupedProjects.map((group) => {
-          const config = group.type !== 'other' ? PROJECT_TYPE_CONFIG[group.type] : null;
-          const GroupIcon = config?.icon || Folder;
+    const aiTypes: (ProjectType | null)[] = ['ai_agent', 'voice_agent', 'ai_platform'];
+    const aiProjects = sortedProjects.filter(
+      (p) => p.project_type && aiTypes.includes(p.project_type)
+    );
+    const otherProjects = sortedProjects.filter(
+      (p) => !p.project_type || !aiTypes.includes(p.project_type)
+    );
 
-          return (
-            <div key={group.type}>
-              <div className="mb-2 flex items-center gap-2 px-1">
-                <div
-                  className={cn(
-                    'flex h-5 w-5 items-center justify-center rounded',
-                    config ? config.bgColor : 'bg-muted'
-                  )}
-                >
-                  <GroupIcon
-                    className={cn('h-3 w-3', config ? config.color : 'text-muted-foreground')}
-                  />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  {group.label}
-                </span>
-                <span className="text-xs text-muted-foreground/50">({group.projects.length})</span>
-              </div>
-              <div className="space-y-1.5">
-                {group.projects.map((project) => (
-                  <ProjectRow key={project.id} project={project} compact />
-                ))}
-              </div>
+    // If all projects are one category, show single column
+    if (aiProjects.length === 0 || otherProjects.length === 0) {
+      return (
+        <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+          {sortedProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} compact />
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        {/* AI Projects - Left Column */}
+        <div className="space-y-2">
+          <div className="mb-2.5 flex items-center gap-2 px-1">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-violet-500/10">
+              <Bot className="h-3 w-3 text-violet-400" />
             </div>
-          );
-        })}
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              AI & Voice
+            </span>
+            <span className="text-xs text-muted-foreground/50">({aiProjects.length})</span>
+          </div>
+          {aiProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} compact />
+          ))}
+        </div>
+
+        {/* Web & Marketing - Right Column */}
+        <div className="space-y-2">
+          <div className="mb-2.5 flex items-center gap-2 px-1">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-sky-500/10">
+              <Globe className="h-3 w-3 text-sky-400" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Web & Marketing
+            </span>
+            <span className="text-xs text-muted-foreground/50">({otherProjects.length})</span>
+          </div>
+          {otherProjects.map((project) => (
+            <ProjectRow key={project.id} project={project} compact />
+          ))}
+        </div>
       </div>
     );
   }
