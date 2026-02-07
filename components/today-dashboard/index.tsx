@@ -143,7 +143,8 @@ const PROJECT_TYPE_CONFIG: Record<
 // =============================================================================
 
 function BuildingProjectsList({ projects }: { projects: Project[] }) {
-  const buildingProjects = projects.filter((p) => p.is_building);
+  // Show all active projects (already filtered upstream) — no need to mark individually
+  const buildingProjects = projects;
 
   // Group by project type
   const grouped = buildingProjects.reduce(
@@ -249,7 +250,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   // Computed stats
   const todaysMeetings = meetings.filter((m) => isToday(parseISO(m.start_time)));
   const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
-  const buildingCount = projects.filter((p) => p.is_building).length;
+  const buildingCount = projects.length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">

@@ -76,14 +76,14 @@ export function ProjectsClient({
       {/* Completed Projects — compact bottom strip */}
       {hasFinishedProjects && (
         <div className="shadow-subtle flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
-          <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border/50 px-5 py-2.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10">
-              <Trophy className="h-3 w-3 text-emerald-500" />
+          <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/50 px-4 py-2">
+            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10">
+              <Trophy className="h-2.5 w-2.5 text-emerald-500" />
             </div>
-            <h2 className="text-sm font-medium text-foreground">Completed</h2>
+            <h2 className="text-xs font-medium text-foreground">Completed</h2>
             <span className="ml-auto text-xs text-muted-foreground">{finishedProjects.length}</span>
           </div>
-          <div className="overflow-x-auto px-4 py-3">
+          <div className="overflow-x-auto px-3 py-2">
             <ProjectListView projects={finishedProjects} horizontal />
           </div>
         </div>
