@@ -143,17 +143,17 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
       <div
         onClick={handleClick}
         className={cn(
-          'group relative flex cursor-pointer items-center gap-2.5 rounded-lg border bg-card/50 px-3 py-2 transition-all duration-150',
-          'hover:bg-card hover:shadow-sm',
-          isPartnership ? 'border-orange-500/30' : 'border-border/50 hover:border-border',
-          isComplete && 'opacity-50',
+          'group relative flex cursor-pointer items-center gap-3 rounded-lg border bg-card/40 px-3.5 py-2.5 transition-all duration-200',
+          'hover:border-primary/20 hover:bg-card hover:shadow-sm',
+          isPartnership ? 'border-orange-500/30' : 'border-border/40',
+          isComplete && 'opacity-40',
           isPending && 'pointer-events-none opacity-50'
         )}
       >
         {/* Type icon */}
         <div
           className={cn(
-            'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md',
+            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105',
             typeConfig?.bgColor || 'bg-muted'
           )}
         >
@@ -413,7 +413,7 @@ export function ProjectListView({
     // If all projects are one category, show single column
     if (aiProjects.length === 0 || otherProjects.length === 0) {
       return (
-        <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
           {sortedProjects.map((project) => (
             <ProjectRow key={project.id} project={project} compact />
           ))}
@@ -422,15 +422,17 @@ export function ProjectListView({
     }
 
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {/* AI Projects - Left Column */}
-        <div className="space-y-1.5">
-          <div className="mb-2 flex items-center gap-1.5 px-1">
-            <Bot className="h-3.5 w-3.5 text-violet-400" />
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              AI
+        <div className="space-y-2">
+          <div className="mb-2.5 flex items-center gap-2 px-1">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-violet-500/10">
+              <Bot className="h-3 w-3 text-violet-400" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              AI & Voice
             </span>
-            <span className="text-xs text-muted-foreground/60">({aiProjects.length})</span>
+            <span className="text-xs text-muted-foreground/50">({aiProjects.length})</span>
           </div>
           {aiProjects.map((project) => (
             <ProjectRow key={project.id} project={project} compact />
@@ -438,13 +440,15 @@ export function ProjectListView({
         </div>
 
         {/* Web & Marketing - Right Column */}
-        <div className="space-y-1.5">
-          <div className="mb-2 flex items-center gap-1.5 px-1">
-            <Globe className="h-3.5 w-3.5 text-sky-400" />
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <div className="space-y-2">
+          <div className="mb-2.5 flex items-center gap-2 px-1">
+            <div className="flex h-5 w-5 items-center justify-center rounded bg-sky-500/10">
+              <Globe className="h-3 w-3 text-sky-400" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Web & Marketing
             </span>
-            <span className="text-xs text-muted-foreground/60">({otherProjects.length})</span>
+            <span className="text-xs text-muted-foreground/50">({otherProjects.length})</span>
           </div>
           {otherProjects.map((project) => (
             <ProjectRow key={project.id} project={project} compact />

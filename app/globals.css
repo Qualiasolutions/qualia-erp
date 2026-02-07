@@ -57,8 +57,8 @@
     --accent-foreground: 166 100% 50%;
     --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
-    /* Visible borders in dark mode */
-    --border: 222 15% 20%;
+    /* Subtle borders in dark mode */
+    --border: 222 15% 16%;
     --input: 222 15% 12%;
     --ring: 166 100% 50%;
 
@@ -139,11 +139,11 @@
   /* Base card - clean, minimal */
   .card-base {
     @apply relative overflow-hidden rounded-xl border border-border/50 bg-card;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .card-base:hover {
-    @apply border-border;
+    @apply border-border/80;
   }
 
   /* Interactive card - subtle hover state */
@@ -152,32 +152,32 @@
   }
 
   .card-interactive:hover {
-    @apply border-primary/20;
-    box-shadow: 0 8px 32px -8px hsl(var(--primary) / 0.1);
+    @apply border-primary/15;
+    box-shadow: 0 4px 20px -6px hsl(var(--primary) / 0.08);
     transform: translateY(-1px);
   }
 
   /* Widget container - UNIFIED dashboard cards */
   .widget {
-    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card;
-    transition: all 0.2s ease;
+    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-card;
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .widget:hover {
-    @apply border-border;
+    @apply border-border/80;
   }
 
   .widget-header {
-    @apply flex items-center justify-between border-b border-border px-4 py-3;
+    @apply flex items-center justify-between border-b border-border/50 px-4 py-2.5;
   }
 
   .widget-title {
-    @apply flex items-center gap-3;
+    @apply flex items-center gap-2.5;
   }
 
   .widget-icon {
-    @apply flex h-9 w-9 items-center justify-center rounded-lg;
-    transition: all 0.2s ease;
+    @apply flex h-8 w-8 items-center justify-center rounded-lg;
+    transition: transform 0.2s ease;
   }
 
   .widget:hover .widget-icon {
@@ -191,11 +191,11 @@
   /* Glass card - premium glassmorphism */
   .card-glass {
     @apply relative overflow-hidden rounded-xl;
-    @apply border border-white/[0.08] bg-white/[0.02] backdrop-blur-xl;
+    @apply border border-white/[0.06] bg-white/[0.02] backdrop-blur-xl;
   }
 
   .dark .card-glass {
-    @apply border-white/[0.06] bg-white/[0.01];
+    @apply border-white/[0.04] bg-white/[0.01];
   }
 }
 
@@ -205,21 +205,21 @@
 @layer utilities {
   /* Nav item */
   .nav-item {
-    @apply flex h-9 items-center gap-3 rounded-md px-3 text-sm font-medium;
-    @apply text-muted-foreground transition-colors;
+    @apply flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium;
+    @apply text-muted-foreground transition-all duration-150;
   }
 
   .nav-item:hover {
-    @apply bg-muted/50 text-foreground;
+    @apply bg-muted/40 text-foreground;
   }
 
   .nav-item-active {
-    @apply bg-muted text-foreground;
+    @apply bg-primary/8 text-foreground;
   }
 
   /* Sidebar container */
   .sidebar {
-    @apply flex h-full flex-col border-r border-border bg-background;
+    @apply flex h-full flex-col border-r border-border/40 bg-background;
   }
 }
 
@@ -229,19 +229,19 @@
 @layer utilities {
   /* Standard input */
   .input-base {
-    @apply w-full rounded-md border border-border bg-background px-3 py-2;
-    @apply text-sm text-foreground placeholder:text-muted-foreground;
-    @apply transition-colors;
+    @apply w-full rounded-lg border border-border/60 bg-background px-3 py-2;
+    @apply text-sm text-foreground placeholder:text-muted-foreground/60;
+    @apply transition-all duration-150;
     @apply hover:border-border;
-    @apply focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20;
+    @apply focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10;
   }
 
   /* Search/filter input */
   .input-search {
-    @apply h-9 rounded-md border border-border bg-muted/30 px-3;
-    @apply text-sm placeholder:text-muted-foreground;
-    @apply transition-colors;
-    @apply focus:border-primary/40 focus:bg-background focus:outline-none;
+    @apply h-9 rounded-lg border border-border/50 bg-muted/20 px-3;
+    @apply text-sm placeholder:text-muted-foreground/50;
+    @apply transition-all duration-150;
+    @apply focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/10;
   }
 
   /* Inline editable */
@@ -265,33 +265,37 @@
 @layer utilities {
   /* Primary button */
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2;
     @apply bg-primary text-primary-foreground;
-    @apply text-sm font-medium transition-colors;
-    @apply hover:bg-primary/90;
+    @apply text-sm font-medium transition-all duration-150;
+    @apply hover:bg-primary/90 hover:shadow-sm;
+    @apply active:scale-[0.98];
     @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1;
   }
 
   /* Secondary button */
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2;
     @apply bg-secondary text-secondary-foreground;
-    @apply text-sm font-medium transition-colors;
+    @apply text-sm font-medium transition-all duration-150;
     @apply hover:bg-secondary/80;
+    @apply active:scale-[0.98];
   }
 
   /* Ghost button */
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2;
-    @apply text-sm font-medium text-muted-foreground transition-colors;
-    @apply hover:bg-muted hover:text-foreground;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2;
+    @apply text-sm font-medium text-muted-foreground transition-all duration-150;
+    @apply hover:bg-muted/60 hover:text-foreground;
+    @apply active:scale-[0.98];
   }
 
   /* Icon button */
   .btn-icon {
-    @apply inline-flex h-8 w-8 items-center justify-center rounded-md;
-    @apply text-muted-foreground transition-colors;
-    @apply hover:bg-muted hover:text-foreground;
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg;
+    @apply text-muted-foreground transition-all duration-150;
+    @apply hover:bg-muted/60 hover:text-foreground;
+    @apply active:scale-95;
   }
 }
 
@@ -301,20 +305,20 @@
 @layer utilities {
   /* Page header */
   .page-header {
-    @apply border-b border-border bg-background px-6 py-4;
+    @apply border-b border-border/50 bg-background px-5 py-3 sm:px-6;
   }
 
   .page-title {
-    @apply text-lg font-semibold text-foreground;
+    @apply text-base font-semibold tracking-tight text-foreground;
   }
 
   .page-description {
-    @apply text-sm text-muted-foreground;
+    @apply text-xs text-muted-foreground;
   }
 
   /* Page content area */
   .page-content {
-    @apply flex-1 overflow-auto p-6;
+    @apply flex-1 overflow-auto p-5 sm:p-6;
   }
 }
 
@@ -453,27 +457,27 @@
 
 @layer utilities {
   .animate-fade-in {
-    animation: fade-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: fade-in 0.2s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   .animate-slide-up {
-    animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slide-up 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   .animate-slide-in {
-    animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: slide-in-right 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   .animate-scale-in {
-    animation: scale-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: scale-in 0.2s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
   }
 
   .animate-glow-pulse {
-    animation: glow-pulse 2s ease-in-out infinite;
+    animation: glow-pulse 2.5s ease-in-out infinite;
   }
 
   .animate-float {
-    animation: float 4s ease-in-out infinite;
+    animation: float 5s ease-in-out infinite;
   }
 
   .animate-breathe {
@@ -489,39 +493,39 @@
     background: linear-gradient(
       90deg,
       hsl(var(--muted)) 0%,
-      hsl(var(--muted-foreground) / 0.06) 50%,
+      hsl(var(--muted-foreground) / 0.05) 50%,
       hsl(var(--muted)) 100%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.8s ease-in-out infinite;
+    animation: shimmer 2s ease-in-out infinite;
   }
 
   /* Smooth transitions */
   .transition-premium {
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   /* Hover lift effect */
   .hover-lift {
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 40px -12px hsl(var(--foreground) / 0.15);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px -8px hsl(var(--foreground) / 0.1);
   }
 
   .dark .hover-lift:hover {
-    box-shadow: 0 12px 40px -12px hsl(var(--primary) / 0.1);
+    box-shadow: 0 8px 24px -8px hsl(var(--primary) / 0.08);
   }
 
   /* Glow on hover */
   .hover-glow {
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
   }
 
   .hover-glow:hover {
-    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.25);
+    box-shadow: 0 0 20px -4px hsl(var(--primary) / 0.15);
   }
 }
 
@@ -700,15 +704,15 @@ textarea:focus-visible {
 
   /* List item - consistent hover state */
   .list-item {
-    @apply flex items-center gap-3 rounded-md px-3 py-2;
-    @apply transition-colors;
+    @apply flex items-center gap-3 rounded-lg px-3 py-2;
+    @apply transition-colors duration-150;
   }
 
   .list-item:hover {
-    @apply bg-muted/50;
+    @apply bg-muted/40;
   }
 
   .list-item-active {
-    @apply bg-muted;
+    @apply bg-muted/60;
   }
 }

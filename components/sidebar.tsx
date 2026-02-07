@@ -11,10 +11,9 @@ import {
   Building2,
   ChevronUp,
   LogOut,
-  Info,
-  HelpCircle,
   Settings,
   BookOpen,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -34,6 +33,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Research', href: '/research', icon: FlaskConical },
   { name: 'Guides', href: '/guides', icon: BookOpen },
 ];
 
@@ -51,22 +51,22 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-10 items-center gap-3 overflow-hidden rounded-xl px-4 text-sm transition-all duration-300',
+        'group relative flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-all duration-200',
         isActive
-          ? 'bg-primary/10 text-primary shadow-[inset_0_0_20px_rgba(var(--primary),0.05)]'
-          : 'text-muted-foreground/70 hover:bg-white/5 hover:text-foreground'
+          ? 'bg-primary/8 text-foreground'
+          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
       )}
     >
       {isActive && (
-        <div className="absolute left-0 top-1/4 h-1/2 w-1 rounded-r-full bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+        <div className="absolute left-0 top-1/4 h-1/2 w-[3px] rounded-r-full bg-primary" />
       )}
       <item.icon
         className={cn(
-          'h-4 w-4 flex-shrink-0 transition-transform duration-300 group-hover:scale-110',
-          isActive ? 'text-primary' : 'text-muted-foreground/50 group-hover:text-foreground'
+          'h-[15px] w-[15px] flex-shrink-0 transition-colors duration-200',
+          isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-foreground'
         )}
       />
-      <span className="font-semibold tracking-tight">{item.name}</span>
+      <span className="tracking-tight">{item.name}</span>
     </Link>
   );
 }
@@ -94,33 +94,24 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors',
+            'flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors duration-150',
             'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30'
           )}
         >
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <span className="text-xs font-medium text-primary">Q</span>
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
+              <span className="text-[10px] font-semibold text-primary">Q</span>
             </div>
             <span className="truncate text-xs font-medium">Account</span>
           </div>
-          <ChevronUp className="h-3.5 w-3.5 shrink-0 opacity-50" />
+          <ChevronUp className="h-3 w-3 shrink-0 opacity-40" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-48">
         <DropdownMenuItem onClick={() => handleMenuItemClick('/settings')}>
           <Settings className="h-4 w-4" />
           Settings
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleMenuItemClick('/about')}>
-          <Info className="h-4 w-4" />
-          About
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleMenuItemClick('/how-it-works')}>
-          <HelpCircle className="h-4 w-4" />
-          How it Works
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -141,28 +132,26 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-20 items-center px-6">
-        <Link href="/" className="group flex items-center" onClick={onLinkClick}>
-          <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-foreground p-[1px] shadow-glow-sm transition-transform group-hover:scale-105">
-            <div className="flex h-full w-full items-center justify-center rounded-xl bg-background">
+      <div className="flex h-14 items-center px-5">
+        <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
+          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 to-primary p-[1px] transition-transform duration-200 group-hover:scale-105">
+            <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-background">
               <Image
                 src="/logo.webp"
                 alt="Qualia"
-                width={32}
-                height={32}
-                className="h-8 w-8 object-contain"
+                width={24}
+                height={24}
+                className="h-6 w-6 object-contain"
                 priority
               />
             </div>
           </div>
-          <span className="ml-3 text-lg font-bold tracking-tighter text-foreground transition-colors group-hover:text-primary">
-            QUALIA
-          </span>
+          <span className="text-sm font-bold tracking-tight text-foreground">QUALIA</span>
         </Link>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 space-y-1 p-3">
+      {/* Navigation */}
+      <nav className="flex-1 space-y-0.5 px-3 pt-1">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -171,8 +160,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         })}
       </nav>
 
-      {/* Ask AI + User Menu */}
-      <div className="space-y-2 border-t border-border/50 p-3">
+      {/* Bottom section */}
+      <div className="space-y-1.5 border-t border-border/30 p-3">
         <SidebarAI />
         <UserMenu onLinkClick={onLinkClick} />
       </div>
@@ -192,7 +181,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-60 flex-shrink-0 border-r border-white/5 bg-background md:block">
+      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-background md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

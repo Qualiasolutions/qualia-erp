@@ -2,7 +2,17 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Bot, Globe, Phone, TrendingUp, Megaphone, Folder, Inbox, User, Sparkles } from 'lucide-react';
+import {
+  Bot,
+  Globe,
+  Phone,
+  TrendingUp,
+  Megaphone,
+  Folder,
+  Inbox,
+  User,
+  Sparkles,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { USER_COLORS } from '@/lib/color-constants';
@@ -137,11 +147,16 @@ export function ProjectColumnView({
   className,
 }: ProjectColumnViewProps) {
   return (
-    <div className={cn("flex flex-col overflow-hidden rounded-lg border border-border bg-card", className)}>
+    <div
+      className={cn(
+        'shadow-subtle flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card',
+        className
+      )}
+    >
       {/* Column header */}
-      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-4 py-3">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/50 px-4 py-2.5">
         <span className="text-muted-foreground">{icon}</span>
-        <h2 className="font-semibold text-foreground">{title}</h2>
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
         <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
           {projects.length}
         </span>
