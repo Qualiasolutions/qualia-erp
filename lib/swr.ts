@@ -13,6 +13,12 @@ import {
 import { getTasks, getProjectTasks } from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
+import {
+  getResearchFindings,
+  getResearchTasks,
+  type ResearchFinding,
+  type ResearchTask,
+} from '@/app/actions/research';
 
 // Type for meetings with all relations
 export type MeetingWithRelations = Awaited<ReturnType<typeof getMeetings>>[number];
@@ -47,6 +53,8 @@ export const cacheKeys = {
   projectDeployments: (projectId: string) => `project-deployments-${projectId}`,
   projectEnvironments: (projectId: string) => `project-environments-${projectId}`,
   projectHealth: (projectId: string) => `project-health-${projectId}`,
+  researchFindings: 'research-findings',
+  researchTasks: 'research-tasks',
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -788,4 +796,88 @@ export function invalidateProjectHealth(projectId: string, immediate = true) {
   } else {
     mutate(cacheKeys.projectHealth(projectId));
   }
+}
+
+// ============================================================================
+// RESEARCH HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch research findings with auto-refresh
+ */
+export function useResearchFindings(initialData?: ResearchFinding[]) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.researchFindings, () => getResearchFindings(), {
+    ...autoRefreshConfig,
+    fallbackData: initialData,
+  });
+
+  return {
+    findings: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch research tasks (auto-generated daily tasks)
+ */
+export function useResearchTasks(initialData?: ResearchTask[]) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.researchTasks, () => getResearchTasks(), {
+    ...autoRefreshConfig,
+    fallbackData: initialData,
+  });
+
+  return {
+    tasks: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate research findings cache
+ */
+export function invalidateResearchFindings(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.researchFindings, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.researchFindings);
+  }
+}
+
+/**
+ * Invalidate research tasks cache
+ */
+export function invalidateResearchTasks(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.researchTasks, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.researchTasks);
+  }
+}
+
+/**
+ * Invalidate all research caches
+ */
+export function invalidateResearch(immediate = true) {
+  invalidateResearchFindings(immediate);
+  invalidateResearchTasks(immediate);
 }

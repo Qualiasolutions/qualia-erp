@@ -13,6 +13,7 @@ import {
   TreeDeciduous,
   RotateCcw,
   CheckCircle2,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getGuideBySlug, type ProjectType } from '@/lib/guides-data';
@@ -28,6 +29,7 @@ const PROJECT_TYPE_CONFIG: Record<
   'ai-agent': { icon: Bot, color: 'text-violet-400 bg-violet-400/10', label: 'AI Agent' },
   'voice-agent': { icon: Phone, color: 'text-pink-400 bg-pink-400/10', label: 'Voice Agent' },
   'ai-platform': { icon: Layers, color: 'text-amber-400 bg-amber-400/10', label: 'Platform' },
+  workflow: { icon: FlaskConical, color: 'text-teal-400 bg-teal-400/10', label: 'Workflow' },
 };
 
 function getStorageKey(slug: string) {

@@ -11,6 +11,7 @@ import {
   Sprout,
   TreeDeciduous,
   CheckCircle2,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { guides, type Guide, type GuideCategory, type ProjectType } from '@/lib/guides-data';
@@ -23,6 +24,7 @@ const PROJECT_TYPE_CONFIG: Record<
   'ai-agent': { icon: Bot, color: 'text-violet-400 bg-violet-400/10' },
   'voice-agent': { icon: Phone, color: 'text-pink-400 bg-pink-400/10' },
   'ai-platform': { icon: Layers, color: 'text-amber-400 bg-amber-400/10' },
+  workflow: { icon: FlaskConical, color: 'text-teal-400 bg-teal-400/10' },
 };
 
 function getProgress(slug: string): { completed: number; total: number } {
@@ -105,6 +107,7 @@ export default function GuidesPage() {
 
   const greenfieldGuides = guides.filter((g) => g.category === 'greenfield');
   const brownfieldGuides = guides.filter((g) => g.category === 'brownfield');
+  const workflowGuides = guides.filter((g) => g.category === 'workflow');
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,6 +163,21 @@ export default function GuidesPage() {
                 Existing Projects
               </span>
             </button>
+            <button
+              onClick={() => setActiveCategory('workflow')}
+              className={cn(
+                'flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors',
+                activeCategory === 'workflow'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <FlaskConical className="h-4 w-4" />
+              Workflows
+              <span className="rounded-full bg-teal-500/10 px-2 py-0.5 text-xs text-teal-400">
+                Daily Habits
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -198,6 +216,25 @@ export default function GuidesPage() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               {brownfieldGuides.map((guide) => (
+                <GuideCard key={guide.slug} guide={guide} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeCategory === 'workflow' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="flex items-center gap-2 text-lg font-semibold">
+                <FlaskConical className="h-5 w-5 text-teal-500" />
+                Daily Workflows
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Step-by-step habits and routines to build consistency
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {workflowGuides.map((guide) => (
                 <GuideCard key={guide.slug} guide={guide} />
               ))}
             </div>

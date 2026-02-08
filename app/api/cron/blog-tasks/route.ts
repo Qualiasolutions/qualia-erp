@@ -113,20 +113,19 @@ export async function GET(request: Request) {
     );
     const nextProject = sortedProjects[0];
 
-    // 5. Check if a blog task for this project already exists for today
+    // 5. Check if ANY blog task already exists for today (one task per day)
     const today = new Date().toISOString().split('T')[0];
     const { data: existingTask } = await supabase
       .from('tasks')
-      .select('id')
+      .select('id, title, project_id')
       .eq('workspace_id', workspaceId)
       .eq('assignee_id', moayad.id)
-      .eq('project_id', nextProject.id)
       .eq('due_date', today)
       .ilike('title', '%blog post%')
       .limit(1);
 
     if (existingTask && existingTask.length > 0) {
-      console.log('[cron/blog-tasks] Blog task already exists for today');
+      console.log('[cron/blog-tasks] Blog task already exists for today:', existingTask[0].title);
       return NextResponse.json({
         success: true,
         message: 'Blog task already exists for today',

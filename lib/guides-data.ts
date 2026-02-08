@@ -1,7 +1,7 @@
 // Guide data for trainee workflows
 
-export type GuideCategory = 'greenfield' | 'brownfield';
-export type ProjectType = 'website' | 'ai-agent' | 'voice-agent' | 'ai-platform';
+export type GuideCategory = 'greenfield' | 'brownfield' | 'workflow';
+export type ProjectType = 'website' | 'ai-agent' | 'voice-agent' | 'ai-platform' | 'workflow';
 
 export interface GuideStep {
   id: string;
@@ -842,6 +842,96 @@ export const guides: Guide[] = [
         'Deployed to staging first',
         'Production deploy off-peak',
         'Monitoring active',
+      ],
+    },
+  },
+
+  // ==================== WORKFLOWS ====================
+  {
+    slug: 'daily-research',
+    title: 'Daily AI Research',
+    subtitle: 'Use Gemini Deep Research + NotebookLM to research daily',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'dr-1',
+        title: "Check Your Inbox for Today's Research Task",
+        description:
+          "Open the Qualia dashboard. You'll see a daily research task in your inbox with today's topic.",
+      },
+      {
+        id: 'dr-2',
+        title: 'Open Gemini',
+        description: 'Go to gemini.google.com in your browser.',
+        commands: ['https://gemini.google.com'],
+      },
+      {
+        id: 'dr-3',
+        title: 'Use Deep Research',
+        description:
+          'Click "Deep Research" and paste today\'s topic. Gemini will search the web and compile a comprehensive report.',
+        tips: [
+          'Be specific with your topic for better results',
+          'Wait for the full report to generate',
+        ],
+      },
+      {
+        id: 'dr-4',
+        title: 'Copy the Research Output',
+        description: 'Select all the research output from Gemini and copy it to your clipboard.',
+      },
+      {
+        id: 'dr-5',
+        title: 'Open NotebookLM',
+        description: 'Go to notebooklm.google.com in your browser.',
+        commands: ['https://notebooklm.google.com'],
+      },
+      {
+        id: 'dr-6',
+        title: 'Create a Notebook & Paste Research',
+        description: 'Create a new notebook, then paste the Gemini research as a source document.',
+        tips: ["Name the notebook with today's date and topic"],
+      },
+      {
+        id: 'dr-7',
+        title: 'Ask NotebookLM to Summarize',
+        description: 'Ask NotebookLM to summarize the key findings and extract action items.',
+        tips: [
+          '"Summarize the top 5 key findings from this research"',
+          '"What are the actionable next steps for an AI agency?"',
+        ],
+      },
+      {
+        id: 'dr-8',
+        title: 'Go to Research Page in Qualia',
+        description: 'Navigate to /research in the Qualia app.',
+        commands: ['/research'],
+      },
+      {
+        id: 'dr-9',
+        title: 'Log Your Research',
+        description:
+          'Click "Log Research" and fill in the form with your findings, key takeaways, action items, and source links.',
+        tips: ['Use the category that matches your topic', 'Add source links for reference'],
+      },
+      {
+        id: 'dr-10',
+        title: 'Mark Task Done',
+        description: 'Go back to your inbox and mark the research task as Done.',
+        isMilestone: true,
+      },
+    ],
+    checklist: {
+      title: 'Daily Research Checklist',
+      items: [
+        "Checked inbox for today's topic",
+        'Used Gemini Deep Research',
+        'Pasted into NotebookLM',
+        'Extracted key findings',
+        'Logged in /research page',
+        'Added source links',
+        'Marked task as Done',
       ],
     },
   },
