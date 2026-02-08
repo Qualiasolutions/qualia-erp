@@ -123,8 +123,8 @@ export async function GET(request: Request) {
     const { data: newTask, error: createError } = await supabase
       .from('tasks')
       .insert({
-        title: `Daily Research: ${topic} — Log findings at /research (Guide: /guides/daily-research)`,
-        description: `Research topic: ${topic}\n\nWorkflow:\n1. Use Gemini Deep Research to explore this topic\n2. Paste output into NotebookLM for summarization\n3. Log findings at /research\n4. Mark this task Done`,
+        title: `Daily Research: ${topic} — See /knowledge for guides and snippets (Guide: /guides/daily-research)`,
+        description: `Research topic: ${topic}\n\nWorkflow:\n1. Use Gemini Deep Research to explore this topic\n2. Paste output into NotebookLM for summarization\n3. Add useful snippets to /knowledge\n4. Mark this task Done`,
         status: 'Todo',
         priority: 'Medium',
         item_type: 'task',
