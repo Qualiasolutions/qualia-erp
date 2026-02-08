@@ -22,6 +22,7 @@ import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { InboxWidget } from './inbox-widget';
 import { TimelineSidebar } from './timeline-sidebar';
+import { BuildingProjectSheet } from './building-project-sheet';
 import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
@@ -142,7 +143,13 @@ const PROJECT_TYPE_CONFIG: Record<
 // BUILDING PROJECTS SIDEBAR
 // =============================================================================
 
-function BuildingProjectsList({ projects }: { projects: Project[] }) {
+function BuildingProjectsList({
+  projects,
+  onProjectClick,
+}: {
+  projects: Project[];
+  onProjectClick: (project: Project) => void;
+}) {
   // Show all active projects (already filtered upstream) — no need to mark individually
   const buildingProjects = projects;
 
@@ -203,17 +210,17 @@ function BuildingProjectsList({ projects }: { projects: Project[] }) {
               {/* Project List */}
               <div className="space-y-0.5">
                 {typeProjects.map((project) => (
-                  <Link
+                  <button
                     key={project.id}
-                    href={`/projects/${project.id}`}
-                    className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent"
+                    onClick={() => onProjectClick(project)}
+                    className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent"
                   >
                     <span className={cn('size-2 rounded-full', config.dotColor)} />
                     <span className="flex-1 truncate text-[13px] font-medium text-foreground">
                       {project.name}
                     </span>
                     <ChevronRight className="size-3.5 text-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </Link>
+                  </button>
                 ))}
               </div>
             </motion.div>
@@ -233,6 +240,8 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
+  const [sheetProject, setSheetProject] = useState<Project | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const now = new Date();
 
@@ -337,7 +346,13 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
                 </Button>
               }
             />
-            <BuildingProjectsList projects={projects} />
+            <BuildingProjectsList
+              projects={projects}
+              onProjectClick={(p) => {
+                setSheetProject(p);
+                setSheetOpen(true);
+              }}
+            />
           </aside>
 
           {/* ----- CENTER: Inbox (Primary) ----- */}
@@ -351,6 +366,9 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           </aside>
         </div>
       </main>
+
+      {/* Project Checklist Sheet */}
+      <BuildingProjectSheet project={sheetProject} open={sheetOpen} onOpenChange={setSheetOpen} />
     </div>
   );
 }
