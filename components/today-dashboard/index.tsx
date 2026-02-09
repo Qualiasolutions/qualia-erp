@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { format, isToday, parseISO } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ interface Project {
   id: string;
   name: string;
   project_type: string | null;
+  logo_url?: string | null;
   is_building?: boolean;
 }
 
@@ -140,6 +142,43 @@ const PROJECT_TYPE_CONFIG: Record<
 };
 
 // =============================================================================
+// PROJECT LOGO COMPONENT
+// =============================================================================
+
+function ProjectLogo({
+  logo_url,
+  name,
+  project_type,
+  size = 'sm',
+}: {
+  logo_url?: string | null;
+  name: string;
+  project_type?: string | null;
+  size?: 'sm' | 'md';
+}) {
+  const sizeClass = size === 'sm' ? 'size-5' : 'size-6';
+
+  if (logo_url) {
+    return (
+      <div className={cn('shrink-0 overflow-hidden rounded', sizeClass)}>
+        <Image
+          src={logo_url}
+          alt={name}
+          width={20}
+          height={20}
+          className="size-full object-cover"
+          unoptimized
+        />
+      </div>
+    );
+  }
+
+  // Fallback: colored dot based on project type
+  const config = PROJECT_TYPE_CONFIG[project_type || 'other'] || PROJECT_TYPE_CONFIG.other;
+  return <span className={cn('size-2.5 shrink-0 rounded-full', config.dotColor)} />;
+}
+
+// =============================================================================
 // BUILDING PROJECTS SIDEBAR
 // =============================================================================
 
@@ -215,7 +254,11 @@ function BuildingProjectsList({
                     onClick={() => onProjectClick(project)}
                     className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent"
                   >
-                    <span className={cn('size-2 rounded-full', config.dotColor)} />
+                    <ProjectLogo
+                      logo_url={project.logo_url}
+                      name={project.name}
+                      project_type={project.project_type}
+                    />
                     <span className="flex-1 truncate text-[13px] font-medium text-foreground">
                       {project.name}
                     </span>

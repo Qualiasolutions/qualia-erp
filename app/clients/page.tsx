@@ -9,12 +9,21 @@ async function ClientListLoader() {
   const data = await getClients();
 
   // Only show clients (active_client, inactive_client, dead_lead), not leads
-  const clients = (data as Client[]).filter(
+  let clients = (data as Client[]).filter(
     (c) =>
       c.lead_status === 'active_client' ||
       c.lead_status === 'inactive_client' ||
       c.lead_status === 'dead_lead'
   );
+
+  // Sort: active clients first, then by name
+  clients = clients.sort((a, b) => {
+    if (a.lead_status === 'active_client' && b.lead_status !== 'active_client') return -1;
+    if (a.lead_status !== 'active_client' && b.lead_status === 'active_client') return 1;
+    const aName = a.display_name || '';
+    const bName = b.display_name || '';
+    return aName.localeCompare(bName);
+  });
 
   return <ClientTableView clients={clients} />;
 }
