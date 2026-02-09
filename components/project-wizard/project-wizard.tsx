@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
-import { startProvisioning, checkIntegrationsConfigured } from '@/app/actions/integrations';
+import { checkIntegrationsConfigured } from '@/app/actions/integrations';
 import type { IntegrationSelections } from '@/lib/integrations/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkspace } from '@/components/workspace-provider';
@@ -220,6 +220,8 @@ export function ProjectWizard({
         team_id: null,
         workspace_id: currentWorkspace?.id,
         is_demo: mode === 'demo',
+        // Pass integration selections so provisioning runs in same request context
+        selectedIntegrations: needsProvisioning ? selectedIntegrations : undefined,
       });
 
       if (result.success) {
@@ -229,16 +231,10 @@ export function ProjectWizard({
         const projectData = result.data as { id: string } | undefined;
 
         if (projectData?.id && needsProvisioning) {
+          // Provisioning is already running on the server from the same request
           setCreatedProjectId(projectData.id);
           setShowProvisioning(true);
           toast({ title: `Creating ${wizardData.name}...` });
-
-          // Start provisioning as a separate server action call.
-          // The polling UI is already visible and will track progress.
-          // Must NOT be fire-and-forget inside the server action (needs request context for createClient).
-          startProvisioning(projectData.id, selectedIntegrations).catch((err) => {
-            console.error('[ProjectWizard] Provisioning error:', err);
-          });
         } else {
           const label = mode === 'demo' ? 'Demo' : 'Project';
           toast({ title: `${label} "${wizardData.name}" created` });

@@ -689,9 +689,17 @@ export async function getBoardTasks(
 
 /**
  * Create a project with roadmap (wizard)
+ * Optionally starts provisioning if integration selections are provided
  */
 export async function createProjectWithRoadmap(
-  input: CreateProjectWizardInput
+  input: CreateProjectWizardInput & {
+    /** Integration selections to auto-provision after project creation */
+    selectedIntegrations?: {
+      github?: boolean;
+      vercel?: boolean;
+      vapi?: boolean;
+    };
+  }
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -702,8 +710,11 @@ export async function createProjectWithRoadmap(
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Extract integration selections before validation (they're not in the schema)
+  const { selectedIntegrations, ...validationInput } = input;
+
   // Validate input
-  const validation = createProjectWizardSchema.safeParse(input);
+  const validation = createProjectWizardSchema.safeParse(validationInput);
   if (!validation.success) {
     const firstError = validation.error.issues[0];
     return { success: false, error: firstError?.message || 'Validation failed' };
@@ -791,6 +802,50 @@ export async function createProjectWithRoadmap(
 
   // Prefill workflow phases based on project type
   await prefillProjectWorkflow(project.id, wsId, project_type);
+
+  // Start provisioning if integrations were selected
+  // We do this fire-and-forget since the UI will poll for status
+  if (selectedIntegrations && Object.keys(selectedIntegrations).length > 0) {
+    // Import here to avoid circular dependency
+    const { setupProjectIntegrations } = await import('@/lib/integrations/orchestrator');
+
+    // Get client name for the repo
+    let clientName: string | undefined;
+    if (finalClientId) {
+      const { data: client } = await supabase
+        .from('clients')
+        .select('display_name')
+        .eq('id', finalClientId)
+        .single();
+      clientName = client?.display_name || undefined;
+    }
+
+    // Create provisioning record first
+    await supabase.from('project_provisioning').upsert(
+      {
+        project_id: project.id,
+        workspace_id: wsId,
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+      },
+      { onConflict: 'project_id' }
+    );
+
+    // Run provisioning asynchronously - don't await
+    // The UI will poll for status
+    setupProjectIntegrations({
+      projectId: project.id,
+      projectName: project.name,
+      projectType: project_type,
+      deploymentPlatform: deployment_platform || 'none',
+      description: description || undefined,
+      clientName,
+      workspaceId: wsId,
+      selectedIntegrations,
+    }).catch((err) => {
+      console.error('[createProjectWithRoadmap] Provisioning error:', err);
+    });
+  }
 
   revalidatePath('/projects');
   revalidatePath('/');
