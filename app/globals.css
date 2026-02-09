@@ -26,7 +26,7 @@
     --accent-foreground: 174 72% 30%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
+    --border: 0 0% 0%;
     --input: 220 13% 91%;
     --ring: 174 72% 38%;
     --radius: 0.75rem;
@@ -58,7 +58,7 @@
     --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
     /* Subtle borders in dark mode */
-    --border: 222 15% 16%;
+    --border: 0 0% 15%;
     --input: 222 15% 12%;
     --ring: 166 100% 50%;
 
