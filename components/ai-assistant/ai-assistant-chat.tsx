@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Send, Bot, User, Sparkles, Loader2, Copy, Check, Printer, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Copy, Check, Printer, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant } from './ai-assistant-provider';
 
@@ -15,6 +15,90 @@ const documentPrompts = [
   'Web development proposal',
   'Marketing services agreement',
 ];
+
+// Typewriter component for smooth text reveal
+function TypewriterText({
+  text,
+  isStreaming,
+  speed = 12,
+}: {
+  text: string;
+  isStreaming: boolean;
+  speed?: number;
+}) {
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    // If streaming is done or text changed, catch up immediately if we're behind
+    if (!isStreaming && currentIndex < text.length) {
+      setDisplayedText(text);
+      setCurrentIndex(text.length);
+      return;
+    }
+
+    // If we've displayed everything, nothing to do
+    if (currentIndex >= text.length) return;
+
+    // Typewriter effect - reveal characters gradually
+    const timer = setTimeout(() => {
+      // Reveal multiple characters at once for smoother feel
+      const charsToAdd = Math.min(3, text.length - currentIndex);
+      const newIndex = currentIndex + charsToAdd;
+      setDisplayedText(text.slice(0, newIndex));
+      setCurrentIndex(newIndex);
+    }, speed);
+
+    return () => clearTimeout(timer);
+  }, [text, currentIndex, isStreaming, speed]);
+
+  // Reset when text changes significantly (new message)
+  useEffect(() => {
+    if (text.length < displayedText.length) {
+      setDisplayedText('');
+      setCurrentIndex(0);
+    }
+  }, [text, displayedText.length]);
+
+  return (
+    <p className="whitespace-pre-wrap leading-relaxed">
+      {displayedText}
+      {isStreaming && currentIndex < text.length && (
+        <span className="ml-0.5 inline-block h-3.5 w-1.5 animate-pulse bg-primary/60" />
+      )}
+    </p>
+  );
+}
+
+// Thinking indicator with animated dots
+function ThinkingIndicator() {
+  return (
+    <div className="flex gap-2">
+      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary">
+        <Bot className="h-3 w-3 text-primary" />
+      </div>
+      <div className="rounded-lg bg-secondary px-2.5 py-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="flex gap-0.5">
+            <span
+              className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: '0ms' }}
+            />
+            <span
+              className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: '150ms' }}
+            />
+            <span
+              className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary"
+              style={{ animationDelay: '300ms' }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">Thinking...</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Convert markdown to safe HTML for printing
 function markdownToHtml(text: string): string {
@@ -153,49 +237,51 @@ export function AIAssistantChat() {
           </div>
         ) : (
           <div className="space-y-3 p-3">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn('flex gap-2', message.role === 'user' ? 'flex-row-reverse' : '')}
-              >
-                <div
-                  className={cn(
-                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
-                    message.role === 'user' ? 'bg-primary' : 'bg-secondary'
-                  )}
-                >
-                  {message.role === 'user' ? (
-                    <User className="h-3 w-3 text-primary-foreground" />
-                  ) : (
-                    <Bot className="h-3 w-3 text-primary" />
-                  )}
-                </div>
-                <div
-                  className={cn(
-                    'max-w-[80%] rounded-lg px-2.5 py-1.5 text-xs',
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-foreground'
-                  )}
-                >
-                  <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                </div>
-              </div>
-            ))}
+            {messages.map((message, index) => {
+              const isLastAssistantMessage =
+                message.role === 'assistant' && index === messages.length - 1;
+              const isCurrentlyStreaming = isLastAssistantMessage && isStreaming;
 
-            {isStreaming && messages[messages.length - 1]?.role === 'user' && (
-              <div className="flex gap-2">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-secondary">
-                  <Bot className="h-3 w-3 text-primary" />
-                </div>
-                <div className="rounded-lg bg-secondary px-2.5 py-1.5">
-                  <div className="flex items-center gap-1.5">
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">Thinking...</span>
+              return (
+                <div
+                  key={message.id}
+                  className={cn('flex gap-2', message.role === 'user' ? 'flex-row-reverse' : '')}
+                >
+                  <div
+                    className={cn(
+                      'flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
+                      message.role === 'user' ? 'bg-primary' : 'bg-secondary'
+                    )}
+                  >
+                    {message.role === 'user' ? (
+                      <User className="h-3 w-3 text-primary-foreground" />
+                    ) : (
+                      <Bot className="h-3 w-3 text-primary" />
+                    )}
+                  </div>
+                  <div
+                    className={cn(
+                      'max-w-[80%] rounded-lg px-2.5 py-1.5 text-xs',
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-secondary text-foreground'
+                    )}
+                  >
+                    {message.role === 'assistant' && isCurrentlyStreaming ? (
+                      <TypewriterText text={message.content} isStreaming={isStreaming} speed={8} />
+                    ) : (
+                      <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                    )}
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })}
+
+            {/* Show thinking indicator when streaming but no assistant response yet, or assistant has no content */}
+            {isStreaming &&
+              (messages[messages.length - 1]?.role === 'user' ||
+                (messages[messages.length - 1]?.role === 'assistant' &&
+                  !messages[messages.length - 1]?.content.trim())) && <ThinkingIndicator />}
 
             <div ref={messagesEndRef} />
           </div>
