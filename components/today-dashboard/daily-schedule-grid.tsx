@@ -3,16 +3,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { format, parseISO, isToday, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import {
-  Clock,
-  Plus,
-  Video,
-  Check,
-  Circle,
-  ChevronDown,
-  ChevronRight,
-  CalendarClock,
-} from 'lucide-react';
+import { Video, Check, Circle, ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type Task, quickUpdateTask } from '@/app/actions/inbox';
 import { type MeetingWithRelations, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
@@ -20,11 +11,10 @@ import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constant
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 
-// Schedule config
-const SCHEDULE_START_HOUR = 8; // 8:00 AM
-const SCHEDULE_END_HOUR = 18; // 6:00 PM
-const SLOT_DURATION_MINUTES = 60;
-const TOTAL_SLOTS = SCHEDULE_END_HOUR - SCHEDULE_START_HOUR; // 10 slots (1 per hour)
+// ── Schedule config ──────────────────────────────────────────────────────────
+const START_HOUR = 8;
+const END_HOUR = 18;
+const TOTAL_HOURS = END_HOUR - START_HOUR; // 10
 
 interface ScheduleItem {
   id: string;
@@ -41,137 +31,146 @@ interface DailyScheduleGridProps {
   meetings: MeetingWithRelations[];
 }
 
-// Generate time slot labels
-function getSlotLabel(slotIndex: number): string {
-  const hour = SCHEDULE_START_HOUR + slotIndex;
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function hourLabel(hour: number): string {
   const d = setMinutes(setHours(new Date(), hour), 0);
   return format(d, 'h a');
 }
 
-// Get percentage position for a time within the schedule
-function getTimePercent(time: Date): number {
-  const hours = time.getHours() + time.getMinutes() / 60;
-  const offset = hours - SCHEDULE_START_HOUR;
-  const totalHours = SCHEDULE_END_HOUR - SCHEDULE_START_HOUR;
-  return Math.max(0, Math.min((offset / totalHours) * 100, 100));
+/** Returns a 0-100 percentage for where `time` falls in the schedule range */
+function pct(time: Date): number {
+  const h = time.getHours() + time.getMinutes() / 60;
+  return Math.max(0, Math.min(((h - START_HOUR) / TOTAL_HOURS) * 100, 100));
 }
 
-// Get percentage height for a duration
-function getItemHeightPercent(start: Date, end: Date): number {
-  const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  const totalHours = SCHEDULE_END_HOUR - SCHEDULE_START_HOUR;
-  return Math.max((100 / totalHours) * 0.4, (durationHours / totalHours) * 100);
+/** Returns a percentage height for a duration */
+function pctHeight(start: Date, end: Date): number {
+  const dur = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+  // Min height = 40% of one hour slot so tiny items are still visible
+  return Math.max((1 / TOTAL_HOURS) * 100 * 0.4, (dur / TOTAL_HOURS) * 100);
 }
 
-// Priority border color mapping
-const PRIORITY_BORDER: Record<string, string> = {
+// Priority left-border accent
+const PRIORITY_ACCENT: Record<string, string> = {
   Urgent: 'border-l-red-500',
   High: 'border-l-orange-500',
-  Medium: 'border-l-amber-500',
-  Low: 'border-l-blue-500',
-  'No Priority': 'border-l-zinc-400 dark:border-l-zinc-600',
+  Medium: 'border-l-yellow-500',
+  Low: 'border-l-blue-400',
+  'No Priority': 'border-l-zinc-300 dark:border-l-zinc-600',
 };
 
-// ===== SCHEDULE ITEM CARD =====
-function ScheduleItemCard({
+// ── Event Cards ──────────────────────────────────────────────────────────────
+
+function MeetingCard({
   item,
   style,
-  isOverlapping,
+  isNarrow,
+}: {
+  item: ScheduleItem;
+  style: React.CSSProperties;
+  isNarrow: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        'absolute inset-x-0 overflow-hidden rounded-[5px] border border-violet-500/20 bg-violet-500/10 px-2.5 py-1.5 transition-colors hover:bg-violet-500/[0.15]',
+        isNarrow && 'right-[52%]'
+      )}
+      style={style}
+    >
+      <p className="truncate text-[11px] font-semibold text-violet-700 dark:text-violet-300">
+        {item.title}
+      </p>
+      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-violet-600/70 dark:text-violet-400/60">
+        <span>
+          {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
+        </span>
+        {item.meeting?.client && (
+          <>
+            <span className="opacity-40">·</span>
+            <span className="truncate">
+              {(item.meeting.client as { display_name?: string }).display_name}
+            </span>
+          </>
+        )}
+      </div>
+      {item.meeting?.meeting_link && (
+        <a
+          href={item.meeting.meeting_link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-1 inline-flex items-center gap-1 rounded bg-violet-500 px-1.5 py-0.5 text-[9px] font-semibold text-white transition-colors hover:bg-violet-600"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Video className="size-2.5" />
+          Join
+        </a>
+      )}
+    </div>
+  );
+}
+
+function TaskCard({
+  item,
+  style,
+  isNarrow,
   onTaskClick,
   onTaskComplete,
 }: {
   item: ScheduleItem;
   style: React.CSSProperties;
-  isOverlapping: boolean;
+  isNarrow: boolean;
   onTaskClick: (task: Task) => void;
   onTaskComplete: (taskId: string) => void;
 }) {
-  if (item.type === 'meeting') {
-    return (
-      <div
-        className={cn(
-          'absolute rounded-md border border-l-[3px] border-violet-500/40 border-l-violet-500 bg-violet-500/10 p-2 transition-all hover:bg-violet-500/15',
-          isOverlapping && 'w-[48%]'
-        )}
-        style={style}
-      >
-        <div className="flex items-start justify-between gap-1">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-foreground">{item.title}</p>
-            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-foreground/60">
-              <Clock className="size-2.5" />
-              <span>
-                {format(item.startTime, 'h:mm')} - {format(item.endTime, 'h:mm a')}
-              </span>
-            </div>
-            {item.meeting?.client && (
-              <p className="mt-0.5 truncate text-[10px] text-foreground/50">
-                {(item.meeting.client as { display_name?: string }).display_name}
-              </p>
-            )}
-          </div>
-          {item.meeting?.meeting_link && (
-            <a
-              href={item.meeting.meeting_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex h-5 shrink-0 items-center gap-1 rounded bg-violet-500 px-1.5 text-[10px] font-medium text-white hover:bg-violet-400"
-            >
-              <Video className="size-2.5" />
-              Join
-            </a>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Task card
   const task = item.task;
   if (!task) return null;
 
-  const priorityBorder = PRIORITY_BORDER[task.priority] || PRIORITY_BORDER['No Priority'];
   const isDone = task.status === 'Done';
+  const accent = PRIORITY_ACCENT[task.priority] || PRIORITY_ACCENT['No Priority'];
 
   return (
     <div
       className={cn(
-        'absolute cursor-pointer rounded-md border border-l-[3px] bg-card p-2 transition-all hover:bg-accent/50',
-        priorityBorder,
-        isDone && 'opacity-50',
-        isOverlapping && 'w-[48%]'
+        'absolute inset-x-0 cursor-pointer overflow-hidden rounded-[5px] border border-l-[3px] border-border/40 bg-card px-2.5 py-1.5 transition-all hover:border-border/60 hover:shadow-sm',
+        accent,
+        isDone && 'opacity-40',
+        isNarrow && 'left-[52%]'
       )}
       style={style}
       onClick={() => onTaskClick(task)}
     >
-      <div className="flex items-start gap-2">
+      <div className="flex items-start gap-1.5">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onTaskComplete(task.id);
           }}
-          className="mt-0.5 shrink-0"
+          className="mt-px shrink-0"
         >
           {isDone ? (
-            <Check className="size-3.5 text-emerald-500" />
+            <Check className="size-3 text-emerald-500" />
           ) : (
-            <Circle className="size-3.5 text-foreground/30 hover:text-foreground/60" />
+            <Circle className="size-3 text-foreground/25 transition-colors hover:text-foreground/50" />
           )}
         </button>
         <div className="min-w-0 flex-1">
           <p
-            className={cn('truncate text-xs font-medium text-foreground', isDone && 'line-through')}
+            className={cn(
+              'truncate text-[11px] font-semibold text-foreground',
+              isDone && 'line-through'
+            )}
           >
             {task.title}
           </p>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/60">
-            <Clock className="size-2.5" />
+          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/45">
             <span>
-              {format(item.startTime, 'h:mm')} - {format(item.endTime, 'h:mm a')}
+              {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
             </span>
             {task.project && (
               <>
-                <span className="text-foreground/30">·</span>
+                <span className="opacity-40">·</span>
                 <span className="truncate">{task.project.name}</span>
               </>
             )}
@@ -182,8 +181,9 @@ function ScheduleItemCard({
   );
 }
 
-// ===== UNSCHEDULED TASK ROW =====
-function UnscheduledTaskRow({
+// ── Unscheduled row ──────────────────────────────────────────────────────────
+
+function UnscheduledRow({
   task,
   onTaskClick,
   onTaskComplete,
@@ -193,11 +193,11 @@ function UnscheduledTaskRow({
   onTaskComplete: (taskId: string) => void;
 }) {
   const isDone = task.status === 'Done';
-  const priorityColor = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
+  const pc = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
 
   return (
     <div
-      className="flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 transition-colors hover:bg-accent/50"
+      className="flex cursor-pointer items-center gap-2 px-3 py-1.5 transition-colors hover:bg-accent/40"
       onClick={() => onTaskClick(task)}
     >
       <button
@@ -208,313 +208,295 @@ function UnscheduledTaskRow({
         className="shrink-0"
       >
         {isDone ? (
-          <Check className="size-3.5 text-emerald-500" />
+          <Check className="size-3 text-emerald-500" />
         ) : (
-          <Circle className="size-3.5 text-foreground/30 hover:text-foreground/60" />
+          <Circle className="size-3 text-foreground/25 hover:text-foreground/50" />
         )}
       </button>
       <span
         className={cn(
-          'flex-1 truncate text-[13px] text-foreground',
-          isDone && 'line-through opacity-50'
+          'flex-1 truncate text-[12px] text-foreground',
+          isDone && 'line-through opacity-40'
         )}
       >
         {task.title}
       </span>
       {task.project && (
-        <span className="max-w-[100px] shrink-0 truncate text-[10px] text-foreground/40">
+        <span className="max-w-[90px] shrink-0 truncate text-[10px] text-foreground/35">
           {task.project.name}
         </span>
       )}
-      <span
-        className={cn(
-          'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
-          priorityColor?.bg,
-          priorityColor?.text
-        )}
-      >
-        {priorityColor?.label}
-      </span>
+      {pc && (
+        <span
+          className={cn('shrink-0 rounded px-1.5 py-0.5 text-[9px] font-semibold', pc.bg, pc.text)}
+        >
+          {pc.label}
+        </span>
+      )}
     </div>
   );
 }
 
-// ===== MAIN COMPONENT =====
+// ── Main Component ───────────────────────────────────────────────────────────
+
 export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showUnscheduled, setShowUnscheduled] = useState(true);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [, setPrefilledTime] = useState<string | null>(null);
 
-  // Update current time every 60s
+  // Tick every minute
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setCurrentTime(new Date()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
-  // No scroll needed - grid fits in viewport
-
-  // Split tasks into scheduled and unscheduled
+  // ── Partition tasks ──────────────────────────────────────────────────────
   const { scheduledTasks, unscheduledTasks } = useMemo(() => {
     const scheduled: Task[] = [];
     const unscheduled: Task[] = [];
-
-    tasks.forEach((task) => {
-      if (task.scheduled_start_time && task.scheduled_end_time) {
-        const start = parseISO(task.scheduled_start_time);
-        if (isToday(start) || isSameDay(start, new Date())) {
-          scheduled.push(task);
-        } else {
-          unscheduled.push(task);
-        }
+    for (const t of tasks) {
+      if (t.scheduled_start_time && t.scheduled_end_time) {
+        const s = parseISO(t.scheduled_start_time);
+        if (isToday(s) || isSameDay(s, new Date())) scheduled.push(t);
+        else unscheduled.push(t);
       } else {
-        unscheduled.push(task);
+        unscheduled.push(t);
       }
-    });
-
+    }
     return { scheduledTasks: scheduled, unscheduledTasks: unscheduled };
   }, [tasks]);
 
-  // Build schedule items (tasks + meetings)
-  const scheduleItems = useMemo(() => {
-    const items: ScheduleItem[] = [];
-
-    // Add scheduled tasks
-    scheduledTasks.forEach((task) => {
-      if (task.scheduled_start_time && task.scheduled_end_time) {
-        items.push({
-          id: `task-${task.id}`,
+  // ── Build schedule items ─────────────────────────────────────────────────
+  const items = useMemo(() => {
+    const all: ScheduleItem[] = [];
+    for (const t of scheduledTasks) {
+      if (t.scheduled_start_time && t.scheduled_end_time) {
+        all.push({
+          id: `task-${t.id}`,
           type: 'task',
-          title: task.title,
-          startTime: parseISO(task.scheduled_start_time),
-          endTime: parseISO(task.scheduled_end_time),
-          task,
+          title: t.title,
+          startTime: parseISO(t.scheduled_start_time),
+          endTime: parseISO(t.scheduled_end_time),
+          task: t,
         });
       }
-    });
-
-    // Add today's meetings
-    meetings.forEach((meeting) => {
-      const start = parseISO(meeting.start_time);
-      if (isToday(start)) {
-        items.push({
-          id: `meeting-${meeting.id}`,
+    }
+    for (const m of meetings) {
+      const s = parseISO(m.start_time);
+      if (isToday(s)) {
+        all.push({
+          id: `meeting-${m.id}`,
           type: 'meeting',
-          title: meeting.title,
-          startTime: start,
-          endTime: parseISO(meeting.end_time),
-          meeting,
+          title: m.title,
+          startTime: s,
+          endTime: parseISO(m.end_time),
+          meeting: m,
         });
       }
-    });
-
-    return items.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+    }
+    return all.sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }, [scheduledTasks, meetings]);
 
-  // Detect overlapping items
-  const itemPositions = useMemo(() => {
-    const positions = new Map<string, { style: React.CSSProperties; isOverlapping: boolean }>();
-
-    // Group overlapping items
-    const sorted = [...scheduleItems].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  // ── Overlap detection → position map ─────────────────────────────────────
+  const positions = useMemo(() => {
+    const map = new Map<string, { top: number; height: number; isNarrow: boolean; col: number }>();
+    const sorted = [...items].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
 
     for (let i = 0; i < sorted.length; i++) {
       const item = sorted[i];
-      const top = getTimePercent(item.startTime);
-      const height = getItemHeightPercent(item.startTime, item.endTime);
-
-      // Check for overlaps with other items
-      let isOverlapping = false;
-      let isSecondColumn = false;
+      const top = pct(item.startTime);
+      const height = pctHeight(item.startTime, item.endTime);
+      let hasOverlap = false;
+      let col = 0;
 
       for (let j = 0; j < i; j++) {
         const other = sorted[j];
         if (item.startTime < other.endTime && item.endTime > other.startTime) {
-          isOverlapping = true;
-          const otherPos = positions.get(other.id);
-          if (otherPos && !otherPos.style.left) {
-            isSecondColumn = true;
-          }
+          hasOverlap = true;
+          const prev = map.get(other.id);
+          if (prev && prev.col === 0) col = 1;
+          // Also mark the other as narrow
+          if (prev) map.set(other.id, { ...prev, isNarrow: true });
         }
       }
 
-      // Mark previous overlapping items too
-      if (isOverlapping) {
-        for (let j = 0; j < i; j++) {
-          const other = sorted[j];
-          if (item.startTime < other.endTime && item.endTime > other.startTime) {
-            const otherPos = positions.get(other.id);
-            if (otherPos) {
-              positions.set(other.id, { ...otherPos, isOverlapping: true });
-            }
-          }
-        }
-      }
-
-      positions.set(item.id, {
-        style: {
-          top: `${top}%`,
-          height: `${height}%`,
-          left: isSecondColumn ? '50%' : undefined,
-          right: '4px',
-        },
-        isOverlapping,
-      });
+      map.set(item.id, { top, height, isNarrow: hasOverlap, col });
     }
+    return map;
+  }, [items]);
 
-    return positions;
-  }, [scheduleItems]);
-
-  // Current time indicator position (percentage)
-  const currentTimePosition = useMemo(() => {
-    const hour = currentTime.getHours() + currentTime.getMinutes() / 60;
-    if (hour < SCHEDULE_START_HOUR || hour > SCHEDULE_END_HOUR) return null;
-    return getTimePercent(currentTime);
+  // ── Current time line ────────────────────────────────────────────────────
+  const nowPct = useMemo(() => {
+    const h = currentTime.getHours() + currentTime.getMinutes() / 60;
+    if (h < START_HOUR || h > END_HOUR) return null;
+    return pct(currentTime);
   }, [currentTime]);
 
-  // Handle task completion
-  const handleTaskComplete = useCallback(
+  // ── Handlers ─────────────────────────────────────────────────────────────
+  const handleComplete = useCallback(
     async (taskId: string) => {
-      const task = tasks.find((t) => t.id === taskId);
-      const newStatus = task?.status === 'Done' ? 'Todo' : 'Done';
-      await quickUpdateTask(taskId, { status: newStatus as 'Todo' | 'Done' });
+      const t = tasks.find((x) => x.id === taskId);
+      await quickUpdateTask(taskId, { status: t?.status === 'Done' ? 'Todo' : 'Done' });
       invalidateInboxTasks();
       invalidateDailyFlow();
     },
     [tasks]
   );
 
-  // Handle empty slot click
-  const handleSlotClick = useCallback((slotIndex: number) => {
-    const totalMinutes = SCHEDULE_START_HOUR * 60 + slotIndex * SLOT_DURATION_MINUTES;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    const now = new Date();
-    const slotTime = setMinutes(setHours(now, hours), minutes);
-    setPrefilledTime(slotTime.toISOString());
+  const handleSlotClick = useCallback((hour: number) => {
+    // Could pre-fill time in future
+    void hour;
     setShowNewTaskModal(true);
   }, []);
 
-  const todaysMeetings = meetings.filter((m) => isToday(parseISO(m.start_time)));
-  const pendingUnscheduled = unscheduledTasks.filter((t) => t.status !== 'Done');
+  const pendingCount = unscheduledTasks.filter((t) => t.status !== 'Done').length;
 
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
-        <div className="flex items-center gap-2.5">
-          <CalendarClock className="size-4 text-foreground/70" />
-          <h2 className="text-[13px] font-semibold text-foreground">Today&apos;s Schedule</h2>
-          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-amber-600 dark:text-amber-400">
-            {scheduledTasks.filter((t) => t.status !== 'Done').length + todaysMeetings.length}
-          </span>
-          <span className="text-[11px] text-foreground/40">
-            {format(new Date(), 'EEEE, MMM d')}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/50 px-4">
+        <div className="flex items-center gap-3">
+          <h2 className="text-[13px] font-semibold text-foreground">Schedule</h2>
+          <span className="text-[11px] tabular-nums text-foreground/40">
+            {format(new Date(), 'EEE, MMM d')}
           </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="size-7"
-          onClick={() => {
-            setPrefilledTime(null);
-            setShowNewTaskModal(true);
-          }}
+          className="size-7 text-foreground/50 hover:text-foreground"
+          onClick={() => setShowNewTaskModal(true)}
         >
-          <Plus className="size-4" />
+          <Plus className="size-3.5" />
         </Button>
       </div>
 
-      {/* Schedule Grid - fits in viewport, no scroll */}
-      <div className="flex-1 overflow-hidden">
-        <div className="relative h-full">
-          {/* Time slot lines and labels */}
-          {Array.from({ length: TOTAL_SLOTS }, (_, i) => (
-            <div
-              key={i}
-              className="absolute left-0 right-0 flex border-b border-border/30"
-              style={{ top: `${(i / TOTAL_SLOTS) * 100}%`, height: `${100 / TOTAL_SLOTS}%` }}
-            >
-              <div className="flex w-16 shrink-0 items-start justify-end pr-3 pt-1">
-                <span className="text-[10px] font-medium tabular-nums text-foreground/50">
-                  {getSlotLabel(i)}
-                </span>
-              </div>
-              {/* Clickable empty area */}
+      {/* ── Time Grid ──────────────────────────────────────────────────── */}
+      <div className="relative min-h-0 flex-1">
+        {/* Hour rows - using CSS grid for even distribution */}
+        <div className="grid h-full" style={{ gridTemplateRows: `repeat(${TOTAL_HOURS}, 1fr)` }}>
+          {Array.from({ length: TOTAL_HOURS }, (_, i) => {
+            const hour = START_HOUR + i;
+            const isCurrentHour = currentTime.getHours() === hour;
+            return (
               <div
-                className="flex-1 cursor-pointer transition-colors hover:bg-accent/30"
-                onClick={() => handleSlotClick(i)}
-              />
-            </div>
-          ))}
+                key={hour}
+                className={cn(
+                  'group relative flex border-b border-border/20 transition-colors hover:bg-accent/20',
+                  isCurrentHour && 'bg-accent/10'
+                )}
+                onClick={() => handleSlotClick(hour)}
+              >
+                {/* Time gutter */}
+                <div className="flex w-14 shrink-0 items-start justify-end pr-3 pt-1.5">
+                  <span
+                    className={cn(
+                      'text-[10px] font-medium tabular-nums leading-none',
+                      isCurrentHour ? 'text-foreground/70' : 'text-foreground/30'
+                    )}
+                  >
+                    {hourLabel(hour)}
+                  </span>
+                </div>
+                {/* Vertical separator */}
+                <div className="w-px shrink-0 bg-border/30" />
+                {/* Empty event area (items are absolutely positioned over this) */}
+                <div className="flex-1" />
+              </div>
+            );
+          })}
+        </div>
 
-          {/* Current time indicator */}
-          {currentTimePosition !== null && (
-            <div
-              className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
-              style={{ top: `${currentTimePosition}%` }}
-            >
-              <div className="ml-14 size-2 rounded-full bg-red-500" />
-              <div className="h-px flex-1 bg-red-500/50" />
-            </div>
-          )}
-
-          {/* Schedule items */}
-          <div className="absolute inset-0 left-16 right-1">
-            {scheduleItems.map((item) => {
-              const pos = itemPositions.get(item.id);
+        {/* ── Event layer (absolute over the grid) ──────────────────── */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ left: 'calc(3.5rem + 1px)' }}
+        >
+          <div className="pointer-events-auto relative h-full px-1.5">
+            {items.map((item) => {
+              const pos = positions.get(item.id);
               if (!pos) return null;
+
+              const style: React.CSSProperties = {
+                top: `${pos.top}%`,
+                height: `${pos.height}%`,
+              };
+
+              if (item.type === 'meeting') {
+                return (
+                  <MeetingCard
+                    key={item.id}
+                    item={item}
+                    style={style}
+                    isNarrow={pos.isNarrow && pos.col === 0}
+                  />
+                );
+              }
               return (
-                <ScheduleItemCard
+                <TaskCard
                   key={item.id}
                   item={item}
-                  style={pos.style}
-                  isOverlapping={pos.isOverlapping}
+                  style={style}
+                  isNarrow={pos.isNarrow && pos.col === 1}
                   onTaskClick={setEditingTask}
-                  onTaskComplete={handleTaskComplete}
+                  onTaskComplete={handleComplete}
                 />
               );
             })}
           </div>
         </div>
 
-        {/* Unscheduled Tasks Section */}
-        <div className="border-t border-border/60">
+        {/* ── Current time indicator ────────────────────────────────── */}
+        {nowPct !== null && (
+          <div
+            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
+            style={{ top: `${nowPct}%` }}
+          >
+            <div className="flex w-14 items-center justify-end pr-2">
+              <div className="size-1.5 rounded-full bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+            </div>
+            <div className="h-[1.5px] flex-1 bg-red-500/60" />
+          </div>
+        )}
+      </div>
+
+      {/* ── Unscheduled Tasks ──────────────────────────────────────────── */}
+      {unscheduledTasks.length > 0 && (
+        <div className="shrink-0 border-t border-border/40">
           <button
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/30"
+            className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-muted/30"
             onClick={() => setShowUnscheduled(!showUnscheduled)}
           >
             {showUnscheduled ? (
-              <ChevronDown className="size-3.5 text-foreground/50" />
+              <ChevronDown className="size-3 text-foreground/40" />
             ) : (
-              <ChevronRight className="size-3.5 text-foreground/50" />
+              <ChevronRight className="size-3 text-foreground/40" />
             )}
-            <span className="text-[12px] font-semibold text-foreground/70">Unscheduled</span>
-            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-foreground/50">
-              {pendingUnscheduled.length}
-            </span>
+            <span className="text-[11px] font-semibold text-foreground/50">Unscheduled</span>
+            {pendingCount > 0 && (
+              <span className="rounded-full bg-foreground/5 px-1.5 py-px text-[10px] font-medium tabular-nums text-foreground/40">
+                {pendingCount}
+              </span>
+            )}
           </button>
           {showUnscheduled && (
-            <div className="pb-4">
-              {unscheduledTasks.length === 0 ? (
-                <p className="px-4 py-3 text-xs text-foreground/40">No unscheduled tasks</p>
-              ) : (
-                unscheduledTasks.map((task) => (
-                  <UnscheduledTaskRow
-                    key={task.id}
-                    task={task}
-                    onTaskClick={setEditingTask}
-                    onTaskComplete={handleTaskComplete}
-                  />
-                ))
-              )}
+            <div className="max-h-36 overflow-y-auto pb-1">
+              {unscheduledTasks.map((task) => (
+                <UnscheduledRow
+                  key={task.id}
+                  task={task}
+                  onTaskClick={setEditingTask}
+                  onTaskComplete={handleComplete}
+                />
+              ))}
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Modals */}
+      {/* ── Modals ─────────────────────────────────────────────────────── */}
       {editingTask && (
         <EditTaskModal
           task={editingTask}
