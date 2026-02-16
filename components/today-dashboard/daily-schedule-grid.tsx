@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { format, parseISO, isToday, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,11 +21,10 @@ import { EditTaskModal } from '@/components/edit-task-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 
 // Schedule config
-const SCHEDULE_START_HOUR = 7.5; // 7:30 AM
-const SCHEDULE_END_HOUR = 15.5; // 3:30 PM
-const SLOT_DURATION_MINUTES = 30;
-const SLOT_HEIGHT_PX = 60;
-const TOTAL_SLOTS = (SCHEDULE_END_HOUR - SCHEDULE_START_HOUR) * 2; // 16 slots
+const SCHEDULE_START_HOUR = 8; // 8:00 AM
+const SCHEDULE_END_HOUR = 18; // 6:00 PM
+const SLOT_DURATION_MINUTES = 60;
+const TOTAL_SLOTS = SCHEDULE_END_HOUR - SCHEDULE_START_HOUR; // 10 slots (1 per hour)
 
 interface ScheduleItem {
   id: string;
@@ -44,24 +43,24 @@ interface DailyScheduleGridProps {
 
 // Generate time slot labels
 function getSlotLabel(slotIndex: number): string {
-  const totalMinutes = SCHEDULE_START_HOUR * 60 + slotIndex * SLOT_DURATION_MINUTES;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  const d = setMinutes(setHours(new Date(), hours), minutes);
-  return format(d, 'h:mm a');
+  const hour = SCHEDULE_START_HOUR + slotIndex;
+  const d = setMinutes(setHours(new Date(), hour), 0);
+  return format(d, 'h a');
 }
 
-// Get pixel position for a time within the schedule
-function getTimePosition(time: Date): number {
+// Get percentage position for a time within the schedule
+function getTimePercent(time: Date): number {
   const hours = time.getHours() + time.getMinutes() / 60;
   const offset = hours - SCHEDULE_START_HOUR;
-  return Math.max(0, Math.min(offset * 2 * SLOT_HEIGHT_PX, TOTAL_SLOTS * SLOT_HEIGHT_PX));
+  const totalHours = SCHEDULE_END_HOUR - SCHEDULE_START_HOUR;
+  return Math.max(0, Math.min((offset / totalHours) * 100, 100));
 }
 
-// Get height for a duration
-function getItemHeight(start: Date, end: Date): number {
+// Get percentage height for a duration
+function getItemHeightPercent(start: Date, end: Date): number {
   const durationHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  return Math.max(SLOT_HEIGHT_PX * 0.8, durationHours * 2 * SLOT_HEIGHT_PX);
+  const totalHours = SCHEDULE_END_HOUR - SCHEDULE_START_HOUR;
+  return Math.max((100 / totalHours) * 0.4, (durationHours / totalHours) * 100);
 }
 
 // Priority border color mapping
@@ -242,7 +241,6 @@ function UnscheduledTaskRow({
 
 // ===== MAIN COMPONENT =====
 export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
-  const gridRef = useRef<HTMLDivElement>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showUnscheduled, setShowUnscheduled] = useState(true);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -255,17 +253,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to current time on mount
-  useEffect(() => {
-    if (gridRef.current) {
-      const now = new Date();
-      const currentHour = now.getHours() + now.getMinutes() / 60;
-      if (currentHour >= SCHEDULE_START_HOUR && currentHour <= SCHEDULE_END_HOUR) {
-        const scrollOffset = getTimePosition(now) - 120; // 120px above current time
-        gridRef.current.scrollTop = Math.max(0, scrollOffset);
-      }
-    }
-  }, []);
+  // No scroll needed - grid fits in viewport
 
   // Split tasks into scheduled and unscheduled
   const { scheduledTasks, unscheduledTasks } = useMemo(() => {
@@ -333,8 +321,8 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
     for (let i = 0; i < sorted.length; i++) {
       const item = sorted[i];
-      const top = getTimePosition(item.startTime);
-      const height = getItemHeight(item.startTime, item.endTime);
+      const top = getTimePercent(item.startTime);
+      const height = getItemHeightPercent(item.startTime, item.endTime);
 
       // Check for overlaps with other items
       let isOverlapping = false;
@@ -366,8 +354,8 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
       positions.set(item.id, {
         style: {
-          top: `${top}px`,
-          height: `${height - 2}px`,
+          top: `${top}%`,
+          height: `${height}%`,
           left: isSecondColumn ? '50%' : undefined,
           right: '4px',
         },
@@ -378,11 +366,11 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     return positions;
   }, [scheduleItems]);
 
-  // Current time indicator position
+  // Current time indicator position (percentage)
   const currentTimePosition = useMemo(() => {
     const hour = currentTime.getHours() + currentTime.getMinutes() / 60;
     if (hour < SCHEDULE_START_HOUR || hour > SCHEDULE_END_HOUR) return null;
-    return getTimePosition(currentTime);
+    return getTimePercent(currentTime);
   }, [currentTime]);
 
   // Handle task completion
@@ -438,15 +426,15 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         </Button>
       </div>
 
-      {/* Schedule Grid */}
-      <div ref={gridRef} className="flex-1 overflow-y-auto">
-        <div className="relative" style={{ height: `${TOTAL_SLOTS * SLOT_HEIGHT_PX}px` }}>
+      {/* Schedule Grid - fits in viewport, no scroll */}
+      <div className="flex-1 overflow-hidden">
+        <div className="relative h-full">
           {/* Time slot lines and labels */}
           {Array.from({ length: TOTAL_SLOTS }, (_, i) => (
             <div
               key={i}
               className="absolute left-0 right-0 flex border-b border-border/30"
-              style={{ top: `${i * SLOT_HEIGHT_PX}px`, height: `${SLOT_HEIGHT_PX}px` }}
+              style={{ top: `${(i / TOTAL_SLOTS) * 100}%`, height: `${100 / TOTAL_SLOTS}%` }}
             >
               <div className="flex w-16 shrink-0 items-start justify-end pr-3 pt-1">
                 <span className="text-[10px] font-medium tabular-nums text-foreground/50">
@@ -465,7 +453,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           {currentTimePosition !== null && (
             <div
               className="pointer-events-none absolute left-0 right-0 z-10 flex items-center"
-              style={{ top: `${currentTimePosition}px` }}
+              style={{ top: `${currentTimePosition}%` }}
             >
               <div className="ml-14 size-2 rounded-full bg-red-500" />
               <div className="h-px flex-1 bg-red-500/50" />
