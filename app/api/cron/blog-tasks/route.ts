@@ -145,7 +145,10 @@ export async function GET(request: Request) {
 
     const nextSortOrder = lastTask ? lastTask.sort_order + 1 : 0;
 
-    // 7. Create the task
+    // 7. Create the task (scheduled 9-10 AM Cyprus time)
+    const scheduleStart = `${today}T09:00:00+02:00`;
+    const scheduleEnd = `${today}T10:00:00+02:00`;
+
     const { data: newTask, error: createError } = await supabase
       .from('tasks')
       .insert({
@@ -161,6 +164,8 @@ export async function GET(request: Request) {
         due_date: today,
         sort_order: nextSortOrder,
         show_in_inbox: true,
+        scheduled_start_time: scheduleStart,
+        scheduled_end_time: scheduleEnd,
       })
       .select()
       .single();
