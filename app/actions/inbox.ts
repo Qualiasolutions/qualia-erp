@@ -29,6 +29,8 @@ export type Task = {
   sort_order: number;
   due_date: string | null;
   completed_at: string | null;
+  scheduled_start_time: string | null;
+  scheduled_end_time: string | null;
   show_in_inbox: boolean;
   created_at: string;
   updated_at: string;
@@ -109,6 +111,8 @@ export async function getTasks(
       sort_order,
       due_date,
       completed_at,
+      scheduled_start_time,
+      scheduled_end_time,
       show_in_inbox,
       created_at,
       updated_at,
@@ -188,6 +192,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     item_type,
     phase_name,
     phase_id,
+    scheduled_start_time,
+    scheduled_end_time,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -253,6 +259,8 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       due_date: due_date || null,
       sort_order: nextSortOrder,
       show_in_inbox: show_in_inbox ?? true, // Default to true when no project
+      scheduled_start_time: scheduled_start_time || null,
+      scheduled_end_time: scheduled_end_time || null,
     })
     .select()
     .single();
@@ -312,6 +320,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     assignee_id,
     project_id,
     show_in_inbox,
+    scheduled_start_time,
+    scheduled_end_time,
   } = validation.data;
 
   if (!id) {
@@ -335,6 +345,9 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;
   if (project_id !== undefined) updateData.project_id = project_id || null;
   if (show_in_inbox !== undefined) updateData.show_in_inbox = show_in_inbox;
+  if (scheduled_start_time !== undefined)
+    updateData.scheduled_start_time = scheduled_start_time || null;
+  if (scheduled_end_time !== undefined) updateData.scheduled_end_time = scheduled_end_time || null;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -481,6 +494,8 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       sort_order,
       due_date,
       completed_at,
+      scheduled_start_time,
+      scheduled_end_time,
       show_in_inbox,
       created_at,
       updated_at,
@@ -639,6 +654,80 @@ export async function quickUpdateTask(
       // Don't fail the task update if skill learning fails
       console.error('[quickUpdateTask] Skill learning error:', err);
     }
+  }
+
+  revalidatePath('/inbox');
+  return { success: true };
+}
+
+/**
+ * Schedule a task to a specific time slot
+ */
+export async function scheduleTask(
+  taskId: string,
+  startTime: string,
+  endTime: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to schedule this task' };
+  }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      scheduled_start_time: startTime,
+      scheduled_end_time: endTime,
+    })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('[scheduleTask] Error scheduling task:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/inbox');
+  return { success: true };
+}
+
+/**
+ * Remove scheduling from a task
+ */
+export async function unscheduleTask(taskId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to unschedule this task' };
+  }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      scheduled_start_time: null,
+      scheduled_end_time: null,
+    })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('[unscheduleTask] Error unscheduling task:', error);
+    return { success: false, error: error.message };
   }
 
   revalidatePath('/inbox');

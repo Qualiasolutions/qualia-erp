@@ -49,6 +49,8 @@ export const createTaskSchema = z.object({
   item_type: z.enum(['task', 'issue', 'note', 'resource'] as const).default('task'),
   phase_name: z.string().max(100, 'Phase name too long').optional().nullable(),
   phase_id: z.string().uuid('Invalid phase ID').optional().nullable(),
+  scheduled_start_time: z.string().optional().nullable(),
+  scheduled_end_time: z.string().optional().nullable(),
 });
 
 export const updateTaskSchema = z.object({
@@ -61,6 +63,8 @@ export const updateTaskSchema = z.object({
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
   project_id: z.string().uuid('Invalid project ID').optional().nullable(),
   show_in_inbox: z.boolean().optional(),
+  scheduled_start_time: z.string().optional().nullable(),
+  scheduled_end_time: z.string().optional().nullable(),
 });
 
 // =====================

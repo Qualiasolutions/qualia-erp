@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, CalendarIcon, User, FolderOpen, Sparkles, Check, X } from 'lucide-react';
+import { Plus, CalendarIcon, User, FolderOpen, Sparkles, Check, X, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { createTask } from '@/app/actions/inbox';
 import { useProfiles, useProjects, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
+import { setHours, setMinutes, addMinutes } from 'date-fns';
 
 interface NewTaskModalProps {
   open?: boolean;
@@ -48,6 +49,8 @@ export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModa
   const [customProjectName, setCustomProjectName] = useState<string>('');
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [scheduledTime, setScheduledTime] = useState<string>('');
+  const [duration, setDuration] = useState<string>('30');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -61,6 +64,8 @@ export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModa
       setCustomProjectName('');
       setAssigneeId(null);
       setDueDate(undefined);
+      setScheduledTime('');
+      setDuration('30');
       setError(null);
       setSuccess(false);
       // Focus input after animation
@@ -105,6 +110,16 @@ export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModa
     }
     if (dueDate) {
       formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
+    }
+
+    // Add scheduled time if selected
+    if (scheduledTime) {
+      const [hours, minutes] = scheduledTime.split(':').map(Number);
+      const today = new Date();
+      const startTime = setMinutes(setHours(today, hours), minutes);
+      const endTime = addMinutes(startTime, parseInt(duration, 10));
+      formData.set('scheduled_start_time', startTime.toISOString());
+      formData.set('scheduled_end_time', endTime.toISOString());
     }
 
     const result = await createTask(formData);
@@ -291,6 +306,52 @@ export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModa
                         ))}
                       </SelectContent>
                     </Select>
+
+                    {/* Time Slot */}
+                    <Select
+                      value={scheduledTime || 'none'}
+                      onValueChange={(v) => setScheduledTime(v === 'none' ? '' : v)}
+                    >
+                      <SelectTrigger
+                        className={cn(
+                          'h-9 w-auto min-w-[120px] gap-2 rounded-full border-border/50 bg-secondary/50 px-3 text-sm transition-all hover:bg-secondary',
+                          scheduledTime && 'border-primary/30 bg-primary/5'
+                        )}
+                      >
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <SelectValue placeholder="Time" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[200px] border-border/50 bg-card/95 backdrop-blur-xl">
+                        <SelectItem value="none">No time</SelectItem>
+                        {Array.from({ length: 17 }, (_, i) => {
+                          const totalMinutes = 7.5 * 60 + i * 30;
+                          const h = Math.floor(totalMinutes / 60);
+                          const m = totalMinutes % 60;
+                          const label = format(setMinutes(setHours(new Date(), h), m), 'h:mm a');
+                          const value = `${h}:${m.toString().padStart(2, '0')}`;
+                          return (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+
+                    {/* Duration */}
+                    {scheduledTime && scheduledTime !== 'none' && (
+                      <Select value={duration} onValueChange={setDuration}>
+                        <SelectTrigger className="h-9 w-auto min-w-[90px] gap-2 rounded-full border-border/50 bg-secondary/50 px-3 text-sm transition-all hover:bg-secondary">
+                          <SelectValue placeholder="Duration" />
+                        </SelectTrigger>
+                        <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
+                          <SelectItem value="30">30 min</SelectItem>
+                          <SelectItem value="60">1 hour</SelectItem>
+                          <SelectItem value="90">1.5 hours</SelectItem>
+                          <SelectItem value="120">2 hours</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
 
                     {/* Due Date */}
                     <Popover>

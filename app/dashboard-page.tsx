@@ -152,6 +152,8 @@ async function getDashboardData(userId: string, workspaceId?: string) {
     creator_id: null,
     assignee_id: null,
     completed_at: null,
+    scheduled_start_time: (t.scheduled_start_time as string | null) || null,
+    scheduled_end_time: (t.scheduled_end_time as string | null) || null,
     created_at: '',
     updated_at: '',
   });

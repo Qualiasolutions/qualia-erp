@@ -47,6 +47,7 @@ export const cacheKeys = {
   projectDeployments: (projectId: string) => `project-deployments-${projectId}`,
   projectEnvironments: (projectId: string) => `project-environments-${projectId}`,
   projectHealth: (projectId: string) => `project-health-${projectId}`,
+  scheduledTasks: (date: string) => `scheduled-tasks-${date}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -388,11 +389,25 @@ export function invalidateProjectTasks(projectId: string, immediate = true) {
  * @param immediate - If true, forces immediate refetch (fixes 8-10s stale data issue)
  */
 export function invalidateInboxTasks(immediate = true) {
+  const today = new Date().toISOString().split('T')[0];
   if (immediate) {
-    // Force immediate refetch by passing undefined data and revalidate option
     mutate(cacheKeys.inboxTasks, undefined, { revalidate: true });
+    mutate(cacheKeys.scheduledTasks(today), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.inboxTasks);
+    mutate(cacheKeys.scheduledTasks(today));
+  }
+}
+
+/**
+ * Invalidate scheduled tasks cache for a specific date
+ */
+export function invalidateScheduledTasks(date?: string, immediate = true) {
+  const d = date || new Date().toISOString().split('T')[0];
+  if (immediate) {
+    mutate(cacheKeys.scheduledTasks(d), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.scheduledTasks(d));
   }
 }
 

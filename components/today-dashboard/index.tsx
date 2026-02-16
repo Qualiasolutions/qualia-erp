@@ -21,8 +21,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
-import { InboxWidget } from './inbox-widget';
-import { TimelineSidebar } from './timeline-sidebar';
+import { DailyScheduleGrid } from './daily-schedule-grid';
 import { BuildingProjectSheet } from './building-project-sheet';
 import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
@@ -398,15 +397,10 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
             />
           </aside>
 
-          {/* ----- CENTER: Inbox (Primary) ----- */}
-          <section className="min-w-0 flex-1 border-r border-border/60">
-            <InboxWidget tasks={tasks} />
+          {/* ----- CENTER: Daily Schedule (Primary) ----- */}
+          <section className="min-w-0 flex-1">
+            <DailyScheduleGrid tasks={tasks} meetings={meetings} />
           </section>
-
-          {/* ----- RIGHT: Today Timeline ----- */}
-          <aside className="hidden w-72 shrink-0 flex-col lg:flex xl:w-80">
-            <TimelineSidebar meetings={meetings} />
-          </aside>
         </div>
       </main>
 
@@ -416,4 +410,4 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   );
 }
 
-export { InboxWidget } from './inbox-widget';
+export { DailyScheduleGrid } from './daily-schedule-grid';

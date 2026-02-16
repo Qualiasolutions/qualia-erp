@@ -275,6 +275,8 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       sort_order: 0,
       due_date: null,
       completed_at: null,
+      scheduled_start_time: null,
+      scheduled_end_time: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       project: null,

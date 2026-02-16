@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useActionState, useOptimistic } from 'react';
-import { CalendarIcon, User, FolderOpen, GraduationCap } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, User, FolderOpen, GraduationCap, Clock } from 'lucide-react';
+import { format, setHours, setMinutes, addMinutes, differenceInMinutes, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,6 +44,25 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
     task.project_id || 'no-project'
   );
 
+  // Schedule state
+  const [scheduledTime, setScheduledTime] = useState<string>(() => {
+    if (task.scheduled_start_time) {
+      const start = parseISO(task.scheduled_start_time);
+      return `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')}`;
+    }
+    return '';
+  });
+  const [duration, setDuration] = useState<string>(() => {
+    if (task.scheduled_start_time && task.scheduled_end_time) {
+      const mins = differenceInMinutes(
+        parseISO(task.scheduled_end_time),
+        parseISO(task.scheduled_start_time)
+      );
+      return String(mins);
+    }
+    return '30';
+  });
+
   // React 19: Optimistic task updates for instant UI feedback
   const [optimisticTask, updateOptimisticTask] = useOptimistic(
     task,
@@ -72,6 +91,19 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         formData.set('project_id', selectedProjectId);
       } else {
         formData.set('project_id', '');
+      }
+
+      // Add scheduled time
+      if (scheduledTime && scheduledTime !== 'none') {
+        const [hours, minutes] = scheduledTime.split(':').map(Number);
+        const today = new Date();
+        const startTime = setMinutes(setHours(today, hours), minutes);
+        const endTime = addMinutes(startTime, parseInt(duration, 10));
+        formData.set('scheduled_start_time', startTime.toISOString());
+        formData.set('scheduled_end_time', endTime.toISOString());
+      } else {
+        formData.set('scheduled_start_time', '');
+        formData.set('scheduled_end_time', '');
       }
 
       // Add task ID for server action
@@ -122,8 +154,23 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
     if (open) {
       setDueDate(task.due_date ? new Date(task.due_date) : undefined);
       setSelectedProjectId(task.project_id || 'no-project');
+      if (task.scheduled_start_time) {
+        const start = parseISO(task.scheduled_start_time);
+        setScheduledTime(`${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')}`);
+      } else {
+        setScheduledTime('');
+      }
+      if (task.scheduled_start_time && task.scheduled_end_time) {
+        const mins = differenceInMinutes(
+          parseISO(task.scheduled_end_time),
+          parseISO(task.scheduled_start_time)
+        );
+        setDuration(String(mins));
+      } else {
+        setDuration('30');
+      }
     }
-  }, [open, task.due_date, task.project_id]);
+  }, [open, task.due_date, task.project_id, task.scheduled_start_time, task.scheduled_end_time]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -231,6 +278,50 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Time Slot</Label>
+              <Select
+                value={scheduledTime || 'none'}
+                onValueChange={(v) => setScheduledTime(v === 'none' ? '' : v)}
+              >
+                <SelectTrigger className="border-border bg-background">
+                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="No time" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] border-border bg-card">
+                  <SelectItem value="none">No time</SelectItem>
+                  {Array.from({ length: 17 }, (_, i) => {
+                    const totalMinutes = 7.5 * 60 + i * 30;
+                    const h = Math.floor(totalMinutes / 60);
+                    const m = totalMinutes % 60;
+                    const label = format(setMinutes(setHours(new Date(), h), m), 'h:mm a');
+                    const value = `${h}:${m.toString().padStart(2, '0')}`;
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Duration</Label>
+              <Select value={duration} onValueChange={setDuration} disabled={!scheduledTime}>
+                <SelectTrigger className="border-border bg-background">
+                  <SelectValue placeholder="Duration" />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  <SelectItem value="30">30 min</SelectItem>
+                  <SelectItem value="60">1 hour</SelectItem>
+                  <SelectItem value="90">1.5 hours</SelectItem>
+                  <SelectItem value="120">2 hours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
