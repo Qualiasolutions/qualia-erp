@@ -40,16 +40,16 @@
   .dark {
     /* Dark mode - Deep, premium, minimal */
     --background: 222 20% 4%;
-    --foreground: 210 20% 98%;
+    --foreground: 0 0% 100%;
     --card: 222 18% 6%;
-    --card-foreground: 210 20% 98%;
+    --card-foreground: 0 0% 100%;
     --popover: 222 18% 5%;
-    --popover-foreground: 210 20% 98%;
+    --popover-foreground: 0 0% 100%;
     /* Primary Teal: #00FFD1 */
     --primary: 166 100% 50%;
     --primary-foreground: 222 20% 4%;
     --secondary: 222 15% 9%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 222 15% 10%;
     --muted-foreground: 220 10% 50%;
     /* Accent teal */

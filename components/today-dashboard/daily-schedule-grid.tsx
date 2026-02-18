@@ -501,7 +501,9 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           onOpenChange={(open) => !open && setEditingTask(null)}
         />
       )}
-      <NewTaskModalControlled open={showNewTaskModal} onOpenChange={setShowNewTaskModal} />
+      <div className="hidden">
+        <NewTaskModalControlled open={showNewTaskModal} onOpenChange={setShowNewTaskModal} />
+      </div>
     </div>
   );
 }
