@@ -31,9 +31,14 @@ import { setHours, setMinutes, addMinutes } from 'date-fns';
 interface NewTaskModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  defaultAssigneeId?: string | null;
 }
 
-export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModalProps = {}) {
+export function NewTaskModal({
+  open: controlledOpen,
+  onOpenChange,
+  defaultAssigneeId,
+}: NewTaskModalProps = {}) {
   const { profiles } = useProfiles();
   const { projects } = useProjects();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +67,7 @@ export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModa
       setDescription('');
       setProjectId('');
       setCustomProjectName('');
-      setAssigneeId(null);
+      setAssigneeId(defaultAssigneeId || null);
       setDueDate(undefined);
       setScheduledTime('');
       setDuration('30');
@@ -433,8 +438,15 @@ export function NewTaskModal({ open: controlledOpen, onOpenChange }: NewTaskModa
 interface NewTaskModalControlledProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  defaultAssigneeId?: string | null;
 }
 
-export function NewTaskModalControlled({ open, onOpenChange }: NewTaskModalControlledProps) {
-  return <NewTaskModal open={open} onOpenChange={onOpenChange} />;
+export function NewTaskModalControlled({
+  open,
+  onOpenChange,
+  defaultAssigneeId,
+}: NewTaskModalControlledProps) {
+  return (
+    <NewTaskModal open={open} onOpenChange={onOpenChange} defaultAssigneeId={defaultAssigneeId} />
+  );
 }
