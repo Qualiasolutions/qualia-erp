@@ -65,7 +65,7 @@ const PRIORITY_ACCENT: Record<string, string> = {
 function MeetingCard({ item, style }: { item: ScheduleItem; style: React.CSSProperties }) {
   return (
     <div
-      className="absolute overflow-hidden rounded-md border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-1.5 transition-all hover:bg-violet-500/[0.13] hover:shadow-sm"
+      className="absolute overflow-hidden rounded-none border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-1.5 transition-all hover:bg-violet-500/[0.13] hover:shadow-sm"
       style={style}
     >
       <p className="truncate text-[11px] font-semibold leading-tight text-violet-700 dark:text-violet-300">
@@ -120,7 +120,7 @@ function TaskCard({
   return (
     <div
       className={cn(
-        'absolute cursor-pointer overflow-hidden rounded-md border border-l-[3px] border-border/30 bg-card px-2.5 py-1.5 transition-all hover:border-border/50 hover:shadow-sm',
+        'absolute cursor-pointer overflow-hidden rounded-none border border-l-[3px] border-border/30 bg-card px-2.5 py-1.5 transition-all hover:border-border/50 hover:shadow-sm',
         accent,
         isDone && 'opacity-35'
       )}
