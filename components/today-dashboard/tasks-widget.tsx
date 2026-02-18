@@ -6,9 +6,15 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Circle, Clock, EyeOff, FolderOpen, Edit2, Plus, Check } from 'lucide-react';
+import { Circle, Clock, EyeOff, FolderOpen, Edit2, Plus, Check, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
+import {
+  quickUpdateTask,
+  toggleTaskInbox,
+  createTask,
+  deleteTask,
+  type Task,
+} from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +24,7 @@ import { useAdminContext } from '@/components/admin-provider';
 type OptimisticAction =
   | { type: 'toggle'; taskId: string; completed: boolean }
   | { type: 'hide'; taskId: string }
+  | { type: 'delete'; taskId: string }
   | { type: 'add'; task: Task };
 
 function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
@@ -33,6 +40,8 @@ function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
           : t
       );
     case 'hide':
+      return state.filter((t) => t.id !== action.taskId);
+    case 'delete':
       return state.filter((t) => t.id !== action.taskId);
     case 'add':
       return [action.task, ...state];
@@ -74,12 +83,14 @@ const TaskItem = React.memo(function TaskItem({
   task,
   onToggle,
   onHide,
+  onDelete,
   onEdit,
   isPending,
 }: {
   task: Task;
   onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
   isPending: boolean;
 }) {
@@ -199,6 +210,20 @@ const TaskItem = React.memo(function TaskItem({
               </TooltipTrigger>
               <TooltipContent side="left">Hide</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-red-500/20 hover:text-red-400"
+                  onClick={() => onDelete(task.id)}
+                  disabled={isPending}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">Delete</TooltipContent>
+            </Tooltip>
           </TooltipProvider>
         </div>
       </div>
@@ -299,6 +324,20 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
       startTransition(async () => {
         dispatchOptimistic({ type: 'hide', taskId });
         await toggleTaskInbox(taskId, false);
+        invalidateInboxTasks(true);
+        invalidateDailyFlow(true);
+        router.refresh();
+      });
+    },
+    [router, dispatchOptimistic]
+  );
+
+  // Optimistic delete - instant feedback, then sync with server
+  const handleDeleteTask = useCallback(
+    (taskId: string) => {
+      startTransition(async () => {
+        dispatchOptimistic({ type: 'delete', taskId });
+        await deleteTask(taskId);
         invalidateInboxTasks(true);
         invalidateDailyFlow(true);
         router.refresh();
@@ -422,6 +461,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
                       task={task}
                       onToggle={handleToggleTask}
                       onHide={handleHideTask}
+                      onDelete={handleDeleteTask}
                       onEdit={setEditingTask}
                       isPending={isPending}
                     />

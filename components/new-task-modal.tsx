@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, CalendarIcon, User, FolderOpen, Sparkles, Check, X, Clock } from 'lucide-react';
+import {
+  Plus,
+  CalendarIcon,
+  User,
+  Users,
+  FolderOpen,
+  Sparkles,
+  Check,
+  X,
+  Clock,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Dialog,
@@ -32,12 +42,14 @@ interface NewTaskModalProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   defaultAssigneeId?: string | null;
+  defaultScheduledTime?: string | null; // Format: "H:mm" e.g. "9:00"
 }
 
 export function NewTaskModal({
   open: controlledOpen,
   onOpenChange,
   defaultAssigneeId,
+  defaultScheduledTime,
 }: NewTaskModalProps = {}) {
   const { profiles } = useProfiles();
   const { projects } = useProjects();
@@ -69,14 +81,14 @@ export function NewTaskModal({
       setCustomProjectName('');
       setAssigneeId(defaultAssigneeId || null);
       setDueDate(undefined);
-      setScheduledTime('');
-      setDuration('30');
+      setScheduledTime(defaultScheduledTime || '');
+      setDuration('60');
       setError(null);
       setSuccess(false);
       // Focus input after animation
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open]);
+  }, [open, defaultAssigneeId, defaultScheduledTime]);
 
   // Keyboard shortcut: Cmd/Ctrl + Enter to submit
   useEffect(() => {
@@ -98,36 +110,40 @@ export function NewTaskModal({
     setLoading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.set('title', title);
-    formData.set('description', description);
-    formData.set('status', 'Todo');
-    formData.set('show_in_inbox', 'true');
+    // Build common form data helper
+    function buildFormData(overrideAssigneeId?: string | null): FormData {
+      const fd = new FormData();
+      fd.set('title', title);
+      fd.set('description', description);
+      fd.set('status', 'Todo');
+      fd.set('show_in_inbox', 'true');
 
-    if (projectId) {
-      formData.set('project_id', projectId);
-    }
-    if (customProjectName) {
-      formData.set('custom_project_name', customProjectName);
-    }
-    if (assigneeId) {
-      formData.set('assignee_id', assigneeId);
-    }
-    if (dueDate) {
-      formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
-    }
+      if (projectId) fd.set('project_id', projectId);
+      if (customProjectName) fd.set('custom_project_name', customProjectName);
+      if (overrideAssigneeId) fd.set('assignee_id', overrideAssigneeId);
+      if (dueDate) fd.set('due_date', format(dueDate, 'yyyy-MM-dd'));
 
-    // Add scheduled time if selected
-    if (scheduledTime) {
-      const [hours, minutes] = scheduledTime.split(':').map(Number);
-      const today = new Date();
-      const startTime = setMinutes(setHours(today, hours), minutes);
-      const endTime = addMinutes(startTime, parseInt(duration, 10));
-      formData.set('scheduled_start_time', startTime.toISOString());
-      formData.set('scheduled_end_time', endTime.toISOString());
+      if (scheduledTime) {
+        const [hours, minutes] = scheduledTime.split(':').map(Number);
+        const today = new Date();
+        const startTime = setMinutes(setHours(today, hours), minutes);
+        const endTime = addMinutes(startTime, parseInt(duration, 10));
+        fd.set('scheduled_start_time', startTime.toISOString());
+        fd.set('scheduled_end_time', endTime.toISOString());
+      }
+
+      return fd;
     }
 
-    const result = await createTask(formData);
+    let result;
+    if (assigneeId === 'both') {
+      // Create a task for each team member
+      const assigneeIds = profiles.map((p) => p.id);
+      const results = await Promise.all(assigneeIds.map((id) => createTask(buildFormData(id))));
+      result = results.find((r) => !r.success) || results[0];
+    } else {
+      result = await createTask(buildFormData(assigneeId));
+    }
 
     if (result.success) {
       setSuccess(true);
@@ -278,7 +294,9 @@ export function NewTaskModal({
                           assigneeId && 'border-primary/30 bg-primary/5'
                         )}
                       >
-                        {selectedAssignee ? (
+                        {assigneeId === 'both' ? (
+                          <Users className="h-3.5 w-3.5 text-primary" />
+                        ) : selectedAssignee ? (
                           <Avatar className="h-4 w-4">
                             {selectedAssignee.avatar_url && (
                               <AvatarImage src={selectedAssignee.avatar_url} />
@@ -295,6 +313,12 @@ export function NewTaskModal({
                       <SelectContent className="border-border/50 bg-card/95 backdrop-blur-xl">
                         <SelectItem value="unassigned">
                           <span className="text-muted-foreground">Unassigned</span>
+                        </SelectItem>
+                        <SelectItem value="both">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-primary" />
+                            <span>Both</span>
+                          </div>
                         </SelectItem>
                         {profiles.map((profile) => (
                           <SelectItem key={profile.id} value={profile.id}>
@@ -439,14 +463,21 @@ interface NewTaskModalControlledProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultAssigneeId?: string | null;
+  defaultScheduledTime?: string | null;
 }
 
 export function NewTaskModalControlled({
   open,
   onOpenChange,
   defaultAssigneeId,
+  defaultScheduledTime,
 }: NewTaskModalControlledProps) {
   return (
-    <NewTaskModal open={open} onOpenChange={onOpenChange} defaultAssigneeId={defaultAssigneeId} />
+    <NewTaskModal
+      open={open}
+      onOpenChange={onOpenChange}
+      defaultAssigneeId={defaultAssigneeId}
+      defaultScheduledTime={defaultScheduledTime}
+    />
   );
 }

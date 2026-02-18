@@ -231,6 +231,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [newTaskDefaultAssignee, setNewTaskDefaultAssignee] = useState<string | null>(null);
+  const [newTaskDefaultTime, setNewTaskDefaultTime] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const FAWZI_ID = '696cbe99-20fe-437c-97fe-246fb3367d9b';
@@ -254,8 +255,9 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAddTask = (assigneeId: string) => {
+  const handleAddTask = (assigneeId: string, scheduledTime?: string) => {
     setNewTaskDefaultAssignee(assigneeId);
+    setNewTaskDefaultTime(scheduledTime || null);
     setShowNewTaskModal(true);
   };
 
@@ -268,8 +270,11 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       if (t.scheduled_start_time && t.scheduled_end_time) {
         const s = parseISO(t.scheduled_start_time);
         if (isToday(s) || isSameDay(s, new Date())) {
+          // Unassigned scheduled tasks span both columns (joint task)
+          const isJoint =
+            !t.assignee_id || (t.assignee_id !== FAWZI_ID && t.assignee_id !== MOAYAD_ID);
           let col = 0;
-          if (t.assignee_id === MOAYAD_ID) col = 1;
+          if (!isJoint && t.assignee_id === MOAYAD_ID) col = 1;
           items.push({
             id: `task-${t.id}`,
             type: 'task',
@@ -278,7 +283,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             endTime: parseISO(t.scheduled_end_time),
             task: t,
             col,
-            span: false,
+            span: isJoint,
           });
         } else {
           unscheduled.push(t);
@@ -452,11 +457,12 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             const hour = START_HOUR + i;
             const isCurrentHour = currentTime.getHours() === hour;
             const y = i * HOUR_HEIGHT;
+            const timeStr = `${hour}:00`;
 
             return (
               <div
                 key={hour}
-                className="absolute left-0 right-0 border-b border-border/30"
+                className="group/hour absolute left-0 right-0 border-b border-border/30"
                 style={{ top: y, height: HOUR_HEIGHT }}
               >
                 {/* Time label */}
@@ -485,6 +491,26 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                   className="absolute bottom-0 top-0 border-l border-dashed border-border/25"
                   style={{ left: `calc(50% + ${TIME_GUTTER / 2}px)` }}
                 />
+
+                {/* Per-block add buttons (Fawzi column) */}
+                <button
+                  className="absolute top-1 z-[5] flex size-5 items-center justify-center rounded bg-foreground/[0.04] text-foreground/20 opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover/hour:opacity-100"
+                  style={{ left: `${TIME_GUTTER + 4}px` }}
+                  onClick={() => handleAddTask(FAWZI_ID, timeStr)}
+                  title={`Add task for Fawzi at ${hourLabel(hour)}`}
+                >
+                  <Plus className="size-3" />
+                </button>
+
+                {/* Per-block add buttons (Moayad column) */}
+                <button
+                  className="absolute top-1 z-[5] flex size-5 items-center justify-center rounded bg-foreground/[0.04] text-foreground/20 opacity-0 transition-all hover:bg-primary/10 hover:text-primary group-hover/hour:opacity-100"
+                  style={{ left: `calc(50% + ${TIME_GUTTER / 2 + 4}px)` }}
+                  onClick={() => handleAddTask(MOAYAD_ID, timeStr)}
+                  title={`Add task for Moayad at ${hourLabel(hour)}`}
+                >
+                  <Plus className="size-3" />
+                </button>
               </div>
             );
           })}
@@ -577,6 +603,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           open={showNewTaskModal}
           onOpenChange={setShowNewTaskModal}
           defaultAssigneeId={newTaskDefaultAssignee}
+          defaultScheduledTime={newTaskDefaultTime}
         />
       </div>
     </div>
