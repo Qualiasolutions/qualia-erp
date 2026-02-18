@@ -411,9 +411,9 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       {/* ── Column Headers ──────────────────────────────────────────────────── */}
       <div className="flex shrink-0 border-b border-border/30" style={{ height: 36 }}>
         {/* Time gutter spacer */}
-        <div className="shrink-0 border-r border-border/20" style={{ width: TIME_GUTTER }} />
+        <div className="shrink-0 border-r border-border/30" style={{ width: TIME_GUTTER }} />
         {/* Fawzi column */}
-        <div className="flex flex-1 items-center justify-between border-r border-border/20 px-3">
+        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border/25 px-3">
           <div className="flex items-center gap-2">
             <div className="size-[7px] rounded-full bg-sky-400" />
             <span className="text-[11px] font-semibold text-foreground/60">Fawzi</span>
@@ -445,8 +445,8 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       </div>
 
       {/* ── Time Grid ────────────────────────────────────────────────────────── */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
-        <div className="relative" style={{ height: TOTAL_HEIGHT }}>
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="relative overflow-hidden" style={{ height: TOTAL_HEIGHT }}>
           {/* Hour rows background */}
           {Array.from({ length: TOTAL_HOURS }, (_, i) => {
             const hour = START_HOUR + i;
@@ -456,12 +456,12 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             return (
               <div
                 key={hour}
-                className="absolute left-0 right-0 border-b border-border/[0.12]"
+                className="absolute left-0 right-0 border-b border-border/30"
                 style={{ top: y, height: HOUR_HEIGHT }}
               >
                 {/* Time label */}
                 <div
-                  className="absolute top-0 flex items-start justify-end border-r border-border/15 pr-3 pt-2"
+                  className="absolute top-0 flex items-start justify-end border-r border-border/30 pr-3 pt-2"
                   style={{ width: TIME_GUTTER }}
                 >
                   <span
@@ -476,14 +476,14 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
                 {/* Half-hour line */}
                 <div
-                  className="absolute left-0 right-0 border-b border-border/[0.06]"
+                  className="absolute left-0 right-0 border-b border-dotted border-border/15"
                   style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
                 />
 
                 {/* Column divider */}
                 <div
-                  className="absolute bottom-0 top-0 border-l border-dashed border-border/[0.12]"
-                  style={{ left: `calc(${TIME_GUTTER}px + 50%)` }}
+                  className="absolute bottom-0 top-0 border-l border-dashed border-border/25"
+                  style={{ left: `calc(50% + ${TIME_GUTTER / 2}px)` }}
                 />
               </div>
             );
