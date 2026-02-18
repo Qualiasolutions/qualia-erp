@@ -16,6 +16,7 @@ import {
   Hammer,
   Plus,
   ChevronRight,
+  Search,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -26,7 +27,6 @@ import { BuildingProjectSheet } from './building-project-sheet';
 import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
-import { motion } from 'framer-motion';
 
 interface Project {
   id: string;
@@ -42,56 +42,6 @@ interface TodayDashboardProps {
   projects: Project[];
   finishedProjects: unknown[];
   issues?: unknown[];
-}
-
-// =============================================================================
-// UNIFIED SECTION HEADER COMPONENT
-// =============================================================================
-
-interface SectionHeaderProps {
-  icon: React.ReactNode;
-  title: string;
-  count?: number;
-  countLabel?: string;
-  countColor?: 'amber' | 'violet' | 'emerald' | 'blue';
-  action?: React.ReactNode;
-}
-
-const COUNT_COLORS = {
-  amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-  emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-} as const;
-
-function SectionHeader({
-  icon,
-  title,
-  count,
-  countLabel,
-  countColor = 'emerald',
-  action,
-}: SectionHeaderProps) {
-  return (
-    <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
-      <div className="flex items-center gap-2.5">
-        <span className="text-foreground/70">{icon}</span>
-        <h2 className="text-[13px] font-semibold text-foreground">{title}</h2>
-        {typeof count === 'number' && (
-          <span
-            className={cn(
-              'rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums',
-              COUNT_COLORS[countColor]
-            )}
-          >
-            {count}
-            {countLabel && <span className="ml-1 font-normal opacity-70">{countLabel}</span>}
-          </span>
-        )}
-      </div>
-      {action}
-    </div>
-  );
 }
 
 // =============================================================================
@@ -112,16 +62,16 @@ const PROJECT_TYPE_CONFIG: Record<
     icon: <Mic2 className="size-3.5" />,
     color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
     dotColor: 'bg-amber-500',
-    label: 'Voice Agents',
+    label: 'Voice',
   },
   web_design: {
     icon: <Globe className="size-3.5" />,
     color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
     dotColor: 'bg-emerald-500',
-    label: 'Web Design',
+    label: 'Web',
   },
   seo: {
-    icon: <Globe className="size-3.5" />,
+    icon: <Search className="size-3.5" />,
     color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
     dotColor: 'bg-blue-500',
     label: 'SEO',
@@ -141,30 +91,26 @@ const PROJECT_TYPE_CONFIG: Record<
 };
 
 // =============================================================================
-// PROJECT LOGO COMPONENT
+// PROJECT LOGO
 // =============================================================================
 
 function ProjectLogo({
   logo_url,
   name,
   project_type,
-  size = 'sm',
 }: {
   logo_url?: string | null;
   name: string;
   project_type?: string | null;
-  size?: 'sm' | 'md';
 }) {
-  const sizeClass = size === 'sm' ? 'size-5' : 'size-6';
-
   if (logo_url) {
     return (
-      <div className={cn('shrink-0 overflow-hidden rounded', sizeClass)}>
+      <div className="size-6 shrink-0 overflow-hidden rounded-md border border-border/40">
         <Image
           src={logo_url}
           alt={name}
-          width={20}
-          height={20}
+          width={24}
+          height={24}
           className="size-full object-cover"
           unoptimized
         />
@@ -172,9 +118,14 @@ function ProjectLogo({
     );
   }
 
-  // Fallback: colored dot based on project type
   const config = PROJECT_TYPE_CONFIG[project_type || 'other'] || PROJECT_TYPE_CONFIG.other;
-  return <span className={cn('size-2.5 shrink-0 rounded-full', config.dotColor)} />;
+  return (
+    <div
+      className={cn('flex size-6 shrink-0 items-center justify-center rounded-md', config.color)}
+    >
+      {config.icon}
+    </div>
+  );
 }
 
 // =============================================================================
@@ -188,11 +139,7 @@ function BuildingProjectsList({
   projects: Project[];
   onProjectClick: (project: Project) => void;
 }) {
-  // Show all active projects (already filtered upstream) — no need to mark individually
-  const buildingProjects = projects;
-
-  // Group by project type
-  const grouped = buildingProjects.reduce(
+  const grouped = projects.reduce(
     (acc, project) => {
       const type = project.project_type || 'other';
       if (!acc[type]) acc[type] = [];
@@ -204,71 +151,87 @@ function BuildingProjectsList({
 
   const typeOrder = ['ai_agent', 'voice_agent', 'web_design', 'seo', 'ads', 'other'];
 
-  if (buildingProjects.length === 0) {
+  if (projects.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
         <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted/50">
           <Hammer className="size-4 text-foreground/40" />
         </div>
         <p className="text-xs font-medium text-foreground/60">No active builds</p>
-        <p className="mt-1 text-center text-[11px] text-foreground/40">
-          Projects marked as building will appear here
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="p-2">
-        {typeOrder.map((type) => {
-          const typeProjects = grouped[type];
-          if (!typeProjects?.length) return null;
+    <div className="flex-1 overflow-y-auto px-3 py-3">
+      {typeOrder.map((type) => {
+        const typeProjects = grouped[type];
+        if (!typeProjects?.length) return null;
 
-          const config = PROJECT_TYPE_CONFIG[type] || PROJECT_TYPE_CONFIG.other;
+        const config = PROJECT_TYPE_CONFIG[type] || PROJECT_TYPE_CONFIG.other;
 
-          return (
-            <motion.div
-              key={type}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-3"
-            >
-              {/* Type Header */}
-              <div className="mb-1 flex items-center gap-2 px-2 py-1.5">
-                <span className={cn('rounded-md p-1', config.color)}>{config.icon}</span>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-foreground/60">
-                  {config.label}
-                </span>
-                <span className="text-[10px] tabular-nums text-foreground/40">
-                  {typeProjects.length}
-                </span>
-              </div>
+        return (
+          <div key={type} className="mb-4 last:mb-0">
+            {/* Type Header */}
+            <div className="mb-1.5 flex items-center gap-2 px-1">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+                {config.label}
+              </span>
+              <span className="text-[10px] tabular-nums text-foreground/25">
+                {typeProjects.length}
+              </span>
+            </div>
 
-              {/* Project List */}
-              <div className="space-y-0.5">
-                {typeProjects.map((project) => (
-                  <button
-                    key={project.id}
-                    onClick={() => onProjectClick(project)}
-                    className="group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent"
-                  >
-                    <ProjectLogo
-                      logo_url={project.logo_url}
-                      name={project.name}
-                      project_type={project.project_type}
-                    />
-                    <span className="flex-1 truncate text-[13px] font-medium text-foreground">
-                      {project.name}
-                    </span>
-                    <ChevronRight className="size-3.5 text-foreground/30 opacity-0 transition-opacity group-hover:opacity-100" />
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
+            {/* Project List */}
+            <div className="space-y-px">
+              {typeProjects.map((project) => (
+                <button
+                  key={project.id}
+                  onClick={() => onProjectClick(project)}
+                  className="group flex w-full items-center gap-2.5 rounded-lg px-2 py-[7px] text-left transition-colors hover:bg-accent"
+                >
+                  <ProjectLogo
+                    logo_url={project.logo_url}
+                    name={project.name}
+                    project_type={project.project_type}
+                  />
+                  <span className="flex-1 truncate text-[13px] font-medium text-foreground/80 group-hover:text-foreground">
+                    {project.name}
+                  </span>
+                  <ChevronRight className="size-3 text-foreground/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// =============================================================================
+// STAT PILL
+// =============================================================================
+
+function StatPill({
+  value,
+  label,
+  color,
+}: {
+  value: number;
+  label: string;
+  color: 'amber' | 'violet' | 'emerald';
+}) {
+  const colors = {
+    amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+  };
+
+  return (
+    <div className={cn('flex items-center gap-1.5 rounded-full px-2.5 py-1', colors[color])}>
+      <span className="text-xs font-semibold tabular-nums">{value}</span>
+      <span className="text-[10px] opacity-70">{label}</span>
     </div>
   );
 }
@@ -298,58 +261,38 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
     startRefresh(() => router.refresh());
   };
 
-  // Computed stats
   const todaysMeetings = meetings.filter((m) => isToday(parseISO(m.start_time)));
   const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
   const buildingCount = projects.length;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      {/* ===== TOP HEADER ===== */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/60 bg-background/95 px-4 backdrop-blur-sm lg:px-6">
-        {/* Left: Menu + Greeting */}
-        <div className="flex items-center gap-4">
+      {/* ===== TOP BAR ===== */}
+      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 bg-background px-4 lg:px-5">
+        {/* Left */}
+        <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
             <Menu className="size-4" />
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-medium text-foreground">{greeting}</h1>
-            <span className="text-foreground/30">·</span>
-            <p className="text-sm text-foreground/70">{format(now, 'EEEE, MMM d')}</p>
+            <h1 className="text-[13px] font-semibold text-foreground">{greeting}</h1>
+            <span className="text-foreground/20">|</span>
+            <span className="text-[13px] text-foreground/50">{format(now, 'EEE, MMM d')}</span>
           </div>
 
-          {/* Quick Stats Pills */}
-          <div className="ml-4 hidden items-center gap-2 lg:flex">
-            <div className="flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1">
-              <span className="text-xs font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-                {pendingTasks}
-              </span>
-              <span className="text-[10px] text-amber-600/70 dark:text-amber-400/70">tasks</span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-violet-500/10 px-2.5 py-1">
-              <span className="text-xs font-semibold tabular-nums text-violet-600 dark:text-violet-400">
-                {todaysMeetings.length}
-              </span>
-              <span className="text-[10px] text-violet-600/70 dark:text-violet-400/70">
-                meetings
-              </span>
-            </div>
+          {/* Stats */}
+          <div className="ml-3 hidden items-center gap-1.5 lg:flex">
+            <StatPill value={pendingTasks} label="tasks" color="amber" />
+            <StatPill value={todaysMeetings.length} label="meetings" color="violet" />
             {buildingCount > 0 && (
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1">
-                <span className="text-xs font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                  {buildingCount}
-                </span>
-                <span className="text-[10px] text-emerald-600/70 dark:text-emerald-400/70">
-                  building
-                </span>
-              </div>
+              <StatPill value={buildingCount} label="building" color="emerald" />
             )}
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-1">
+        {/* Right */}
+        <div className="flex items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon"
@@ -357,54 +300,54 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={cn('size-4', isRefreshing && 'animate-spin')} />
+            <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
           </Button>
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
           <Button variant="ghost" size="icon" className="size-8" asChild>
             <Link href="/settings">
-              <Settings className="size-4" />
+              <Settings className="size-3.5" />
             </Link>
           </Button>
         </div>
       </header>
 
-      {/* ===== MAIN 3-COLUMN LAYOUT ===== */}
-      <main className="min-h-0 flex-1 bg-zinc-50/50 dark:bg-zinc-900/20">
-        <div className="mx-auto flex h-full max-w-[1800px]">
-          {/* ----- LEFT: Building Projects ----- */}
-          <aside className="hidden w-[280px] shrink-0 flex-col border-r border-border/40 bg-background lg:flex">
-            <SectionHeader
-              icon={<Hammer className="size-4" />}
-              title="Building"
-              count={buildingCount}
-              countColor="emerald"
-              action={
-                <Button variant="ghost" size="icon" className="size-7" asChild>
-                  <Link href="/projects?filter=building">
-                    <Plus className="size-4" />
-                  </Link>
-                </Button>
-              }
-            />
-            <BuildingProjectsList
-              projects={projects}
-              onProjectClick={(p) => {
-                setSheetProject(p);
-                setSheetOpen(true);
-              }}
-            />
-          </aside>
+      {/* ===== CONTENT ===== */}
+      <div className="flex min-h-0 flex-1">
+        {/* ----- LEFT: Building Projects ----- */}
+        <aside className="hidden w-[260px] shrink-0 flex-col border-r border-border/40 lg:flex">
+          {/* Panel Header - same h-12 as top bar */}
+          <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
+            <div className="flex items-center gap-2">
+              <Hammer className="size-3.5 text-foreground/50" />
+              <span className="text-[13px] font-semibold text-foreground">Building</span>
+              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                {buildingCount}
+              </span>
+            </div>
+            <Button variant="ghost" size="icon" className="size-7" asChild>
+              <Link href="/projects?filter=building">
+                <Plus className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+          <BuildingProjectsList
+            projects={projects}
+            onProjectClick={(p) => {
+              setSheetProject(p);
+              setSheetOpen(true);
+            }}
+          />
+        </aside>
 
-          {/* ----- CENTER: Daily Schedule (Primary) ----- */}
-          <section className="min-w-0 flex-1 bg-background">
-            <DailyScheduleGrid tasks={tasks} meetings={meetings} />
-          </section>
-        </div>
-      </main>
+        {/* ----- CENTER: Daily Schedule ----- */}
+        <section className="min-w-0 flex-1">
+          <DailyScheduleGrid tasks={tasks} meetings={meetings} />
+        </section>
+      </div>
 
-      {/* Project Checklist Sheet */}
+      {/* Project Sheet */}
       <BuildingProjectSheet project={sheetProject} open={sheetOpen} onOpenChange={setSheetOpen} />
     </div>
   );

@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { format, parseISO, isToday, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Video, Check, Circle, ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { Video, Check, Circle, ChevronDown, ChevronRight, Plus, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { type Task, quickUpdateTask } from '@/app/actions/inbox';
 import { type MeetingWithRelations, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
@@ -11,10 +11,12 @@ import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constant
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 
-// ── Schedule config ──────────────────────────────────────────────────────────
+// ── Config ───────────────────────────────────────────────────────────────────
 const START_HOUR = 8;
 const END_HOUR = 18;
-const TOTAL_HOURS = END_HOUR - START_HOUR; // 10
+const TOTAL_HOURS = END_HOUR - START_HOUR;
+const HOUR_HEIGHT = 72; // px per hour row
+const TOTAL_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
 
 interface ScheduleItem {
   id: string;
@@ -24,8 +26,8 @@ interface ScheduleItem {
   endTime: Date;
   task?: Task;
   meeting?: MeetingWithRelations;
-  col: number; // 0 = Left (Fawzi), 1 = Right (Moayad)
-  span: boolean; // True if spans both columns
+  col: number;
+  span: boolean;
 }
 
 interface DailyScheduleGridProps {
@@ -40,51 +42,36 @@ function hourLabel(hour: number): string {
   return format(d, 'h a');
 }
 
-/** Returns a 0-100 percentage for where `time` falls in the schedule range */
-function pct(time: Date): number {
+function topPx(time: Date): number {
   const h = time.getHours() + time.getMinutes() / 60;
-  return Math.max(0, Math.min(((h - START_HOUR) / TOTAL_HOURS) * 100, 100));
+  return Math.max(0, Math.min((h - START_HOUR) * HOUR_HEIGHT, TOTAL_HEIGHT));
 }
 
-/** Returns a percentage height for a duration */
-function pctHeight(start: Date, end: Date): number {
+function heightPx(start: Date, end: Date): number {
   const dur = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-  // Min height = 40% of one hour slot so tiny items are still visible
-  return Math.max((1 / TOTAL_HOURS) * 100 * 0.4, (dur / TOTAL_HOURS) * 100);
+  return Math.max(HOUR_HEIGHT * 0.35, dur * HOUR_HEIGHT);
 }
 
-// Priority left-border accent
 const PRIORITY_ACCENT: Record<string, string> = {
   Urgent: 'border-l-red-500',
   High: 'border-l-orange-500',
-  Medium: 'border-l-yellow-500',
+  Medium: 'border-l-amber-500',
   Low: 'border-l-blue-400',
-  'No Priority': 'border-l-zinc-300 dark:border-l-zinc-600',
+  'No Priority': 'border-l-border',
 };
 
 // ── Event Cards ──────────────────────────────────────────────────────────────
 
-function MeetingCard({
-  item,
-  style,
-  isNarrow,
-}: {
-  item: ScheduleItem;
-  style: React.CSSProperties;
-  isNarrow: boolean;
-}) {
+function MeetingCard({ item, style }: { item: ScheduleItem; style: React.CSSProperties }) {
   return (
     <div
-      className={cn(
-        'absolute inset-x-0 overflow-hidden rounded-[5px] border border-violet-500/20 bg-violet-500/10 px-2.5 py-1.5 transition-colors hover:bg-violet-500/[0.15]',
-        isNarrow && 'right-[52%]'
-      )}
+      className="absolute overflow-hidden rounded-md border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-1.5 transition-all hover:bg-violet-500/[0.13] hover:shadow-sm"
       style={style}
     >
-      <p className="truncate text-[11px] font-semibold text-violet-700 dark:text-violet-300">
+      <p className="truncate text-[11px] font-semibold leading-tight text-violet-700 dark:text-violet-300">
         {item.title}
       </p>
-      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-violet-600/70 dark:text-violet-400/60">
+      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-violet-600/60 dark:text-violet-400/50">
         <span>
           {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
         </span>
@@ -102,7 +89,7 @@ function MeetingCard({
           href={item.meeting.meeting_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-flex items-center gap-1 rounded bg-violet-500 px-1.5 py-0.5 text-[9px] font-semibold text-white transition-colors hover:bg-violet-600"
+          className="mt-1 inline-flex items-center gap-1 rounded bg-violet-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white transition-colors hover:bg-violet-600"
           onClick={(e) => e.stopPropagation()}
         >
           <Video className="size-2.5" />
@@ -116,13 +103,11 @@ function MeetingCard({
 function TaskCard({
   item,
   style,
-  isNarrow,
   onTaskClick,
   onTaskComplete,
 }: {
   item: ScheduleItem;
   style: React.CSSProperties;
-  isNarrow: boolean;
   onTaskClick: (task: Task) => void;
   onTaskComplete: (taskId: string) => void;
 }) {
@@ -135,10 +120,9 @@ function TaskCard({
   return (
     <div
       className={cn(
-        'absolute inset-x-0 cursor-pointer overflow-hidden rounded-[5px] border border-l-[3px] border-border/40 bg-card px-2.5 py-1.5 transition-all hover:border-border/60 hover:shadow-sm',
+        'absolute cursor-pointer overflow-hidden rounded-md border border-l-[3px] border-border/30 bg-card px-2.5 py-1.5 transition-all hover:border-border/50 hover:shadow-sm',
         accent,
-        isDone && 'opacity-40',
-        isNarrow && 'left-[52%]'
+        isDone && 'opacity-35'
       )}
       style={style}
       onClick={() => onTaskClick(task)}
@@ -154,25 +138,25 @@ function TaskCard({
           {isDone ? (
             <Check className="size-3 text-emerald-500" />
           ) : (
-            <Circle className="size-3 text-foreground/25 transition-colors hover:text-foreground/50" />
+            <Circle className="size-3 text-foreground/20 transition-colors hover:text-foreground/50" />
           )}
         </button>
         <div className="min-w-0 flex-1">
           <p
             className={cn(
-              'truncate text-[11px] font-semibold text-foreground',
+              'truncate text-[11px] font-semibold leading-tight text-foreground',
               isDone && 'line-through'
             )}
           >
             {task.title}
           </p>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/45">
+          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/40">
             <span>
               {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
             </span>
             {task.project && (
               <>
-                <span className="opacity-40">·</span>
+                <span className="opacity-30">·</span>
                 <span className="truncate">{task.project.name}</span>
               </>
             )}
@@ -183,7 +167,7 @@ function TaskCard({
   );
 }
 
-// ── Unscheduled row ──────────────────────────────────────────────────────────
+// ── Unscheduled Row ──────────────────────────────────────────────────────────
 
 function UnscheduledRow({
   task,
@@ -199,7 +183,7 @@ function UnscheduledRow({
 
   return (
     <div
-      className="flex cursor-pointer items-center gap-2 px-3 py-1.5 transition-colors hover:bg-accent/40"
+      className="flex cursor-pointer items-center gap-2.5 px-4 py-[7px] transition-colors hover:bg-accent/40"
       onClick={() => onTaskClick(task)}
     >
       <button
@@ -212,19 +196,19 @@ function UnscheduledRow({
         {isDone ? (
           <Check className="size-3 text-emerald-500" />
         ) : (
-          <Circle className="size-3 text-foreground/25 hover:text-foreground/50" />
+          <Circle className="size-3 text-foreground/20 hover:text-foreground/50" />
         )}
       </button>
       <span
         className={cn(
-          'flex-1 truncate text-[12px] text-foreground',
+          'flex-1 truncate text-[12px] text-foreground/80',
           isDone && 'line-through opacity-40'
         )}
       >
         {task.title}
       </span>
       {task.project && (
-        <span className="max-w-[90px] shrink-0 truncate text-[10px] text-foreground/35">
+        <span className="max-w-[100px] shrink-0 truncate text-[10px] text-foreground/30">
           {task.project.name}
         </span>
       )}
@@ -247,15 +231,27 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [newTaskDefaultAssignee, setNewTaskDefaultAssignee] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // User IDs
   const FAWZI_ID = '696cbe99-20fe-437c-97fe-246fb3367d9b';
   const MOAYAD_ID = 'e0472b7b-4378-4311-9c45-9d3e8ca94bd2';
 
-  // Tick every minute
   useEffect(() => {
     const id = setInterval(() => setCurrentTime(new Date()), 60_000);
     return () => clearInterval(id);
+  }, []);
+
+  // Scroll to current time on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      const h = currentTime.getHours() + currentTime.getMinutes() / 60;
+      if (h >= START_HOUR && h <= END_HOUR) {
+        const scrollTo = Math.max(0, (h - START_HOUR) * HOUR_HEIGHT - 100);
+        scrollRef.current.scrollTop = scrollTo;
+      }
+    }
+    // Only on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAddTask = (assigneeId: string) => {
@@ -263,33 +259,17 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     setShowNewTaskModal(true);
   };
 
-  // ── Partition tasks ──────────────────────────────────────────────────────
+  // ── Partition items ────────────────────────────────────────────────────────
   const { scheduledItems, unscheduledTasks } = useMemo(() => {
     const items: ScheduleItem[] = [];
     const unscheduled: Task[] = [];
 
-    // Process tasks
     for (const t of tasks) {
       if (t.scheduled_start_time && t.scheduled_end_time) {
         const s = parseISO(t.scheduled_start_time);
         if (isToday(s) || isSameDay(s, new Date())) {
-          // Assign col based on assignee (0=Fawzi, 1=Moayad, default=0/Fawzi if unknown)
-          // Actually, if unknown, maybe show for both or just Fawzi? Let's default to Fawzi (left)
-          // or filter out if not one of them?
-          // The prompt implies "one for fawzi and one for moayad", so maybe we only show theirs.
-          // Let's check assignee.
-          let col = 0; // Default Fawzi
+          let col = 0;
           if (t.assignee_id === MOAYAD_ID) col = 1;
-          else if (t.assignee_id === FAWZI_ID) col = 0;
-          else {
-            // Task assigned to someone else?
-            // For now, let's put unassigned or others in Fawzi's column or handle logic?
-            // Let's stick to the specific user request: "one for fawzi and one for moayad"
-            // If it's unassigned, maybe show in Fawzi's for visibility or check creator?
-            // Let's assume left column is main/admin/Fawzi.
-            col = 0;
-          }
-
           items.push({
             id: `task-${t.id}`,
             type: 'task',
@@ -298,7 +278,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             endTime: parseISO(t.scheduled_end_time),
             task: t,
             col,
-            span: false, // Tasks generally don't span unless we implement shared tasks later
+            span: false,
           });
         } else {
           unscheduled.push(t);
@@ -308,17 +288,14 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       }
     }
 
-    // Process meetings
     for (const m of meetings) {
       const s = parseISO(m.start_time);
       if (isToday(s)) {
-        // Check attendees
         const attendees = m.attendees.map((a) => a.profile?.id);
-        const hasFawzi = attendees.includes(FAWZI_ID) || m.creator?.id === FAWZI_ID; // Creator is usually attendee
+        const hasFawzi = attendees.includes(FAWZI_ID) || m.creator?.id === FAWZI_ID;
         const hasMoayad = attendees.includes(MOAYAD_ID) || m.creator?.id === MOAYAD_ID;
 
         if (hasFawzi && hasMoayad) {
-          // Merged meeting
           items.push({
             id: `meeting-${m.id}`,
             type: 'meeting',
@@ -330,31 +307,16 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             span: true,
           });
         } else {
-          // Individual meeting
-          if (hasMoayad) {
-            items.push({
-              id: `meeting-${m.id}`,
-              type: 'meeting',
-              title: m.title,
-              startTime: s,
-              endTime: parseISO(m.end_time),
-              meeting: m,
-              col: 1,
-              span: false,
-            });
-          } else {
-            // Default to Fawzi/Left if only Fawzi or neither (e.g. system meeting?)
-            items.push({
-              id: `meeting-${m.id}`,
-              type: 'meeting',
-              title: m.title,
-              startTime: s,
-              endTime: parseISO(m.end_time),
-              meeting: m,
-              col: 0,
-              span: false,
-            });
-          }
+          items.push({
+            id: `meeting-${m.id}`,
+            type: 'meeting',
+            title: m.title,
+            startTime: s,
+            endTime: parseISO(m.end_time),
+            meeting: m,
+            col: hasMoayad ? 1 : 0,
+            span: false,
+          });
         }
       }
     }
@@ -365,84 +327,53 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     };
   }, [tasks, meetings]);
 
-  // ── Overlap detection / Visual Position ──────────────────────────────────
-  // We need to calculate width and left position.
-  // Col 0: Left 0, Width 50% (if not span)
-  // Col 1: Left 50%, Width 50%
-  // Span: Left 0, Width 100%
-  // AND we need to handle overlaps within the same column if multiple items stack.
-  // For simplicity V1: Just place them side-by-side based on Col.
-  // TODO: Intra-column overlap handling (like narrowing them further) would be ideal but complex.
-  // Let's assume simple 2-column grid for now as requested.
-
+  // ── Position map ───────────────────────────────────────────────────────────
   const positionMap = useMemo(() => {
     const map = new Map<string, React.CSSProperties>();
+    const GAP = 3; // px gap between columns
 
-    // We also need to handle overlaps *within* a column?
-    // The previous implementation handled overlaps by "narrowing".
-    // Let's keep it simple:
-    // If span: left 0, width 100%
-    // If col 0: left 0, width 48% (gap 2%)
-    // If col 1: left 52%, width 48%
+    for (const item of scheduledItems) {
+      const top = topPx(item.startTime);
+      const height = heightPx(item.startTime, item.endTime);
 
-    // But what if 2 tasks for Fawzi at same time?
-    // Let's run the overlap logic per column.
-
-    const resolveColumnOverlaps = (
-      colItems: ScheduleItem[],
-      baseLeft: number,
-      baseWidth: number
-    ) => {
-      // Simple greedy layout or just stack them?
-      // Stacking with z-index or slight offset is easier for "quick" implementation.
-      // Let's stick to the provided requirement: "divide schedule into 2 columns".
-      // Use basic full width of the column.
-
-      for (const item of colItems) {
-        const top = pct(item.startTime);
-        const height = pctHeight(item.startTime, item.endTime);
-
+      if (item.span) {
         map.set(item.id, {
-          top: `${top}%`,
-          height: `${height}%`,
-          left: `${baseLeft}%`,
-          width: `${baseWidth}%`,
-          zIndex: 10, // Base z-index
+          top: `${top}px`,
+          height: `${height}px`,
+          left: `${GAP}px`,
+          right: `${GAP}px`,
+          zIndex: 20,
+        });
+      } else if (item.col === 0) {
+        map.set(item.id, {
+          top: `${top}px`,
+          height: `${height}px`,
+          left: `${GAP}px`,
+          right: `calc(50% + ${GAP / 2}px)`,
+          zIndex: 10,
+        });
+      } else {
+        map.set(item.id, {
+          top: `${top}px`,
+          height: `${height}px`,
+          left: `calc(50% + ${GAP / 2}px)`,
+          right: `${GAP}px`,
+          zIndex: 10,
         });
       }
-    };
-
-    const fawziItems = scheduledItems.filter((i) => i.col === 0 && !i.span);
-    const moayadItems = scheduledItems.filter((i) => i.col === 1 && !i.span);
-    const mergedItems = scheduledItems.filter((i) => i.span);
-
-    // Span items
-    for (const item of mergedItems) {
-      const top = pct(item.startTime);
-      const height = pctHeight(item.startTime, item.endTime);
-      map.set(item.id, {
-        top: `${top}%`,
-        height: `${height}%`,
-        left: '0%',
-        width: '100%',
-        zIndex: 20, // Higher z-index for spanned events
-      });
     }
-
-    resolveColumnOverlaps(fawziItems, 0.5, 49); // Leave tiny gap for borders
-    resolveColumnOverlaps(moayadItems, 50.5, 49);
 
     return map;
   }, [scheduledItems]);
 
-  // ── Current time line ────────────────────────────────────────────────────
-  const nowPct = useMemo(() => {
+  // ── Current time ───────────────────────────────────────────────────────────
+  const nowTop = useMemo(() => {
     const h = currentTime.getHours() + currentTime.getMinutes() / 60;
     if (h < START_HOUR || h > END_HOUR) return null;
-    return pct(currentTime);
+    return topPx(currentTime);
   }, [currentTime]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleComplete = useCallback(
     async (taskId: string) => {
       const t = tasks.find((x) => x.id === taskId);
@@ -454,165 +385,172 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   );
 
   const pendingCount = unscheduledTasks.filter((t) => t.status !== 'Done').length;
+  const TIME_GUTTER = 56; // px
 
   return (
     <div className="flex h-full flex-col">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 px-6">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
-          <span className="text-xs tabular-nums text-foreground/40">
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
+        <div className="flex items-center gap-2.5">
+          <Clock className="size-3.5 text-foreground/50" />
+          <span className="text-[13px] font-semibold text-foreground">Schedule</span>
+          <span className="text-[12px] tabular-nums text-foreground/35">
             {format(new Date(), 'EEE, MMM d')}
           </span>
         </div>
-        {/* Global Add - defaults to Fawzi/Unassigned or generic */}
         <Button
           variant="ghost"
           size="icon"
-          className="size-8 text-foreground/50 hover:text-foreground"
+          className="size-7 text-foreground/40 hover:text-foreground"
           onClick={() => handleAddTask(FAWZI_ID)}
         >
-          <Plus className="size-4" />
+          <Plus className="size-3.5" />
         </Button>
       </div>
 
-      {/* ── Column Headers ────────────────────────────────────────────────── */}
-      <div className="flex h-10 shrink-0 border-b border-border/20 bg-muted/20">
-        <div className="w-16 shrink-0 border-r border-border/20" /> {/* Time gutter spacer */}
-        <div className="flex flex-1">
-          <div className="flex flex-1 items-center justify-between border-r border-border/20 px-3">
-            <span className="flex items-center gap-2 text-xs font-semibold text-foreground/70">
-              <div className="size-2 rounded-full bg-blue-400" />
-              Fawzi
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-6"
-              onClick={() => handleAddTask(FAWZI_ID)}
-            >
-              <Plus className="size-3 text-muted-foreground" />
-            </Button>
+      {/* ── Column Headers ──────────────────────────────────────────────────── */}
+      <div className="flex shrink-0 border-b border-border/30" style={{ height: 36 }}>
+        {/* Time gutter spacer */}
+        <div className="shrink-0 border-r border-border/20" style={{ width: TIME_GUTTER }} />
+        {/* Fawzi column */}
+        <div className="flex flex-1 items-center justify-between border-r border-border/20 px-3">
+          <div className="flex items-center gap-2">
+            <div className="size-[7px] rounded-full bg-sky-400" />
+            <span className="text-[11px] font-semibold text-foreground/60">Fawzi</span>
           </div>
-          <div className="flex flex-1 items-center justify-between px-3">
-            <span className="flex items-center gap-2 text-xs font-semibold text-foreground/70">
-              <div className="size-2 rounded-full bg-purple-400" />
-              Moayad
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-6"
-              onClick={() => handleAddTask(MOAYAD_ID)}
-            >
-              <Plus className="size-3 text-muted-foreground" />
-            </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            onClick={() => handleAddTask(FAWZI_ID)}
+          >
+            <Plus className="size-3 text-foreground/30" />
+          </Button>
+        </div>
+        {/* Moayad column */}
+        <div className="flex flex-1 items-center justify-between px-3">
+          <div className="flex items-center gap-2">
+            <div className="size-[7px] rounded-full bg-violet-400" />
+            <span className="text-[11px] font-semibold text-foreground/60">Moayad</span>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6"
+            onClick={() => handleAddTask(MOAYAD_ID)}
+          >
+            <Plus className="size-3 text-foreground/30" />
+          </Button>
         </div>
       </div>
 
-      {/* ── Time Grid ──────────────────────────────────────────────────── */}
-      <div className="relative min-h-0 flex-1">
-        {/* Background Grid */}
-        <div className="grid h-full" style={{ gridTemplateRows: `repeat(${TOTAL_HOURS}, 1fr)` }}>
+      {/* ── Time Grid ────────────────────────────────────────────────────────── */}
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+        <div className="relative" style={{ height: TOTAL_HEIGHT }}>
+          {/* Hour rows background */}
           {Array.from({ length: TOTAL_HOURS }, (_, i) => {
             const hour = START_HOUR + i;
             const isCurrentHour = currentTime.getHours() === hour;
+            const y = i * HOUR_HEIGHT;
+
             return (
               <div
                 key={hour}
-                className={cn(
-                  'group relative flex border-b border-border/20 transition-colors hover:bg-accent/20',
-                  isCurrentHour && 'bg-accent/10'
-                )}
+                className="absolute left-0 right-0 border-b border-border/[0.12]"
+                style={{ top: y, height: HOUR_HEIGHT }}
               >
-                {/* Time gutter */}
-                <div className="flex w-16 shrink-0 items-start justify-end border-r border-border/30 bg-muted/5 pr-4 pt-3">
+                {/* Time label */}
+                <div
+                  className="absolute top-0 flex items-start justify-end border-r border-border/15 pr-3 pt-2"
+                  style={{ width: TIME_GUTTER }}
+                >
                   <span
                     className={cn(
-                      'text-xs font-medium tabular-nums leading-none',
-                      isCurrentHour ? 'text-foreground/70' : 'text-foreground/30'
+                      'text-[10px] font-medium tabular-nums leading-none',
+                      isCurrentHour ? 'text-foreground/60' : 'text-foreground/25'
                     )}
                   >
                     {hourLabel(hour)}
                   </span>
                 </div>
-                {/* Column Dividers Background */}
-                <div className="relative flex flex-1">
-                  <div className="flex-1 border-r border-dashed border-border/20" />
-                  <div className="flex-1" />
-                </div>
+
+                {/* Half-hour line */}
+                <div
+                  className="absolute left-0 right-0 border-b border-border/[0.06]"
+                  style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
+                />
+
+                {/* Column divider */}
+                <div
+                  className="absolute bottom-0 top-0 border-l border-dashed border-border/[0.12]"
+                  style={{ left: `calc(${TIME_GUTTER}px + 50%)` }}
+                />
               </div>
             );
           })}
-        </div>
 
-        {/* ── Event layer (absolute over the grid) ──────────────────── */}
-        <div className="pointer-events-none absolute inset-0" style={{ left: '4rem' }}>
-          <div className="pointer-events-auto relative h-full w-full">
-            {scheduledItems.map((item) => {
-              const style = positionMap.get(item.id);
-              if (!style) return null;
+          {/* ── Event layer ───────────────────────────────────────────────── */}
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0"
+            style={{ left: TIME_GUTTER }}
+          >
+            <div className="pointer-events-auto relative h-full w-full">
+              {scheduledItems.map((item) => {
+                const style = positionMap.get(item.id);
+                if (!style) return null;
 
-              if (item.type === 'meeting') {
+                if (item.type === 'meeting') {
+                  return <MeetingCard key={item.id} item={item} style={style} />;
+                }
                 return (
-                  <MeetingCard
+                  <TaskCard
                     key={item.id}
                     item={item}
                     style={style}
-                    isNarrow={false} // Handled by width in style
+                    onTaskClick={setEditingTask}
+                    onTaskComplete={handleComplete}
                   />
                 );
-              }
-              return (
-                <TaskCard
-                  key={item.id}
-                  item={item}
-                  style={style}
-                  isNarrow={false} // Handled by width in style
-                  onTaskClick={setEditingTask}
-                  onTaskComplete={handleComplete}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Current time indicator ────────────────────────────────── */}
-        {nowPct !== null && (
-          <div
-            className="pointer-events-none absolute left-0 right-0 z-50 flex items-center"
-            style={{ top: `${nowPct}%` }}
-          >
-            <div className="flex w-16 items-center justify-end pr-2">
-              <div className="size-1.5 rounded-full bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+              })}
             </div>
-            <div className="h-[1.5px] flex-1 bg-red-500/60 shadow-[0_1px_2px_rgba(239,68,68,0.3)]" />
           </div>
-        )}
+
+          {/* ── Current time line ─────────────────────────────────────────── */}
+          {nowTop !== null && (
+            <div
+              className="pointer-events-none absolute left-0 right-0 z-30 flex items-center"
+              style={{ top: nowTop }}
+            >
+              <div className="flex items-center justify-end pr-1.5" style={{ width: TIME_GUTTER }}>
+                <div className="size-[6px] rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]" />
+              </div>
+              <div className="h-[1px] flex-1 bg-red-500/50" />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* ── Unscheduled Tasks ──────────────────────────────────────────── */}
+      {/* ── Unscheduled Tasks ──────────────────────────────────────────────── */}
       {unscheduledTasks.length > 0 && (
-        <div className="shrink-0 border-t border-border/40 bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div className="shrink-0 border-t border-border/40">
           <button
-            className="flex w-full items-center gap-2 px-6 py-3 text-left transition-colors hover:bg-muted/50"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-muted/30"
             onClick={() => setShowUnscheduled(!showUnscheduled)}
           >
             {showUnscheduled ? (
-              <ChevronDown className="size-3.5 text-foreground/40" />
+              <ChevronDown className="size-3 text-foreground/35" />
             ) : (
-              <ChevronRight className="size-3.5 text-foreground/40" />
+              <ChevronRight className="size-3 text-foreground/35" />
             )}
-            <span className="text-xs font-semibold text-foreground/60">Unscheduled Tasks</span>
+            <span className="text-[11px] font-semibold text-foreground/50">Unscheduled</span>
             {pendingCount > 0 && (
-              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-foreground/60">
+              <span className="rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-foreground/45">
                 {pendingCount}
               </span>
             )}
           </button>
           {showUnscheduled && (
-            <div className="max-h-36 overflow-y-auto pb-1">
+            <div className="max-h-40 overflow-y-auto border-t border-border/20 pb-1">
               {unscheduledTasks.map((task) => (
                 <UnscheduledRow
                   key={task.id}
@@ -626,7 +564,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         </div>
       )}
 
-      {/* ── Modals ─────────────────────────────────────────────────────── */}
+      {/* ── Modals ─────────────────────────────────────────────────────────── */}
       {editingTask && (
         <EditTaskModal
           task={editingTask}
@@ -644,12 +582,3 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     </div>
   );
 }
-
-// Re-add ScheduleItem interface that was lost in replacement if defined within component file,
-// otherwise assume it's at top level.
-// Looking at previous view_file, interfaces were defined at top level.
-// But I need to update ScheduleItem to include `col` and `span`.
-
-// Since I replaced the *Function*, I should ensure the Interfaces are compatible or if I need to update them too.
-// The replace_file_content tool replaces a CONTIGUOUS block.
-// I replaced `export function DailyScheduleGrid...`. Use `multi_replace` to update interface as well.
