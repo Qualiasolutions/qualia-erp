@@ -13,6 +13,7 @@ import {
   LogOut,
   Settings,
   BookOpen,
+  FlaskConical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Research', href: '/research', icon: FlaskConical },
   { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
 ];
 
