@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharmacovigilance Video</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; width: 100vw; height: 100vh; overflow: hidden; }
+    video { width: 100%; height: 100%; object-fit: contain; }
+  </style>
+</head>
+<body>
+  <!-- Replace VIDEO_URL below with your actual video URL -->
+  <video id="video" controls playsInline autoplay>
+    <source src="VIDEO_URL" type="video/mp4">
+  </video>
+  <script>
+    const video = document.getElementById('video');
+    const playFullscreen = async () => {
+      await video.play();
+      try {
+        if (video.requestFullscreen) video.requestFullscreen();
+        else if (video.webkitRequestFullscreen) video.webkitRequestFullscreen();
+        else if (videomozRequestFullScreen) video.mozRequestFullScreen();
+      } catch(e) {}
+    };
+    video.addEventListener('click', playFullscreen);
+    video.play().catch(() => {});
+  </script>
+</body>
+</html>

@@ -356,20 +356,20 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   return (
     <div className="flex h-full flex-col">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex h-11 shrink-0 items-center justify-between border-b border-border/50 px-4">
+      <div className="flex h-14 shrink-0 items-center justify-between border-b border-border/50 px-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-[13px] font-semibold text-foreground">Schedule</h2>
-          <span className="text-[11px] tabular-nums text-foreground/40">
+          <h2 className="text-sm font-semibold text-foreground">Schedule</h2>
+          <span className="text-xs tabular-nums text-foreground/40">
             {format(new Date(), 'EEE, MMM d')}
           </span>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="size-7 text-foreground/50 hover:text-foreground"
+          className="size-8 text-foreground/50 hover:text-foreground"
           onClick={() => setShowNewTaskModal(true)}
         >
-          <Plus className="size-3.5" />
+          <Plus className="size-4" />
         </Button>
       </div>
 
@@ -390,10 +390,10 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 onClick={() => handleSlotClick(hour)}
               >
                 {/* Time gutter */}
-                <div className="flex w-14 shrink-0 items-start justify-end pr-3 pt-1.5">
+                <div className="flex w-16 shrink-0 items-start justify-end pr-4 pt-3">
                   <span
                     className={cn(
-                      'text-[10px] font-medium tabular-nums leading-none',
+                      'text-xs font-medium tabular-nums leading-none',
                       isCurrentHour ? 'text-foreground/70' : 'text-foreground/30'
                     )}
                   >
@@ -410,10 +410,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         </div>
 
         {/* ── Event layer (absolute over the grid) ──────────────────── */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ left: 'calc(3.5rem + 1px)' }}
-        >
+        <div className="pointer-events-none absolute inset-0" style={{ left: 'calc(4rem + 1px)' }}>
           <div className="pointer-events-auto relative h-full px-1.5">
             {items.map((item) => {
               const pos = positions.get(item.id);
@@ -464,19 +461,19 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
       {/* ── Unscheduled Tasks ──────────────────────────────────────────── */}
       {unscheduledTasks.length > 0 && (
-        <div className="shrink-0 border-t border-border/40">
+        <div className="shrink-0 border-t border-border/40 bg-zinc-50/50 dark:bg-zinc-900/50">
           <button
-            className="flex w-full items-center gap-2 px-4 py-2 text-left transition-colors hover:bg-muted/30"
+            className="flex w-full items-center gap-2 px-6 py-3 text-left transition-colors hover:bg-muted/50"
             onClick={() => setShowUnscheduled(!showUnscheduled)}
           >
             {showUnscheduled ? (
-              <ChevronDown className="size-3 text-foreground/40" />
+              <ChevronDown className="size-3.5 text-foreground/40" />
             ) : (
-              <ChevronRight className="size-3 text-foreground/40" />
+              <ChevronRight className="size-3.5 text-foreground/40" />
             )}
-            <span className="text-[11px] font-semibold text-foreground/50">Unscheduled</span>
+            <span className="text-xs font-semibold text-foreground/60">Unscheduled Tasks</span>
             {pendingCount > 0 && (
-              <span className="rounded-full bg-foreground/5 px-1.5 py-px text-[10px] font-medium tabular-nums text-foreground/40">
+              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-medium tabular-nums text-foreground/60">
                 {pendingCount}
               </span>
             )}

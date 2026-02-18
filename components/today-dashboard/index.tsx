@@ -371,10 +371,10 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
       </header>
 
       {/* ===== MAIN 3-COLUMN LAYOUT ===== */}
-      <main className="min-h-0 flex-1">
-        <div className="flex h-full">
+      <main className="min-h-0 flex-1 bg-zinc-50/50 dark:bg-zinc-900/20">
+        <div className="mx-auto flex h-full max-w-[1800px]">
           {/* ----- LEFT: Building Projects ----- */}
-          <aside className="hidden w-56 shrink-0 flex-col border-r border-border/60 lg:flex xl:w-64">
+          <aside className="hidden w-[280px] shrink-0 flex-col border-r border-border/40 bg-background lg:flex">
             <SectionHeader
               icon={<Hammer className="size-4" />}
               title="Building"
@@ -398,7 +398,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           </aside>
 
           {/* ----- CENTER: Daily Schedule (Primary) ----- */}
-          <section className="min-w-0 flex-1">
+          <section className="min-w-0 flex-1 bg-background">
             <DailyScheduleGrid tasks={tasks} meetings={meetings} />
           </section>
         </div>

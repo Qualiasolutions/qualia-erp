@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { X, Minus, MessageSquare, Mic, FileText, Bot, FileStack } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, AssistantMode } from './ai-assistant-provider';
@@ -42,29 +42,10 @@ export function AIAssistantWidget() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, open, close]);
 
-  const handleFabClick = useCallback(() => {
-    open();
-  }, [open]);
-
   return (
     <>
       {/* FAB - Floating Action Button */}
-      {!isOpen && (
-        <button
-          onClick={handleFabClick}
-          className={cn(
-            'fixed bottom-6 right-6 z-assistant',
-            'flex h-12 w-12 items-center justify-center rounded-full',
-            'bg-gradient-to-br from-qualia-500 to-qualia-700 text-white',
-            'shadow-lg shadow-qualia-500/20 hover:shadow-glow',
-            'transition-all hover:scale-105 active:scale-95',
-            'md:h-14 md:w-14'
-          )}
-          aria-label="Open AI Assistant"
-        >
-          <Bot className="h-6 w-6 md:h-7 md:w-7" />
-        </button>
-      )}
+      {/* FAB - Floating Action Button Removed */}
 
       {/* Expanded Panel */}
       {isOpen && (
