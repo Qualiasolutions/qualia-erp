@@ -708,7 +708,7 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                     return (
                       <div
                         key={item.id}
-                        className="absolute left-2 right-2 transition-all"
+                        className="absolute left-2 right-2 z-20 transition-all"
                         style={{ top: `${top}px`, height: `${height}px` }}
                       >
                         <DraggableItem
