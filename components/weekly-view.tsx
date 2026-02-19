@@ -16,6 +16,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight, Clock, Globe, Trash2, Pencil, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
+import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
 
 // Cyprus timezone (for Fawzi) - UTC+2 (EET) / UTC+3 (EEST in summer)
@@ -149,7 +150,11 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
   const handleDelete = useCallback((id: string) => {
     if (confirm('Are you sure you want to delete this meeting?')) {
       startTransition(async () => {
-        await deleteMeeting(id);
+        const result = await deleteMeeting(id);
+        if (result.success) {
+          invalidateMeetings(true);
+          invalidateTodaysSchedule(true);
+        }
       });
     }
   }, []);
