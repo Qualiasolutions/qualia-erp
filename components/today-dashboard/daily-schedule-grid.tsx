@@ -1,15 +1,37 @@
 'use client';
 
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef, useTransition } from 'react';
 import { format, parseISO, isToday, isSameDay, setHours, setMinutes } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Video, Check, Circle, ChevronDown, ChevronRight, Plus, Clock } from 'lucide-react';
+import {
+  Video,
+  Check,
+  Circle,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Clock,
+  Pencil,
+  Trash2,
+  Columns2,
+  ArrowRightFromLine,
+  CalendarPlus,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type Task, quickUpdateTask } from '@/app/actions/inbox';
-import { type MeetingWithRelations, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
+import { type Task, quickUpdateTask, deleteTask } from '@/app/actions/inbox';
+import { deleteMeeting } from '@/app/actions';
+import {
+  type MeetingWithRelations,
+  invalidateInboxTasks,
+  invalidateDailyFlow,
+  invalidateMeetings,
+  invalidateTodaysSchedule,
+} from '@/lib/swr';
 import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 import { EditTaskModal } from '@/components/edit-task-modal';
+import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
+import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
 
 // ── Config ───────────────────────────────────────────────────────────────────
 const START_HOUR = 8;
@@ -62,34 +84,102 @@ const PRIORITY_ACCENT: Record<string, string> = {
 
 // ── Event Cards ──────────────────────────────────────────────────────────────
 
-function MeetingCard({ item, style }: { item: ScheduleItem; style: React.CSSProperties }) {
+function MeetingCard({
+  item,
+  style,
+  isSpanning,
+  onEdit,
+  onDelete,
+  onToggleSpan,
+}: {
+  item: ScheduleItem;
+  style: React.CSSProperties;
+  isSpanning: boolean;
+  onEdit: (meeting: MeetingWithRelations) => void;
+  onDelete: (meetingId: string) => void;
+  onToggleSpan: (meetingId: string) => void;
+}) {
+  const itemHeight = parseFloat(String(style.height)) || 0;
+  const isCompact = itemHeight < 40;
+
   return (
     <div
-      className="absolute overflow-hidden rounded-none border border-violet-500/25 bg-violet-500/[0.08] px-2.5 py-1.5 transition-all hover:bg-violet-500/[0.13] hover:shadow-sm"
+      className={cn(
+        'group/meeting absolute overflow-hidden border px-3 py-2 transition-all',
+        isSpanning
+          ? 'rounded-lg border-violet-500/20 bg-gradient-to-r from-violet-500/[0.07] via-violet-500/[0.10] to-violet-500/[0.07] hover:border-violet-500/35 hover:from-violet-500/[0.10] hover:via-violet-500/[0.14] hover:to-violet-500/[0.10]'
+          : 'rounded-md border-violet-500/25 bg-violet-500/[0.08] hover:bg-violet-500/[0.14]',
+        'hover:shadow-[0_2px_12px_-4px_rgba(139,92,246,0.15)]'
+      )}
       style={style}
     >
-      <p className="truncate text-[11px] font-semibold leading-tight text-violet-700 dark:text-violet-300">
+      {/* Action buttons on hover */}
+      <div className="absolute right-1.5 top-1 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSpan(item.meeting!.id);
+          }}
+          className="flex size-5 items-center justify-center rounded bg-violet-500/15 text-violet-400 transition-colors hover:bg-violet-500/25 hover:text-violet-300"
+          title={isSpanning ? 'Collapse to single column' : 'Expand to both columns'}
+        >
+          {isSpanning ? (
+            <ArrowRightFromLine className="size-2.5" />
+          ) : (
+            <Columns2 className="size-2.5" />
+          )}
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            if (item.meeting) onEdit(item.meeting);
+          }}
+          className="flex size-5 items-center justify-center rounded bg-violet-500/15 text-violet-400 transition-colors hover:bg-violet-500/25 hover:text-violet-300"
+          title="Edit meeting"
+        >
+          <Pencil className="size-2.5" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(item.meeting!.id);
+          }}
+          className="flex size-5 items-center justify-center rounded bg-red-500/10 text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300"
+          title="Delete meeting"
+        >
+          <Trash2 className="size-2.5" />
+        </button>
+      </div>
+
+      <p
+        className={cn(
+          'truncate font-semibold leading-tight text-violet-700 dark:text-violet-300',
+          isCompact ? 'text-[10px]' : 'text-[11px]'
+        )}
+      >
         {item.title}
       </p>
-      <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-violet-600/60 dark:text-violet-400/50">
-        <span>
-          {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
-        </span>
-        {item.meeting?.client && (
-          <>
-            <span className="opacity-40">·</span>
-            <span className="truncate">
-              {(item.meeting.client as { display_name?: string }).display_name}
-            </span>
-          </>
-        )}
-      </div>
-      {item.meeting?.meeting_link && (
+      {!isCompact && (
+        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-violet-600/60 dark:text-violet-400/50">
+          <span>
+            {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
+          </span>
+          {item.meeting?.client && (
+            <>
+              <span className="opacity-40">·</span>
+              <span className="truncate">
+                {(item.meeting.client as { display_name?: string }).display_name}
+              </span>
+            </>
+          )}
+        </div>
+      )}
+      {!isCompact && item.meeting?.meeting_link && (
         <a
           href={item.meeting.meeting_link}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-flex items-center gap-1 rounded bg-violet-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white transition-colors hover:bg-violet-600"
+          className="mt-1.5 inline-flex items-center gap-1 rounded-md bg-violet-500/90 px-2 py-0.5 text-[9px] font-semibold text-white shadow-sm transition-colors hover:bg-violet-600"
           onClick={(e) => e.stopPropagation()}
         >
           <Video className="size-2.5" />
@@ -105,28 +195,57 @@ function TaskCard({
   style,
   onTaskClick,
   onTaskComplete,
+  onTaskDelete,
 }: {
   item: ScheduleItem;
   style: React.CSSProperties;
   onTaskClick: (task: Task) => void;
   onTaskComplete: (taskId: string) => void;
+  onTaskDelete: (taskId: string) => void;
 }) {
   const task = item.task;
   if (!task) return null;
 
   const isDone = task.status === 'Done';
   const accent = PRIORITY_ACCENT[task.priority] || PRIORITY_ACCENT['No Priority'];
+  const itemHeight = parseFloat(String(style.height)) || 0;
+  const isCompact = itemHeight < 40;
 
   return (
     <div
       className={cn(
-        'absolute cursor-pointer overflow-hidden rounded-none border border-l-[3px] border-border/30 bg-card px-2.5 py-1.5 transition-all hover:border-border/50 hover:shadow-sm',
+        'group/task absolute cursor-pointer overflow-hidden border border-l-[3px] border-border/30 bg-card px-2.5 py-1.5 transition-all hover:border-border/50',
+        'rounded-md hover:shadow-[0_2px_10px_-4px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_2px_10px_-4px_rgba(0,0,0,0.3)]',
         accent,
         isDone && 'opacity-35'
       )}
       style={style}
       onClick={() => onTaskClick(task)}
     >
+      {/* Action buttons on hover */}
+      <div className="absolute right-1 top-1 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/task:opacity-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onTaskClick(task);
+          }}
+          className="flex size-5 items-center justify-center rounded bg-foreground/[0.06] text-foreground/40 transition-colors hover:bg-foreground/[0.10] hover:text-foreground/70"
+          title="Edit task"
+        >
+          <Pencil className="size-2.5" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onTaskDelete(task.id);
+          }}
+          className="flex size-5 items-center justify-center rounded bg-red-500/10 text-red-400 transition-colors hover:bg-red-500/20 hover:text-red-300"
+          title="Delete task"
+        >
+          <Trash2 className="size-2.5" />
+        </button>
+      </div>
+
       <div className="flex items-start gap-1.5">
         <button
           onClick={(e) => {
@@ -144,23 +263,26 @@ function TaskCard({
         <div className="min-w-0 flex-1">
           <p
             className={cn(
-              'truncate text-[11px] font-semibold leading-tight text-foreground',
+              'truncate font-semibold leading-tight text-foreground',
+              isCompact ? 'text-[10px]' : 'text-[11px]',
               isDone && 'line-through'
             )}
           >
             {task.title}
           </p>
-          <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/40">
-            <span>
-              {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
-            </span>
-            {task.project && (
-              <>
-                <span className="opacity-30">·</span>
-                <span className="truncate">{task.project.name}</span>
-              </>
-            )}
-          </div>
+          {!isCompact && (
+            <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/40">
+              <span>
+                {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
+              </span>
+              {task.project && (
+                <>
+                  <span className="opacity-30">·</span>
+                  <span className="truncate">{task.project.name}</span>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -173,17 +295,19 @@ function UnscheduledRow({
   task,
   onTaskClick,
   onTaskComplete,
+  onTaskDelete,
 }: {
   task: Task;
   onTaskClick: (task: Task) => void;
   onTaskComplete: (taskId: string) => void;
+  onTaskDelete: (taskId: string) => void;
 }) {
   const isDone = task.status === 'Done';
   const pc = TASK_PRIORITY_COLORS[task.priority as TaskPriorityKey];
 
   return (
     <div
-      className="flex cursor-pointer items-center gap-2.5 px-4 py-[7px] transition-colors hover:bg-accent/40"
+      className="group/row flex cursor-pointer items-center gap-2.5 px-4 py-[7px] transition-colors hover:bg-accent/40"
       onClick={() => onTaskClick(task)}
     >
       <button
@@ -208,7 +332,7 @@ function UnscheduledRow({
         {task.title}
       </span>
       {task.project && (
-        <span className="max-w-[100px] shrink-0 truncate text-[10px] text-foreground/30">
+        <span className="max-w-[80px] shrink-0 truncate text-[10px] text-foreground/30">
           {task.project.name}
         </span>
       )}
@@ -219,6 +343,16 @@ function UnscheduledRow({
           {pc.label}
         </span>
       )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onTaskDelete(task.id);
+        }}
+        className="shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100"
+        title="Delete task"
+      >
+        <Trash2 className="size-3 text-red-400 hover:text-red-300" />
+      </button>
     </div>
   );
 }
@@ -229,9 +363,13 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showUnscheduled, setShowUnscheduled] = useState(true);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingMeeting, setEditingMeeting] = useState<MeetingWithRelations | null>(null);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [showNewMeetingModal, setShowNewMeetingModal] = useState(false);
   const [newTaskDefaultAssignee, setNewTaskDefaultAssignee] = useState<string | null>(null);
   const [newTaskDefaultTime, setNewTaskDefaultTime] = useState<string | null>(null);
+  const [collapsedMeetings, setCollapsedMeetings] = useState<Set<string>>(new Set());
+  const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const FAWZI_ID = '696cbe99-20fe-437c-97fe-246fb3367d9b';
@@ -260,6 +398,45 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     setNewTaskDefaultTime(scheduledTime || null);
     setShowNewTaskModal(true);
   };
+
+  const toggleMeetingSpan = useCallback((meetingId: string) => {
+    setCollapsedMeetings((prev) => {
+      const next = new Set(prev);
+      if (next.has(meetingId)) next.delete(meetingId);
+      else next.add(meetingId);
+      return next;
+    });
+  }, []);
+
+  // ── Handlers ───────────────────────────────────────────────────────────────
+  const handleComplete = useCallback(
+    async (taskId: string) => {
+      const t = tasks.find((x) => x.id === taskId);
+      await quickUpdateTask(taskId, { status: t?.status === 'Done' ? 'Todo' : 'Done' });
+      invalidateInboxTasks();
+      invalidateDailyFlow();
+    },
+    [tasks]
+  );
+
+  const handleDeleteTask = useCallback((taskId: string) => {
+    if (!confirm('Delete this task?')) return;
+    startTransition(async () => {
+      await deleteTask(taskId);
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+    });
+  }, []);
+
+  const handleDeleteMeeting = useCallback((meetingId: string) => {
+    if (!confirm('Delete this meeting?')) return;
+    startTransition(async () => {
+      await deleteMeeting(meetingId);
+      invalidateMeetings(true);
+      invalidateTodaysSchedule(true);
+      invalidateDailyFlow(true);
+    });
+  }, []);
 
   // ── Partition items ────────────────────────────────────────────────────────
   const { scheduledItems, unscheduledTasks } = useMemo(() => {
@@ -293,25 +470,16 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       }
     }
 
+    // Meetings ALWAYS span both columns by default
     for (const m of meetings) {
       const s = parseISO(m.start_time);
       if (isToday(s)) {
-        const attendees = m.attendees.map((a) => a.profile?.id);
-        const hasFawzi = attendees.includes(FAWZI_ID) || m.creator?.id === FAWZI_ID;
-        const hasMoayad = attendees.includes(MOAYAD_ID) || m.creator?.id === MOAYAD_ID;
+        const isCollapsed = collapsedMeetings.has(m.id);
 
-        if (hasFawzi && hasMoayad) {
-          items.push({
-            id: `meeting-${m.id}`,
-            type: 'meeting',
-            title: m.title,
-            startTime: s,
-            endTime: parseISO(m.end_time),
-            meeting: m,
-            col: 0,
-            span: true,
-          });
-        } else {
+        if (isCollapsed) {
+          // When collapsed, assign to a specific column based on attendees
+          const attendees = m.attendees.map((a) => a.profile?.id);
+          const hasMoayad = attendees.includes(MOAYAD_ID) || m.creator?.id === MOAYAD_ID;
           items.push({
             id: `meeting-${m.id}`,
             type: 'meeting',
@@ -322,6 +490,18 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             col: hasMoayad ? 1 : 0,
             span: false,
           });
+        } else {
+          // Default: span both columns
+          items.push({
+            id: `meeting-${m.id}`,
+            type: 'meeting',
+            title: m.title,
+            startTime: s,
+            endTime: parseISO(m.end_time),
+            meeting: m,
+            col: 0,
+            span: true,
+          });
         }
       }
     }
@@ -330,7 +510,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       scheduledItems: items.sort((a, b) => a.startTime.getTime() - b.startTime.getTime()),
       unscheduledTasks: unscheduled,
     };
-  }, [tasks, meetings]);
+  }, [tasks, meetings, collapsedMeetings]);
 
   // ── Position map ───────────────────────────────────────────────────────────
   const positionMap = useMemo(() => {
@@ -378,17 +558,6 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     return topPx(currentTime);
   }, [currentTime]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleComplete = useCallback(
-    async (taskId: string) => {
-      const t = tasks.find((x) => x.id === taskId);
-      await quickUpdateTask(taskId, { status: t?.status === 'Done' ? 'Todo' : 'Done' });
-      invalidateInboxTasks();
-      invalidateDailyFlow();
-    },
-    [tasks]
-  );
-
   const pendingCount = unscheduledTasks.filter((t) => t.status !== 'Done').length;
   const TIME_GUTTER = 56; // px
 
@@ -403,14 +572,26 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             {format(new Date(), 'EEE, MMM d')}
           </span>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7 text-foreground/40 hover:text-foreground"
-          onClick={() => handleAddTask(FAWZI_ID)}
-        >
-          <Plus className="size-3.5" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-violet-400/60 hover:text-violet-400"
+            onClick={() => setShowNewMeetingModal(true)}
+            title="Add meeting"
+          >
+            <CalendarPlus className="size-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 text-foreground/40 hover:text-foreground"
+            onClick={() => handleAddTask(FAWZI_ID)}
+            title="Add task"
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* ── Column Headers ──────────────────────────────────────────────────── */}
@@ -526,7 +707,17 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 if (!style) return null;
 
                 if (item.type === 'meeting') {
-                  return <MeetingCard key={item.id} item={item} style={style} />;
+                  return (
+                    <MeetingCard
+                      key={item.id}
+                      item={item}
+                      style={style}
+                      isSpanning={item.span}
+                      onEdit={setEditingMeeting}
+                      onDelete={handleDeleteMeeting}
+                      onToggleSpan={toggleMeetingSpan}
+                    />
+                  );
                 }
                 return (
                   <TaskCard
@@ -535,6 +726,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                     style={style}
                     onTaskClick={setEditingTask}
                     onTaskComplete={handleComplete}
+                    onTaskDelete={handleDeleteTask}
                   />
                 );
               })}
@@ -583,6 +775,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                   task={task}
                   onTaskClick={setEditingTask}
                   onTaskComplete={handleComplete}
+                  onTaskDelete={handleDeleteTask}
                 />
               ))}
             </div>
@@ -598,14 +791,26 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           onOpenChange={(open) => !open && setEditingTask(null)}
         />
       )}
-      <div className="hidden">
-        <NewTaskModalControlled
-          open={showNewTaskModal}
-          onOpenChange={setShowNewTaskModal}
-          defaultAssigneeId={newTaskDefaultAssignee}
-          defaultScheduledTime={newTaskDefaultTime}
-        />
-      </div>
+      <EditMeetingModal
+        meeting={editingMeeting}
+        open={!!editingMeeting}
+        onOpenChange={(open) => !open && setEditingMeeting(null)}
+      />
+      <NewTaskModalControlled
+        open={showNewTaskModal}
+        onOpenChange={setShowNewTaskModal}
+        defaultAssigneeId={newTaskDefaultAssignee}
+        defaultScheduledTime={newTaskDefaultTime}
+      />
+      <NewMeetingModalInline
+        open={showNewMeetingModal}
+        onOpenChange={setShowNewMeetingModal}
+        onMeetingCreated={() => {
+          invalidateMeetings(true);
+          invalidateTodaysSchedule(true);
+          invalidateDailyFlow(true);
+        }}
+      />
     </div>
   );
 }
