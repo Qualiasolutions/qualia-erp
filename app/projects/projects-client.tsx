@@ -43,7 +43,10 @@ export function ProjectsClient({
       {/* Main area: Currently Building takes the stage */}
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[1fr_280px]">
         {/* Currently Building — the dominant section */}
-        <div className="shadow-subtle flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
+        <div
+          className="shadow-subtle flex animate-slide-up flex-col overflow-hidden rounded-xl border border-border/60 bg-card"
+          style={{ animationFillMode: 'both' }}
+        >
           <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border/50 px-5 py-3">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
               <Hammer className="h-3.5 w-3.5 text-primary" />
@@ -62,20 +65,28 @@ export function ProjectsClient({
 
         {/* Demos — narrow sidebar column */}
         {hasDemos && (
-          <ProjectColumnView
-            title="Demos"
-            icon={<Beaker className="h-3.5 w-3.5" />}
-            projects={demos as ProjectData[]}
-            emptyMessage="No demos yet"
-            onProjectClick={handleDemoClick}
-            className="h-full"
-          />
+          <div
+            className="animate-slide-up"
+            style={{ animationDelay: '80ms', animationFillMode: 'both' }}
+          >
+            <ProjectColumnView
+              title="Demos"
+              icon={<Beaker className="h-3.5 w-3.5" />}
+              projects={demos as ProjectData[]}
+              emptyMessage="No demos yet"
+              onProjectClick={handleDemoClick}
+              className="h-full"
+            />
+          </div>
         )}
       </div>
 
       {/* Completed Projects — compact bottom strip */}
       {hasFinishedProjects && (
-        <div className="shadow-subtle flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
+        <div
+          className="shadow-subtle flex min-h-0 flex-shrink-0 animate-slide-up flex-col overflow-hidden rounded-xl border border-border/60 bg-card"
+          style={{ animationDelay: '120ms', animationFillMode: 'both' }}
+        >
           <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/50 px-4 py-2">
             <div className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10">
               <Trophy className="h-2.5 w-2.5 text-emerald-500" />

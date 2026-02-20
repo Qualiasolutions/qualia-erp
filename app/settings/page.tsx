@@ -102,7 +102,10 @@ export default function SettingsPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="max-w-2xl space-y-6">
           {/* Account Section */}
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div
+            className="animate-slide-up rounded-lg border border-border bg-card p-6"
+            style={{ animationFillMode: 'both' }}
+          >
             <h2 className="text-md mb-4 font-medium text-foreground">Account</h2>
             <Suspense fallback={<AccountInfoSkeleton />}>
               <AccountInfoLoader />
@@ -110,13 +113,19 @@ export default function SettingsPage() {
           </div>
 
           {/* Learning & Development Section */}
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div
+            className="animate-slide-up rounded-lg border border-border bg-card p-6"
+            style={{ animationDelay: '60ms', animationFillMode: 'both' }}
+          >
             <h2 className="text-md mb-4 font-medium text-foreground">Learning & Development</h2>
             <LearnModeSettings />
           </div>
 
           {/* Appearance Section */}
-          <div className="rounded-lg border border-border bg-card p-6">
+          <div
+            className="animate-slide-up rounded-lg border border-border bg-card p-6"
+            style={{ animationDelay: '120ms', animationFillMode: 'both' }}
+          >
             <h2 className="text-md mb-4 font-medium text-foreground">Appearance</h2>
             <p className="text-sm text-muted-foreground">
               Use the theme toggle in the header to switch between light and dark mode.
@@ -124,7 +133,10 @@ export default function SettingsPage() {
           </div>
 
           {/* Danger Zone */}
-          <div className="rounded-lg border border-red-900/50 bg-card p-6">
+          <div
+            className="animate-slide-up rounded-lg border border-red-900/50 bg-card p-6"
+            style={{ animationDelay: '180ms', animationFillMode: 'both' }}
+          >
             <h2 className="text-md mb-4 font-medium text-red-400">Danger Zone</h2>
             <div className="flex items-center justify-between">
               <div>

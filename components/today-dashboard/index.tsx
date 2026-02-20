@@ -184,11 +184,12 @@ function BuildingProjectsList({
 
             {/* Project List */}
             <div className="space-y-px">
-              {typeProjects.map((project) => (
+              {typeProjects.map((project, i) => (
                 <button
                   key={project.id}
                   onClick={() => onProjectClick(project)}
-                  className="group flex w-full items-center gap-2.5 rounded-lg px-2 py-[7px] text-left transition-colors hover:bg-accent"
+                  className="group flex w-full animate-slide-in items-center gap-2.5 rounded-lg px-2 py-[7px] text-left transition-colors hover:bg-accent"
+                  style={{ animationDelay: `${i * 30}ms`, animationFillMode: 'both' }}
                 >
                   <ProjectLogo
                     logo_url={project.logo_url}
@@ -283,10 +284,25 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
 
           {/* Stats */}
           <div className="ml-3 hidden items-center gap-1.5 lg:flex">
-            <StatPill value={pendingTasks} label="tasks" color="amber" />
-            <StatPill value={todaysMeetings.length} label="meetings" color="violet" />
+            <div
+              className="animate-scale-in"
+              style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+            >
+              <StatPill value={pendingTasks} label="tasks" color="amber" />
+            </div>
+            <div
+              className="animate-scale-in"
+              style={{ animationDelay: '160ms', animationFillMode: 'both' }}
+            >
+              <StatPill value={todaysMeetings.length} label="meetings" color="violet" />
+            </div>
             {buildingCount > 0 && (
-              <StatPill value={buildingCount} label="building" color="emerald" />
+              <div
+                className="animate-scale-in"
+                style={{ animationDelay: '220ms', animationFillMode: 'both' }}
+              >
+                <StatPill value={buildingCount} label="building" color="emerald" />
+              </div>
             )}
           </div>
         </div>

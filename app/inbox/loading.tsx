@@ -26,13 +26,20 @@ export default function InboxLoading() {
         </div>
         <div className="hidden items-center gap-3 md:flex">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-8 w-24 rounded-full bg-zinc-800" />
+            <Skeleton
+              key={i}
+              className="h-8 w-24 animate-fade-in rounded-full bg-zinc-800"
+              style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
+            />
           ))}
         </div>
       </header>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-4 border-b border-white/[0.06] px-6 py-3">
+      <div
+        className="flex animate-fade-in items-center gap-4 border-b border-white/[0.06] px-6 py-3"
+        style={{ animationDelay: '100ms', animationFillMode: 'both' }}
+      >
         <Skeleton className="h-9 w-64 rounded-md bg-zinc-800" />
         <Skeleton className="h-9 w-32 rounded-md bg-zinc-800" />
         <Skeleton className="h-9 w-32 rounded-md bg-zinc-800" />
@@ -42,7 +49,10 @@ export default function InboxLoading() {
       </div>
 
       {/* Table Header */}
-      <div className="flex items-center border-b border-white/[0.06] bg-zinc-900/50 px-6 py-2">
+      <div
+        className="flex animate-fade-in items-center border-b border-white/[0.06] bg-zinc-900/50 px-6 py-2"
+        style={{ animationDelay: '160ms', animationFillMode: 'both' }}
+      >
         <Skeleton className="h-3 w-5 bg-zinc-700" />
         <Skeleton className="ml-4 h-3 w-12 bg-zinc-700" />
         <div className="flex-1" />
@@ -52,13 +62,13 @@ export default function InboxLoading() {
         <div className="w-20" />
       </div>
 
-      {/* Task Rows */}
+      {/* Task Rows - staggered */}
       <div className="flex-1 overflow-hidden">
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
-            className="flex animate-pulse items-center gap-4 border-b border-white/[0.04] px-6 py-4"
-            style={{ animationDelay: `${i * 0.05}s` }}
+            className="flex animate-slide-up items-center gap-4 border-b border-white/[0.04] px-6 py-4"
+            style={{ animationDelay: `${200 + i * 45}ms`, animationFillMode: 'both' }}
           >
             <Skeleton className="h-5 w-5 rounded-md bg-zinc-700" />
             <div className="min-w-0 flex-1">
