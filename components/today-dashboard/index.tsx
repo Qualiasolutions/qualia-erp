@@ -17,6 +17,11 @@ import {
   Plus,
   ChevronRight,
   Search,
+  Check,
+  Circle,
+  Pencil,
+  Trash2,
+  Inbox,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -24,9 +29,11 @@ import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
 import { BuildingProjectSheet } from './building-project-sheet';
-import { useTransition, useState, useEffect } from 'react';
-import { type Task } from '@/app/actions/inbox';
-import { type MeetingWithRelations } from '@/lib/swr';
+import { useTransition, useState, useEffect, useCallback } from 'react';
+import { type Task, quickUpdateTask, deleteTask } from '@/app/actions/inbox';
+import { type MeetingWithRelations, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
+import { EditTaskModal } from '@/components/edit-task-modal';
+import { NewTaskModalControlled } from '@/components/new-task-modal';
 
 interface Project {
   id: string;
@@ -53,41 +60,49 @@ const PROJECT_TYPE_CONFIG: Record<
   { icon: React.ReactNode; color: string; dotColor: string; label: string }
 > = {
   ai_agent: {
-    icon: <Bot className="size-3.5" />,
-    color: 'text-violet-600 dark:text-violet-400 bg-violet-500/10',
+    icon: <Bot className="size-3" />,
+    color: 'text-violet-600 dark:text-violet-400 bg-violet-500/8',
     dotColor: 'bg-violet-500',
     label: 'AI Agents',
   },
   voice_agent: {
-    icon: <Mic2 className="size-3.5" />,
-    color: 'text-amber-600 dark:text-amber-400 bg-amber-500/10',
+    icon: <Mic2 className="size-3" />,
+    color: 'text-amber-600 dark:text-amber-400 bg-amber-500/8',
     dotColor: 'bg-amber-500',
     label: 'Voice',
   },
   web_design: {
-    icon: <Globe className="size-3.5" />,
-    color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10',
+    icon: <Globe className="size-3" />,
+    color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/8',
     dotColor: 'bg-emerald-500',
     label: 'Web',
   },
   seo: {
-    icon: <Search className="size-3.5" />,
-    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/10',
+    icon: <Search className="size-3" />,
+    color: 'text-blue-600 dark:text-blue-400 bg-blue-500/8',
     dotColor: 'bg-blue-500',
     label: 'SEO',
   },
   ads: {
-    icon: <Globe className="size-3.5" />,
-    color: 'text-pink-600 dark:text-pink-400 bg-pink-500/10',
+    icon: <Globe className="size-3" />,
+    color: 'text-pink-600 dark:text-pink-400 bg-pink-500/8',
     dotColor: 'bg-pink-500',
     label: 'Ads',
   },
   other: {
-    icon: <Globe className="size-3.5" />,
-    color: 'text-foreground/60 bg-muted',
+    icon: <Globe className="size-3" />,
+    color: 'text-foreground/50 bg-muted/50',
     dotColor: 'bg-zinc-500',
     label: 'Other',
   },
+};
+
+const PRIORITY_DOT: Record<string, string> = {
+  Urgent: 'bg-red-500',
+  High: 'bg-orange-500',
+  Medium: 'bg-amber-400',
+  Low: 'bg-sky-400',
+  'No Priority': 'bg-foreground/10',
 };
 
 // =============================================================================
@@ -105,12 +120,12 @@ function ProjectLogo({
 }) {
   if (logo_url) {
     return (
-      <div className="size-6 shrink-0 overflow-hidden rounded-md border border-border/40">
+      <div className="size-[22px] shrink-0 overflow-hidden rounded-md border border-border/30">
         <Image
           src={logo_url}
           alt={name}
-          width={24}
-          height={24}
+          width={22}
+          height={22}
           className="size-full object-cover"
           unoptimized
         />
@@ -121,7 +136,10 @@ function ProjectLogo({
   const config = PROJECT_TYPE_CONFIG[project_type || 'other'] || PROJECT_TYPE_CONFIG.other;
   return (
     <div
-      className={cn('flex size-6 shrink-0 items-center justify-center rounded-md', config.color)}
+      className={cn(
+        'flex size-[22px] shrink-0 items-center justify-center rounded-md',
+        config.color
+      )}
     >
       {config.icon}
     </div>
@@ -129,7 +147,7 @@ function ProjectLogo({
 }
 
 // =============================================================================
-// BUILDING PROJECTS SIDEBAR
+// BUILDING PROJECTS PANEL
 // =============================================================================
 
 function BuildingProjectsList({
@@ -153,52 +171,42 @@ function BuildingProjectsList({
 
   if (projects.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
-        <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-muted/50">
-          <Hammer className="size-4 text-foreground/40" />
-        </div>
-        <p className="text-xs font-medium text-foreground/60">No active builds</p>
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+        <p className="text-[11px] text-foreground/30">No active builds</p>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 py-3">
+    <div className="flex-1 overflow-y-auto px-2 py-2">
       {typeOrder.map((type) => {
         const typeProjects = grouped[type];
         if (!typeProjects?.length) return null;
-
         const config = PROJECT_TYPE_CONFIG[type] || PROJECT_TYPE_CONFIG.other;
 
         return (
-          <div key={type} className="mb-4 last:mb-0">
-            {/* Type Header */}
-            <div className="mb-1.5 flex items-center gap-2 px-1">
-              <span className="text-[10px] font-semibold uppercase tracking-widest text-foreground/40">
+          <div key={type} className="mb-3 last:mb-0">
+            <div className="mb-1 flex items-center gap-1.5 px-1.5">
+              <span className="text-[9px] font-semibold uppercase tracking-[0.08em] text-foreground/30">
                 {config.label}
               </span>
-              <span className="text-[10px] tabular-nums text-foreground/25">
-                {typeProjects.length}
-              </span>
             </div>
-
-            {/* Project List */}
             <div className="space-y-px">
               {typeProjects.map((project) => (
                 <button
                   key={project.id}
                   onClick={() => onProjectClick(project)}
-                  className="group flex w-full items-center gap-2.5 rounded-lg px-2 py-[7px] text-left transition-colors hover:bg-accent"
+                  className="group flex w-full items-center gap-2 rounded-lg px-1.5 py-[6px] text-left transition-colors hover:bg-accent/50"
                 >
                   <ProjectLogo
                     logo_url={project.logo_url}
                     name={project.name}
                     project_type={project.project_type}
                   />
-                  <span className="flex-1 truncate text-[13px] font-medium text-foreground/80 group-hover:text-foreground">
+                  <span className="flex-1 truncate text-[12px] font-medium text-foreground/70 group-hover:text-foreground/90">
                     {project.name}
                   </span>
-                  <ChevronRight className="size-3 text-foreground/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                  <ChevronRight className="size-3 text-foreground/15 opacity-0 transition-opacity group-hover:opacity-100" />
                 </button>
               ))}
             </div>
@@ -210,29 +218,186 @@ function BuildingProjectsList({
 }
 
 // =============================================================================
-// STAT PILL
+// TODAY'S TASKS PANEL
 // =============================================================================
 
-function StatPill({
-  value,
-  label,
-  color,
+function TaskRow({
+  task,
+  onEdit,
+  onComplete,
+  onDelete,
 }: {
-  value: number;
-  label: string;
-  color: 'amber' | 'violet' | 'emerald';
+  task: Task;
+  onEdit: (task: Task) => void;
+  onComplete: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
 }) {
-  const colors = {
-    amber: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    violet: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-    emerald: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  };
+  const isDone = task.status === 'Done';
+  const dotColor = PRIORITY_DOT[task.priority] || PRIORITY_DOT['No Priority'];
 
   return (
-    <div className={cn('flex items-center gap-1.5 rounded-full px-2.5 py-1', colors[color])}>
-      <span className="text-xs font-semibold tabular-nums">{value}</span>
-      <span className="text-[10px] opacity-70">{label}</span>
+    <div
+      className={cn(
+        'group/task flex cursor-pointer items-center gap-2 rounded-lg px-2 py-[6px] transition-colors hover:bg-accent/50',
+        isDone && 'opacity-30'
+      )}
+      onClick={() => onEdit(task)}
+    >
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onComplete(task.id);
+        }}
+        className="shrink-0"
+      >
+        {isDone ? (
+          <div className="flex size-3.5 items-center justify-center rounded-full bg-emerald-500">
+            <Check className="size-2 text-white" strokeWidth={3} />
+          </div>
+        ) : (
+          <Circle className="text-foreground/12 size-3.5 transition-colors hover:text-foreground/30" />
+        )}
+      </button>
+
+      <div className={cn('size-1 shrink-0 rounded-full', dotColor)} />
+
+      <span
+        className={cn(
+          'flex-1 truncate text-[12px] font-medium text-foreground/70',
+          isDone && 'text-foreground/30 line-through'
+        )}
+      >
+        {task.title}
+      </span>
+
+      <div className="flex shrink-0 items-center gap-px opacity-0 transition-opacity group-hover/task:opacity-100">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(task);
+          }}
+          className="flex size-5 items-center justify-center rounded text-foreground/25 transition-colors hover:bg-foreground/[0.05] hover:text-foreground/50"
+        >
+          <Pencil className="size-2.5" />
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(task.id);
+          }}
+          className="hover:bg-red-500/8 flex size-5 items-center justify-center rounded text-red-400/40 transition-colors hover:text-red-400"
+        >
+          <Trash2 className="size-2.5" />
+        </button>
+      </div>
     </div>
+  );
+}
+
+function TodaysTasksPanel({
+  tasks,
+  onEditTask,
+}: {
+  tasks: Task[];
+  onEditTask: (task: Task) => void;
+}) {
+  const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [, startTransition] = useTransition();
+
+  // Split into pending and done
+  const pending = tasks.filter((t) => t.status !== 'Done');
+  const done = tasks.filter((t) => t.status === 'Done');
+
+  const handleComplete = useCallback(
+    async (taskId: string) => {
+      const t = tasks.find((x) => x.id === taskId);
+      await quickUpdateTask(taskId, { status: t?.status === 'Done' ? 'Todo' : 'Done' });
+      invalidateInboxTasks();
+      invalidateDailyFlow();
+    },
+    [tasks]
+  );
+
+  const handleDelete = useCallback((taskId: string) => {
+    if (!confirm('Delete this task?')) return;
+    startTransition(async () => {
+      await deleteTask(taskId);
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+    });
+  }, []);
+
+  return (
+    <>
+      <div className="flex h-full flex-col">
+        {/* Header */}
+        <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-border/15 px-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-foreground/50">Tasks</span>
+            {pending.length > 0 && (
+              <span className="bg-amber-500/8 rounded-full px-1.5 py-px text-[9px] font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                {pending.length}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => setShowNewTaskModal(true)}
+              className="flex size-5 items-center justify-center rounded text-foreground/20 transition-colors hover:bg-accent hover:text-foreground/50"
+            >
+              <Plus className="size-2.5" />
+            </button>
+            <Link
+              href="/inbox"
+              className="flex size-5 items-center justify-center rounded text-foreground/15 transition-colors hover:bg-accent hover:text-foreground/40"
+              title="Open inbox"
+            >
+              <Inbox className="size-2.5" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Task list */}
+        <div className="flex-1 overflow-y-auto px-1 py-1">
+          {tasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-10">
+              <p className="text-[11px] text-foreground/25">No tasks today</p>
+            </div>
+          ) : (
+            <>
+              {pending.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onEdit={onEditTask}
+                  onComplete={handleComplete}
+                  onDelete={handleDelete}
+                />
+              ))}
+              {done.length > 0 && pending.length > 0 && (
+                <div className="bg-border/8 mx-2 my-1.5 h-px" />
+              )}
+              {done.map((task) => (
+                <TaskRow
+                  key={task.id}
+                  task={task}
+                  onEdit={onEditTask}
+                  onComplete={handleComplete}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+
+      <NewTaskModalControlled
+        open={showNewTaskModal}
+        onOpenChange={setShowNewTaskModal}
+        defaultAssigneeId={null}
+        defaultScheduledTime={null}
+      />
+    </>
   );
 }
 
@@ -247,6 +412,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   const [greeting, setGreeting] = useState('');
   const [sheetProject, setSheetProject] = useState<Project | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const now = new Date();
 
@@ -263,30 +429,44 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
 
   const todaysMeetings = meetings.filter((m) => isToday(parseISO(m.start_time)));
   const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
-  const buildingCount = projects.length;
+
+  // Tasks that are NOT scheduled today (the "backlog" / inbox tasks)
+  const unscheduledTasks = tasks.filter((t) => {
+    if (!t.scheduled_start_time) return true;
+    const s = parseISO(t.scheduled_start_time);
+    return !isToday(s);
+  });
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== TOP BAR ===== */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 bg-background px-4 lg:px-5">
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-border/20 bg-background px-4">
         {/* Left */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
-            <Menu className="size-4" />
+          <Button variant="ghost" size="icon" className="size-7 lg:hidden" onClick={toggleMobile}>
+            <Menu className="size-3.5" />
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-[13px] font-semibold text-foreground">{greeting}</h1>
-            <span className="text-foreground/20">|</span>
-            <span className="text-[13px] text-foreground/50">{format(now, 'EEE, MMM d')}</span>
+            <h1 className="text-[13px] font-semibold tracking-tight text-foreground">{greeting}</h1>
+            <span className="text-foreground/12 hidden sm:inline">|</span>
+            <span className="hidden text-[12px] tabular-nums text-foreground/35 sm:inline">
+              {format(now, 'EEE, MMM d')}
+            </span>
           </div>
 
-          {/* Stats */}
-          <div className="ml-3 hidden items-center gap-1.5 lg:flex">
-            <StatPill value={pendingTasks} label="tasks" color="amber" />
-            <StatPill value={todaysMeetings.length} label="meetings" color="violet" />
-            {buildingCount > 0 && (
-              <StatPill value={buildingCount} label="building" color="emerald" />
+          {/* Minimal stats */}
+          <div className="ml-2 hidden items-center gap-2 lg:flex">
+            {pendingTasks > 0 && (
+              <span className="text-[11px] tabular-nums text-foreground/30">
+                <span className="font-semibold text-foreground/50">{pendingTasks}</span> tasks
+              </span>
+            )}
+            {todaysMeetings.length > 0 && (
+              <span className="text-[11px] tabular-nums text-foreground/30">
+                <span className="font-semibold text-violet-500/70">{todaysMeetings.length}</span>{' '}
+                meetings
+              </span>
             )}
           </div>
         </div>
@@ -296,39 +476,38 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           <Button
             variant="ghost"
             size="icon"
-            className="size-8"
+            className="size-7"
             onClick={handleRefresh}
             disabled={isRefreshing}
           >
-            <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
+            <RefreshCw className={cn('size-3', isRefreshing && 'animate-spin')} />
           </Button>
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
-          <Button variant="ghost" size="icon" className="size-8" asChild>
+          <Button variant="ghost" size="icon" className="size-7" asChild>
             <Link href="/settings">
-              <Settings className="size-3.5" />
+              <Settings className="size-3" />
             </Link>
           </Button>
         </div>
       </header>
 
-      {/* ===== CONTENT ===== */}
+      {/* ===== THREE-COLUMN LAYOUT ===== */}
       <div className="flex min-h-0 flex-1">
-        {/* ----- LEFT: Building Projects ----- */}
-        <aside className="hidden w-[260px] shrink-0 flex-col border-r border-border/40 lg:flex">
-          {/* Panel Header - same h-12 as top bar */}
-          <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
-            <div className="flex items-center gap-2">
-              <Hammer className="size-3.5 text-foreground/50" />
-              <span className="text-[13px] font-semibold text-foreground">Building</span>
-              <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-                {buildingCount}
+        {/* ── LEFT: Building Projects ─────────────────────────────────────── */}
+        <aside className="hidden w-[220px] shrink-0 flex-col border-r border-border/15 lg:flex">
+          <div className="flex h-[38px] shrink-0 items-center justify-between border-b border-border/15 px-3">
+            <div className="flex items-center gap-1.5">
+              <Hammer className="size-3 text-foreground/30" />
+              <span className="text-[11px] font-semibold text-foreground/50">Building</span>
+              <span className="bg-emerald-500/8 rounded-full px-1.5 py-px text-[9px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                {projects.length}
               </span>
             </div>
-            <Button variant="ghost" size="icon" className="size-7" asChild>
+            <Button variant="ghost" size="icon" className="size-5" asChild>
               <Link href="/projects?filter=building">
-                <Plus className="size-3.5" />
+                <Plus className="size-2.5 text-foreground/20" />
               </Link>
             </Button>
           </div>
@@ -341,14 +520,26 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           />
         </aside>
 
-        {/* ----- CENTER: Daily Schedule ----- */}
+        {/* ── CENTER: Schedule ─────────────────────────────────────────────── */}
         <section className="min-w-0 flex-1">
           <DailyScheduleGrid tasks={tasks} meetings={meetings} />
         </section>
+
+        {/* ── RIGHT: Today's Tasks ────────────────────────────────────────── */}
+        <aside className="hidden w-[220px] shrink-0 border-l border-border/15 xl:flex xl:flex-col">
+          <TodaysTasksPanel tasks={unscheduledTasks} onEditTask={setEditingTask} />
+        </aside>
       </div>
 
-      {/* Project Sheet */}
+      {/* ===== Modals & Sheets ===== */}
       <BuildingProjectSheet project={sheetProject} open={sheetOpen} onOpenChange={setSheetOpen} />
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask}
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+        />
+      )}
     </div>
   );
 }
