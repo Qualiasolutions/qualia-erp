@@ -25,6 +25,7 @@ import {
   Video,
   Plus,
   CheckCircle2,
+  ListTodo,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -40,103 +41,79 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { deleteMeeting, updateMeeting, scheduleIssue, unscheduleIssue } from '@/app/actions';
-import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
+import { scheduleTask as scheduleTaskAction, unscheduleTask } from '@/app/actions/inbox';
+import type { Task } from '@/app/actions/inbox';
+import {
+  invalidateMeetings,
+  invalidateTodaysSchedule,
+  invalidateInboxTasks,
+  invalidateDailyFlow,
+} from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
-import { NewIssueModal } from './new-issue-modal';
+import { EditTaskModal } from './edit-task-modal';
+import { NewTaskModal } from './new-task-modal';
+import {
+  useTimezone,
+  TIMEZONE_CYPRUS,
+  type ScheduleTask,
+  tasksToScheduleItems,
+} from '@/lib/schedule-shared';
 
-// Cyprus timezone (for Fawzi) - UTC+2 (EET) / UTC+3 (EEST in summer)
-const TIMEZONE_CYPRUS = 'Europe/Nicosia';
-// Jordan timezone (for Moayad) - UTC+3 (Arabia Standard Time)
-const TIMEZONE_JORDAN = 'Asia/Amman';
+type ScheduleItemType = 'meeting' | 'task' | 'issue';
 
-type ScheduleItemType = 'meeting' | 'issue';
-
-interface BaseScheduleItem {
+// Legacy issue type (still supported)
+interface Issue {
   id: string;
   title: string;
   description: string | null;
-  start_time: string;
-  end_time: string;
-  type: ScheduleItemType;
-  project: {
-    id: string;
-    name: string;
-    project_group?: string;
-  } | null;
-}
-
-interface Meeting extends BaseScheduleItem {
-  type: 'meeting';
-  location?: string | null;
-  meeting_link?: string | null;
-  creator?: { id: string; full_name?: string | null; avatar_url?: string | null } | null;
-  attendees?: Array<{ id: string; profile?: { id: string; full_name?: string | null } | null }>;
-}
-
-interface Issue extends BaseScheduleItem {
-  type: 'issue';
   status: string;
   priority: string;
+  start_time: string;
+  end_time: string;
+  type: 'issue';
+  project: { id: string; name: string; project_group?: string } | null;
   assignee?:
     | { id: string; full_name?: string | null; avatar_url?: string | null }
     | Array<{ full_name?: string | null; avatar_url?: string | null }>
     | null;
 }
 
-type ScheduleItem = Meeting | Issue;
+// Meeting type for this component's props
+interface Meeting {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string;
+  type: 'meeting';
+  location?: string | null;
+  meeting_link?: string | null;
+  project: { id: string; name: string; project_group?: string } | null;
+  creator?: { id: string; full_name?: string | null; avatar_url?: string | null } | null;
+  attendees?: Array<{ id: string; profile?: { id: string; full_name?: string | null } | null }>;
+}
 
-// Type guard for Meeting
-function isMeeting(item: BaseScheduleItem): item is Meeting {
+type AnyScheduleItem = Meeting | Issue | ScheduleTask;
+
+function isMeeting(item: AnyScheduleItem): item is Meeting {
   return item.type === 'meeting';
+}
+
+function isTask(item: AnyScheduleItem): item is ScheduleTask {
+  return item.type === 'task';
 }
 
 interface DayViewProps {
   meetings: Meeting[];
   issues?: Issue[];
+  tasks?: Task[];
   embedded?: boolean;
 }
 
-const HOUR_HEIGHT = 80; // Taller for better readability
-const START_HOUR = 8; // 8 AM
-const END_HOUR = 21; // 9 PM
+const HOUR_HEIGHT = 80;
+const START_HOUR = 8;
+const END_HOUR = 21;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-
-// Get timezone from localStorage or detect from browser
-function useTimezone() {
-  const [timezone, setTimezone] = useState(TIMEZONE_CYPRUS);
-
-  useEffect(() => {
-    const loadTimezone = () => {
-      const stored = localStorage.getItem('preferred_timezone');
-      if (stored && (stored === TIMEZONE_CYPRUS || stored === TIMEZONE_JORDAN)) {
-        setTimezone(stored);
-      } else {
-        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        if (
-          browserTz.includes('Amman') ||
-          browserTz.includes('Jerusalem') ||
-          browserTz.includes('Beirut')
-        ) {
-          setTimezone(TIMEZONE_JORDAN);
-        }
-      }
-    };
-
-    loadTimezone();
-
-    // Listen for timezone changes from the toggle
-    const handleTimezoneChange = () => loadTimezone();
-    window.addEventListener('timezone-change', handleTimezoneChange);
-    return () => window.removeEventListener('timezone-change', handleTimezoneChange);
-  }, []);
-
-  const setAndStoreTimezone = (tz: string) => {
-    setTimezone(tz);
-    localStorage.setItem('preferred_timezone', tz);
-  };
-
-  return { timezone, setTimezone: setAndStoreTimezone };
-}
 
 // Draggable item component
 function DraggableItem({
@@ -147,10 +124,10 @@ function DraggableItem({
   onDelete,
   isPending,
 }: {
-  item: ScheduleItem;
+  item: AnyScheduleItem;
   timezone: string;
   height: number;
-  onEdit: (item: ScheduleItem) => void;
+  onEdit: (item: AnyScheduleItem) => void;
   onDelete: (id: string, type: ScheduleItemType) => void;
   isPending: boolean;
 }) {
@@ -163,6 +140,7 @@ function DraggableItem({
   const endTime = toZonedTime(parseISO(item.end_time), timezone);
 
   const isItemMeeting = isMeeting(item);
+  const isItemTask = isTask(item);
   const hasLink = isItemMeeting && !!item.meeting_link;
 
   const handleClick = () => {
@@ -256,7 +234,10 @@ function DraggableItem({
       <div className="flex items-start justify-between gap-2 pl-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            {!isItemMeeting && <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />}
+            {isItemTask && <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />}
+            {!isItemMeeting && !isItemTask && (
+              <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
+            )}
             <div className="truncate text-sm font-semibold text-foreground">{item.title}</div>
           </div>
 
@@ -326,7 +307,7 @@ function TimeSlot({
   );
 }
 
-export function DayView({ meetings, issues = [], embedded = false }: DayViewProps) {
+export function DayView({ meetings, issues = [], tasks = [], embedded = false }: DayViewProps) {
   const { timezone, setTimezone } = useTimezone();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
@@ -334,21 +315,31 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [activeDropSlot, setActiveDropSlot] = useState<string | null>(null);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
-  const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
-  const [newIssueTime, setNewIssueTime] = useState<{ start: Date; end: Date } | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [newTaskTime, setNewTaskTime] = useState<string | null>(null);
+  // Future: allow collapsing meetings to right-only column
+  // const [collapsedMeetings, setCollapsedMeetings] = useState<Set<string>>(new Set());
 
-  // Combine meetings and issues
+  // Convert tasks to schedule items
+  const scheduleTasks = useMemo(() => tasksToScheduleItems(tasks), [tasks]);
+
+  // Combine all items
   const allItems = useMemo(() => {
-    const meetingItems: ScheduleItem[] = meetings.map((m) => ({ ...m, type: 'meeting' }));
-    const issueItems: ScheduleItem[] = issues.map((i) => ({ ...i, type: 'issue' }));
-    return [...meetingItems, ...issueItems];
-  }, [meetings, issues]);
+    const meetingItems: AnyScheduleItem[] = meetings.map((m) => ({
+      ...m,
+      type: 'meeting' as const,
+    }));
+    const issueItems: AnyScheduleItem[] = issues.map((i) => ({ ...i, type: 'issue' as const }));
+    const taskItems: AnyScheduleItem[] = scheduleTasks;
+    return [...meetingItems, ...issueItems, ...taskItems];
+  }, [meetings, issues, scheduleTasks]);
 
   // Configure sensors for better drag experience
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Start drag after 8px movement
+        distance: 8,
       },
     })
   );
@@ -359,28 +350,41 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
     return () => clearInterval(interval);
   }, []);
 
-  // Get the current time in the selected timezone
   const nowInTz = useMemo(() => toZonedTime(currentTime, timezone), [currentTime, timezone]);
   const todayInTz = startOfDay(nowInTz);
 
   const hours = Array.from({ length: TOTAL_HOURS }, (_, i) => START_HOUR + i);
 
-  // Filter items for the selected day
-  const dayItems = useMemo(() => {
+  // Filter items for the selected day, split by type
+  const { dayTasks, dayMeetings } = useMemo(() => {
     const dayStart = startOfDay(currentDate);
-    return allItems.filter((item) => {
+    const filteredTasks: AnyScheduleItem[] = [];
+    const filteredMeetings: AnyScheduleItem[] = [];
+    const filteredIssues: AnyScheduleItem[] = [];
+
+    for (const item of allItems) {
       const itemStart = toZonedTime(parseISO(item.start_time), timezone);
-      return isSameDay(itemStart, dayStart);
-    });
+      if (!isSameDay(itemStart, dayStart)) continue;
+
+      if (isMeeting(item)) filteredMeetings.push(item);
+      else if (isTask(item)) filteredTasks.push(item);
+      else filteredIssues.push(item);
+    }
+
+    return {
+      dayTasks: [...filteredTasks, ...filteredIssues],
+      dayMeetings: filteredMeetings,
+    };
   }, [allItems, currentDate, timezone]);
+
+  const totalDayItems = dayTasks.length + dayMeetings.length;
 
   const goToPreviousDay = () => setCurrentDate(subDays(currentDate, 1));
   const goToNextDay = () => setCurrentDate(addDays(currentDate, 1));
   const goToToday = () => setCurrentDate(toZonedTime(new Date(), timezone));
 
   const getItemPosition = useCallback(
-    (item: ScheduleItem) => {
-      // Convert to timezone for accurate positioning
+    (item: AnyScheduleItem) => {
       const start = toZonedTime(parseISO(item.start_time), timezone);
       const end = toZonedTime(parseISO(item.end_time), timezone);
       const startMinutes = start.getHours() * 60 + start.getMinutes();
@@ -401,6 +405,10 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
           await deleteMeeting(id);
           invalidateMeetings(true);
           invalidateTodaysSchedule(true);
+        } else if (type === 'task') {
+          await unscheduleTask(id);
+          invalidateInboxTasks(true);
+          invalidateDailyFlow(true);
         } else {
           await unscheduleIssue(id);
         }
@@ -408,21 +416,22 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
     }
   }, []);
 
-  const handleEdit = useCallback((item: ScheduleItem) => {
-    if (isMeeting(item)) {
-      setEditingMeeting(item);
-    } else {
-      // For now, no edit modal for issues, just drag to reschedule
-      console.log('Edit issue', item);
-    }
-  }, []);
+  const handleEdit = useCallback(
+    (item: AnyScheduleItem) => {
+      if (isMeeting(item)) {
+        setEditingMeeting(item);
+      } else if (isTask(item)) {
+        // Find the full Task object for the edit modal
+        const fullTask = tasks.find((t) => t.id === item.id);
+        if (fullTask) setEditingTask(fullTask);
+      }
+    },
+    [tasks]
+  );
 
-  const handleSlotClick = (hour: number, minute: number) => {
-    const clickDate = setMinutes(setHours(currentDate, hour), minute);
-    const endDate = addMinutes(clickDate, 60); // Default 1 hour
-
-    setNewIssueTime({ start: clickDate, end: endDate });
-    setIsIssueModalOpen(true);
+  const handleSlotClick = (hour: number) => {
+    setNewTaskTime(`${hour}:00`);
+    setIsTaskModalOpen(true);
   };
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
@@ -447,23 +456,19 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
 
       if (!item) return;
 
-      // Parse the slot ID to get hour and minute
       const [hourStr, minuteStr] = slotId.split(':');
       const newHour = parseInt(hourStr, 10);
       const newMinute = parseInt(minuteStr, 10);
 
       if (isNaN(newHour) || isNaN(newMinute)) return;
 
-      // Calculate the new start and end times
       const originalStart = parseISO(item.start_time);
       const originalEnd = parseISO(item.end_time);
       const duration = differenceInMinutes(originalEnd, originalStart);
 
-      // Create new times in the selected timezone
       const newStart = setMinutes(setHours(startOfDay(currentDate), newHour), newMinute);
       const newEnd = addMinutes(newStart, duration);
 
-      // Update the item
       startTransition(async () => {
         if (isMeeting(item)) {
           await updateMeeting({
@@ -473,6 +478,10 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
           });
           invalidateMeetings(true);
           invalidateTodaysSchedule(true);
+        } else if (isTask(item)) {
+          await scheduleTaskAction(itemId, newStart.toISOString(), newEnd.toISOString());
+          invalidateInboxTasks(true);
+          invalidateDailyFlow(true);
         } else {
           await scheduleIssue(itemId, newStart.toISOString(), newEnd.toISOString());
         }
@@ -483,11 +492,16 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
 
   const isToday = isSameDay(currentDate, todayInTz);
 
-  // Find the active item for drag overlay
   const activeItem = useMemo(() => {
     if (!activeDragId) return null;
     return allItems.find((m) => m.id === activeDragId) || null;
   }, [activeDragId, allItems]);
+
+  const isItemOutsideHours = (item: AnyScheduleItem) => {
+    const startTime = toZonedTime(parseISO(item.start_time), timezone);
+    const endTime = toZonedTime(parseISO(item.end_time), timezone);
+    return startTime.getHours() >= END_HOUR || endTime.getHours() < START_HOUR;
+  };
 
   return (
     <>
@@ -496,7 +510,7 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
         <div
           className={cn(
             'flex items-center justify-between',
-            embedded ? 'border-b border-white/[0.06] px-5 py-4' : ''
+            embedded ? 'border-b border-border/30 px-5 py-4' : ''
           )}
         >
           <div className="flex items-center gap-4">
@@ -509,14 +523,14 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
               <h2
                 className={cn(
                   'font-bold tracking-tight',
-                  embedded ? 'text-sm text-white' : 'text-2xl text-foreground'
+                  embedded ? 'text-sm text-foreground' : 'text-2xl text-foreground'
                 )}
               >
                 {embedded ? 'Schedule' : format(currentDate, 'EEEE, MMMM d')}
               </h2>
               {embedded ? (
-                <p className="mt-1 text-xs text-zinc-500">
-                  {format(currentDate, 'MMM d')} · {dayItems.length} events
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {format(currentDate, 'MMM d')} · {totalDayItems} events
                 </p>
               ) : (
                 <div className="mt-1 flex items-center gap-2">
@@ -526,8 +540,8 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                     onChange={(e) => setTimezone(e.target.value)}
                     className="bg-transparent text-sm text-muted-foreground hover:text-foreground focus:outline-none"
                   >
-                    <option value={TIMEZONE_CYPRUS}>Cyprus (Fawzi)</option>
-                    <option value={TIMEZONE_JORDAN}>Jordan (Moayad)</option>
+                    <option value="Europe/Nicosia">Cyprus (Fawzi)</option>
+                    <option value="Asia/Amman">Jordan (Moayad)</option>
                   </select>
                 </div>
               )}
@@ -537,17 +551,12 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
           <div
             className={cn(
               'flex items-center gap-1 rounded-lg p-1',
-              embedded ? 'bg-zinc-800/50' : 'gap-2 bg-secondary/50'
+              embedded ? 'bg-muted/30' : 'gap-2 bg-secondary/50'
             )}
           >
             <button
               onClick={goToPreviousDay}
-              className={cn(
-                'rounded-md p-2 transition-colors',
-                embedded
-                  ? 'text-zinc-400 hover:bg-white/10 hover:text-white'
-                  : 'text-muted-foreground hover:bg-background hover:text-foreground'
-              )}
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -557,8 +566,8 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                 'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
                 embedded
                   ? isToday
-                    ? 'bg-white/10 text-white'
-                    : 'text-zinc-400 hover:text-white'
+                    ? 'bg-muted/50 text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                   : isToday
                     ? 'bg-background px-4 py-2 text-sm text-foreground shadow-sm'
                     : 'px-4 py-2 text-sm text-muted-foreground hover:text-foreground'
@@ -568,12 +577,7 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
             </button>
             <button
               onClick={goToNextDay}
-              className={cn(
-                'rounded-md p-2 transition-colors',
-                embedded
-                  ? 'text-zinc-400 hover:bg-white/10 hover:text-white'
-                  : 'text-muted-foreground hover:bg-background hover:text-foreground'
-              )}
+              className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -594,19 +598,44 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                 : 'rounded-xl border border-border bg-card/50 shadow-lg backdrop-blur-xl'
             )}
           >
-            {/* Time grid wrapper with Scroll Area if needed */}
             <div className="h-full overflow-y-auto">
+              {/* Column headers */}
+              {!embedded && (
+                <div className="sticky top-0 z-30 grid grid-cols-[80px_1fr_1fr] border-b border-border/60 bg-card">
+                  <div className="border-r border-border/50 px-3 py-2" />
+                  <div className="flex items-center gap-2 border-r border-border/30 px-4 py-2">
+                    <ListTodo className="h-3.5 w-3.5 text-blue-500" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-500">
+                      Tasks
+                    </span>
+                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                      {dayTasks.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2">
+                    <Video className="h-3.5 w-3.5 text-violet-500" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-500">
+                      Meetings
+                    </span>
+                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                      {dayMeetings.length}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div
-                className={cn('grid', embedded ? 'grid-cols-[60px_1fr]' : 'grid-cols-[80px_1fr]')}
+                className={cn(
+                  'grid',
+                  embedded ? 'grid-cols-[60px_1fr]' : 'grid-cols-[80px_1fr_1fr]'
+                )}
                 style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT}px`, minHeight: '100%' }}
               >
                 {/* Time labels */}
                 <div
                   className={cn(
                     'relative border-r',
-                    embedded
-                      ? 'border-white/[0.06] bg-zinc-900/50'
-                      : 'border-border/50 bg-secondary/20'
+                    embedded ? 'border-border/30 bg-muted/20' : 'border-border/50 bg-secondary/20'
                   )}
                 >
                   {hours.map((hour) => (
@@ -618,38 +647,29 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                       )}
                       style={{ height: `${HOUR_HEIGHT}px` }}
                     >
-                      <span
-                        className={cn(
-                          'text-xs font-semibold',
-                          embedded ? 'text-zinc-500' : 'text-muted-foreground/80'
-                        )}
-                      >
+                      <span className="text-xs font-semibold text-muted-foreground/80">
                         {format(setHours(setMinutes(new Date(), 0), hour), 'h a')}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                {/* Day column with droppable slots */}
+                {/* Tasks column (left) */}
                 <div
                   className={cn(
                     'relative',
-                    isToday && (embedded ? 'bg-violet-500/[0.02]' : 'bg-primary/[0.01]')
+                    !embedded && 'border-r border-border/30',
+                    isToday && 'bg-blue-500/[0.01]'
                   )}
                 >
-                  {/* Droppable time slots (30-minute intervals) */}
+                  {/* Droppable time slots */}
                   {hours.map((hour) => (
                     <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT}px` }}>
-                      {/* Add Task Button Overlay (Visible on Hover) */}
+                      {/* Add Task Button */}
                       <div className="absolute inset-0 z-10 opacity-0 transition-opacity hover:opacity-100">
                         <button
-                          onClick={() => handleSlotClick(hour, 0)}
-                          className={cn(
-                            'absolute right-2 top-0 rounded-full p-1.5 shadow-sm transition-transform hover:scale-110',
-                            embedded
-                              ? 'bg-violet-500 text-white'
-                              : 'bg-primary text-primary-foreground'
-                          )}
+                          onClick={() => handleSlotClick(hour)}
+                          className="absolute right-2 top-0 rounded-full bg-blue-500 p-1.5 text-white shadow-sm transition-transform hover:scale-110"
                           title="Add Task"
                         >
                           <Plus className="h-3 w-3" />
@@ -679,31 +699,15 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                         top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
                       }}
                     >
-                      <div
-                        className={cn(
-                          '-ml-1.5 h-3 w-3 rounded-full shadow-sm ring-2',
-                          embedded ? 'bg-violet-500 ring-zinc-900' : 'bg-red-500 ring-background'
-                        )}
-                      />
-                      <div
-                        className={cn(
-                          'h-[2px] w-full shadow-sm',
-                          embedded ? 'bg-violet-500' : 'bg-red-500'
-                        )}
-                      />
+                      <div className="-ml-1.5 h-3 w-3 rounded-full bg-red-500 shadow-sm ring-2 ring-background" />
+                      <div className="h-[2px] w-full bg-red-500 shadow-sm" />
                     </div>
                   )}
 
-                  {/* Items */}
-                  {dayItems.map((item) => {
+                  {/* Task items */}
+                  {dayTasks.map((item) => {
+                    if (isItemOutsideHours(item)) return null;
                     const { top, height } = getItemPosition(item);
-                    const startTime = toZonedTime(parseISO(item.start_time), timezone);
-                    const endTime = toZonedTime(parseISO(item.end_time), timezone);
-
-                    // Skip if completely outside visible hours
-                    if (startTime.getHours() >= END_HOUR || endTime.getHours() < START_HOUR) {
-                      return null;
-                    }
 
                     return (
                       <div
@@ -723,11 +727,106 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
                     );
                   })}
                 </div>
+
+                {/* Meetings column (right) - only in non-embedded mode */}
+                {!embedded && (
+                  <div className={cn('relative', isToday && 'bg-violet-500/[0.01]')}>
+                    {/* Hour grid lines */}
+                    {hours.map((hour) => (
+                      <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT}px` }}>
+                        <TimeSlot
+                          hour={hour}
+                          minute={0}
+                          currentDate={currentDate}
+                          isOver={activeDropSlot === `${hour}:00`}
+                        />
+                        <TimeSlot
+                          hour={hour}
+                          minute={30}
+                          currentDate={currentDate}
+                          isOver={activeDropSlot === `${hour}:30`}
+                        />
+                      </div>
+                    ))}
+
+                    {/* Current time indicator */}
+                    {isToday && (
+                      <div
+                        className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+                        style={{
+                          top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
+                        }}
+                      >
+                        <div className="h-[2px] w-full bg-red-500 shadow-sm" />
+                      </div>
+                    )}
+
+                    {/* Meeting items */}
+                    {dayMeetings.map((item) => {
+                      if (isItemOutsideHours(item)) return null;
+                      const { top, height } = getItemPosition(item);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="absolute left-2 right-2 z-20 transition-all"
+                          style={{ top: `${top}px`, height: `${height}px` }}
+                        >
+                          <DraggableItem
+                            item={item}
+                            timezone={timezone}
+                            height={height}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            isPending={isPending}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* In embedded mode, meetings are overlaid below */}
               </div>
+
+              {/* In embedded mode, we need to overlay meetings on the single content column */}
+              {embedded && dayMeetings.length > 0 && (
+                <div
+                  className="pointer-events-none absolute"
+                  style={{
+                    top: 0,
+                    left: '60px',
+                    right: 0,
+                    height: `${TOTAL_HOURS * HOUR_HEIGHT}px`,
+                  }}
+                >
+                  {dayMeetings.map((item) => {
+                    if (isItemOutsideHours(item)) return null;
+                    const { top, height } = getItemPosition(item);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className="pointer-events-auto absolute left-2 right-2 z-20 transition-all"
+                        style={{ top: `${top}px`, height: `${height}px` }}
+                      >
+                        <DraggableItem
+                          item={item}
+                          timezone={timezone}
+                          height={height}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          isPending={isPending}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Drag overlay for visual feedback */}
+          {/* Drag overlay */}
           <DragOverlay>
             {activeItem && (
               <div
@@ -761,12 +860,20 @@ export function DayView({ meetings, issues = [], embedded = false }: DayViewProp
         onOpenChange={(open) => !open && setEditingMeeting(null)}
       />
 
-      {/* New Issue Modal */}
-      <NewIssueModal
-        open={isIssueModalOpen}
-        onOpenChange={setIsIssueModalOpen}
-        defaultStartTime={newIssueTime?.start}
-        defaultEndTime={newIssueTime?.end}
+      {/* Edit Task Modal */}
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask}
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+        />
+      )}
+
+      {/* New Task Modal */}
+      <NewTaskModal
+        open={isTaskModalOpen}
+        onOpenChange={setIsTaskModalOpen}
+        defaultScheduledTime={newTaskTime}
       />
     </>
   );

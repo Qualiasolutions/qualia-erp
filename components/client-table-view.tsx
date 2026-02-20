@@ -141,9 +141,8 @@ const ClientTableRow = React.memo(function ClientTableRow({
     <tr
       onClick={handleRowClick}
       className={cn(
-        'group cursor-pointer transition-colors',
-        'hover:bg-secondary/50',
-        rowIndex % 2 === 1 && 'bg-secondary/20',
+        'group cursor-pointer border-b border-border/40 transition-colors',
+        'hover:bg-secondary/40',
         isPending && 'pointer-events-none opacity-50'
       )}
     >
@@ -528,7 +527,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full min-w-[950px] table-fixed">
-          <thead className="border-b border-border bg-secondary/50">
+          <thead className="table-header">
             <tr>
               <th className="w-14 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 ID

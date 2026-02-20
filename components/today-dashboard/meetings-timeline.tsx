@@ -124,20 +124,20 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20">
             <Video className="h-4 w-4 text-violet-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">Meetings</h3>
-            <p className="text-xs text-zinc-500">{totalMeetings} this week</p>
+            <h3 className="text-sm font-semibold text-foreground">Meetings</h3>
+            <p className="text-xs text-muted-foreground">{totalMeetings} this week</p>
           </div>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-zinc-400 hover:text-white"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
           onClick={() => setShowModal(true)}
         >
           <Plus className="h-4 w-4" />
@@ -148,10 +148,10 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
       <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
         {totalMeetings === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="rounded-xl bg-zinc-800/50 p-3">
-              <Video className="h-5 w-5 text-zinc-600" />
+            <div className="rounded-xl bg-muted/30 p-3">
+              <Video className="h-5 w-5 text-muted-foreground/50" />
             </div>
-            <p className="mt-3 text-sm text-zinc-500">No meetings scheduled</p>
+            <p className="mt-3 text-sm text-muted-foreground">No meetings scheduled</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -162,12 +162,12 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                   <span
                     className={cn(
                       'text-[11px] font-semibold uppercase tracking-wider',
-                      isToday(group.date) ? 'text-violet-400' : 'text-zinc-600'
+                      isToday(group.date) ? 'text-violet-400' : 'text-muted-foreground/60'
                     )}
                   >
                     {group.label}
                   </span>
-                  <div className="h-px flex-1 bg-white/5" />
+                  <div className="h-px flex-1 bg-border/30" />
                 </div>
 
                 {/* Meetings */}
@@ -184,13 +184,13 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                           'group/meeting relative flex items-center gap-3 rounded-xl p-3 transition-all',
                           isCurrent && 'bg-violet-500/10 ring-1 ring-violet-500/30',
                           isPast && 'opacity-40',
-                          !isCurrent && !isPast && 'hover:bg-white/5'
+                          !isCurrent && !isPast && 'hover:bg-muted/20'
                         )}
                       >
                         {/* Client/Attendee Avatar */}
                         <div className="relative">
                           {meeting.client ? (
-                            <Avatar className="h-10 w-10 ring-2 ring-zinc-800">
+                            <Avatar className="h-10 w-10 ring-2 ring-background">
                               <AvatarImage src={meeting.client.logo_url || undefined} />
                               <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-xs font-bold text-white">
                                 {getInitials(meeting.client.display_name)}
@@ -201,7 +201,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                               {meeting.attendees.slice(0, 2).map((a, i) => (
                                 <Avatar
                                   key={a.profile.id}
-                                  className={cn('h-8 w-8 ring-2 ring-zinc-900', i > 0 && '-ml-2')}
+                                  className={cn('h-8 w-8 ring-2 ring-background', i > 0 && '-ml-2')}
                                 >
                                   <AvatarImage src={a.profile.avatar_url || undefined} />
                                   <AvatarFallback className="bg-gradient-to-br from-sky-500 to-blue-600 text-[10px] font-bold text-white">
@@ -210,14 +210,14 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                                 </Avatar>
                               ))}
                               {meeting.attendees.length > 2 && (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 ring-2 ring-zinc-900">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground ring-2 ring-background">
                                   +{meeting.attendees.length - 2}
                                 </div>
                               )}
                             </div>
                           ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800">
-                              <Users className="h-4 w-4 text-zinc-500" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                              <Users className="h-4 w-4 text-muted-foreground" />
                             </div>
                           )}
                           {isCurrent && (
@@ -238,7 +238,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                           >
                             {meeting.client?.display_name || meeting.title}
                           </p>
-                          <div className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
+                          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                             <span
                               className={cn(
                                 'font-medium tabular-nums',
@@ -268,7 +268,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                                   e.stopPropagation();
                                   setEditingMeeting(meeting);
                                 }}
-                                className="rounded p-1 text-zinc-500 hover:bg-white/10 hover:text-white"
+                                className="rounded p-1 text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                                 title="Edit meeting"
                               >
                                 <Pencil className="h-3 w-3" />
@@ -279,7 +279,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                                   handleDeleteMeeting(meeting.id);
                                 }}
                                 disabled={deletingId === meeting.id}
-                                className="rounded p-1 text-zinc-500 hover:bg-red-500/20 hover:text-red-400"
+                                className="rounded p-1 text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
                                 title="Delete meeting"
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -297,7 +297,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                                 'flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-all',
                                 isCurrent
                                   ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:bg-violet-400'
-                                  : 'bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                                  : 'bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                               )}
                               onClick={(e) => e.stopPropagation()}
                             >

@@ -13,16 +13,34 @@ import {
   setMinutes,
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { ChevronLeft, ChevronRight, Clock, Globe, Trash2, Pencil, Video } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Globe,
+  Trash2,
+  Pencil,
+  Video,
+  CheckCircle2,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
-import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
+import { unscheduleTask } from '@/app/actions/inbox';
+import type { Task } from '@/app/actions/inbox';
+import {
+  invalidateMeetings,
+  invalidateTodaysSchedule,
+  invalidateInboxTasks,
+  invalidateDailyFlow,
+} from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
-
-// Cyprus timezone (for Fawzi) - UTC+2 (EET) / UTC+3 (EEST in summer)
-const TIMEZONE_CYPRUS = 'Europe/Nicosia';
-// Jordan timezone (for Moayad) - UTC+3 (Arabia Standard Time)
-const TIMEZONE_JORDAN = 'Asia/Amman';
+import { EditTaskModal } from './edit-task-modal';
+import {
+  useTimezone,
+  TIMEZONE_CYPRUS,
+  type ScheduleTask,
+  tasksToScheduleItems,
+} from '@/lib/schedule-shared';
 
 interface Meeting {
   id: string;
@@ -38,48 +56,27 @@ interface Meeting {
   } | null;
 }
 
+type WeeklyItem = (Meeting & { itemType: 'meeting' }) | (ScheduleTask & { itemType: 'task' });
+
 interface WeeklyViewProps {
   meetings: Meeting[];
+  tasks?: Task[];
 }
 
-const HOUR_HEIGHT = 60; // pixels per hour
-const START_HOUR = 7; // 7 AM
-const END_HOUR = 21; // 9 PM
+const HOUR_HEIGHT = 60;
+const START_HOUR = 7;
+const END_HOUR = 21;
 
-// Get timezone from localStorage or detect from browser
-function useTimezone() {
-  const [timezone, setTimezone] = useState(TIMEZONE_CYPRUS);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('preferred_timezone');
-    if (stored && (stored === TIMEZONE_CYPRUS || stored === TIMEZONE_JORDAN)) {
-      setTimezone(stored);
-    } else {
-      const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (
-        browserTz.includes('Amman') ||
-        browserTz.includes('Jerusalem') ||
-        browserTz.includes('Beirut')
-      ) {
-        setTimezone(TIMEZONE_JORDAN);
-      }
-    }
-  }, []);
-
-  const setAndStoreTimezone = (tz: string) => {
-    setTimezone(tz);
-    localStorage.setItem('preferred_timezone', tz);
-  };
-
-  return { timezone, setTimezone: setAndStoreTimezone };
-}
-
-export function WeeklyView({ meetings }: WeeklyViewProps) {
+export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
   const { timezone, setTimezone } = useTimezone();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
   const [isPending, startTransition] = useTransition();
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // Convert tasks to schedule items
+  const scheduleTasks = useMemo(() => tasksToScheduleItems(tasks), [tasks]);
 
   // Update current time every minute
   useEffect(() => {
@@ -87,7 +84,6 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Get the current time in the selected timezone
   const nowInTz = useMemo(() => toZonedTime(currentTime, timezone), [currentTime, timezone]);
 
   const weekStart = startOfWeek(currentDate);
@@ -95,27 +91,35 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-  const meetingsByDate = useMemo(() => {
-    const map = new Map<string, Meeting[]>();
+  // Group all items by date
+  const itemsByDate = useMemo(() => {
+    const map = new Map<string, WeeklyItem[]>();
+
     meetings.forEach((meeting) => {
-      // Convert meeting time to selected timezone for grouping
       const meetingInTz = toZonedTime(parseISO(meeting.start_time), timezone);
       const dateKey = format(meetingInTz, 'yyyy-MM-dd');
       const existing = map.get(dateKey) || [];
-      map.set(dateKey, [...existing, meeting]);
+      map.set(dateKey, [...existing, { ...meeting, itemType: 'meeting' as const }]);
     });
+
+    scheduleTasks.forEach((task) => {
+      const taskInTz = toZonedTime(parseISO(task.start_time), timezone);
+      const dateKey = format(taskInTz, 'yyyy-MM-dd');
+      const existing = map.get(dateKey) || [];
+      map.set(dateKey, [...existing, { ...task, itemType: 'task' as const }]);
+    });
+
     return map;
-  }, [meetings, timezone]);
+  }, [meetings, scheduleTasks, timezone]);
 
   const goToPreviousWeek = () => setCurrentDate(subWeeks(currentDate, 1));
   const goToNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
   const goToToday = () => setCurrentDate(toZonedTime(new Date(), timezone));
 
-  const getMeetingPosition = useCallback(
-    (meeting: Meeting) => {
-      // Convert to timezone for accurate positioning
-      const start = toZonedTime(parseISO(meeting.start_time), timezone);
-      const end = toZonedTime(parseISO(meeting.end_time), timezone);
+  const getItemPosition = useCallback(
+    (item: WeeklyItem) => {
+      const start = toZonedTime(parseISO(item.start_time), timezone);
+      const end = toZonedTime(parseISO(item.end_time), timezone);
       const startMinutes = start.getHours() * 60 + start.getMinutes();
       const endMinutes = end.getHours() * 60 + end.getMinutes();
 
@@ -140,14 +144,13 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
     return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
   };
 
-  // Check if a day is today in the selected timezone
   const isTodayInTz = (day: Date) => {
     const todayStr = format(nowInTz, 'yyyy-MM-dd');
     const dayStr = format(day, 'yyyy-MM-dd');
     return todayStr === dayStr;
   };
 
-  const handleDelete = useCallback((id: string) => {
+  const handleDeleteMeeting = useCallback((id: string) => {
     if (confirm('Are you sure you want to delete this meeting?')) {
       startTransition(async () => {
         const result = await deleteMeeting(id);
@@ -159,9 +162,27 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
     }
   }, []);
 
-  const handleEdit = useCallback((meeting: Meeting) => {
+  const handleDeleteTask = useCallback((id: string) => {
+    if (confirm('Remove this task from schedule?')) {
+      startTransition(async () => {
+        await unscheduleTask(id);
+        invalidateInboxTasks(true);
+        invalidateDailyFlow(true);
+      });
+    }
+  }, []);
+
+  const handleEditMeeting = useCallback((meeting: Meeting) => {
     setEditingMeeting(meeting);
   }, []);
+
+  const handleEditTask = useCallback(
+    (taskItem: ScheduleTask) => {
+      const fullTask = tasks.find((t) => t.id === taskItem.id);
+      if (fullTask) setEditingTask(fullTask);
+    },
+    [tasks]
+  );
 
   return (
     <>
@@ -177,8 +198,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                 onChange={(e) => setTimezone(e.target.value)}
                 className="rounded-md border border-border bg-secondary px-2 py-1 text-xs text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
               >
-                <option value={TIMEZONE_CYPRUS}>Cyprus (Fawzi)</option>
-                <option value={TIMEZONE_JORDAN}>Jordan (Moayad)</option>
+                <option value="Europe/Nicosia">Cyprus (Fawzi)</option>
+                <option value="Asia/Amman">Jordan (Moayad)</option>
               </select>
             </div>
           </div>
@@ -206,7 +227,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
 
         {/* Day headers */}
         <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-card/50">
-          <div className="p-2" /> {/* Time column header */}
+          <div className="p-2" />
           {days.map((day) => {
             const isCurrentDay = isTodayInTz(day);
             return (
@@ -247,7 +268,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
           {/* Day columns */}
           {days.map((day) => {
             const dateKey = format(day, 'yyyy-MM-dd');
-            const dayMeetings = meetingsByDate.get(dateKey) || [];
+            const dayItems = itemsByDate.get(dateKey) || [];
             const isCurrentDay = isTodayInTz(day);
 
             return (
@@ -275,33 +296,51 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   </div>
                 )}
 
-                {/* Meetings */}
-                {dayMeetings.map((meeting) => {
-                  const { top, height } = getMeetingPosition(meeting);
-                  const startTime = toZonedTime(parseISO(meeting.start_time), timezone);
-                  const endTime = toZonedTime(parseISO(meeting.end_time), timezone);
-                  const hasLink = !!meeting.meeting_link;
+                {/* All items (meetings + tasks) */}
+                {dayItems.map((item) => {
+                  const { top, height } = getItemPosition(item);
+                  const startTime = toZonedTime(parseISO(item.start_time), timezone);
+                  const endTime = toZonedTime(parseISO(item.end_time), timezone);
 
-                  // Skip if outside visible hours
                   if (startTime.getHours() >= END_HOUR || endTime.getHours() < START_HOUR) {
                     return null;
                   }
 
+                  const isMeetingItem = item.itemType === 'meeting';
+                  const hasLink = isMeetingItem && !!(item as Meeting).meeting_link;
+
+                  // Color coding: violet for meetings, blue for tasks
+                  const borderColor = isMeetingItem ? 'border-violet-500/30' : 'border-blue-500/30';
+                  const bgColor = isMeetingItem
+                    ? 'bg-violet-500/10 hover:bg-violet-500/20'
+                    : 'bg-blue-500/10 hover:bg-blue-500/20';
+
                   return (
                     <div
-                      key={meeting.id}
-                      onClick={() => hasLink && window.open(meeting.meeting_link!, '_blank')}
+                      key={item.id}
+                      onClick={() =>
+                        isMeetingItem &&
+                        hasLink &&
+                        window.open((item as Meeting).meeting_link!, '_blank')
+                      }
                       className={cn(
-                        'group absolute left-1 right-1 z-10 overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-1.5 transition-colors hover:bg-violet-500/20',
+                        'group absolute left-1 right-1 z-10 overflow-hidden rounded-md border p-1.5 transition-colors',
+                        borderColor,
+                        bgColor,
                         hasLink ? 'cursor-pointer' : 'cursor-default'
                       )}
                       style={{ top: `${top}px`, height: `${height}px` }}
-                      title={`${meeting.title}\n${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}${hasLink ? '\nClick to join' : ''}`}
+                      title={`${item.title}\n${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}${hasLink ? '\nClick to join' : ''}`}
                     >
-                      {/* Live/Link indicator */}
+                      {/* Indicators */}
                       {hasLink && (
                         <div className="absolute right-0.5 top-0.5 flex items-center gap-0.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-500 group-hover:opacity-0">
                           <Video className="h-2.5 w-2.5" />
+                        </div>
+                      )}
+                      {!isMeetingItem && (
+                        <div className="absolute right-0.5 top-0.5 group-hover:opacity-0">
+                          <CheckCircle2 className="h-3 w-3 text-blue-500" />
                         </div>
                       )}
 
@@ -311,10 +350,19 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEdit(meeting);
+                            if (isMeetingItem) {
+                              handleEditMeeting(item as Meeting);
+                            } else {
+                              handleEditTask(item as ScheduleTask);
+                            }
                           }}
-                          className="rounded p-0.5 text-muted-foreground hover:bg-violet-500/20 hover:text-foreground"
-                          title="Edit meeting"
+                          className={cn(
+                            'rounded p-0.5 text-muted-foreground',
+                            isMeetingItem
+                              ? 'hover:bg-violet-500/20 hover:text-foreground'
+                              : 'hover:bg-blue-500/20 hover:text-foreground'
+                          )}
+                          title="Edit"
                         >
                           <Pencil className="h-3 w-3" />
                         </button>
@@ -322,18 +370,22 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDelete(meeting.id);
+                            if (isMeetingItem) {
+                              handleDeleteMeeting(item.id);
+                            } else {
+                              handleDeleteTask(item.id);
+                            }
                           }}
                           disabled={isPending}
                           className="rounded p-0.5 text-muted-foreground hover:bg-red-500/20 hover:text-red-500"
-                          title="Delete meeting"
+                          title="Remove"
                         >
                           <Trash2 className="h-3 w-3" />
                         </button>
                       </div>
 
                       <div className="truncate text-[11px] font-medium text-foreground">
-                        {meeting.title}
+                        {item.title}
                       </div>
                       {height > 40 && (
                         <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -341,9 +393,14 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                           <span>{format(startTime, 'h:mm a')}</span>
                         </div>
                       )}
-                      {height > 60 && meeting.project && (
-                        <div className="mt-1 truncate text-[10px] text-primary/80">
-                          {meeting.project.name}
+                      {height > 60 && item.project && (
+                        <div
+                          className={cn(
+                            'mt-1 truncate text-[10px]',
+                            isMeetingItem ? 'text-violet-400/80' : 'text-blue-400/80'
+                          )}
+                        >
+                          {item.project.name}
                         </div>
                       )}
                     </div>
@@ -361,6 +418,15 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
         open={editingMeeting !== null}
         onOpenChange={(open) => !open && setEditingMeeting(null)}
       />
+
+      {/* Edit Task Modal */}
+      {editingTask && (
+        <EditTaskModal
+          task={editingTask}
+          open={!!editingTask}
+          onOpenChange={(open) => !open && setEditingTask(null)}
+        />
+      )}
     </>
   );
 }

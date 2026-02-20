@@ -58,7 +58,7 @@ function NavLink({
       )}
     >
       {isActive && (
-        <div className="absolute left-0 top-1/4 h-1/2 w-[3px] rounded-r-full bg-primary" />
+        <div className="absolute left-0 top-[20%] h-[60%] w-[2px] rounded-r-full bg-primary/80" />
       )}
       <item.icon
         className={cn(
@@ -132,7 +132,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center px-5">
+      <div className="flex h-14 items-center border-b border-border/30 px-5">
         <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 to-primary p-[1px] transition-transform duration-200 group-hover:scale-105">
             <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-background">
@@ -181,7 +181,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-background md:block">
+      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-card/50 md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

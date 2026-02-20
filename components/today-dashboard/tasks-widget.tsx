@@ -106,7 +106,7 @@ const TaskItem = React.memo(function TaskItem({
       exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
       className={cn(
         'group mx-1 flex items-start gap-3 rounded-xl px-3 py-3 transition-all duration-200',
-        'hover:bg-white/[0.04]',
+        'hover:bg-muted/20',
         isCompleted && 'opacity-50'
       )}
     >
@@ -117,8 +117,8 @@ const TaskItem = React.memo(function TaskItem({
         className={cn(
           'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
           isCompleted
-            ? 'border-amber-500/50 bg-amber-500 text-black'
-            : 'border-zinc-600 hover:border-amber-500/50 hover:bg-amber-500/10'
+            ? 'border-amber-500/50 bg-amber-500 text-primary-foreground'
+            : 'border-muted-foreground/30 hover:border-amber-500/50 hover:bg-amber-500/10'
         )}
       >
         {isCompleted && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -129,17 +129,17 @@ const TaskItem = React.memo(function TaskItem({
         <span
           className={cn(
             'text-[13px] font-medium leading-tight',
-            isCompleted ? 'text-zinc-500 line-through' : 'text-zinc-100'
+            isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
           )}
         >
           {task.title}
         </span>
 
         {/* Meta row */}
-        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           {task.project && (
-            <span className="flex items-center gap-1.5 rounded-md bg-zinc-800/50 px-2 py-0.5">
-              <FolderOpen className="h-3 w-3 text-zinc-400" />
+            <span className="flex items-center gap-1.5 rounded-md bg-muted/30 px-2 py-0.5">
+              <FolderOpen className="h-3 w-3 text-muted-foreground" />
               <span className="max-w-[100px] truncate">{task.project.name}</span>
             </span>
           )}
@@ -149,7 +149,7 @@ const TaskItem = React.memo(function TaskItem({
                 'flex items-center gap-1.5 rounded-md px-2 py-0.5',
                 overdue && 'bg-red-500/10 text-red-400',
                 dueToday && !overdue && 'bg-amber-500/10 text-amber-400',
-                !overdue && !dueToday && 'bg-zinc-800/50'
+                !overdue && !dueToday && 'bg-muted/30'
               )}
             >
               <Clock className="h-3 w-3" />
@@ -159,7 +159,9 @@ const TaskItem = React.memo(function TaskItem({
           {task.assignee && (
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-qualia-500" />
-              <span className="text-zinc-400">{task.assignee.full_name?.split(' ')[0]}</span>
+              <span className="text-muted-foreground">
+                {task.assignee.full_name?.split(' ')[0]}
+              </span>
             </span>
           )}
         </div>
@@ -187,7 +189,7 @@ const TaskItem = React.memo(function TaskItem({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
+                  className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   onClick={() => onEdit(task)}
                   disabled={isPending}
                 >
@@ -201,7 +203,7 @@ const TaskItem = React.memo(function TaskItem({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-white/10 hover:text-white"
+                  className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                   onClick={() => onHide(task.id)}
                   disabled={isPending}
                 >
@@ -215,7 +217,7 @@ const TaskItem = React.memo(function TaskItem({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-lg text-zinc-400 hover:bg-red-500/20 hover:text-red-400"
+                  className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-red-500/20 hover:text-red-400"
                   onClick={() => onDelete(task.id)}
                   disabled={isPending}
                 >
@@ -358,26 +360,28 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
   return (
     <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border/40 px-5 py-4">
         <div>
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/10">
               <Circle className="h-3 w-3 fill-amber-500 text-amber-500" />
             </div>
-            <h3 className="text-sm font-semibold text-white">Tasks</h3>
+            <h3 className="text-sm font-semibold text-foreground">Tasks</h3>
           </div>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             {pendingTasks} pending{completedTasks > 0 && ` · ${completedTasks} done`}
           </p>
         </div>
 
         {/* Simplified user filter for 2-person team */}
-        <div className="flex items-center gap-1 rounded-lg bg-zinc-800/50 p-1">
+        <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
           <button
             onClick={() => setSelectedUserId(null)}
             className={cn(
               'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-              !selectedUserId ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'
+              !selectedUserId
+                ? 'bg-muted/50 text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             All Tasks
@@ -387,8 +391,8 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
             className={cn(
               'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
               selectedUserId === currentUserId
-                ? 'bg-white/10 text-white'
-                : 'text-zinc-400 hover:text-white'
+                ? 'bg-muted/50 text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             My Tasks
@@ -397,7 +401,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
       </div>
 
       {/* Quick Add */}
-      <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3">
+      <div className="flex items-center gap-3 border-b border-border/40 px-5 py-3">
         <input
           type="text"
           value={quickAddValue}
@@ -410,7 +414,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
           }}
           placeholder="Add a new task..."
           disabled={isAddingTask}
-          className="h-9 flex-1 rounded-lg bg-zinc-800/50 px-3 text-sm text-white outline-none ring-1 ring-white/[0.06] transition-all placeholder:text-zinc-500 focus:ring-amber-500/50"
+          className="h-9 flex-1 rounded-lg bg-muted/30 px-3 text-sm text-foreground outline-none ring-1 ring-border/40 transition-all placeholder:text-muted-foreground focus:ring-amber-500/50"
         />
         <Button
           size="sm"
@@ -429,8 +433,8 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
             <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
               <Check className="h-6 w-6 text-amber-500" />
             </div>
-            <p className="text-sm font-medium text-white">All done!</p>
-            <p className="mt-1 text-xs text-zinc-500">No pending tasks</p>
+            <p className="text-sm font-medium text-foreground">All done!</p>
+            <p className="mt-1 text-xs text-muted-foreground">No pending tasks</p>
           </div>
         ) : (
           <div

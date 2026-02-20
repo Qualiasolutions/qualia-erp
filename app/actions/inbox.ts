@@ -661,6 +661,84 @@ export async function quickUpdateTask(
 }
 
 /**
+ * Get tasks that have been scheduled (have start/end times)
+ */
+export async function getScheduledTasks(workspaceId?: string | null): Promise<Task[]> {
+  const supabase = await createClient();
+
+  let wsId = workspaceId;
+  if (!wsId) {
+    wsId = await getCurrentWorkspaceId();
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error('[getScheduledTasks] No authenticated user');
+    return [];
+  }
+
+  let query = supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      workspace_id,
+      creator_id,
+      assignee_id,
+      project_id,
+      title,
+      description,
+      status,
+      priority,
+      item_type,
+      phase_name,
+      sort_order,
+      due_date,
+      completed_at,
+      scheduled_start_time,
+      scheduled_end_time,
+      show_in_inbox,
+      created_at,
+      updated_at,
+      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
+      project:projects (id, name, project_type, lead:profiles!projects_lead_id_fkey (id, full_name, avatar_url))
+    `
+    )
+    .not('scheduled_start_time', 'is', null)
+    .not('scheduled_end_time', 'is', null)
+    .order('scheduled_start_time', { ascending: true });
+
+  if (wsId) {
+    query = query.eq('workspace_id', wsId);
+  }
+
+  const { data: tasks, error } = await query;
+
+  if (error) {
+    console.error('[getScheduledTasks] Error fetching scheduled tasks:', error);
+    return [];
+  }
+
+  return (tasks || []).map((task) => {
+    const t = task as unknown as {
+      creator: Task['creator'] | Task['creator'][] | null;
+      assignee: Task['assignee'] | Task['assignee'][] | null;
+      project: Task['project'] | Task['project'][];
+    };
+    return {
+      ...task,
+      creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
+      assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+      project: Array.isArray(t.project) ? t.project[0] : t.project,
+    } as Task;
+  });
+}
+
+/**
  * Schedule a task to a specific time slot
  */
 export async function scheduleTask(
