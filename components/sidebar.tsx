@@ -41,24 +41,21 @@ function NavLink({
   item,
   isActive,
   onClick,
-  index,
 }: {
   item: (typeof navigation)[0];
   isActive: boolean;
   onClick?: () => void;
-  index: number;
 }) {
   return (
     <Link
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-9 animate-slide-in items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-all duration-200',
+        'group relative flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-all duration-200',
         isActive
           ? 'bg-primary/8 text-foreground'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
       )}
-      style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'both' }}
     >
       {isActive && (
         <div className="absolute left-0 top-1/4 h-1/2 w-[3px] rounded-r-full bg-primary" />
@@ -135,10 +132,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div
-        className="flex h-14 animate-fade-in items-center px-5"
-        style={{ animationFillMode: 'both' }}
-      >
+      <div className="flex h-14 items-center px-5">
         <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 to-primary p-[1px] transition-transform duration-200 group-hover:scale-105">
             <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-background">
@@ -158,19 +152,11 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-0.5 px-3 pt-1">
-        {navigation.map((item, index) => {
+        {navigation.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
 
-          return (
-            <NavLink
-              key={item.name}
-              item={item}
-              isActive={isActive}
-              onClick={onLinkClick}
-              index={index}
-            />
-          );
+          return <NavLink key={item.name} item={item} isActive={isActive} onClick={onLinkClick} />;
         })}
       </nav>
 
