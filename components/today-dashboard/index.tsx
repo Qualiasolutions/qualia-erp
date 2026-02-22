@@ -2,25 +2,17 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { format, isToday, parseISO, isPast } from 'date-fns';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import {
-  RefreshCw,
-  Settings,
-  Menu,
-  Plus,
-  ListTodo,
-  AlertTriangle,
-  CheckCircle2,
-  Video,
-} from 'lucide-react';
+import { RefreshCw, Settings, Menu, Plus } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
-import { ProjectPulseSidebar } from './project-pulse-sidebar';
+import { BuildingProjectsRow } from './building-projects-row';
+import { DashboardAIChat } from './dashboard-ai-chat';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
@@ -44,39 +36,6 @@ interface TodayDashboardProps {
   projects: Project[];
   finishedProjects: Project[];
   issues?: unknown[];
-}
-
-// =============================================================================
-// STAT CARD
-// =============================================================================
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ElementType;
-  accent?: string;
-}) {
-  return (
-    <div className="rounded-xl border border-border/30 bg-card/50 px-4 py-3 dark:border-border/40">
-      <div className="flex items-center gap-2">
-        <div
-          className={cn(
-            'flex size-7 items-center justify-center rounded-lg',
-            accent || 'bg-muted/50 text-foreground/50'
-          )}
-        >
-          <Icon className="size-3.5" />
-        </div>
-        <span className="text-xs font-medium text-foreground/40">{label}</span>
-      </div>
-      <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{value}</p>
-    </div>
-  );
 }
 
 // =============================================================================
@@ -107,56 +66,20 @@ export function TodayDashboard({
     startRefresh(() => router.refresh());
   };
 
-  // Compute stats
-  const stats = useMemo(() => {
-    const todaysMeetings = meetings.filter((m) => isToday(parseISO(m.start_time)));
-    const pendingCount = tasks.filter((t) => t.status !== 'Done').length;
-    const doneCount = tasks.filter((t) => t.status === 'Done').length;
-    const totalCount = tasks.length;
-    const progressPercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
-    const overdueCount = tasks.filter(
-      (t) =>
-        t.due_date &&
-        isPast(parseISO(t.due_date)) &&
-        !isToday(parseISO(t.due_date)) &&
-        t.status !== 'Done'
-    ).length;
-
-    return {
-      todaysMeetings: todaysMeetings.length,
-      pending: pendingCount,
-      overdue: overdueCount,
-      progress: progressPercent,
-    };
-  }, [meetings, tasks]);
-
-  // Split projects for ProjectPulseSidebar
-  const activeProjects = useMemo(
+  // Map projects for the building row
+  const allProjects = useMemo(
     () =>
-      projects.map((p) => ({
+      [...projects, ...finishedProjects].map((p) => ({
         id: p.id,
         name: p.name,
         status: p.status,
         project_type: p.project_type,
         target_date: p.target_date,
         logo_url: p.logo_url,
+        is_building: (p as Project).is_building,
         issue_stats: p.issue_stats,
       })),
-    [projects]
-  );
-
-  const finishedProjectsMapped = useMemo(
-    () =>
-      (finishedProjects as Project[]).map((p) => ({
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        project_type: p.project_type,
-        target_date: p.target_date,
-        logo_url: p.logo_url,
-        issue_stats: p.issue_stats,
-      })),
-    [finishedProjects]
+    [projects, finishedProjects]
   );
 
   return (
@@ -211,34 +134,9 @@ export function TodayDashboard({
       {/* ===== MAIN CONTENT (no page scroll) ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
-          {/* ── STATS ROW ──────────────────────────────────────────────── */}
-          <div className="mb-3 grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard
-              label="Progress"
-              value={`${stats.progress}%`}
-              icon={CheckCircle2}
-              accent="bg-emerald-500/10 text-emerald-500"
-            />
-            <StatCard
-              label="Pending"
-              value={stats.pending}
-              icon={ListTodo}
-              accent="bg-amber-500/10 text-amber-500"
-            />
-            <StatCard
-              label="Overdue"
-              value={stats.overdue}
-              icon={AlertTriangle}
-              accent={
-                stats.overdue > 0 ? 'bg-red-500/10 text-red-500' : 'bg-muted/50 text-foreground/50'
-              }
-            />
-            <StatCard
-              label="Meetings"
-              value={stats.todaysMeetings}
-              icon={Video}
-              accent="bg-violet-500/10 text-violet-500"
-            />
+          {/* ── CURRENTLY BUILDING ROW ─────────────────────────────────── */}
+          <div className="mb-3 shrink-0">
+            <BuildingProjectsRow projects={allProjects} />
           </div>
 
           {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
@@ -250,14 +148,9 @@ export function TodayDashboard({
               </div>
             </div>
 
-            {/* RIGHT COLUMN — Currently Building */}
+            {/* RIGHT COLUMN — AI Assistant */}
             <div className="min-h-0 lg:col-span-2 xl:col-span-5">
-              <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
-                <ProjectPulseSidebar
-                  activeProjects={activeProjects}
-                  finishedProjects={finishedProjectsMapped}
-                />
-              </div>
+              <DashboardAIChat />
             </div>
           </div>
         </div>
