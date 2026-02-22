@@ -545,7 +545,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 className="group/hour absolute left-0 right-0"
                 style={{ top: y, height: HOUR_HEIGHT }}
               >
-                <div className="absolute inset-x-0 bottom-0 h-px bg-border/[0.18]" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-border/30 dark:bg-border/40" />
 
                 <div
                   className="absolute top-0 flex items-start justify-end pr-2 pt-1"
@@ -562,12 +562,12 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 </div>
 
                 <div
-                  className="absolute right-0 border-b border-dotted border-border/[0.14]"
+                  className="absolute right-0 border-b border-dotted border-border/25 dark:border-border/35"
                   style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
                 />
 
                 <div
-                  className="absolute bottom-0 top-0 border-l border-dashed border-border/[0.18]"
+                  className="absolute bottom-0 top-0 border-l border-dashed border-border/30 dark:border-border/40"
                   style={{ left: `calc(50% + ${TIME_GUTTER / 2}px)` }}
                 />
 

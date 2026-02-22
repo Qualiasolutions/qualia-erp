@@ -168,14 +168,16 @@ export function NewTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="group relative overflow-hidden">
-          <span className="relative z-10 flex items-center gap-2">
-            <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
-            <span>New Task</span>
-          </span>
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button className="group relative overflow-hidden">
+            <span className="relative z-10 flex items-center gap-2">
+              <Plus className="h-4 w-4 transition-transform group-hover:rotate-90" />
+              <span>New Task</span>
+            </span>
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent
         className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[480px]"
         showCloseButton={false}

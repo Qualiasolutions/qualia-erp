@@ -64,7 +64,7 @@ function StatCard({
   accent?: string;
 }) {
   return (
-    <div className="rounded-xl border border-border/30 bg-card/50 px-4 py-3">
+    <div className="rounded-xl border border-border/30 bg-card/50 px-4 py-3 dark:border-border/40">
       <div className="flex items-center gap-2">
         <div
           className={cn(
@@ -248,14 +248,14 @@ export function TodayDashboard({
             {/* LEFT COLUMN */}
             <div className="space-y-5 lg:col-span-3 xl:col-span-7">
               {/* Schedule Grid */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
                 <div className="h-[640px]">
                   <DailyScheduleGrid tasks={tasks} meetings={meetings} />
                 </div>
               </div>
 
               {/* Meetings Timeline */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
                 <div className="max-h-[440px]">
                   <MeetingsTimeline meetings={meetings} />
                 </div>
@@ -265,14 +265,14 @@ export function TodayDashboard({
             {/* RIGHT COLUMN */}
             <div className="space-y-5 lg:col-span-2 xl:col-span-5">
               {/* Inbox Widget */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
                 <div className="h-[640px]">
                   <InboxWidget tasks={tasks} />
                 </div>
               </div>
 
               {/* Project Pulse */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
                 <div className="max-h-[440px]">
                   <ProjectPulseSidebar
                     activeProjects={activeProjects}
