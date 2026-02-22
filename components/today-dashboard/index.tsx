@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { format, isToday, parseISO } from 'date-fns';
+import { format, isToday, parseISO, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -17,10 +17,8 @@ import {
   Plus,
   ChevronRight,
   Search,
-  Check,
-  Circle,
-  Pencil,
-  Trash2,
+  Video,
+  ExternalLink,
   Inbox,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -29,10 +27,9 @@ import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
 import { BuildingProjectSheet } from './building-project-sheet';
-import { useTransition, useState, useEffect, useCallback } from 'react';
-import { type Task, quickUpdateTask, deleteTask } from '@/app/actions/inbox';
-import { type MeetingWithRelations, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
-import { EditTaskModal } from '@/components/edit-task-modal';
+import { useTransition, useState, useEffect } from 'react';
+import { type Task } from '@/app/actions/inbox';
+import { type MeetingWithRelations } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 
 interface Project {
@@ -95,14 +92,6 @@ const PROJECT_TYPE_CONFIG: Record<
     dotColor: 'bg-zinc-500',
     label: 'Other',
   },
-};
-
-const PRIORITY_DOT: Record<string, string> = {
-  Urgent: 'bg-red-500',
-  High: 'bg-orange-500',
-  Medium: 'bg-amber-400',
-  Low: 'bg-sky-400',
-  'No Priority': 'bg-foreground/10',
 };
 
 // =============================================================================
@@ -184,7 +173,7 @@ function BuildingProjectsList({
         return (
           <div key={type} className="mb-3 last:mb-0">
             <div className="mb-1.5 flex items-center gap-2 px-2">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-foreground/30">
+              <span className="text-xs font-semibold uppercase tracking-[0.08em] text-foreground/30">
                 {config.label}
               </span>
             </div>
@@ -200,7 +189,7 @@ function BuildingProjectsList({
                     name={project.name}
                     project_type={project.project_type}
                   />
-                  <span className="flex-1 truncate text-[13px] font-medium text-foreground/70 group-hover:text-foreground/90">
+                  <span className="flex-1 truncate text-sm font-medium text-foreground/70 group-hover:text-foreground/90">
                     {project.name}
                   </span>
                   <ChevronRight className="size-3.5 text-foreground/15 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -215,176 +204,150 @@ function BuildingProjectsList({
 }
 
 // =============================================================================
-// TODAY'S TASKS PANEL
+// OVERVIEW PANEL
 // =============================================================================
 
-function TaskRow({
-  task,
-  onEdit,
-  onComplete,
-  onDelete,
-}: {
-  task: Task;
-  onEdit: (task: Task) => void;
-  onComplete: (taskId: string) => void;
-  onDelete: (taskId: string) => void;
-}) {
-  const isDone = task.status === 'Done';
-  const dotColor = PRIORITY_DOT[task.priority] || PRIORITY_DOT['No Priority'];
-
-  return (
-    <div
-      className={cn(
-        'group/task flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-accent/50',
-        isDone && 'opacity-30'
-      )}
-      onClick={() => onEdit(task)}
-    >
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onComplete(task.id);
-        }}
-        className="shrink-0"
-      >
-        {isDone ? (
-          <div className="flex size-4 items-center justify-center rounded-full bg-emerald-500">
-            <Check className="size-2.5 text-white" strokeWidth={3} />
-          </div>
-        ) : (
-          <Circle className="text-foreground/12 size-4 transition-colors hover:text-foreground/30" />
-        )}
-      </button>
-
-      <div className={cn('size-1.5 shrink-0 rounded-full', dotColor)} />
-
-      <span
-        className={cn(
-          'flex-1 truncate text-[13px] font-medium text-foreground/70',
-          isDone && 'text-foreground/30 line-through'
-        )}
-      >
-        {task.title}
-      </span>
-
-      <div className="flex shrink-0 items-center gap-px opacity-0 transition-opacity group-hover/task:opacity-100">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onEdit(task);
-          }}
-          className="flex size-6 items-center justify-center rounded text-foreground/25 transition-colors hover:bg-foreground/[0.05] hover:text-foreground/50"
-        >
-          <Pencil className="size-3" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(task.id);
-          }}
-          className="hover:bg-red-500/8 flex size-6 items-center justify-center rounded text-red-400/40 transition-colors hover:text-red-400"
-        >
-          <Trash2 className="size-3" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TodaysTasksPanel({
-  tasks,
-  onEditTask,
-}: {
-  tasks: Task[];
-  onEditTask: (task: Task) => void;
-}) {
+function OverviewPanel({ meetings, tasks }: { meetings: MeetingWithRelations[]; tasks: Task[] }) {
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [, startTransition] = useTransition();
 
-  // Split into pending and done
-  const pending = tasks.filter((t) => t.status !== 'Done');
-  const done = tasks.filter((t) => t.status === 'Done');
+  const now = new Date();
+  const todaysMeetings = meetings
+    .filter((m) => isToday(parseISO(m.start_time)))
+    .sort((a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime());
 
-  const handleComplete = useCallback(
-    async (taskId: string) => {
-      const t = tasks.find((x) => x.id === taskId);
-      await quickUpdateTask(taskId, { status: t?.status === 'Done' ? 'Todo' : 'Done' });
-      invalidateInboxTasks();
-      invalidateDailyFlow();
-    },
-    [tasks]
+  const upcomingMeetings = todaysMeetings.filter((m) => parseISO(m.end_time) > now);
+  const pendingCount = tasks.filter((t) => t.status !== 'Done').length;
+  const doneCount = tasks.filter((t) => t.status === 'Done').length;
+  const totalCount = tasks.length;
+  const progressPercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+  const overdueTasks = tasks.filter(
+    (t) =>
+      t.due_date &&
+      isPast(parseISO(t.due_date)) &&
+      !isToday(parseISO(t.due_date)) &&
+      t.status !== 'Done'
   );
-
-  const handleDelete = useCallback((taskId: string) => {
-    if (!confirm('Delete this task?')) return;
-    startTransition(async () => {
-      await deleteTask(taskId);
-      invalidateInboxTasks(true);
-      invalidateDailyFlow(true);
-    });
-  }, []);
 
   return (
     <>
       <div className="flex h-full flex-col">
         {/* Header */}
-        <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/30 px-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-foreground/50">Tasks</span>
-            {pending.length > 0 && (
-              <span className="bg-amber-500/8 rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-                {pending.length}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => setShowNewTaskModal(true)}
-              className="flex size-6 items-center justify-center rounded text-foreground/20 transition-colors hover:bg-accent hover:text-foreground/50"
-            >
-              <Plus className="size-3" />
-            </button>
-            <Link
-              href="/inbox"
-              className="flex size-6 items-center justify-center rounded text-foreground/15 transition-colors hover:bg-accent hover:text-foreground/40"
-              title="Open inbox"
-            >
-              <Inbox className="size-3" />
-            </Link>
-          </div>
+        <div className="flex h-12 shrink-0 items-center border-b border-border/30 px-4">
+          <span className="text-sm font-semibold text-foreground/60">Overview</span>
         </div>
 
-        {/* Task list */}
-        <div className="flex-1 overflow-y-auto px-1.5 py-2">
-          {tasks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10">
-              <p className="text-xs text-foreground/25">No tasks today</p>
+        <div className="flex-1 space-y-6 overflow-y-auto p-4">
+          {/* Progress Card */}
+          <div className="rounded-xl border border-border/20 bg-muted/15 p-4">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wider text-foreground/35">
+                Today&apos;s Progress
+              </span>
+              <span className="text-xs tabular-nums text-foreground/30">
+                {doneCount}/{totalCount}
+              </span>
             </div>
-          ) : (
-            <>
-              {pending.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onEdit={onEditTask}
-                  onComplete={handleComplete}
-                  onDelete={handleDelete}
-                />
-              ))}
-              {done.length > 0 && pending.length > 0 && (
-                <div className="bg-border/8 mx-2 my-2 h-px" />
-              )}
-              {done.map((task) => (
-                <TaskRow
-                  key={task.id}
-                  task={task}
-                  onEdit={onEditTask}
-                  onComplete={handleComplete}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </>
+            <div className="mb-3 flex items-baseline gap-1">
+              <span className="text-3xl font-bold tabular-nums text-foreground">
+                {progressPercent}
+              </span>
+              <span className="text-sm text-foreground/25">%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-foreground/[0.06]">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-700',
+                  progressPercent === 100 ? 'bg-emerald-500' : 'bg-primary/70'
+                )}
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            {pendingCount > 0 && (
+              <p className="mt-2.5 text-xs text-foreground/30">
+                {pendingCount} task{pendingCount !== 1 ? 's' : ''} remaining
+              </p>
+            )}
+          </div>
+
+          {/* Overdue Alert */}
+          {overdueTasks.length > 0 && (
+            <div className="rounded-lg border border-red-500/15 bg-red-500/[0.04] px-4 py-3">
+              <p className="text-sm font-medium text-red-400">
+                {overdueTasks.length} overdue task{overdueTasks.length !== 1 ? 's' : ''}
+              </p>
+              <div className="mt-2 space-y-1">
+                {overdueTasks.slice(0, 3).map((t) => (
+                  <p key={t.id} className="truncate text-xs text-red-400/60">
+                    {t.title}
+                  </p>
+                ))}
+              </div>
+            </div>
           )}
+
+          {/* Up Next - Meetings */}
+          {upcomingMeetings.length > 0 && (
+            <div>
+              <h4 className="mb-3 px-1 text-xs font-medium uppercase tracking-wider text-foreground/35">
+                Up Next
+              </h4>
+              <div className="space-y-2">
+                {upcomingMeetings.slice(0, 3).map((m) => (
+                  <div
+                    key={m.id}
+                    className="rounded-lg border border-violet-500/10 bg-violet-500/[0.04] p-3"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded bg-violet-500/10">
+                        <Video className="size-3 text-violet-400" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground/80">{m.title}</p>
+                        <p className="mt-0.5 text-xs tabular-nums text-foreground/30">
+                          {format(parseISO(m.start_time), 'h:mm')} –{' '}
+                          {format(parseISO(m.end_time), 'h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                    {m.meeting_link && (
+                      <a
+                        href={m.meeting_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-violet-500/80 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-violet-500"
+                      >
+                        <ExternalLink className="size-3" />
+                        Join Meeting
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick Actions */}
+          <div>
+            <h4 className="mb-3 px-1 text-xs font-medium uppercase tracking-wider text-foreground/35">
+              Quick Actions
+            </h4>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setShowNewTaskModal(true)}
+                className="flex items-center gap-2 rounded-lg border border-border/20 bg-muted/10 px-3 py-2.5 text-sm text-foreground/60 transition-colors hover:bg-muted/30 hover:text-foreground/80"
+              >
+                <Plus className="size-3.5" />
+                New Task
+              </button>
+              <Link
+                href="/inbox"
+                className="flex items-center gap-2 rounded-lg border border-border/20 bg-muted/10 px-3 py-2.5 text-sm text-foreground/60 transition-colors hover:bg-muted/30 hover:text-foreground/80"
+              >
+                <Inbox className="size-3.5" />
+                Inbox
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -409,8 +372,6 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   const [greeting, setGreeting] = useState('');
   const [sheetProject, setSheetProject] = useState<Project | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-
   const now = new Date();
 
   useEffect(() => {
@@ -427,13 +388,6 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   const todaysMeetings = meetings.filter((m) => isToday(parseISO(m.start_time)));
   const pendingTasks = tasks.filter((t) => t.status !== 'Done').length;
 
-  // Tasks that are NOT scheduled today (the "backlog" / inbox tasks)
-  const unscheduledTasks = tasks.filter((t) => {
-    if (!t.scheduled_start_time) return true;
-    const s = parseISO(t.scheduled_start_time);
-    return !isToday(s);
-  });
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== TOP BAR ===== */}
@@ -445,9 +399,9 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-sm font-semibold tracking-tight text-foreground">{greeting}</h1>
+            <h1 className="text-base font-semibold tracking-tight text-foreground">{greeting}</h1>
             <span className="text-foreground/12 hidden sm:inline">|</span>
-            <span className="hidden text-[13px] tabular-nums text-foreground/35 sm:inline">
+            <span className="hidden text-sm tabular-nums text-foreground/35 sm:inline">
               {format(now, 'EEE, MMM d')}
             </span>
           </div>
@@ -455,12 +409,12 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           {/* Minimal stats */}
           <div className="ml-2 hidden items-center gap-2 lg:flex">
             {pendingTasks > 0 && (
-              <span className="text-xs tabular-nums text-foreground/30">
+              <span className="text-sm tabular-nums text-foreground/30">
                 <span className="font-semibold text-foreground/50">{pendingTasks}</span> tasks
               </span>
             )}
             {todaysMeetings.length > 0 && (
-              <span className="text-xs tabular-nums text-foreground/30">
+              <span className="text-sm tabular-nums text-foreground/30">
                 <span className="font-semibold text-violet-500/70">{todaysMeetings.length}</span>{' '}
                 meetings
               </span>
@@ -497,7 +451,7 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/30 px-3">
             <div className="flex items-center gap-1.5">
               <Hammer className="size-3.5 text-foreground/30" />
-              <span className="text-xs font-semibold text-foreground/50">Building</span>
+              <span className="text-sm font-semibold text-foreground/50">Building</span>
               <span className="bg-emerald-500/8 rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
                 {projects.length}
               </span>
@@ -522,21 +476,14 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
           <DailyScheduleGrid tasks={tasks} meetings={meetings} />
         </section>
 
-        {/* ── RIGHT: Today's Tasks ────────────────────────────────────────── */}
+        {/* ── RIGHT: Overview ────────────────────────────────────────────── */}
         <aside className="hidden w-[260px] shrink-0 border-l border-border/30 xl:flex xl:flex-col">
-          <TodaysTasksPanel tasks={unscheduledTasks} onEditTask={setEditingTask} />
+          <OverviewPanel meetings={meetings} tasks={tasks} />
         </aside>
       </div>
 
       {/* ===== Modals & Sheets ===== */}
       <BuildingProjectSheet project={sheetProject} open={sheetOpen} onOpenChange={setSheetOpen} />
-      {editingTask && (
-        <EditTaskModal
-          task={editingTask}
-          open={!!editingTask}
-          onOpenChange={(open) => !open && setEditingTask(null)}
-        />
-      )}
     </div>
   );
 }
