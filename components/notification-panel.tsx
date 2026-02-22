@@ -81,7 +81,7 @@ export function NotificationPanel() {
         >
           <Bell className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
           {unreadCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium text-white">
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-medium text-white">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
@@ -146,7 +146,7 @@ export function NotificationPanel() {
                       </p>
                     )}
                     {notification.created_at && (
-                      <p className="mt-1 text-[10px] text-muted-foreground/70">
+                      <p className="mt-1 text-[11px] text-muted-foreground/70">
                         {formatDistanceToNow(new Date(notification.created_at), {
                           addSuffix: true,
                         })}

@@ -47,7 +47,7 @@ function TemplateCard({ template }: { template: (typeof templates)[0] }) {
         </div>
         <div>
           <h4 className="text-xs font-medium text-foreground">{template.title}</h4>
-          <p className="text-[10px] text-muted-foreground">{template.description}</p>
+          <p className="text-[11px] text-muted-foreground">{template.description}</p>
         </div>
       </div>
       <a
@@ -101,13 +101,13 @@ export function AIAssistantTemplates() {
               </div>
               <div>
                 <h4 className="text-xs font-medium text-foreground">Brand Guidelines</h4>
-                <p className="text-[10px] text-muted-foreground">Colors, logos, standards</p>
+                <p className="text-[11px] text-muted-foreground">Colors, logos, standards</p>
               </div>
             </div>
             <a
               href="/tempaltes/Qualia_Solutions_Brand_Guidelines.pdf"
               download
-              className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[10px] font-medium text-primary-foreground hover:bg-primary/90"
+              className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90"
             >
               <Download className="h-3 w-3" />
               PDF

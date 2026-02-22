@@ -228,7 +228,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                   <SelectItem value="unassigned">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-5 w-5">
-                        <AvatarFallback className="text-[10px]">
+                        <AvatarFallback className="text-[11px]">
                           <User className="h-3 w-3" />
                         </AvatarFallback>
                       </Avatar>
@@ -242,7 +242,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                           {profile.avatar_url ? (
                             <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
                           ) : null}
-                          <AvatarFallback className="bg-qualia-600 text-[10px] text-white">
+                          <AvatarFallback className="bg-qualia-600 text-[11px] text-white">
                             {getInitials(profile.full_name || profile.email || 'U')}
                           </AvatarFallback>
                         </Avatar>

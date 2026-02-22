@@ -36,7 +36,7 @@ export function SkillCard({ skill, userSkill, compact = false, onClick }: SkillC
       >
         <div className={cn('h-2 w-2 rounded-full', levelConfig.dot)} />
         <span className="flex-1 truncate text-sm font-medium">{skill.name}</span>
-        <Badge variant="secondary" className="h-5 text-[10px]">
+        <Badge variant="secondary" className="h-5 text-[11px]">
           {levelConfig.label}
         </Badge>
       </div>

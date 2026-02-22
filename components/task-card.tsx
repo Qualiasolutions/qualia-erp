@@ -200,7 +200,7 @@ function TaskCardComponent({ task, onDelete }: TaskCardProps) {
                         alt={task.assignee.full_name || 'Assignee'}
                       />
                     ) : null}
-                    <AvatarFallback className="bg-primary text-[9px] text-primary-foreground">
+                    <AvatarFallback className="bg-primary text-[10px] text-primary-foreground">
                       {getInitials(task.assignee.full_name || task.assignee.email || 'U')}
                     </AvatarFallback>
                   </Avatar>
@@ -212,7 +212,7 @@ function TaskCardComponent({ task, onDelete }: TaskCardProps) {
             </TooltipProvider>
           ) : (
             <Avatar className="h-5 w-5 opacity-30">
-              <AvatarFallback className="text-[9px]">
+              <AvatarFallback className="text-[10px]">
                 <User className="h-2.5 w-2.5" />
               </AvatarFallback>
             </Avatar>

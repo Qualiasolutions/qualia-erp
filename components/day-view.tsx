@@ -195,7 +195,7 @@ function DraggableItem({
       {hasLink && (
         <div className="absolute right-2 top-2 flex items-center gap-1 rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-emerald-500">
           <Video className="h-3 w-3" />
-          <span className="text-[10px] font-medium">Join</span>
+          <span className="text-[11px] font-medium">Join</span>
         </div>
       )}
 
@@ -605,19 +605,19 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
                   <div className="border-r border-border/50 px-3 py-2" />
                   <div className="flex items-center gap-2 border-r border-border/30 px-4 py-2">
                     <ListTodo className="h-3.5 w-3.5 text-blue-500" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-blue-500">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
                       Tasks
                     </span>
-                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                    <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
                       {dayTasks.length}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 px-4 py-2">
                     <Video className="h-3.5 w-3.5 text-violet-500" />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-500">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-violet-500">
                       Meetings
                     </span>
-                    <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                    <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
                       {dayMeetings.length}
                     </span>
                   </div>

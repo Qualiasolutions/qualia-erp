@@ -92,18 +92,18 @@ export function LearnModeSettings() {
                 <Zap className="h-4 w-4" />
                 {profile.total_xp || 0}
               </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">Total XP</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Total XP</p>
             </div>
             <div className="rounded-lg bg-muted/30 p-3 text-center">
               <div className="text-lg font-bold text-purple-400">Lvl {level}</div>
-              <p className="mt-1 text-[10px] text-muted-foreground">Current Level</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Current Level</p>
             </div>
             <div className="relative rounded-lg bg-muted/30 p-3 text-center">
               {(profile.current_streak || 0) > 0 && (
                 <Flame className="absolute right-1 top-1 h-3 w-3 text-orange-400" />
               )}
               <div className="text-lg font-bold text-orange-400">{profile.current_streak || 0}</div>
-              <p className="mt-1 text-[10px] text-muted-foreground">Day Streak</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">Day Streak</p>
             </div>
           </div>
 

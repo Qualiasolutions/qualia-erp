@@ -126,7 +126,7 @@ export function DashboardAIChat() {
           <div className="flex flex-col">
             <span className="text-sm font-bold tracking-tight text-foreground">Assistant</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
                 {getStatusText()}
               </span>
             </div>
@@ -250,7 +250,7 @@ export function DashboardAIChat() {
                           }}
                         />
                       ))}
-                      <span className="ml-1 text-[10px] font-bold uppercase tracking-wider text-primary/60">
+                      <span className="ml-1 text-[11px] font-bold uppercase tracking-wider text-primary/60">
                         {isListening
                           ? vapiCallState === 'connecting'
                             ? 'CONNECTING'

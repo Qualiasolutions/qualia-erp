@@ -56,18 +56,14 @@ export function ScheduleViewToggle({ currentView }: ScheduleViewToggleProps) {
         className={cn(
           'group relative flex items-center gap-2 rounded-lg border-2 px-3 py-1.5 text-xs font-medium transition-all duration-300',
           isCyprus
-            ? 'border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:border-sky-500/50'
-            : 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:border-amber-500/50'
+            ? 'border-sky-500/30 bg-sky-500/10 text-sky-600 hover:border-sky-500/50 dark:text-sky-400'
+            : 'border-amber-500/30 bg-amber-500/10 text-amber-600 hover:border-amber-500/50 dark:text-amber-400'
         )}
         title={`Switch to ${isCyprus ? 'Jordan' : 'Cyprus'} time`}
       >
-        {isCyprus ? (
-          <Sun className="h-3.5 w-3.5" />
-        ) : (
-          <Moon className="h-3.5 w-3.5" />
-        )}
+        {isCyprus ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
         <span className="hidden sm:inline">{isCyprus ? 'Cyprus' : 'Jordan'}</span>
-        <span className="text-[10px] font-normal opacity-70">
+        <span className="text-[11px] font-normal opacity-70">
           {isCyprus ? '(Fawzi)' : '(Moayad)'}
         </span>
       </button>

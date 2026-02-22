@@ -247,7 +247,7 @@ export function SidebarAI() {
                   {messages.length > 0 && (
                     <button
                       onClick={clearChat}
-                      className="rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground/70"
+                      className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground/70"
                     >
                       Clear
                     </button>
@@ -403,7 +403,7 @@ export function SidebarAI() {
               {/* Hint when empty */}
               {messages.length === 0 && (
                 <div className="border-t border-white/[0.04] px-4 py-2.5">
-                  <p className="text-[11px] text-muted-foreground/40">
+                  <p className="text-xs text-muted-foreground/40">
                     Create tasks, schedule meetings, search projects...
                   </p>
                 </div>

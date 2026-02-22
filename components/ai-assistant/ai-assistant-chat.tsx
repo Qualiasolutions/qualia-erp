@@ -293,7 +293,7 @@ export function AIAssistantChat() {
         <div className="flex items-center justify-between border-t border-border/50 bg-muted/20 px-3 py-1.5">
           <button
             onClick={clearConversation}
-            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
           >
             <Trash2 className="h-3 w-3" />
             Clear
@@ -302,7 +302,7 @@ export function AIAssistantChat() {
             {mode === 'document' && (
               <button
                 onClick={printDocument}
-                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+                className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
               >
                 <Printer className="h-3 w-3" />
                 Print
@@ -310,7 +310,7 @@ export function AIAssistantChat() {
             )}
             <button
               onClick={copyLastMessage}
-              className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
             >
               {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
               {copied ? 'Copied' : 'Copy'}

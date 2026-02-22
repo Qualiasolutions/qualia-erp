@@ -102,7 +102,14 @@ const PROJECT_STATUSES = [
   'Archived',
   'Canceled',
 ] as const;
-const PROJECT_TYPES: ProjectType[] = ['ai_agent', 'voice_agent', 'ai_platform', 'web_design', 'seo', 'ads'];
+const PROJECT_TYPES: ProjectType[] = [
+  'ai_agent',
+  'voice_agent',
+  'ai_platform',
+  'web_design',
+  'seo',
+  'ads',
+];
 
 type SortField = 'name' | 'progress' | 'owner' | 'start_date' | 'end_date' | 'type';
 type SortDirection = 'asc' | 'desc';
@@ -253,7 +260,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
         {project.lead ? (
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarFallback className="bg-qualia-500/10 text-[10px] text-qualia-500">
+              <AvatarFallback className="bg-qualia-500/10 text-[11px] text-qualia-500">
                 {getInitials(project.lead.full_name || '')}
               </AvatarFallback>
             </Avatar>

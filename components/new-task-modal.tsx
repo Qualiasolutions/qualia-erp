@@ -325,7 +325,7 @@ export function NewTaskModal({
                             <div className="flex items-center gap-2">
                               <Avatar className="h-5 w-5">
                                 {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
-                                <AvatarFallback className="bg-primary/20 text-[9px] text-primary">
+                                <AvatarFallback className="bg-primary/20 text-[10px] text-primary">
                                   {getInitials(profile.full_name || profile.email || 'U')}
                                 </AvatarFallback>
                               </Avatar>
@@ -424,11 +424,11 @@ export function NewTaskModal({
                 {/* Footer */}
                 <div className="mt-6 flex items-center justify-between border-t border-border/50 pt-4">
                   <p className="text-xs text-muted-foreground">
-                    <kbd className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px]">
+                    <kbd className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px]">
                       ⌘
                     </kbd>
                     <span className="mx-1">+</span>
-                    <kbd className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px]">
+                    <kbd className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[11px]">
                       Enter
                     </kbd>
                     <span className="ml-1.5">to create</span>

@@ -23,7 +23,7 @@ const statusColors = {
 };
 
 function UserAvatar({ user, size = 'md' }: { user: PresenceUser; size?: 'sm' | 'md' }) {
-  const sizeClasses = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-8 h-8 text-xs';
+  const sizeClasses = size === 'sm' ? 'w-7 h-7 text-[11px]' : 'w-8 h-8 text-xs';
   const dotSize = size === 'sm' ? 'w-2 h-2' : 'w-2.5 h-2.5';
 
   return (
@@ -87,7 +87,7 @@ export function ActiveUsers({
             <UserAvatar key={user.id} user={user} size="sm" />
           ))}
           {remainingCount > 0 && (
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[10px] font-medium text-muted-foreground ring-2 ring-background">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-[11px] font-medium text-muted-foreground ring-2 ring-background">
               +{remainingCount}
             </div>
           )}
@@ -127,7 +127,7 @@ export function ActiveUsers({
                     <span className="ml-1 font-normal text-muted-foreground">(you)</span>
                   )}
                 </p>
-                <p className="text-[10px] capitalize text-muted-foreground">{user.status}</p>
+                <p className="text-[11px] capitalize text-muted-foreground">{user.status}</p>
               </div>
             </div>
           ))

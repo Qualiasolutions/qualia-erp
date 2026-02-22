@@ -178,7 +178,7 @@ function ProjectCard({ project, compact = false }: { project: Project; compact?:
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-[11px] font-medium tabular-nums text-zinc-400">
+            <span className="text-xs font-medium tabular-nums text-zinc-400">
               {Math.round(progress)}%
             </span>
           </div>
@@ -223,7 +223,7 @@ function ProjectColumns({ projects }: { projects: Project[] }) {
       <div className="space-y-1">
         <div className="mb-2 flex items-center gap-1.5 px-1">
           <Bot className="h-3 w-3 text-violet-400" />
-          <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">AI</span>
+          <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">AI</span>
         </div>
         {aiProjects.map((project) => (
           <ProjectCard key={project.id} project={project} />
@@ -234,7 +234,7 @@ function ProjectColumns({ projects }: { projects: Project[] }) {
       <div className="space-y-1">
         <div className="mb-2 flex items-center gap-1.5 px-1">
           <Globe className="h-3 w-3 text-sky-400" />
-          <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+          <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
             Web & Marketing
           </span>
         </div>

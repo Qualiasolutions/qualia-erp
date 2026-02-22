@@ -38,14 +38,14 @@ export function EmptyState({
       className={cn(
         'flex flex-col items-center justify-center gap-3 text-center',
         !minimal && 'rounded-lg border border-dashed border-border/60 bg-card/50',
-        compact ? 'p-6' : 'p-8',
+        compact ? 'p-8' : 'p-10',
         className
       )}
     >
       <div
         className={cn(
           'flex items-center justify-center rounded-xl',
-          compact ? 'h-10 w-10' : 'h-12 w-12',
+          compact ? 'h-11 w-11' : 'h-14 w-14',
           iconBgColor
         )}
       >

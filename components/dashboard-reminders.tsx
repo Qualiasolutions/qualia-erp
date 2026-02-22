@@ -157,7 +157,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
         <span className="truncate uppercase tracking-wide">Reminders</span>
         <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           {unseenCount > 0 && (
-            <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-medium text-rose-600 dark:text-rose-400 sm:px-2.5 sm:py-1 sm:text-xs">
+            <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-medium text-rose-600 dark:text-rose-400 sm:px-2.5 sm:py-1 sm:text-xs">
               {unseenCount}
             </span>
           )}

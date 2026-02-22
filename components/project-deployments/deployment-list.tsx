@@ -136,7 +136,7 @@ export function DeploymentList({ projectId, className }: DeploymentListProps) {
                   <span className="text-xs font-medium capitalize">{deployment.environment}</span>
                   <span className={cn('text-xs', config.color)}>{config.label}</span>
                 </div>
-                <div className="mt-0.5 flex items-center gap-3 text-[10px] text-muted-foreground">
+                <div className="mt-0.5 flex items-center gap-3 text-[11px] text-muted-foreground">
                   {deployment.branch && (
                     <span className="flex items-center gap-1">
                       <GitBranch className="h-2.5 w-2.5" />
@@ -152,7 +152,7 @@ export function DeploymentList({ projectId, className }: DeploymentListProps) {
                   <span>{formatDate(deployment.created_at)}</span>
                 </div>
                 {deployment.commit_message && (
-                  <p className="mt-1 truncate text-[10px] text-muted-foreground/70">
+                  <p className="mt-1 truncate text-[11px] text-muted-foreground/70">
                     {deployment.commit_message}
                   </p>
                 )}

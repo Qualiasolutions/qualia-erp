@@ -51,18 +51,18 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium transition-all duration-200',
+        'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all duration-200',
         isActive
           ? 'bg-primary/8 text-foreground'
           : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
       )}
     >
       {isActive && (
-        <div className="absolute left-0 top-[20%] h-[60%] w-[2px] rounded-r-full bg-primary/80" />
+        <div className="absolute left-0 top-[15%] h-[70%] w-[3px] rounded-r-full bg-primary/80" />
       )}
       <item.icon
         className={cn(
-          'h-[15px] w-[15px] flex-shrink-0 transition-colors duration-200',
+          'h-4 w-4 flex-shrink-0 transition-colors duration-200',
           isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-foreground'
         )}
       />
@@ -100,12 +100,12 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
           )}
         >
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10">
-              <span className="text-[10px] font-semibold text-primary">Q</span>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
+              <span className="text-xs font-semibold text-primary">Q</span>
             </div>
-            <span className="truncate text-xs font-medium">Account</span>
+            <span className="truncate text-sm font-medium">Account</span>
           </div>
-          <ChevronUp className="h-3 w-3 shrink-0 opacity-40" />
+          <ChevronUp className="h-3.5 w-3.5 shrink-0 opacity-40" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-48">
@@ -132,7 +132,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center border-b border-border/30 px-5">
+      <div className="flex h-16 items-center border-b border-border/40 px-5">
         <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 to-primary p-[1px] transition-transform duration-200 group-hover:scale-105">
             <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-background">
@@ -151,7 +151,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-0.5 px-3 pt-1">
+      <nav className="flex-1 space-y-1 px-3.5 pt-3">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -161,7 +161,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       </nav>
 
       {/* Bottom section */}
-      <div className="space-y-1.5 border-t border-border/30 p-3">
+      <div className="space-y-2 border-t border-border/40 p-3.5">
         <SidebarAI />
         <UserMenu onLinkClick={onLinkClick} />
       </div>
@@ -181,7 +181,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-card/50 md:block">
+      <aside className="hidden h-full w-60 flex-shrink-0 border-r border-border/50 bg-card/80 md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

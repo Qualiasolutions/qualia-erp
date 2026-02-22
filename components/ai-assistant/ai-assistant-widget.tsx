@@ -68,7 +68,7 @@ export function AIAssistantWidget() {
                 <Bot className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm font-medium text-foreground">Qualia AI</span>
-              <span className="text-[10px] text-muted-foreground">Cmd+J</span>
+              <span className="text-[11px] text-muted-foreground">Cmd+J</span>
             </div>
             <div className="flex items-center gap-1">
               {/* Templates Toggle */}

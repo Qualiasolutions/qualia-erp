@@ -229,7 +229,7 @@ export function CommandMenu() {
                 placeholder="Type a command or search... (ai: for AI)"
                 className="flex h-10 w-full bg-transparent py-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground"
               />
-              <kbd className="ml-2 shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+              <kbd className="ml-2 shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                 esc
               </kbd>
             </div>
@@ -241,7 +241,7 @@ export function CommandMenu() {
               {/* AI Quick Access */}
               <Command.Group
                 heading="ai"
-                className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70"
+                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
               >
                 <Command.Item
                   onSelect={switchToAI}
@@ -249,7 +249,7 @@ export function CommandMenu() {
                 >
                   <Sparkles className="h-4 w-4 text-primary" />
                   <span>Ask AI...</span>
-                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                     ⌘J
                   </kbd>
                 </Command.Item>
@@ -258,7 +258,7 @@ export function CommandMenu() {
               {/* Navigation */}
               <Command.Group
                 heading="navigation"
-                className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70"
+                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
               >
                 <Command.Item
                   onSelect={() => runCommand(() => router.push('/'))}
@@ -300,7 +300,7 @@ export function CommandMenu() {
               {/* Quick Actions */}
               <Command.Group
                 heading="quick actions"
-                className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70"
+                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
               >
                 <Command.Item
                   onSelect={() =>
@@ -312,7 +312,7 @@ export function CommandMenu() {
                 >
                   <CheckSquare className="h-4 w-4 text-amber-500" />
                   <span>New Task</span>
-                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                     c
                   </kbd>
                 </Command.Item>
@@ -326,7 +326,7 @@ export function CommandMenu() {
                 >
                   <CalendarPlus className="h-4 w-4 text-violet-500" />
                   <span>New Meeting</span>
-                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                  <kbd className="ml-auto rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-muted-foreground">
                     m
                   </kbd>
                 </Command.Item>
@@ -335,7 +335,7 @@ export function CommandMenu() {
               {/* Actions */}
               <Command.Group
                 heading="actions"
-                className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70"
+                className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
               >
                 <Command.Item
                   onSelect={() => runCommand(() => router.push('/projects?new=true'))}

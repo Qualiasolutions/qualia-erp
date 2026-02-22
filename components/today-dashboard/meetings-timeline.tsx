@@ -161,7 +161,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                 <div className="mb-2 flex items-center gap-2">
                   <span
                     className={cn(
-                      'text-[11px] font-semibold uppercase tracking-wider',
+                      'text-xs font-semibold uppercase tracking-wider',
                       isToday(group.date) ? 'text-violet-400' : 'text-muted-foreground/60'
                     )}
                   >
@@ -204,13 +204,13 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                                   className={cn('h-8 w-8 ring-2 ring-background', i > 0 && '-ml-2')}
                                 >
                                   <AvatarImage src={a.profile.avatar_url || undefined} />
-                                  <AvatarFallback className="bg-gradient-to-br from-sky-500 to-blue-600 text-[10px] font-bold text-white">
+                                  <AvatarFallback className="bg-gradient-to-br from-sky-500 to-blue-600 text-[11px] font-bold text-white">
                                     {getInitials(a.profile.full_name)}
                                   </AvatarFallback>
                                 </Avatar>
                               ))}
                               {meeting.attendees.length > 2 && (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground ring-2 ring-background">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground ring-2 ring-background">
                                   +{meeting.attendees.length - 2}
                                 </div>
                               )}

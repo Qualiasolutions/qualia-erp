@@ -123,7 +123,7 @@ export function AISpotlight() {
       >
         <Sparkles className="h-4 w-4" />
         <span className="text-sm font-medium">Ask AI</span>
-        <kbd className="ml-1 hidden rounded bg-background/20 px-1.5 py-0.5 text-[10px] font-medium sm:inline-block">
+        <kbd className="ml-1 hidden rounded bg-background/20 px-1.5 py-0.5 text-[11px] font-medium sm:inline-block">
           <Command className="mr-0.5 inline h-2.5 w-2.5" />K
         </kbd>
       </motion.button>
@@ -264,13 +264,13 @@ export function AISpotlight() {
                 <div className="flex items-center justify-between border-t border-border px-4 py-2">
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span>
-                      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">
                         Enter
                       </kbd>{' '}
                       to send
                     </span>
                     <span>
-                      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px]">
+                      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">
                         Esc
                       </kbd>{' '}
                       to close

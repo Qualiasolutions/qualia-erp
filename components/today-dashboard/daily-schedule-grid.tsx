@@ -32,9 +32,9 @@ import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
 const START_HOUR = 8;
 const END_HOUR = 18;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
-const HOUR_HEIGHT = 72;
+const HOUR_HEIGHT = 84;
 const TOTAL_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
-const TIME_GUTTER = 48;
+const TIME_GUTTER = 56;
 
 interface ScheduleItem {
   id: string;
@@ -167,13 +167,13 @@ function MeetingCard({
             <p
               className={cn(
                 'truncate font-semibold leading-tight tracking-tight text-violet-700 dark:text-violet-300',
-                isCompact ? 'text-[10px]' : 'text-[11.5px]'
+                isCompact ? 'text-[11px]' : 'text-xs'
               )}
             >
               {item.title}
             </p>
             {!isCompact && (
-              <p className="mt-0.5 text-[10px] tabular-nums text-violet-500/40 dark:text-violet-400/35">
+              <p className="mt-0.5 text-[11px] tabular-nums text-violet-500/40 dark:text-violet-400/35">
                 {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
                 {item.meeting?.client && (
                   <span className="ml-1.5 text-violet-500/30 dark:text-violet-400/25">
@@ -190,7 +190,7 @@ function MeetingCard({
             href={item.meeting.meeting_link}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-auto inline-flex w-fit items-center gap-1 rounded-md bg-violet-500/85 px-2 py-[3px] text-[9px] font-semibold tracking-wide text-white transition-all hover:bg-violet-500 hover:shadow-sm"
+            className="mt-auto inline-flex w-fit items-center gap-1 rounded-md bg-violet-500/85 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white transition-all hover:bg-violet-500 hover:shadow-sm"
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="size-2.5" />
@@ -282,14 +282,14 @@ function TaskCard({
           <p
             className={cn(
               'truncate font-medium leading-tight tracking-tight text-foreground/85',
-              isCompact ? 'text-[10px]' : 'text-[11.5px]',
+              isCompact ? 'text-[11px]' : 'text-xs',
               isDone && 'text-foreground/35 line-through'
             )}
           >
             {task.title}
           </p>
           {!isCompact && (
-            <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/30">
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-foreground/30">
               <span className="tabular-nums">
                 {format(item.startTime, 'h:mm')} – {format(item.endTime, 'h:mm a')}
               </span>
@@ -494,16 +494,16 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   return (
     <div className="flex h-full flex-col">
       {/* ── Column Headers ──────────────────────────────────────────────────── */}
-      <div className="flex shrink-0 border-b border-border/15" style={{ height: 38 }}>
+      <div className="flex shrink-0 border-b border-border/15" style={{ height: 44 }}>
         <div className="shrink-0" style={{ width: TIME_GUTTER }} />
 
         {/* Fawzi */}
         <div className="flex flex-1 items-center justify-between border-r border-dashed border-border/10 px-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-5 items-center justify-center rounded-full bg-sky-500/10 text-[9px] font-bold text-sky-500">
+            <div className="flex size-6 items-center justify-center rounded-full bg-sky-500/10 text-[10px] font-bold text-sky-500">
               F
             </div>
-            <span className="text-[11px] font-medium text-foreground/45">Fawzi</span>
+            <span className="text-xs font-medium text-foreground/45">Fawzi</span>
           </div>
           <button
             onClick={() => handleAddTask(FAWZI_ID)}
@@ -516,10 +516,10 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         {/* Moayad */}
         <div className="flex flex-1 items-center justify-between px-3">
           <div className="flex items-center gap-2">
-            <div className="flex size-5 items-center justify-center rounded-full bg-violet-500/10 text-[9px] font-bold text-violet-500">
+            <div className="flex size-6 items-center justify-center rounded-full bg-violet-500/10 text-[10px] font-bold text-violet-500">
               M
             </div>
-            <span className="text-[11px] font-medium text-foreground/45">Moayad</span>
+            <span className="text-xs font-medium text-foreground/45">Moayad</span>
           </div>
           <button
             onClick={() => handleAddTask(MOAYAD_ID)}
@@ -545,7 +545,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 className="group/hour absolute left-0 right-0"
                 style={{ top: y, height: HOUR_HEIGHT }}
               >
-                <div className="absolute inset-x-0 bottom-0 h-px bg-border/[0.06]" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-border/[0.10]" />
 
                 <div
                   className="absolute top-0 flex items-start justify-end pr-2 pt-1"
@@ -553,7 +553,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 >
                   <span
                     className={cn(
-                      'text-[10px] font-medium tabular-nums leading-none',
+                      'text-[11px] font-medium tabular-nums leading-none',
                       isCurrentHour ? 'text-foreground/45' : 'text-foreground/18'
                     )}
                   >
@@ -562,12 +562,12 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 </div>
 
                 <div
-                  className="absolute right-0 border-b border-dotted border-border/[0.04]"
+                  className="absolute right-0 border-b border-dotted border-border/[0.07]"
                   style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
                 />
 
                 <div
-                  className="absolute bottom-0 top-0 border-l border-dashed border-border/[0.06]"
+                  className="absolute bottom-0 top-0 border-l border-dashed border-border/[0.10]"
                   style={{ left: `calc(50% + ${TIME_GUTTER / 2}px)` }}
                 />
 
@@ -634,7 +634,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
               style={{ top: nowTop }}
             >
               <div className="flex items-center justify-end pr-1" style={{ width: TIME_GUTTER }}>
-                <div className="rounded-full bg-red-500 px-1.5 py-[1px] text-[8px] font-bold tabular-nums text-white shadow-sm">
+                <div className="rounded-full bg-red-500 px-2 py-0.5 text-[9px] font-bold tabular-nums text-white shadow-sm">
                   {format(currentTime, 'h:mm')}
                 </div>
               </div>

@@ -260,7 +260,7 @@ const LeadRow = React.memo(function LeadRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-medium">{lead.display_name || lead.name}</p>
-          <Badge variant="outline" className={cn('px-1.5 py-0 text-[10px]', config.className)}>
+          <Badge variant="outline" className={cn('px-1.5 py-0 text-[11px]', config.className)}>
             <StatusIcon className="mr-1 h-2.5 w-2.5" />
             {config.label}
           </Badge>

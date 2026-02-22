@@ -286,7 +286,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                 </h1>
                 <span
                   className={cn(
-                    'flex-shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider',
+                    'flex-shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider',
                     statusColor
                   )}
                 >
@@ -368,7 +368,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                   <p className="truncate text-sm font-medium text-foreground">
                     {project.lead?.full_name || 'Unassigned'}
                   </p>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Lead</p>
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Lead</p>
                 </div>
               </div>
               {project.client && (
@@ -380,7 +380,7 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                     <p className="truncate text-sm font-medium text-foreground">
                       {project.client.name}
                     </p>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                       Client
                     </p>
                   </div>

@@ -140,7 +140,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
             <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
           <span className="truncate">2025 Objectives</span>
-          <span className="ml-auto flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
+          <span className="ml-auto flex shrink-0 items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-600 dark:text-amber-400 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
             <Sparkles className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
             {totalCount} active
           </span>
@@ -213,7 +213,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
                   {/* Status Indicator */}
                   <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-                    <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 sm:inline">
+                    <span className="hidden text-[11px] font-medium uppercase tracking-wider text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 sm:inline">
                       Active
                     </span>
                   </div>
@@ -227,7 +227,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
       {/* Progress Footer */}
       {projects.length > 0 && (
         <div className="shrink-0 border-t border-border/40 bg-muted/20 px-4 py-3 sm:px-5 sm:py-3.5">
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground sm:text-xs">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground sm:text-xs">
             <span>Tap to complete</span>
             <span className="font-medium tabular-nums">
               {completedCount}/{totalCount + completedCount} done

@@ -269,7 +269,7 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
         </div>
         <span className="truncate">Team Notes</span>
         {notes.length > 0 && (
-          <span className="ml-auto shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-normal text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+          <span className="ml-auto shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[11px] font-normal text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
             {notes.length}
           </span>
         )}
@@ -335,7 +335,7 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
                         <span className="text-xs font-semibold sm:text-sm">
                           {note.profile?.full_name || 'Unknown User'}
                         </span>
-                        <span className="text-[10px] text-muted-foreground sm:text-xs">
+                        <span className="text-[11px] text-muted-foreground sm:text-xs">
                           {formatTimeAgo(note.created_at)}
                         </span>
                       </div>

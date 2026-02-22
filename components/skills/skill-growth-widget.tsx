@@ -67,18 +67,18 @@ export function SkillGrowthWidget({ profileId }: SkillGrowthWidgetProps) {
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-lg bg-muted/30 p-2 text-center">
             <div className="text-xl font-bold text-qualia-400">{data.totalXp}</div>
-            <div className="text-[10px] text-muted-foreground">Total XP</div>
+            <div className="text-[11px] text-muted-foreground">Total XP</div>
           </div>
           <div className="rounded-lg bg-muted/30 p-2 text-center">
             <div className="text-xl font-bold text-purple-400">Lvl {level}</div>
-            <div className="text-[10px] text-muted-foreground">Level</div>
+            <div className="text-[11px] text-muted-foreground">Level</div>
           </div>
           <div className="relative rounded-lg bg-muted/30 p-2 text-center">
             {data.currentStreak > 0 && (
               <Flame className="absolute right-1 top-1 h-3 w-3 text-orange-400" />
             )}
             <div className="text-xl font-bold text-orange-400">{data.currentStreak}</div>
-            <div className="text-[10px] text-muted-foreground">Day Streak</div>
+            <div className="text-[11px] text-muted-foreground">Day Streak</div>
           </div>
         </div>
 
@@ -94,7 +94,7 @@ export function SkillGrowthWidget({ profileId }: SkillGrowthWidgetProps) {
         {/* Top Skill This Week */}
         {data.topSkillThisWeek && (
           <div className="rounded-lg border border-qualia-500/20 bg-qualia-500/10 p-2.5">
-            <div className="mb-0.5 text-[10px] text-muted-foreground">Most practiced</div>
+            <div className="mb-0.5 text-[11px] text-muted-foreground">Most practiced</div>
             <div className="flex items-center gap-1.5 text-sm font-medium text-qualia-400">
               <Sparkles className="h-3.5 w-3.5" />
               {data.topSkillThisWeek}
@@ -114,7 +114,7 @@ export function SkillGrowthWidget({ profileId }: SkillGrowthWidgetProps) {
         {/* Recent Achievements */}
         {data.recentAchievements.length > 0 && (
           <div className="border-t border-border/60 pt-2">
-            <div className="mb-2 flex items-center gap-1 text-[10px] text-muted-foreground">
+            <div className="mb-2 flex items-center gap-1 text-[11px] text-muted-foreground">
               <Award className="h-3 w-3" />
               Recent Achievements
             </div>

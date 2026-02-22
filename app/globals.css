@@ -157,7 +157,7 @@
 
   /* Base card - clean, minimal */
   .card-base {
-    @apply relative overflow-hidden rounded-xl border border-border/50;
+    @apply relative overflow-hidden rounded-xl border border-border/60;
     background: hsl(var(--surface-1, var(--card)));
     transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
@@ -180,7 +180,7 @@
 
   /* Widget container - UNIFIED dashboard cards */
   .widget {
-    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border/60 bg-card;
+    @apply flex h-full flex-col overflow-hidden rounded-xl border border-border/70 bg-card;
     transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
@@ -189,16 +189,16 @@
   }
 
   .widget-header {
-    @apply flex items-center justify-between border-b border-border/50 px-4 py-2.5;
+    @apply flex items-center justify-between border-b border-border/60 px-5 py-3.5;
     background: hsl(var(--surface-2, var(--secondary)) / 0.3);
   }
 
   .widget-title {
-    @apply flex items-center gap-2.5;
+    @apply flex items-center gap-3;
   }
 
   .widget-icon {
-    @apply flex h-8 w-8 items-center justify-center rounded-lg;
+    @apply flex h-9 w-9 items-center justify-center rounded-lg;
     transition: transform 0.2s ease;
   }
 
@@ -222,12 +222,12 @@
 
   /* Section label - uppercase micro text */
   .label-section {
-    @apply text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
 
   /* Table row - consistent bottom border, hover state */
   .table-row {
-    @apply border-b border-border/40 transition-colors duration-150;
+    @apply border-b border-border/50 transition-colors duration-150;
   }
 
   .table-row:hover {
@@ -236,7 +236,7 @@
 
   /* Table header - surface-2 bg + uppercase styling */
   .table-header {
-    @apply border-b border-border/60 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground;
+    @apply border-b border-border/60 text-xs font-semibold uppercase tracking-wider text-muted-foreground;
     background: hsl(var(--surface-2, var(--secondary)) / 0.5);
   }
 }
@@ -247,12 +247,12 @@
 @layer utilities {
   /* Nav item */
   .nav-item {
-    @apply flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] font-medium;
+    @apply flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium;
     @apply text-muted-foreground transition-all duration-150;
   }
 
   .nav-item:hover {
-    @apply bg-muted/40 text-foreground;
+    @apply bg-muted/60 text-foreground;
   }
 
   .nav-item-active {
@@ -261,7 +261,7 @@
 
   /* Sidebar container */
   .sidebar {
-    @apply flex h-full flex-col border-r border-border/40 bg-background;
+    @apply flex h-full flex-col border-r border-border/50 bg-background;
   }
 }
 
@@ -280,7 +280,7 @@
 
   /* Search/filter input */
   .input-search {
-    @apply h-9 rounded-lg border border-border/50 bg-muted/20 px-3;
+    @apply h-10 rounded-lg border border-border/50 bg-muted/20 px-3;
     @apply text-sm placeholder:text-muted-foreground/50;
     @apply transition-all duration-150;
     @apply focus:border-primary/30 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/10;
@@ -334,7 +334,7 @@
 
   /* Icon button */
   .btn-icon {
-    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg;
     @apply text-muted-foreground transition-all duration-150;
     @apply hover:bg-muted/60 hover:text-foreground;
     @apply active:scale-95;
@@ -347,11 +347,11 @@
 @layer utilities {
   /* Page header */
   .page-header {
-    @apply border-b border-border/50 bg-background px-5 py-3 sm:px-6;
+    @apply border-b border-border/50 bg-background px-6 py-4 sm:px-8 sm:py-5;
   }
 
   .page-title {
-    @apply text-base font-semibold tracking-tight text-foreground;
+    @apply text-lg font-semibold tracking-tight text-foreground;
   }
 
   .page-description {
@@ -360,7 +360,7 @@
 
   /* Page content area */
   .page-content {
-    @apply flex-1 overflow-auto p-5 sm:p-6;
+    @apply flex-1 overflow-auto p-6 sm:p-8;
   }
 }
 
@@ -396,6 +396,19 @@
   /* Primary glow - use sparingly */
   .glow-primary {
     box-shadow: 0 0 20px -8px hsl(var(--primary) / 0.3);
+  }
+
+  /* Card shadow - subtle depth */
+  .shadow-card {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.04),
+      0 1px 2px rgba(0, 0, 0, 0.02);
+  }
+
+  .dark .shadow-card {
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.2),
+      0 1px 2px rgba(0, 0, 0, 0.12);
   }
 }
 
@@ -575,8 +588,8 @@
    SCROLLBAR
    ============================================ */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -733,7 +746,7 @@ textarea:focus-visible {
 
   /* Status indicator dot */
   .status-dot {
-    @apply h-2 w-2 rounded-full;
+    @apply h-2.5 w-2.5 rounded-full;
   }
 
   /* Truncate with ellipsis */
@@ -746,12 +759,12 @@ textarea:focus-visible {
 
   /* List item - consistent hover state */
   .list-item {
-    @apply flex items-center gap-3 rounded-lg px-3 py-2;
+    @apply flex items-center gap-3 rounded-lg px-3.5 py-2.5;
     @apply transition-colors duration-150;
   }
 
   .list-item:hover {
-    @apply bg-muted/40;
+    @apply bg-muted/60;
   }
 
   .list-item-active {

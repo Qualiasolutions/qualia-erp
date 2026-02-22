@@ -247,7 +247,7 @@ const SortableItemCard = memo(function SortableItemCard({ task, onDelete }: Sort
           )}
 
           {/* Inline metadata - single line */}
-          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
             <StatusIcon className={cn('h-3 w-3', statusConfig.color)} />
             <span>{task.status}</span>
 
@@ -919,7 +919,7 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
       {/* Badges */}
       <div className="flex items-center gap-2">
         {task.due_date && (
-          <span className="flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 text-[10px] text-muted-foreground">
+          <span className="flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 text-[11px] text-muted-foreground">
             <Clock className="h-2.5 w-2.5" />
             {new Date(task.due_date).toLocaleDateString('en-US', {
               month: 'short',

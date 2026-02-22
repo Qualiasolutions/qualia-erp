@@ -103,7 +103,7 @@ export const TimeBlockRow = memo(function TimeBlockRow({
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-foreground">{block.label}</span>
               {isActive && (
-                <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-foreground/50">
+                <span className="rounded bg-foreground/5 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-foreground/50">
                   Active
                 </span>
               )}

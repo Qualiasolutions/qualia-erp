@@ -83,7 +83,7 @@ function TaskItem({
         )}
       </div>
       {isOverdue && (
-        <span className="shrink-0 rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-400">
+        <span className="shrink-0 rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-red-400">
           Overdue
         </span>
       )}
@@ -140,7 +140,7 @@ function ProjectCategory({
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70">
           {title}
         </h3>
-        <span className="ml-auto text-[10px] font-medium text-muted-foreground/40">
+        <span className="ml-auto text-[11px] font-medium text-muted-foreground/40">
           {projects.length}
         </span>
       </div>
@@ -412,7 +412,7 @@ export function DashboardClient({
             {/* Quick Insights */}
             <div className="grid grid-cols-2 gap-4">
               <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-colors hover:bg-white/[0.04]">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                   Completion
                 </p>
                 <div className="flex items-end justify-between">
@@ -423,7 +423,7 @@ export function DashboardClient({
                 </div>
               </div>
               <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-colors hover:bg-white/[0.04]">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                   Meetings
                 </p>
                 <div className="flex items-end justify-between">
@@ -441,10 +441,10 @@ export function DashboardClient({
         <div className="mt-16 text-center">
           <div className="inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.03] px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>Press</span>
-            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-[10px] font-bold text-foreground">
+            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-[11px] font-bold text-foreground">
               ⌘
             </kbd>
-            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-[10px] font-bold text-foreground">
+            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-[11px] font-bold text-foreground">
               K
             </kbd>
             <span>to execute commands</span>

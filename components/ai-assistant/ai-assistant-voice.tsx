@@ -378,7 +378,7 @@ export function AIAssistantVoice({ userName = 'Fawzi' }: AIAssistantVoiceProps) 
 
       {/* Help text */}
       {meetingRemindersEnabled && (
-        <p className="mt-6 text-center text-[10px] text-muted-foreground">
+        <p className="mt-6 text-center text-[11px] text-muted-foreground">
           Meeting reminders enabled
         </p>
       )}

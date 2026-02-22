@@ -305,15 +305,15 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                     <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-lg font-semibold text-foreground">{thisWeekDone}</p>
-                        <p className="text-[10px] text-muted-foreground">This Week</p>
+                        <p className="text-[11px] text-muted-foreground">This Week</p>
                       </div>
                       <div>
                         <p className="text-lg font-semibold text-foreground">{thisMonthDone}</p>
-                        <p className="text-[10px] text-muted-foreground">This Month</p>
+                        <p className="text-[11px] text-muted-foreground">This Month</p>
                       </div>
                       <div>
                         <p className="text-lg font-semibold text-foreground">{completedTasks}</p>
-                        <p className="text-[10px] text-muted-foreground">All Time</p>
+                        <p className="text-[11px] text-muted-foreground">All Time</p>
                       </div>
                     </div>
 
@@ -361,7 +361,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                             ? format(parseISO(task.due_date), 'MMM d')
                             : format(parseISO(task.created_at), 'MMM d')}
                           {isToday && (
-                            <span className="ml-1 text-[10px] font-medium text-foreground">
+                            <span className="ml-1 text-[11px] font-medium text-foreground">
                               TODAY
                             </span>
                           )}
@@ -410,7 +410,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                             {post.title}
                           </h4>
                           <Badge
-                            className={cn('shrink-0 text-[10px]', STATUS_CONFIG[post.status].color)}
+                            className={cn('shrink-0 text-[11px]', STATUS_CONFIG[post.status].color)}
                           >
                             {STATUS_CONFIG[post.status].label}
                           </Badge>

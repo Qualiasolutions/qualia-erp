@@ -358,7 +358,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                           >
                             {phase.name}
                           </span>
-                          <span className="text-[10px] font-medium text-muted-foreground">
+                          <span className="text-[11px] font-medium text-muted-foreground">
                             {completed}/{total} Tasks
                           </span>
                         </div>

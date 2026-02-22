@@ -258,7 +258,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
           <div className="relative">
             {hours.map((hour) => (
               <div key={hour} className="h-[60px] border-b border-border/50 pr-2 text-right">
-                <span className="relative -top-2 text-[10px] text-muted-foreground">
+                <span className="relative -top-2 text-[11px] text-muted-foreground">
                   {format(setHours(setMinutes(new Date(), 0), hour), 'h a')}
                 </span>
               </div>
@@ -384,11 +384,11 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                         </button>
                       </div>
 
-                      <div className="truncate text-[11px] font-medium text-foreground">
+                      <div className="truncate text-xs font-medium text-foreground">
                         {item.title}
                       </div>
                       {height > 40 && (
-                        <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                           <Clock className="h-2.5 w-2.5" />
                           <span>{format(startTime, 'h:mm a')}</span>
                         </div>
@@ -396,7 +396,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                       {height > 60 && item.project && (
                         <div
                           className={cn(
-                            'mt-1 truncate text-[10px]',
+                            'mt-1 truncate text-[11px]',
                             isMeetingItem ? 'text-violet-400/80' : 'text-blue-400/80'
                           )}
                         >

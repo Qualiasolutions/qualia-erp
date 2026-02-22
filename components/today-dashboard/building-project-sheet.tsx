@@ -161,7 +161,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                   <span className="text-lg font-semibold tabular-nums leading-none text-foreground">
                     {overallPercent}%
                   </span>
-                  <span className="text-[11px] text-foreground/40">
+                  <span className="text-xs text-foreground/40">
                     ({completedTasks}/{totalTasks})
                   </span>
                 </div>
@@ -217,7 +217,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                         {/* Phase Status Icon */}
                         <div
                           className={cn(
-                            'flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold transition-colors duration-300',
+                            'flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-colors duration-300',
                             isPhaseComplete
                               ? 'bg-emerald-500/15 text-emerald-500'
                               : hasStarted
@@ -244,7 +244,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                         {total > 0 && (
                           <span
                             className={cn(
-                              'shrink-0 text-[11px] font-medium tabular-nums transition-colors duration-300',
+                              'shrink-0 text-xs font-medium tabular-nums transition-colors duration-300',
                               isPhaseComplete ? 'text-emerald-500' : 'text-foreground/40'
                             )}
                           >

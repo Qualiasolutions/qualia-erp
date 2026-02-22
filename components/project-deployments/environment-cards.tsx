@@ -152,7 +152,7 @@ export function EnvironmentCards({ projectId, className }: EnvironmentCardsProps
 
               {/* Last checked */}
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground">
                   {env.last_checked_at
                     ? `Checked ${formatDate(env.last_checked_at)}`
                     : 'Never checked'}
@@ -160,7 +160,7 @@ export function EnvironmentCards({ projectId, className }: EnvironmentCardsProps
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 gap-1 px-2 text-[10px]"
+                  className="h-6 gap-1 px-2 text-[11px]"
                   onClick={() => handleHealthCheck(env.id)}
                   disabled={isChecking || isPending}
                 >

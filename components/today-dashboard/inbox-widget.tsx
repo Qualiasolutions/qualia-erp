@@ -347,11 +347,11 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
         <div className="flex items-center gap-2.5">
           <Inbox className="size-4 text-foreground/70" />
           <h2 className="text-[13px] font-semibold text-foreground">Inbox</h2>
-          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-amber-600 dark:text-amber-400">
+          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium tabular-nums text-amber-600 dark:text-amber-400">
             {stats.todo}
           </span>
           {stats.overdue > 0 && (
-            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-red-600 dark:text-red-400">
+            <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium tabular-nums text-red-600 dark:text-red-400">
               {stats.overdue} overdue
             </span>
           )}
@@ -364,7 +364,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
               key={mode}
               onClick={() => setFilterMode(mode)}
               className={cn(
-                'rounded-md px-2 py-1 text-[11px] font-medium capitalize transition-all',
+                'rounded-md px-2 py-1 text-xs font-medium capitalize transition-all',
                 filterMode === mode
                   ? 'bg-background text-foreground shadow-sm'
                   : 'text-foreground/60 hover:text-foreground'

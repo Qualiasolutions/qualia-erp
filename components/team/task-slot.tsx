@@ -78,7 +78,7 @@ export const TaskSlot = memo(function TaskSlot({
       {!compact && isHighPriority && (
         <span
           className={cn(
-            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+            'shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide',
             task.priority === 'Urgent'
               ? 'bg-foreground/5 text-foreground/50'
               : 'bg-foreground/5 text-foreground/40'

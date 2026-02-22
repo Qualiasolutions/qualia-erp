@@ -117,7 +117,7 @@ function TaskItemComponent({
             {task.assignee && (
               <Avatar className="h-5 w-5">
                 <AvatarImage src={task.assignee.avatar_url || undefined} />
-                <AvatarFallback className="bg-primary/10 text-[9px] text-primary">
+                <AvatarFallback className="bg-primary/10 text-[10px] text-primary">
                   {task.assignee.full_name?.[0] || '?'}
                 </AvatarFallback>
               </Avatar>

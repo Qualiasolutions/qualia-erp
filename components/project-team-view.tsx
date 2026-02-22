@@ -122,7 +122,7 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
                 {lead && assignees.length > 0 && (
                   <div className="flex items-center gap-2 px-2">
                     <div className="h-px flex-1 bg-border/50" />
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
                       Contributors
                     </span>
                     <div className="h-px flex-1 bg-border/50" />
@@ -163,14 +163,14 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
                       member && (
                         <Avatar key={member.id} className="h-7 w-7 border-2 border-card">
                           <AvatarImage src={member.avatar_url || undefined} />
-                          <AvatarFallback className="text-[10px]">
+                          <AvatarFallback className="text-[11px]">
                             {getInitials(member.full_name || member.email)}
                           </AvatarFallback>
                         </Avatar>
                       )
                   )}
                   {totalMembers > 4 && (
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] font-medium">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-card bg-muted text-[11px] font-medium">
                       +{totalMembers - 4}
                     </div>
                   )}

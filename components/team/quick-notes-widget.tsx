@@ -99,7 +99,7 @@ export function QuickNotesWidget({ className }: QuickNotesWidgetProps) {
 
       {/* Footer */}
       <div className="border-t border-border/40 px-4 py-2">
-        <p className="text-[11px] text-muted-foreground/40">Auto-saved locally. Resets daily.</p>
+        <p className="text-xs text-muted-foreground/40">Auto-saved locally. Resets daily.</p>
       </div>
     </div>
   );

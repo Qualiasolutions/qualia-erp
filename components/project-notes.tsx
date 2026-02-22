@@ -153,14 +153,14 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                     <div className="mb-2 flex items-center gap-2">
                       <Avatar className="h-6 w-6">
                         <AvatarImage src={note.profile?.avatar_url || undefined} />
-                        <AvatarFallback className="text-[10px]">
+                        <AvatarFallback className="text-[11px]">
                           {getInitials(note.profile?.full_name || note.profile?.email)}
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-xs font-medium">
                         {note.profile?.full_name || note.profile?.email || 'Unknown'}
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-[11px] text-muted-foreground">
                         {formatTimeAgo(note.created_at)}
                       </span>
                     </div>

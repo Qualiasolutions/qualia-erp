@@ -62,7 +62,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
         <div className="flex items-center gap-2.5">
           <Clock className="size-4 text-foreground/70" />
           <h2 className="text-[13px] font-semibold text-foreground">Today</h2>
-          <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium tabular-nums text-violet-600 dark:text-violet-400">
+          <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-xs font-medium tabular-nums text-violet-600 dark:text-violet-400">
             {meetingsCount}
           </span>
         </div>
@@ -130,7 +130,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                         <p className="truncate text-xs font-medium text-foreground">
                           {slot.meeting.title}
                         </p>
-                        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-foreground/60">
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-foreground/60">
                           <Clock className="h-2.5 w-2.5" />
                           <span>
                             {format(parseISO(slot.meeting.start_time), 'h:mm')} -{' '}
@@ -138,7 +138,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                           </span>
                         </div>
                         {slot.meeting.client && (
-                          <p className="mt-0.5 truncate text-[10px] text-foreground/50">
+                          <p className="mt-0.5 truncate text-[11px] text-foreground/50">
                             {slot.meeting.client.display_name}
                           </p>
                         )}
@@ -149,7 +149,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                           target="_blank"
                           rel="noopener noreferrer"
                           className={cn(
-                            'flex h-6 items-center gap-1 rounded px-2 text-[10px] font-medium transition-all',
+                            'flex h-6 items-center gap-1 rounded px-2 text-[11px] font-medium transition-all',
                             slot.isCurrent
                               ? 'bg-violet-500 text-white hover:bg-violet-400'
                               : 'bg-muted text-foreground/70 hover:bg-accent hover:text-foreground'

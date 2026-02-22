@@ -226,7 +226,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                   return (
                     <div
                       key={meeting.id}
-                      className="group relative flex items-center gap-1 truncate rounded bg-violet-500/20 px-1 py-0.5 text-[10px] text-violet-300 transition-colors hover:bg-violet-500/30"
+                      className="group relative flex items-center gap-1 truncate rounded bg-violet-500/20 px-1 py-0.5 text-[11px] text-violet-300 transition-colors hover:bg-violet-500/30"
                     >
                       {hasLink ? (
                         <Video className="h-2.5 w-2.5 flex-shrink-0 text-emerald-400" />
@@ -267,7 +267,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                 {!isExpanded && dayMeetings.length > 2 && (
                   <button
                     onClick={() => setExpandedDay(dateKey)}
-                    className="px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                    className="px-1 text-[11px] text-muted-foreground hover:text-foreground"
                   >
                     +{dayMeetings.length - 2} more
                   </button>
@@ -275,7 +275,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                 {isExpanded && dayMeetings.length > 2 && (
                   <button
                     onClick={() => setExpandedDay(null)}
-                    className="px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                    className="px-1 text-[11px] text-muted-foreground hover:text-foreground"
                   >
                     Show less
                   </button>

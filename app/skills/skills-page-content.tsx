@@ -184,7 +184,7 @@ export function SkillsPageContent() {
                           <p className="truncate text-xs text-zinc-500">
                             {achievement.description}
                           </p>
-                          <Badge variant="secondary" className="mt-1 text-[10px]">
+                          <Badge variant="secondary" className="mt-1 text-[11px]">
                             +{achievement.xp_reward} XP
                           </Badge>
                         </div>

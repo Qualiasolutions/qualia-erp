@@ -224,7 +224,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
         {meetingsWithoutLinks.length > 0 && (
           <div className="p-2">
-            <p className="mb-2 px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">
+            <p className="mb-2 px-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground sm:text-xs">
               Add link to meeting
             </p>
             <ScrollArea className="max-h-40 sm:max-h-48">
@@ -242,7 +242,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                   >
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-xs font-medium sm:text-sm">{meeting.title}</p>
-                      <p className="text-[10px] text-muted-foreground sm:text-xs">
+                      <p className="text-[11px] text-muted-foreground sm:text-xs">
                         {formatMeetingDate(meeting.start_time)} at{' '}
                         {format(parseISO(meeting.start_time), 'h:mm a')}
                       </p>
@@ -279,7 +279,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
         <span className="truncate">Meetings</span>
         <div className="ml-auto flex shrink-0 items-center gap-2">
           {totalActiveMeetings > 0 && (
-            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-500 sm:text-xs">
+            <span className="rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px] font-medium text-violet-500 sm:text-xs">
               {totalActiveMeetings}
             </span>
           )}
@@ -345,10 +345,10 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
               <div className="group/meeting border-l-2 border-violet-500 bg-violet-500/5 p-3 sm:p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                    <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[11px] font-bold uppercase text-white">
                       Now
                     </span>
-                    <span className="text-[10px] text-muted-foreground sm:text-xs">
+                    <span className="text-[11px] text-muted-foreground sm:text-xs">
                       {getTimeRemaining(currentMeeting)}
                     </span>
                     <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
@@ -404,7 +404,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                 <h4 className="mb-1 truncate text-sm font-semibold text-foreground">
                   {currentMeeting.title}
                 </h4>
-                <p className="mb-2 text-[10px] text-muted-foreground sm:text-xs">
+                <p className="mb-2 text-[11px] text-muted-foreground sm:text-xs">
                   {format(parseISO(currentMeeting.start_time), 'h:mm a')} -{' '}
                   {format(parseISO(currentMeeting.end_time), 'h:mm a')}
                 </p>
@@ -423,10 +423,10 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
               <div className="group/meeting border-l-2 border-qualia-500 bg-qualia-500/5 p-3 sm:p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold text-qualia-500">
+                    <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[11px] font-semibold text-qualia-500">
                       Up Next
                     </span>
-                    <span className="text-[10px] text-muted-foreground sm:text-xs">
+                    <span className="text-[11px] text-muted-foreground sm:text-xs">
                       {getTimeUntil(nextMeeting.start_time)}
                     </span>
                     <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
@@ -482,7 +482,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                 <h4 className="mb-1 truncate text-sm font-semibold text-foreground">
                   {nextMeeting.title}
                 </h4>
-                <p className="text-[10px] text-muted-foreground sm:text-xs">
+                <p className="text-[11px] text-muted-foreground sm:text-xs">
                   {formatMeetingDate(nextMeeting.start_time)} at{' '}
                   {format(parseISO(nextMeeting.start_time), 'h:mm a')}
                 </p>
@@ -502,7 +502,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center gap-1.5 sm:gap-2">
                       <Clock className="h-3 w-3 shrink-0 text-muted-foreground" />
-                      <span className="truncate text-[10px] text-muted-foreground sm:text-xs">
+                      <span className="truncate text-[11px] text-muted-foreground sm:text-xs">
                         {formatMeetingDate(meeting.start_time)} at{' '}
                         {format(parseISO(meeting.start_time), 'h:mm a')}
                       </span>
@@ -511,7 +511,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                       {meeting.title}
                     </h4>
                     {meeting.project && (
-                      <p className="mt-0.5 truncate text-[10px] text-muted-foreground sm:text-xs">
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
                         {meeting.project.name}
                       </p>
                     )}
