@@ -12,9 +12,10 @@ import {
   Columns2,
   ArrowRightFromLine,
   ExternalLink,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { type Task, quickUpdateTask, deleteTask } from '@/app/actions/inbox';
+import { type Task, createTask, quickUpdateTask, deleteTask } from '@/app/actions/inbox';
 import { deleteMeeting } from '@/app/actions';
 import {
   type MeetingWithRelations,
@@ -23,6 +24,7 @@ import {
   invalidateMeetings,
   invalidateTodaysSchedule,
 } from '@/lib/swr';
+import { useRouter } from 'next/navigation';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
@@ -310,6 +312,7 @@ function TaskCard({
 // ── Main Component ───────────────────────────────────────────────────────────
 
 export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
+  const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingMeeting, setEditingMeeting] = useState<MeetingWithRelations | null>(null);
@@ -318,11 +321,46 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [newTaskDefaultAssignee, setNewTaskDefaultAssignee] = useState<string | null>(null);
   const [newTaskDefaultTime, setNewTaskDefaultTime] = useState<string | null>(null);
   const [collapsedMeetings, setCollapsedMeetings] = useState<Set<string>>(new Set());
+  const [quickInput, setQuickInput] = useState('');
+  const [quickAssignee, setQuickAssignee] = useState<'fawzi' | 'moayad' | 'both'>('fawzi');
+  const [backlogOpen, setBacklogOpen] = useState(false);
   const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const FAWZI_ID = '696cbe99-20fe-437c-97fe-246fb3367d9b';
   const MOAYAD_ID = 'e0472b7b-4378-4311-9c45-9d3e8ca94bd2';
+
+  // Backlog: unscheduled, not done/canceled
+  const backlogTasks = useMemo(
+    () =>
+      tasks.filter(
+        (t) => !t.scheduled_start_time && t.status !== 'Done' && (t.status as string) !== 'Canceled'
+      ),
+    [tasks]
+  );
+
+  const handleQuickAdd = useCallback(async () => {
+    const title = quickInput.trim();
+    if (!title) return;
+
+    const assigneeId =
+      quickAssignee === 'fawzi' ? FAWZI_ID : quickAssignee === 'moayad' ? MOAYAD_ID : null;
+
+    const formData = new FormData();
+    formData.set('title', title);
+    formData.set('status', 'Todo');
+    formData.set('show_in_inbox', 'true');
+    formData.set('item_type', 'task');
+    if (assigneeId) formData.set('assignee_id', assigneeId);
+
+    setQuickInput('');
+    startTransition(async () => {
+      await createTask(formData);
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+      router.refresh();
+    });
+  }, [quickInput, quickAssignee, router]);
 
   useEffect(() => {
     const id = setInterval(() => setCurrentTime(new Date()), 60_000);
@@ -493,6 +531,83 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
   return (
     <div className="flex h-full flex-col">
+      {/* ── Quick-Add Bar ────────────────────────────────────────────────────── */}
+      <div className="flex shrink-0 items-center gap-2 border-b border-border/30 px-3 py-2">
+        <input
+          type="text"
+          value={quickInput}
+          onChange={(e) => setQuickInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
+          placeholder="Quick add task..."
+          className="min-w-0 flex-1 rounded-lg border border-border/30 bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/25 focus:border-foreground/20 focus:outline-none"
+        />
+        <div className="flex items-center gap-1">
+          {(['fawzi', 'moayad', 'both'] as const).map((who) => (
+            <button
+              key={who}
+              onClick={() => setQuickAssignee(who)}
+              className={cn(
+                'rounded-md px-2 py-1 text-xs font-semibold transition-colors',
+                quickAssignee === who
+                  ? who === 'fawzi'
+                    ? 'bg-sky-500/15 text-sky-500'
+                    : who === 'moayad'
+                      ? 'bg-violet-500/15 text-violet-500'
+                      : 'bg-foreground/10 text-foreground/70'
+                  : 'text-foreground/25 hover:text-foreground/50'
+              )}
+            >
+              {who === 'fawzi' ? 'F' : who === 'moayad' ? 'M' : 'Both'}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handleQuickAdd}
+          disabled={!quickInput.trim()}
+          className="flex size-7 items-center justify-center rounded-lg bg-foreground/[0.06] text-foreground/40 transition-colors hover:bg-foreground/10 hover:text-foreground/60 disabled:opacity-30"
+        >
+          <Plus className="size-3.5" />
+        </button>
+      </div>
+
+      {/* ── Backlog (unscheduled tasks) ──────────────────────────────────────── */}
+      {backlogTasks.length > 0 && (
+        <div className="shrink-0 border-b border-border/30">
+          <button
+            onClick={() => setBacklogOpen(!backlogOpen)}
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-foreground/40 transition-colors hover:text-foreground/60"
+          >
+            <ChevronDown
+              className={cn('size-3 transition-transform', !backlogOpen && '-rotate-90')}
+            />
+            <span>Backlog</span>
+            <span className="rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[10px] tabular-nums text-foreground/30">
+              {backlogTasks.length}
+            </span>
+          </button>
+          {backlogOpen && (
+            <div className="flex max-h-[120px] flex-wrap gap-1.5 overflow-y-auto px-3 pb-2.5">
+              {backlogTasks.map((t) => (
+                <div
+                  key={t.id}
+                  className="group/chip flex items-center gap-1.5 rounded-lg border border-border/20 bg-background/50 px-2.5 py-1 transition-colors hover:border-border/40"
+                >
+                  <button onClick={() => handleComplete(t.id)} className="shrink-0">
+                    <Circle className="size-3 text-foreground/15 transition-colors hover:text-foreground/40" />
+                  </button>
+                  <button
+                    onClick={() => setEditingTask(t)}
+                    className="max-w-[180px] truncate text-xs text-foreground/60 transition-colors hover:text-foreground/80"
+                  >
+                    {t.title}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Column Headers ──────────────────────────────────────────────────── */}
       <div className="flex shrink-0 border-b border-border/40 bg-card/90" style={{ height: 44 }}>
         <div className="shrink-0" style={{ width: TIME_GUTTER }} />

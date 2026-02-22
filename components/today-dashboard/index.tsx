@@ -20,8 +20,6 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
-import { InboxWidget } from './inbox-widget';
-import { MeetingsTimeline } from './meetings-timeline';
 import { ProjectPulseSidebar } from './project-pulse-sidebar';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
@@ -210,11 +208,11 @@ export function TodayDashboard({
         </div>
       </header>
 
-      {/* ===== SCROLLABLE MAIN CONTENT ===== */}
-      <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6">
+      {/* ===== MAIN CONTENT (no page scroll) ===== */}
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
           {/* ── STATS ROW ──────────────────────────────────────────────── */}
-          <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mb-3 grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard
               label="Progress"
               value={`${stats.progress}%`}
@@ -243,42 +241,22 @@ export function TodayDashboard({
             />
           </div>
 
-          {/* ── TWO-COLUMN GRID ────────────────────────────────────────── */}
-          <div className="grid gap-5 lg:grid-cols-5 xl:grid-cols-12">
-            {/* LEFT COLUMN */}
-            <div className="space-y-5 lg:col-span-3 xl:col-span-7">
-              {/* Schedule Grid */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
-                <div className="h-[640px]">
-                  <DailyScheduleGrid tasks={tasks} meetings={meetings} />
-                </div>
-              </div>
-
-              {/* Meetings Timeline */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
-                <div className="max-h-[440px]">
-                  <MeetingsTimeline meetings={meetings} />
-                </div>
+          {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
+          <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-5 xl:grid-cols-12">
+            {/* LEFT COLUMN — Schedule */}
+            <div className="min-h-0 lg:col-span-3 xl:col-span-7">
+              <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
+                <DailyScheduleGrid tasks={tasks} meetings={meetings} />
               </div>
             </div>
 
-            {/* RIGHT COLUMN */}
-            <div className="space-y-5 lg:col-span-2 xl:col-span-5">
-              {/* Inbox Widget */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
-                <div className="h-[640px]">
-                  <InboxWidget tasks={tasks} />
-                </div>
-              </div>
-
-              {/* Project Pulse */}
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
-                <div className="max-h-[440px]">
-                  <ProjectPulseSidebar
-                    activeProjects={activeProjects}
-                    finishedProjects={finishedProjectsMapped}
-                  />
-                </div>
+            {/* RIGHT COLUMN — Currently Building */}
+            <div className="min-h-0 lg:col-span-2 xl:col-span-5">
+              <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
+                <ProjectPulseSidebar
+                  activeProjects={activeProjects}
+                  finishedProjects={finishedProjectsMapped}
+                />
               </div>
             </div>
           </div>

@@ -97,7 +97,7 @@ export function ProjectPulseSidebar({
 
       {/* Completed Projects */}
       {finishedProjects.length > 0 && (
-        <div className="flex flex-col border-t border-white/[0.06]">
+        <div className="flex min-h-0 flex-col border-t border-white/[0.06]">
           <div className="px-5 py-4">
             <div className="flex items-center gap-2">
               <div className="flex h-5 w-5 items-center justify-center rounded-md bg-sky-500/10">
@@ -107,7 +107,7 @@ export function ProjectPulseSidebar({
             </div>
             <p className="mt-1 text-xs text-zinc-500">{finishedProjects.length} launched</p>
           </div>
-          <div className="max-h-[180px] overflow-y-auto px-3 pb-3">
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
             <div className="space-y-1">
               {finishedProjects.slice(0, 4).map((project) => (
                 <ProjectCard key={project.id} project={project} compact />
