@@ -209,19 +209,15 @@ export function SidebarAI() {
 
   return (
     <>
-      {/* Sidebar trigger button - clean minimal style */}
+      {/* Sidebar trigger — compact icon button */}
       <motion.button
         onClick={() => setIsOpen(true)}
-        className="group flex w-full items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 transition-all duration-200 hover:border-primary/20 hover:bg-white/[0.04]"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        className="group flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-purple-500/15 text-primary ring-1 ring-white/[0.06] transition-all duration-200 hover:from-primary/25 hover:to-purple-500/25 hover:ring-primary/30"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        title="Ask AI"
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-white/10 transition-all group-hover:ring-primary/30">
-          <Sparkles className="h-3.5 w-3.5 text-primary" />
-        </div>
-        <span className="text-sm font-medium text-foreground/80 transition-colors group-hover:text-foreground">
-          Ask AI
-        </span>
+        <Sparkles className="h-3.5 w-3.5" />
       </motion.button>
 
       {/* Bottom center popup - no overlay */}
