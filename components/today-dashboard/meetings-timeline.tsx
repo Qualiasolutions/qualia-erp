@@ -20,7 +20,7 @@ interface Meeting {
   project?: { id: string; name: string } | null;
   client?: { id: string; display_name: string; logo_url?: string | null } | null;
   attendees?: Array<{
-    profile: { id: string; full_name: string | null; avatar_url?: string | null };
+    profile: { id: string; full_name: string | null; avatar_url?: string | null } | null;
   }>;
 }
 
@@ -196,22 +196,32 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                                 {getInitials(meeting.client.display_name)}
                               </AvatarFallback>
                             </Avatar>
-                          ) : meeting.attendees && meeting.attendees.length > 0 ? (
+                          ) : meeting.attendees &&
+                            meeting.attendees.filter((a) => a.profile).length > 0 ? (
                             <div className="flex -space-x-2">
-                              {meeting.attendees.slice(0, 2).map((a, i) => (
-                                <Avatar
-                                  key={a.profile.id}
-                                  className={cn('h-8 w-8 ring-2 ring-background', i > 0 && '-ml-2')}
-                                >
-                                  <AvatarImage src={a.profile.avatar_url || undefined} />
-                                  <AvatarFallback className="bg-gradient-to-br from-sky-500 to-blue-600 text-[11px] font-bold text-white">
-                                    {getInitials(a.profile.full_name)}
-                                  </AvatarFallback>
-                                </Avatar>
-                              ))}
-                              {meeting.attendees.length > 2 && (
+                              {meeting.attendees
+                                .filter(
+                                  (a): a is { profile: NonNullable<typeof a.profile> } =>
+                                    !!a.profile
+                                )
+                                .slice(0, 2)
+                                .map((a, i) => (
+                                  <Avatar
+                                    key={a.profile.id}
+                                    className={cn(
+                                      'h-8 w-8 ring-2 ring-background',
+                                      i > 0 && '-ml-2'
+                                    )}
+                                  >
+                                    <AvatarImage src={a.profile.avatar_url || undefined} />
+                                    <AvatarFallback className="bg-gradient-to-br from-sky-500 to-blue-600 text-[11px] font-bold text-white">
+                                      {getInitials(a.profile.full_name)}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                              {meeting.attendees.filter((a) => a.profile).length > 2 && (
                                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground ring-2 ring-background">
-                                  +{meeting.attendees.length - 2}
+                                  +{meeting.attendees.filter((a) => a.profile).length - 2}
                                 </div>
                               )}
                             </div>
