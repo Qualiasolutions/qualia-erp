@@ -135,15 +135,15 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
           isPending && 'pointer-events-none opacity-50'
         )}
       >
-        {/* Type icon */}
-        <div
-          className={cn(
-            'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-105',
-            typeConfig?.bgColor || 'bg-muted'
-          )}
-        >
-          <TypeIcon className={cn('h-3.5 w-3.5', typeConfig?.color || 'text-muted-foreground')} />
-        </div>
+        {/* Project Logo/Avatar */}
+        <EntityAvatar
+          src={project.logo_url}
+          fallbackIcon={<TypeIcon className="h-3.5 w-3.5" />}
+          fallbackBgColor={typeConfig?.bgColor || 'bg-muted'}
+          fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
+          size="md"
+          className="transition-transform duration-200 group-hover:scale-105"
+        />
 
         {/* Name + client */}
         <div className="min-w-0 flex-1">

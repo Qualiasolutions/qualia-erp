@@ -66,7 +66,7 @@ export function EntityAvatar({
   return (
     <div
       className={cn(
-        'relative flex-shrink-0 overflow-hidden',
+        'relative flex-shrink-0 overflow-hidden bg-muted/40',
         sizeConfig.container,
         roundedClass,
         className
@@ -76,7 +76,7 @@ export function EntityAvatar({
         src={src}
         alt="Logo"
         fill
-        className="object-contain"
+        className="object-contain p-0.5"
         onError={() => setImageError(true)}
         unoptimized // Allow external URLs from Supabase storage
       />
