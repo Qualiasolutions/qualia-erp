@@ -80,10 +80,6 @@ export function BuildingProjectsRow({ projects }: { projects: Project[] }) {
 function ProjectChip({ project }: { project: Project }) {
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
-  const progress =
-    project.issue_stats.total > 0
-      ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
-      : 0;
 
   return (
     <Link
@@ -102,27 +98,10 @@ function ProjectChip({ project }: { project: Project }) {
         className="h-7 w-7 rounded-lg ring-1 ring-border/20"
       />
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <span className="whitespace-nowrap text-sm font-medium text-foreground/80 group-hover:text-foreground">
           {project.name}
         </span>
-
-        <div className="flex items-center gap-2">
-          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all',
-                progress >= 80
-                  ? 'bg-emerald-500'
-                  : progress >= 50
-                    ? 'bg-amber-500'
-                    : 'bg-muted-foreground/30'
-              )}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <span className="text-xs tabular-nums text-muted-foreground">{progress}%</span>
-        </div>
 
         <span
           className={cn(

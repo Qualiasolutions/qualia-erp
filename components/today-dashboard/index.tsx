@@ -140,16 +140,16 @@ export function TodayDashboard({
           </div>
 
           {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
-          <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-5 xl:grid-cols-12">
+          <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-4 lg:grid-cols-5 xl:grid-cols-12">
             {/* LEFT COLUMN — Schedule */}
-            <div className="min-h-0 lg:col-span-3 xl:col-span-7">
+            <div className="min-h-0 overflow-hidden lg:col-span-3 xl:col-span-7">
               <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
                 <DailyScheduleGrid tasks={tasks} meetings={meetings} />
               </div>
             </div>
 
             {/* RIGHT COLUMN — AI Assistant */}
-            <div className="min-h-0 lg:col-span-2 xl:col-span-5">
+            <div className="min-h-0 overflow-hidden lg:col-span-2 xl:col-span-5">
               <DashboardAIChat />
             </div>
           </div>
