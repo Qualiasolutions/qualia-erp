@@ -176,14 +176,6 @@ export async function getProjectStats(
     return { projects: [], demos: [] };
   }
 
-  // Create a map to track is_finished status from raw data
-  const isFinishedMap = new Map<string, boolean>();
-  (rawProjects || []).forEach((p: Record<string, unknown>) => {
-    if (typeof p.is_finished === 'boolean') {
-      isFinishedMap.set(p.id as string, p.is_finished);
-    }
-  });
-
   const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
     name: p.name as string,
@@ -211,21 +203,9 @@ export async function getProjectStats(
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Split into categories:
-  // - demos: status = 'Demos'
-  // - projects: active projects (not demos, not archived, not finished)
+  // Status-based filtering — no boolean flags needed
   const demos = allProjects.filter((p) => p.status === 'Demos');
-  const projects = allProjects.filter((p) => {
-    // Exclude demos
-    if (p.status === 'Demos') return false;
-    // Exclude archived/canceled
-    if (['Archived', 'Canceled'].includes(p.status)) return false;
-    // Exclude finished projects (is_finished=true or status='Launched')
-    const isFinished = isFinishedMap.get(p.id);
-    if (isFinished === true) return false;
-    if (p.status === 'Launched') return false;
-    return true;
-  });
+  const projects = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
 
   return { projects, demos };
 }
@@ -375,108 +355,6 @@ export async function deleteProject(id: string): Promise<ActionResult> {
   }
 
   revalidatePath('/projects');
-  return { success: true };
-}
-
-/**
- * Toggle project live status
- */
-export async function toggleProjectLive(projectId: string, isLive: boolean): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  const { error } = await supabase
-    .from('projects')
-    .update({
-      is_live: isLive,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', projectId);
-
-  if (error) {
-    console.error('[toggleProjectLive] Error toggling project live status:', error);
-    return { success: false, error: error.message };
-  }
-
-  revalidatePath('/');
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
-  return { success: true };
-}
-
-/**
- * Toggle project finished status
- */
-export async function toggleProjectFinished(
-  projectId: string,
-  isFinished: boolean
-): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  const { error } = await supabase
-    .from('projects')
-    .update({
-      is_finished: isFinished,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', projectId);
-
-  if (error) {
-    console.error('[toggleProjectFinished] Error toggling project finished status:', error);
-    return { success: false, error: error.message };
-  }
-
-  revalidatePath('/');
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
-  return { success: true };
-}
-
-/**
- * Toggle project building status (appears in "Currently Building" section)
- */
-export async function toggleProjectBuilding(
-  projectId: string,
-  isBuilding: boolean
-): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  const { error } = await supabase
-    .from('projects')
-    .update({
-      is_building: isBuilding,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', projectId);
-
-  if (error) {
-    console.error('[toggleProjectBuilding] Error toggling project building status:', error);
-    return { success: false, error: error.message };
-  }
-
-  revalidatePath('/');
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 

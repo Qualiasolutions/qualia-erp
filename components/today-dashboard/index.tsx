@@ -13,7 +13,7 @@ import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
 import { BuildingProjectsRow } from './building-projects-row';
 import { DashboardAIChat } from './dashboard-ai-chat';
-import { useTransition, useState, useEffect, useMemo } from 'react';
+import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
@@ -26,7 +26,6 @@ interface Project {
   project_type: ProjectType | null;
   target_date: string | null;
   logo_url: string | null;
-  is_building?: boolean;
   issue_stats: { total: number; done: number };
 }
 
@@ -34,7 +33,6 @@ interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
   tasks: Task[];
   projects: Project[];
-  finishedProjects: Project[];
   issues?: unknown[];
 }
 
@@ -42,12 +40,7 @@ interface TodayDashboardProps {
 // MAIN DASHBOARD
 // =============================================================================
 
-export function TodayDashboard({
-  meetings,
-  tasks,
-  projects,
-  finishedProjects,
-}: TodayDashboardProps) {
+export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
@@ -66,21 +59,8 @@ export function TodayDashboard({
     startRefresh(() => router.refresh());
   };
 
-  // Map projects for the building row
-  const allProjects = useMemo(
-    () =>
-      [...projects, ...finishedProjects].map((p) => ({
-        id: p.id,
-        name: p.name,
-        status: p.status,
-        project_type: p.project_type,
-        target_date: p.target_date,
-        logo_url: p.logo_url,
-        is_building: (p as Project).is_building,
-        issue_stats: p.issue_stats,
-      })),
-    [projects, finishedProjects]
-  );
+  // Projects for the building row (already filtered to Active/Delayed)
+  const allProjects = projects;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">

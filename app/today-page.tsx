@@ -63,41 +63,9 @@ export default async function TodayPage() {
         : null,
     })) as Task[];
 
-  // Get LIVE or BUILDING projects
-  // Building projects show in left sidebar regardless of is_live status
+  // Active projects: status = Active or Delayed (currently being built)
   const projects = (projectsRaw.data || [])
-    .filter((p: Record<string, unknown>) => {
-      // Include if building (for sidebar) or live
-      if (p.is_building === true) return true;
-      if (typeof p.is_live === 'boolean') {
-        return p.is_live === true;
-      }
-      // Fallback for before migration: show Active projects
-      return !['Archived', 'Canceled'].includes(p.status as string);
-    })
-    .map((p: Record<string, unknown>) => ({
-      id: p.id as string,
-      name: p.name as string,
-      status: p.status as string,
-      project_type: p.project_type as ProjectType | null,
-      target_date: p.target_date as string | null,
-      logo_url: (p.logo_url as string | null) || null,
-      is_building: p.is_building === true,
-      issue_stats: {
-        total: Number(p.total_issues) || 0,
-        done: Number(p.done_issues) || 0,
-      },
-    }));
-
-  // Get FINISHED projects (filter by is_finished = true)
-  const finishedProjects = (projectsRaw.data || [])
-    .filter((p: Record<string, unknown>) => {
-      if (typeof p.is_finished === 'boolean') {
-        return p.is_finished === true;
-      }
-      // Fallback for before migration: show Launched projects
-      return p.status === 'Launched';
-    })
+    .filter((p: Record<string, unknown>) => ['Active', 'Delayed'].includes(p.status as string))
     .map((p: Record<string, unknown>) => ({
       id: p.id as string,
       name: p.name as string,
@@ -111,13 +79,5 @@ export default async function TodayPage() {
       },
     }));
 
-  return (
-    <TodayDashboard
-      meetings={meetings}
-      tasks={tasks}
-      projects={projects}
-      finishedProjects={finishedProjects}
-      issues={issues}
-    />
-  );
+  return <TodayDashboard meetings={meetings} tasks={tasks} projects={projects} issues={issues} />;
 }

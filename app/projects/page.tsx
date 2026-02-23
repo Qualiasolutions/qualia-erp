@@ -19,7 +19,6 @@ export interface ProjectData {
   client_id: string | null;
   client_name: string | null;
   logo_url: string | null;
-  is_building: boolean;
   lead: {
     id: string;
     full_name: string | null;
@@ -68,7 +67,6 @@ async function ProjectListLoader() {
     client_id: p.client_id as string | null,
     client_name: p.client_name as string | null,
     logo_url: (p.logo_url as string | null) || null,
-    is_building: (p.is_building as boolean) ?? false,
     lead: p.lead_id
       ? {
           id: p.lead_id as string,
@@ -84,56 +82,15 @@ async function ProjectListLoader() {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Split projects into categories:
-  // - Active demos: status = 'Demos'
-  // - Archived demos: Any project where project_group includes 'demos' but status is Archived/Canceled
-  // - Active projects: Not demos, not archived/canceled, not finished
-  // - Finished projects: is_finished = true (displayed with distinct styling, sorted to bottom)
-  // - Archived projects: status = 'Archived' or 'Canceled' (not demos)
+  // Status-based filtering — project_status drives everything
   const demos = projects.filter((p) => p.status === 'Demos');
+  const activeProjects = projects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const finishedProjects = projects.filter((p) => p.status === 'Launched');
   const archivedDemos = projects.filter(
     (p) =>
       ['Archived', 'Canceled'].includes(p.status) &&
       (p.project_group === 'demos' || p.metadata?.is_partnership === true)
   );
-
-  // Check if is_finished exists in the raw data
-  const hasIsFinished = (rawProjects || []).some(
-    (p: Record<string, unknown>) => typeof p.is_finished === 'boolean'
-  );
-
-  // Create a map of project id to is_finished value
-  const isFinishedMap = new Map<string, boolean>();
-  (rawProjects || []).forEach((p: Record<string, unknown>) => {
-    if (typeof p.is_finished === 'boolean') {
-      isFinishedMap.set(p.id as string, p.is_finished);
-    }
-  });
-
-  // Finished projects: is_finished = true OR status = 'Launched' (fallback)
-  const finishedProjects = projects.filter((p) => {
-    if (['Archived', 'Canceled', 'Demos'].includes(p.status)) return false;
-    if (hasIsFinished) {
-      return isFinishedMap.get(p.id) === true;
-    }
-    // Fallback: treat 'Launched' status as finished
-    return p.status === 'Launched';
-  });
-
-  // Active projects (Currently Building): Use is_building flag
-  // Fallback to old logic if is_building not set yet
-  const activeProjects = projects.filter((p) => {
-    if (p.status === 'Demos') return false;
-    if (['Archived', 'Canceled'].includes(p.status)) return false;
-    // Use is_building flag if available
-    if (p.is_building) return true;
-    // Fallback: if no is_building flag set, use old logic
-    if (hasIsFinished) {
-      return isFinishedMap.get(p.id) !== true;
-    }
-    return p.status !== 'Launched';
-  });
-
   const archivedProjects = projects.filter(
     (p) =>
       ['Archived', 'Canceled'].includes(p.status) &&

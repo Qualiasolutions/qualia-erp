@@ -22,7 +22,6 @@ interface Project {
   project_type: ProjectType | null;
   target_date: string | null;
   logo_url: string | null;
-  is_building?: boolean;
   issue_stats: { total: number; done: number };
 }
 
@@ -43,8 +42,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function BuildingProjectsRow({ projects }: { projects: Project[] }) {
-  const buildingProjects = projects.filter((p) => p.is_building);
-  const displayProjects = buildingProjects.length > 0 ? buildingProjects : projects;
+  const displayProjects = projects;
 
   return (
     <div className="rounded-xl border border-border/30 bg-card/50 dark:border-border/40">

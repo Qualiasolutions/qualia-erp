@@ -126,8 +126,6 @@ export {
   getProjectById,
   updateProject,
   deleteProject,
-  toggleProjectLive,
-  toggleProjectFinished,
   updateProjectPhaseProgress,
   bulkDeleteProjects,
   updateProjectStatus,

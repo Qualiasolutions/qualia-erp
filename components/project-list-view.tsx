@@ -16,11 +16,10 @@ import {
   Trash2,
   Inbox,
   Sparkles,
-  Hammer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
-import { deleteProject, toggleProjectBuilding } from '@/app/actions';
+import { deleteProject } from '@/app/actions';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -119,20 +118,6 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
     });
   };
 
-  const handleToggleBuilding = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    startTransition(async () => {
-      const result = await toggleProjectBuilding(project.id, !project.is_building);
-      if (result.success) {
-        router.refresh();
-      } else {
-        alert(result.error || 'Failed to toggle building status');
-      }
-    });
-  };
-
   const handleClick = () => {
     router.push(`/projects/${project.id}`);
   };
@@ -213,10 +198,6 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleToggleBuilding}>
-                <Hammer className="mr-2 h-3.5 w-3.5" />
-                {project.is_building ? 'Remove from Building' : 'Mark as Building'}
-              </DropdownMenuItem>
               <DropdownMenuItem
                 className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
                 onClick={handleDelete}
@@ -300,10 +281,6 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={handleToggleBuilding}>
-              <Hammer className="mr-2 h-4 w-4" />
-              {project.is_building ? 'Remove from Building' : 'Mark as Building'}
-            </DropdownMenuItem>
             <DropdownMenuItem
               className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
               onClick={handleDelete}

@@ -14,8 +14,6 @@ import {
   TrendingUp,
   Megaphone,
   Settings,
-  Radio,
-  Trophy,
   Building2,
   PanelRightOpen,
   Link as LinkIcon,
@@ -42,14 +40,7 @@ import {
 } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Switch } from '@/components/ui/switch';
-import {
-  getProjectById,
-  updateProject,
-  deleteProject,
-  toggleProjectLive,
-  toggleProjectFinished,
-} from '@/app/actions';
+import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { cn } from '@/lib/utils';
 import { ProjectNotes } from '@/components/project-notes';
 import { ProjectResources } from '@/components/project-resources';
@@ -103,8 +94,6 @@ interface Project {
   created_at: string;
   updated_at: string;
   logo_url: string | null;
-  is_live: boolean;
-  is_finished: boolean;
   lead: Profile | null;
   team: { id: string; name: string; key: string } | null;
   client: { id: string; name: string } | null;
@@ -149,10 +138,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
   );
   const [leadId, setLeadId] = useState<string | null>(initialProject.lead?.id || null);
   const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
-  const [isLive, setIsLive] = useState(initialProject.is_live || false);
-  const [togglingLive, setTogglingLive] = useState(false);
-  const [isFinished, setIsFinished] = useState(initialProject.is_finished || false);
-  const [togglingFinished, setTogglingFinished] = useState(false);
 
   // Track changes
   useEffect(() => {
@@ -210,30 +195,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
         setError(result.error || 'Failed to delete project');
       }
     });
-  };
-
-  const handleToggleLive = async (checked: boolean) => {
-    setTogglingLive(true);
-    const result = await toggleProjectLive(project.id, checked);
-    if (result.success) {
-      setIsLive(checked);
-      setProject((prev) => ({ ...prev, is_live: checked }));
-    } else {
-      setError(result.error || 'Failed to update live status');
-    }
-    setTogglingLive(false);
-  };
-
-  const handleToggleFinished = async (checked: boolean) => {
-    setTogglingFinished(true);
-    const result = await toggleProjectFinished(project.id, checked);
-    if (result.success) {
-      setIsFinished(checked);
-      setProject((prev) => ({ ...prev, is_finished: checked }));
-    } else {
-      setError(result.error || 'Failed to update finished status');
-    }
-    setTogglingFinished(false);
   };
 
   const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
@@ -433,49 +394,6 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                 setProject((prev) => ({ ...prev, logo_url: newUrl }));
               }}
             />
-          </div>
-
-          {/* Toggles */}
-          <div className="grid gap-3">
-            <div className="flex items-center justify-between rounded-xl border border-border/50 bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
-                    isLive ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <Radio className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Live Status</p>
-                  <p className="text-xs text-muted-foreground">Show in live projects watch</p>
-                </div>
-              </div>
-              <Switch checked={isLive} onCheckedChange={handleToggleLive} disabled={togglingLive} />
-            </div>
-
-            <div className="flex items-center justify-between rounded-xl border border-border/50 bg-card p-4">
-              <div className="flex items-center gap-3">
-                <div
-                  className={cn(
-                    'flex h-9 w-9 items-center justify-center rounded-lg transition-all',
-                    isFinished ? 'bg-amber-500/10 text-amber-500' : 'bg-muted text-muted-foreground'
-                  )}
-                >
-                  <Trophy className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Completed</p>
-                  <p className="text-xs text-muted-foreground">Mark as officially completed</p>
-                </div>
-              </div>
-              <Switch
-                checked={isFinished}
-                onCheckedChange={handleToggleFinished}
-                disabled={togglingFinished}
-              />
-            </div>
           </div>
 
           {/* Form fields */}

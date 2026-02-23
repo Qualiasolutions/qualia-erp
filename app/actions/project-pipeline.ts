@@ -23,7 +23,6 @@ export interface ProjectPipelineData {
   lead_id: string | null;
   lead_full_name: string | null;
   lead_email: string | null;
-  is_live: boolean;
   logo_url: string | null;
   metadata: Record<string, unknown> | null;
   // Pipeline stats
@@ -50,20 +49,18 @@ export interface ProjectsByPhase {
 
 // Phase name mapping
 const PHASE_ORDER: Record<string, keyof ProjectsByPhase> = {
-  'Setup': 'setup',
-  'Plan': 'plan',
-  'Frontend': 'frontend',
-  'Backend': 'backend',
-  'Ship': 'ship',
+  Setup: 'setup',
+  Plan: 'plan',
+  Frontend: 'frontend',
+  Backend: 'backend',
+  Ship: 'ship',
 };
 
 // ============================================================================
 // GET PROJECT PIPELINE DATA
 // ============================================================================
 
-export async function getProjectPipelineData(
-  workspaceId?: string
-): Promise<ProjectPipelineData[]> {
+export async function getProjectPipelineData(workspaceId?: string): Promise<ProjectPipelineData[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase.rpc('get_project_pipeline_stats', {
@@ -89,7 +86,6 @@ export async function getProjectPipelineData(
     lead_id: p.lead_id as string | null,
     lead_full_name: p.lead_full_name as string | null,
     lead_email: p.lead_email as string | null,
-    is_live: (p.is_live as boolean) || false,
     logo_url: p.logo_url as string | null,
     metadata: p.metadata as Record<string, unknown> | null,
     current_phase_id: p.current_phase_id as string | null,
@@ -107,9 +103,7 @@ export async function getProjectPipelineData(
 // GROUP PROJECTS BY PHASE FOR KANBAN VIEW
 // ============================================================================
 
-export async function getProjectsByPhase(
-  workspaceId?: string
-): Promise<ProjectsByPhase> {
+export async function getProjectsByPhase(workspaceId?: string): Promise<ProjectsByPhase> {
   const projects = await getProjectPipelineData(workspaceId);
 
   const grouped: ProjectsByPhase = {
@@ -224,7 +218,7 @@ export async function advanceProjectPhase(projectId: string): Promise<ActionResu
     data: {
       completedPhase: currentPhase.name,
       nextPhase: nextPhase?.name || null,
-    }
+    },
   };
 }
 
@@ -285,7 +279,7 @@ export async function regressProjectPhase(projectId: string): Promise<ActionResu
 
   return {
     success: true,
-    data: { movedToPhase: previousPhase.name }
+    data: { movedToPhase: previousPhase.name },
   };
 }
 
@@ -343,10 +337,7 @@ export async function setProjectPhase(
   }
 
   // Ensure project is Active
-  await supabase
-    .from('projects')
-    .update({ status: 'Active' })
-    .eq('id', projectId);
+  await supabase.from('projects').update({ status: 'Active' }).eq('id', projectId);
 
   revalidatePath('/projects');
   revalidatePath(`/projects/${projectId}`);
