@@ -133,17 +133,17 @@ export function TodayDashboard({
 
       {/* ===== MAIN CONTENT (no page scroll) ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
           {/* ── CURRENTLY BUILDING ROW ─────────────────────────────────── */}
           <div className="mb-3 shrink-0">
             <BuildingProjectsRow projects={allProjects} />
           </div>
 
           {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
-          <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-4 lg:grid-cols-5 xl:grid-cols-12">
+          <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-4 overflow-hidden lg:grid-cols-5 xl:grid-cols-12">
             {/* LEFT COLUMN — Schedule */}
             <div className="min-h-0 overflow-hidden lg:col-span-3 xl:col-span-7">
-              <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
+              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
                 <DailyScheduleGrid tasks={tasks} meetings={meetings} />
               </div>
             </div>
