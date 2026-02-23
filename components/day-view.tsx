@@ -308,6 +308,8 @@ function TimeSlot({
 }
 
 export function DayView({ meetings, issues = [], tasks = [], embedded = false }: DayViewProps) {
+  // Show tasks column only when tasks/issues are actually provided (dashboard embedded mode)
+  const showTasks = embedded || tasks.length > 0 || issues.length > 0;
   const { timezone, setTimezone } = useTimezone();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
@@ -601,17 +603,24 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
             <div className="h-full overflow-y-auto">
               {/* Column headers */}
               {!embedded && (
-                <div className="sticky top-0 z-30 grid grid-cols-[80px_1fr_1fr] border-b border-border/60 bg-card">
+                <div
+                  className={cn(
+                    'sticky top-0 z-30 grid border-b border-border/60 bg-card',
+                    showTasks ? 'grid-cols-[80px_1fr_1fr]' : 'grid-cols-[80px_1fr]'
+                  )}
+                >
                   <div className="border-r border-border/50 px-3 py-2" />
-                  <div className="flex items-center gap-2 border-r border-border/30 px-4 py-2">
-                    <ListTodo className="h-3.5 w-3.5 text-blue-500" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
-                      Tasks
-                    </span>
-                    <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
-                      {dayTasks.length}
-                    </span>
-                  </div>
+                  {showTasks && (
+                    <div className="flex items-center gap-2 border-r border-border/30 px-4 py-2">
+                      <ListTodo className="h-3.5 w-3.5 text-blue-500" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
+                        Tasks
+                      </span>
+                      <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+                        {dayTasks.length}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 px-4 py-2">
                     <Video className="h-3.5 w-3.5 text-violet-500" />
                     <span className="text-xs font-semibold uppercase tracking-wider text-violet-500">
@@ -627,7 +636,11 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
               <div
                 className={cn(
                   'grid',
-                  embedded ? 'grid-cols-[60px_1fr]' : 'grid-cols-[80px_1fr_1fr]'
+                  embedded
+                    ? 'grid-cols-[60px_1fr]'
+                    : showTasks
+                      ? 'grid-cols-[80px_1fr_1fr]'
+                      : 'grid-cols-[80px_1fr]'
                 )}
                 style={{ height: `${TOTAL_HOURS * HOUR_HEIGHT}px`, minHeight: '100%' }}
               >
@@ -654,81 +667,83 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
                   ))}
                 </div>
 
-                {/* Tasks column (left) */}
-                <div
-                  className={cn(
-                    'relative',
-                    !embedded && 'border-r border-border/30',
-                    isToday && 'bg-blue-500/[0.01]'
-                  )}
-                >
-                  {/* Droppable time slots */}
-                  {hours.map((hour) => (
-                    <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT}px` }}>
-                      {/* Add Task Button */}
-                      <div className="absolute inset-0 z-10 opacity-0 transition-opacity hover:opacity-100">
-                        <button
-                          onClick={() => handleSlotClick(hour)}
-                          className="absolute right-2 top-0 rounded-full bg-blue-500 p-1.5 text-white shadow-sm transition-transform hover:scale-110"
-                          title="Add Task"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
+                {/* Tasks column (left) - only when tasks are provided */}
+                {showTasks && (
+                  <div
+                    className={cn(
+                      'relative',
+                      !embedded && 'border-r border-border/30',
+                      isToday && 'bg-blue-500/[0.01]'
+                    )}
+                  >
+                    {/* Droppable time slots */}
+                    {hours.map((hour) => (
+                      <div key={hour} className="relative" style={{ height: `${HOUR_HEIGHT}px` }}>
+                        {/* Add Task Button */}
+                        <div className="absolute inset-0 z-10 opacity-0 transition-opacity hover:opacity-100">
+                          <button
+                            onClick={() => handleSlotClick(hour)}
+                            className="absolute right-2 top-0 rounded-full bg-blue-500 p-1.5 text-white shadow-sm transition-transform hover:scale-110"
+                            title="Add Task"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
 
-                      <TimeSlot
-                        hour={hour}
-                        minute={0}
-                        currentDate={currentDate}
-                        isOver={activeDropSlot === `${hour}:00`}
-                      />
-                      <TimeSlot
-                        hour={hour}
-                        minute={30}
-                        currentDate={currentDate}
-                        isOver={activeDropSlot === `${hour}:30`}
-                      />
-                    </div>
-                  ))}
-
-                  {/* Current time indicator */}
-                  {isToday && (
-                    <div
-                      className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
-                      style={{
-                        top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
-                      }}
-                    >
-                      <div className="-ml-1.5 h-3 w-3 rounded-full bg-red-500 shadow-sm ring-2 ring-background" />
-                      <div className="h-[2px] w-full bg-red-500 shadow-sm" />
-                    </div>
-                  )}
-
-                  {/* Task items */}
-                  {dayTasks.map((item) => {
-                    if (isItemOutsideHours(item)) return null;
-                    const { top, height } = getItemPosition(item);
-
-                    return (
-                      <div
-                        key={item.id}
-                        className="absolute left-2 right-2 z-20 transition-all"
-                        style={{ top: `${top}px`, height: `${height}px` }}
-                      >
-                        <DraggableItem
-                          item={item}
-                          timezone={timezone}
-                          height={height}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          isPending={isPending}
+                        <TimeSlot
+                          hour={hour}
+                          minute={0}
+                          currentDate={currentDate}
+                          isOver={activeDropSlot === `${hour}:00`}
+                        />
+                        <TimeSlot
+                          hour={hour}
+                          minute={30}
+                          currentDate={currentDate}
+                          isOver={activeDropSlot === `${hour}:30`}
                         />
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
 
-                {/* Meetings column (right) - only in non-embedded mode */}
+                    {/* Current time indicator */}
+                    {isToday && (
+                      <div
+                        className="pointer-events-none absolute left-0 right-0 z-20 flex items-center"
+                        style={{
+                          top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
+                        }}
+                      >
+                        <div className="-ml-1.5 h-3 w-3 rounded-full bg-red-500 shadow-sm ring-2 ring-background" />
+                        <div className="h-[2px] w-full bg-red-500 shadow-sm" />
+                      </div>
+                    )}
+
+                    {/* Task items */}
+                    {dayTasks.map((item) => {
+                      if (isItemOutsideHours(item)) return null;
+                      const { top, height } = getItemPosition(item);
+
+                      return (
+                        <div
+                          key={item.id}
+                          className="absolute left-2 right-2 z-20 transition-all"
+                          style={{ top: `${top}px`, height: `${height}px` }}
+                        >
+                          <DraggableItem
+                            item={item}
+                            timezone={timezone}
+                            height={height}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            isPending={isPending}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Meetings column (right, or full-width when no tasks) - only in non-embedded mode */}
                 {!embedded && (
                   <div className={cn('relative', isToday && 'bg-violet-500/[0.01]')}>
                     {/* Hour grid lines */}
@@ -757,6 +772,9 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
                           top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
                         }}
                       >
+                        {!showTasks && (
+                          <div className="-ml-1.5 h-3 w-3 rounded-full bg-red-500 shadow-sm ring-2 ring-background" />
+                        )}
                         <div className="h-[2px] w-full bg-red-500 shadow-sm" />
                       </div>
                     )}

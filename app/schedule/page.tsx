@@ -1,7 +1,6 @@
 import { Suspense, use } from 'react';
 import { connection } from 'next/server';
-import { getMeetings, getScheduledIssues } from '@/app/actions';
-import { getScheduledTasks } from '@/app/actions/inbox';
+import { getMeetings } from '@/app/actions';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { ScheduleContent } from '@/components/schedule-content';
 import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
@@ -9,20 +8,9 @@ import { Calendar } from 'lucide-react';
 
 async function ScheduleLoader({ view }: { view: string }) {
   await connection();
-  const [meetings, issues, tasks] = await Promise.all([
-    getMeetings(),
-    getScheduledIssues(),
-    getScheduledTasks(),
-  ]);
+  const meetings = await getMeetings();
 
-  return (
-    <ScheduleContent
-      view={view}
-      initialMeetings={meetings}
-      initialIssues={issues}
-      initialTasks={tasks}
-    />
-  );
+  return <ScheduleContent view={view} initialMeetings={meetings} />;
 }
 
 function ScheduleSkeleton() {
@@ -55,8 +43,8 @@ function ScheduleSkeleton() {
             <div className="h-7 w-7 animate-pulse rounded bg-muted" />
           </div>
         </div>
-        {/* Two-column grid skeleton */}
-        <div className="grid grid-cols-[80px_1fr_1fr]">
+        {/* Single-column meetings grid skeleton */}
+        <div className="grid grid-cols-[80px_1fr]">
           <div className="space-y-0">
             {[...Array(12)].map((_, i) => (
               <div
@@ -66,14 +54,6 @@ function ScheduleSkeleton() {
                 <div className="h-3 w-8 animate-pulse rounded bg-muted" />
               </div>
             ))}
-          </div>
-          <div className="relative border-l border-r border-border">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="h-[55px] border-b border-border/50" />
-            ))}
-            {/* Task placeholders */}
-            <div className="absolute left-2 right-2 top-[110px] h-[82px] animate-pulse rounded-md bg-blue-500/10" />
-            <div className="absolute left-2 right-2 top-[330px] h-[55px] animate-pulse rounded-md bg-blue-500/10" />
           </div>
           <div className="relative border-l border-border">
             {[...Array(12)].map((_, i) => (

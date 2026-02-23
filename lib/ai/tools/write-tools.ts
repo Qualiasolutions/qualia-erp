@@ -679,5 +679,548 @@ export function createWriteTools(
         };
       },
     }),
+
+    logPayment: tool({
+      description:
+        'Log a payment (incoming or outgoing). Use when user says "log payment", "record $X from client", "we paid $X", "invoice received", etc. Admin only.',
+      inputSchema: z.object({
+        type: z
+          .enum(['incoming', 'outgoing'])
+          .describe('incoming = money received, outgoing = money spent'),
+        amount: z.number().positive().describe('Payment amount'),
+        currency: z
+          .enum(['EUR', 'USD', 'GBP', 'KWD'])
+          .optional()
+          .describe('Currency (default: EUR)'),
+        description: z.string().describe('What is this payment for'),
+        client_name: z.string().optional().describe('Client name to link (will search)'),
+        project_name: z.string().optional().describe('Project name to link (will search)'),
+        status: z
+          .enum(['pending', 'completed'])
+          .optional()
+          .describe('Payment status (default: completed)'),
+        payment_date: z.string().optional().describe('Payment date (ISO, default: today)'),
+        notes: z.string().optional().describe('Additional notes'),
+      }),
+      execute: async ({
+        type,
+        amount,
+        currency = 'EUR',
+        description,
+        client_name,
+        project_name,
+        status = 'completed',
+        payment_date,
+        notes,
+      }: {
+        type: 'incoming' | 'outgoing';
+        amount: number;
+        currency?: string;
+        description: string;
+        client_name?: string;
+        project_name?: string;
+        status?: 'pending' | 'completed';
+        payment_date?: string;
+        notes?: string;
+      }) => {
+        if (!workspaceId) return { error: 'No workspace found' };
+        if (user.role !== 'admin') return { error: 'Only admins can log payments' };
+
+        let clientId: string | null = null;
+        let projectId: string | null = null;
+
+        // Resolve client by name
+        if (client_name) {
+          const { data: clients } = await supabase
+            .from('clients')
+            .select('id, display_name')
+            .eq('workspace_id', workspaceId)
+            .ilike('display_name', `%${client_name}%`)
+            .limit(3);
+
+          if (clients && clients.length === 1) {
+            clientId = clients[0].id;
+          } else if (clients && clients.length > 1) {
+            return {
+              error: `Multiple clients match "${client_name}". Be more specific.`,
+              matches: clients.map((c) => ({ id: c.id, name: c.display_name })),
+            };
+          }
+        }
+
+        // Resolve project by name
+        if (project_name) {
+          const { data: projects } = await supabase
+            .from('projects')
+            .select('id, name')
+            .eq('workspace_id', workspaceId)
+            .ilike('name', `%${project_name}%`)
+            .limit(3);
+
+          if (projects && projects.length === 1) {
+            projectId = projects[0].id;
+          } else if (projects && projects.length > 1) {
+            return {
+              error: `Multiple projects match "${project_name}". Be more specific.`,
+              matches: projects.map((p) => ({ id: p.id, name: p.name })),
+            };
+          }
+        }
+
+        const { data, error } = await supabase
+          .from('payments')
+          .insert({
+            workspace_id: workspaceId,
+            type,
+            amount,
+            currency,
+            description,
+            client_id: clientId,
+            project_id: projectId,
+            payment_date: payment_date || new Date().toISOString().split('T')[0],
+            status,
+            notes: notes || null,
+            created_by: user.id,
+          })
+          .select('id, type, amount, currency, description, status')
+          .single();
+
+        if (error) return { error: error.message };
+
+        return {
+          success: true,
+          payment: data,
+          message: `Logged ${type} payment: ${data.currency} ${data.amount} — "${data.description}" (${data.status})`,
+        };
+      },
+    }),
+
+    updateTaskPriority: tool({
+      description:
+        'Update a task\'s priority. Use when user says "make X urgent", "set priority to high", "deprioritize task", etc. Can search by task name.',
+      inputSchema: z.object({
+        task_id: z.string().uuid().optional().describe('Task ID (if known)'),
+        task_name: z.string().optional().describe('Task name to search for (if ID not known)'),
+        priority: z
+          .enum(['Urgent', 'High', 'Medium', 'Low', 'No Priority'])
+          .describe('New priority level'),
+      }),
+      execute: async ({
+        task_id,
+        task_name,
+        priority,
+      }: {
+        task_id?: string;
+        task_name?: string;
+        priority: 'Urgent' | 'High' | 'Medium' | 'Low' | 'No Priority';
+      }) => {
+        let targetTaskId = task_id;
+
+        if (!targetTaskId && task_name) {
+          const { data: tasks } = await supabase
+            .from('tasks')
+            .select('id, title')
+            .eq('workspace_id', workspaceId)
+            .ilike('title', `%${task_name}%`)
+            .not('status', 'in', '("Done","Canceled")')
+            .limit(5);
+
+          if (!tasks || tasks.length === 0) {
+            return { error: `No active task found matching "${task_name}".` };
+          }
+          if (tasks.length > 1) {
+            return {
+              error: `Multiple tasks match "${task_name}". Be more specific.`,
+              matches: tasks.map((t) => ({ id: t.id, title: t.title })),
+            };
+          }
+          targetTaskId = tasks[0].id;
+        }
+
+        if (!targetTaskId) return { error: 'Provide task_id or task_name' };
+
+        const { data: currentTask } = await supabase
+          .from('tasks')
+          .select('title, priority')
+          .eq('id', targetTaskId)
+          .single();
+
+        if (!currentTask) return { error: 'Task not found' };
+
+        const { error } = await supabase
+          .from('tasks')
+          .update({ priority, updated_at: new Date().toISOString() })
+          .eq('id', targetTaskId);
+
+        if (error) return { error: error.message };
+
+        return {
+          success: true,
+          message: `Updated "${currentTask.title}" priority: ${currentTask.priority} → ${priority}`,
+          task: {
+            id: targetTaskId,
+            title: currentTask.title,
+            oldPriority: currentTask.priority,
+            newPriority: priority,
+          },
+        };
+      },
+    }),
+
+    assignTask: tool({
+      description:
+        'Assign a task to a team member. Use when user says "assign X to Tarek", "give this to Y", "reassign task". Use getTeamMembers to find member IDs first.',
+      inputSchema: z.object({
+        task_id: z.string().uuid().optional().describe('Task ID (if known)'),
+        task_name: z.string().optional().describe('Task name to search for'),
+        assignee_name: z
+          .string()
+          .optional()
+          .describe('Team member name to assign to (will search)'),
+        assignee_id: z.string().uuid().optional().describe('Team member ID (if known)'),
+      }),
+      execute: async ({
+        task_id,
+        task_name,
+        assignee_name,
+        assignee_id,
+      }: {
+        task_id?: string;
+        task_name?: string;
+        assignee_name?: string;
+        assignee_id?: string;
+      }) => {
+        // Resolve task
+        let targetTaskId = task_id;
+        if (!targetTaskId && task_name) {
+          const { data: tasks } = await supabase
+            .from('tasks')
+            .select('id, title')
+            .eq('workspace_id', workspaceId)
+            .ilike('title', `%${task_name}%`)
+            .not('status', 'in', '("Done","Canceled")')
+            .limit(5);
+
+          if (!tasks || tasks.length === 0) {
+            return { error: `No active task found matching "${task_name}".` };
+          }
+          if (tasks.length > 1) {
+            return {
+              error: `Multiple tasks match. Be more specific.`,
+              matches: tasks.map((t) => ({ id: t.id, title: t.title })),
+            };
+          }
+          targetTaskId = tasks[0].id;
+        }
+
+        if (!targetTaskId) return { error: 'Provide task_id or task_name' };
+
+        // Resolve assignee
+        let targetAssigneeId = assignee_id;
+        let assigneeName = assignee_name;
+
+        if (!targetAssigneeId && assignee_name) {
+          const { data: members } = await supabase
+            .from('workspace_members')
+            .select('profile:profiles!workspace_members_profile_id_fkey(id, full_name)')
+            .eq('workspace_id', workspaceId);
+
+          const matched = (members || []).filter((m) => {
+            const profile = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+            return profile?.full_name?.toLowerCase().includes(assignee_name!.toLowerCase());
+          });
+
+          if (matched.length === 0) {
+            return { error: `No team member found matching "${assignee_name}".` };
+          }
+          if (matched.length > 1) {
+            return {
+              error: `Multiple members match. Be more specific.`,
+              matches: matched.map((m) => {
+                const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+                return { id: p?.id, name: p?.full_name };
+              }),
+            };
+          }
+
+          const profile = Array.isArray(matched[0].profile)
+            ? matched[0].profile[0]
+            : matched[0].profile;
+          targetAssigneeId = profile?.id;
+          assigneeName = profile?.full_name || assignee_name;
+        }
+
+        if (!targetAssigneeId) return { error: 'Provide assignee_id or assignee_name' };
+
+        // Get task info
+        const { data: currentTask } = await supabase
+          .from('tasks')
+          .select('title, assignee_id, project_id')
+          .eq('id', targetTaskId)
+          .single();
+
+        if (!currentTask) return { error: 'Task not found' };
+
+        // Update task
+        const { error } = await supabase
+          .from('tasks')
+          .update({ assignee_id: targetAssigneeId, updated_at: new Date().toISOString() })
+          .eq('id', targetTaskId);
+
+        if (error) return { error: error.message };
+
+        // Log activity
+        await supabase.from('activities').insert({
+          actor_id: user.id,
+          type: 'task_updated',
+          task_id: targetTaskId,
+          project_id: currentTask.project_id,
+          workspace_id: workspaceId,
+          metadata: {
+            title: currentTask.title,
+            field: 'assignee',
+            new_assignee: assigneeName,
+            updated_by_ai: true,
+          },
+        });
+
+        return {
+          success: true,
+          message: `Assigned "${currentTask.title}" to ${assigneeName}`,
+          task: { id: targetTaskId, title: currentTask.title, assignee: assigneeName },
+        };
+      },
+    }),
+
+    updateClientStatus: tool({
+      description:
+        'Update a client\'s lead status or log contact. Use when user says "mark client as active", "log call with X", "update lead status", "we spoke to X today".',
+      inputSchema: z.object({
+        client_id: z.string().uuid().optional().describe('Client ID (if known)'),
+        client_name: z.string().optional().describe('Client name to search for'),
+        lead_status: z
+          .enum(['active_client', 'inactive_client', 'hot', 'cold', 'dropped', 'dead_lead'])
+          .optional()
+          .describe('New lead status'),
+        log_contact: z
+          .boolean()
+          .optional()
+          .describe('Update last_contacted_at to now (default: false)'),
+        notes: z.string().optional().describe('Notes to append to client record'),
+      }),
+      execute: async ({
+        client_id,
+        client_name,
+        lead_status,
+        log_contact = false,
+        notes,
+      }: {
+        client_id?: string;
+        client_name?: string;
+        lead_status?: string;
+        log_contact?: boolean;
+        notes?: string;
+      }) => {
+        let targetClientId = client_id;
+
+        if (!targetClientId && client_name) {
+          const { data: clients } = await supabase
+            .from('clients')
+            .select('id, display_name, lead_status')
+            .eq('workspace_id', workspaceId)
+            .ilike('display_name', `%${client_name}%`)
+            .limit(5);
+
+          if (!clients || clients.length === 0) {
+            return { error: `No client found matching "${client_name}".` };
+          }
+          if (clients.length > 1) {
+            return {
+              error: `Multiple clients match. Be more specific.`,
+              matches: clients.map((c) => ({ id: c.id, name: c.display_name })),
+            };
+          }
+          targetClientId = clients[0].id;
+        }
+
+        if (!targetClientId) return { error: 'Provide client_id or client_name' };
+
+        // Get current client info
+        const { data: client } = await supabase
+          .from('clients')
+          .select('display_name, lead_status, notes')
+          .eq('id', targetClientId)
+          .single();
+
+        if (!client) return { error: 'Client not found' };
+
+        // Build update
+        const updateData: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+        };
+
+        if (lead_status) updateData.lead_status = lead_status;
+        if (log_contact) updateData.last_contacted_at = new Date().toISOString();
+        if (notes) {
+          // Append notes
+          const existing = client.notes || '';
+          const timestamp = new Date().toLocaleDateString();
+          updateData.notes = existing
+            ? `${existing}\n\n[${timestamp}] ${notes}`
+            : `[${timestamp}] ${notes}`;
+        }
+
+        const { error } = await supabase
+          .from('clients')
+          .update(updateData)
+          .eq('id', targetClientId);
+
+        if (error) return { error: error.message };
+
+        // Log client activity
+        if (log_contact || notes) {
+          await supabase.from('client_activities').insert({
+            client_id: targetClientId,
+            type: log_contact ? 'contact' : 'note',
+            description: notes || 'Contact logged via AI',
+            created_by: user.id,
+            metadata: { updated_by_ai: true, lead_status },
+          });
+        }
+
+        const changes: string[] = [];
+        if (lead_status) changes.push(`status → ${lead_status}`);
+        if (log_contact) changes.push('contact logged');
+        if (notes) changes.push('notes updated');
+
+        return {
+          success: true,
+          message: `Updated "${client.display_name}": ${changes.join(', ')}`,
+          client: {
+            id: targetClientId,
+            name: client.display_name,
+            oldStatus: client.lead_status,
+            newStatus: lead_status || client.lead_status,
+          },
+        };
+      },
+    }),
+
+    bulkUpdateTasks: tool({
+      description:
+        'Bulk update multiple tasks at once. Use when user says "mark all done tasks as...", "close all tasks in project X", "set all urgent tasks to high", etc.',
+      inputSchema: z.object({
+        filter_status: z
+          .enum(['Todo', 'In Progress', 'Done', 'Canceled'])
+          .optional()
+          .describe('Filter tasks by current status'),
+        filter_priority: z
+          .enum(['Urgent', 'High', 'Medium', 'Low', 'No Priority'])
+          .optional()
+          .describe('Filter tasks by current priority'),
+        filter_project_name: z.string().optional().describe('Filter by project name'),
+        new_status: z
+          .enum(['Todo', 'In Progress', 'Done', 'Canceled'])
+          .optional()
+          .describe('Set new status on matched tasks'),
+        new_priority: z
+          .enum(['Urgent', 'High', 'Medium', 'Low', 'No Priority'])
+          .optional()
+          .describe('Set new priority on matched tasks'),
+        limit: z.number().optional().describe('Max tasks to update (default 20, safety cap)'),
+      }),
+      execute: async ({
+        filter_status,
+        filter_priority,
+        filter_project_name,
+        new_status,
+        new_priority,
+        limit = 20,
+      }: {
+        filter_status?: string;
+        filter_priority?: string;
+        filter_project_name?: string;
+        new_status?: string;
+        new_priority?: string;
+        limit?: number;
+      }) => {
+        if (!new_status && !new_priority) {
+          return { error: 'Provide at least one of new_status or new_priority' };
+        }
+
+        // Resolve project if needed
+        let projectId: string | undefined;
+        if (filter_project_name) {
+          const { data: projects } = await supabase
+            .from('projects')
+            .select('id, name')
+            .eq('workspace_id', workspaceId)
+            .ilike('name', `%${filter_project_name}%`)
+            .limit(3);
+
+          if (!projects || projects.length === 0) {
+            return { error: `No project found matching "${filter_project_name}".` };
+          }
+          if (projects.length > 1) {
+            return {
+              error: `Multiple projects match. Be more specific.`,
+              matches: projects.map((p) => ({ id: p.id, name: p.name })),
+            };
+          }
+          projectId = projects[0].id;
+        }
+
+        // Build query to find matching tasks
+        let q = supabase
+          .from('tasks')
+          .select('id, title')
+          .eq('workspace_id', workspaceId)
+          .limit(limit);
+
+        if (filter_status) q = q.eq('status', filter_status);
+        if (filter_priority) q = q.eq('priority', filter_priority);
+        if (projectId) q = q.eq('project_id', projectId);
+
+        const { data: tasks, error: fetchError } = await q;
+        if (fetchError) return { error: fetchError.message };
+        if (!tasks || tasks.length === 0) {
+          return { error: 'No tasks matched the filters.' };
+        }
+
+        // Build update payload
+        const updateData: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+        };
+        if (new_status) {
+          updateData.status = new_status;
+          if (new_status === 'Done') {
+            updateData.completed_at = new Date().toISOString();
+          } else {
+            updateData.completed_at = null;
+          }
+        }
+        if (new_priority) updateData.priority = new_priority;
+
+        // Apply update
+        const taskIds = tasks.map((t) => t.id);
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update(updateData)
+          .in('id', taskIds);
+
+        if (updateError) return { error: updateError.message };
+
+        const changes: string[] = [];
+        if (new_status) changes.push(`status → ${new_status}`);
+        if (new_priority) changes.push(`priority → ${new_priority}`);
+
+        return {
+          success: true,
+          message: `Updated ${tasks.length} tasks: ${changes.join(', ')}`,
+          updatedCount: tasks.length,
+          tasks: tasks.map((t) => t.title),
+        };
+      },
+    }),
   };
 }

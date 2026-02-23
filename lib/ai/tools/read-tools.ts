@@ -519,5 +519,371 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
         }
       },
     }),
+
+    getFinancialSummary: tool({
+      description:
+        'Get financial overview: total income, expenses, pending payments, client balances, monthly recurring. Use when user asks "how much are we owed", "financial summary", "money", "payments", "revenue", "expenses", "burn rate".',
+      inputSchema: z.object({
+        include_client_balances: z
+          .boolean()
+          .optional()
+          .describe('Include per-client balance breakdown (default: true)'),
+      }),
+      execute: async ({
+        include_client_balances = true,
+      }: {
+        include_client_balances?: boolean;
+      }) => {
+        // Get all payments
+        const { data: payments } = await supabase
+          .from('payments')
+          .select('type, amount, status, payment_date, client_id')
+          .eq('workspace_id', workspaceId);
+
+        // Get recurring payments
+        const { data: recurring } = await supabase
+          .from('recurring_payments')
+          .select('type, amount')
+          .eq('workspace_id', workspaceId)
+          .eq('is_active', true);
+
+        // Calculate payment totals
+        const summary = (payments || []).reduce(
+          (acc, p) => {
+            const amount = Number(p.amount);
+            if (p.type === 'incoming') {
+              acc.totalIncoming += amount;
+              if (p.status === 'pending') acc.pendingIncoming += amount;
+              if (p.status === 'completed') acc.completedIncoming += amount;
+            } else {
+              acc.totalOutgoing += amount;
+              if (p.status === 'pending') acc.pendingOutgoing += amount;
+              if (p.status === 'completed') acc.completedOutgoing += amount;
+            }
+            return acc;
+          },
+          {
+            totalIncoming: 0,
+            totalOutgoing: 0,
+            pendingIncoming: 0,
+            pendingOutgoing: 0,
+            completedIncoming: 0,
+            completedOutgoing: 0,
+          }
+        );
+
+        // Calculate recurring totals
+        const recurringSummary = (recurring || []).reduce(
+          (acc, r) => {
+            const amount = Number(r.amount);
+            if (r.type === 'incoming') acc.monthlyIncome += amount;
+            else acc.monthlyExpenses += amount;
+            return acc;
+          },
+          { monthlyIncome: 0, monthlyExpenses: 0 }
+        );
+
+        const result: Record<string, unknown> = {
+          payments: {
+            ...summary,
+            netProfit: summary.completedIncoming - summary.completedOutgoing,
+          },
+          recurring: {
+            ...recurringSummary,
+            netMonthly: recurringSummary.monthlyIncome - recurringSummary.monthlyExpenses,
+          },
+        };
+
+        // Client balances
+        if (include_client_balances) {
+          const { data: clients } = await supabase
+            .from('clients')
+            .select('id, display_name')
+            .eq('workspace_id', workspaceId);
+
+          const clientBalances = (clients || [])
+            .map((client) => {
+              const clientPayments = (payments || []).filter((p) => p.client_id === client.id);
+              const paid = clientPayments
+                .filter((p) => p.type === 'incoming' && p.status === 'completed')
+                .reduce((s, p) => s + Number(p.amount), 0);
+              const pending = clientPayments
+                .filter((p) => p.type === 'incoming' && p.status === 'pending')
+                .reduce((s, p) => s + Number(p.amount), 0);
+              return {
+                name: client.display_name,
+                paid,
+                pending,
+                total: paid + pending,
+              };
+            })
+            .filter((c) => c.total > 0)
+            .sort((a, b) => b.pending - a.pending);
+
+          result.clientBalances = clientBalances;
+        }
+
+        return result;
+      },
+    }),
+
+    getDailyBriefing: tool({
+      description:
+        'Get a comprehensive daily briefing: overdue tasks, today\'s meetings, urgent items, stale projects, recent activity. Use when user says "morning briefing", "what\'s happening today", "daily summary", "brief me", "what do I need to know".',
+      inputSchema: z.object({
+        _placeholder: z.string().optional().describe('Not used'),
+      }),
+      execute: async () => {
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const todayEnd = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+          23,
+          59,
+          59
+        ).toISOString();
+        const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString();
+
+        const [
+          overdueTasks,
+          urgentTasks,
+          todayMeetings,
+          recentActivity,
+          activeProjects,
+          pendingPayments,
+        ] = await Promise.all([
+          // Overdue tasks (due before today, not done)
+          supabase
+            .from('tasks')
+            .select(
+              'id, title, due_date, priority, assignee:profiles!tasks_assignee_id_fkey(full_name), project:projects(name)'
+            )
+            .eq('workspace_id', workspaceId)
+            .lt('due_date', todayStart)
+            .not('status', 'in', '("Done","Canceled")')
+            .order('due_date', { ascending: true })
+            .limit(10),
+          // Urgent/high priority open tasks
+          supabase
+            .from('tasks')
+            .select(
+              'id, title, status, due_date, assignee:profiles!tasks_assignee_id_fkey(full_name), project:projects(name)'
+            )
+            .eq('workspace_id', workspaceId)
+            .in('priority', ['Urgent', 'High'])
+            .not('status', 'in', '("Done","Canceled")')
+            .order('created_at', { ascending: false })
+            .limit(10),
+          // Today's meetings
+          supabase
+            .from('meetings')
+            .select(
+              'id, title, start_time, end_time, client:clients(display_name), project:projects(name)'
+            )
+            .eq('workspace_id', workspaceId)
+            .gte('start_time', todayStart)
+            .lte('start_time', todayEnd)
+            .order('start_time'),
+          // Recent activity (last 3 days)
+          supabase
+            .from('activities')
+            .select(
+              'type, created_at, metadata, actor:profiles!activities_actor_id_fkey(full_name)'
+            )
+            .gte('created_at', threeDaysAgo)
+            .order('created_at', { ascending: false })
+            .limit(10),
+          // Active projects with progress
+          supabase
+            .from('projects')
+            .select('id, name, status, progress, target_date')
+            .eq('workspace_id', workspaceId)
+            .eq('status', 'Active')
+            .order('target_date', { ascending: true }),
+          // Pending incoming payments
+          supabase
+            .from('payments')
+            .select('amount, description, client:clients(display_name)')
+            .eq('workspace_id', workspaceId)
+            .eq('type', 'incoming')
+            .eq('status', 'pending'),
+        ]);
+
+        const totalPending = (pendingPayments.data || []).reduce((s, p) => s + Number(p.amount), 0);
+
+        return {
+          date: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+          overdueTasks: {
+            count: overdueTasks.data?.length || 0,
+            items: (overdueTasks.data || []).map((t) => ({
+              title: t.title,
+              dueDate: t.due_date,
+              priority: t.priority,
+              assignee: Array.isArray(t.assignee) ? t.assignee[0]?.full_name : null,
+              project: Array.isArray(t.project) ? t.project[0]?.name : null,
+            })),
+          },
+          urgentTasks: {
+            count: urgentTasks.data?.length || 0,
+            items: (urgentTasks.data || []).map((t) => ({
+              title: t.title,
+              status: t.status,
+              dueDate: t.due_date,
+              assignee: Array.isArray(t.assignee) ? t.assignee[0]?.full_name : null,
+              project: Array.isArray(t.project) ? t.project[0]?.name : null,
+            })),
+          },
+          todaysMeetings: {
+            count: todayMeetings.data?.length || 0,
+            items: (todayMeetings.data || []).map((m) => ({
+              title: m.title,
+              time: m.start_time,
+              client: Array.isArray(m.client) ? m.client[0]?.display_name : null,
+              project: Array.isArray(m.project) ? m.project[0]?.name : null,
+            })),
+          },
+          activeProjects: {
+            count: activeProjects.data?.length || 0,
+            items: (activeProjects.data || []).map((p) => ({
+              name: p.name,
+              progress: p.progress || 0,
+              targetDate: p.target_date,
+            })),
+          },
+          pendingPayments: {
+            totalAmount: totalPending,
+            count: pendingPayments.data?.length || 0,
+          },
+          recentActivityCount: recentActivity.data?.length || 0,
+        };
+      },
+    }),
+
+    getProjectRoadmap: tool({
+      description:
+        'Get project roadmap with phases, their progress, and tasks. Use when user asks "show roadmap for X", "what phase is X in", "project phases", "milestone progress".',
+      inputSchema: z.object({
+        project_id: z.string().uuid().optional().describe('Project ID (if known)'),
+        project_name: z
+          .string()
+          .optional()
+          .describe('Project name to search for (if ID not known)'),
+      }),
+      execute: async ({
+        project_id,
+        project_name,
+      }: {
+        project_id?: string;
+        project_name?: string;
+      }) => {
+        let targetProjectId = project_id;
+
+        if (!targetProjectId && project_name) {
+          const { data: projects } = await supabase
+            .from('projects')
+            .select('id, name')
+            .eq('workspace_id', workspaceId)
+            .ilike('name', `%${project_name}%`)
+            .limit(5);
+
+          if (!projects || projects.length === 0) {
+            return { error: `No project found matching "${project_name}".` };
+          }
+          if (projects.length > 1) {
+            return {
+              error: `Multiple projects match. Be more specific.`,
+              matches: projects.map((p) => ({ id: p.id, name: p.name })),
+            };
+          }
+          targetProjectId = projects[0].id;
+        }
+
+        if (!targetProjectId) {
+          return { error: 'Provide project_id or project_name' };
+        }
+
+        // Get project info
+        const { data: project } = await supabase
+          .from('projects')
+          .select('id, name, status, progress, target_date, project_type')
+          .eq('id', targetProjectId)
+          .single();
+
+        if (!project) return { error: 'Project not found' };
+
+        // Get phases with their items
+        const { data: phases } = await supabase
+          .from('project_phases')
+          .select(
+            'id, name, status, is_locked, completed_at, sort_order, phase_items(id, title, status)'
+          )
+          .eq('project_id', targetProjectId)
+          .order('sort_order', { ascending: true });
+
+        const roadmap = (phases || []).map((phase) => {
+          const items = phase.phase_items || [];
+          const total = items.length;
+          const completed = items.filter((i: { status: string }) => i.status === 'Done').length;
+          return {
+            name: phase.name,
+            status: phase.status,
+            isLocked: phase.is_locked,
+            completedAt: phase.completed_at,
+            progress: total > 0 ? Math.round((completed / total) * 100) : 0,
+            tasks: { total, completed },
+            items: items.map((i: { title: string; status: string }) => ({
+              title: i.title,
+              status: i.status,
+            })),
+          };
+        });
+
+        return {
+          project: {
+            name: project.name,
+            status: project.status,
+            progress: project.progress || 0,
+            targetDate: project.target_date,
+            type: project.project_type,
+          },
+          phases: roadmap,
+          totalPhases: roadmap.length,
+          completedPhases: roadmap.filter((p) => p.status === 'completed').length,
+        };
+      },
+    }),
+
+    getTeamMembers: tool({
+      description:
+        'Get all team members in the workspace. Use when user needs to assign tasks, asks "who is on the team", or needs to find someone by name.',
+      inputSchema: z.object({
+        _placeholder: z.string().optional().describe('Not used'),
+      }),
+      execute: async () => {
+        const { data: members, error } = await supabase
+          .from('workspace_members')
+          .select(
+            'profile:profiles!workspace_members_profile_id_fkey(id, full_name, email, role, avatar_url)'
+          )
+          .eq('workspace_id', workspaceId);
+
+        if (error) return { error: error.message };
+
+        return {
+          count: members?.length || 0,
+          members: (members || []).map((m) => {
+            const profile = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+            return {
+              id: profile?.id,
+              name: profile?.full_name,
+              email: profile?.email,
+              role: profile?.role,
+            };
+          }),
+        };
+      },
+    }),
   };
 }
