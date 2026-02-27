@@ -12,7 +12,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
           'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
           'placeholder:text-muted-foreground/60',
           'hover:border-border/80 hover:bg-muted/40',
-          'focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary/20',
+          'focus:border-primary/50 focus:bg-background focus:shadow-glow-sm focus:outline-none focus:ring-[3px] focus:ring-primary/15',
           'disabled:cursor-not-allowed disabled:opacity-50',
           className
         )}
