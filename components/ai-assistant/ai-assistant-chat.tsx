@@ -1,7 +1,18 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Send, Bot, User, Sparkles, Copy, Check, Printer, Trash2 } from 'lucide-react';
+import {
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  Copy,
+  Check,
+  Printer,
+  Trash2,
+  Volume2,
+  VolumeX,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant } from './ai-assistant-provider';
 
@@ -119,6 +130,13 @@ export function AIAssistantChat() {
 
   const [input, setInput] = useState('');
   const [copied, setCopied] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('ai-tts-enabled') === 'true';
+  });
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const lastSpokenIdRef = useRef<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -126,6 +144,83 @@ export function AIAssistantChat() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-speak assistant responses when TTS is enabled
+  useEffect(() => {
+    if (!ttsEnabled || isStreaming) return;
+
+    const lastMessage = messages[messages.length - 1];
+    if (
+      !lastMessage ||
+      lastMessage.role !== 'assistant' ||
+      lastMessage.id === lastSpokenIdRef.current ||
+      !lastMessage.content.trim()
+    )
+      return;
+
+    lastSpokenIdRef.current = lastMessage.id;
+    speakText(lastMessage.content);
+  }, [messages, isStreaming, ttsEnabled]);
+
+  const speakText = useCallback(async (text: string) => {
+    // Stop any existing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    setIsSpeaking(true);
+    try {
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text.slice(0, 500) }),
+      });
+
+      if (!response.ok) {
+        // Fallback to browser TTS
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance(text.slice(0, 300));
+          utterance.rate = 1.1;
+          utterance.onend = () => setIsSpeaking(false);
+          utterance.onerror = () => setIsSpeaking(false);
+          speechSynthesis.speak(utterance);
+        } else {
+          setIsSpeaking(false);
+        }
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+      };
+      await audio.play();
+    } catch {
+      setIsSpeaking(false);
+    }
+  }, []);
+
+  const toggleTts = useCallback(() => {
+    setTtsEnabled((prev) => {
+      const next = !prev;
+      localStorage.setItem('ai-tts-enabled', String(next));
+      if (!next && audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+        setIsSpeaking(false);
+      }
+      return next;
+    });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,13 +386,30 @@ export function AIAssistantChat() {
       {/* Actions Bar */}
       {hasAssistantMessage && (
         <div className="flex items-center justify-between border-t border-border/50 bg-muted/20 px-3 py-1.5">
-          <button
-            onClick={clearConversation}
-            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
-          >
-            <Trash2 className="h-3 w-3" />
-            Clear
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={clearConversation}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
+            >
+              <Trash2 className="h-3 w-3" />
+              Clear
+            </button>
+            <button
+              onClick={toggleTts}
+              className={cn(
+                'flex items-center gap-1 text-[11px] transition-colors',
+                ttsEnabled ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+              )}
+              title={ttsEnabled ? 'Disable voice' : 'Enable voice'}
+            >
+              {ttsEnabled ? (
+                <Volume2 className={cn('h-3 w-3', isSpeaking && 'animate-pulse')} />
+              ) : (
+                <VolumeX className="h-3 w-3" />
+              )}
+              {ttsEnabled ? 'Voice on' : 'Voice off'}
+            </button>
+          </div>
           <div className="flex items-center gap-2">
             {mode === 'document' && (
               <button

@@ -10,7 +10,7 @@ import {
   getNotifications,
   getUnreadNotificationCount,
 } from '@/app/actions';
-import { getTasks, getProjectTasks } from '@/app/actions/inbox';
+import { getTasks, getProjectTasks, getScheduledTasks } from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
 import { getConversations, getMessages } from '@/app/actions/ai-conversations';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
@@ -412,6 +412,36 @@ export function invalidateScheduledTasks(date?: string, immediate = true) {
   } else {
     mutate(cacheKeys.scheduledTasks(d));
   }
+}
+
+/**
+ * Hook to fetch all scheduled tasks (tasks with scheduled_start_time/end_time)
+ * Used by schedule page to show tasks alongside meetings
+ */
+export function useScheduledTasks(initialData?: Awaited<ReturnType<typeof getScheduledTasks>>) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.scheduledTasks(new Date().toISOString().split('T')[0]),
+    () => getScheduledTasks(),
+    {
+      ...autoRefreshConfig,
+      fallbackData: initialData,
+    }
+  );
+
+  return {
+    tasks: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
 }
 
 /**

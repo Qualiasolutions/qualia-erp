@@ -26,7 +26,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
-import { SidebarAI } from '@/components/sidebar-ai';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: Sun },
@@ -158,10 +157,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         })}
       </nav>
 
-      {/* Bottom section — single row: AI trigger + account */}
-      <div className="flex items-center gap-1.5 border-t border-border/40 px-3.5 py-3">
-        <SidebarAI />
-        <div className="h-5 w-px bg-border/30" />
+      {/* Bottom section — account menu */}
+      <div className="border-t border-border/40 px-3.5 py-3">
         <UserMenu onLinkClick={onLinkClick} />
       </div>
     </div>
