@@ -16,14 +16,20 @@ import {
   Trash2,
   Inbox,
   Sparkles,
+  Beaker,
+  Hammer,
+  Rocket,
+  Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
-import { deleteProject } from '@/app/actions';
+import { deleteProject, updateProjectStatus } from '@/app/actions';
+import { invalidateProjectStats } from '@/lib/swr';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { EntityAvatar } from '@/components/entity-avatar';
@@ -78,7 +84,23 @@ const PROJECT_TYPE_CONFIG: Record<
   },
 };
 
-function ProjectRow({ project, compact = false }: { project: ProjectData; compact?: boolean }) {
+// Stage move options
+const STAGE_MOVES = [
+  { label: 'Move to Demo', status: 'Demos', icon: Beaker, color: 'text-violet-500' },
+  { label: 'Move to Building', status: 'Active', icon: Hammer, color: 'text-emerald-500' },
+  { label: 'Mark as Live', status: 'Launched', icon: Rocket, color: 'text-sky-500' },
+  { label: 'Archive', status: 'Archived', icon: Archive, color: 'text-muted-foreground' },
+] as const;
+
+function ProjectRow({
+  project,
+  compact = false,
+  onProjectClick,
+}: {
+  project: ProjectData;
+  compact?: boolean;
+  onProjectClick?: (project: ProjectData) => void;
+}) {
   const { isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
@@ -111,6 +133,7 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
     startTransition(async () => {
       const result = await deleteProject(project.id);
       if (result.success) {
+        invalidateProjectStats(true);
         router.refresh();
       } else {
         alert(result.error || 'Failed to delete project');
@@ -118,9 +141,39 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
     });
   };
 
-  const handleClick = () => {
-    router.push(`/projects/${project.id}`);
+  const handleStageMove = (e: React.MouseEvent, newStatus: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    startTransition(async () => {
+      const result = await updateProjectStatus(project.id, newStatus);
+      if (result.success) {
+        invalidateProjectStats(true);
+      } else {
+        alert(result.error || 'Failed to move project');
+      }
+    });
   };
+
+  const handleClick = () => {
+    if (onProjectClick) {
+      onProjectClick(project);
+    } else {
+      router.push(`/projects/${project.id}`);
+    }
+  };
+
+  // Filter out the current stage from move options
+  const currentStatusMap: Record<string, string> = {
+    Demos: 'Demos',
+    Active: 'Active',
+    Delayed: 'Active',
+    Launched: 'Launched',
+    Archived: 'Archived',
+    Canceled: 'Archived',
+  };
+  const currentMapped = currentStatusMap[project.status] || project.status;
+  const availableMoves = STAGE_MOVES.filter((m) => m.status !== currentMapped);
 
   // Compact row for dense display
   if (compact) {
@@ -185,29 +238,45 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
           </div>
         )}
 
-        {/* Admin delete */}
-        {isSuperAdmin && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="h-3.5 w-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-                onClick={handleDelete}
-              >
-                <Trash2 className="mr-2 h-3.5 w-3.5" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        {/* Actions dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {availableMoves.map((move) => {
+              const MoveIcon = move.icon;
+              return (
+                <DropdownMenuItem
+                  key={move.status}
+                  className={move.color}
+                  onClick={(e) => handleStageMove(e, move.status)}
+                >
+                  <MoveIcon className="mr-2 h-3.5 w-3.5" />
+                  {move.label}
+                </DropdownMenuItem>
+              );
+            })}
+            {isSuperAdmin && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                  onClick={handleDelete}
+                >
+                  <Trash2 className="mr-2 h-3.5 w-3.5" />
+                  Delete
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }
@@ -269,28 +338,44 @@ function ProjectRow({ project, compact = false }: { project: ProjectData; compac
       </div>
 
       {/* Actions */}
-      {isSuperAdmin && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-              onClick={handleDelete}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete project
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          {availableMoves.map((move) => {
+            const MoveIcon = move.icon;
+            return (
+              <DropdownMenuItem
+                key={move.status}
+                className={move.color}
+                onClick={(e) => handleStageMove(e, move.status)}
+              >
+                <MoveIcon className="mr-2 h-4 w-4" />
+                {move.label}
+              </DropdownMenuItem>
+            );
+          })}
+          {isSuperAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete project
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
@@ -299,12 +384,14 @@ interface ProjectListViewProps {
   projects: ProjectData[];
   horizontal?: boolean;
   compact?: boolean;
+  onProjectClick?: (project: ProjectData) => void;
 }
 
 export function ProjectListView({
   projects,
   horizontal = false,
   compact = false,
+  onProjectClick,
 }: ProjectListViewProps) {
   // Sort projects: in-progress first (by progress desc), then completed
   const sortedProjects = useMemo(() => {
@@ -326,31 +413,6 @@ export function ProjectListView({
     });
   }, [projects]);
 
-  // Group projects by type
-  const groupedProjects = useMemo(() => {
-    const groups: { type: ProjectType | 'other'; label: string; projects: ProjectData[] }[] = [
-      { type: 'ai_agent', label: 'AI Agents', projects: [] },
-      { type: 'voice_agent', label: 'Voice Agents', projects: [] },
-      { type: 'ai_platform', label: 'AI Platforms', projects: [] },
-      { type: 'web_design', label: 'Websites', projects: [] },
-      { type: 'seo', label: 'SEO', projects: [] },
-      { type: 'ads', label: 'Ads', projects: [] },
-      { type: 'other', label: 'Other', projects: [] },
-    ];
-
-    sortedProjects.forEach((project) => {
-      const group = groups.find((g) => g.type === project.project_type);
-      if (group) {
-        group.projects.push(project);
-      } else {
-        groups.find((g) => g.type === 'other')?.projects.push(project);
-      }
-    });
-
-    // Filter out empty groups
-    return groups.filter((g) => g.projects.length > 0);
-  }, [sortedProjects]);
-
   if (projects.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
@@ -370,104 +432,28 @@ export function ProjectListView({
       <div className="flex flex-row gap-2 overflow-x-auto pb-2">
         {sortedProjects.map((project) => (
           <div key={project.id} className="w-[200px] flex-shrink-0">
-            <ProjectRow project={project} compact />
+            <ProjectRow project={project} compact onProjectClick={onProjectClick} />
           </div>
         ))}
       </div>
     );
   }
 
-  // Compact mode: Split into AI (left) vs Web & Marketing (right)
   if (compact) {
-    const aiTypes: (ProjectType | null)[] = ['ai_agent', 'voice_agent', 'ai_platform'];
-    const aiProjects = sortedProjects.filter(
-      (p) => p.project_type && aiTypes.includes(p.project_type)
-    );
-    const otherProjects = sortedProjects.filter(
-      (p) => !p.project_type || !aiTypes.includes(p.project_type)
-    );
-
-    // If all projects are one category, show single column
-    if (aiProjects.length === 0 || otherProjects.length === 0) {
-      return (
-        <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
-          {sortedProjects.map((project) => (
-            <ProjectRow key={project.id} project={project} compact />
-          ))}
-        </div>
-      );
-    }
-
     return (
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        {/* AI Projects - Left Column */}
-        <div className="space-y-2">
-          <div className="mb-2.5 flex items-center gap-2 px-1">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-violet-500/10">
-              <Bot className="h-3 w-3 text-violet-400" />
-            </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              AI & Voice
-            </span>
-            <span className="text-xs text-muted-foreground/50">({aiProjects.length})</span>
-          </div>
-          {aiProjects.map((project) => (
-            <ProjectRow key={project.id} project={project} compact />
-          ))}
-        </div>
-
-        {/* Web & Marketing - Right Column */}
-        <div className="space-y-2">
-          <div className="mb-2.5 flex items-center gap-2 px-1">
-            <div className="flex h-5 w-5 items-center justify-center rounded bg-sky-500/10">
-              <Globe className="h-3 w-3 text-sky-400" />
-            </div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Web & Marketing
-            </span>
-            <span className="text-xs text-muted-foreground/50">({otherProjects.length})</span>
-          </div>
-          {otherProjects.map((project) => (
-            <ProjectRow key={project.id} project={project} compact />
-          ))}
-        </div>
+      <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
+        {sortedProjects.map((project) => (
+          <ProjectRow key={project.id} project={project} compact onProjectClick={onProjectClick} />
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {groupedProjects.map((group) => {
-        const config = group.type !== 'other' ? PROJECT_TYPE_CONFIG[group.type] : null;
-        const GroupIcon = config?.icon || Folder;
-
-        return (
-          <div key={group.type}>
-            {/* Group header */}
-            <div className="mb-2 flex items-center gap-2">
-              <div
-                className={cn(
-                  'flex h-6 w-6 items-center justify-center rounded-md',
-                  config ? config.bgColor : 'bg-muted'
-                )}
-              >
-                <GroupIcon
-                  className={cn('h-3.5 w-3.5', config ? config.color : 'text-muted-foreground')}
-                />
-              </div>
-              <h2 className="text-sm font-medium text-foreground">{group.label}</h2>
-              <span className="text-xs text-muted-foreground">({group.projects.length})</span>
-            </div>
-
-            {/* Projects grid - 2 columns on wider screens */}
-            <div className="grid grid-cols-1 gap-1.5 xl:grid-cols-2">
-              {group.projects.map((project) => (
-                <ProjectRow key={project.id} project={project} compact />
-              ))}
-            </div>
-          </div>
-        );
-      })}
+    <div className="space-y-1.5">
+      {sortedProjects.map((project) => (
+        <ProjectRow key={project.id} project={project} compact onProjectClick={onProjectClick} />
+      ))}
     </div>
   );
 }

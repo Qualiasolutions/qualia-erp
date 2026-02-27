@@ -11,28 +11,19 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
-import { BuildingProjectsRow } from './building-projects-row';
+import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
 import { DashboardAIChat } from './dashboard-ai-chat';
 import { useTransition, useState, useEffect } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
-import type { ProjectType } from '@/types/database';
-
-interface Project {
-  id: string;
-  name: string;
-  status: string;
-  project_type: ProjectType | null;
-  target_date: string | null;
-  logo_url: string | null;
-  issue_stats: { total: number; done: number };
-}
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
   tasks: Task[];
-  projects: Project[];
+  demos: PipelineProject[];
+  building: PipelineProject[];
+  live: PipelineProject[];
   issues?: unknown[];
 }
 
@@ -40,7 +31,7 @@ interface TodayDashboardProps {
 // MAIN DASHBOARD
 // =============================================================================
 
-export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProps) {
+export function TodayDashboard({ meetings, tasks, demos, building, live }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
@@ -58,9 +49,6 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
   const handleRefresh = () => {
     startRefresh(() => router.refresh());
   };
-
-  // Projects for the building row (already filtered to Active/Delayed)
-  const allProjects = projects;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -114,9 +102,9 @@ export function TodayDashboard({ meetings, tasks, projects }: TodayDashboardProp
       {/* ===== MAIN CONTENT (no page scroll) ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
-          {/* ── CURRENTLY BUILDING ROW ─────────────────────────────────── */}
+          {/* ── PROJECT PIPELINE ROW ──────────────────────────────────── */}
           <div className="mb-3 shrink-0">
-            <BuildingProjectsRow projects={allProjects} />
+            <BuildingProjectsRow demos={demos} building={building} live={live} />
           </div>
 
           {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}

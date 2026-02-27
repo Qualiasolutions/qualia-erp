@@ -43,19 +43,11 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return (
-      <ProjectsClient
-        projects={[]}
-        demos={[]}
-        finishedProjects={[]}
-        archivedDemos={[]}
-        archivedProjects={[]}
-      />
-    );
+    return <ProjectsClient demos={[]} building={[]} live={[]} archived={[]} />;
   }
 
   // Map RPC result to Project interface
-  const projects: ProjectData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
+  const allProjects: ProjectData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
     name: p.name as string,
     status: p.status as string,
@@ -82,31 +74,13 @@ async function ProjectListLoader() {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Status-based filtering — project_status drives everything
-  const demos = projects.filter((p) => p.status === 'Demos');
-  const activeProjects = projects.filter((p) => ['Active', 'Delayed'].includes(p.status));
-  const finishedProjects = projects.filter((p) => p.status === 'Launched');
-  const archivedDemos = projects.filter(
-    (p) =>
-      ['Archived', 'Canceled'].includes(p.status) &&
-      (p.project_group === 'demos' || p.metadata?.is_partnership === true)
-  );
-  const archivedProjects = projects.filter(
-    (p) =>
-      ['Archived', 'Canceled'].includes(p.status) &&
-      p.project_group !== 'demos' &&
-      !p.metadata?.is_partnership
-  );
+  // Pipeline stages
+  const demos = allProjects.filter((p) => p.status === 'Demos');
+  const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const live = allProjects.filter((p) => p.status === 'Launched');
+  const archived = allProjects.filter((p) => ['Archived', 'Canceled'].includes(p.status));
 
-  return (
-    <ProjectsClient
-      projects={activeProjects}
-      demos={demos}
-      finishedProjects={finishedProjects}
-      archivedDemos={archivedDemos}
-      archivedProjects={archivedProjects}
-    />
-  );
+  return <ProjectsClient demos={demos} building={building} live={live} archived={archived} />;
 }
 
 function ProjectsSkeleton() {

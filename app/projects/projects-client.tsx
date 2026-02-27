@@ -1,92 +1,174 @@
 'use client';
 
 import { useState } from 'react';
-import { Beaker, Trophy, Hammer } from 'lucide-react';
+import { Beaker, Hammer, Rocket, Archive, ChevronRight } from 'lucide-react';
 import { ProjectListView } from '@/components/project-list-view';
-import { ProjectColumnView } from '@/components/project-column-view';
 import { DemoSheet } from '@/components/demo-sheet';
 import { useProjectStats, type ProjectStatsData } from '@/lib/swr';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 import type { ProjectData } from './page';
 
 interface ProjectsClientProps {
-  projects: ProjectData[];
   demos: ProjectData[];
-  finishedProjects: ProjectData[];
-  archivedDemos: ProjectData[];
-  archivedProjects: ProjectData[];
+  building: ProjectData[];
+  live: ProjectData[];
+  archived: ProjectData[];
+}
+
+const STAGE_CONFIG = {
+  demo: {
+    title: 'Demo',
+    icon: Beaker,
+    color: 'text-violet-500',
+    bgColor: 'bg-violet-500/10',
+    badgeColor: 'bg-violet-500/10 text-violet-500',
+    borderColor: 'border-violet-500/20',
+  },
+  building: {
+    title: 'Building',
+    icon: Hammer,
+    color: 'text-emerald-500',
+    bgColor: 'bg-emerald-500/10',
+    badgeColor: 'bg-emerald-500/10 text-emerald-500',
+    borderColor: 'border-emerald-500/20',
+  },
+  live: {
+    title: 'Live',
+    icon: Rocket,
+    color: 'text-sky-500',
+    bgColor: 'bg-sky-500/10',
+    badgeColor: 'bg-sky-500/10 text-sky-500',
+    borderColor: 'border-sky-500/20',
+  },
+} as const;
+
+function StageColumn({
+  stage,
+  projects,
+  onDemoClick,
+}: {
+  stage: keyof typeof STAGE_CONFIG;
+  projects: ProjectStatsData[];
+  onDemoClick?: (demo: ProjectStatsData) => void;
+}) {
+  const config = STAGE_CONFIG[stage];
+  const Icon = config.icon;
+
+  return (
+    <div className="shadow-subtle flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
+      {/* Column header */}
+      <div
+        className={cn(
+          'flex flex-shrink-0 items-center gap-2.5 border-b px-4 py-3',
+          config.borderColor
+        )}
+      >
+        <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg', config.bgColor)}>
+          <Icon className={cn('h-3.5 w-3.5', config.color)} />
+        </div>
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">{config.title}</h2>
+        <span
+          className={cn('ml-auto rounded-full px-2 py-0.5 text-xs font-medium', config.badgeColor)}
+        >
+          {projects.length}
+        </span>
+      </div>
+
+      {/* Scrollable project list */}
+      <div className="flex-1 overflow-y-auto p-3">
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className={cn('mb-3 rounded-xl p-4', config.bgColor)}>
+              <Icon className={cn('h-6 w-6', config.color)} />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              No {config.title.toLowerCase()} projects
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {projects.map((project) => {
+              const isDelayed = project.status === 'Delayed';
+              return (
+                <div key={project.id} className="relative">
+                  {isDelayed && (
+                    <span className="absolute -top-1 right-2 z-10 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+                      Delayed
+                    </span>
+                  )}
+                  <ProjectListView
+                    projects={[project as ProjectData]}
+                    compact
+                    onProjectClick={stage === 'demo' ? () => onDemoClick?.(project) : undefined}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function ProjectsClient({
-  projects: initialProjects,
   demos: initialDemos,
-  finishedProjects: initialFinishedProjects,
+  building: initialBuilding,
+  live: initialLive,
+  archived: initialArchived,
 }: ProjectsClientProps) {
-  const { projects, demos } = useProjectStats({
-    projects: initialProjects as ProjectStatsData[],
+  const { demos, building, live, archived } = useProjectStats({
     demos: initialDemos as ProjectStatsData[],
+    building: initialBuilding as ProjectStatsData[],
+    live: initialLive as ProjectStatsData[],
+    archived: initialArchived as ProjectStatsData[],
   });
 
   const [selectedDemo, setSelectedDemo] = useState<ProjectData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [archivedOpen, setArchivedOpen] = useState(false);
 
   const handleDemoClick = (demo: ProjectStatsData) => {
     setSelectedDemo(demo as ProjectData);
     setSheetOpen(true);
   };
 
-  const finishedProjects = initialFinishedProjects;
-  const hasFinishedProjects = finishedProjects.length > 0;
-  const hasDemos = demos.length > 0;
-
   return (
-    <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
-      {/* Main area: Currently Building takes the stage */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[1fr_280px]">
-        {/* Currently Building — the dominant section */}
-        <div className="shadow-subtle flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
-          <div className="flex flex-shrink-0 items-center gap-2.5 border-b border-border/50 px-5 py-3">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-              <Hammer className="h-3.5 w-3.5 text-primary" />
-            </div>
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              Currently Building
-            </h2>
-            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-              {projects.length}
-            </span>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3">
-            <ProjectListView projects={projects as ProjectData[]} compact />
-          </div>
-        </div>
-
-        {/* Demos — narrow sidebar column */}
-        {hasDemos && (
-          <ProjectColumnView
-            title="Demos"
-            icon={<Beaker className="h-3.5 w-3.5" />}
-            projects={demos as ProjectData[]}
-            emptyMessage="No demos yet"
-            onProjectClick={handleDemoClick}
-            className="h-full"
-          />
-        )}
+    <div className="flex h-full w-full flex-col gap-4 overflow-hidden p-5 md:p-6">
+      {/* Three-column pipeline */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+        <StageColumn stage="demo" projects={demos} onDemoClick={handleDemoClick} />
+        <StageColumn stage="building" projects={building} />
+        <StageColumn stage="live" projects={live} />
       </div>
 
-      {/* Completed Projects — compact bottom strip */}
-      {hasFinishedProjects && (
-        <div className="shadow-subtle flex min-h-0 flex-shrink-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
-          <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/50 px-4 py-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-emerald-500/10">
-              <Trophy className="h-2.5 w-2.5 text-emerald-500" />
+      {/* Archived — collapsible */}
+      {archived.length > 0 && (
+        <Collapsible open={archivedOpen} onOpenChange={setArchivedOpen}>
+          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground">
+            <ChevronRight
+              className={cn(
+                'h-3.5 w-3.5 transition-transform duration-200',
+                archivedOpen && 'rotate-90'
+              )}
+            />
+            <Archive className="h-3.5 w-3.5" />
+            <span className="font-medium">Archived</span>
+            <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{archived.length}</span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 rounded-xl border border-border/40 bg-card/50 p-3">
+              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                {archived.map((project) => (
+                  <div key={project.id} className="w-[220px] flex-shrink-0">
+                    <ProjectListView projects={[project as ProjectData]} compact />
+                  </div>
+                ))}
+              </div>
             </div>
-            <h2 className="text-xs font-medium text-foreground">Completed</h2>
-            <span className="ml-auto text-xs text-muted-foreground">{finishedProjects.length}</span>
-          </div>
-          <div className="overflow-x-auto px-3 py-2">
-            <ProjectListView projects={finishedProjects} horizontal />
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Demo Sheet */}

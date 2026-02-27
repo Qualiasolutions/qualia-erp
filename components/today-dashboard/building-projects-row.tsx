@@ -10,12 +10,15 @@ import {
   Megaphone,
   Sparkles,
   ChevronRight,
+  Beaker,
+  Hammer,
+  Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
 import type { ProjectType } from '@/types/database';
 
-interface Project {
+export interface PipelineProject {
   id: string;
   name: string;
   status: string;
@@ -34,79 +37,129 @@ const PROJECT_TYPE_CONFIG: Record<ProjectType, { icon: typeof Globe; color: stri
   ads: { icon: Megaphone, color: 'text-amber-500' },
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  Active: 'bg-emerald-500',
-  Demos: 'bg-violet-500',
-  Launched: 'bg-sky-500',
-  Delayed: 'bg-amber-500',
-};
+const STAGE_CONFIG = [
+  {
+    key: 'demo' as const,
+    title: 'Demo',
+    icon: Beaker,
+    color: 'text-violet-500',
+    dotColor: 'bg-violet-500',
+    bgColor: 'bg-violet-500/10',
+  },
+  {
+    key: 'building' as const,
+    title: 'Building',
+    icon: Hammer,
+    color: 'text-emerald-500',
+    dotColor: 'bg-emerald-500',
+    bgColor: 'bg-emerald-500/10',
+  },
+  {
+    key: 'live' as const,
+    title: 'Live',
+    icon: Rocket,
+    color: 'text-sky-500',
+    dotColor: 'bg-sky-500',
+    bgColor: 'bg-sky-500/10',
+  },
+] as const;
 
-export function BuildingProjectsRow({ projects }: { projects: Project[] }) {
-  const displayProjects = projects;
+interface BuildingProjectsRowProps {
+  demos: PipelineProject[];
+  building: PipelineProject[];
+  live: PipelineProject[];
+}
+
+export function BuildingProjectsRow({ demos, building, live }: BuildingProjectsRowProps) {
+  const stages = [
+    { config: STAGE_CONFIG[0], projects: demos },
+    { config: STAGE_CONFIG[1], projects: building },
+    { config: STAGE_CONFIG[2], projects: live },
+  ];
+
+  const totalCount = demos.length + building.length + live.length;
 
   return (
     <div className="rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
       <div className="flex items-center justify-between px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10">
-            <Folder className="h-3 w-3 text-emerald-500" />
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10">
+            <Folder className="h-3 w-3 text-primary" />
           </div>
-          <h3 className="text-sm font-semibold text-foreground">Currently Building</h3>
-          <span className="text-xs text-muted-foreground">{displayProjects.length} active</span>
+          <h3 className="text-sm font-semibold text-foreground">Project Pipeline</h3>
+          <span className="text-xs text-muted-foreground">{totalCount} projects</span>
         </div>
         <Link
           href="/projects"
-          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
         >
-          <ChevronRight className="h-4 w-4" />
+          View all
+          <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      <div className="scrollbar-none flex gap-2 overflow-x-auto px-4 pb-3">
-        {displayProjects.length === 0 ? (
-          <div className="flex w-full items-center justify-center py-3 text-sm text-muted-foreground">
-            No active projects
-          </div>
-        ) : (
-          displayProjects.map((project) => <ProjectChip key={project.id} project={project} />)
-        )}
+      <div className="grid grid-cols-3 gap-px border-t border-border/20 bg-border/20">
+        {stages.map(({ config, projects }) => {
+          const Icon = config.icon;
+          return (
+            <div key={config.key} className="bg-card/50 px-3 py-2.5">
+              {/* Stage label */}
+              <div className="mb-2 flex items-center gap-1.5">
+                <Icon className={cn('h-3 w-3', config.color)} />
+                <span className={cn('text-xs font-semibold', config.color)}>{config.title}</span>
+                <span className="text-xs text-muted-foreground/60">({projects.length})</span>
+              </div>
+
+              {/* Chips row */}
+              <div className="scrollbar-none flex gap-1.5 overflow-x-auto">
+                {projects.length === 0 ? (
+                  <span className="text-xs text-muted-foreground/40">—</span>
+                ) : (
+                  projects.map((project) => (
+                    <ProjectChip key={project.id} project={project} dotColor={config.dotColor} />
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function ProjectChip({ project }: { project: Project }) {
+function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor: string }) {
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
+  const isDelayed = project.status === 'Delayed';
 
   return (
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200',
+        'group flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 transition-all duration-200',
         'border border-border/20 bg-background/50 hover:border-border/50 hover:bg-muted/50'
       )}
     >
       <EntityAvatar
         src={project.logo_url}
-        fallbackIcon={<TypeIcon className="h-3.5 w-3.5" />}
+        fallbackIcon={<TypeIcon className="h-3 w-3" />}
         fallbackBgColor="bg-muted"
         fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
         size="sm"
-        className="h-7 w-7 rounded-lg ring-1 ring-border/20"
+        className="h-6 w-6 rounded-md ring-1 ring-border/20"
       />
 
-      <div className="flex items-center gap-2">
-        <span className="whitespace-nowrap text-sm font-medium text-foreground/80 group-hover:text-foreground">
+      <div className="flex items-center gap-1.5">
+        <span className="whitespace-nowrap text-xs font-medium text-foreground/80 group-hover:text-foreground">
           {project.name}
         </span>
 
-        <span
-          className={cn(
-            'h-2 w-2 shrink-0 rounded-full',
-            STATUS_COLORS[project.status] || 'bg-muted-foreground/50'
-          )}
-        />
+        {isDelayed ? (
+          <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+        ) : (
+          <span className={cn('h-2 w-2 shrink-0 rounded-full', dotColor)} />
+        )}
       </div>
     </Link>
   );

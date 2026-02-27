@@ -159,7 +159,12 @@ export async function getProjects(workspaceId?: string | null) {
  */
 export async function getProjectStats(
   workspaceId?: string | null
-): Promise<{ projects: ProjectStatsData[]; demos: ProjectStatsData[] }> {
+): Promise<{
+  demos: ProjectStatsData[];
+  building: ProjectStatsData[];
+  live: ProjectStatsData[];
+  archived: ProjectStatsData[];
+}> {
   const supabase = await createClient();
 
   let wsId = workspaceId;
@@ -173,7 +178,7 @@ export async function getProjectStats(
 
   if (error) {
     console.error('Error fetching project stats:', error);
-    return { projects: [], demos: [] };
+    return { demos: [], building: [], live: [], archived: [] };
   }
 
   const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
@@ -203,11 +208,13 @@ export async function getProjectStats(
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
-  // Status-based filtering — no boolean flags needed
+  // Status-based filtering — pipeline stages
   const demos = allProjects.filter((p) => p.status === 'Demos');
-  const projects = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const live = allProjects.filter((p) => p.status === 'Launched');
+  const archived = allProjects.filter((p) => ['Archived', 'Canceled'].includes(p.status));
 
-  return { projects, demos };
+  return { demos, building, live, archived };
 }
 
 /**

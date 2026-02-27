@@ -3,6 +3,7 @@ import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
 import { createClient } from '@/lib/supabase/server';
 import type { ProjectType } from '@/types/database';
+import type { PipelineProject } from '@/components/today-dashboard/building-projects-row';
 
 export default async function TodayPage() {
   const workspaceId = await getCurrentWorkspaceId();
@@ -63,10 +64,9 @@ export default async function TodayPage() {
         : null,
     })) as Task[];
 
-  // Active projects: status = Active or Delayed (currently being built)
-  const projects = (projectsRaw.data || [])
-    .filter((p: Record<string, unknown>) => ['Active', 'Delayed'].includes(p.status as string))
-    .map((p: Record<string, unknown>) => ({
+  // Map all projects for pipeline display
+  const allProjects: PipelineProject[] = (projectsRaw.data || []).map(
+    (p: Record<string, unknown>) => ({
       id: p.id as string,
       name: p.name as string,
       status: p.status as string,
@@ -77,7 +77,22 @@ export default async function TodayPage() {
         total: Number(p.total_issues) || 0,
         done: Number(p.done_issues) || 0,
       },
-    }));
+    })
+  );
 
-  return <TodayDashboard meetings={meetings} tasks={tasks} projects={projects} issues={issues} />;
+  // Pipeline stages
+  const demos = allProjects.filter((p) => p.status === 'Demos');
+  const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const live = allProjects.filter((p) => p.status === 'Launched');
+
+  return (
+    <TodayDashboard
+      meetings={meetings}
+      tasks={tasks}
+      demos={demos}
+      building={building}
+      live={live}
+      issues={issues}
+    />
+  );
 }
