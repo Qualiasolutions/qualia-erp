@@ -1,4 +1,4 @@
-import { getCurrentWorkspaceId, getMeetings, getScheduledIssues } from '@/app/actions';
+import { getCurrentWorkspaceId, getMeetings } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
 import { createClient } from '@/lib/supabase/server';
@@ -18,11 +18,10 @@ export default async function TodayPage() {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [meetingsRaw, tasksRaw, projectsRaw, issues] = await Promise.all([
+  const [meetingsRaw, tasksRaw, projectsRaw] = await Promise.all([
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
-    getScheduledIssues(workspaceId),
   ]);
 
   const meetings = meetingsRaw;
@@ -80,19 +79,7 @@ export default async function TodayPage() {
     })
   );
 
-  // Pipeline stages
-  const demos = allProjects.filter((p) => p.status === 'Demos');
   const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
-  const live = allProjects.filter((p) => p.status === 'Launched');
 
-  return (
-    <TodayDashboard
-      meetings={meetings}
-      tasks={tasks}
-      demos={demos}
-      building={building}
-      live={live}
-      issues={issues}
-    />
-  );
+  return <TodayDashboard meetings={meetings} tasks={tasks} building={building} />;
 }

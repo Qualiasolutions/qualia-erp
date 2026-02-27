@@ -10,9 +10,7 @@ import {
   Megaphone,
   Sparkles,
   ChevronRight,
-  Beaker,
   Hammer,
-  Rocket,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
@@ -37,92 +35,34 @@ const PROJECT_TYPE_CONFIG: Record<ProjectType, { icon: typeof Globe; color: stri
   ads: { icon: Megaphone, color: 'text-amber-500' },
 };
 
-const STAGE_CONFIG = [
-  {
-    key: 'demo' as const,
-    title: 'Demo',
-    icon: Beaker,
-    color: 'text-violet-500',
-    dotColor: 'bg-violet-500',
-    bgColor: 'bg-violet-500/10',
-  },
-  {
-    key: 'building' as const,
-    title: 'Building',
-    icon: Hammer,
-    color: 'text-emerald-500',
-    dotColor: 'bg-emerald-500',
-    bgColor: 'bg-emerald-500/10',
-  },
-  {
-    key: 'live' as const,
-    title: 'Live',
-    icon: Rocket,
-    color: 'text-sky-500',
-    dotColor: 'bg-sky-500',
-    bgColor: 'bg-sky-500/10',
-  },
-] as const;
-
 interface BuildingProjectsRowProps {
-  demos: PipelineProject[];
   building: PipelineProject[];
-  live: PipelineProject[];
 }
 
-export function BuildingProjectsRow({ demos, building, live }: BuildingProjectsRowProps) {
-  const stages = [
-    { config: STAGE_CONFIG[0], projects: demos },
-    { config: STAGE_CONFIG[1], projects: building },
-    { config: STAGE_CONFIG[2], projects: live },
-  ];
-
-  const totalCount = demos.length + building.length + live.length;
+export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
+  if (building.length === 0) return null;
 
   return (
     <div className="rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
       <div className="flex items-center justify-between px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10">
-            <Folder className="h-3 w-3 text-primary" />
-          </div>
-          <h3 className="text-sm font-semibold text-foreground">Project Pipeline</h3>
-          <span className="text-xs text-muted-foreground">{totalCount} projects</span>
+          <Hammer className="h-3.5 w-3.5 text-emerald-500" />
+          <h3 className="text-sm font-semibold text-foreground">Currently Building</h3>
+          <span className="text-xs text-muted-foreground">{building.length}</span>
         </div>
         <Link
           href="/projects"
           className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
         >
-          View all
+          All projects
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-px border-t border-border/20 bg-border/20">
-        {stages.map(({ config, projects }) => {
-          const Icon = config.icon;
-          return (
-            <div key={config.key} className="bg-card/50 px-3 py-2.5">
-              {/* Stage label */}
-              <div className="mb-2 flex items-center gap-1.5">
-                <Icon className={cn('h-3 w-3', config.color)} />
-                <span className={cn('text-xs font-semibold', config.color)}>{config.title}</span>
-                <span className="text-xs text-muted-foreground/60">({projects.length})</span>
-              </div>
-
-              {/* Chips row */}
-              <div className="scrollbar-none flex gap-1.5 overflow-x-auto">
-                {projects.length === 0 ? (
-                  <span className="text-xs text-muted-foreground/40">—</span>
-                ) : (
-                  projects.map((project) => (
-                    <ProjectChip key={project.id} project={project} dotColor={config.dotColor} />
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
+      <div className="scrollbar-none flex gap-1.5 overflow-x-auto border-t border-border/20 px-3 py-2.5">
+        {building.map((project) => (
+          <ProjectChip key={project.id} project={project} dotColor="bg-emerald-500" />
+        ))}
       </div>
     </div>
   );

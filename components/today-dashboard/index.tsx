@@ -21,17 +21,14 @@ import { NewTaskModalControlled } from '@/components/new-task-modal';
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
   tasks: Task[];
-  demos: PipelineProject[];
   building: PipelineProject[];
-  live: PipelineProject[];
-  issues?: unknown[];
 }
 
 // =============================================================================
 // MAIN DASHBOARD
 // =============================================================================
 
-export function TodayDashboard({ meetings, tasks, demos, building, live }: TodayDashboardProps) {
+export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
@@ -102,11 +99,6 @@ export function TodayDashboard({ meetings, tasks, demos, building, live }: Today
       {/* ===== MAIN CONTENT (no page scroll) ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
-          {/* ── PROJECT PIPELINE ROW ──────────────────────────────────── */}
-          <div className="mb-3 shrink-0">
-            <BuildingProjectsRow demos={demos} building={building} live={live} />
-          </div>
-
           {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
           <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-4 overflow-hidden lg:grid-cols-5 xl:grid-cols-12">
             {/* LEFT COLUMN — Schedule */}
@@ -120,6 +112,11 @@ export function TodayDashboard({ meetings, tasks, demos, building, live }: Today
             <div className="min-h-0 overflow-hidden lg:col-span-2 xl:col-span-5">
               <DashboardAIChat />
             </div>
+          </div>
+
+          {/* ── CURRENTLY BUILDING ROW ────────────────────────────────── */}
+          <div className="mt-3 shrink-0">
+            <BuildingProjectsRow building={building} />
           </div>
         </div>
       </main>
