@@ -50,7 +50,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-border/30 bg-background/80 px-5 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center justify-between border-b border-border/20 bg-background/90 px-5 backdrop-blur-sm">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
@@ -58,9 +58,9 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-base font-semibold tracking-tight text-foreground">{greeting}</h1>
-            <span className="text-foreground/12 hidden sm:inline">|</span>
-            <span className="hidden text-sm tabular-nums text-foreground/35 sm:inline">
+            <h1 className="text-[13px] font-medium text-foreground">{greeting}</h1>
+            <span className="hidden text-border sm:inline">/</span>
+            <span className="hidden text-[13px] tabular-nums text-muted-foreground sm:inline">
               {format(now, 'EEE, MMM d')}
             </span>
           </div>
@@ -103,7 +103,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
           <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-4 overflow-hidden lg:grid-cols-5 xl:grid-cols-12">
             {/* LEFT COLUMN — Schedule */}
             <div className="min-h-0 overflow-hidden lg:col-span-3 xl:col-span-7">
-              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
+              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/25 bg-card">
                 <DailyScheduleGrid tasks={tasks} meetings={meetings} />
               </div>
             </div>

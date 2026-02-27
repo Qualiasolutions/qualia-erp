@@ -19,8 +19,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#fefefe' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0b' },
+    { media: '(prefers-color-scheme: light)', color: '#FAF9F7' },
+    { media: '(prefers-color-scheme: dark)', color: '#131210' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -90,20 +90,17 @@ export const metadata: Metadata = {
 
 function SidebarSkeleton() {
   return (
-    <div className="hidden h-full w-60 flex-shrink-0 flex-col border-r border-border/50 bg-background md:flex">
-      <div className="flex h-16 items-center gap-3 border-b border-border/50 px-4">
-        <div className="h-6 w-6 animate-pulse rounded bg-muted" />
-        <div className="flex flex-col gap-1">
-          <div className="h-3 w-12 animate-pulse rounded bg-muted" />
-          <div className="h-2 w-16 animate-pulse rounded bg-muted" />
-        </div>
+    <div className="hidden h-full w-56 flex-shrink-0 flex-col border-r border-border/30 bg-background md:flex">
+      <div className="flex h-14 items-center gap-2.5 border-b border-border/20 px-4">
+        <div className="h-7 w-7 animate-pulse rounded-lg bg-muted" />
+        <div className="h-3 w-14 animate-pulse rounded bg-muted" />
       </div>
-      <nav className="flex flex-1 flex-col gap-1 p-3">
-        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
-        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
-        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
-        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
-        <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+      <nav className="flex flex-1 flex-col gap-0.5 p-3">
+        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
       </nav>
     </div>
   );

@@ -50,22 +50,21 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all duration-200',
+        'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors duration-100',
         isActive
-          ? 'bg-primary/8 text-foreground'
-          : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+          ? 'bg-muted/60 text-foreground'
+          : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
       )}
     >
-      {isActive && (
-        <div className="absolute left-0 top-[15%] h-[70%] w-[3px] rounded-r-full bg-primary/80" />
-      )}
       <item.icon
         className={cn(
-          'h-4 w-4 flex-shrink-0 transition-colors duration-200',
-          isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-foreground'
+          'h-4 w-4 flex-shrink-0 transition-colors duration-100',
+          isActive
+            ? 'text-foreground'
+            : 'text-muted-foreground/50 group-hover:text-muted-foreground'
         )}
       />
-      <span className="tracking-tight">{item.name}</span>
+      <span>{item.name}</span>
     </Link>
   );
 }
@@ -129,26 +128,24 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-border/40 px-5">
+      <div className="flex h-14 items-center border-b border-border/20 px-4">
         <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-primary/80 to-primary p-[1px] transition-transform duration-200 group-hover:scale-105">
-            <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-background">
-              <Image
-                src="/logo.webp"
-                alt="Qualia"
-                width={24}
-                height={24}
-                className="h-6 w-6 object-contain"
-                priority
-              />
-            </div>
+          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg">
+            <Image
+              src="/logo.webp"
+              alt="Qualia"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
+              priority
+            />
           </div>
-          <span className="text-sm font-bold tracking-tight text-foreground">QUALIA</span>
+          <span className="text-[13px] font-semibold tracking-wide text-foreground/80">QUALIA</span>
         </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3.5 pt-3">
+      <nav className="flex-1 space-y-0.5 px-3 pt-3">
         {navigation.map((item) => {
           const isActive =
             pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
@@ -158,7 +155,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       </nav>
 
       {/* Bottom section — account menu */}
-      <div className="border-t border-border/40 px-3.5 py-3">
+      <div className="border-t border-border/20 px-3 py-2.5">
         <UserMenu onLinkClick={onLinkClick} />
       </div>
     </div>
@@ -177,7 +174,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-60 flex-shrink-0 border-r border-border/50 bg-card/80 md:block">
+      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/30 bg-background md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

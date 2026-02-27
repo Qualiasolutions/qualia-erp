@@ -131,12 +131,10 @@ export default function ProjectsPage() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/50 px-6 py-4 sm:px-8 sm:py-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <Folder className="h-[18px] w-[18px] text-primary" />
-          </div>
-          <h1 className="text-lg font-semibold tracking-tight text-foreground">Projects</h1>
+      <header className="flex items-center justify-between border-b border-border/20 px-6 py-3.5 sm:px-8">
+        <div className="flex items-center gap-2">
+          <Folder className="h-4 w-4 text-muted-foreground" />
+          <h1 className="text-[15px] font-medium text-foreground">Projects</h1>
         </div>
         <NewProjectModal />
       </header>

@@ -382,7 +382,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/20 px-6">
         <div className="flex items-center gap-4">
           <Link
             href="/"

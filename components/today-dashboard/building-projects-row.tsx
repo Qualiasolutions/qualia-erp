@@ -43,7 +43,7 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
   if (building.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/30 bg-card/50 dark:border-border/40">
+    <div className="rounded-xl border border-border/25 bg-card">
       <div className="flex items-center justify-between px-4 py-2.5">
         <div className="flex items-center gap-2">
           <Hammer className="h-3.5 w-3.5 text-emerald-500" />

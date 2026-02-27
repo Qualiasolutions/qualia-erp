@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 function ClientDetailSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-border bg-background px-6 py-4">
+      <header className="flex items-center gap-4 border-b border-border/20 bg-background px-6 py-3.5">
         <div className="h-6 w-32 animate-pulse rounded bg-muted" />
       </header>
       <div className="flex-1 p-6">
@@ -27,7 +27,6 @@ interface ClientLoaderProps {
 }
 
 async function ClientLoader({ id }: ClientLoaderProps) {
-
   // Fetch client data on the server
   const client = await getClientById(id);
 
@@ -47,7 +46,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-border bg-background px-6 py-4">
+      <header className="flex items-center gap-4 border-b border-border/20 bg-background px-6 py-3.5">
         <Link href="/clients">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />

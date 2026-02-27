@@ -132,20 +132,17 @@ export function DashboardAIChat() {
   return (
     <div
       className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-2xl transition-all duration-300',
-        'border border-border/40 bg-card/40 backdrop-blur-xl',
-        isFocused ? 'border-primary/40 shadow-xl shadow-primary/5' : 'hover:border-border/80'
+        'group relative flex h-full flex-col overflow-hidden rounded-xl transition-all duration-150',
+        'border border-border/25 bg-card',
+        isFocused ? 'border-border/50' : 'hover:border-border/40'
       )}
     >
-      {/* Background Accent */}
-      <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-primary/5 blur-3xl transition-opacity group-hover:opacity-100" />
-
       {/* Header */}
-      <div className="relative flex items-center justify-between border-b border-border/40 px-4 py-3">
+      <div className="relative flex items-center justify-between border-b border-border/20 px-4 py-2.5">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Bot className="h-4 w-4" />
+            <div className="bg-primary/8 flex h-7 w-7 items-center justify-center rounded-lg text-primary">
+              <Bot className="h-3.5 w-3.5" />
             </div>
             {(isListening || isSpeaking || isStreaming || vapiCallState === 'connecting') && (
               <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
@@ -155,9 +152,9 @@ export function DashboardAIChat() {
             )}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-foreground">Assistant</span>
+            <span className="text-[13px] font-medium text-foreground">Assistant</span>
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/60">
                 {getStatusText()}
               </span>
             </div>
@@ -318,7 +315,7 @@ export function DashboardAIChat() {
         </div>
 
         {/* Dynamic Voice/Input Area */}
-        <div className="relative mt-auto border-t border-border/40 p-4">
+        <div className="relative mt-auto border-t border-border/20 p-3">
           {/* Listening Overlay */}
           <AnimatePresence>
             {isListening && (
@@ -350,10 +347,8 @@ export function DashboardAIChat() {
           <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
             <div
               className={cn(
-                'flex flex-1 items-center gap-3 rounded-2xl border border-border/40 bg-background/50 px-3 transition-all duration-300',
-                isFocused
-                  ? 'border-primary/50 bg-background shadow-inner'
-                  : 'hover:border-border/80'
+                'flex flex-1 items-center gap-2 rounded-xl border border-border/30 bg-background/60 px-3 transition-all duration-150',
+                isFocused ? 'border-border/50 bg-background' : 'hover:border-border/50'
               )}
             >
               {/* This button is now for text input, not voice */}

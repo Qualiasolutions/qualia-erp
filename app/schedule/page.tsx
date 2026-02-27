@@ -82,17 +82,10 @@ export default function SchedulePage({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex flex-col gap-3 border-b border-border bg-card px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:px-8 sm:py-5">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="rounded-lg bg-violet-500/10 p-2 sm:p-2.5">
-            <Calendar className="h-4 w-4 text-violet-500 sm:h-5 sm:w-5" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Schedule</h1>
-            <p className="hidden text-xs text-muted-foreground sm:block">
-              Manage your meetings and events
-            </p>
-          </div>
+      <header className="flex flex-col gap-3 border-b border-border/20 bg-background px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:px-8">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <h1 className="text-[15px] font-medium text-foreground">Schedule</h1>
         </div>
         <div className="flex items-center gap-2">
           <ScheduleViewToggle currentView={view} />
