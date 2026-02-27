@@ -227,7 +227,7 @@ function ProjectCard({
     return (
       <div
         className={cn(
-          'group relative flex items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-xl border-2 px-3.5 py-2.5 transition-all duration-200 ease-premium',
           'shadow-sm shadow-black/5 dark:shadow-black/20',
           'hover:shadow-md hover:shadow-black/10 dark:hover:shadow-black/30',
           isPartnership
@@ -236,7 +236,7 @@ function ProjectCard({
               ? typeConfig.borderColor
               : 'border-border',
           isComplete ? 'opacity-50' : 'opacity-100',
-          'hover:scale-[1.01] hover:bg-secondary/20'
+          'hover:-translate-y-px hover:bg-secondary/20'
         )}
       >
         <button
@@ -275,7 +275,7 @@ function ProjectCard({
   return (
     <div
       className={cn(
-        'group relative overflow-hidden rounded-2xl border-2 transition-all duration-300',
+        'group relative overflow-hidden rounded-2xl border-2 transition-all duration-200 ease-premium',
         isPartnership
           ? 'border-orange-500/60 ring-2 ring-orange-500/20'
           : typeConfig
@@ -284,7 +284,7 @@ function ProjectCard({
         isComplete ? 'opacity-50' : 'opacity-100',
         'shadow-lg shadow-black/5 dark:shadow-black/20',
         'hover:shadow-xl hover:shadow-black/10 dark:hover:shadow-black/30',
-        'hover:-translate-y-1 hover:scale-[1.01]'
+        'hover:-translate-y-px'
       )}
     >
       {/* Gradient background overlay - enhanced */}

@@ -230,7 +230,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
     <tr
       onClick={handleRowClick}
       className={cn(
-        'group cursor-pointer transition-colors',
+        'group cursor-pointer transition-all duration-150 ease-premium',
         'hover:bg-secondary/50',
         rowIndex % 2 === 1 && 'bg-secondary/20',
         isPending && 'pointer-events-none opacity-50'

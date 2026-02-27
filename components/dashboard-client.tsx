@@ -95,7 +95,7 @@ function ProjectItem({ project }: { project: DashboardProject }) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:border-primary/30 hover:bg-white/10 hover:shadow-glow-sm"
+      className="group flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-4 transition-all duration-200 ease-premium hover:-translate-y-1 hover:border-primary/30 hover:bg-white/10 hover:shadow-sm"
     >
       <div className="min-w-0 flex-1">
         <h4 className="truncate text-sm font-semibold text-foreground/90 transition-colors group-hover:text-primary">
@@ -225,12 +225,12 @@ export function DashboardClient({
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-card text-xs font-bold text-muted-foreground"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-card text-xs font-bold text-muted-foreground transition-transform duration-200 ease-spring group-hover:scale-105"
                 >
                   {String.fromCharCode(64 + i)}
                 </div>
               ))}
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-primary/20 text-xs font-bold text-primary">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-background bg-primary/20 text-xs font-bold text-primary transition-transform duration-200 ease-spring group-hover:scale-105">
                 +12
               </div>
             </div>

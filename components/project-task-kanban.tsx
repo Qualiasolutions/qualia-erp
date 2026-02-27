@@ -177,9 +177,9 @@ const SortableItemCard = memo(function SortableItemCard({ task, onDelete }: Sort
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group relative rounded-md border border-border bg-card p-2.5 transition-colors duration-150',
-        'hover:border-border/80',
-        isDragging && 'z-50 scale-[1.01] opacity-90 ring-1 ring-primary/30',
+        'group relative rounded-md border border-border bg-card p-2.5 transition-all duration-200 ease-premium',
+        'hover:-translate-y-1 hover:border-border/80 hover:shadow-sm',
+        isDragging && 'shadow-elevation-raised z-50 rotate-[2deg] scale-[1.03] opacity-90',
         isDone && 'opacity-50'
       )}
     >
@@ -290,7 +290,7 @@ const SortableItemCard = memo(function SortableItemCard({ task, onDelete }: Sort
 // Overlay card for drag preview - Minimal
 const DragOverlayCard = memo(function DragOverlayCard({ task }: { task: Task }) {
   return (
-    <div className="rounded-md border border-border bg-card p-2.5 shadow-lg">
+    <div className="shadow-elevation-floating rotate-[2deg] scale-[1.03] rounded-md border border-border bg-card p-2.5">
       <span className="text-[13px] font-medium">{task.title}</span>
     </div>
   );
@@ -343,10 +343,11 @@ const ResourceCard = memo(function ResourceCard({
       style={style}
       onClick={handleContainerClick}
       className={cn(
-        'group relative flex items-center gap-3 rounded-xl border bg-card/90 px-4 py-3 backdrop-blur-sm transition-all',
-        'hover:border-primary/40 hover:bg-primary/5 hover:shadow-md active:scale-[0.98]',
+        'group relative flex items-center gap-3 rounded-xl border bg-card/90 px-4 py-3 backdrop-blur-sm transition-all duration-200 ease-premium',
+        'hover:shadow-elevation-raised hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/5 active:scale-[0.98]',
         config.borderColor,
-        isDragging && 'z-50 scale-[1.02] opacity-80 shadow-xl ring-2 ring-primary/50'
+        isDragging &&
+          'shadow-elevation-floating z-50 rotate-[2deg] scale-[1.03] opacity-80 ring-2 ring-primary/50'
       )}
     >
       {/* Drag Handle */}
@@ -869,7 +870,7 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 rounded-lg border border-border/50 bg-card/80 p-3 transition-all hover:border-primary/30 hover:shadow-sm',
+        'group flex items-center gap-3 rounded-lg border border-border/50 bg-card/80 p-3 transition-all duration-200 ease-premium hover:-translate-y-px hover:border-primary/30 hover:shadow-sm',
         isDone && 'opacity-60'
       )}
     >

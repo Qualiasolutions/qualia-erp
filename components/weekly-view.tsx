@@ -287,12 +287,12 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                 {/* Current time indicator */}
                 {isCurrentDay && (
                   <div
-                    className="absolute left-0 right-0 z-20 border-t-2 border-red-500"
+                    className="absolute left-0 right-0 z-20 border-t-2 border-red-500 shadow-glow-sm"
                     style={{
                       top: `${((nowInTz.getHours() * 60 + nowInTz.getMinutes() - START_HOUR * 60) / 60) * HOUR_HEIGHT}px`,
                     }}
                   >
-                    <div className="-ml-1 -mt-1 h-2 w-2 rounded-full bg-red-500" />
+                    <div className="-ml-1 -mt-1 h-2 w-2 rounded-full bg-red-500 shadow-glow-sm" />
                   </div>
                 )}
 
@@ -324,7 +324,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                         window.open((item as Meeting).meeting_link!, '_blank')
                       }
                       className={cn(
-                        'group absolute left-1 right-1 z-10 overflow-hidden rounded-md border p-1.5 transition-colors',
+                        'group absolute left-1 right-1 z-10 overflow-hidden rounded-md border p-1.5 transition-all duration-200 ease-premium hover:-translate-y-px',
                         borderColor,
                         bgColor,
                         hasLink ? 'cursor-pointer' : 'cursor-default'
