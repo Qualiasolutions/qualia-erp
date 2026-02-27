@@ -9,25 +9,25 @@
 
 @layer base {
   :root {
-    /* Light mode — Warm, bright, natural */
-    --background: 40 10% 98%;
-    --foreground: 30 10% 12%;
-    --card: 40 12% 99%;
-    --card-foreground: 30 10% 12%;
+    /* Light mode — Clean, layered surfaces */
+    --background: 220 14% 96%;
+    --foreground: 220 14% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 14% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 30 10% 12%;
+    --popover-foreground: 220 14% 10%;
     --primary: 174 60% 34%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 40 8% 95%;
-    --secondary-foreground: 30 8% 35%;
-    --muted: 40 6% 93%;
-    --muted-foreground: 30 6% 46%;
+    --secondary: 220 8% 94%;
+    --secondary-foreground: 220 8% 35%;
+    --muted: 220 6% 92%;
+    --muted-foreground: 220 6% 44%;
     --accent: 174 25% 95%;
     --accent-foreground: 174 55% 28%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 36 8% 88%;
-    --input: 36 8% 90%;
+    --border: 220 8% 87%;
+    --input: 220 8% 90%;
     --ring: 174 60% 34%;
     --radius: 0.625rem;
 
@@ -37,10 +37,10 @@
     --info: 205 75% 46%;
 
     /* Surface layers */
-    --surface-1: 40 12% 99%;
-    --surface-2: 40 8% 96.5%;
-    --surface-3: 40 6% 94%;
-    --surface-hover: 40 8% 95.5%;
+    --surface-1: 0 0% 100%;
+    --surface-2: 220 8% 96%;
+    --surface-3: 220 6% 93%;
+    --surface-hover: 220 8% 95%;
 
     /* Motion system */
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -57,32 +57,32 @@
   }
 
   .dark {
-    /* Dark mode — Warm charcoal, comfortable for long use */
-    --background: 30 6% 7%;
-    --foreground: 40 8% 93%;
-    --card: 30 5% 9%;
-    --card-foreground: 40 8% 93%;
-    --popover: 30 5% 9%;
-    --popover-foreground: 40 8% 93%;
+    /* Dark mode — Deep, layered, high contrast */
+    --background: 240 6% 6%;
+    --foreground: 220 10% 94%;
+    --card: 240 5% 8.5%;
+    --card-foreground: 220 10% 94%;
+    --popover: 240 5% 9%;
+    --popover-foreground: 220 10% 94%;
     --primary: 174 60% 42%;
-    --primary-foreground: 30 6% 7%;
-    --secondary: 30 5% 12%;
-    --secondary-foreground: 40 8% 88%;
-    --muted: 30 4% 14%;
-    --muted-foreground: 30 6% 50%;
+    --primary-foreground: 240 6% 6%;
+    --secondary: 240 4% 12%;
+    --secondary-foreground: 220 8% 88%;
+    --muted: 240 4% 13%;
+    --muted-foreground: 220 5% 50%;
     --accent: 174 30% 13%;
     --accent-foreground: 174 55% 55%;
     --destructive: 0 63% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 30 5% 17%;
-    --input: 30 5% 14%;
+    --border: 240 4% 16%;
+    --input: 240 4% 13%;
     --ring: 174 60% 42%;
 
-    /* Surface layers */
-    --surface-1: 30 5% 9%;
-    --surface-2: 30 5% 11.5%;
-    --surface-3: 30 4% 14%;
-    --surface-hover: 30 5% 12.5%;
+    /* Surface layers — visible depth steps */
+    --surface-1: 240 5% 8.5%;
+    --surface-2: 240 4% 11%;
+    --surface-3: 240 4% 14%;
+    --surface-hover: 240 4% 12%;
 
     /* Status colors */
     --success: 152 65% 48%;
@@ -186,14 +186,14 @@
 
   /* Base card */
   .card-base {
-    @apply relative overflow-hidden rounded-xl border border-border/50;
-    background: hsl(var(--surface-1));
-    box-shadow: var(--elevation-resting);
+    @apply relative overflow-hidden rounded-xl border border-border/40;
+    background: hsl(var(--card));
+    box-shadow: var(--elevation-raised);
     transition: all 0.2s var(--ease-premium);
   }
 
   .card-base:hover {
-    @apply border-border/70;
+    @apply border-border/60;
   }
 
   /* Interactive card */
@@ -216,18 +216,18 @@
   /* Widget — dashboard cards */
   .widget {
     @apply flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card;
-    box-shadow: var(--elevation-resting);
+    box-shadow: var(--elevation-raised);
     transition: all 0.25s var(--ease-premium);
   }
 
   .widget:hover {
-    @apply border-border/60;
-    box-shadow: var(--elevation-raised);
+    @apply border-border/50;
+    box-shadow: var(--elevation-floating);
   }
 
   .widget-header {
-    @apply flex items-center justify-between border-b border-border/30 px-5 py-3.5;
-    background: hsl(var(--surface-2) / 0.4);
+    @apply flex items-center justify-between border-b border-border/30 px-5 py-4;
+    background: hsl(var(--surface-2) / 0.5);
   }
 
   .widget-title {
@@ -294,7 +294,7 @@
   }
 
   .sidebar {
-    @apply flex h-full flex-col border-r border-border/30 bg-background;
+    @apply flex h-full flex-col border-r border-border/40 bg-card;
   }
 }
 
@@ -380,7 +380,7 @@
    ============================================ */
 @layer utilities {
   .page-header {
-    @apply sticky top-0 z-sticky border-b border-border/30 bg-background/80 px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
+    @apply sticky top-0 z-sticky border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
   }
 
   .page-title {

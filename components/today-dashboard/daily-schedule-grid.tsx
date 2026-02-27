@@ -532,14 +532,14 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   return (
     <div className="flex h-full flex-col">
       {/* ── Quick-Add Bar ────────────────────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-white/[0.08] px-3 py-2 dark:border-white/[0.12]">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border/30 bg-muted/20 px-4 py-3">
         <input
           type="text"
           value={quickInput}
           onChange={(e) => setQuickInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
           placeholder="Quick add task..."
-          className="min-w-0 flex-1 rounded-lg border border-white/[0.08] bg-background/50 px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/25 focus:border-white/20 focus:outline-none dark:border-white/[0.15]"
+          className="min-w-0 flex-1 rounded-lg border border-border/40 bg-background/60 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
         />
         <div className="flex items-center gap-1">
           {(['fawzi', 'moayad', 'both'] as const).map((who) => (

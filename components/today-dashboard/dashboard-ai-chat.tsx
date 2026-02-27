@@ -133,12 +133,12 @@ export function DashboardAIChat() {
     <div
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-xl transition-all duration-200 ease-premium',
-        'border border-border/25 bg-card',
-        isFocused ? 'border-border/50 shadow-glow-sm' : 'hover:border-border/40'
+        'border border-border/40 bg-card shadow-elevation-1',
+        isFocused ? 'border-primary/30 shadow-glow-sm' : 'hover:border-border/50'
       )}
     >
       {/* Header */}
-      <div className="relative flex items-center justify-between border-b border-border/20 px-4 py-2.5">
+      <div className="relative flex items-center justify-between border-b border-border/30 bg-muted/20 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="bg-primary/8 flex h-7 w-7 items-center justify-center rounded-lg text-primary">

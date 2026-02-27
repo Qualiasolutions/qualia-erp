@@ -50,7 +50,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-border/20 bg-background/80 px-5 backdrop-blur-xl">
+      <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 backdrop-blur-xl">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
@@ -58,7 +58,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-[13px] font-medium text-foreground">{greeting}</h1>
+            <h1 className="text-sm font-semibold text-foreground">{greeting}</h1>
             <span className="hidden text-border sm:inline">/</span>
             <span className="hidden text-[13px] tabular-nums text-muted-foreground sm:inline">
               {format(now, 'EEE, MMM d')}
@@ -98,12 +98,12 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
 
       {/* ===== MAIN CONTENT (no page scroll) ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-4 py-3 sm:px-6">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-4 sm:px-6">
           {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
-          <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-4 overflow-hidden lg:grid-cols-5 xl:grid-cols-12">
+          <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-5 overflow-hidden lg:grid-cols-5 xl:grid-cols-12">
             {/* LEFT COLUMN — Schedule */}
             <div className="min-h-0 overflow-hidden lg:col-span-3 xl:col-span-7">
-              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/25 bg-card">
+              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
                 <DailyScheduleGrid tasks={tasks} meetings={meetings} />
               </div>
             </div>
@@ -115,7 +115,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
           </div>
 
           {/* ── CURRENTLY BUILDING ROW ────────────────────────────────── */}
-          <div className="mt-3 shrink-0">
+          <div className="mt-4 shrink-0">
             <BuildingProjectsRow building={building} />
           </div>
         </div>

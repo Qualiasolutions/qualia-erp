@@ -52,8 +52,8 @@ function NavLink({
       className={cn(
         'group relative flex h-10 items-center gap-2.5 rounded-lg px-4 text-[13px] font-medium transition-all duration-200 ease-premium',
         isActive
-          ? 'bg-muted/60 text-foreground'
-          : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+          ? 'bg-primary/10 text-foreground'
+          : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
       )}
     >
       {/* Active indicator bar */}
@@ -151,7 +151,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               priority
             />
           </div>
-          <span className="text-[13px] font-semibold tracking-wide text-foreground/80">QUALIA</span>
+          <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
         </Link>
       </div>
 
@@ -185,7 +185,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/30 bg-background md:block">
+      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-card md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

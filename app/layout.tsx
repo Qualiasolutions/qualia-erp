@@ -19,8 +19,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#FAF9F7' },
-    { media: '(prefers-color-scheme: dark)', color: '#131210' },
+    { media: '(prefers-color-scheme: light)', color: '#F0F1F4' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F0F12' },
   ],
   width: 'device-width',
   initialScale: 1,
@@ -90,7 +90,7 @@ export const metadata: Metadata = {
 
 function SidebarSkeleton() {
   return (
-    <div className="hidden h-full w-56 flex-shrink-0 flex-col border-r border-border/30 bg-background md:flex">
+    <div className="hidden h-full w-56 flex-shrink-0 flex-col border-r border-border/40 bg-card md:flex">
       <div className="flex h-14 items-center gap-2.5 border-b border-border/20 px-4">
         <div className="h-7 w-7 animate-pulse rounded-lg bg-muted" />
         <div className="h-3 w-14 animate-pulse rounded bg-muted" />
