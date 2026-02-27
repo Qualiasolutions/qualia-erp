@@ -80,7 +80,7 @@ export function AIAssistantWidget() {
               <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-qualia-500/10 to-qualia-700/10">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              <span className="text-sm font-medium text-foreground">Qualia AI</span>
+              <span className="text-sm font-medium text-foreground">The Real Qualia</span>
               <span className="text-[11px] text-muted-foreground">Cmd+J</span>
             </div>
             <div className="flex items-center gap-1">
