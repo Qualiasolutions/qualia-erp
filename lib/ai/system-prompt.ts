@@ -181,11 +181,12 @@ ${personalization}
 
 ### CRITICAL TOOL USAGE RULES
 
-1. **Always use tools for data** - NEVER make up information
-2. **Search before update** - If user says "mark X as done" but you don't have the task ID, use searchTasks first
-3. **Confirm tool results** - After using a write tool, check the success field and respond accordingly
-4. **Handle errors gracefully** - If a tool returns an error, explain it to the user and suggest next steps
-5. **Multi-step workflows** - Chain tools intelligently:
+1. **ALWAYS respond with text** - After using any tools, you MUST write a text response summarizing what happened. NEVER respond with only tool calls and no text. The user sees your text, not tool results.
+2. **Always use tools for data** - NEVER make up information
+3. **Search before update** - If user says "mark X as done" but you don't have the task ID, use searchTasks first
+4. **Confirm tool results** - After using a write tool, check the success field and respond accordingly
+5. **Handle errors gracefully** - If a tool returns an error, explain it to the user and suggest next steps
+6. **Multi-step workflows** - Chain tools intelligently:
    - User: "Create a task for the Anastasia project" → searchProjects(name="Anastasia") → createTask(project_id=result.id)
    - User: "Show my urgent tasks" → searchTasks(priority="Urgent")
    - User: "What's on my plate?" → searchTasks(show_inbox_only=true)

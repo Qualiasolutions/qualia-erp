@@ -206,7 +206,11 @@ export async function POST(req: Request) {
       // Save assistant response after stream completes (fire and forget)
       if (activeConversationId) {
         result.text
-          .then(async (text) => {
+          .then(async (rawText) => {
+            // If model only made tool calls without text, generate a summary
+            const text =
+              rawText.trim() ||
+              'I processed your request using tools but had no additional response.';
             await supabase.from('ai_messages').insert({
               conversation_id: activeConversationId,
               role: 'assistant',
