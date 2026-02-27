@@ -50,7 +50,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex h-12 shrink-0 items-center justify-between border-b border-border/20 bg-background/90 px-5 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-border/20 bg-background/80 px-5 backdrop-blur-xl">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>

@@ -181,10 +181,10 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                       <div
                         key={meeting.id}
                         className={cn(
-                          'group/meeting relative flex items-center gap-3 rounded-xl p-3 transition-all',
+                          'group/meeting relative flex items-center gap-3 rounded-xl p-3 transition-all duration-200 ease-premium',
                           isCurrent && 'bg-violet-500/10 ring-1 ring-violet-500/30',
                           isPast && 'opacity-40',
-                          !isCurrent && !isPast && 'hover:bg-muted/20'
+                          !isCurrent && !isPast && 'hover:-translate-y-px hover:bg-muted/20'
                         )}
                       >
                         {/* Client/Attendee Avatar */}
@@ -306,7 +306,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
                               className={cn(
                                 'flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition-all',
                                 isCurrent
-                                  ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:bg-violet-400'
+                                  ? 'animate-glow-pulse bg-violet-500 text-white shadow-lg shadow-violet-500/25 hover:bg-violet-400'
                                   : 'bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground'
                               )}
                               onClick={(e) => e.stopPropagation()}

@@ -230,10 +230,10 @@ function TaskCard({
   return (
     <div
       className={cn(
-        'group/task absolute cursor-pointer overflow-hidden border-l-[3px] transition-all duration-200',
+        'group/task absolute cursor-pointer overflow-hidden border-l-[3px] transition-all duration-200 ease-premium',
         'rounded-lg border border-white/[0.08] bg-card/80 dark:border-white/[0.12]',
-        'hover:border-white/20 hover:bg-card',
-        'hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.25)]',
+        'hover:-translate-y-px hover:border-white/20 hover:bg-card',
+        'hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.3)]',
         accent,
         isDone && 'opacity-25'
       )}
@@ -754,11 +754,11 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
               style={{ top: nowTop }}
             >
               <div className="flex items-center justify-end pr-1" style={{ width: TIME_GUTTER }}>
-                <div className="rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white shadow-sm">
+                <div className="animate-glow-pulse rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white shadow-sm shadow-red-500/30">
                   {format(currentTime, 'h:mm')}
                 </div>
               </div>
-              <div className="h-[1.5px] flex-1 bg-gradient-to-r from-red-500/50 via-red-500/20 to-transparent" />
+              <div className="h-[2px] flex-1 bg-gradient-to-r from-red-500/60 via-red-500/20 to-transparent" />
             </div>
           )}
         </div>

@@ -60,15 +60,23 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
       </div>
 
       <div className="scrollbar-none flex gap-1.5 overflow-x-auto border-t border-border/20 px-3 py-2.5">
-        {building.map((project) => (
-          <ProjectChip key={project.id} project={project} dotColor="bg-emerald-500" />
+        {building.map((project, i) => (
+          <ProjectChip key={project.id} project={project} dotColor="bg-emerald-500" index={i} />
         ))}
       </div>
     </div>
   );
 }
 
-function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor: string }) {
+function ProjectChip({
+  project,
+  dotColor,
+  index,
+}: {
+  project: PipelineProject;
+  dotColor: string;
+  index: number;
+}) {
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
   const isDelayed = project.status === 'Delayed';
@@ -77,9 +85,12 @@ function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 transition-all duration-200',
-        'border border-border/20 bg-background/50 hover:border-border/50 hover:bg-muted/50'
+        'group flex shrink-0 items-center gap-2 rounded-lg px-2.5 py-1.5 transition-all duration-200 ease-premium',
+        'border border-border/20 bg-background/50',
+        'hover:-translate-y-0.5 hover:border-border/50 hover:bg-muted/50 hover:shadow-sm',
+        'animate-stagger-in'
       )}
+      style={{ animationDelay: `${index * 40}ms` }}
     >
       <EntityAvatar
         src={project.logo_url}

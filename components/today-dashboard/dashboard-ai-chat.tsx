@@ -132,9 +132,9 @@ export function DashboardAIChat() {
   return (
     <div
       className={cn(
-        'group relative flex h-full flex-col overflow-hidden rounded-xl transition-all duration-150',
+        'group relative flex h-full flex-col overflow-hidden rounded-xl transition-all duration-200 ease-premium',
         'border border-border/25 bg-card',
-        isFocused ? 'border-border/50' : 'hover:border-border/40'
+        isFocused ? 'border-border/50 shadow-glow-sm' : 'hover:border-border/40'
       )}
     >
       {/* Header */}
@@ -226,7 +226,7 @@ export function DashboardAIChat() {
                         setInput('');
                         sendMessage(cap.prompt);
                       }}
-                      className="group flex items-center gap-1.5 rounded-lg border border-border/30 bg-background/60 px-2.5 py-1.5 text-left transition-all hover:border-primary/30 hover:bg-primary/5"
+                      className="group flex items-center gap-1.5 rounded-lg border border-border/30 bg-background/60 px-2.5 py-1.5 text-left transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm"
                     >
                       <cap.icon className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
                       <span className="text-[11px] font-medium text-muted-foreground/70 transition-colors group-hover:text-foreground">
@@ -347,8 +347,10 @@ export function DashboardAIChat() {
           <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
             <div
               className={cn(
-                'flex flex-1 items-center gap-2 rounded-xl border border-border/30 bg-background/60 px-3 transition-all duration-150',
-                isFocused ? 'border-border/50 bg-background' : 'hover:border-border/50'
+                'flex flex-1 items-center gap-2 rounded-xl border border-border/30 bg-background/60 px-3 transition-all duration-200 ease-premium',
+                isFocused
+                  ? 'border-primary/40 bg-background shadow-glow-sm'
+                  : 'hover:border-border/50'
               )}
             >
               {/* This button is now for text input, not voice */}

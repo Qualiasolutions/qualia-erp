@@ -105,10 +105,10 @@ const TaskRow = React.memo(function TaskRow({
       <button
         onClick={() => onToggle(task.id, !isCompleted)}
         className={cn(
-          'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all',
+          'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ease-premium',
           isCompleted
-            ? 'border-emerald-500/50 bg-emerald-500 text-white'
-            : 'border-foreground/30 hover:border-emerald-500/50 hover:bg-emerald-500/10'
+            ? 'animate-checkbox-bounce border-emerald-500/50 bg-emerald-500 text-white'
+            : 'border-foreground/30 hover:scale-110 hover:border-emerald-500/50 hover:bg-emerald-500/10'
         )}
       >
         {isCompleted && <Check className="size-3" strokeWidth={3} />}

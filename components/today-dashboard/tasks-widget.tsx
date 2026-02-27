@@ -115,10 +115,10 @@ const TaskItem = React.memo(function TaskItem({
         onClick={() => onToggle(task.id, !isCompleted)}
         disabled={isPending}
         className={cn(
-          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
+          'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200 ease-premium',
           isCompleted
-            ? 'border-amber-500/50 bg-amber-500 text-primary-foreground'
-            : 'border-muted-foreground/30 hover:border-amber-500/50 hover:bg-amber-500/10'
+            ? 'animate-checkbox-bounce border-amber-500/50 bg-amber-500 text-primary-foreground'
+            : 'border-muted-foreground/30 hover:scale-110 hover:border-amber-500/50 hover:bg-amber-500/10'
         )}
       >
         {isCompleted && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -430,11 +430,15 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {visibleTasks.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-16 text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10">
+            <div className="mb-3 flex h-12 w-12 animate-float items-center justify-center rounded-full bg-amber-500/10">
               <Check className="h-6 w-6 text-amber-500" />
             </div>
-            <p className="text-sm font-medium text-foreground">All done!</p>
-            <p className="mt-1 text-xs text-muted-foreground">No pending tasks</p>
+            <p className="stagger-1 animate-stagger-in text-sm font-medium text-foreground">
+              All done!
+            </p>
+            <p className="stagger-2 mt-1 animate-stagger-in text-xs text-muted-foreground">
+              No pending tasks
+            </p>
           </div>
         ) : (
           <div
