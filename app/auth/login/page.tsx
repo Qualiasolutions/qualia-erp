@@ -1,44 +1,94 @@
-import { LoginForm } from "@/components/login-form";
-import Image from "next/image";
+import { LoginForm } from '@/components/login-form';
+import Image from 'next/image';
 
 export default function Page() {
   return (
-    <div className="relative flex min-h-screen w-full items-center justify-center p-6 md:p-10 overflow-hidden">
-      {/* Background effects */}
-      <div className="fixed inset-0 bg-grid opacity-30 pointer-events-none" />
-      <div className="fixed inset-0 bg-gradient-to-br from-qualia-500/10 via-transparent to-neon-purple/10 pointer-events-none" />
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-qualia-500/20 rounded-full blur-[150px] -translate-y-1/2 pointer-events-none" />
+    <div className="flex min-h-screen w-full">
+      {/* Left Panel — Brand */}
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-qualia-950 p-12 lg:flex lg:w-[45%] xl:w-[42%]">
+        {/* Subtle radial glow */}
+        <div className="bg-qualia-500/8 pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full blur-[120px]" />
+        <div className="bg-qualia-600/6 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[100px]" />
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-md animate-fade-in">
-        {/* Logo and branding */}
-        <div className="text-center mb-8 space-y-4">
-          <div className="relative inline-block">
-            <Image
-              src="/logo.webp"
-              alt="Qualia"
-              width={64}
-              height={64}
-              className="rounded-2xl mx-auto"
-            />
-            <div className="absolute -inset-2 bg-qualia-500/30 blur-xl rounded-2xl -z-10 animate-pulse-glow" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Welcome to <span className="text-qualia-400">Qualia</span>
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Sign in to access your workspace
-            </p>
+        {/* Top — Logo */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <Image src="/logo.webp" alt="Qualia" width={40} height={40} className="rounded-lg" />
+            <span className="text-lg font-semibold tracking-tight text-white">Qualia</span>
           </div>
         </div>
 
-        <LoginForm />
+        {/* Center — Headline */}
+        <div className="relative z-10 max-w-sm">
+          <h1 className="text-[2.5rem] font-semibold leading-[1.1] tracking-tight text-white">
+            Build better, <span className="text-qualia-400">ship faster.</span>
+          </h1>
+          <p className="mt-4 text-base leading-relaxed text-qualia-200/60">
+            Your workspace for managing projects, clients, and teams — all in one place.
+          </p>
+        </div>
 
-        {/* Footer */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">
-            Powered by <span className="text-qualia-400 font-medium">Qualia Solutions</span>
+        {/* Bottom — Client logos grid */}
+        <div className="relative z-10 space-y-5">
+          <p className="text-xs font-medium uppercase tracking-widest text-qualia-300/40">
+            Trusted by
+          </p>
+          <div className="flex items-center gap-6 opacity-40 grayscale">
+            <Image
+              src="/logos/alkemy.png"
+              alt="Alkemy"
+              width={80}
+              height={24}
+              className="h-5 w-auto brightness-200"
+            />
+            <Image
+              src="/logos/innrvo.png"
+              alt="Innrvo"
+              width={80}
+              height={24}
+              className="h-5 w-auto brightness-200"
+            />
+            <Image
+              src="/logos/aquador.png"
+              alt="Aquador"
+              width={80}
+              height={24}
+              className="h-5 w-auto brightness-200"
+            />
+            <Image
+              src="/logos/armenius.png"
+              alt="Armenius"
+              width={80}
+              height={24}
+              className="h-5 w-auto brightness-200"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel — Form */}
+      <div className="relative flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-12">
+        {/* Subtle top-right glow on dark */}
+        <div className="pointer-events-none absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-qualia-500/[0.03] blur-[80px] dark:bg-qualia-500/[0.06]" />
+
+        <div className="relative z-10 w-full max-w-[420px]">
+          {/* Mobile logo */}
+          <div className="mb-10 flex items-center gap-3 lg:hidden">
+            <Image src="/logo.webp" alt="Qualia" width={36} height={36} className="rounded-lg" />
+            <span className="text-lg font-semibold tracking-tight text-foreground">Qualia</span>
+          </div>
+
+          {/* Header */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">Sign in to your workspace</p>
+          </div>
+
+          <LoginForm />
+
+          {/* Footer */}
+          <p className="mt-8 text-center text-xs text-muted-foreground/60">
+            Protected by enterprise-grade security
           </p>
         </div>
       </div>
