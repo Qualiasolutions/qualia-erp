@@ -183,11 +183,11 @@ export function CommandMenu() {
 
   return (
     <div
-      className="fixed inset-0 z-command flex items-start justify-center bg-background/80 pt-[15vh] backdrop-blur-sm"
+      className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-black/40 pt-[15vh] backdrop-blur-[12px]"
       onClick={handleClose}
     >
       <div
-        className="w-full max-w-[560px] overflow-hidden rounded-lg border border-border bg-card shadow-lg"
+        className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border/50 bg-card shadow-elevation-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mode indicator */}
@@ -373,7 +373,7 @@ export function CommandMenu() {
                         <button
                           key={suggestion}
                           onClick={() => setInputValue(suggestion)}
-                          className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-foreground"
+                          className="rounded-full border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
                         >
                           {suggestion}
                         </button>

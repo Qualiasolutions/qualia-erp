@@ -18,24 +18,24 @@ const quickActions = ['Show my tasks', 'Project status', 'Create an invoice', 'S
 // Thinking indicator with animated dots
 function ThinkingIndicator() {
   return (
-    <div className="flex items-start gap-3">
+    <div className="flex animate-slide-up items-start gap-3">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
         <Bot className="h-4 w-4 text-primary" />
       </div>
       <div className="rounded-xl bg-secondary px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="flex gap-1">
+          <div className="flex gap-1.5">
             <span
-              className="h-2 w-2 animate-bounce rounded-full bg-primary"
-              style={{ animationDelay: '0ms' }}
+              className="shimmer h-2 w-2 rounded-full bg-primary"
+              style={{ animationDelay: '0ms', animationDuration: '1.2s' }}
             />
             <span
-              className="h-2 w-2 animate-bounce rounded-full bg-primary"
-              style={{ animationDelay: '150ms' }}
+              className="shimmer h-2 w-2 rounded-full bg-primary"
+              style={{ animationDelay: '200ms', animationDuration: '1.2s' }}
             />
             <span
-              className="h-2 w-2 animate-bounce rounded-full bg-primary"
-              style={{ animationDelay: '300ms' }}
+              className="shimmer h-2 w-2 rounded-full bg-primary"
+              style={{ animationDelay: '400ms', animationDuration: '1.2s' }}
             />
           </div>
           <span className="text-sm text-muted-foreground">Thinking...</span>
@@ -304,23 +304,26 @@ export default function AgentPage() {
           {!hasMessages ? (
             // Empty State
             <div className="flex h-full flex-col items-center justify-center px-6 py-16">
-              <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-primary/10">
+              <div className="mb-6 flex h-16 w-16 animate-float items-center justify-center rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 ring-1 ring-primary/10">
                 <Sparkles className="h-8 w-8 text-primary/70" />
               </div>
-              <h2 className="mb-2 text-xl font-semibold">The Real Qualia</h2>
-              <p className="mb-8 text-center text-sm text-muted-foreground">
+              <h2 className="stagger-1 mb-2 animate-stagger-in text-xl font-semibold">
+                The Real Qualia
+              </h2>
+              <p className="stagger-2 mb-8 animate-stagger-in text-center text-sm text-muted-foreground">
                 Ask about tasks, projects, invoices, or anything else
               </p>
 
               <div className="grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-2">
-                {quickActions.map((action) => (
+                {quickActions.map((action, i) => (
                   <button
                     key={action}
                     onClick={() => handleQuickAction(action)}
                     className={cn(
-                      'rounded-xl border border-border bg-card px-4 py-3 text-left text-sm transition-all',
-                      'hover:border-primary/50 hover:bg-muted/50'
+                      'animate-stagger-in rounded-xl border border-border bg-card px-4 py-3 text-left text-sm transition-all duration-200 ease-premium',
+                      'hover:-translate-y-0.5 hover:border-primary/50 hover:bg-muted/50 hover:shadow-sm'
                     )}
+                    style={{ animationDelay: `${(i + 3) * 50}ms` }}
                   >
                     {action}
                   </button>
@@ -385,9 +388,9 @@ export default function AgentPage() {
                 placeholder="Type your message..."
                 disabled={isStreaming}
                 className={cn(
-                  'h-11 flex-1 rounded-xl border border-border bg-muted/30 px-4 text-sm',
+                  'h-11 flex-1 rounded-xl border border-border bg-muted/30 px-4 text-sm transition-all duration-200 ease-premium',
                   'placeholder:text-muted-foreground/60',
-                  'focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20',
+                  'focus:border-primary/50 focus:shadow-glow-sm focus:outline-none focus:ring-[3px] focus:ring-primary/15',
                   'disabled:opacity-50'
                 )}
               />
@@ -397,8 +400,8 @@ export default function AgentPage() {
                 className={cn(
                   'flex h-11 w-11 items-center justify-center rounded-xl',
                   'bg-primary text-primary-foreground',
-                  'hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50',
-                  'transition-colors'
+                  'hover:bg-primary/90 hover:shadow-glow-sm disabled:cursor-not-allowed disabled:opacity-50',
+                  'transition-all duration-200 ease-premium active:scale-[0.97]'
                 )}
               >
                 <Send className="h-4 w-4" />
