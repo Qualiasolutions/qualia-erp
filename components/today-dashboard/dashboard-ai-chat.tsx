@@ -1,7 +1,25 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Mic, MicOff, Send, X, Bot, VolumeX, Loader2 } from 'lucide-react';
+import {
+  Mic,
+  MicOff,
+  Send,
+  X,
+  Bot,
+  VolumeX,
+  Loader2,
+  ListTodo,
+  FolderKanban,
+  Users,
+  Calendar,
+  GitBranch,
+  Rocket,
+  Database,
+  Brain,
+  Receipt,
+  BarChart3,
+} from 'lucide-react';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,6 +28,19 @@ import Vapi from '@vapi-ai/web';
 // VAPI Constants from user request
 const VAPI_ASSISTANT_ID = '67d7928b-e292-4f70-bca6-339f0b9eae50';
 const VAPI_PUBLIC_KEY = '58d3e7c2-5eb3-47dd-a304-5b6a55447ecc';
+
+const AI_CAPABILITIES = [
+  { icon: BarChart3, label: 'Daily briefing', prompt: 'Give me my daily briefing' },
+  { icon: ListTodo, label: 'My tasks', prompt: 'What are my tasks?' },
+  { icon: Calendar, label: 'Upcoming meetings', prompt: 'What meetings do I have coming up?' },
+  { icon: FolderKanban, label: 'Project status', prompt: 'Show me active project statuses' },
+  { icon: Users, label: 'Team workload', prompt: 'Show team members and their workload' },
+  { icon: Receipt, label: 'Log a payment', prompt: 'I need to log a payment' },
+  { icon: Brain, label: 'Remember something', prompt: 'Remember that ' },
+  { icon: GitBranch, label: 'GitHub PRs', prompt: 'Show open pull requests' },
+  { icon: Rocket, label: 'Deployments', prompt: 'Show latest Vercel deployments' },
+  { icon: Database, label: 'DB tables', prompt: 'List database tables for a project' },
+] as const;
 
 export function DashboardAIChat() {
   const { messages, isStreaming, sendMessage, clearConversation } = useAIAssistant();
@@ -182,14 +213,31 @@ export function DashboardAIChat() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="flex h-full flex-col items-center justify-center gap-3 text-center"
+                className="flex h-full flex-col justify-center gap-4 px-1"
               >
-                <div className="rounded-2xl border border-primary/10 bg-primary/5 p-4">
-                  <Bot className="h-6 w-6 text-primary/40" />
-                </div>
-                <p className="max-w-[180px] text-xs font-medium leading-relaxed text-muted-foreground">
-                  Ask about your projects, team, or schedule
+                <p className="text-center text-xs font-medium text-muted-foreground/60">
+                  Try asking
                 </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {AI_CAPABILITIES.map((cap, i) => (
+                    <motion.button
+                      key={cap.prompt}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03, duration: 0.25 }}
+                      onClick={() => {
+                        setInput('');
+                        sendMessage(cap.prompt);
+                      }}
+                      className="group flex items-center gap-1.5 rounded-lg border border-border/30 bg-background/60 px-2.5 py-1.5 text-left transition-all hover:border-primary/30 hover:bg-primary/5"
+                    >
+                      <cap.icon className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
+                      <span className="text-[11px] font-medium text-muted-foreground/70 transition-colors group-hover:text-foreground">
+                        {cap.label}
+                      </span>
+                    </motion.button>
+                  ))}
+                </div>
               </motion.div>
             ) : (
               <div className="space-y-4">
