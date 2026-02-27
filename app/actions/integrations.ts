@@ -8,6 +8,7 @@ import type {
   GitHubConfig,
   VercelConfig,
   VAPIConfig,
+  ZohoConfig,
   IntegrationSelections,
 } from '@/lib/integrations/types';
 import {
@@ -21,6 +22,7 @@ import {
   getProvisioningStatus as getProvisioningStatusFromLib,
   retryProvisioningStep as retryProvisioningStepFromLib,
 } from '@/lib/integrations';
+import { testZohoConnection, clearZohoClientCache } from '@/lib/integrations/zoho';
 
 // =====================================================
 // Integration Token Management
@@ -35,7 +37,7 @@ export async function getIntegrations(workspaceId: string): Promise<
       provider: IntegrationProvider;
       isConnected: boolean;
       lastVerified: string | null;
-      config: GitHubConfig | VercelConfig | VAPIConfig;
+      config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig;
     }>;
   }
 > {
@@ -86,7 +88,7 @@ export async function saveIntegrationToken(
   workspaceId: string,
   provider: IntegrationProvider,
   token: string,
-  config: GitHubConfig | VercelConfig | VAPIConfig
+  config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -116,6 +118,9 @@ export async function saveIntegrationToken(
   } else if (provider === 'vercel') {
     const vercelConfig = config as VercelConfig;
     testResult = await testVercelConnection(token, vercelConfig.teamId);
+  } else if (provider === 'zoho') {
+    // Zoho uses OAuth refresh token, skip validation on save
+    testResult = { success: true };
   } else {
     testResult = await testVAPIConnection(token);
   }
@@ -147,6 +152,7 @@ export async function saveIntegrationToken(
   if (provider === 'github') await clearGitHubClientCache(workspaceId);
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
   if (provider === 'vapi') await clearVAPIClientCache(workspaceId);
+  if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
   revalidatePath('/settings/integrations');
   return { success: true };
@@ -193,6 +199,7 @@ export async function removeIntegration(
   if (provider === 'github') await clearGitHubClientCache(workspaceId);
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
   if (provider === 'vapi') await clearVAPIClientCache(workspaceId);
+  if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
   revalidatePath('/settings/integrations');
   return { success: true };
@@ -245,6 +252,9 @@ export async function testIntegration(
   } else if (provider === 'vercel') {
     const config = integration.config as VercelConfig;
     testResult = await testVercelConnection(integration.encrypted_token, config.teamId);
+  } else if (provider === 'zoho') {
+    const result = await testZohoConnection(workspaceId);
+    testResult = { success: result.valid, error: result.error };
   } else {
     testResult = await testVAPIConnection(integration.encrypted_token);
   }

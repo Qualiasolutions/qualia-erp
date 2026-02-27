@@ -12,6 +12,7 @@ import {
 } from '@/app/actions';
 import { getTasks, getProjectTasks } from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
+import { getConversations, getMessages } from '@/app/actions/ai-conversations';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
 // Type for meetings with all relations
@@ -48,6 +49,8 @@ export const cacheKeys = {
   projectEnvironments: (projectId: string) => `project-environments-${projectId}`,
   projectHealth: (projectId: string) => `project-health-${projectId}`,
   scheduledTasks: (date: string) => `scheduled-tasks-${date}`,
+  aiConversations: 'ai-conversations',
+  aiMessages: (conversationId: string) => `ai-messages-${conversationId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -802,5 +805,77 @@ export function invalidateProjectHealth(projectId: string, immediate = true) {
     mutate(cacheKeys.projectHealth(projectId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.projectHealth(projectId));
+  }
+}
+
+// ============ AI CONVERSATION HOOKS ============
+
+/**
+ * Hook for AI conversations list
+ */
+export function useConversations() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.aiConversations, () => getConversations(), slowRefreshConfig);
+
+  return {
+    conversations: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook for messages in a specific conversation
+ */
+export function useConversationMessages(conversationId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    conversationId ? cacheKeys.aiMessages(conversationId) : null,
+    () => (conversationId ? getMessages(conversationId) : []),
+    {
+      ...swrConfig,
+      revalidateOnFocus: false,
+    }
+  );
+
+  return {
+    messages: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate AI conversation caches
+ */
+export function invalidateConversations(immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.aiConversations, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.aiConversations);
+  }
+}
+
+export function invalidateConversationMessages(conversationId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.aiMessages(conversationId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.aiMessages(conversationId));
   }
 }

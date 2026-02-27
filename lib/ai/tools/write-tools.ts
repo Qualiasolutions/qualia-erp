@@ -6,6 +6,12 @@
 import { tool } from 'ai';
 import { z } from 'zod';
 import { SupabaseClient } from '@supabase/supabase-js';
+import {
+  createZohoInvoice,
+  getZohoInvoices,
+  sendZohoEmail,
+  getZohoContacts,
+} from '@/lib/integrations/zoho';
 
 interface UserInfo {
   id: string;
@@ -1219,6 +1225,134 @@ export function createWriteTools(
           message: `Updated ${tasks.length} tasks: ${changes.join(', ')}`,
           updatedCount: tasks.length,
           tasks: tasks.map((t) => t.title),
+        };
+      },
+    }),
+
+    // ============ ZOHO TOOLS (admin only) ============
+
+    createInvoice: tool({
+      description:
+        'Create and send an invoice to a client via Zoho Invoice. Use when user says "create invoice for X", "bill client X", "invoice $500 to Y". Admin only.',
+      inputSchema: z.object({
+        customer_name: z.string().describe('Client/customer name in Zoho'),
+        items: z
+          .array(
+            z.object({
+              name: z.string().describe('Item/service name'),
+              description: z.string().optional().describe('Item description'),
+              rate: z.number().positive().describe('Price per unit'),
+              quantity: z.number().positive().default(1).describe('Quantity (default 1)'),
+            })
+          )
+          .describe('Invoice line items'),
+        due_date: z.string().optional().describe('Due date (YYYY-MM-DD format)'),
+        notes: z.string().optional().describe('Invoice notes'),
+      }),
+      execute: async ({
+        customer_name,
+        items,
+        due_date,
+        notes,
+      }: {
+        customer_name: string;
+        items: { name: string; description?: string; rate: number; quantity: number }[];
+        due_date?: string;
+        notes?: string;
+      }) => {
+        if (!workspaceId) return { error: 'No workspace found' };
+        if (user.role !== 'admin') return { error: 'Only admins can create invoices' };
+
+        const result = await createZohoInvoice(workspaceId, {
+          customer_name,
+          items,
+          due_date,
+          notes,
+        });
+
+        if (!result.success) return { error: result.error };
+
+        return {
+          success: true,
+          message: `Invoice created for ${customer_name}`,
+          invoice: result.data,
+        };
+      },
+    }),
+
+    sendEmail: tool({
+      description:
+        'Send an email via Zoho Mail. Use when user says "send email to X", "email client about Y", "write and send email".',
+      inputSchema: z.object({
+        to: z.string().email().describe('Recipient email address'),
+        subject: z.string().describe('Email subject'),
+        body: z.string().describe('Email body (plain text or HTML)'),
+        cc: z.string().optional().describe('CC email address'),
+      }),
+      execute: async ({
+        to,
+        subject,
+        body,
+        cc,
+      }: {
+        to: string;
+        subject: string;
+        body: string;
+        cc?: string;
+      }) => {
+        if (!workspaceId) return { error: 'No workspace found' };
+
+        const result = await sendZohoEmail(workspaceId, { to, subject, body, cc });
+
+        if (!result.success) return { error: result.error };
+
+        return {
+          success: true,
+          message: `Email sent to ${to}: "${subject}"`,
+        };
+      },
+    }),
+
+    searchZohoContacts: tool({
+      description:
+        'Find contacts in Zoho. Use when user asks "find contact X in Zoho", "search Zoho for client Y", "who do we have in Zoho".',
+      inputSchema: z.object({
+        search: z.string().optional().describe('Search by name, email, or company'),
+      }),
+      execute: async ({ search }: { search?: string }) => {
+        if (!workspaceId) return { error: 'No workspace found' };
+
+        const result = await getZohoContacts(workspaceId, search);
+
+        if (!result.success) return { error: result.error };
+
+        return {
+          success: true,
+          contacts: result.data,
+        };
+      },
+    }),
+
+    getInvoiceStatus: tool({
+      description:
+        'Check invoice payment status in Zoho. Use when user asks "invoice status", "has X paid", "outstanding invoices", "unpaid bills".',
+      inputSchema: z.object({
+        status: z
+          .enum(['sent', 'draft', 'overdue', 'paid', 'void', 'unpaid', 'partially_paid'])
+          .optional()
+          .describe('Filter by invoice status'),
+        customer_name: z.string().optional().describe('Filter by client name'),
+      }),
+      execute: async ({ status, customer_name }: { status?: string; customer_name?: string }) => {
+        if (!workspaceId) return { error: 'No workspace found' };
+
+        const result = await getZohoInvoices(workspaceId, { status, customer_name });
+
+        if (!result.success) return { error: result.error };
+
+        return {
+          success: true,
+          invoices: result.data,
         };
       },
     }),

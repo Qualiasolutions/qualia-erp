@@ -5,7 +5,7 @@
 
 import { streamText, generateText, stepCountIs } from 'ai';
 import { geminiModel } from './gemini-client';
-import { createAllTools, type UserInfo } from './tools';
+import { createAgentTools, type UserInfo } from './tools';
 import { buildSystemPrompt } from './system-prompt';
 import { createClient } from '@/lib/supabase/server';
 import type { UserContext } from '@/lib/voice-assistant-intelligence';
@@ -65,7 +65,7 @@ export async function processStreamingAI(options: ProcessOptions) {
     userContext: options.userContext,
   });
 
-  const tools = createAllTools(supabase, options.workspaceId, options.user);
+  const tools = createAgentTools(supabase, options.workspaceId, options.user);
 
   // Convert to CoreMessage format
   const coreMessages = options.messages.map((m) => ({
@@ -95,7 +95,7 @@ export async function processNonStreamingAI(options: ProcessOptions) {
     userContext: options.userContext,
   });
 
-  const tools = createAllTools(supabase, options.workspaceId, options.user);
+  const tools = createAgentTools(supabase, options.workspaceId, options.user);
 
   // Convert to CoreMessage format
   const coreMessages = options.messages.map((m) => ({

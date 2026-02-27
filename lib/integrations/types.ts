@@ -10,7 +10,7 @@ export type IntegrationResult<T = unknown> = {
   data?: T;
 };
 
-export type IntegrationProvider = 'github' | 'vercel' | 'vapi';
+export type IntegrationProvider = 'github' | 'vercel' | 'vapi' | 'zoho';
 
 export type ProvisioningStatus =
   | 'not_started'
@@ -29,7 +29,7 @@ export const PROVISIONING_STATUSES: ProvisioningStatus[] = [
   'failed',
 ];
 
-export const INTEGRATION_PROVIDERS: IntegrationProvider[] = ['github', 'vercel', 'vapi'];
+export const INTEGRATION_PROVIDERS: IntegrationProvider[] = ['github', 'vercel', 'vapi', 'zoho'];
 
 // =====================================================
 // GitHub Types
@@ -133,6 +133,15 @@ export const VAPI_VOICE_CONFIGS: Record<
       'You are an AI agent assistant for {company}. Help users with their requests efficiently.',
   },
 };
+
+// =====================================================
+// Zoho Types
+// =====================================================
+
+export interface ZohoConfig {
+  refresh_token?: string;
+  organization_id?: string;
+}
 
 // =====================================================
 // Orchestrator Types

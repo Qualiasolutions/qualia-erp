@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Github, Globe, Phone } from 'lucide-react';
+import { Github, Globe, Phone, FileText } from 'lucide-react';
 import { IntegrationCard } from '@/components/settings/integration-card';
 import { toast } from '@/components/ui/use-toast';
 import {
@@ -15,6 +15,7 @@ import type {
   GitHubConfig,
   VercelConfig,
   VAPIConfig,
+  ZohoConfig,
 } from '@/lib/integrations/types';
 
 interface Integration {
@@ -40,7 +41,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
     async (
       provider: IntegrationProvider,
       token: string,
-      config: GitHubConfig | VercelConfig | VAPIConfig
+      config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig
     ) => {
       const result = await saveIntegrationToken(workspaceId, provider, token, config);
 
@@ -142,6 +143,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
   const githubIntegration = getIntegration('github');
   const vercelIntegration = getIntegration('vercel');
   const vapiIntegration = getIntegration('vapi');
+  const zohoIntegration = getIntegration('zoho');
 
   return (
     <div className="space-y-4">
@@ -186,6 +188,20 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
         onConnect={(token, config) => handleConnect('vapi', token, config)}
         onDisconnect={() => handleDisconnect('vapi')}
         onTest={() => handleTest('vapi')}
+      />
+
+      <IntegrationCard
+        provider="zoho"
+        title="Zoho"
+        description="Create invoices, send emails, and manage contacts via Zoho"
+        icon={FileText}
+        iconColor="bg-red-600"
+        isConnected={zohoIntegration?.is_connected || false}
+        lastVerified={zohoIntegration?.last_verified_at || null}
+        config={zohoIntegration?.config as ZohoConfig | undefined}
+        onConnect={(token, config) => handleConnect('zoho', token, config)}
+        onDisconnect={() => handleDisconnect('zoho')}
+        onTest={() => handleTest('zoho')}
       />
     </div>
   );

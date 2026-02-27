@@ -1,6 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { getMessages } from '@/app/actions/ai-conversations';
+import { invalidateConversations } from '@/lib/swr';
 
 export type AssistantMode = 'chat' | 'voice' | 'document';
 export type GuidedTask = 'create-project' | 'create-client' | null;
@@ -20,6 +22,7 @@ interface AIAssistantContextType {
   guidedTask: GuidedTask;
 
   // Conversation State
+  conversationId: string | null;
   messages: Message[];
   isStreaming: boolean;
   error: string | null;
@@ -38,6 +41,8 @@ interface AIAssistantContextType {
   toggleVoice: () => void;
   sendMessage: (text: string) => Promise<void>;
   clearConversation: () => void;
+  loadConversation: (id: string) => Promise<void>;
+  newConversation: () => void;
   setListening: (listening: boolean) => void;
   setSpeaking: (speaking: boolean) => void;
   setError: (error: string | null) => void;
@@ -106,6 +111,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [guidedTask, setGuidedTask] = useState<GuidedTask>(null);
 
   // Conversation State
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -244,6 +250,30 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
 
   const clearConversation = useCallback(() => {
     setMessages([]);
+    setConversationId(null);
+    setError(null);
+  }, []);
+
+  const loadConversation = useCallback(async (id: string) => {
+    setConversationId(id);
+    setError(null);
+    try {
+      const msgs = await getMessages(id);
+      setMessages(
+        msgs.map((m) => ({
+          id: m.id,
+          role: m.role === 'tool' ? 'assistant' : (m.role as 'user' | 'assistant'),
+          content: m.content,
+        }))
+      );
+    } catch {
+      setError('Failed to load conversation');
+    }
+  }, []);
+
+  const newConversation = useCallback(() => {
+    setConversationId(null);
+    setMessages([]);
     setError(null);
   }, []);
 
@@ -295,12 +325,18 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: chatMessages }),
+          body: JSON.stringify({ messages: chatMessages, conversationId }),
         });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(errorData.error || 'Failed to send message');
+        }
+
+        // Track conversation ID from response
+        const responseConvId = response.headers.get('X-Conversation-Id');
+        if (responseConvId && !conversationId) {
+          setConversationId(responseConvId);
         }
 
         const reader = response.body?.getReader();
@@ -335,6 +371,9 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
           }
         }
 
+        // Refresh conversation list in sidebar
+        invalidateConversations(true);
+
         // If no content was extracted, show a fallback message
         if (!assistantContent) {
           setMessages((prev) => [
@@ -362,7 +401,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
         setIsStreaming(false);
       }
     },
-    [messages, mode, isStreaming]
+    [messages, mode, isStreaming, conversationId]
   );
 
   // Start a guided task (like create project or create client)
@@ -420,6 +459,7 @@ Start by asking for the company name.`;
         mode,
         showTemplates,
         guidedTask,
+        conversationId,
         messages,
         isStreaming,
         error,
@@ -434,6 +474,8 @@ Start by asking for the company name.`;
         toggleVoice,
         sendMessage,
         clearConversation,
+        loadConversation,
+        newConversation,
         setListening,
         setSpeaking,
         setError,

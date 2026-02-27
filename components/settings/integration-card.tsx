@@ -29,6 +29,7 @@ import type {
   GitHubConfig,
   VercelConfig,
   VAPIConfig,
+  ZohoConfig,
 } from '@/lib/integrations/types';
 
 interface IntegrationCardProps {
@@ -39,8 +40,11 @@ interface IntegrationCardProps {
   iconColor: string;
   isConnected: boolean;
   lastVerified: string | null;
-  config?: GitHubConfig | VercelConfig | VAPIConfig;
-  onConnect: (token: string, config: GitHubConfig | VercelConfig | VAPIConfig) => Promise<void>;
+  config?: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig;
+  onConnect: (
+    token: string,
+    config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig
+  ) => Promise<void>;
   onDisconnect: () => Promise<void>;
   onTest: () => Promise<{ valid: boolean; error?: string }>;
   onConfigureTemplates?: (templates: GitHubConfig['templates']) => Promise<void>;
@@ -82,7 +86,7 @@ export function IntegrationCard({
 
     setIsLoading(true);
     try {
-      let newConfig: GitHubConfig | VercelConfig | VAPIConfig;
+      let newConfig: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig;
 
       if (provider === 'github') {
         newConfig = { org, templates } as GitHubConfig;

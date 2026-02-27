@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
-import { X, Minus, MessageSquare, Mic, FileText, Bot, FileStack } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { X, Minus, MessageSquare, Mic, FileText, Bot, FileStack, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, AssistantMode } from './ai-assistant-provider';
 import { AIAssistantChat } from './ai-assistant-chat';
 import { AIAssistantVoice } from './ai-assistant-voice';
 import { AIAssistantTemplates } from './ai-assistant-templates';
+import { ConversationSidebar } from './conversation-sidebar';
 import { useCurrentUser } from '@/hooks/use-current-user';
 
 const modeConfig: Record<AssistantMode, { label: string; icon: typeof MessageSquare }> = {
@@ -16,8 +17,20 @@ const modeConfig: Record<AssistantMode, { label: string; icon: typeof MessageSqu
 };
 
 export function AIAssistantWidget() {
-  const { isOpen, mode, showTemplates, open, close, minimize, setMode, toggleTemplates } =
-    useAIAssistant();
+  const {
+    isOpen,
+    mode,
+    showTemplates,
+    conversationId,
+    open,
+    close,
+    minimize,
+    setMode,
+    toggleTemplates,
+    loadConversation,
+    newConversation,
+  } = useAIAssistant();
+  const [showHistory, setShowHistory] = useState(false);
   const { user } = useCurrentUser();
   const userName = user?.fullName?.split(' ')[0] || 'User';
 
@@ -71,6 +84,19 @@ export function AIAssistantWidget() {
               <span className="text-[11px] text-muted-foreground">Cmd+J</span>
             </div>
             <div className="flex items-center gap-1">
+              {/* History Toggle */}
+              <button
+                onClick={() => setShowHistory((prev) => !prev)}
+                className={cn(
+                  'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                  showHistory
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+                aria-label="Conversation history"
+              >
+                <History className="h-4 w-4" />
+              </button>
               {/* Templates Toggle */}
               <button
                 onClick={toggleTemplates}
@@ -130,11 +156,27 @@ export function AIAssistantWidget() {
 
           {/* Content Area */}
           <div className="relative flex-1 overflow-hidden">
+            {/* History Sidebar (overlay) */}
+            {showHistory && (
+              <ConversationSidebar
+                activeConversationId={conversationId}
+                onSelectConversation={(id) => {
+                  loadConversation(id);
+                  setShowHistory(false);
+                }}
+                onNewConversation={() => {
+                  newConversation();
+                  setShowHistory(false);
+                }}
+                onClose={() => setShowHistory(false)}
+              />
+            )}
+
             {/* Templates Panel (overlay) */}
             {showTemplates && <AIAssistantTemplates />}
 
             {/* Mode Content */}
-            <div className={cn('h-full', showTemplates && 'invisible')}>
+            <div className={cn('h-full', (showTemplates || showHistory) && 'invisible')}>
               {mode === 'voice' ? <AIAssistantVoice userName={userName} /> : <AIAssistantChat />}
             </div>
           </div>

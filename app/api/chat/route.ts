@@ -1,10 +1,13 @@
 /**
  * Chat API Route
  * Uses OpenRouter with Gemini 3 Flash
+ * Supports conversation persistence via conversationId
  */
 
 import { processStreamingAI, getUserInfo, getWorkspaceId } from '@/lib/ai/ai-core';
 import { chatRateLimiter } from '@/lib/rate-limit';
+import { createClient } from '@/lib/supabase/server';
+import { generateSimpleResponse } from '@/lib/ai/ai-core';
 
 export const maxDuration = 60;
 
@@ -46,7 +49,7 @@ export async function POST(req: Request) {
 
     // Parse request
     const body = await req.json();
-    const { messages } = body;
+    const { messages, conversationId } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: 'Invalid request: messages array required' }), {
@@ -57,6 +60,69 @@ export async function POST(req: Request) {
 
     // Get workspace
     const workspaceId = await getWorkspaceId(user.id);
+    const supabase = await createClient();
+
+    // Handle conversation persistence
+    let activeConversationId = conversationId;
+
+    if (conversationId) {
+      // Save the latest user message
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'user') {
+        await supabase.from('ai_messages').insert({
+          conversation_id: conversationId,
+          role: 'user',
+          content: lastMessage.content,
+        });
+        await supabase
+          .from('ai_conversations')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', conversationId);
+      }
+    } else if (messages.length > 0) {
+      // Create a new conversation if none provided
+      const firstMessage = messages[0]?.content || '';
+      const { data: newConv } = await supabase
+        .from('ai_conversations')
+        .insert({
+          workspace_id: workspaceId,
+          user_id: user.id,
+          title: 'New Conversation',
+        })
+        .select('id')
+        .single();
+
+      if (newConv) {
+        activeConversationId = newConv.id;
+
+        // Save the user message
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage?.role === 'user') {
+          await supabase.from('ai_messages').insert({
+            conversation_id: newConv.id,
+            role: 'user',
+            content: lastMessage.content,
+          });
+        }
+
+        // Auto-generate title from first user message (async, don't block)
+        if (firstMessage) {
+          generateSimpleResponse(
+            `Generate a short title (max 6 words) for a conversation that starts with: "${firstMessage.slice(0, 200)}". Return ONLY the title, no quotes.`
+          )
+            .then(async (title) => {
+              const trimmed = title.trim().replace(/^["']|["']$/g, '');
+              if (trimmed) {
+                await supabase
+                  .from('ai_conversations')
+                  .update({ title: trimmed })
+                  .eq('id', newConv.id);
+              }
+            })
+            .catch(() => {});
+        }
+      }
+    }
 
     // Process with AI
     try {
@@ -67,7 +133,32 @@ export async function POST(req: Request) {
         mode: 'chat',
       });
 
-      return result.toTextStreamResponse();
+      // Build response with conversation ID header
+      const response = result.toTextStreamResponse();
+
+      // Add conversationId to response headers so client can track it
+      const headers = new Headers(response.headers);
+      if (activeConversationId) {
+        headers.set('X-Conversation-Id', activeConversationId);
+      }
+
+      // Save assistant response after stream completes (fire and forget)
+      if (activeConversationId) {
+        result.text
+          .then(async (text) => {
+            await supabase.from('ai_messages').insert({
+              conversation_id: activeConversationId,
+              role: 'assistant',
+              content: text,
+            });
+          })
+          .catch(() => {});
+      }
+
+      return new Response(response.body, {
+        status: response.status,
+        headers,
+      });
     } catch (streamError) {
       console.error('AI streaming error:', streamError);
       throw streamError;

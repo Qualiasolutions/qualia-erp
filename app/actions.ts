@@ -17,6 +17,7 @@
  * - issues.ts: Issue/task management
  * - projects.ts: Project management
  * - auth.ts: Authentication and admin
+ * - zoho.ts: Zoho integration (invoices, email, contacts)
  * - shared.ts: Types and authorization helpers
  */
 
@@ -125,3 +126,12 @@ export {
 
 // ============ AUTH ============
 export { loginAction, getAdminStatus, getProfiles } from './actions/auth';
+
+// ============ ZOHO ============
+export {
+  createInvoice,
+  fetchInvoices,
+  sendEmail,
+  searchContacts,
+  syncZohoToERP,
+} from './actions/zoho';
