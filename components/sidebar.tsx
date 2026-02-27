@@ -50,18 +50,25 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-colors duration-100',
+        'group relative flex h-10 items-center gap-2.5 rounded-lg px-4 text-[13px] font-medium transition-all duration-200 ease-premium',
         isActive
           ? 'bg-muted/60 text-foreground'
           : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
       )}
     >
+      {/* Active indicator bar */}
+      <span
+        className={cn(
+          'absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-full bg-primary transition-all duration-200 ease-spring',
+          isActive ? 'scale-y-100 opacity-100' : 'scale-y-0 opacity-0'
+        )}
+      />
       <item.icon
         className={cn(
-          'h-4 w-4 flex-shrink-0 transition-colors duration-100',
+          'h-4 w-4 flex-shrink-0 transition-all duration-200 ease-premium',
           isActive
             ? 'text-foreground'
-            : 'text-muted-foreground/50 group-hover:text-muted-foreground'
+            : 'text-muted-foreground/50 group-hover:scale-110 group-hover:text-muted-foreground'
         )}
       />
       <span>{item.name}</span>
@@ -92,7 +99,7 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition-colors duration-150',
+            'flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200 ease-premium',
             'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
             'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30'
           )}
@@ -129,8 +136,12 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-14 items-center border-b border-border/20 px-4">
-        <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg">
+        <Link
+          href="/"
+          className="group flex items-center gap-2.5 transition-transform duration-200 ease-spring hover:scale-[1.02]"
+          onClick={onLinkClick}
+        >
+          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 ease-spring group-hover:scale-[1.05]">
             <Image
               src="/logo.webp"
               alt="Qualia"

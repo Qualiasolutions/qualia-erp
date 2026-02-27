@@ -294,7 +294,7 @@
   }
 
   .sidebar {
-    @apply flex h-full flex-col border-r border-border/40 bg-background;
+    @apply flex h-full flex-col border-r border-border/30 bg-background;
   }
 }
 
@@ -380,7 +380,7 @@
    ============================================ */
 @layer utilities {
   .page-header {
-    @apply border-b border-border/30 bg-background px-6 py-4 sm:px-8 sm:py-5;
+    @apply sticky top-0 z-sticky border-b border-border/30 bg-background/80 px-6 py-4 backdrop-blur-xl sm:px-8 sm:py-5;
   }
 
   .page-title {
@@ -392,7 +392,8 @@
   }
 
   .page-content {
-    @apply flex-1 overflow-auto p-5 sm:p-7;
+    @apply flex-1 overflow-auto p-6 sm:p-8;
+    animation: fade-in 0.2s var(--ease-premium) forwards;
   }
 }
 
