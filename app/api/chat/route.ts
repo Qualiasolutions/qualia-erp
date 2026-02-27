@@ -14,6 +14,7 @@ import {
   markNotesDelivered,
   updateConversationSummaries,
 } from '@/app/actions/ai-context';
+import { loadFullMemoryContext, updateInteractionCount } from '@/lib/ai/memory';
 import type { EnrichedContext } from '@/lib/ai/system-prompt';
 
 export const maxDuration = 60;
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
     let hasUndeliveredNotes = false;
 
     if (workspaceId) {
-      const [aiContext, projectsResult, tasksResult] = await Promise.all([
+      const [aiContext, projectsResult, tasksResult, memoryContext] = await Promise.all([
         getOrCreateUserAIContext(user.id, workspaceId),
         supabase
           .from('projects')
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
           .in('status', ['Todo', 'In Progress'])
           .order('due_date', { ascending: true, nullsFirst: false })
           .limit(5),
+        loadFullMemoryContext(user.id, workspaceId),
       ]);
 
       const undeliveredNotes = aiContext?.admin_notes?.filter((n) => !n.delivered) || [];
@@ -104,6 +106,7 @@ export async function POST(req: Request) {
           projectsResult.data && projectsResult.data.length > 0 ? projectsResult.data : undefined,
         pendingTasks:
           tasksResult.data && tasksResult.data.length > 0 ? tasksResult.data : undefined,
+        memoryContext,
       };
 
       // Only pass enrichedContext if it has content
@@ -111,7 +114,9 @@ export async function POST(req: Request) {
         !enrichedContext.adminNotes &&
         !enrichedContext.recentSummaries &&
         !enrichedContext.activeProjects &&
-        !enrichedContext.pendingTasks
+        !enrichedContext.pendingTasks &&
+        !enrichedContext.memoryContext?.memories.length &&
+        !enrichedContext.memoryContext?.reminders.length
       ) {
         enrichedContext = undefined;
       }
@@ -211,6 +216,11 @@ export async function POST(req: Request) {
             // Mark admin notes as delivered
             if (hasUndeliveredNotes && workspaceId) {
               markNotesDelivered(user.id, workspaceId).catch(() => {});
+            }
+
+            // Increment interaction count for skill detection
+            if (workspaceId) {
+              updateInteractionCount(user.id, workspaceId).catch(() => {});
             }
 
             // Generate conversation summary if 4+ messages

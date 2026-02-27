@@ -32,7 +32,7 @@ export async function getUserInfo(): Promise<UserInfo | null> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, full_name, email, role')
+    .select('id, full_name, email, role, skill_level')
     .eq('id', user.id)
     .single();
 

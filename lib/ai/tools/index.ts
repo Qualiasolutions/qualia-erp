@@ -6,6 +6,10 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createReadTools } from './read-tools';
 import { createWriteTools } from './write-tools';
+import { createGitHubReadTools, createGitHubWriteTools } from './github-tools';
+import { createVercelReadTools, createVercelWriteTools } from './vercel-tools';
+import { createSupabaseReadTools, createSupabaseWriteTools } from './supabase-tools';
+import { createMemoryTools } from './memory-tools';
 
 export interface UserInfo {
   id: string;
@@ -18,10 +22,19 @@ export interface UserInfo {
  * Admin-only tools that should be filtered out for non-admin users
  */
 const ADMIN_ONLY_TOOLS = new Set([
+  // Internal ERP tools
   'logPayment',
   'createProject',
   'bulkUpdateTasks',
   'createInvoice',
+  // GitHub tools
+  'mergeGitHubPR',
+  // Vercel tools
+  'promoteVercelDeployment',
+  'deleteVercelEnvVar',
+  // Supabase ops tools
+  'executeProjectQuery',
+  'applyProjectMigration',
 ]);
 
 /**
@@ -32,13 +45,29 @@ export function createAllTools(
   workspaceId: string | null,
   user: UserInfo
 ) {
-  const readTools = createReadTools(supabase, workspaceId);
-  const writeTools = createWriteTools(supabase, workspaceId, user);
+  const toolSets = [
+    createReadTools(supabase, workspaceId),
+    createWriteTools(supabase, workspaceId, user),
+    createGitHubReadTools(workspaceId),
+    createGitHubWriteTools(workspaceId),
+    createVercelReadTools(workspaceId),
+    createVercelWriteTools(workspaceId),
+    createSupabaseReadTools(workspaceId),
+    createSupabaseWriteTools(workspaceId),
+    createMemoryTools(supabase, workspaceId, user.id),
+  ];
 
-  return {
-    ...readTools,
-    ...writeTools,
-  };
+  // Merge all tool sets, filtering out empty objects from null workspaceId
+  const merged: Record<string, unknown> = {};
+  for (const set of toolSets) {
+    for (const [key, value] of Object.entries(set)) {
+      if (value !== undefined) {
+        merged[key] = value;
+      }
+    }
+  }
+
+  return merged as ReturnType<typeof createReadTools> & ReturnType<typeof createWriteTools>;
 }
 
 /**
@@ -69,3 +98,7 @@ export function createAgentTools(
 // Re-export individual tool creators for flexibility
 export { createReadTools } from './read-tools';
 export { createWriteTools } from './write-tools';
+export { createGitHubReadTools, createGitHubWriteTools } from './github-tools';
+export { createVercelReadTools, createVercelWriteTools } from './vercel-tools';
+export { createSupabaseReadTools, createSupabaseWriteTools } from './supabase-tools';
+export { createMemoryTools } from './memory-tools';
