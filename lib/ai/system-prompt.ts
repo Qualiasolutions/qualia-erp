@@ -11,10 +11,18 @@ interface UserInfo {
   role: string | null;
 }
 
+export interface EnrichedContext {
+  adminNotes?: Array<{ content: string; from_name: string }>;
+  recentSummaries?: string[];
+  activeProjects?: Array<{ name: string; status: string }>;
+  pendingTasks?: Array<{ title: string; due_date?: string | null; priority: string }>;
+}
+
 interface PromptOptions {
   user: UserInfo;
   mode: 'chat' | 'voice';
   userContext?: UserContext;
+  enrichedContext?: EnrichedContext;
 }
 
 /**
@@ -22,7 +30,7 @@ interface PromptOptions {
  * Supports both chat (text) and voice modes with appropriate adjustments
  */
 export function buildSystemPrompt(options: PromptOptions): string {
-  const { user, mode, userContext } = options;
+  const { user, mode, userContext, enrichedContext } = options;
   const userName = user.full_name || user.email?.split('@')[0] || 'User';
   const isAdmin = user.role === 'admin';
   const firstName = userName.split(' ')[0]?.toLowerCase();
@@ -191,7 +199,64 @@ ${modeInstructions}
 - Mix Arabic phrases naturally if talking to Arabic speakers: "تمام", "ما في مشكلة", "خلص"
 - Never sound robotic - you're a smart colleague, not a machine
 - Confirm actions with relevant details, not just "done"
-- For scheduling, get specifics if missing but don't be annoying about it`;
+- For scheduling, get specifics if missing but don't be annoying about it
+${buildEnrichedContextSection(enrichedContext)}`;
+}
+
+/**
+ * Build enriched context sections for cross-session learning
+ */
+function buildEnrichedContextSection(ctx?: EnrichedContext): string {
+  if (!ctx) return '';
+
+  const sections: string[] = [];
+
+  // Admin notes — deliver naturally in first response
+  const undeliveredNotes = ctx.adminNotes?.filter((n) => n.content);
+  if (undeliveredNotes && undeliveredNotes.length > 0) {
+    const noteLines = undeliveredNotes
+      .map((n) => `- From ${n.from_name}: "${n.content}"`)
+      .join('\n');
+    sections.push(`
+## MESSAGES FROM ADMIN
+The following notes were left for this user. Deliver them naturally in your FIRST response. Be direct.
+${noteLines}`);
+  }
+
+  // Recent conversation summaries
+  if (ctx.recentSummaries && ctx.recentSummaries.length > 0) {
+    const summaryLines = ctx.recentSummaries.map((s) => `- ${s}`).join('\n');
+    sections.push(`
+## Previous Conversations
+This user recently discussed:
+${summaryLines}
+Reference these if relevant. Don't repeat them unprompted.`);
+  }
+
+  // Work context for personalized greetings
+  const hasProjects = ctx.activeProjects && ctx.activeProjects.length > 0;
+  const hasTasks = ctx.pendingTasks && ctx.pendingTasks.length > 0;
+
+  if (hasProjects || hasTasks) {
+    let workSection = '\n## Current Work Context';
+    if (hasProjects) {
+      const projectList = ctx.activeProjects!.map((p) => `${p.name} (${p.status})`).join(', ');
+      workSection += `\nActive Projects: ${projectList}`;
+    }
+    if (hasTasks) {
+      const taskList = ctx
+        .pendingTasks!.map((t) => {
+          const due = t.due_date ? ` — due ${t.due_date}` : '';
+          return `${t.title} [${t.priority}]${due}`;
+        })
+        .join(', ');
+      workSection += `\nPending Tasks: ${taskList}`;
+    }
+    workSection += '\nUse this for personalized greetings and proactive suggestions.';
+    sections.push(workSection);
+  }
+
+  return sections.join('\n');
 }
 
 /**

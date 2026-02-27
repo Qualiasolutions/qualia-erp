@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  ReactNode,
+} from 'react';
 import { getMessages } from '@/app/actions/ai-conversations';
 import { invalidateConversations } from '@/lib/swr';
 
@@ -12,6 +20,9 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
+
+// Auto-greeting marker — hidden from UI
+const AUTO_GREETING_CONTENT = '__auto_greeting__';
 
 interface AIAssistantContextType {
   // UI State
@@ -26,6 +37,7 @@ interface AIAssistantContextType {
   messages: Message[];
   isStreaming: boolean;
   error: string | null;
+  isAutoGreeting: boolean;
 
   // Voice State
   isListening: boolean;
@@ -120,6 +132,9 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+
+  // Auto-greeting state
+  const [isAutoGreeting, setIsAutoGreeting] = useState(false);
 
   // Hydration flag
   const [isHydrated, setIsHydrated] = useState(false);
@@ -252,6 +267,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     setMessages([]);
     setConversationId(null);
     setError(null);
+    setIsAutoGreeting(false);
   }, []);
 
   const loadConversation = useCallback(async (id: string) => {
@@ -275,6 +291,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     setConversationId(null);
     setMessages([]);
     setError(null);
+    setIsAutoGreeting(false);
   }, []);
 
   const setListening = useCallback((listening: boolean) => {
@@ -289,10 +306,13 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     async (text: string) => {
       if (!text.trim() || isStreaming) return;
 
+      const isAutoGreet = text.trim() === AUTO_GREETING_CONTENT;
+      const actualText = isAutoGreet ? 'hi' : text.trim();
+
       const userMessage: Message = {
         id: `user-${Date.now()}`,
         role: 'user',
-        content: text.trim(),
+        content: text.trim(), // Keep original marker for filtering
       };
 
       setMessages((prev) => [...prev, userMessage]);
@@ -309,7 +329,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
           chatMessages = [
             {
               role: 'user' as const,
-              content: `${DOCUMENT_SYSTEM_PROMPT}\n\nUser request: ${text.trim()}`,
+              content: `${DOCUMENT_SYSTEM_PROMPT}\n\nUser request: ${actualText}`,
             },
           ];
         } else {
@@ -318,7 +338,7 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
               role: m.role as 'user' | 'assistant',
               content: m.content,
             })),
-            { role: 'user' as const, content: text.trim() },
+            { role: 'user' as const, content: actualText },
           ];
         }
 
@@ -404,6 +424,30 @@ export function AIAssistantProvider({ children }: { children: ReactNode }) {
     [messages, mode, isStreaming, conversationId]
   );
 
+  // Ref to avoid stale closure in auto-greeting effect
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
+
+  // Auto-greeting: when opening with no messages, send a greeting to trigger personalized welcome
+  useEffect(() => {
+    if (
+      isOpen &&
+      messages.length === 0 &&
+      !isStreaming &&
+      !conversationId &&
+      !guidedTask &&
+      isHydrated &&
+      mode === 'chat'
+    ) {
+      setIsAutoGreeting(true);
+      const timer = setTimeout(() => {
+        sendMessageRef.current(AUTO_GREETING_CONTENT);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isHydrated]);
+
   // Start a guided task (like create project or create client)
   const startGuidedTask = useCallback(
     (task: GuidedTask) => {
@@ -463,6 +507,7 @@ Start by asking for the company name.`;
         messages,
         isStreaming,
         error,
+        isAutoGreeting,
         isListening,
         isSpeaking,
         voiceEnabled,

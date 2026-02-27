@@ -126,7 +126,13 @@ function markdownToHtml(text: string): string {
 }
 
 export function AIAssistantChat() {
-  const { messages, isStreaming, mode, sendMessage, clearConversation } = useAIAssistant();
+  const { messages, isStreaming, mode, sendMessage, clearConversation, isAutoGreeting } =
+    useAIAssistant();
+
+  // Filter out auto-greeting user message from display
+  const displayMessages = isAutoGreeting
+    ? messages.filter((m) => !(m.role === 'user' && m.content === '__auto_greeting__'))
+    : messages;
 
   const [input, setInput] = useState('');
   const [copied, setCopied] = useState(false);
@@ -143,13 +149,13 @@ export function AIAssistantChat() {
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [displayMessages]);
 
   // Auto-speak assistant responses when TTS is enabled
   useEffect(() => {
     if (!ttsEnabled || isStreaming) return;
 
-    const lastMessage = messages[messages.length - 1];
+    const lastMessage = displayMessages[displayMessages.length - 1];
     if (
       !lastMessage ||
       lastMessage.role !== 'assistant' ||
@@ -160,7 +166,7 @@ export function AIAssistantChat() {
 
     lastSpokenIdRef.current = lastMessage.id;
     speakText(lastMessage.content);
-  }, [messages, isStreaming, ttsEnabled]);
+  }, [displayMessages, isStreaming, ttsEnabled]);
 
   const speakText = useCallback(async (text: string) => {
     // Stop any existing audio
@@ -236,16 +242,16 @@ export function AIAssistantChat() {
   };
 
   const copyLastMessage = useCallback(() => {
-    const lastAssistant = messages.filter((m) => m.role === 'assistant').pop();
+    const lastAssistant = displayMessages.filter((m) => m.role === 'assistant').pop();
     if (lastAssistant) {
       navigator.clipboard.writeText(lastAssistant.content);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [messages]);
+  }, [displayMessages]);
 
   const printDocument = useCallback(() => {
-    const lastAssistant = messages.filter((m) => m.role === 'assistant').pop();
+    const lastAssistant = displayMessages.filter((m) => m.role === 'assistant').pop();
     if (!lastAssistant) return;
 
     // Convert markdown to HTML with escaping for safety
@@ -291,11 +297,11 @@ export function AIAssistantChat() {
         printWindow.print();
       };
     }
-  }, [messages]);
+  }, [displayMessages]);
 
   const prompts = mode === 'document' ? documentPrompts : quickActions;
-  const hasMessages = messages.length > 0;
-  const hasAssistantMessage = messages.some((m) => m.role === 'assistant');
+  const hasMessages = displayMessages.length > 0;
+  const hasAssistantMessage = displayMessages.some((m) => m.role === 'assistant');
 
   return (
     <div className="flex h-full flex-col">
@@ -332,9 +338,9 @@ export function AIAssistantChat() {
           </div>
         ) : (
           <div className="space-y-3 p-3">
-            {messages.map((message, index) => {
+            {displayMessages.map((message, index) => {
               const isLastAssistantMessage =
-                message.role === 'assistant' && index === messages.length - 1;
+                message.role === 'assistant' && index === displayMessages.length - 1;
               const isCurrentlyStreaming = isLastAssistantMessage && isStreaming;
 
               return (
@@ -374,9 +380,12 @@ export function AIAssistantChat() {
 
             {/* Show thinking indicator when streaming but no assistant response yet, or assistant has no content */}
             {isStreaming &&
-              (messages[messages.length - 1]?.role === 'user' ||
-                (messages[messages.length - 1]?.role === 'assistant' &&
-                  !messages[messages.length - 1]?.content.trim())) && <ThinkingIndicator />}
+              (displayMessages.length === 0 ||
+                displayMessages[displayMessages.length - 1]?.role === 'user' ||
+                (displayMessages[displayMessages.length - 1]?.role === 'assistant' &&
+                  !displayMessages[displayMessages.length - 1]?.content.trim())) && (
+                <ThinkingIndicator />
+              )}
 
             <div ref={messagesEndRef} />
           </div>

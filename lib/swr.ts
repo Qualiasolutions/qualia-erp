@@ -51,6 +51,7 @@ export const cacheKeys = {
   scheduledTasks: (date: string) => `scheduled-tasks-${date}`,
   aiConversations: 'ai-conversations',
   aiMessages: (conversationId: string) => `ai-messages-${conversationId}`,
+  aiUserContext: (userId: string) => `ai-user-context-${userId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -222,8 +223,10 @@ export function invalidateCache(
  * Returns both active projects and demos separately
  */
 export function useProjectStats(initialData?: {
-  projects: ProjectStatsData[];
   demos: ProjectStatsData[];
+  building: ProjectStatsData[];
+  live: ProjectStatsData[];
+  archived: ProjectStatsData[];
 }) {
   const {
     data,
@@ -244,8 +247,10 @@ export function useProjectStats(initialData?: {
   );
 
   return {
-    projects: data?.projects || [],
     demos: data?.demos || [],
+    building: data?.building || [],
+    live: data?.live || [],
+    archived: data?.archived || [],
     isLoading,
     isValidating,
     isError: !!error,
@@ -907,5 +912,48 @@ export function invalidateConversationMessages(conversationId: string, immediate
     mutate(cacheKeys.aiMessages(conversationId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.aiMessages(conversationId));
+  }
+}
+
+// ============ AI USER CONTEXT HOOKS ============
+
+/**
+ * Hook to fetch AI user context (admin notes, summaries)
+ */
+export function useAIUserContext(userId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    userId ? cacheKeys.aiUserContext(userId) : null,
+    async () => {
+      if (!userId) return null;
+      const { getUserAIContext } = await import('@/app/actions/ai-context');
+      return getUserAIContext(userId);
+    },
+    swrConfig
+  );
+
+  return {
+    context: data || null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate AI user context cache
+ */
+export function invalidateAIUserContext(userId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.aiUserContext(userId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.aiUserContext(userId));
   }
 }

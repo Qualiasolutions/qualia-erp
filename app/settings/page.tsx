@@ -4,7 +4,8 @@ import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
 import { LearnModeSettings } from '@/components/settings/learn-mode-settings';
-import { ChevronRight, Plug } from 'lucide-react';
+import { AdminNotesSection } from '@/components/ai-assistant/admin-notes-section';
+import { ChevronRight, Plug, MessageSquarePlus } from 'lucide-react';
 
 async function AccountInfoLoader() {
   await connection();
@@ -77,6 +78,44 @@ async function AccountInfoLoader() {
   );
 }
 
+async function AdminNotesLoader() {
+  await connection();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role !== 'admin') return null;
+
+  return <AdminNotesSection currentUserId={user.id} />;
+}
+
+async function AdminNotesWrapper() {
+  const content = await AdminNotesLoader();
+  if (!content) return null;
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-6">
+      <div className="mb-4 flex items-center gap-2">
+        <MessageSquarePlus className="h-5 w-5 text-primary" />
+        <h2 className="text-md font-medium text-foreground">AI Assistant Notes</h2>
+      </div>
+      <p className="mb-4 text-sm text-muted-foreground">
+        Leave notes for team members that the AI assistant will deliver in their next conversation.
+      </p>
+      {content}
+    </div>
+  );
+}
+
 function AccountInfoSkeleton() {
   return (
     <div className="animate-pulse space-y-4">
@@ -114,6 +153,11 @@ export default function SettingsPage() {
             <h2 className="text-md mb-4 font-medium text-foreground">Learning & Development</h2>
             <LearnModeSettings />
           </div>
+
+          {/* AI Assistant Notes (Admin Only) */}
+          <Suspense fallback={null}>
+            <AdminNotesWrapper />
+          </Suspense>
 
           {/* Appearance Section */}
           <div className="rounded-lg border border-border bg-card p-6">

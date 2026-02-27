@@ -2,12 +2,19 @@
  * Chat API Route
  * Uses OpenRouter with Gemini 3 Flash
  * Supports conversation persistence via conversationId
+ * Enriched with cross-session context (admin notes, summaries, work context)
  */
 
 import { processStreamingAI, getUserInfo, getWorkspaceId } from '@/lib/ai/ai-core';
 import { chatRateLimiter } from '@/lib/rate-limit';
 import { createClient } from '@/lib/supabase/server';
 import { generateSimpleResponse } from '@/lib/ai/ai-core';
+import {
+  getOrCreateUserAIContext,
+  markNotesDelivered,
+  updateConversationSummaries,
+} from '@/app/actions/ai-context';
+import type { EnrichedContext } from '@/lib/ai/system-prompt';
 
 export const maxDuration = 60;
 
@@ -61,6 +68,54 @@ export async function POST(req: Request) {
     // Get workspace
     const workspaceId = await getWorkspaceId(user.id);
     const supabase = await createClient();
+
+    // Fetch enriched context (admin notes, summaries, work context)
+    let enrichedContext: EnrichedContext | undefined;
+    let hasUndeliveredNotes = false;
+
+    if (workspaceId) {
+      const [aiContext, projectsResult, tasksResult] = await Promise.all([
+        getOrCreateUserAIContext(user.id, workspaceId),
+        supabase
+          .from('projects')
+          .select('name, status')
+          .eq('lead_id', user.id)
+          .in('status', ['Active', 'Demos'])
+          .limit(10),
+        supabase
+          .from('tasks')
+          .select('title, due_date, priority')
+          .eq('assigned_to', user.id)
+          .in('status', ['Todo', 'In Progress'])
+          .order('due_date', { ascending: true, nullsFirst: false })
+          .limit(5),
+      ]);
+
+      const undeliveredNotes = aiContext?.admin_notes?.filter((n) => !n.delivered) || [];
+      hasUndeliveredNotes = undeliveredNotes.length > 0;
+
+      enrichedContext = {
+        adminNotes: undeliveredNotes.length > 0 ? undeliveredNotes : undefined,
+        recentSummaries:
+          aiContext?.recent_summaries && aiContext.recent_summaries.length > 0
+            ? aiContext.recent_summaries
+            : undefined,
+        activeProjects:
+          projectsResult.data && projectsResult.data.length > 0 ? projectsResult.data : undefined,
+        pendingTasks:
+          tasksResult.data && tasksResult.data.length > 0 ? tasksResult.data : undefined,
+      };
+
+      // Only pass enrichedContext if it has content
+      if (
+        !enrichedContext.adminNotes &&
+        !enrichedContext.recentSummaries &&
+        !enrichedContext.activeProjects &&
+        !enrichedContext.pendingTasks
+      ) {
+        enrichedContext = undefined;
+      }
+    }
 
     // Handle conversation persistence
     let activeConversationId = conversationId;
@@ -131,6 +186,7 @@ export async function POST(req: Request) {
         user,
         workspaceId,
         mode: 'chat',
+        enrichedContext,
       });
 
       // Build response with conversation ID header
@@ -151,6 +207,38 @@ export async function POST(req: Request) {
               role: 'assistant',
               content: text,
             });
+
+            // Mark admin notes as delivered
+            if (hasUndeliveredNotes && workspaceId) {
+              markNotesDelivered(user.id, workspaceId).catch(() => {});
+            }
+
+            // Generate conversation summary if 4+ messages
+            if (workspaceId && messages.length >= 3) {
+              const recentMessages = messages
+                .slice(-4)
+                .map(
+                  (m: { role: string; content: string }) => `${m.role}: ${m.content.slice(0, 100)}`
+                )
+                .join('\n');
+
+              generateSimpleResponse(
+                `Summarize this conversation in ONE short sentence (max 15 words). Focus on the main topic/action:\n${recentMessages}\nAssistant: ${text.slice(0, 200)}`
+              )
+                .then(async (summary) => {
+                  const trimmed = summary.trim().replace(/^["']|["']$/g, '');
+                  if (trimmed) {
+                    // Save to ai_user_context
+                    await updateConversationSummaries(user.id, workspaceId!, trimmed);
+                    // Save to conversation record
+                    await supabase
+                      .from('ai_conversations')
+                      .update({ summary: trimmed })
+                      .eq('id', activeConversationId);
+                  }
+                })
+                .catch(() => {});
+            }
           })
           .catch(() => {});
       }

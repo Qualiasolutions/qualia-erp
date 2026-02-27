@@ -6,7 +6,7 @@
 import { streamText, generateText, stepCountIs } from 'ai';
 import { geminiModel } from './gemini-client';
 import { createAgentTools, type UserInfo } from './tools';
-import { buildSystemPrompt } from './system-prompt';
+import { buildSystemPrompt, type EnrichedContext } from './system-prompt';
 import { createClient } from '@/lib/supabase/server';
 import type { UserContext } from '@/lib/voice-assistant-intelligence';
 
@@ -16,6 +16,7 @@ export interface ProcessOptions {
   workspaceId: string | null;
   mode: 'chat' | 'voice';
   userContext?: UserContext;
+  enrichedContext?: EnrichedContext;
 }
 
 /**
@@ -63,6 +64,7 @@ export async function processStreamingAI(options: ProcessOptions) {
     user: options.user,
     mode: options.mode,
     userContext: options.userContext,
+    enrichedContext: options.enrichedContext,
   });
 
   const tools = createAgentTools(supabase, options.workspaceId, options.user);
