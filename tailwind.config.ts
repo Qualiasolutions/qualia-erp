@@ -11,6 +11,11 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-display)', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['var(--font-mono)', 'SF Mono', 'Monaco', 'Consolas', 'monospace'],
+        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+      },
       colors: {
         /* Qualia Brand — Warm Teal */
         qualia: {

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
 import { LearnModeSettings } from '@/components/settings/learn-mode-settings';
 import { AdminNotesSection } from '@/components/ai-assistant/admin-notes-section';
-import { ChevronRight, Plug, MessageSquarePlus } from 'lucide-react';
+import { ChevronRight, Plug, MessageSquarePlus, Settings } from 'lucide-react';
 
 async function AccountInfoLoader() {
   await connection();
@@ -134,8 +134,13 @@ function AccountInfoSkeleton() {
 export default function SettingsPage() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl">
-        <h1 className="text-sm font-semibold text-foreground">Settings</h1>
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted">
+            <Settings className="h-3.5 w-3.5 text-muted-foreground" />
+          </div>
+          <h1 className="text-sm font-semibold text-foreground">Settings</h1>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">

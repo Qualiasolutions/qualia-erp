@@ -7,8 +7,8 @@ export default function Page() {
       {/* Left Panel — Brand */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-qualia-950 p-12 lg:flex lg:w-[45%] xl:w-[42%]">
         {/* Subtle radial glow */}
-        <div className="bg-qualia-500/8 pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full blur-[120px]" />
-        <div className="bg-qualia-600/6 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[100px]" />
+        <div className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-qualia-500/10 blur-[140px]" />
+        <div className="bg-qualia-600/8 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[120px]" />
 
         {/* Top — Logo */}
         <div className="relative z-10">
@@ -19,11 +19,11 @@ export default function Page() {
         </div>
 
         {/* Center — Headline */}
-        <div className="relative z-10 max-w-sm">
-          <h1 className="text-[2.5rem] font-semibold leading-[1.1] tracking-tight text-white">
+        <div className="relative z-10 max-w-md">
+          <h1 className="text-[2.75rem] font-bold leading-[1.08] tracking-[-0.04em] text-white">
             Build better, <span className="text-qualia-400">ship faster.</span>
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-qualia-200/60">
+          <p className="mt-5 text-base leading-relaxed text-qualia-200/60">
             Your workspace for managing projects, clients, and teams — all in one place.
           </p>
         </div>
@@ -79,9 +79,11 @@ export default function Page() {
           </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">Welcome back</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Sign in to your workspace</p>
+          <div className="mb-10">
+            <h2 className="text-[1.75rem] font-bold tracking-[-0.03em] text-foreground">
+              Welcome back
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">Sign in to your workspace</p>
           </div>
 
           <LoginForm />

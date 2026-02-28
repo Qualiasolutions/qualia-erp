@@ -46,8 +46,8 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
     <div className="rounded-xl border border-border/40 bg-card shadow-elevation-1">
       <div className="flex items-center justify-between border-b border-border/20 bg-muted/20 px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15">
-            <Hammer className="h-3 w-3 text-emerald-500" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15">
+            <Hammer className="h-3.5 w-3.5 text-emerald-500" />
           </div>
           <h3 className="text-[13px] font-semibold text-foreground">Currently Building</h3>
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-500">
@@ -91,7 +91,7 @@ function ProjectChip({
       className={cn(
         'group flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200 ease-premium',
         'border border-border/30 bg-muted/30',
-        'hover:-translate-y-0.5 hover:border-border/50 hover:bg-muted/60 hover:shadow-sm',
+        'hover:-translate-y-0.5 hover:border-border/60 hover:bg-muted/60 hover:shadow-md',
         'animate-stagger-in'
       )}
       style={{ animationDelay: `${index * 40}ms` }}

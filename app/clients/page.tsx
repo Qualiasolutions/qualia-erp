@@ -92,10 +92,10 @@ export default function ClientsPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-5 py-3.5 backdrop-blur-xl sm:px-8">
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10">
-            <Building2 className="h-3 w-3 text-emerald-500" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
+            <Building2 className="h-3.5 w-3.5 text-emerald-500" />
           </div>
           <h1 className="text-sm font-semibold text-foreground">Clients</h1>
         </div>

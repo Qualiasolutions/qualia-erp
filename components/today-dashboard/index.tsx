@@ -50,18 +50,18 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 backdrop-blur-xl">
+      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
             <Menu className="size-4" />
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <h1 className="text-sm font-semibold text-foreground">{greeting}</h1>
-            <span className="hidden text-border sm:inline">/</span>
-            <span className="hidden text-[13px] tabular-nums text-muted-foreground sm:inline">
-              {format(now, 'EEE, MMM d')}
+            <span className="hidden h-4 w-px bg-border/60 sm:inline-block" />
+            <span className="hidden text-[13px] font-medium tabular-nums text-muted-foreground sm:inline">
+              {format(now, 'EEEE, MMMM d')}
             </span>
           </div>
         </div>

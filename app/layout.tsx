@@ -1,7 +1,21 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
-import { GeistSans } from 'geist/font/sans';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
+
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  weight: ['400', '500', '600'],
+  display: 'swap',
+});
 import { Sidebar } from '@/components/sidebar';
 import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -91,16 +105,20 @@ export const metadata: Metadata = {
 function SidebarSkeleton() {
   return (
     <div className="hidden h-full w-56 flex-shrink-0 flex-col border-r border-border/40 bg-card md:flex">
-      <div className="flex h-14 items-center gap-2.5 border-b border-border/20 px-4">
+      <div className="flex h-[60px] items-center gap-2.5 border-b border-border/20 px-4">
         <div className="h-7 w-7 animate-pulse rounded-lg bg-muted" />
         <div className="h-3 w-14 animate-pulse rounded bg-muted" />
       </div>
+      <div className="px-3 pt-4">
+        <div className="mb-2 h-3 w-16 animate-pulse rounded bg-muted/30" />
+      </div>
       <nav className="flex flex-1 flex-col gap-0.5 p-3">
-        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-9 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
+        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
       </nav>
     </div>
   );
@@ -120,7 +138,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://dhnlvbjxmmsxetxphqbh.supabase.co" />
       </head>
       <body
-        className={`${GeistSans.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
+        className={`${plusJakarta.variable} ${jetbrainsMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
       >
         {/* Skip to main content link for keyboard users */}
         <a href="#main-content" className="skip-to-main">

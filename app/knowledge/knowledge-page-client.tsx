@@ -127,20 +127,17 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-gradient-to-r from-background via-background to-background/95 px-4 backdrop-blur-sm sm:px-6">
-        <div className="flex items-center gap-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
+        <div className="flex items-center gap-2.5">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-qualia-500/20 to-qualia-500/5 shadow-sm"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10"
           >
-            <BookOpen className="h-5 w-5 text-qualia-500" />
+            <BookOpen className="h-3.5 w-3.5 text-qualia-500" />
           </motion.div>
           <div>
-            <h1 className="text-lg font-semibold text-foreground">Knowledge Hub</h1>
-            <p className="text-xs text-muted-foreground">
-              {initialData.allGuides.length} workflow guides
-            </p>
+            <h1 className="text-sm font-semibold text-foreground">Knowledge</h1>
           </div>
         </div>
       </header>
