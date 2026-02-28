@@ -547,6 +547,9 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
 
 function ClientBalanceRow({ balance }: { balance: ClientBalance }) {
   const hasActivity = balance.total_paid > 0 || balance.total_pending > 0;
+  const totalOwed = balance.total_owed || balance.total_paid + balance.total_pending;
+  const paidPct =
+    totalOwed > 0 ? Math.min(100, Math.round((balance.total_paid / totalOwed) * 100)) : 0;
 
   return (
     <div className="flex items-center gap-3 border-b border-border/50 px-2 py-3 last:border-0">
@@ -557,8 +560,21 @@ function ClientBalanceRow({ balance }: { balance: ClientBalance }) {
         <p className="truncate text-sm font-medium text-foreground">
           {balance.display_name || balance.client_name}
         </p>
+        {hasActivity && (
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{ width: `${paidPct}%` }}
+              />
+            </div>
+            <span className="shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
+              {paidPct}%
+            </span>
+          </div>
+        )}
         {balance.last_payment_date && (
-          <p className="text-xs text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Last: {format(parseISO(balance.last_payment_date), 'MMM d')}
           </p>
         )}
@@ -615,7 +631,7 @@ export function PaymentsClient({
     <div className="space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-l-[3px] border-border border-l-emerald-500 bg-card p-4">
           <p className="text-xs text-muted-foreground">Total Income</p>
           <p className="mt-1 text-xl font-bold tabular-nums text-emerald-600">
             {formatCurrency(summary.totalIncoming)}
@@ -626,7 +642,7 @@ export function PaymentsClient({
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-l-[3px] border-border border-l-red-500 bg-card p-4">
           <p className="text-xs text-muted-foreground">Total Expenses</p>
           <p className="mt-1 text-xl font-bold tabular-nums text-red-500">
             {formatCurrency(summary.totalOutgoing)}
@@ -637,7 +653,12 @@ export function PaymentsClient({
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div
+          className={cn(
+            'rounded-xl border border-l-[3px] border-border bg-card p-4',
+            balance >= 0 ? 'border-l-qualia-500' : 'border-l-red-500'
+          )}
+        >
           <p className="text-xs text-muted-foreground">Net Balance</p>
           <p
             className={cn(
@@ -653,7 +674,7 @@ export function PaymentsClient({
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-border bg-card p-4">
+        <div className="rounded-xl border border-l-[3px] border-border border-l-qualia-500 bg-card p-4">
           <p className="text-xs text-muted-foreground">Client Revenue</p>
           <p className="mt-1 text-xl font-bold tabular-nums text-qualia-600">
             {formatCurrency(totalClientPaid + totalClientPending)}
@@ -754,9 +775,26 @@ export function PaymentsClient({
                   </p>
                 </div>
               ) : (
-                filteredPayments.map((payment) => (
-                  <PaymentRow key={payment.id} payment={payment} clients={clients} />
-                ))
+                (() => {
+                  let lastMonth = '';
+                  return filteredPayments.map((payment) => {
+                    const monthKey = format(parseISO(payment.payment_date), 'MMMM yyyy');
+                    const showHeader = monthKey !== lastMonth;
+                    lastMonth = monthKey;
+                    return (
+                      <div key={payment.id}>
+                        {showHeader && (
+                          <div className="sticky top-0 z-10 border-b border-border/30 bg-card/95 px-1 py-2 backdrop-blur-sm">
+                            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                              {monthKey}
+                            </span>
+                          </div>
+                        )}
+                        <PaymentRow payment={payment} clients={clients} />
+                      </div>
+                    );
+                  });
+                })()
               )}
             </div>
           </div>

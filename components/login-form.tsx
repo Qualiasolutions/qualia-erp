@@ -37,7 +37,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             required
             autoComplete="email"
             autoFocus
-            className="h-12"
+            className="h-12 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
           />
         </div>
 
@@ -62,7 +62,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
               type={showPassword ? 'text' : 'password'}
               required
               autoComplete="current-password"
-              className="h-12 pr-11"
+              className="h-12 pr-11 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
             />
             <button
               type="button"

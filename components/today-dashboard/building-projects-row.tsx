@@ -43,8 +43,8 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
   if (building.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card shadow-elevation-1">
-      <div className="flex items-center justify-between border-b border-border/20 bg-muted/20 px-4 py-3">
+    <div className="rounded-xl border border-border/50 bg-card shadow-elevation-1">
+      <div className="flex items-center justify-between border-b border-border/30 bg-muted/20 px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15">
             <Hammer className="h-3.5 w-3.5 text-emerald-500" />
@@ -84,6 +84,10 @@ function ProjectChip({
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
   const isDelayed = project.status === 'Delayed';
+  const completionPct =
+    project.issue_stats.total > 0
+      ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
+      : 0;
 
   return (
     <Link
@@ -109,6 +113,12 @@ function ProjectChip({
         <span className="whitespace-nowrap text-xs font-medium text-foreground/80 group-hover:text-foreground">
           {project.name}
         </span>
+
+        {project.issue_stats.total > 0 && (
+          <span className="rounded bg-muted/60 px-1 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
+            {completionPct}%
+          </span>
+        )}
 
         {isDelayed ? (
           <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />

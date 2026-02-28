@@ -12,8 +12,8 @@ import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { DailyScheduleGrid } from './daily-schedule-grid';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
-import { DashboardAIChat } from './dashboard-ai-chat';
-import { useTransition, useState, useEffect } from 'react';
+import { QuickStatsBar } from './quick-stats-bar';
+import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
@@ -47,6 +47,27 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
     startRefresh(() => router.refresh());
   };
 
+  // Compute stats from existing data
+  const statsData = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const tasksDueToday = tasks.filter((t) => {
+      if (!t.due_date || t.status === 'Done') return false;
+      const due = new Date(t.due_date);
+      return due < tomorrow;
+    }).length;
+
+    return {
+      tasksDueToday,
+      meetingsToday: meetings.length,
+      activeProjects: building.length,
+      buildingCount: building.length,
+    };
+  }, [tasks, meetings, building]);
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
@@ -61,7 +82,7 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
             <h1 className="text-sm font-semibold text-foreground">{greeting}</h1>
             <span className="hidden h-4 w-px bg-border/60 sm:inline-block" />
             <span className="hidden text-[13px] font-medium tabular-nums text-muted-foreground sm:inline">
-              {format(now, 'EEEE, MMMM d')}
+              {format(now, 'EEEE, MMMM d, yyyy')}
             </span>
           </div>
         </div>
@@ -96,21 +117,18 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
         </div>
       </header>
 
-      {/* ===== MAIN CONTENT (no page scroll) ===== */}
+      {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-4 sm:px-6">
-          {/* ── TWO-COLUMN GRID (fills remaining height) ───────────────── */}
-          <div className="grid min-h-0 flex-1 grid-rows-[1fr] gap-5 overflow-hidden lg:grid-cols-5 xl:grid-cols-12">
-            {/* LEFT COLUMN — Schedule */}
-            <div className="min-h-0 overflow-hidden lg:col-span-3 xl:col-span-7">
-              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
-                <DailyScheduleGrid tasks={tasks} meetings={meetings} />
-              </div>
-            </div>
+          {/* ── QUICK STATS STRIP ─────────────────────────────────────── */}
+          <div className="mb-4 shrink-0">
+            <QuickStatsBar {...statsData} />
+          </div>
 
-            {/* RIGHT COLUMN — AI Assistant */}
-            <div className="min-h-0 overflow-hidden lg:col-span-2 xl:col-span-5">
-              <DashboardAIChat />
+          {/* ── FULL-WIDTH SCHEDULE ───────────────────────────────────── */}
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
+              <DailyScheduleGrid tasks={tasks} meetings={meetings} />
             </div>
           </div>
 

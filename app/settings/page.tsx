@@ -1,11 +1,12 @@
 import { Suspense } from 'react';
-import Link from 'next/link';
+import { SettingsLayout } from './settings-layout';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
 import { LearnModeSettings } from '@/components/settings/learn-mode-settings';
 import { AdminNotesSection } from '@/components/ai-assistant/admin-notes-section';
-import { ChevronRight, Plug, MessageSquarePlus, Settings } from 'lucide-react';
+import { ChevronRight, Plug, MessageSquarePlus } from 'lucide-react';
+import Link from 'next/link';
 
 async function AccountInfoLoader() {
   await connection();
@@ -103,7 +104,7 @@ async function AdminNotesWrapper() {
   if (!content) return null;
 
   return (
-    <div className="rounded-lg border border-border bg-card p-6">
+    <div>
       <div className="mb-4 flex items-center gap-2">
         <MessageSquarePlus className="h-5 w-5 text-primary" />
         <h2 className="text-md font-medium text-foreground">AI Assistant Notes</h2>
@@ -131,60 +132,59 @@ function AccountInfoSkeleton() {
   );
 }
 
-export default function SettingsPage() {
+// Section content components for the sidebar layout
+function AccountSection() {
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted">
-            <Settings className="h-3.5 w-3.5 text-muted-foreground" />
-          </div>
-          <h1 className="text-sm font-semibold text-foreground">Settings</h1>
+    <Suspense fallback={<AccountInfoSkeleton />}>
+      <AccountInfoLoader />
+    </Suspense>
+  );
+}
+
+function AppearanceSection() {
+  return (
+    <div>
+      <p className="text-sm text-muted-foreground">
+        Use the theme toggle in the header to switch between light and dark mode.
+      </p>
+    </div>
+  );
+}
+
+function AINotesSection() {
+  return (
+    <Suspense fallback={null}>
+      <AdminNotesWrapper />
+    </Suspense>
+  );
+}
+
+function DangerZoneSection() {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-foreground">Sign Out</p>
+          <p className="text-xs text-muted-foreground">Sign out of your account</p>
         </div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl space-y-6">
-          {/* Account Section */}
-          <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="text-md mb-4 font-medium text-foreground">Account</h2>
-            <Suspense fallback={<AccountInfoSkeleton />}>
-              <AccountInfoLoader />
-            </Suspense>
-          </div>
-
-          {/* Learning & Development Section */}
-          <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="text-md mb-4 font-medium text-foreground">Learning & Development</h2>
-            <LearnModeSettings />
-          </div>
-
-          {/* AI Assistant Notes (Admin Only) */}
-          <Suspense fallback={null}>
-            <AdminNotesWrapper />
-          </Suspense>
-
-          {/* Appearance Section */}
-          <div className="rounded-lg border border-border bg-card p-6">
-            <h2 className="text-md mb-4 font-medium text-foreground">Appearance</h2>
-            <p className="text-sm text-muted-foreground">
-              Use the theme toggle in the header to switch between light and dark mode.
-            </p>
-          </div>
-
-          {/* Danger Zone */}
-          <div className="rounded-lg border border-red-900/50 bg-card p-6">
-            <h2 className="text-md mb-4 font-medium text-red-400">Danger Zone</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-foreground">Sign Out</p>
-                <p className="text-xs text-muted-foreground">Sign out of your account</p>
-              </div>
-              <LogoutButton />
-            </div>
-          </div>
-        </div>
+        <LogoutButton />
       </div>
     </div>
   );
+}
+
+function LearningSection() {
+  return <LearnModeSettings />;
+}
+
+const sections = [
+  { id: 'account', label: 'Account', content: <AccountSection /> },
+  { id: 'appearance', label: 'Appearance', content: <AppearanceSection /> },
+  { id: 'learning', label: 'Learning', content: <LearningSection /> },
+  { id: 'ai-notes', label: 'AI Notes', content: <AINotesSection /> },
+  { id: 'danger', label: 'Danger Zone', content: <DangerZoneSection />, danger: true },
+];
+
+export default function SettingsPage() {
+  return <SettingsLayout sections={sections} />;
 }

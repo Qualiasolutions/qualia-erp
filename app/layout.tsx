@@ -1,21 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
-import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import './globals.css';
-
-const plusJakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['300', '400', '500', '600', '700', '800'],
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  weight: ['400', '500', '600'],
-  display: 'swap',
-});
 import { Sidebar } from '@/components/sidebar';
 import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -138,7 +125,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://dhnlvbjxmmsxetxphqbh.supabase.co" />
       </head>
       <body
-        className={`${plusJakarta.variable} ${jetbrainsMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
       >
         {/* Skip to main content link for keyboard users */}
         <a href="#main-content" className="skip-to-main">

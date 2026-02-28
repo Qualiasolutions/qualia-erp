@@ -1,12 +1,23 @@
 import { LoginForm } from '@/components/login-form';
 import Image from 'next/image';
+import { Zap, Shield, Users } from 'lucide-react';
 
 export default function Page() {
   return (
     <div className="flex min-h-screen w-full">
-      {/* Left Panel — Brand */}
+      {/* Left Panel — Brand with animated gradient */}
       <div className="relative hidden flex-col justify-between overflow-hidden bg-qualia-950 p-12 lg:flex lg:w-[45%] xl:w-[42%]">
-        {/* Subtle radial glow */}
+        {/* Animated gradient background */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(135deg, rgba(0,164,172,0.15) 0%, rgba(0,140,147,0.08) 25%, transparent 50%, rgba(0,164,172,0.12) 75%, rgba(0,111,117,0.1) 100%)',
+            backgroundSize: '400% 400%',
+            animation: 'gradientShift 15s ease infinite',
+          }}
+        />
+        {/* Subtle radial glows */}
         <div className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-qualia-500/10 blur-[140px]" />
         <div className="bg-qualia-600/8 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[120px]" />
 
@@ -18,14 +29,36 @@ export default function Page() {
           </div>
         </div>
 
-        {/* Center — Headline */}
+        {/* Center — Headline + Feature bullets */}
         <div className="relative z-10 max-w-md">
-          <h1 className="text-[2.75rem] font-bold leading-[1.08] tracking-[-0.04em] text-white">
+          <h1 className="text-[3.25rem] font-bold leading-[1.06] tracking-[-0.04em] text-white">
             Build better, <span className="text-qualia-400">ship faster.</span>
           </h1>
           <p className="mt-5 text-base leading-relaxed text-qualia-200/60">
             Your workspace for managing projects, clients, and teams — all in one place.
           </p>
+
+          {/* Feature highlights */}
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/15">
+                <Zap className="h-4 w-4 text-qualia-400" />
+              </div>
+              <span className="text-sm text-qualia-200/70">AI-powered project management</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/15">
+                <Users className="h-4 w-4 text-qualia-400" />
+              </div>
+              <span className="text-sm text-qualia-200/70">Real-time team collaboration</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/15">
+                <Shield className="h-4 w-4 text-qualia-400" />
+              </div>
+              <span className="text-sm text-qualia-200/70">Enterprise-grade security</span>
+            </div>
+          </div>
         </div>
 
         {/* Bottom — Client logos grid */}
@@ -80,7 +113,7 @@ export default function Page() {
 
           {/* Header */}
           <div className="mb-10">
-            <h2 className="text-[1.75rem] font-bold tracking-[-0.03em] text-foreground">
+            <h2 className="text-[2rem] font-bold tracking-[-0.03em] text-foreground">
               Welcome back
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">Sign in to your workspace</p>

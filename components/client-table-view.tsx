@@ -18,6 +18,8 @@ import {
   UserMinus,
   Skull,
   Pencil,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getInitials, getStatusConfig, type Client, type ClientStatus } from '@/lib/client-utils';
@@ -41,6 +43,7 @@ import {
 import { deleteClientRecord, toggleClientStatus } from '@/app/actions';
 import { ClientDetailModal } from '@/components/client-detail-modal';
 import { EditClientModal } from '@/components/edit-client-modal';
+import { ClientCardView } from '@/components/client-card-view';
 
 type SortField = 'name' | 'status' | 'projects' | 'assigned' | 'last_contact' | 'created';
 type SortDirection = 'asc' | 'desc';
@@ -314,6 +317,9 @@ interface ClientTableViewProps {
 }
 
 export function ClientTableView({ clients }: ClientTableViewProps) {
+  // View mode
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+
   // Sorting state
   const [sortField, setSortField] = useState<SortField>('status');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -449,23 +455,52 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
   return (
     <div className="space-y-4">
       {/* Stats Bar */}
-      <div className="flex items-center gap-5">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold tabular-nums text-foreground">{clients.length}</span>
-          <span className="text-sm text-muted-foreground">clients</span>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {clients.length}
+          </span>
+          <span className="text-xs text-muted-foreground">total</span>
         </div>
-        <div className="h-5 w-px bg-border" />
-        <div className="flex items-center gap-4 text-xs">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            <span className="font-medium text-foreground">{activeCount}</span>
-            <span className="text-muted-foreground">active</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-amber-500" />
-            <span className="font-medium text-foreground">{inactiveCount}</span>
-            <span className="text-muted-foreground">inactive</span>
-          </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          <span className="text-sm font-semibold tabular-nums text-foreground">{activeCount}</span>
+          <span className="text-xs text-muted-foreground">active</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {inactiveCount}
+          </span>
+          <span className="text-xs text-muted-foreground">inactive</span>
+        </div>
+
+        {/* View Toggle */}
+        <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-border/40 bg-secondary/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => setViewMode('table')}
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              viewMode === 'table'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <List className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode('cards')}
+            className={cn(
+              'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+              viewMode === 'cards'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
         </div>
       </div>
 
@@ -524,91 +559,95 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
         </span>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card">
-        <table className="w-full min-w-[950px] table-fixed">
-          <thead className="table-header">
-            <tr>
-              <th className="w-14 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                ID
-              </th>
-              <th className="w-[200px] px-4 py-3 text-left">
-                <SortableHeader
-                  field="name"
-                  label="Client Name"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
+      {/* Content — Table or Cards */}
+      {viewMode === 'cards' ? (
+        <ClientCardView clients={processedClients} onOpenDetail={handleOpenDetail} />
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <table className="w-full min-w-[950px] table-fixed">
+            <thead className="table-header">
+              <tr>
+                <th className="w-14 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  ID
+                </th>
+                <th className="w-[200px] px-4 py-3 text-left">
+                  <SortableHeader
+                    field="name"
+                    label="Client Name"
+                    currentField={sortField}
+                    direction={sortDirection}
+                    onSort={handleSort}
+                  />
+                </th>
+                <th className="w-28 px-4 py-3 text-left">
+                  <SortableHeader
+                    field="status"
+                    label="Status"
+                    currentField={sortField}
+                    direction={sortDirection}
+                    onSort={handleSort}
+                  />
+                </th>
+                <th className="w-20 px-4 py-3 text-left">
+                  <SortableHeader
+                    field="projects"
+                    label="Projects"
+                    currentField={sortField}
+                    direction={sortDirection}
+                    onSort={handleSort}
+                  />
+                </th>
+                <th className="w-28 px-4 py-3 text-left">
+                  <SortableHeader
+                    field="assigned"
+                    label="Assigned"
+                    currentField={sortField}
+                    direction={sortDirection}
+                    onSort={handleSort}
+                  />
+                </th>
+                <th className="w-28 px-4 py-3 text-left">
+                  <SortableHeader
+                    field="last_contact"
+                    label="Last Contact"
+                    currentField={sortField}
+                    direction={sortDirection}
+                    onSort={handleSort}
+                  />
+                </th>
+                <th className="w-32 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Website
+                </th>
+                <th className="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Phone
+                </th>
+                <th className="w-10 px-2 py-3"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {processedClients.map((client, index) => (
+                <ClientTableRow
+                  key={client.id}
+                  client={client}
+                  rowIndex={index}
+                  onOpenDetail={handleOpenDetail}
+                  onOpenEdit={handleOpenEdit}
                 />
-              </th>
-              <th className="w-28 px-4 py-3 text-left">
-                <SortableHeader
-                  field="status"
-                  label="Status"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-20 px-4 py-3 text-left">
-                <SortableHeader
-                  field="projects"
-                  label="Projects"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-28 px-4 py-3 text-left">
-                <SortableHeader
-                  field="assigned"
-                  label="Assigned"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-28 px-4 py-3 text-left">
-                <SortableHeader
-                  field="last_contact"
-                  label="Last Contact"
-                  currentField={sortField}
-                  direction={sortDirection}
-                  onSort={handleSort}
-                />
-              </th>
-              <th className="w-32 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Website
-              </th>
-              <th className="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Phone
-              </th>
-              <th className="w-10 px-2 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {processedClients.map((client, index) => (
-              <ClientTableRow
-                key={client.id}
-                client={client}
-                rowIndex={index}
-                onOpenDetail={handleOpenDetail}
-                onOpenEdit={handleOpenEdit}
-              />
-            ))}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
 
-        {/* Empty filtered state */}
-        {processedClients.length === 0 && clients.length > 0 && (
-          <div className="flex h-40 flex-col items-center justify-center text-center">
-            <p className="text-sm text-muted-foreground">No clients match your filters</p>
-            <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
-              Clear filters
-            </Button>
-          </div>
-        )}
-      </div>
+          {/* Empty filtered state */}
+          {processedClients.length === 0 && clients.length > 0 && (
+            <div className="flex h-40 flex-col items-center justify-center text-center">
+              <p className="text-sm text-muted-foreground">No clients match your filters</p>
+              <Button variant="link" size="sm" onClick={clearFilters} className="mt-2">
+                Clear filters
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Detail Modal */}
       <ClientDetailModal

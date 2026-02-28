@@ -119,60 +119,50 @@
   body {
     @apply bg-background text-foreground;
     font-family:
-      var(--font-display),
+      var(--font-geist-sans),
       system-ui,
       -apple-system,
       sans-serif;
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
-    font-size: 0.875rem;
-    font-weight: 400;
-    letter-spacing: -0.006em;
+    letter-spacing: -0.011em;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Typography — warm, confident hierarchy with strong size jumps */
+  /* Typography — clean, restrained hierarchy */
   h1,
   h2,
   h3,
   h4,
   h5,
   h6 {
-    font-family: var(--font-display), system-ui, sans-serif;
+    font-weight: 500;
+    letter-spacing: -0.025em;
     line-height: 1.2;
   }
 
   h1 {
-    font-size: 2.25rem;
-    font-weight: 700;
-    letter-spacing: -0.04em;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.035em;
   }
 
   h2 {
-    font-size: 1.625rem;
-    font-weight: 600;
-    letter-spacing: -0.03em;
+    font-size: 1.5rem;
+    font-weight: 500;
   }
 
   h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-
-  h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: -0.015em;
+    font-size: 1.125rem;
   }
 
   code,
   pre,
   .font-mono {
-    font-family: var(--font-mono), 'SF Mono', 'Monaco', 'Consolas', monospace;
+    font-family: var(--font-geist-mono), 'SF Mono', 'Monaco', 'Consolas', monospace;
   }
 }
 
@@ -214,8 +204,8 @@
   .card-interactive:hover {
     @apply border-border/80;
     background: hsl(var(--surface-hover));
-    transform: translateY(-2px);
-    box-shadow: var(--elevation-raised);
+    transform: translateY(-1px);
+    box-shadow: var(--elevation-floating);
   }
 
   .card-interactive:active {
@@ -530,6 +520,18 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
   }
 }
 

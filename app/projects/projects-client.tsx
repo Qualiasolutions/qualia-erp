@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Beaker, Hammer, Rocket, Archive, ChevronRight } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Beaker, Hammer, Rocket, Archive, ChevronRight, Folder } from 'lucide-react';
 import { ProjectListView } from '@/components/project-list-view';
 import { DemoSheet } from '@/components/demo-sheet';
 import { useProjectStats, type ProjectStatsData } from '@/lib/swr';
@@ -64,12 +64,15 @@ function StageColumn({
           config.borderColor
         )}
       >
-        <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg', config.bgColor)}>
-          <Icon className={cn('h-3.5 w-3.5', config.color)} />
+        <div className={cn('flex h-8 w-8 items-center justify-center rounded-lg', config.bgColor)}>
+          <Icon className={cn('h-4 w-4', config.color)} />
         </div>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{config.title}</h2>
         <span
-          className={cn('ml-auto rounded-full px-2 py-0.5 text-xs font-medium', config.badgeColor)}
+          className={cn(
+            'ml-auto flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold',
+            config.badgeColor
+          )}
         >
           {projects.length}
         </span>
@@ -91,7 +94,10 @@ function StageColumn({
             {projects.map((project) => {
               const isDelayed = project.status === 'Delayed';
               return (
-                <div key={project.id} className="relative">
+                <div
+                  key={project.id}
+                  className={cn('relative', stage === 'building' && 'card-interactive rounded-lg')}
+                >
                   {isDelayed && (
                     <span className="absolute -top-1 right-2 z-10 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
                       Delayed
@@ -134,10 +140,49 @@ export function ProjectsClient({
     setSheetOpen(true);
   };
 
+  // Compute stats
+  const totalProjects = demos.length + building.length + live.length;
+  const avgCompletion = useMemo(() => {
+    const allActive = [...building, ...live];
+    if (allActive.length === 0) return 0;
+    const total = allActive.reduce((sum, p) => {
+      const stats = (p as ProjectData).issue_stats;
+      if (!stats || stats.total === 0) return sum;
+      return sum + (stats.done / stats.total) * 100;
+    }, 0);
+    return Math.round(total / allActive.length);
+  }, [building, live]);
+
   return (
     <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
-      {/* Three-column pipeline */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
+      {/* Stats strip */}
+      <div className="flex shrink-0 items-center gap-2 overflow-x-auto">
+        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <Folder className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {totalProjects}
+          </span>
+          <span className="text-xs text-muted-foreground">total</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <Hammer className="h-3.5 w-3.5 text-emerald-500" />
+          <span className="text-sm font-semibold tabular-nums text-foreground">
+            {building.length}
+          </span>
+          <span className="text-xs text-muted-foreground">active</span>
+        </div>
+        {avgCompletion > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+            <span className="text-sm font-semibold tabular-nums text-foreground">
+              {avgCompletion}%
+            </span>
+            <span className="text-xs text-muted-foreground">avg completion</span>
+          </div>
+        )}
+      </div>
+
+      {/* Three-column pipeline — Building gets 2x width */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[1fr_2fr_1fr]">
         <StageColumn stage="demo" projects={demos} onDemoClick={handleDemoClick} />
         <StageColumn stage="building" projects={building} />
         <StageColumn stage="live" projects={live} />
