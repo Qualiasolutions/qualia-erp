@@ -56,11 +56,11 @@ function StageColumn({
   const Icon = config.icon;
 
   return (
-    <div className="shadow-subtle flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/60 bg-card">
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
       {/* Column header */}
       <div
         className={cn(
-          'flex flex-shrink-0 items-center gap-2.5 border-b px-4 py-3',
+          'flex flex-shrink-0 items-center gap-2.5 border-b bg-muted/20 px-4 py-3',
           config.borderColor
         )}
       >
@@ -135,9 +135,9 @@ export function ProjectsClient({
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-4 overflow-hidden p-5 md:p-6">
+    <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
       {/* Three-column pipeline */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-3">
         <StageColumn stage="demo" projects={demos} onDemoClick={handleDemoClick} />
         <StageColumn stage="building" projects={building} />
         <StageColumn stage="live" projects={live} />

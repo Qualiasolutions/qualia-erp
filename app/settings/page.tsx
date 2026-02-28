@@ -134,8 +134,8 @@ function AccountInfoSkeleton() {
 export default function SettingsPage() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border/20 bg-background px-6 py-3.5">
-        <h1 className="text-lg font-medium text-foreground">Settings</h1>
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl">
+        <h1 className="text-sm font-semibold text-foreground">Settings</h1>
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">

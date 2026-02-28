@@ -2,7 +2,7 @@ export default function ProjectDetailLoading() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/20 bg-background px-6 py-3.5">
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
           <div>

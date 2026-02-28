@@ -92,19 +92,12 @@ export default function PaymentsPage() {
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/20 px-4 py-3 sm:px-6 sm:py-3.5">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 sm:h-9 sm:w-9">
-            <Wallet className="h-4 w-4 text-emerald-500" />
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-3.5">
+        <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10">
+            <Wallet className="h-3 w-3 text-emerald-500" />
           </div>
-          <div>
-            <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
-              Payments
-            </h1>
-            <p className="hidden text-xs text-muted-foreground sm:block">
-              Track income and expenses
-            </p>
-          </div>
+          <h1 className="text-sm font-semibold text-foreground">Payments</h1>
         </div>
       </header>
 

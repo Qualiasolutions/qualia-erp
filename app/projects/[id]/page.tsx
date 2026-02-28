@@ -7,7 +7,7 @@ import { ProjectDetailView } from './project-detail-view';
 function ProjectDetailSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-border/20 bg-background px-6 py-3.5">
+      <header className="flex items-center gap-4 border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl">
         <div className="h-6 w-32 animate-pulse rounded bg-muted" />
       </header>
       <div className="flex-1 p-6">
