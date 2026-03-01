@@ -17,6 +17,34 @@ export async function isClientRole(userId: string): Promise<boolean> {
 }
 
 /**
+ * Check if a user has the 'admin' role
+ */
+export async function isAdminRole(userId: string): Promise<boolean> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    return data?.role === 'admin';
+  } catch (error) {
+    console.error('Failed to check admin role:', error);
+    return false;
+  }
+}
+
+/**
+ * Get user role from profiles
+ */
+export async function getUserRole(userId: string): Promise<string | null> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    return data?.role || null;
+  } catch (error) {
+    console.error('Failed to get user role:', error);
+    return null;
+  }
+}
+
+/**
  * Check if a client has access to a specific project
  * @param userId - The client user ID
  * @param projectId - The project ID to check access for
@@ -25,6 +53,18 @@ export async function isClientRole(userId: string): Promise<boolean> {
 export async function canAccessProject(userId: string, projectId: string): Promise<boolean> {
   try {
     const supabase = await createClient();
+
+    // Admins can access any project in the portal
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    if (profile?.role === 'admin') {
+      return true;
+    }
+
     const { data } = await supabase
       .from('client_projects')
       .select('id')
@@ -33,7 +73,7 @@ export async function canAccessProject(userId: string, projectId: string): Promi
       .single();
 
     return !!data;
-  } catch (error) {
+  } catch {
     // No match found or error - deny access
     return false;
   }

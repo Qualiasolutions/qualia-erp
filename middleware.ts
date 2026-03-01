@@ -86,8 +86,9 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Admin/Employee users: redirect to dashboard if trying to access portal
-    if ((userRole === 'admin' || userRole === 'employee') && pathname.startsWith('/portal')) {
+    // Employee users: redirect to dashboard if trying to access portal
+    // Admins are allowed to access portal for preview/oversight
+    if (userRole === 'employee' && pathname.startsWith('/portal')) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);

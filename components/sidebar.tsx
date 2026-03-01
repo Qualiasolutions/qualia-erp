@@ -14,6 +14,7 @@ import {
   Settings,
   BookOpen,
   FlaskConical,
+  ExternalLink,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -38,6 +39,8 @@ const resourcesNav = [
   { name: 'Research', href: '/research', icon: FlaskConical },
   { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
 ];
+
+const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
 
 type NavItem = (typeof workspaceNav)[0];
 
@@ -198,6 +201,21 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             ))}
           </div>
         </div>
+
+        {/* Portal section */}
+        <div className="space-y-1">
+          <SectionLabel>External</SectionLabel>
+          <div className="space-y-0.5">
+            {portalNav.map((item) => (
+              <NavLink
+                key={item.name}
+                item={item}
+                isActive={isActive(item.href)}
+                onClick={onLinkClick}
+              />
+            ))}
+          </div>
+        </div>
       </nav>
 
       {/* Bottom section — account menu */}
@@ -218,8 +236,8 @@ export function Sidebar() {
     }
   };
 
-  // Hide sidebar on auth pages
-  if (pathname.startsWith('/auth')) {
+  // Hide sidebar on auth pages and portal (portal has its own layout)
+  if (pathname.startsWith('/auth') || pathname.startsWith('/portal')) {
     return null;
   }
 
