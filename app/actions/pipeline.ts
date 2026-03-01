@@ -52,7 +52,6 @@ export interface ProjectNote {
   };
 }
 
-
 export interface PhaseWithDetails {
   id: string;
   project_id: string;
@@ -1016,6 +1015,84 @@ export async function getPhaseTasks(phaseId: string) {
     ...task,
     assignee: Array.isArray(task.assignee) ? task.assignee[0] : task.assignee,
   }));
+}
+
+// ============================================================================
+// TOGGLE PHASE TASK (phase_items table)
+// ============================================================================
+
+/**
+ * Toggle completion state of a phase_items task
+ * Auto-completes phase when all tasks are done (if auto_progress enabled)
+ */
+export async function togglePhaseTask(itemId: string, phaseId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  try {
+    // Get current state and auth user
+    const [itemResult, userResult] = await Promise.all([
+      supabase.from('phase_items').select('is_completed').eq('id', itemId).single(),
+      supabase.auth.getUser(),
+    ]);
+
+    if (itemResult.error) {
+      console.error('[togglePhaseTask] Error fetching item:', itemResult.error);
+      return { success: false, error: 'Task not found' };
+    }
+
+    const currentState = itemResult.data.is_completed;
+    const newState = !currentState;
+    const userId = userResult.data.user?.id || null;
+
+    // Toggle completion
+    const updateData: {
+      is_completed: boolean;
+      completed_at: string | null;
+      completed_by: string | null;
+    } = {
+      is_completed: newState,
+      completed_at: newState ? new Date().toISOString() : null,
+      completed_by: newState ? userId : null,
+    };
+
+    const { error: updateError } = await supabase
+      .from('phase_items')
+      .update(updateData)
+      .eq('id', itemId);
+
+    if (updateError) {
+      console.error('[togglePhaseTask] Error updating item:', updateError);
+      return { success: false, error: updateError.message };
+    }
+
+    // Get project_id for revalidation
+    const { data: phase } = await supabase
+      .from('project_phases')
+      .select('project_id')
+      .eq('id', phaseId)
+      .single();
+
+    const projectId = phase?.project_id;
+
+    // Check if phase should auto-complete
+    if (newState) {
+      // Import checkPhaseProgress from phases.ts
+      const { checkPhaseProgress } = await import('./phases');
+      await checkPhaseProgress(phaseId);
+    }
+
+    // Revalidate relevant paths
+    if (projectId) {
+      revalidatePath(`/projects/${projectId}`);
+      revalidatePath(`/projects/${projectId}/roadmap`);
+    }
+    revalidatePath('/projects');
+
+    return { success: true, data: { is_completed: newState } };
+  } catch (error) {
+    console.error('[togglePhaseTask] Unexpected error:', error);
+    return { success: false, error: 'Failed to toggle task' };
+  }
 }
 
 // ============================================================================
