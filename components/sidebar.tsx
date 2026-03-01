@@ -210,12 +210,18 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
 
 export function Sidebar() {
   const { isMobileOpen, toggleMobile } = useSidebar();
+  const pathname = usePathname();
 
   const handleLinkClick = () => {
     if (isMobileOpen) {
       toggleMobile();
     }
   };
+
+  // Hide sidebar on auth pages
+  if (pathname.startsWith('/auth')) {
+    return null;
+  }
 
   return (
     <>

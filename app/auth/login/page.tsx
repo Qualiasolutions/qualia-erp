@@ -116,7 +116,9 @@ export default function Page() {
             <h2 className="text-[2rem] font-bold tracking-[-0.03em] text-foreground">
               Welcome back
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">Sign in to your workspace</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Choose how you&apos;d like to sign in
+            </p>
           </div>
 
           <LoginForm />
