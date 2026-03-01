@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 2 of 3 (Client Portal Core)
-Plan: 1 of 3
-Status: Phase 2 in progress
-Last activity: 2026-03-01 — Completed 02-01-PLAN.md (auth-routing)
+Plan: 2 of 2
+Status: Phase 2 complete
+Last activity: 2026-03-01 — Completed 02-02-PLAN.md (portal-layout)
 
-Progress: [█████▓░░░░] 55% (Phase 0 + Phase 1 complete, Phase 2 plan 1/3 done)
+Progress: [███████░░░] 70% (Phase 0, 1, and 2 complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 3
-- Average duration: 2.8 min
-- Total execution time: 8.5 min
+- Total plans completed: 4
+- Average duration: 3.1 min
+- Total execution time: 12.5 min
 
 **By Phase:**
 
@@ -30,12 +30,12 @@ Progress: [█████▓░░░░] 55% (Phase 0 + Phase 1 complete, Phas
 | ----------------------------- | ----- | -------- | -------- |
 | 0. Foundation                 | N/A   | N/A      | N/A      |
 | 1. Trainee Interactive System | 2     | 6 min    | 3 min    |
-| 2. Client Portal Core         | 1     | 2.5 min  | 2.5 min  |
+| 2. Client Portal Core         | 2     | 6.5 min  | 3.25 min |
 
 **Recent Trend:**
 
-- Last 3 plans: 2.8 min average
-- Trend: Improving velocity, Phase 2 started
+- Last 3 plans: 3.3 min average
+- Trend: Consistent velocity, Phase 2 complete
 
 _Updated after each plan completion_
 
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - phase_items table is template-driven (not user-editable) — Separates GSD workflow from ad-hoc tasks
 - Phase-level copy button aggregates gsdCommand + helper_text — Complete Claude Code prompt in one click
 - TaskInstructionCard shows helper text inline instead of modal — Faster scanning for trainees
+- Progress calculated from project_status for client view — Simpler than phase-based calculation
+- Phase timeline shows status/dates only, no task details — Read-only client view
 
 ### Pending Todos
 
@@ -63,10 +65,10 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet.
+- Pre-commit hook broken (eslint ENOENT error) - needs fixing but not blocking development
 
 ## Session Continuity
 
 Last session: 2026-03-01 (phase execution)
-Stopped at: Phase 2 plan 1 complete (auth-routing). Ready for plan 2.
-Resume file: .planning/phases/02-client-portal-core/02-01-SUMMARY.md
+Stopped at: Phase 2 complete (portal-layout). Ready for Phase 3.
+Resume file: .planning/phases/02-client-portal-core/02-02-SUMMARY.md

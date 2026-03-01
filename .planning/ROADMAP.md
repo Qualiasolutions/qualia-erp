@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 0: Foundation** - Database schema, review workflow backend, admin components (COMPLETE)
 - [x] **Phase 1: Trainee Interactive System** - Task guidance, phase locking, integration display (COMPLETE)
-- [ ] **Phase 2: Client Portal Core** - Auth routing, portal layout, project views
+- [x] **Phase 2: Client Portal Core** - Auth routing, portal layout, project views (COMPLETE)
 - [ ] **Phase 3: Client Portal Features** - Shared files, comments, activity feed
 
 ## Phase Details
@@ -72,8 +72,8 @@ Plans:
 
 Plans:
 
-- [ ] 02-01-PLAN.md — Auth & role-based routing with client protection
-- [ ] 02-02-PLAN.md — Portal layout, projects list, and simplified roadmap
+- [x] 02-01-PLAN.md — Auth & role-based routing with client protection
+- [x] 02-02-PLAN.md — Portal layout, projects list, and simplified roadmap
 
 ### Phase 3: Client Portal Features
 
@@ -106,5 +106,5 @@ Phases execute in numeric order: 0 (complete) → 1 → 2 → 3
 | ----------------------------- | -------------- | ----------- | ---------- |
 | 0. Foundation                 | N/A            | Complete    | 2026-03-01 |
 | 1. Trainee Interactive System | 2/2            | Complete    | 2026-03-01 |
-| 2. Client Portal Core         | 0/2            | Planned     | -          |
+| 2. Client Portal Core         | 2/2            | Complete    | 2026-03-01 |
 | 3. Client Portal Features     | 0/TBD          | Not started | -          |
