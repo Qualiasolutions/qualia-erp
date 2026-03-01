@@ -51,11 +51,54 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // If user is authenticated and trying to access /auth/login, redirect to home
-  if (user && request.nextUrl.pathname === '/auth/login') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
-    return NextResponse.redirect(url);
+  // Role-based routing: Fetch user role to determine access permissions
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.sub)
+      .single();
+
+    const userRole = profile?.role;
+    const pathname = request.nextUrl.pathname;
+
+    // Internal routes that clients cannot access
+    const internalRoutes = [
+      '/projects',
+      '/inbox',
+      '/schedule',
+      '/team',
+      '/admin',
+      '/settings',
+      '/clients',
+      '/payments',
+    ];
+
+    // Client users: redirect to portal if trying to access internal routes or root
+    if (userRole === 'client') {
+      const isAccessingInternal =
+        pathname === '/' || internalRoutes.some((route) => pathname.startsWith(route));
+
+      if (isAccessingInternal && !pathname.startsWith('/portal')) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/portal';
+        return NextResponse.redirect(url);
+      }
+    }
+
+    // Admin/Employee users: redirect to dashboard if trying to access portal
+    if ((userRole === 'admin' || userRole === 'employee') && pathname.startsWith('/portal')) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+
+    // If user is authenticated and trying to access /auth/login, redirect based on role
+    if (pathname === '/auth/login') {
+      const url = request.nextUrl.clone();
+      url.pathname = userRole === 'client' ? '/portal' : '/';
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
