@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 Phase: 1 of 3 (Trainee Interactive System)
-Plan: 2 of 2 in wave 1
-Status: In progress
-Last activity: 2026-03-01 — Completed 01-02-PLAN.md (Integration Display)
+Plan: 2 of 2 in wave 1 (Wave 1 COMPLETE)
+Status: Wave 1 complete
+Last activity: 2026-03-01 — Completed 01-01-PLAN.md (Interactive Task Instruction Cards)
 
-Progress: [████░░░░░░] 33% (Phase 0 complete, Phase 1 wave 1 complete)
+Progress: [████░░░░░░] 33% (Phase 0 complete, Phase 1 wave 1 complete - 2/2 plans)
 
 ## Performance Metrics
 
@@ -52,6 +52,9 @@ Recent decisions affecting current work:
 - Build trainee system first, client portal second — Trainee system is higher priority
 - Display integrations as badges below project name — Quick access without cluttering UI
 - Admin-only edit mode for integrations — Prevents trainees from modifying URLs
+- phase_items table is template-driven (not user-editable) — Separates GSD workflow from ad-hoc tasks
+- Phase-level copy button aggregates gsdCommand + helper_text — Complete Claude Code prompt in one click
+- TaskInstructionCard shows helper text inline instead of modal — Faster scanning for trainees
 
 ### Pending Todos
 
@@ -64,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01 (plan execution)
-Stopped at: Completed 01-02-PLAN.md (Integration Display), wave 1 complete
-Resume file: .planning/phases/01-trainee-interactive-system/01-02-SUMMARY.md
+Stopped at: Completed 01-01-PLAN.md (Interactive Task Instruction Cards), wave 1 complete (2/2 plans)
+Resume file: .planning/phases/01-trainee-interactive-system/01-01-SUMMARY.md
