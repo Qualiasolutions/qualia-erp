@@ -1,27 +1,19 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { createTask, updateTask, deleteTask } from '@/app/actions/inbox';
-import { checkPhaseProgress } from '@/app/actions/phases';
+import { useState, useEffect, useTransition } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { TaskItem } from './task-item';
+import { TaskInstructionCard } from './task-instruction-card';
+import { togglePhaseTask } from '@/app/actions/pipeline';
+import { createClient } from '@/lib/supabase/client';
 
-interface Task {
+interface PhaseItem {
   id: string;
   title: string;
   description: string | null;
-  status: string;
-  priority: string;
-  due_date: string | null;
-  sort_order: number;
-  assignee?: {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-  } | null;
+  helper_text: string | null;
+  template_key: string | null;
+  is_completed: boolean;
+  display_order: number;
 }
 
 interface PhaseTasksProps {
@@ -29,164 +21,98 @@ interface PhaseTasksProps {
   phaseName: string;
   projectId: string;
   workspaceId: string;
-  tasks: Task[];
+  tasks: unknown[]; // Legacy prop, not used anymore
   onTasksChange: () => void;
   compact?: boolean;
 }
 
-export function PhaseTasks({
-  phaseId,
-  phaseName,
-  projectId,
-  workspaceId,
-  tasks,
-  onTasksChange,
-  compact = false,
-}: PhaseTasksProps) {
-  const [newTitle, setNewTitle] = useState('');
+export function PhaseTasks({ phaseId, onTasksChange, compact = false }: PhaseTasksProps) {
+  const [phaseItems, setPhaseItems] = useState<PhaseItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleAdd = () => {
-    if (!newTitle.trim()) return;
+  // Fetch phase_items for this phase
+  useEffect(() => {
+    let cancelled = false;
 
-    const formData = new FormData();
-    formData.set('title', newTitle.trim());
-    formData.set('project_id', projectId);
-    formData.set('workspace_id', workspaceId);
-    formData.set('phase_id', phaseId);
-    formData.set('phase_name', phaseName);
-    formData.set('status', 'Todo');
-    formData.set('priority', 'No Priority');
+    async function fetchPhaseItems() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('phase_items')
+        .select('id, title, description, helper_text, template_key, is_completed, display_order')
+        .eq('phase_id', phaseId)
+        .order('display_order', { ascending: true });
 
-    startTransition(async () => {
-      const result = await createTask(formData);
-      if (result.success) {
-        setNewTitle('');
-        onTasksChange();
-        // Keep focus on input for rapid entry
-        inputRef.current?.focus();
+      if (!cancelled) {
+        if (error) {
+          console.error('[PhaseTasks] Error fetching phase_items:', error);
+          setPhaseItems([]);
+        } else {
+          setPhaseItems(data || []);
+        }
+        setIsLoading(false);
       }
-    });
-  };
-
-  const handleToggle = (taskId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'Done' ? 'Todo' : 'Done';
-
-    const formData = new FormData();
-    formData.set('id', taskId);
-    formData.set('status', newStatus);
-
-    startTransition(async () => {
-      await updateTask(formData);
-      onTasksChange();
-
-      // Check for auto-progression when marking task as Done
-      if (newStatus === 'Done') {
-        await checkPhaseProgress(phaseId);
-      }
-    });
-  };
-
-  const handleUpdate = async (taskId: string, title: string) => {
-    const formData = new FormData();
-    formData.set('id', taskId);
-    formData.set('title', title);
-
-    await updateTask(formData);
-    onTasksChange();
-  };
-
-  const handleDelete = (taskId: string) => {
-    startTransition(async () => {
-      await deleteTask(taskId);
-      onTasksChange();
-    });
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleAdd();
     }
+
+    fetchPhaseItems();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [phaseId]);
+
+  const handleToggle = (itemId: string, isCompleted: boolean) => {
+    startTransition(async () => {
+      const result = await togglePhaseTask(itemId, phaseId);
+      if (result.success) {
+        // Update local state optimistically
+        setPhaseItems((prev) =>
+          prev.map((item) => (item.id === itemId ? { ...item, is_completed: !isCompleted } : item))
+        );
+        // Notify parent to refresh overall progress
+        onTasksChange();
+      }
+    });
   };
 
-  // Sort: incomplete first, then by sort_order
-  const sortedTasks = [...tasks].sort((a, b) => {
-    if (a.status === 'Done' && b.status !== 'Done') return 1;
-    if (a.status !== 'Done' && b.status === 'Done') return -1;
-    return (a.sort_order || 0) - (b.sort_order || 0);
+  // Sort: incomplete first, then by display_order
+  const sortedItems = [...phaseItems].sort((a, b) => {
+    if (a.is_completed && !b.is_completed) return 1;
+    if (!a.is_completed && b.is_completed) return -1;
+    return a.display_order - b.display_order;
   });
 
   // Compact mode for dashboard widgets
-  if (compact && tasks.length === 0) {
+  if (compact && phaseItems.length === 0) {
+    return <p className="text-xs text-muted-foreground">No tasks defined for this phase yet.</p>;
+  }
+
+  if (isLoading) {
     return (
-      <button
-        onClick={() => inputRef.current?.focus()}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <Plus className="h-3 w-3" />
-        Add task
-      </button>
+      <div className="flex items-center justify-center py-4">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+      </div>
     );
   }
 
   return (
     <div className="space-y-1">
-      {/* Always-visible quick-add input */}
-      <div className="mb-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-[18px] w-[18px] shrink-0 items-center justify-center">
-            <Plus
-              className={cn(
-                'h-4 w-4 transition-colors',
-                newTitle.trim() ? 'text-primary' : 'text-muted-foreground/50'
-              )}
-            />
-          </div>
-          <input
-            ref={inputRef}
-            type="text"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Add task... (press Enter)"
-            disabled={isPending}
-            className={cn(
-              'h-8 flex-1 rounded-md border-0 bg-transparent px-0 text-sm font-medium',
-              'placeholder:text-muted-foreground/50',
-              'focus:outline-none focus:ring-0',
-              'border-b border-transparent focus:border-border/50',
-              'disabled:opacity-50'
-            )}
-            autoFocus={tasks.length === 0}
-          />
-          {newTitle.trim() && (
-            <Button size="sm" className="h-7 text-xs" onClick={handleAdd} disabled={isPending}>
-              {isPending ? '...' : 'Add'}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Task List */}
+      {/* Task List - using TaskInstructionCard for phase_items */}
       <AnimatePresence mode="popLayout">
-        {sortedTasks.map((task) => (
-          <TaskItem
-            key={task.id}
-            task={task}
+        {sortedItems.map((item) => (
+          <TaskInstructionCard
+            key={item.id}
+            phaseItem={item}
             onToggle={handleToggle}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
             disabled={isPending}
           />
         ))}
       </AnimatePresence>
 
       {/* Empty state */}
-      {!compact && tasks.length === 0 && (
+      {!compact && phaseItems.length === 0 && (
         <p className="py-4 text-center text-sm text-muted-foreground">
-          No tasks yet. Type above to add your first task.
+          No tasks defined for this phase. Tasks are created from GSD templates.
         </p>
       )}
     </div>
