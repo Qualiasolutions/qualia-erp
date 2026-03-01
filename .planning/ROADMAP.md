@@ -99,7 +99,7 @@ Plans:
 
 - [x] 03-01: Admin client invite UI (gap closure)
 - [ ] 03-02: Shared files with visibility toggle
-- [ ] 03-03: Client comments on phases
+- [x] 03-03: Client comments on phases
 - [ ] 03-04: Client activity feed
 
 ## Progress
@@ -112,4 +112,4 @@ Phases execute in numeric order: 0 (complete) → 1 → 2 → 3
 | 0. Foundation                 | N/A            | Complete    | 2026-03-01 |
 | 1. Trainee Interactive System | 2/2            | Complete    | 2026-03-01 |
 | 2. Client Portal Core         | 2/2            | Complete    | 2026-03-01 |
-| 3. Client Portal Features     | 1/4            | In progress | -          |
+| 3. Client Portal Features     | 2/4            | In progress | -          |
