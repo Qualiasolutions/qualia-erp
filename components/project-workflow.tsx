@@ -245,7 +245,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
   if (phases.length === 0) {
     return (
       <div className={cn('space-y-8', className)}>
-        <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 text-center backdrop-blur-sm">
+        <div className="rounded-2xl border border-border/30 bg-muted/20 p-8 text-center backdrop-blur-sm">
           <FolderPlus className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
           <h3 className="mb-2 text-xl font-bold">No Phases Yet</h3>
           <p className="mb-6 text-muted-foreground">
@@ -271,7 +271,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
   return (
     <div className={cn('space-y-8', className)}>
       {/* Header Stat Bar */}
-      <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 backdrop-blur-sm">
+      <div className="rounded-2xl border border-border/30 bg-muted/20 p-6 backdrop-blur-sm">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Project Workflow</h2>
@@ -288,7 +288,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
         </div>
 
         {/* Progress Bar */}
-        <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted/40">
           <motion.div
             className="h-full bg-gradient-to-r from-primary/80 to-primary"
             initial={{ width: 0 }}
@@ -315,7 +315,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                   'group relative overflow-hidden rounded-xl border transition-all duration-200',
                   isActive
                     ? 'border-primary/30 bg-primary/10 shadow-[0_0_20px_rgba(var(--primary-rgb),0.2)]'
-                    : 'border-white/5 bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]'
+                    : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
                 )}
               >
                 {isEditing ? (
@@ -344,7 +344,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                               ? 'bg-emerald-500/20 text-emerald-500'
                               : isActive
                                 ? 'bg-primary text-primary-foreground'
-                                : 'bg-white/10 text-muted-foreground'
+                                : 'bg-muted/40 text-muted-foreground'
                           )}
                         >
                           {isComplete ? <Check className="h-4 w-4" /> : idx + 1}
@@ -404,7 +404,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
 
           {/* Add Phase Button */}
           {showNewPhase ? (
-            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2 rounded-xl border border-border/50 bg-muted/20 p-3">
               <Input
                 ref={newPhaseInputRef}
                 value={newPhaseName}
@@ -435,7 +435,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                 setShowNewPhase(true);
                 setTimeout(() => newPhaseInputRef.current?.focus(), 100);
               }}
-              className="flex w-full items-center gap-2 rounded-xl border border-dashed border-white/10 p-4 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+              className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border/50 p-4 text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
             >
               <Plus className="h-4 w-4" />
               <span className="font-medium">Add Phase</span>
@@ -445,7 +445,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
 
         {/* Right: Active Phase Tasks */}
         <div className="space-y-6">
-          <div className="relative min-h-[500px] overflow-hidden rounded-[2rem] border border-white/5 bg-white/[0.02] p-8 backdrop-blur-sm">
+          <div className="relative min-h-[500px] overflow-hidden rounded-[2rem] border border-border/30 bg-muted/20 p-8 backdrop-blur-sm">
             {/* Decorative blob */}
             <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-primary/5 blur-[100px]" />
 
@@ -466,7 +466,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                 </div>
 
                 {/* Add Task Input */}
-                <div className="mb-6 flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] p-3">
+                <div className="mb-6 flex items-center gap-3 rounded-xl border border-border/30 bg-muted/20 p-3">
                   <Plus
                     className={cn(
                       'h-5 w-5 transition-colors',
@@ -509,7 +509,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                             'group flex items-start gap-4 rounded-xl border p-4 transition-all duration-200',
                             isDone
                               ? 'border-emerald-500/20 bg-emerald-500/[0.02]'
-                              : 'border-white/5 bg-white/[0.02] hover:border-primary/20 hover:bg-white/[0.04]'
+                              : 'border-border/30 bg-muted/20 hover:border-primary/20 hover:bg-muted/40'
                           )}
                         >
                           <Checkbox

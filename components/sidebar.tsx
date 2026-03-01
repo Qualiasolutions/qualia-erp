@@ -145,7 +145,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-card to-card/95">
       {/* Logo */}
-      <div className="relative flex h-[60px] items-center border-b border-border/20 px-4">
+      <div className="relative flex h-[60px] items-center border-b border-border/50 px-4">
         <Link
           href="/"
           className="group flex items-center gap-2.5 transition-transform duration-200 ease-spring hover:scale-[1.02]"
@@ -164,7 +164,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
         </Link>
         {/* Separator gradient */}
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border/30 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
       </div>
 
       {/* Navigation */}
@@ -201,7 +201,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       </nav>
 
       {/* Bottom section — account menu */}
-      <div className="border-t border-border/20 px-3 py-2.5">
+      <div className="border-t border-border/50 px-3 py-2.5">
         <UserMenu onLinkClick={onLinkClick} />
       </div>
     </div>

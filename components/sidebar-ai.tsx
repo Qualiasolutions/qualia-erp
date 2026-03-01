@@ -230,11 +230,11 @@ export function SidebarAI() {
             transition={{ type: 'spring' as const, stiffness: 400, damping: 30 }}
             className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 sm:w-full"
           >
-            <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-background/95 shadow-2xl shadow-black/40 backdrop-blur-xl">
+            <div className="overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-2xl shadow-black/20 backdrop-blur-xl dark:shadow-black/40">
               {/* Header */}
-              <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+              <div className="flex items-center justify-between border-b border-border/30 px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-white/10">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-primary/20 to-purple-500/20 ring-1 ring-border/30">
                     <Sparkles className="h-3 w-3 text-primary" />
                   </div>
                   <span className="text-sm font-medium text-foreground/90">AI Assistant</span>
@@ -243,14 +243,14 @@ export function SidebarAI() {
                   {messages.length > 0 && (
                     <button
                       onClick={clearChat}
-                      className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground/60 transition-colors hover:bg-white/5 hover:text-foreground/70"
+                      className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground/70"
                     >
                       Clear
                     </button>
                   )}
                   <motion.button
                     onClick={() => setIsOpen(false)}
-                    className="rounded-md p-1.5 text-muted-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground/70"
+                    className="rounded-md p-1.5 text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground/70"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
@@ -398,7 +398,7 @@ export function SidebarAI() {
 
               {/* Hint when empty */}
               {messages.length === 0 && (
-                <div className="border-t border-white/[0.04] px-4 py-2.5">
+                <div className="border-t border-border/20 px-4 py-2.5">
                   <p className="text-xs text-muted-foreground/40">
                     Create tasks, schedule meetings, search projects...
                   </p>

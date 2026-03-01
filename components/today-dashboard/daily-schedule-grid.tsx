@@ -231,8 +231,8 @@ function TaskCard({
     <div
       className={cn(
         'group/task absolute cursor-pointer overflow-hidden border-l-[3px] transition-all duration-200 ease-premium',
-        'rounded-lg border border-white/[0.08] bg-card/80 dark:border-white/[0.12]',
-        'hover:-translate-y-px hover:border-white/20 hover:bg-card',
+        'rounded-lg border border-border/40 bg-card/80',
+        'hover:-translate-y-px hover:border-border/60 hover:bg-card',
         'hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.3)]',
         accent,
         isDone && 'opacity-25'
@@ -241,13 +241,13 @@ function TaskCard({
       onClick={() => onTaskClick(task)}
     >
       {/* Hover actions */}
-      <div className="absolute right-1 top-1 z-10 flex items-center gap-px rounded-md border border-white/[0.08] bg-card/90 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-all duration-150 group-hover/task:opacity-100 dark:border-white/[0.12]">
+      <div className="absolute right-1 top-1 z-10 flex items-center gap-px rounded-md border border-border/40 bg-card/90 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-all duration-150 group-hover/task:opacity-100">
         <button
           onClick={(e) => {
             e.stopPropagation();
             onTaskClick(task);
           }}
-          className="flex size-[22px] items-center justify-center rounded-[5px] text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 dark:text-white/50"
+          className="flex size-[22px] items-center justify-center rounded-[5px] text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground"
           title="Edit"
         >
           <Pencil className="size-3" />
@@ -277,7 +277,7 @@ function TaskCard({
               <Check className="size-2 text-white" strokeWidth={3} />
             </div>
           ) : (
-            <Circle className="size-3.5 text-white/15 transition-colors hover:text-white/40 dark:text-white/25" />
+            <Circle className="size-3.5 text-border/50 transition-colors hover:text-border" />
           )}
         </button>
         <div className="min-w-0 flex-1">
@@ -564,7 +564,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         <button
           onClick={handleQuickAdd}
           disabled={!quickInput.trim()}
-          className="flex size-7 items-center justify-center rounded-lg bg-white/[0.06] text-white/40 transition-colors hover:bg-white/10 hover:text-white/70 disabled:opacity-30 dark:bg-white/[0.08] dark:text-white/50"
+          className="flex size-7 items-center justify-center rounded-lg bg-muted/30 text-muted-foreground/60 transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-30"
         >
           <Plus className="size-3.5" />
         </button>
@@ -572,16 +572,16 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
       {/* ── Backlog (unscheduled tasks) ──────────────────────────────────────── */}
       {backlogTasks.length > 0 && (
-        <div className="shrink-0 border-b border-white/[0.08] dark:border-white/[0.12]">
+        <div className="shrink-0 border-b border-border/40">
           <button
             onClick={() => setBacklogOpen(!backlogOpen)}
-            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-white/40 transition-colors hover:text-white/70 dark:text-white/50"
+            className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
           >
             <ChevronDown
               className={cn('size-3 transition-transform', !backlogOpen && '-rotate-90')}
             />
             <span>Backlog</span>
-            <span className="rounded-full bg-white/[0.06] px-1.5 py-0.5 text-[10px] tabular-nums text-white/30 dark:bg-white/[0.1] dark:text-white/40">
+            <span className="rounded-full bg-muted/30 px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground/50">
               {backlogTasks.length}
             </span>
           </button>
@@ -590,14 +590,14 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
               {backlogTasks.map((t) => (
                 <div
                   key={t.id}
-                  className="group/chip flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-background/50 px-2.5 py-1 transition-colors hover:border-white/20 dark:border-white/[0.12]"
+                  className="group/chip flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1 transition-colors hover:border-border/60"
                 >
                   <button onClick={() => handleComplete(t.id)} className="shrink-0">
-                    <Circle className="size-3 text-white/20 transition-colors hover:text-white/50 dark:text-white/25" />
+                    <Circle className="size-3 text-border/50 transition-colors hover:text-border" />
                   </button>
                   <button
                     onClick={() => setEditingTask(t)}
-                    className="max-w-[180px] truncate text-xs text-white/60 transition-colors hover:text-white/80 dark:text-white/70"
+                    className="max-w-[180px] truncate text-xs text-muted-foreground transition-colors hover:text-foreground"
                   >
                     {t.title}
                   </button>
@@ -609,23 +609,20 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       )}
 
       {/* ── Column Headers ──────────────────────────────────────────────────── */}
-      <div
-        className="flex shrink-0 border-b border-white/[0.08] bg-card/90 dark:border-white/[0.12]"
-        style={{ height: 44 }}
-      >
+      <div className="flex shrink-0 border-b border-border/40 bg-card/90" style={{ height: 44 }}>
         <div className="shrink-0" style={{ width: TIME_GUTTER }} />
 
         {/* Fawzi */}
-        <div className="flex flex-1 items-center justify-between border-r border-dashed border-white/[0.08] px-3 dark:border-white/[0.12]">
+        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border/30 px-3">
           <div className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-full bg-sky-500/10 text-xs font-bold text-sky-500">
               F
             </div>
-            <span className="text-sm font-medium text-white/80">Fawzi</span>
+            <span className="text-sm font-medium text-foreground">Fawzi</span>
           </div>
           <button
             onClick={() => handleAddTask(FAWZI_ID)}
-            className="flex size-5 items-center justify-center rounded text-white/25 transition-colors hover:bg-white/10 hover:text-white/60 dark:text-white/35"
+            className="flex size-5 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <Plus className="size-2.5" />
           </button>
@@ -637,11 +634,11 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             <div className="flex size-6 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-500">
               M
             </div>
-            <span className="text-sm font-medium text-white/80">Moayad</span>
+            <span className="text-sm font-medium text-foreground">Moayad</span>
           </div>
           <button
             onClick={() => handleAddTask(MOAYAD_ID)}
-            className="flex size-5 items-center justify-center rounded text-white/25 transition-colors hover:bg-white/10 hover:text-white/60 dark:text-white/35"
+            className="flex size-5 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <Plus className="size-2.5" />
           </button>
@@ -663,7 +660,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 className="group/hour absolute left-0 right-0"
                 style={{ top: y, height: HOUR_HEIGHT }}
               >
-                <div className="absolute inset-x-0 bottom-0 h-px bg-white/[0.06] dark:bg-white/[0.10]" />
+                <div className="absolute inset-x-0 bottom-0 h-px bg-border/30" />
 
                 <div
                   className="absolute top-0 flex items-start justify-end pr-2 pt-1"
@@ -672,9 +669,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                   <span
                     className={cn(
                       'text-xs font-medium tabular-nums leading-none',
-                      isCurrentHour
-                        ? 'text-white/50 dark:text-white/60'
-                        : 'text-white/15 dark:text-white/25'
+                      isCurrentHour ? 'text-muted-foreground' : 'text-muted-foreground/40'
                     )}
                   >
                     {hourLabel(hour)}
@@ -682,17 +677,17 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 </div>
 
                 <div
-                  className="absolute right-0 border-b border-dotted border-white/[0.05] dark:border-white/[0.08]"
+                  className="absolute right-0 border-b border-dotted border-border/25"
                   style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
                 />
 
                 <div
-                  className="absolute bottom-0 top-0 border-l border-dashed border-white/[0.06] dark:border-white/[0.10]"
+                  className="absolute bottom-0 top-0 border-l border-dashed border-border/30"
                   style={{ left: `calc(50% + ${TIME_GUTTER / 2}px)` }}
                 />
 
                 <button
-                  className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-white/15 transition-all hover:bg-white/10 hover:text-white/50 dark:text-white/25"
+                  className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-muted-foreground/40 transition-all hover:bg-muted/50 hover:text-muted-foreground"
                   style={{ left: `${TIME_GUTTER + 4}px` }}
                   onClick={() => handleAddTask(FAWZI_ID, timeStr)}
                 >
@@ -700,7 +695,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 </button>
 
                 <button
-                  className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-white/15 transition-all hover:bg-white/10 hover:text-white/50 dark:text-white/25"
+                  className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-muted-foreground/40 transition-all hover:bg-muted/50 hover:text-muted-foreground"
                   style={{ left: `calc(50% + ${TIME_GUTTER / 2 + 4}px)` }}
                   onClick={() => handleAddTask(MOAYAD_ID, timeStr)}
                 >

@@ -154,19 +154,19 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={goToToday}
-            className="rounded-lg bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/[0.1] hover:text-foreground"
+            className="rounded-lg bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             Today
           </button>
           <button
             onClick={goToPreviousMonth}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/[0.05] hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={goToNextMonth}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-white/[0.05] hover:text-foreground"
+            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted/30 hover:text-foreground"
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -196,7 +196,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
               key={day.toISOString()}
               className={cn(
                 'relative min-h-[80px] rounded-lg p-1 text-left transition-all duration-200',
-                isCurrentMonth ? 'hover:bg-white/[0.05]' : 'opacity-40',
+                isCurrentMonth ? 'hover:bg-muted/30' : 'opacity-40',
                 isCurrentDay && 'bg-violet-500/5 ring-1 ring-violet-500/50'
               )}
             >

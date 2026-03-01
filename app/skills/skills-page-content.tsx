@@ -70,17 +70,19 @@ export function SkillsPageContent() {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-white/[0.06] bg-zinc-950/80 px-6 py-6 backdrop-blur-xl lg:px-8">
+      <header className="border-b border-border/30 bg-card/80 px-6 py-6 backdrop-blur-xl lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 ring-1 ring-white/10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 ring-1 ring-border/50">
               <Trophy className="h-6 w-6 text-amber-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-white">Skills & Growth</h1>
-              <p className="text-sm text-zinc-500">Track your progress and unlock achievements</p>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">Skills & Growth</h1>
+              <p className="text-sm text-muted-foreground">
+                Track your progress and unlock achievements
+              </p>
             </div>
           </div>
         </div>
@@ -98,32 +100,32 @@ export function SkillsPageContent() {
 
             {/* Quick Stats */}
             <div className="space-y-4 lg:col-span-2">
-              <Card className="border-white/[0.06] bg-zinc-900/80">
+              <Card className="border-border/30 bg-card">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base font-medium text-white">
+                  <CardTitle className="flex items-center gap-2 text-base font-medium text-foreground">
                     <Target className="h-4 w-4 text-qualia-500" />
                     Quick Stats
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    <div className="rounded-lg bg-zinc-800/50 p-4 text-center">
-                      <div className="text-2xl font-bold text-white">{skills.length}</div>
-                      <div className="text-xs text-zinc-500">Available Skills</div>
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
+                      <div className="text-2xl font-bold text-foreground">{skills.length}</div>
+                      <div className="text-xs text-muted-foreground">Available Skills</div>
                     </div>
-                    <div className="rounded-lg bg-zinc-800/50 p-4 text-center">
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
                       <div className="text-2xl font-bold text-qualia-400">{userSkills.length}</div>
-                      <div className="text-xs text-zinc-500">Skills Practiced</div>
+                      <div className="text-xs text-muted-foreground">Skills Practiced</div>
                     </div>
-                    <div className="rounded-lg bg-zinc-800/50 p-4 text-center">
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
                       <div className="text-2xl font-bold text-amber-400">{achievements.length}</div>
-                      <div className="text-xs text-zinc-500">Achievements</div>
+                      <div className="text-xs text-muted-foreground">Achievements</div>
                     </div>
-                    <div className="rounded-lg bg-zinc-800/50 p-4 text-center">
+                    <div className="rounded-lg bg-muted/50 p-4 text-center">
                       <div className="text-2xl font-bold text-emerald-400">
                         {userSkills.filter((us) => us.proficiency_level >= 4).length}
                       </div>
-                      <div className="text-xs text-zinc-500">Mastered</div>
+                      <div className="text-xs text-muted-foreground">Mastered</div>
                     </div>
                   </div>
                 </CardContent>
@@ -133,9 +135,9 @@ export function SkillsPageContent() {
 
           {/* Achievements Section */}
           {achievements.length > 0 && (
-            <Card className="border-white/[0.06] bg-zinc-900/80">
+            <Card className="border-border/30 bg-card">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base font-medium text-white">
+                <CardTitle className="flex items-center gap-2 text-base font-medium text-foreground">
                   <Award className="h-4 w-4 text-amber-500" />
                   Achievements
                 </CardTitle>
@@ -178,10 +180,10 @@ export function SkillsPageContent() {
                           {achievement.icon}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-white">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {achievement.name}
                           </p>
-                          <p className="truncate text-xs text-zinc-500">
+                          <p className="truncate text-xs text-muted-foreground">
                             {achievement.description}
                           </p>
                           <Badge variant="secondary" className="mt-1 text-[11px]">
@@ -198,26 +200,28 @@ export function SkillsPageContent() {
 
           {/* Skills by Category */}
           <div className="space-y-6">
-            <h2 className="flex items-center gap-2 text-lg font-semibold text-white">
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
               <TrendingUp className="h-5 w-5 text-qualia-500" />
               Skills Library
             </h2>
 
             {Object.entries(skillsByCategory).length === 0 ? (
-              <Card className="border-white/[0.06] bg-zinc-900/80">
+              <Card className="border-border/30 bg-card">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Sparkles className="mb-3 h-12 w-12 text-zinc-600" />
-                  <p className="text-sm font-medium text-white">No skills available yet</p>
-                  <p className="mt-1 text-xs text-zinc-500">
+                  <Sparkles className="mb-3 h-12 w-12 text-muted-foreground" />
+                  <p className="text-sm font-medium text-foreground">No skills available yet</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Skills will appear here as you complete tasks
                   </p>
                 </CardContent>
               </Card>
             ) : (
               Object.entries(skillsByCategory).map(([category, categorySkills]) => (
-                <Card key={category} className="border-white/[0.06] bg-zinc-900/80">
+                <Card key={category} className="border-border/30 bg-card">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-zinc-400">{category}</CardTitle>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {category}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -237,11 +241,11 @@ export function SkillsPageContent() {
 
           {/* Empty State for No User Progress */}
           {userSkills.length === 0 && skills.length > 0 && (
-            <Card className="border-dashed border-zinc-700 bg-zinc-900/50">
+            <Card className="border-dashed border-border bg-muted/50">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Trophy className="mb-3 h-12 w-12 text-zinc-600" />
-                <p className="text-sm font-medium text-white">Start your journey</p>
-                <p className="mt-1 max-w-sm text-center text-xs text-zinc-500">
+                <Trophy className="mb-3 h-12 w-12 text-muted-foreground" />
+                <p className="text-sm font-medium text-foreground">Start your journey</p>
+                <p className="mt-1 max-w-sm text-center text-xs text-muted-foreground">
                   Complete tasks to earn XP and level up your skills. Each completed task helps you
                   grow!
                 </p>
