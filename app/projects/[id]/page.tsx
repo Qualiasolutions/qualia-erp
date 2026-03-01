@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { getProjectById, getProfiles } from '@/app/actions';
+import { getProjectById, getProfiles, getCurrentUserProfile } from '@/app/actions';
 import { ProjectDetailView } from './project-detail-view';
 
 function ProjectDetailSkeleton() {
@@ -28,7 +28,11 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   await connection();
 
   // Fetch all data in parallel on the server
-  const [project, profiles] = await Promise.all([getProjectById(id), getProfiles()]);
+  const [project, profiles, userProfile] = await Promise.all([
+    getProjectById(id),
+    getProfiles(),
+    getCurrentUserProfile(),
+  ]);
 
   if (!project) {
     notFound();
@@ -39,7 +43,13 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     redirect('/projects');
   }
 
-  return <ProjectDetailView project={project} profiles={profiles} />;
+  return (
+    <ProjectDetailView
+      project={project}
+      profiles={profiles}
+      userRole={userProfile?.role || 'employee'}
+    />
+  );
 }
 
 interface PageProps {

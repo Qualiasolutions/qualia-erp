@@ -46,6 +46,7 @@ import { ProjectNotes } from '@/components/project-notes';
 import { ProjectResources } from '@/components/project-resources';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
+import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
 import type { ProjectType, ProjectGroup } from '@/types/database';
 
 const PROJECT_TYPES: {
@@ -116,9 +117,14 @@ interface Project {
 interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
+  userRole?: 'admin' | 'employee';
 }
 
-export function ProjectDetailView({ project: initialProject, profiles }: ProjectDetailViewProps) {
+export function ProjectDetailView({
+  project: initialProject,
+  profiles,
+  userRole = 'employee',
+}: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -272,6 +278,9 @@ export function ProjectDetailView({ project: initialProject, profiles }: Project
                     {project.client.name}
                   </span>
                 )}
+              </div>
+              <div className="mt-2">
+                <ProjectIntegrationsDisplay projectId={project.id} userRole={userRole} />
               </div>
             </div>
           </div>
