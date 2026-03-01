@@ -34,6 +34,7 @@ import {
   Sparkles,
   Clock,
   AlertCircle,
+  Code2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -47,6 +48,7 @@ import { PhasePromptModal } from './phase-prompt-modal';
 import { PhaseReviewButton } from '@/components/phase-review-button';
 import { AdminReviewPanel } from '@/components/admin-review-panel';
 import { getPhaseReview, type PhaseReviewWithDetails } from '@/app/actions/phase-reviews';
+import { toast } from 'sonner';
 
 interface Task {
   id: string;
@@ -102,6 +104,7 @@ export function PhaseCard({
   const [editingName, setEditingName] = useState(phase.name);
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [review, setReview] = useState<PhaseReviewWithDetails | null>(null);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const phaseConfig = getPipelinePhaseConfig(phase.name);
@@ -205,7 +208,30 @@ export function PhaseCard({
     });
   };
 
+  const handleCopyPhasePrompt = async () => {
+    const promptData = getPhasePromptData(phase.template_key);
+    if (!promptData) {
+      toast.error('No GSD template available for this phase');
+      return;
+    }
+
+    // Aggregate GSD command and prompt
+    const aggregatedText = `${promptData.gsdCommand}
+
+${phase.helper_text || ''}`.trim();
+
+    try {
+      await navigator.clipboard.writeText(aggregatedText);
+      setCopiedPrompt(true);
+      toast.success('Phase prompt copied to clipboard');
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } catch {
+      toast.error('Failed to copy prompt');
+    }
+  };
+
   const isLocked = phase.is_locked ?? false;
+  const hasPhasePrompt = getPhasePromptData(phase.template_key) !== null;
 
   return (
     <motion.div
@@ -322,6 +348,27 @@ export function PhaseCard({
               {phase.progress}%
             </span>
           </div>
+        )}
+
+        {/* Copy Phase Prompt Button */}
+        {hasPhasePrompt && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              'h-8 shrink-0 gap-1.5 px-2 text-xs transition-opacity',
+              !isExpanded && 'opacity-60 hover:opacity-100',
+              copiedPrompt && 'text-emerald-600'
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyPhasePrompt();
+            }}
+            disabled={isPending}
+          >
+            {copiedPrompt ? <Check className="h-3.5 w-3.5" /> : <Code2 className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{copiedPrompt ? 'Copied!' : 'Copy prompt'}</span>
+          </Button>
         )}
 
         {/* Chevron only - cleaner */}
