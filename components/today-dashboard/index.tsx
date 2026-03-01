@@ -10,25 +10,31 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
-import { DailyScheduleGrid } from './daily-schedule-grid';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
 import { QuickStatsBar } from './quick-stats-bar';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
+import { ScheduleBlock } from '@/components/schedule-block';
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
   tasks: Task[];
   building: PipelineProject[];
+  profiles: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  }[];
 }
 
 // =============================================================================
 // MAIN DASHBOARD
 // =============================================================================
 
-export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProps) {
+export function TodayDashboard({ meetings, tasks, building, profiles }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
@@ -46,6 +52,19 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
   const handleRefresh = () => {
     startRefresh(() => router.refresh());
   };
+
+  // Split tasks into scheduled vs backlog for ScheduleBlock
+  const scheduledTasks = useMemo(
+    () => tasks.filter((t) => t.scheduled_start_time && t.scheduled_end_time),
+    [tasks]
+  );
+  const backlogTasks = useMemo(
+    () =>
+      tasks.filter(
+        (t) => !t.scheduled_start_time && t.status !== 'Done' && (t.status as string) !== 'Canceled'
+      ),
+    [tasks]
+  );
 
   // Compute stats from existing data
   const statsData = useMemo(() => {
@@ -126,10 +145,13 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
           </div>
 
           {/* ── FULL-WIDTH SCHEDULE ───────────────────────────────────── */}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
-              <DailyScheduleGrid tasks={tasks} meetings={meetings} />
-            </div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ScheduleBlock
+              scheduledTasks={scheduledTasks}
+              backlogTasks={backlogTasks}
+              meetings={meetings}
+              profiles={profiles}
+            />
           </div>
 
           {/* ── CURRENTLY BUILDING ROW ────────────────────────────────── */}
@@ -149,5 +171,3 @@ export function TodayDashboard({ meetings, tasks, building }: TodayDashboardProp
     </div>
   );
 }
-
-export { DailyScheduleGrid } from './daily-schedule-grid';
