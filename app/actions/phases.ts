@@ -308,7 +308,7 @@ export async function prefillProjectWorkflow(
         name: phaseTemplate.name,
         description: phaseTemplate.description,
         sort_order: phaseIndex,
-        status: phaseIndex === 0 ? 'in_progress' : 'pending',
+        status: phaseIndex === 0 ? 'in_progress' : 'not_started',
         is_locked: phaseIndex > 0,
         auto_progress: true,
       })
