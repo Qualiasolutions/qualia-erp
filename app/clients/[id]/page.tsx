@@ -62,7 +62,18 @@ async function ClientLoader({ id }: ClientLoaderProps) {
     .eq('client_id', id);
 
   const assignedProjects =
-    clientProjectsData?.map((cp) => normalizeFKResponse(cp.project)).filter(Boolean) || [];
+    clientProjectsData
+      ?.map((cp) => normalizeFKResponse(cp.project))
+      .filter(
+        (
+          p
+        ): p is {
+          id: string;
+          name: string;
+          project_type: string | null;
+          project_status: string | null;
+        } => p != null
+      ) || [];
 
   // Fetch all active projects for dropdown (admin only)
   let allProjects: Array<{

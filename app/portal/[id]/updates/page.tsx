@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectActivityFeed } from '@/app/actions/activity-feed';
+import type { ActivityLogEntry } from '@/lib/activity-utils';
 import { PortalActivityFeed } from '@/components/portal/portal-activity-feed';
 import { PortalTabs } from '@/components/portal/portal-tabs';
 
@@ -40,13 +42,13 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
 
   // Fetch client-visible activities (limit 100)
   const activityResult = await getProjectActivityFeed(projectId, true, 100);
-  const activities = activityResult.success ? (activityResult.data as any[]) : [];
+  const activities = activityResult.success ? (activityResult.data as ActivityLogEntry[]) : [];
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-4">
-        <a
+        <Link
           href="/portal"
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
         >
@@ -59,7 +61,7 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-        </a>
+        </Link>
         <div>
           <h1 className="text-2xl font-bold text-neutral-900">{project.name}</h1>
           {project.description && (
@@ -78,7 +80,7 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
       </div>
 
       {/* Activity Feed */}
-      <PortalActivityFeed activities={activities} projectName={project.name} />
+      <PortalActivityFeed activities={activities} />
     </div>
   );
 }

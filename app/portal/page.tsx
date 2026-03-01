@@ -27,7 +27,31 @@ export default async function PortalPage() {
     );
   }
 
-  const projects = result.data || [];
+  const projects = (result.data || []) as Array<{
+    id: string;
+    project_id: string;
+    access_level: string | null;
+    invited_at: string | null;
+    project:
+      | {
+          id: string;
+          name: string;
+          description: string | null;
+          project_type: string;
+          project_status: string;
+          start_date: string | null;
+          end_date: string | null;
+        }
+      | Array<{
+          id: string;
+          name: string;
+          description: string | null;
+          project_type: string;
+          project_status: string;
+          start_date: string | null;
+          end_date: string | null;
+        }>;
+  }>;
 
   return (
     <div className="space-y-6">

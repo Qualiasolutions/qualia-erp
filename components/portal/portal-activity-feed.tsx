@@ -1,6 +1,6 @@
 'use client';
 
-import { ActivityLogEntry, formatActivityMessage } from '@/app/actions/activity-feed';
+import { type ActivityLogEntry, formatActivityMessage } from '@/lib/activity-utils';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import {
   CheckCircle2,
@@ -14,7 +14,6 @@ import {
 
 interface PortalActivityFeedProps {
   activities: ActivityLogEntry[];
-  projectName: string;
 }
 
 function getActivityIcon(actionType: string) {
@@ -72,7 +71,7 @@ function groupActivitiesByDate(activities: ActivityLogEntry[]): Map<string, Acti
   return grouped;
 }
 
-export function PortalActivityFeed({ activities, projectName }: PortalActivityFeedProps) {
+export function PortalActivityFeed({ activities }: PortalActivityFeedProps) {
   if (!activities || activities.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -104,7 +103,7 @@ export function PortalActivityFeed({ activities, projectName }: PortalActivityFe
             {/* Connecting Line */}
             <div className="absolute left-2.5 top-2 h-[calc(100%-1rem)] w-px bg-neutral-200" />
 
-            {dateActivities.map((activity, index) => (
+            {dateActivities.map((activity) => (
               <div key={activity.id} className="relative">
                 {/* Icon */}
                 <div className="absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full bg-white">
