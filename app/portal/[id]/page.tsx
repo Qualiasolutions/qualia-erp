@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { canAccessProject } from '@/lib/portal-utils';
 import { PortalRoadmap } from '@/components/portal/portal-roadmap';
+import { PortalTabs } from '@/components/portal/portal-tabs';
 
 interface PortalProjectPageProps {
   params: Promise<{ id: string }>;
@@ -78,6 +79,8 @@ export default async function PortalProjectPage({ params }: PortalProjectPagePro
           )}
         </div>
       </div>
+
+      <PortalTabs projectId={projectId} />
 
       <PortalRoadmap
         project={project}

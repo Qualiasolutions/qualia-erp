@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectFiles } from '@/app/actions/project-files';
 import { PortalFileList } from '@/components/portal/portal-file-list';
+import { PortalTabs } from '@/components/portal/portal-tabs';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -47,7 +48,7 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
       {/* Page Header */}
       <div className="flex items-center gap-4">
         <a
-          href={`/portal/${projectId}`}
+          href="/portal"
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
         >
           <svg
@@ -61,10 +62,14 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
           </svg>
         </a>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Shared Files</h1>
-          <p className="mt-1 text-sm text-neutral-600">{project.name}</p>
+          <h1 className="text-2xl font-bold text-neutral-900">{project.name}</h1>
+          {project.description && (
+            <p className="mt-1 text-sm text-neutral-600">{project.description}</p>
+          )}
         </div>
       </div>
+
+      <PortalTabs projectId={projectId} />
 
       {/* Info Banner */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
