@@ -48,12 +48,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 3. Employee cannot start a phase until the previous phase is approved (lock icon shows)
 4. Admin can manually unlock phases if needed
 5. GitHub and Vercel integration links display prominently in project detail header
-   **Plans**: TBD
+   **Plans**: 2 plans in 1 wave
 
 Plans:
 
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Interactive task instruction cards with helper text and GSD commands
+- [ ] 01-02-PLAN.md — GitHub/Vercel integration display in project header
 
 ### Phase 2: Client Portal Core
 
@@ -105,6 +105,6 @@ Phases execute in numeric order: 0 (complete) → 1 → 2 → 3
 | Phase                         | Plans Complete | Status      | Completed  |
 | ----------------------------- | -------------- | ----------- | ---------- |
 | 0. Foundation                 | N/A            | Complete    | 2026-03-01 |
-| 1. Trainee Interactive System | 0/TBD          | Not started | -          |
+| 1. Trainee Interactive System | 0/2            | Not started | -          |
 | 2. Client Portal Core         | 0/TBD          | Not started | -          |
 | 3. Client Portal Features     | 0/TBD          | Not started | -          |
