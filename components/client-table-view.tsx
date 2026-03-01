@@ -325,7 +325,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
   // Filter state
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active_client');
   const [assignedFilter, setAssignedFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 

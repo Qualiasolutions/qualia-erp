@@ -109,6 +109,7 @@ export function ScheduleBlock({
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [newTaskTime, setNewTaskTime] = useState<string | null>(null);
+  const [newTaskAssigneeId, setNewTaskAssigneeId] = useState<string | null>(null);
 
   // Build team members from profiles
   const teamMembers: TeamMember[] = useMemo(() => {
@@ -324,14 +325,20 @@ export function ScheduleBlock({
       formData.set('status', 'Todo');
       formData.set('show_in_inbox', 'true');
 
+      // Auto-assign to the filtered member
+      if (activeFilter !== 'all') {
+        formData.set('assignee_id', activeFilter);
+      }
+
       startTransition(async () => {
         await createTask(formData);
         setQuickAddValue('');
         invalidateInboxTasks(true);
+        invalidateScheduledTasks(undefined, true);
         invalidateDailyFlow(true);
       });
     },
-    [quickAddValue]
+    [quickAddValue, activeFilter]
   );
 
   // Filter members by profileId for reliable matching
@@ -340,13 +347,12 @@ export function ScheduleBlock({
     return teamMembers.filter((m) => m.profileId === activeFilter);
   }, [activeFilter, teamMembers]);
 
-  // Build filter buttons from team members (use profileId as key to avoid initial collisions)
+  // Build filter buttons from team members — ALL first, then member initials
   const filterButtons = useMemo(() => {
-    const buttons = teamMembers.map((m) => ({
-      key: m.profileId || m.id,
-      label: m.initial,
-    }));
-    buttons.push({ key: 'all', label: 'All' });
+    const buttons: { key: string; label: string }[] = [{ key: 'all', label: 'All' }];
+    for (const m of teamMembers) {
+      buttons.push({ key: m.profileId || m.id, label: m.initial });
+    }
     return buttons;
   }, [teamMembers]);
 
@@ -417,7 +423,11 @@ export function ScheduleBlock({
               type="text"
               value={quickAddValue}
               onChange={(e) => setQuickAddValue(e.target.value)}
-              placeholder="Quick add task..."
+              placeholder={
+                activeFilter !== 'all'
+                  ? `Quick add task for ${filteredMembers[0]?.name || 'member'}...`
+                  : 'Quick add task...'
+              }
               className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
             />
           </form>
@@ -709,6 +719,7 @@ export function ScheduleBlock({
                             type="button"
                             onClick={() => {
                               setNewTaskTime(`${hour}:00`);
+                              setNewTaskAssigneeId(member.profileId || null);
                               setIsTaskModalOpen(true);
                             }}
                             className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
@@ -742,7 +753,10 @@ export function ScheduleBlock({
             </div>
             <button
               type="button"
-              onClick={() => setIsTaskModalOpen(true)}
+              onClick={() => {
+                setNewTaskAssigneeId(activeFilter !== 'all' ? activeFilter : null);
+                setIsTaskModalOpen(true);
+              }}
               className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
             >
               <Plus className="h-3 w-3" strokeWidth={1.5} />
@@ -765,6 +779,7 @@ export function ScheduleBlock({
       <NewTaskModal
         open={isTaskModalOpen}
         onOpenChange={setIsTaskModalOpen}
+        defaultAssigneeId={newTaskAssigneeId}
         defaultScheduledTime={newTaskTime}
       />
     </>
