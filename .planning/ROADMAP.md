@@ -68,12 +68,12 @@ Plans:
 4. Client sees list of their assigned projects at /portal
 5. Client sees simplified project roadmap at /portal/[id] with phase names, progress bars, and status only (no task details)
 6. Portal has clean, branded layout without admin sidebar
-   **Plans**: TBD
+   **Plans**: 2 plans in 2 waves
 
 Plans:
 
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md — Auth & role-based routing with client protection
+- [ ] 02-02-PLAN.md — Portal layout, projects list, and simplified roadmap
 
 ### Phase 3: Client Portal Features
 
@@ -106,5 +106,5 @@ Phases execute in numeric order: 0 (complete) → 1 → 2 → 3
 | ----------------------------- | -------------- | ----------- | ---------- |
 | 0. Foundation                 | N/A            | Complete    | 2026-03-01 |
 | 1. Trainee Interactive System | 2/2            | Complete    | 2026-03-01 |
-| 2. Client Portal Core         | 0/TBD          | Not started | -          |
+| 2. Client Portal Core         | 0/2            | Planned     | -          |
 | 3. Client Portal Features     | 0/TBD          | Not started | -          |
