@@ -52,8 +52,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 
-- [ ] 01-01-PLAN.md — Interactive task instruction cards with helper text and GSD commands
-- [ ] 01-02-PLAN.md — GitHub/Vercel integration display in project header
+- [x] 01-01-PLAN.md — Interactive task instruction cards with helper text and GSD commands
+- [x] 01-02-PLAN.md — GitHub/Vercel integration display in project header
 
 ### Phase 2: Client Portal Core
 
