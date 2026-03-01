@@ -42,8 +42,13 @@ const ALLOWED_MIME_TYPES = [
 
 /**
  * Get all files for a project
+ * @param projectId - Project ID to fetch files for
+ * @param clientVisibleOnly - If true, only return files with is_client_visible=true
  */
-export async function getProjectFiles(projectId: string): Promise<ProjectFile[]> {
+export async function getProjectFiles(
+  projectId: string,
+  clientVisibleOnly = false
+): Promise<ProjectFile[]> {
   const supabase = await createClient();
 
   const {
@@ -62,7 +67,7 @@ export async function getProjectFiles(projectId: string): Promise<ProjectFile[]>
     return [];
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('project_files')
     .select(
       `
@@ -77,16 +82,29 @@ export async function getProjectFiles(projectId: string): Promise<ProjectFile[]>
       uploaded_by,
       created_at,
       updated_at,
+      description,
+      phase_id,
+      is_client_visible,
       uploader:profiles!project_files_uploaded_by_fkey (
         id,
         full_name,
         email,
         avatar_url
+      ),
+      phase:project_phases!project_files_phase_id_fkey (
+        id,
+        phase_name
       )
     `
     )
-    .eq('project_id', projectId)
-    .order('created_at', { ascending: false });
+    .eq('project_id', projectId);
+
+  // Filter by client visibility if requested
+  if (clientVisibleOnly) {
+    query = query.eq('is_client_visible', true);
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false });
 
   if (error) {
     console.error('[getProjectFiles] Error:', error);
@@ -97,6 +115,7 @@ export async function getProjectFiles(projectId: string): Promise<ProjectFile[]>
   return (data || []).map((file) => ({
     ...file,
     uploader: Array.isArray(file.uploader) ? file.uploader[0] || null : file.uploader,
+    phase: Array.isArray(file.phase) ? file.phase[0] || null : file.phase,
   })) as ProjectFile[];
 }
 
@@ -116,6 +135,9 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
 
   const file = formData.get('file') as File | null;
   const projectId = formData.get('project_id') as string | null;
+  const description = formData.get('description') as string | null;
+  const phaseId = formData.get('phase_id') as string | null;
+  const isClientVisible = formData.get('is_client_visible') as string | null;
 
   if (!file) {
     return { success: false, error: 'No file provided' };
@@ -182,6 +204,9 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
       file_size: file.size,
       mime_type: file.type,
       uploaded_by: user.id,
+      description: description || null,
+      phase_id: phaseId || null,
+      is_client_visible: isClientVisible === 'true',
     })
     .select()
     .single();
@@ -194,6 +219,8 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
   }
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${projectId}/files`);
+  revalidatePath(`/portal/${projectId}/files`);
 
   return { success: true, data: fileRecord };
 }
@@ -269,7 +296,7 @@ export async function getFileDownloadUrl(fileId: string): Promise<ActionResult> 
   // Get file record with workspace info for authorization check
   const { data: file, error: fetchError } = await supabase
     .from('project_files')
-    .select('storage_path, original_name, workspace_id')
+    .select('storage_path, original_name, workspace_id, project_id, is_client_visible')
     .eq('id', fileId)
     .single();
 
@@ -277,15 +304,30 @@ export async function getFileDownloadUrl(fileId: string): Promise<ActionResult> 
     return { success: false, error: 'File not found' };
   }
 
-  // Authorization: Verify user is a member of the workspace
-  const { data: membership, error: membershipError } = await supabase
+  // Authorization: Check if user is a workspace member OR a client with access to this file
+  const { data: membership } = await supabase
     .from('workspace_members')
     .select('id')
     .eq('workspace_id', file.workspace_id)
     .eq('profile_id', user.id)
     .single();
 
-  if (membershipError || !membership) {
+  let hasAccess = !!membership;
+
+  // If not a workspace member, check if user is a client with access to this project
+  // AND the file is marked as client-visible
+  if (!hasAccess && file.is_client_visible) {
+    const { data: clientProject } = await supabase
+      .from('client_projects')
+      .select('id')
+      .eq('project_id', file.project_id)
+      .eq('client_id', user.id)
+      .single();
+
+    hasAccess = !!clientProject;
+  }
+
+  if (!hasAccess) {
     return { success: false, error: 'Access denied' };
   }
 
