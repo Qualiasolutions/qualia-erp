@@ -135,11 +135,11 @@
 
 - v1 requirements: 31 total
 - Mapped to phases: 31
-- Already complete: 8
-- Remaining: 23
+- Already complete (Phase 0): 7
+- Remaining (Phases 1-3): 24
 - Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-03-01_
-_Last updated: 2026-03-01 after initial definition_
+_Last updated: 2026-03-01 after roadmap creation_
