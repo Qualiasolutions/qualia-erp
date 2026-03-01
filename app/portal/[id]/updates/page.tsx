@@ -1,0 +1,79 @@
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+import { canAccessProject } from '@/lib/portal-utils';
+import { getProjectActivityFeed } from '@/app/actions/activity-feed';
+import { PortalActivityFeed } from '@/components/portal/portal-activity-feed';
+
+interface PortalUpdatesPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function PortalUpdatesPage({ params }: PortalUpdatesPageProps) {
+  const { id: projectId } = await params;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/auth/login');
+  }
+
+  // Verify client has access to this project
+  const hasAccess = await canAccessProject(user.id, projectId);
+  if (!hasAccess) {
+    redirect('/portal');
+  }
+
+  // Fetch project details
+  const { data: project } = await supabase
+    .from('projects')
+    .select('id, name, description')
+    .eq('id', projectId)
+    .single();
+
+  if (!project) {
+    redirect('/portal');
+  }
+
+  // Fetch client-visible activities (limit 100)
+  const activityResult = await getProjectActivityFeed(projectId, true, 100);
+  const activities = activityResult.success ? (activityResult.data as any[]) : [];
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center gap-4">
+        <a
+          href={`/portal/${projectId}`}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </a>
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">Project Updates</h1>
+          <p className="mt-1 text-sm text-neutral-600">{project.name}</p>
+        </div>
+      </div>
+
+      {/* Info Banner */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+        <p className="text-sm text-blue-900">
+          Track the latest updates, milestones, and activities on your project.
+        </p>
+      </div>
+
+      {/* Activity Feed */}
+      <PortalActivityFeed activities={activities} projectName={project.name} />
+    </div>
+  );
+}
