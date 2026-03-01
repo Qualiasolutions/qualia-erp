@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
+import { createActivityLogEntry } from './activity-feed';
 
 interface CreatePhaseCommentInput {
   projectId: string;
@@ -86,6 +87,17 @@ export async function createPhaseComment(
     console.error('[createPhaseComment] Error:', error);
     return { success: false, error: error.message };
   }
+
+  // Log activity (only if comment insert succeeds)
+  await createActivityLogEntry({
+    projectId,
+    actionType: 'comment_added',
+    actionData: {
+      phase_name: phaseName,
+      comment_preview: commentText.trim().substring(0, 100),
+    },
+    isClientVisible: !finalIsInternal,
+  });
 
   // Revalidate portal and roadmap paths
   revalidatePath(`/portal/${projectId}`);
