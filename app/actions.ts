@@ -120,6 +120,7 @@ export {
   updateProjectPhaseProgress,
   bulkDeleteProjects,
   updateProjectStatus,
+  toggleProjectPreProduction,
   getBoardTasks,
   createProjectWithRoadmap,
 } from './actions/projects';

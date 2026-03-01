@@ -466,12 +466,55 @@ export async function updateProjectStatus(
     .from('projects')
     .update({
       status: newStatus,
+      is_pre_production: false,
       updated_at: new Date().toISOString(),
     })
     .eq('id', projectId);
 
   if (error) {
     console.error('Error updating project status:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/projects');
+  revalidatePath(`/projects/${projectId}`);
+  return { success: true };
+}
+
+/**
+ * Toggle project pre-production flag
+ */
+export async function toggleProjectPreProduction(projectId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Get current value
+  const { data: project, error: fetchError } = await supabase
+    .from('projects')
+    .select('is_pre_production')
+    .eq('id', projectId)
+    .single();
+
+  if (fetchError || !project) {
+    return { success: false, error: 'Project not found' };
+  }
+
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      is_pre_production: !project.is_pre_production,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', projectId);
+
+  if (error) {
+    console.error('Error toggling pre-production:', error);
     return { success: false, error: error.message };
   }
 

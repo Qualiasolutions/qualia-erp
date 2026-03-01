@@ -50,14 +50,13 @@ export function ScheduleContent({
     );
   }
 
-  // Day view - use the new ScheduleBlock with unified mode
+  // Day view - member-split with toggle (same as dashboard)
   return (
     <ScheduleBlock
       scheduledTasks={tasks}
       backlogTasks={initialBacklog}
       meetings={meetings}
       profiles={profiles}
-      unified={true}
     />
   );
 }

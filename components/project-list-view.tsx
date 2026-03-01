@@ -20,10 +20,11 @@ import {
   Hammer,
   Rocket,
   Archive,
+  ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
-import { deleteProject, updateProjectStatus } from '@/app/actions';
+import { deleteProject, updateProjectStatus, toggleProjectPreProduction } from '@/app/actions';
 import { invalidateProjectStats } from '@/lib/swr';
 import {
   DropdownMenu,
@@ -155,6 +156,20 @@ function ProjectRow({
     });
   };
 
+  const handlePreProductionToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    startTransition(async () => {
+      const result = await toggleProjectPreProduction(project.id);
+      if (result.success) {
+        invalidateProjectStats(true);
+      } else {
+        alert(result.error || 'Failed to toggle pre-production');
+      }
+    });
+  };
+
   const handleClick = () => {
     if (onProjectClick) {
       onProjectClick(project);
@@ -174,6 +189,7 @@ function ProjectRow({
   };
   const currentMapped = currentStatusMap[project.status] || project.status;
   const availableMoves = STAGE_MOVES.filter((m) => m.status !== currentMapped);
+  const isActiveOrDelayed = ['Active', 'Delayed'].includes(project.status);
 
   // Compact row for dense display
   if (compact) {
@@ -250,6 +266,12 @@ function ProjectRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
+            {isActiveOrDelayed && (
+              <DropdownMenuItem className="text-amber-500" onClick={handlePreProductionToggle}>
+                <ClipboardCheck className="mr-2 h-3.5 w-3.5" />
+                {project.is_pre_production ? 'Move to Building' : 'Move to Pre-Production'}
+              </DropdownMenuItem>
+            )}
             {availableMoves.map((move) => {
               const MoveIcon = move.icon;
               return (
@@ -349,6 +371,12 @@ function ProjectRow({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
+          {isActiveOrDelayed && (
+            <DropdownMenuItem className="text-amber-500" onClick={handlePreProductionToggle}>
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              {project.is_pre_production ? 'Move to Building' : 'Move to Pre-Production'}
+            </DropdownMenuItem>
+          )}
           {availableMoves.map((move) => {
             const MoveIcon = move.icon;
             return (

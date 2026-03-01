@@ -425,11 +425,11 @@ export function ScheduleBlock({
     return teamMembers.filter((m) => m.profileId === activeFilter);
   }, [unified, activeFilter, teamMembers]);
 
-  // Build filter buttons from team members — ALL first, then member initials
+  // Build filter buttons from team members — Both first, then member names
   const filterButtons = useMemo(() => {
-    const buttons: { key: string; label: string }[] = [{ key: 'all', label: 'All' }];
+    const buttons: { key: string; label: string }[] = [{ key: 'all', label: 'Both' }];
     for (const m of teamMembers) {
-      buttons.push({ key: m.profileId || m.id, label: m.initial });
+      buttons.push({ key: m.profileId || m.id, label: m.name });
     }
     return buttons;
   }, [teamMembers]);
