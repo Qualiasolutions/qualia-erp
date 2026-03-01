@@ -323,7 +323,7 @@ export function ProjectWizard({
               size="icon"
               onClick={handleClose}
               disabled={isSubmitting || showProvisioning}
-              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+              className="absolute right-3 top-3 h-8 w-8 rounded-full text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </Button>

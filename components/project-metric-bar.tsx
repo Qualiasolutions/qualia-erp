@@ -78,7 +78,7 @@ export function ProjectMetricBar({ metrics, className }: ProjectMetricBarProps) 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
-          className="group relative overflow-hidden rounded-2xl border border-white/5 bg-white/[0.02] p-5 shadow-glow-sm backdrop-blur-sm transition-all hover:border-primary/20 hover:bg-white/[0.04]"
+          className="group relative overflow-hidden rounded-2xl border border-border/30 bg-muted/20 p-5 shadow-glow-sm backdrop-blur-sm transition-all hover:border-primary/20 hover:bg-muted/40"
         >
           <div className="flex items-center gap-4">
             <div
@@ -102,7 +102,7 @@ export function ProjectMetricBar({ metrics, className }: ProjectMetricBarProps) 
 
           {metric.progress !== undefined && (
             <div className="mt-4">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${metric.progress}%` }}

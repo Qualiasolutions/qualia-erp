@@ -9,25 +9,25 @@
 
 @layer base {
   :root {
-    /* Light mode — Clean, layered surfaces */
+    /* Light mode — Clean surfaces, strong navy borders */
     --background: 220 14% 96%;
-    --foreground: 220 14% 10%;
+    --foreground: 220 25% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 220 14% 10%;
+    --card-foreground: 220 25% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 14% 10%;
+    --popover-foreground: 220 25% 8%;
     --primary: 174 60% 34%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 8% 94%;
-    --secondary-foreground: 220 8% 35%;
-    --muted: 220 6% 92%;
-    --muted-foreground: 220 6% 44%;
+    --secondary: 220 12% 93%;
+    --secondary-foreground: 220 15% 25%;
+    --muted: 220 10% 91%;
+    --muted-foreground: 220 12% 34%;
     --accent: 174 25% 95%;
-    --accent-foreground: 174 55% 28%;
+    --accent-foreground: 174 55% 24%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 8% 87%;
-    --input: 220 8% 90%;
+    --border: 220 20% 42%;
+    --input: 220 15% 78%;
     --ring: 174 60% 34%;
     --radius: 0.75rem;
 
@@ -226,7 +226,7 @@
   }
 
   .widget-header {
-    @apply flex items-center justify-between border-b border-border/30 px-5 py-4;
+    @apply flex items-center justify-between border-b border-border/40 px-5 py-4;
     background: hsl(var(--surface-2) / 0.4);
   }
 
@@ -250,7 +250,7 @@
   /* Glass card */
   .card-glass {
     @apply relative overflow-hidden rounded-xl;
-    @apply border border-foreground/[0.04] bg-foreground/[0.02] backdrop-blur-xl;
+    @apply border border-border/30 bg-muted/20 backdrop-blur-xl;
   }
 
   /* Section label */
@@ -260,7 +260,7 @@
 
   /* Table row */
   .table-row {
-    @apply border-b border-border/30;
+    @apply border-b border-border/40;
     transition: all 0.15s var(--ease-premium);
   }
 

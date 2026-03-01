@@ -62,7 +62,7 @@ function TaskItem({
   const isOverdue = task.due_date && new Date(task.due_date) < new Date();
 
   return (
-    <div className="group flex items-center gap-4 rounded-xl border border-white/5 bg-white/5 p-4 transition-all hover:border-primary/30 hover:bg-white/10 hover:shadow-glow-sm">
+    <div className="group flex items-center gap-4 rounded-xl border border-border/30 bg-muted/30 p-4 transition-all hover:border-primary/30 hover:bg-muted/50 hover:shadow-glow-sm">
       <button
         onClick={() => onComplete(task.id)}
         disabled={isPending}
@@ -71,7 +71,7 @@ function TaskItem({
         {isPending ? (
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
         ) : (
-          <Circle className="h-6 w-6 text-white/20 transition-colors group-hover:text-primary" />
+          <Circle className="h-6 w-6 text-muted-foreground/30 transition-colors group-hover:text-primary" />
         )}
       </button>
       <div className="min-w-0 flex-1">
@@ -95,7 +95,7 @@ function ProjectItem({ project }: { project: DashboardProject }) {
   return (
     <Link
       href={`/projects/${project.id}`}
-      className="group flex items-center justify-between rounded-xl border border-white/5 bg-white/5 p-4 transition-all duration-200 ease-premium hover:-translate-y-1 hover:border-primary/30 hover:bg-white/10 hover:shadow-sm"
+      className="group flex items-center justify-between rounded-xl border border-border/30 bg-muted/30 p-4 transition-all duration-200 ease-premium hover:-translate-y-1 hover:border-primary/30 hover:bg-muted/50 hover:shadow-sm"
     >
       <div className="min-w-0 flex-1">
         <h4 className="truncate text-sm font-semibold text-foreground/90 transition-colors group-hover:text-primary">
@@ -105,13 +105,13 @@ function ProjectItem({ project }: { project: DashboardProject }) {
           <span>{project.status}</span>
           {project.client && (
             <>
-              <span className="h-1 w-1 rounded-full bg-white/20" />
+              <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
               <span className="truncate">{project.client.display_name}</span>
             </>
           )}
         </div>
       </div>
-      <ChevronRight className="h-4 w-4 text-white/20 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+      <ChevronRight className="h-4 w-4 text-muted-foreground/30 transition-transform group-hover:translate-x-1 group-hover:text-primary" />
     </Link>
   );
 }
@@ -211,7 +211,7 @@ export function DashboardClient({
       </div>
 
       {/* Header */}
-      <div className="relative border-b border-white/5 bg-white/[0.01] px-8 py-12 backdrop-blur-md">
+      <div className="relative border-b border-border/30 bg-muted/10 px-8 py-12 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-6 md:flex-row md:items-end">
           <div>
             <h1 className="text-4xl font-light tracking-tight text-foreground drop-shadow-sm">
@@ -245,7 +245,7 @@ export function DashboardClient({
             {/* Today's Tasks */}
             <section className="group relative">
               <div className="absolute -inset-0.5 rounded-[2rem] bg-gradient-to-r from-primary/10 to-transparent px-1 opacity-0 blur-xl transition duration-1000 group-hover:opacity-100"></div>
-              <div className="relative rounded-[1.5rem] border border-white/5 bg-card/40 p-8 shadow-2xl backdrop-blur-sm">
+              <div className="relative rounded-[1.5rem] border border-border/30 bg-card/40 p-8 shadow-2xl backdrop-blur-sm">
                 <div className="mb-8 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -261,7 +261,7 @@ export function DashboardClient({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="hidden rounded-full border border-white/5 bg-white/5 px-4 py-1.5 text-xs font-bold text-muted-foreground sm:inline-flex">
+                    <span className="hidden rounded-full border border-border/30 bg-muted/30 px-4 py-1.5 text-xs font-bold text-muted-foreground sm:inline-flex">
                       {tasks.length} REMAINING
                     </span>
                     <button className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-glow transition-all hover:scale-105 hover:bg-primary/90 active:scale-95">
@@ -283,7 +283,7 @@ export function DashboardClient({
                     {tasks.length > 6 && (
                       <Link
                         href="/projects"
-                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/5 py-4 text-sm font-bold text-muted-foreground transition-all hover:border-primary/20 hover:bg-white/5 hover:text-foreground"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border/30 py-4 text-sm font-bold text-muted-foreground transition-all hover:border-primary/20 hover:bg-muted/30 hover:text-foreground"
                       >
                         VIEW {tasks.length - 6} MORE TASKS
                         <ChevronRight className="h-4 w-4" />
@@ -291,7 +291,7 @@ export function DashboardClient({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16 text-center">
+                  <div className="rounded-2xl border border-dashed border-border/50 bg-muted/20 py-16 text-center">
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <CheckCircle2 className="h-8 w-8" />
                     </div>
@@ -301,7 +301,7 @@ export function DashboardClient({
                     <p className="mt-1 text-sm text-muted-foreground">
                       Why not plan your next big move?
                     </p>
-                    <button className="mt-8 rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-foreground transition-colors hover:bg-white/10">
+                    <button className="mt-8 rounded-xl border border-border/50 bg-muted/30 px-6 py-3 text-sm font-bold text-foreground transition-colors hover:bg-muted/50">
                       CREATE NEW TASK
                     </button>
                   </div>
@@ -311,7 +311,7 @@ export function DashboardClient({
 
             {/* Pending Feedback */}
             {pendingTasks.length > 0 && (
-              <section className="rounded-[1.5rem] border border-white/5 bg-card/40 p-8 backdrop-blur-sm">
+              <section className="rounded-[1.5rem] border border-border/30 bg-card/40 p-8 backdrop-blur-sm">
                 <div className="mb-6 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
@@ -341,7 +341,7 @@ export function DashboardClient({
 
           {/* Right Column - Projects (5/12) */}
           <div className="space-y-12 lg:col-span-5">
-            <section className="rounded-[1.5rem] border border-white/5 bg-card/60 p-8 shadow-xl backdrop-blur-md">
+            <section className="rounded-[1.5rem] border border-border/30 bg-card/60 p-8 shadow-xl backdrop-blur-md">
               <div className="mb-10 flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight text-foreground">
@@ -353,7 +353,7 @@ export function DashboardClient({
                 </div>
                 <Link
                   href="/projects"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/5 text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/30 bg-muted/30 text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
                 >
                   <Briefcase className="h-5 w-5" />
                 </Link>
@@ -392,7 +392,7 @@ export function DashboardClient({
                 />
 
                 {projects.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-white/10 py-12 text-center">
+                  <div className="rounded-2xl border border-dashed border-border/50 py-12 text-center">
                     <Briefcase className="mx-auto h-10 w-10 text-muted-foreground/20" />
                     <p className="mt-4 text-sm font-medium text-muted-foreground">
                       No active projects yet
@@ -411,23 +411,23 @@ export function DashboardClient({
 
             {/* Quick Insights */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-colors hover:bg-white/[0.04]">
+              <div className="rounded-[1.5rem] border border-border/30 bg-muted/20 p-6 transition-colors hover:bg-muted/30">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                   Completion
                 </p>
                 <div className="flex items-end justify-between">
-                  <span className="text-3xl font-bold text-white">84%</span>
+                  <span className="text-3xl font-bold text-foreground">84%</span>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
                     <TrendingUp className="h-5 w-5" />
                   </div>
                 </div>
               </div>
-              <div className="rounded-[1.5rem] border border-white/5 bg-white/[0.02] p-6 transition-colors hover:bg-white/[0.04]">
+              <div className="rounded-[1.5rem] border border-border/30 bg-muted/20 p-6 transition-colors hover:bg-muted/30">
                 <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/60">
                   Meetings
                 </p>
                 <div className="flex items-end justify-between">
-                  <span className="text-3xl font-bold text-white">3</span>
+                  <span className="text-3xl font-bold text-foreground">3</span>
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
                     <Calendar className="h-5 w-5" />
                   </div>
@@ -439,12 +439,12 @@ export function DashboardClient({
 
         {/* Command Hint */}
         <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/5 bg-white/[0.03] px-6 py-3 text-sm font-medium text-muted-foreground">
+          <div className="inline-flex items-center gap-3 rounded-full border border-border/30 bg-muted/20 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>Press</span>
-            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-[11px] font-bold text-foreground">
+            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-muted/50 px-1.5 font-mono text-[11px] font-bold text-foreground">
               ⌘
             </kbd>
-            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-white/10 px-1.5 font-mono text-[11px] font-bold text-foreground">
+            <kbd className="flex h-6 min-w-[24px] items-center justify-center rounded bg-muted/50 px-1.5 font-mono text-[11px] font-bold text-foreground">
               K
             </kbd>
             <span>to execute commands</span>
