@@ -1555,8 +1555,13 @@ export interface ProjectFile {
   uploaded_by: string | null;
   created_at: string;
   updated_at: string;
+  // New columns (Phase 3 Plan 2)
+  description: string | null;
+  phase_id: string | null;
+  is_client_visible: boolean;
   // Joined data
   uploader?: Profile;
+  phase?: { id: string; phase_name: string } | null;
 }
 
 // Integration types
