@@ -892,6 +892,10 @@ export type Database = {
           deployment_platform: Database['public']['Enums']['deployment_platform'] | null;
           description: string | null;
           id: string;
+          is_building: boolean;
+          is_finished: boolean;
+          is_live: boolean;
+          is_pre_production: boolean;
           lead_id: string | null;
           logo_url: string | null;
           metadata: Json | null;
@@ -911,6 +915,10 @@ export type Database = {
           deployment_platform?: Database['public']['Enums']['deployment_platform'] | null;
           description?: string | null;
           id?: string;
+          is_building?: boolean;
+          is_finished?: boolean;
+          is_live?: boolean;
+          is_pre_production?: boolean;
           lead_id?: string | null;
           logo_url?: string | null;
           metadata?: Json | null;
@@ -930,6 +938,10 @@ export type Database = {
           deployment_platform?: Database['public']['Enums']['deployment_platform'] | null;
           description?: string | null;
           id?: string;
+          is_building?: boolean;
+          is_finished?: boolean;
+          is_live?: boolean;
+          is_pre_production?: boolean;
           lead_id?: string | null;
           logo_url?: string | null;
           metadata?: Json | null;

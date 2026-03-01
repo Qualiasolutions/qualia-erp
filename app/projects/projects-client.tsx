@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Beaker, Hammer, Rocket, Archive, ChevronRight, Folder } from 'lucide-react';
+import {
+  Beaker,
+  Hammer,
+  Rocket,
+  Archive,
+  ChevronRight,
+  Folder,
+  ClipboardCheck,
+} from 'lucide-react';
 import { ProjectListView } from '@/components/project-list-view';
 import { DemoSheet } from '@/components/demo-sheet';
 import { useProjectStats, type ProjectStatsData } from '@/lib/swr';
@@ -12,6 +20,7 @@ import type { ProjectData } from './page';
 interface ProjectsClientProps {
   demos: ProjectData[];
   building: ProjectData[];
+  preProduction: ProjectData[];
   live: ProjectData[];
   archived: ProjectData[];
 }
@@ -32,6 +41,14 @@ const STAGE_CONFIG = {
     bgColor: 'bg-emerald-500/10',
     badgeColor: 'bg-emerald-500/10 text-emerald-500',
     borderColor: 'border-emerald-500/20',
+  },
+  preProduction: {
+    title: 'Pre-Production',
+    icon: ClipboardCheck,
+    color: 'text-amber-500',
+    bgColor: 'bg-amber-500/10',
+    badgeColor: 'bg-amber-500/10 text-amber-500',
+    borderColor: 'border-amber-500/20',
   },
   live: {
     title: 'Live',
@@ -96,7 +113,11 @@ function StageColumn({
               return (
                 <div
                   key={project.id}
-                  className={cn('relative', stage === 'building' && 'card-interactive rounded-lg')}
+                  className={cn(
+                    'relative',
+                    (stage === 'building' || stage === 'preProduction') &&
+                      'card-interactive rounded-lg'
+                  )}
                 >
                   {isDelayed && (
                     <span className="absolute -top-1 right-2 z-10 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
@@ -121,12 +142,14 @@ function StageColumn({
 export function ProjectsClient({
   demos: initialDemos,
   building: initialBuilding,
+  preProduction: initialPreProduction,
   live: initialLive,
   archived: initialArchived,
 }: ProjectsClientProps) {
-  const { demos, building, live, archived } = useProjectStats({
+  const { demos, building, preProduction, live, archived } = useProjectStats({
     demos: initialDemos as ProjectStatsData[],
     building: initialBuilding as ProjectStatsData[],
+    preProduction: initialPreProduction as ProjectStatsData[],
     live: initialLive as ProjectStatsData[],
     archived: initialArchived as ProjectStatsData[],
   });
@@ -141,9 +164,9 @@ export function ProjectsClient({
   };
 
   // Compute stats
-  const totalProjects = demos.length + building.length + live.length;
+  const totalProjects = demos.length + building.length + preProduction.length + live.length;
   const avgCompletion = useMemo(() => {
-    const allActive = [...building, ...live];
+    const allActive = [...building, ...preProduction, ...live];
     if (allActive.length === 0) return 0;
     const total = allActive.reduce((sum, p) => {
       const stats = (p as ProjectData).issue_stats;
@@ -151,7 +174,7 @@ export function ProjectsClient({
       return sum + (stats.done / stats.total) * 100;
     }, 0);
     return Math.round(total / allActive.length);
-  }, [building, live]);
+  }, [building, preProduction, live]);
 
   return (
     <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
@@ -169,8 +192,17 @@ export function ProjectsClient({
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {building.length}
           </span>
-          <span className="text-xs text-muted-foreground">active</span>
+          <span className="text-xs text-muted-foreground">building</span>
         </div>
+        {preProduction.length > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+            <ClipboardCheck className="h-3.5 w-3.5 text-amber-500" />
+            <span className="text-sm font-semibold tabular-nums text-foreground">
+              {preProduction.length}
+            </span>
+            <span className="text-xs text-muted-foreground">pre-prod</span>
+          </div>
+        )}
         {avgCompletion > 0 && (
           <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
             <span className="text-sm font-semibold tabular-nums text-foreground">
@@ -181,10 +213,11 @@ export function ProjectsClient({
         )}
       </div>
 
-      {/* Three-column pipeline — Building gets 2x width */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-[1fr_2fr_1fr]">
+      {/* Four-column pipeline */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-4">
         <StageColumn stage="demo" projects={demos} onDemoClick={handleDemoClick} />
         <StageColumn stage="building" projects={building} />
+        <StageColumn stage="preProduction" projects={preProduction} />
         <StageColumn stage="live" projects={live} />
       </div>
 

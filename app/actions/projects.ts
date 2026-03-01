@@ -40,6 +40,7 @@ export interface ProjectStatsData {
     done: number;
   };
   roadmap_progress: number;
+  is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
 }
 
@@ -157,11 +158,10 @@ export async function getProjects(workspaceId?: string | null) {
 /**
  * Get project stats with issue counts and roadmap progress
  */
-export async function getProjectStats(
-  workspaceId?: string | null
-): Promise<{
+export async function getProjectStats(workspaceId?: string | null): Promise<{
   demos: ProjectStatsData[];
   building: ProjectStatsData[];
+  preProduction: ProjectStatsData[];
   live: ProjectStatsData[];
   archived: ProjectStatsData[];
 }> {
@@ -178,7 +178,7 @@ export async function getProjectStats(
 
   if (error) {
     console.error('Error fetching project stats:', error);
-    return { demos: [], building: [], live: [], archived: [] };
+    return { demos: [], building: [], preProduction: [], live: [], archived: [] };
   }
 
   const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
@@ -205,16 +205,19 @@ export async function getProjectStats(
       done: Number(p.done_issues),
     },
     roadmap_progress: (p.roadmap_progress as number) || 0,
+    is_pre_production: (p.is_pre_production as boolean) || false,
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
   // Status-based filtering — pipeline stages
   const demos = allProjects.filter((p) => p.status === 'Demos');
-  const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const building = activeDelayed.filter((p) => !p.is_pre_production);
+  const preProduction = activeDelayed.filter((p) => p.is_pre_production);
   const live = allProjects.filter((p) => p.status === 'Launched');
   const archived = allProjects.filter((p) => ['Archived', 'Canceled'].includes(p.status));
 
-  return { demos, building, live, archived };
+  return { demos, building, preProduction, live, archived };
 }
 
 /**

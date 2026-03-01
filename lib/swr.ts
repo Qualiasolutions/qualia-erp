@@ -225,6 +225,7 @@ export function invalidateCache(
 export function useProjectStats(initialData?: {
   demos: ProjectStatsData[];
   building: ProjectStatsData[];
+  preProduction: ProjectStatsData[];
   live: ProjectStatsData[];
   archived: ProjectStatsData[];
 }) {
@@ -249,6 +250,7 @@ export function useProjectStats(initialData?: {
   return {
     demos: data?.demos || [],
     building: data?.building || [],
+    preProduction: data?.preProduction || [],
     live: data?.live || [],
     archived: data?.archived || [],
     isLoading,
@@ -282,6 +284,7 @@ export interface ProjectStatsData {
     done: number;
   };
   roadmap_progress: number;
+  is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
 }
 

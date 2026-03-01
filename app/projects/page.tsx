@@ -30,6 +30,7 @@ export interface ProjectData {
     done: number;
   };
   roadmap_progress: number;
+  is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
 }
 
@@ -44,7 +45,7 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectsClient demos={[]} building={[]} live={[]} archived={[]} />;
+    return <ProjectsClient demos={[]} building={[]} preProduction={[]} live={[]} archived={[]} />;
   }
 
   // Map RPC result to Project interface
@@ -72,16 +73,27 @@ async function ProjectListLoader() {
       done: Number(p.done_issues),
     },
     roadmap_progress: (p.roadmap_progress as number) || 0,
+    is_pre_production: (p.is_pre_production as boolean) || false,
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
   }));
 
   // Pipeline stages
   const demos = allProjects.filter((p) => p.status === 'Demos');
-  const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const building = activeDelayed.filter((p) => !p.is_pre_production);
+  const preProduction = activeDelayed.filter((p) => p.is_pre_production);
   const live = allProjects.filter((p) => p.status === 'Launched');
   const archived = allProjects.filter((p) => ['Archived', 'Canceled'].includes(p.status));
 
-  return <ProjectsClient demos={demos} building={building} live={live} archived={archived} />;
+  return (
+    <ProjectsClient
+      demos={demos}
+      building={building}
+      preProduction={preProduction}
+      live={live}
+      archived={archived}
+    />
+  );
 }
 
 function ProjectsSkeleton() {
