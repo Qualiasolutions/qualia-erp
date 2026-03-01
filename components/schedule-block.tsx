@@ -41,6 +41,7 @@ interface ScheduleBlockProps {
     email: string | null;
     avatar_url: string | null;
   }[];
+  unified?: boolean;
 }
 
 const TIME_SLOTS = [
@@ -98,6 +99,7 @@ export function ScheduleBlock({
   backlogTasks,
   meetings,
   profiles,
+  unified = false,
 }: ScheduleBlockProps) {
   const { timezone } = useTimezone();
   const [isPending, startTransition] = useTransition();
@@ -250,6 +252,78 @@ export function ScheduleBlock({
     return schedule;
   }, [scheduledTasks, meetings, teamMembers, currentDate, timezone]);
 
+  // Build unified schedule when unified=true
+  const unifiedSchedule = useMemo(() => {
+    if (!unified) return null;
+
+    const schedule = new Map<
+      number,
+      (Task & { isMeeting?: boolean; meetingLink?: string | null })[]
+    >();
+
+    // Initialize all time slots
+    for (const hour of SLOT_HOURS) {
+      schedule.set(hour, []);
+    }
+
+    // Add all scheduled tasks (regardless of assignee)
+    for (const task of scheduledTasks) {
+      if (!task.scheduled_start_time) continue;
+
+      const startTime = toZonedTime(parseISO(task.scheduled_start_time), timezone);
+      if (!isSameDay(startTime, startOfDay(currentDate))) continue;
+
+      const hour = startTime.getHours();
+      const slotTasks = schedule.get(hour) || [];
+      slotTasks.push(task);
+      schedule.set(hour, slotTasks);
+    }
+
+    // Add all meetings
+    for (const meeting of meetings) {
+      if (!meeting.start_time) continue;
+
+      const startTime = toZonedTime(parseISO(meeting.start_time), timezone);
+      if (!isSameDay(startTime, startOfDay(currentDate))) continue;
+
+      const hour = startTime.getHours();
+
+      // Create pseudo-task for meeting
+      const meetingTask: Task & { isMeeting?: boolean; meetingLink?: string | null } = {
+        id: `meeting-${meeting.id}`,
+        workspace_id: '',
+        creator_id: null,
+        assignee_id: null,
+        project_id: null,
+        title: meeting.title,
+        description: meeting.description,
+        status: 'Todo' as const,
+        priority: 'No Priority' as const,
+        item_type: 'task' as const,
+        phase_name: 'Meeting',
+        sort_order: 0,
+        due_date: null,
+        completed_at: null,
+        scheduled_start_time: meeting.start_time,
+        scheduled_end_time: meeting.end_time,
+        show_in_inbox: false,
+        created_at: meeting.created_at,
+        updated_at: meeting.created_at,
+        isMeeting: true,
+        meetingLink: meeting.meeting_link,
+        project: meeting.project
+          ? { id: meeting.project.id, name: meeting.project.name, project_type: null }
+          : null,
+      };
+
+      const slotTasks = schedule.get(hour) || [];
+      slotTasks.push(meetingTask);
+      schedule.set(hour, slotTasks);
+    }
+
+    return schedule;
+  }, [unified, scheduledTasks, meetings, currentDate, timezone]);
+
   // Stats
   const totalTasks = scheduledTasks.filter((t) => {
     const start = t.scheduled_start_time
@@ -343,9 +417,13 @@ export function ScheduleBlock({
 
   // Filter members by profileId for reliable matching
   const filteredMembers = useMemo(() => {
+    if (unified) {
+      // Unified mode: single virtual column
+      return [{ id: 'unified', name: 'Schedule', initial: 'S' }];
+    }
     if (activeFilter === 'all') return teamMembers;
     return teamMembers.filter((m) => m.profileId === activeFilter);
-  }, [activeFilter, teamMembers]);
+  }, [unified, activeFilter, teamMembers]);
 
   // Build filter buttons from team members — ALL first, then member initials
   const filterButtons = useMemo(() => {
@@ -431,7 +509,7 @@ export function ScheduleBlock({
               className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
             />
           </form>
-          {filterButtons.length > 2 && (
+          {!unified && filterButtons.length > 2 && (
             <div className="flex items-center rounded-lg border border-border bg-card">
               {filterButtons.map((f, i) => (
                 <button
@@ -522,26 +600,34 @@ export function ScheduleBlock({
                     i < filteredMembers.length - 1 && 'border-r border-border'
                   )}
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold',
-                        colors ? `${colors.bg} ${colors.text}` : 'bg-foreground text-background'
-                      )}
-                    >
-                      {member.initial}
-                    </div>
+                  {unified ? (
                     <span className="text-sm font-semibold tracking-wide text-foreground">
                       {member.name}
                     </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                    aria-label={`More options for ${member.name}`}
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-                  </button>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold',
+                            colors ? `${colors.bg} ${colors.text}` : 'bg-foreground text-background'
+                          )}
+                        >
+                          {member.initial}
+                        </div>
+                        <span className="text-sm font-semibold tracking-wide text-foreground">
+                          {member.name}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        aria-label={`More options for ${member.name}`}
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                      </button>
+                    </>
+                  )}
                 </div>
               );
             })}
@@ -572,10 +658,20 @@ export function ScheduleBlock({
 
                   {/* Task Cells */}
                   {filteredMembers.map((member, memberIdx) => {
-                    const memberId = member.profileId || member.id;
-                    const memberSlots = memberSchedule.get(memberId);
-                    const slotItems = memberSlots?.get(hour) || [];
-                    const task = slotItems[0] as
+                    // Use unified schedule if unified mode, otherwise use member schedule
+                    let slotItems: (Task & { isMeeting?: boolean; meetingLink?: string | null })[] =
+                      [];
+                    if (unified) {
+                      slotItems = unifiedSchedule?.get(hour) || [];
+                    } else {
+                      const memberId = member.profileId || member.id;
+                      const memberSlots = memberSchedule.get(memberId);
+                      slotItems = memberSlots?.get(hour) || [];
+                    }
+
+                    // For unified mode, show all items; for member mode, show first item only
+                    const displayItems = unified ? slotItems : slotItems.slice(0, 1);
+                    const task = displayItems[0] as
                       | (Task & { isMeeting?: boolean; meetingLink?: string | null })
                       | undefined;
                     const isDone = task ? (task.isMeeting ? false : isTaskDone(task)) : false;
@@ -594,132 +690,152 @@ export function ScheduleBlock({
                             'border-l-2 border-l-violet-500 bg-violet-500/[0.03]'
                         )}
                       >
-                        {task ? (
-                          <div
-                            className={cn(
-                              'flex items-start gap-3 transition-opacity duration-300',
-                              isDone && 'opacity-35'
-                            )}
-                          >
-                            {!isMeetingItem ? (
-                              <button
-                                type="button"
-                                onClick={() => toggleComplete(task)}
-                                disabled={isPending}
-                                className="mt-[1px] shrink-0 transition-transform active:scale-90"
-                                aria-label={isDone ? 'Mark incomplete' : 'Mark complete'}
-                              >
-                                {isDone ? (
-                                  <CheckCircle2
-                                    className="h-[15px] w-[15px] text-qualia-500"
-                                    strokeWidth={2}
-                                  />
-                                ) : (
-                                  <Circle
-                                    className={cn(
-                                      'h-[15px] w-[15px] transition-colors',
-                                      isInProgress
-                                        ? 'text-qualia-500'
-                                        : 'text-border hover:text-foreground/40'
+                        {displayItems.length > 0 ? (
+                          <div className="space-y-3">
+                            {displayItems.map((item, itemIdx) => {
+                              const itemIsDone = item.isMeeting ? false : isTaskDone(item);
+                              const itemIsInProgress = item.status === 'In Progress' && !itemIsDone;
+                              const itemIsMeeting = item.isMeeting;
+
+                              return (
+                                <div
+                                  key={item.id}
+                                  className={cn(
+                                    'flex items-start gap-3 transition-opacity duration-300',
+                                    itemIsDone && 'opacity-35',
+                                    itemIdx > 0 && 'border-t border-border/30 pt-3'
+                                  )}
+                                >
+                                  {!itemIsMeeting ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => toggleComplete(item)}
+                                      disabled={isPending}
+                                      className="mt-[1px] shrink-0 transition-transform active:scale-90"
+                                      aria-label={itemIsDone ? 'Mark incomplete' : 'Mark complete'}
+                                    >
+                                      {itemIsDone ? (
+                                        <CheckCircle2
+                                          className="h-[15px] w-[15px] text-qualia-500"
+                                          strokeWidth={2}
+                                        />
+                                      ) : (
+                                        <Circle
+                                          className={cn(
+                                            'h-[15px] w-[15px] transition-colors',
+                                            itemIsInProgress
+                                              ? 'text-qualia-500'
+                                              : 'text-border hover:text-foreground/40'
+                                          )}
+                                          strokeWidth={1.5}
+                                        />
+                                      )}
+                                    </button>
+                                  ) : (
+                                    <Video
+                                      className="mt-[1px] h-[15px] w-[15px] shrink-0 text-violet-500"
+                                      strokeWidth={1.5}
+                                    />
+                                  )}
+                                  <div className="min-w-0 flex-1">
+                                    <p
+                                      className={cn(
+                                        'text-[13px] leading-[1.45]',
+                                        itemIsDone
+                                          ? 'text-muted-foreground line-through decoration-muted-foreground/30'
+                                          : itemIsInProgress
+                                            ? 'font-medium text-foreground'
+                                            : itemIsMeeting
+                                              ? 'font-medium text-foreground'
+                                              : 'text-foreground/90'
+                                      )}
+                                    >
+                                      {item.title}
+                                    </p>
+                                    <div className="mt-1 flex items-center gap-2">
+                                      {item.scheduled_start_time && item.scheduled_end_time && (
+                                        <span className="text-[10px] tracking-wide text-muted-foreground/70">
+                                          {format(
+                                            toZonedTime(
+                                              parseISO(item.scheduled_start_time),
+                                              timezone
+                                            ),
+                                            'h:mm'
+                                          )}
+                                          {' \u2013 '}
+                                          {format(
+                                            toZonedTime(
+                                              parseISO(item.scheduled_end_time),
+                                              timezone
+                                            ),
+                                            'h:mm a'
+                                          )}
+                                        </span>
+                                      )}
+                                      {!itemIsDone && (
+                                        <>
+                                          {itemIsMeeting && (
+                                            <span
+                                              className={cn(
+                                                'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
+                                                getTagColor('Meeting')
+                                              )}
+                                            >
+                                              Meeting
+                                            </span>
+                                          )}
+                                          {!itemIsMeeting && getPhaseTag(item) && (
+                                            <span
+                                              className={cn(
+                                                'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
+                                                getTagColor(getPhaseTag(item))
+                                              )}
+                                            >
+                                              {getPhaseTag(item)}
+                                            </span>
+                                          )}
+                                          {item.project && (
+                                            <span className="truncate text-[10px] text-muted-foreground/60">
+                                              {item.project.name}
+                                            </span>
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                    {itemIsMeeting &&
+                                      (item as Task & { meetingLink?: string | null })
+                                        .meetingLink &&
+                                      !itemIsDone && (
+                                        <a
+                                          href={
+                                            (item as Task & { meetingLink?: string | null })
+                                              .meetingLink!
+                                          }
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <Video className="h-2.5 w-2.5" />
+                                          Join
+                                        </a>
+                                      )}
+                                  </div>
+                                  {!itemIsMeeting &&
+                                    getPriorityFromTask(item.priority) === 'high' &&
+                                    !itemIsDone && (
+                                      <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-qualia-500" />
                                     )}
-                                    strokeWidth={1.5}
-                                  />
-                                )}
-                              </button>
-                            ) : (
-                              <Video
-                                className="mt-[1px] h-[15px] w-[15px] shrink-0 text-violet-500"
-                                strokeWidth={1.5}
-                              />
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className={cn(
-                                  'text-[13px] leading-[1.45]',
-                                  isDone
-                                    ? 'text-muted-foreground line-through decoration-muted-foreground/30'
-                                    : isInProgress
-                                      ? 'font-medium text-foreground'
-                                      : isMeetingItem
-                                        ? 'font-medium text-foreground'
-                                        : 'text-foreground/90'
-                                )}
-                              >
-                                {task.title}
-                              </p>
-                              <div className="mt-1 flex items-center gap-2">
-                                {task.scheduled_start_time && task.scheduled_end_time && (
-                                  <span className="text-[10px] tracking-wide text-muted-foreground/70">
-                                    {format(
-                                      toZonedTime(parseISO(task.scheduled_start_time), timezone),
-                                      'h:mm'
-                                    )}
-                                    {' \u2013 '}
-                                    {format(
-                                      toZonedTime(parseISO(task.scheduled_end_time), timezone),
-                                      'h:mm a'
-                                    )}
-                                  </span>
-                                )}
-                                {!isDone && (
-                                  <>
-                                    {isMeetingItem && (
-                                      <span
-                                        className={cn(
-                                          'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
-                                          getTagColor('Meeting')
-                                        )}
-                                      >
-                                        Meeting
-                                      </span>
-                                    )}
-                                    {!isMeetingItem && getPhaseTag(task) && (
-                                      <span
-                                        className={cn(
-                                          'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
-                                          getTagColor(getPhaseTag(task))
-                                        )}
-                                      >
-                                        {getPhaseTag(task)}
-                                      </span>
-                                    )}
-                                    {task.project && (
-                                      <span className="truncate text-[10px] text-muted-foreground/60">
-                                        {task.project.name}
-                                      </span>
-                                    )}
-                                  </>
-                                )}
-                              </div>
-                              {isMeetingItem &&
-                                (task as Task & { meetingLink?: string | null }).meetingLink &&
-                                !isDone && (
-                                  <a
-                                    href={
-                                      (task as Task & { meetingLink?: string | null }).meetingLink!
-                                    }
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <Video className="h-2.5 w-2.5" />
-                                    Join
-                                  </a>
-                                )}
-                            </div>
-                            {!isMeetingItem &&
-                              getPriorityFromTask(task.priority) === 'high' &&
-                              !isDone && (
-                                <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-qualia-500" />
-                              )}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <button
                             type="button"
                             onClick={() => {
                               setNewTaskTime(`${hour}:00`);
-                              setNewTaskAssigneeId(member.profileId || null);
+                              setNewTaskAssigneeId(unified ? null : member.profileId || null);
                               setIsTaskModalOpen(true);
                             }}
                             className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
