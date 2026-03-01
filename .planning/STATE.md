@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 Phase: v1.0 complete — all 4 phases (0-3) shipped
 Plan: Not started
 Status: Ready to plan next milestone
-Last activity: 2026-03-01 — Completed quick task 001: client portal remaining features
+Last activity: 2026-03-02 — Completed quick task 002: Add Pre-Production pipeline column
 
 Progress: [██████████] 100% (v1.0 shipped)
 
@@ -52,9 +52,10 @@ None.
 
 ### Quick Tasks Completed
 
-| #   | Description                                                                       | Date       | Commit  | Directory                                                           |
-| --- | --------------------------------------------------------------------------------- | ---------- | ------- | ------------------------------------------------------------------- |
-| 001 | Password reset, client invite, progress calc, phase notifications, error page fix | 2026-03-01 | 5f154be | [001-client-portal-remaining](./quick/001-client-portal-remaining/) |
+| #   | Description                                                                       | Date       | Commit  | Directory                                                               |
+| --- | --------------------------------------------------------------------------------- | ---------- | ------- | ----------------------------------------------------------------------- |
+| 001 | Password reset, client invite, progress calc, phase notifications, error page fix | 2026-03-01 | 5f154be | [001-client-portal-remaining](./quick/001-client-portal-remaining/)     |
+| 002 | Add Pre-Production pipeline column between Building and Live                      | 2026-03-02 | 0d20f29 | [002-add-pre-production-status](./quick/002-add-pre-production-status/) |
 
 ## Session Continuity
 
