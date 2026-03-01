@@ -334,16 +334,16 @@ export function ScheduleBlock({
     [quickAddValue]
   );
 
-  // Filter members
+  // Filter members by profileId for reliable matching
   const filteredMembers = useMemo(() => {
     if (activeFilter === 'all') return teamMembers;
-    return teamMembers.filter((m) => m.initial === activeFilter);
+    return teamMembers.filter((m) => m.profileId === activeFilter);
   }, [activeFilter, teamMembers]);
 
-  // Build filter buttons from team members
+  // Build filter buttons from team members (use profileId as key to avoid initial collisions)
   const filterButtons = useMemo(() => {
     const buttons = teamMembers.map((m) => ({
-      key: m.initial,
+      key: m.profileId || m.id,
       label: m.initial,
     }));
     buttons.push({ key: 'all', label: 'All' });

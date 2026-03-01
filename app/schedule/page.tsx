@@ -1,6 +1,7 @@
 import { Suspense, use } from 'react';
 import { connection } from 'next/server';
 import { getMeetings, getProfiles } from '@/app/actions';
+import { getCurrentWorkspaceId } from '@/app/actions/workspace';
 import { getScheduledTasks, getBacklogTasks } from '@/app/actions/inbox';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { ScheduleContent } from '@/components/schedule-content';
@@ -9,11 +10,12 @@ import { Calendar } from 'lucide-react';
 
 async function ScheduleLoader({ view }: { view: string }) {
   await connection();
+  const workspaceId = await getCurrentWorkspaceId();
   const [meetings, tasks, backlog, profiles] = await Promise.all([
     getMeetings(),
     getScheduledTasks(),
     getBacklogTasks(),
-    getProfiles(),
+    getProfiles(workspaceId || undefined),
   ]);
 
   return (
