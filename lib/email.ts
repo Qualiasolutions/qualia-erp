@@ -353,6 +353,117 @@ export async function notifyIssueCreated(
 }
 
 // ============================================================================
+// Phase Change Notifications (for client portal)
+// ============================================================================
+
+/**
+ * Notify clients when a phase status changes to completed or blocked.
+ * Only sends for significant status changes, not every update.
+ */
+export async function notifyClientsOfPhaseChange(
+  projectId: string,
+  phaseName: string,
+  newStatus: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyClientsOfPhaseChange] Resend not configured, skipping');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project name
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get all clients for this project
+    const { data: clientLinks } = await supabase
+      .from('client_projects')
+      .select('client_id')
+      .eq('project_id', projectId);
+
+    if (!clientLinks || clientLinks.length === 0) {
+      return { success: true }; // No clients to notify
+    }
+
+    const clientIds = clientLinks.map((cl) => cl.client_id);
+
+    // Get client emails
+    const { data: clients } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .in('id', clientIds);
+
+    if (!clients || clients.length === 0) {
+      return { success: true };
+    }
+
+    const statusLabel = newStatus === 'completed' ? 'Completed' : 'Needs Attention';
+    const portalUrl = `${APP_URL}/portal/${projectId}`;
+
+    const emailPromises = clients
+      .filter((c) => c.email)
+      .map(async (client) => {
+        const subject = `Phase Update: ${phaseName} — ${project.name}`;
+        const recipientName = client.full_name || 'there';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: client.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      The <strong>${phaseName}</strong> phase for <strong>${project.name}</strong> is now <strong>${statusLabel}</strong>.
+    </p>
+    <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      This notification was sent from Qualia. You're receiving this because you have access to this project.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\nThe ${phaseName} phase for ${project.name} is now ${statusLabel}.\n\nView your project: ${portalUrl}\n\n---\nQualia`,
+          });
+
+          if (error) {
+            console.error(`[notifyClientsOfPhaseChange] Failed to send to ${client.email}:`, error);
+          }
+        } catch (err) {
+          console.error(`[notifyClientsOfPhaseChange] Exception sending to ${client.email}:`, err);
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyClientsOfPhaseChange] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+// ============================================================================
 // Daily Reminder Functions (stub implementations for cron job)
 // ============================================================================
 

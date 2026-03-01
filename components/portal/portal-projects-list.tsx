@@ -26,6 +26,7 @@ interface ClientProject {
 
 interface PortalProjectsListProps {
   projects: ClientProject[];
+  progressMap?: Record<string, number>;
 }
 
 function getStatusColor(status: string) {
@@ -47,25 +48,7 @@ function getStatusColor(status: string) {
   }
 }
 
-function getProgressForStatus(status: string): number {
-  switch (status) {
-    case 'Demos':
-      return 10;
-    case 'Active':
-      return 50;
-    case 'Launched':
-      return 100;
-    case 'Delayed':
-      return 35;
-    case 'Archived':
-    case 'Canceled':
-      return 0;
-    default:
-      return 0;
-  }
-}
-
-export function PortalProjectsList({ projects }: PortalProjectsListProps) {
+export function PortalProjectsList({ projects, progressMap = {} }: PortalProjectsListProps) {
   if (!projects || projects.length === 0) {
     return (
       <div className="flex min-h-[400px] items-center justify-center rounded-lg border-2 border-dashed border-neutral-200 bg-neutral-50">
@@ -86,9 +69,7 @@ export function PortalProjectsList({ projects }: PortalProjectsListProps) {
             </svg>
           </div>
           <h3 className="mt-4 text-sm font-semibold text-neutral-900">No projects assigned</h3>
-          <p className="mt-1 text-sm text-neutral-500">
-            Contact your project manager for access.
-          </p>
+          <p className="mt-1 text-sm text-neutral-500">Contact your project manager for access.</p>
         </div>
       </div>
     );
@@ -104,14 +85,14 @@ export function PortalProjectsList({ projects }: PortalProjectsListProps) {
 
         if (!project) return null;
 
-        const progress = getProgressForStatus(project.project_status);
+        const progress = progressMap[project.id] ?? 0;
 
         return (
           <Link key={clientProject.id} href={`/portal/${project.id}`}>
             <Card
               className={cn(
                 'group h-full transition-all duration-200',
-                'hover:shadow-lg hover:shadow-qualia-600/10 hover:-translate-y-1',
+                'hover:-translate-y-1 hover:shadow-lg hover:shadow-qualia-600/10',
                 'cursor-pointer'
               )}
             >

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActionState, useEffect, useState } from 'react';
 import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { loginAction } from '@/app/actions';
 
 type LoginMode = 'team' | 'client';
@@ -119,13 +120,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             <Label htmlFor="password" className="text-sm font-medium text-foreground">
               Password
             </Label>
-            <button
-              type="button"
+            <Link
+              href="/auth/reset-password"
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
               tabIndex={-1}
             >
               Forgot password?
-            </button>
+            </Link>
           </div>
           <div className="relative">
             <Input

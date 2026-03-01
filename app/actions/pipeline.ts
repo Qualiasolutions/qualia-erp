@@ -453,11 +453,28 @@ export async function updatePhaseStatus(
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
+  // Get old status to check if it actually changed
+  const { data: oldPhase } = await supabase
+    .from('project_phases')
+    .select('status, name')
+    .eq('id', phaseId)
+    .single();
+
   const { error } = await supabase.from('project_phases').update({ status }).eq('id', phaseId);
 
   if (error) {
     console.error('[updatePhaseStatus] Error:', error);
     return { success: false, error: error.message };
+  }
+
+  // Notify clients for significant status changes (completed/blocked)
+  if (oldPhase && oldPhase.status !== status && (status === 'completed' || status === 'skipped')) {
+    // Fire-and-forget: don't block the response on email delivery
+    import('@/lib/email').then(({ notifyClientsOfPhaseChange }) => {
+      notifyClientsOfPhaseChange(projectId, oldPhase.name, status).catch((err) =>
+        console.error('[updatePhaseStatus] Notification error:', err)
+      );
+    });
   }
 
   revalidatePath(`/projects/${projectId}`);

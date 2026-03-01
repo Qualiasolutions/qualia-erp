@@ -98,6 +98,13 @@ export async function completePhase(phaseId: string) {
     return { success: false, error: 'Phase not found' };
   }
 
+  // Get phase name for notification
+  const { data: phaseDetail } = await supabase
+    .from('project_phases')
+    .select('name')
+    .eq('id', phaseId)
+    .single();
+
   // Mark the phase as complete
   const { error: updateError } = await supabase
     .from('project_phases')
@@ -110,6 +117,15 @@ export async function completePhase(phaseId: string) {
   if (updateError) {
     console.error('[completePhase] Error updating phase:', updateError);
     return { success: false, error: updateError.message };
+  }
+
+  // Notify clients of phase completion (fire-and-forget)
+  if (phaseDetail?.name) {
+    import('@/lib/email').then(({ notifyClientsOfPhaseChange }) => {
+      notifyClientsOfPhaseChange(phase.project_id, phaseDetail.name, 'completed').catch((err) =>
+        console.error('[completePhase] Notification error:', err)
+      );
+    });
   }
 
   // Find and unlock the next phase (by sort_order)
@@ -259,6 +275,62 @@ export async function getPhaseProgressStats(projectId: string) {
       },
     };
   });
+}
+
+/**
+ * Calculate project progress from phase completion.
+ * Returns a percentage (0-100) based on completed phases / total phases.
+ */
+export async function calculateProjectProgress(projectId: string): Promise<number> {
+  const supabase = await createClient();
+
+  const { data: phases, error } = await supabase
+    .from('project_phases')
+    .select('status')
+    .eq('project_id', projectId);
+
+  if (error || !phases || phases.length === 0) {
+    return 0;
+  }
+
+  const completed = phases.filter((p) => p.status === 'completed' || p.status === 'done').length;
+
+  return Math.round((completed / phases.length) * 100);
+}
+
+/**
+ * Calculate progress for multiple projects at once.
+ * Returns a map of projectId -> progress percentage.
+ */
+export async function calculateProjectsProgress(
+  projectIds: string[]
+): Promise<Record<string, number>> {
+  if (projectIds.length === 0) return {};
+
+  const supabase = await createClient();
+
+  const { data: phases, error } = await supabase
+    .from('project_phases')
+    .select('project_id, status')
+    .in('project_id', projectIds);
+
+  if (error || !phases) return {};
+
+  const progressMap: Record<string, number> = {};
+
+  // Group phases by project
+  const grouped: Record<string, string[]> = {};
+  for (const phase of phases) {
+    if (!grouped[phase.project_id]) grouped[phase.project_id] = [];
+    grouped[phase.project_id].push(phase.status);
+  }
+
+  for (const [projectId, statuses] of Object.entries(grouped)) {
+    const completed = statuses.filter((s) => s === 'completed' || s === 'done').length;
+    progressMap[projectId] = Math.round((completed / statuses.length) * 100);
+  }
+
+  return progressMap;
 }
 
 /**

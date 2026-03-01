@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -10,8 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Folder, Trash2, Plus } from 'lucide-react';
-import { inviteClientToProject, removeClientFromProject } from '@/app/actions/client-portal';
+import { Folder, Trash2, Plus, Mail, Loader2 } from 'lucide-react';
+import {
+  inviteClientToProject,
+  inviteClientByEmail,
+  removeClientFromProject,
+} from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 
 interface Project {
@@ -23,6 +28,7 @@ interface Project {
 
 interface ClientProjectAccessProps {
   clientId: string;
+  clientEmail?: string | null;
   initialProjects: Project[];
   availableProjects: Project[];
   isAdmin: boolean;
@@ -30,12 +36,17 @@ interface ClientProjectAccessProps {
 
 export function ClientProjectAccess({
   clientId,
+  clientEmail,
   initialProjects,
   availableProjects,
   isAdmin,
 }: ClientProjectAccessProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteProjectId, setInviteProjectId] = useState<string>('');
+  const [showInviteForm, setShowInviteForm] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const handleAddProject = () => {
@@ -63,6 +74,48 @@ export function ClientProjectAccess({
         toast.error(result.error || 'Failed to add project access');
       } else {
         toast.success('Project access added successfully');
+      }
+    });
+  };
+
+  const handleInviteByEmail = () => {
+    const emailToUse = inviteEmail.trim() || clientEmail?.trim();
+
+    if (!emailToUse) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    if (!inviteProjectId) {
+      toast.error('Please select a project');
+      return;
+    }
+
+    const projectToAdd = availableProjects.find((p) => p.id === inviteProjectId);
+
+    startTransition(async () => {
+      const result = await inviteClientByEmail(
+        inviteProjectId,
+        emailToUse,
+        inviteName || undefined
+      );
+
+      if (!result.success) {
+        toast.error(result.error || 'Failed to invite client');
+      } else {
+        const data = result.data as { emailSent?: boolean } | undefined;
+        toast.success(
+          data?.emailSent
+            ? 'Invite email sent! Client will receive a link to set their password.'
+            : 'Project access added successfully'
+        );
+        if (projectToAdd) {
+          setProjects((prev) => [...prev, projectToAdd]);
+        }
+        setInviteEmail('');
+        setInviteName('');
+        setInviteProjectId('');
+        setShowInviteForm(false);
       }
     });
   };
@@ -156,7 +209,7 @@ export function ClientProjectAccess({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Add project form */}
+          {/* Add project form (existing clients) */}
           {filteredAvailableProjects.length > 0 && (
             <div className="flex gap-2">
               <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
@@ -180,6 +233,74 @@ export function ClientProjectAccess({
                 <Plus className="h-4 w-4" />
                 Add Access
               </Button>
+            </div>
+          )}
+
+          {/* Invite by email toggle */}
+          {!showInviteForm && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowInviteForm(true)}
+              className="w-full gap-2"
+            >
+              <Mail className="h-4 w-4" />
+              Invite client by email
+            </Button>
+          )}
+
+          {/* Invite by email form */}
+          {showInviteForm && (
+            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+              <p className="text-sm font-medium text-foreground">Invite new client to portal</p>
+              <p className="text-xs text-muted-foreground">
+                They&apos;ll receive an email with a link to set their password and access the
+                portal.
+              </p>
+              <div className="space-y-2">
+                <Input
+                  type="email"
+                  placeholder="Client email"
+                  value={inviteEmail || clientEmail || ''}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                />
+                <Input
+                  type="text"
+                  placeholder="Client name (optional)"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                />
+                <Select value={inviteProjectId} onValueChange={setInviteProjectId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select project..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableProjects.map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleInviteByEmail}
+                  disabled={isPending || (!inviteEmail.trim() && !clientEmail)}
+                  size="sm"
+                  className="gap-2"
+                >
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="h-4 w-4" />
+                  )}
+                  Send Invite
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowInviteForm(false)}>
+                  Cancel
+                </Button>
+              </div>
             </div>
           )}
 

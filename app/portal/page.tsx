@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientProjects } from '@/app/actions/client-portal';
+import { calculateProjectsProgress } from '@/app/actions/phases';
 import { PortalProjectsList } from '@/components/portal/portal-projects-list';
 
 export default async function PortalPage() {
@@ -53,6 +54,16 @@ export default async function PortalPage() {
         }>;
   }>;
 
+  // Calculate real progress from phases for all projects
+  const projectIds = projects
+    .map((cp) => {
+      const p = Array.isArray(cp.project) ? cp.project[0] : cp.project;
+      return p?.id;
+    })
+    .filter((id): id is string => !!id);
+
+  const progressMap = await calculateProjectsProgress(projectIds);
+
   return (
     <div className="space-y-6">
       <div>
@@ -62,7 +73,7 @@ export default async function PortalPage() {
         </p>
       </div>
 
-      <PortalProjectsList projects={projects} />
+      <PortalProjectsList projects={projects} progressMap={progressMap} />
     </div>
   );
 }

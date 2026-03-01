@@ -1,12 +1,149 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { type ActionResult, isUserAdmin } from './shared';
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
+
 /**
- * Invite a client to a project
- * Creates a link in client_projects table allowing the client to view the project
+ * Invite a client to a project by email.
+ * If the client already has a Supabase account, links them directly.
+ * If not, creates an auth account via inviteUserByEmail and links once profile exists.
+ */
+export async function inviteClientByEmail(
+  projectId: string,
+  email: string,
+  clientName?: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Verify user is admin
+    if (!(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Only admins can invite clients' };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if a profile with this email already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (existingProfile) {
+      // Profile exists — check role
+      if (existingProfile.role === 'admin' || existingProfile.role === 'employee') {
+        return {
+          success: false,
+          error: 'This email belongs to a team member, not a client',
+        };
+      }
+
+      // Already a client profile — just link to project
+      return inviteClientToProject(projectId, existingProfile.id);
+    }
+
+    // No existing profile — create auth account via admin API
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return {
+        success: false,
+        error: 'Service role key not configured. Cannot invite new users.',
+      };
+    }
+
+    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+      normalizedEmail,
+      {
+        redirectTo: `${APP_URL}/portal`,
+        data: {
+          role: 'client',
+          full_name: clientName || null,
+        },
+      }
+    );
+
+    if (inviteError) {
+      console.error('[inviteClientByEmail] Invite error:', inviteError);
+      return {
+        success: false,
+        error: `Failed to send invite: ${inviteError.message}`,
+      };
+    }
+
+    if (!inviteData?.user?.id) {
+      return { success: false, error: 'Invite sent but no user ID returned' };
+    }
+
+    const newUserId = inviteData.user.id;
+
+    // Ensure profile exists with client role (Supabase trigger may create it,
+    // but we upsert to be safe)
+    const { error: profileError } = await adminClient.from('profiles').upsert(
+      {
+        id: newUserId,
+        email: normalizedEmail,
+        full_name: clientName || null,
+        role: 'client',
+      },
+      { onConflict: 'id' }
+    );
+
+    if (profileError) {
+      console.error('[inviteClientByEmail] Profile creation error:', profileError);
+      // Don't fail — the invite was sent, profile will be created on signup
+    }
+
+    // Link client to project
+    const { error: linkError } = await adminClient.from('client_projects').insert({
+      client_id: newUserId,
+      project_id: projectId,
+      invited_by: user.id,
+      invited_at: new Date().toISOString(),
+    });
+
+    if (linkError) {
+      console.error('[inviteClientByEmail] Link error:', linkError);
+      return {
+        success: false,
+        error: 'Invite sent but failed to link project. Try adding manually.',
+      };
+    }
+
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+    revalidatePath('/portal');
+
+    return {
+      success: true,
+      data: { userId: newUserId, emailSent: true },
+    };
+  } catch (error) {
+    console.error('[inviteClientByEmail] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to invite client',
+    };
+  }
+}
+
+/**
+ * Invite a client to a project (by existing profile ID).
+ * Creates a link in client_projects table allowing the client to view the project.
  */
 export async function inviteClientToProject(
   projectId: string,
