@@ -14,29 +14,10 @@ interface CreatePhaseCommentInput {
   isInternal?: boolean;
 }
 
-interface PhaseCommentWithProfile {
-  id: string;
-  project_id: string;
-  phase_name: string;
-  task_key: string | null;
-  commented_by: string;
-  comment_text: string;
-  is_internal: boolean | null;
-  created_at: string | null;
-  profile?: {
-    id: string;
-    full_name: string | null;
-    avatar_url: string | null;
-    email: string | null;
-  } | null;
-}
-
 /**
  * Create a new phase comment
  */
-export async function createPhaseComment(
-  data: CreatePhaseCommentInput
-): Promise<ActionResult> {
+export async function createPhaseComment(data: CreatePhaseCommentInput): Promise<ActionResult> {
   const supabase = await createClient();
 
   const {
@@ -211,6 +192,41 @@ export async function deletePhaseComment(
   revalidatePath(`/projects/${projectId}`);
 
   return { success: true };
+}
+
+/**
+ * Get comment count for a specific phase
+ */
+export async function getPhaseCommentCount(
+  projectId: string,
+  phaseName: string,
+  includeInternal = false
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  let query = supabase
+    .from('phase_comments')
+    .select('id', { count: 'exact', head: true })
+    .eq('project_id', projectId)
+    .eq('phase_name', phaseName);
+
+  if (!includeInternal) {
+    query = query.or('is_internal.is.null,is_internal.eq.false');
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    console.error('[getPhaseCommentCount] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: count ?? 0 };
 }
 
 /**

@@ -131,6 +131,11 @@ export async function getClientProjects(clientId: string): Promise<ActionResult>
       return { success: false, error: 'Not authenticated' };
     }
 
+    // Authorization: user can only query their own projects unless admin
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Not authorized to view these projects' };
+    }
+
     // Query client_projects with project details
     const { data, error } = await supabase
       .from('client_projects')

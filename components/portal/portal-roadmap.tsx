@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { PhaseCommentThread } from './phase-comment-thread';
-import { getPhaseComments } from '@/app/actions/phase-comments';
+import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
 
 interface Project {
   id: string;
@@ -146,17 +146,13 @@ function PhaseWithComments({
     loadComments();
   }, [isExpanded, project.id, phase.name, canSeeInternal]);
 
-  // Load comment count on mount
+  // Load comment count on mount (uses head: true — no data transfer)
   useEffect(() => {
     async function loadCommentCount() {
-      const result = await getPhaseComments(
-        project.id,
-        phase.name,
-        canSeeInternal
-      );
+      const result = await getPhaseCommentCount(project.id, phase.name, canSeeInternal);
 
-      if (result.success && result.data) {
-        setCommentCount((result.data as CommentWithProfile[]).length);
+      if (result.success && typeof result.data === 'number') {
+        setCommentCount(result.data);
       }
     }
 
@@ -188,9 +184,7 @@ function PhaseWithComments({
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-neutral-900">
-                {phase.name}
-              </h3>
+              <h3 className="text-base font-semibold text-neutral-900">{phase.name}</h3>
               {phase.description && (
                 <p className="mt-2 text-sm text-neutral-600">{phase.description}</p>
               )}
@@ -270,10 +264,7 @@ function PhaseWithComments({
                 )}
               </span>
               <svg
-                className={cn(
-                  'h-4 w-4 transition-transform',
-                  isExpanded && 'rotate-180'
-                )}
+                className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')}
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -359,7 +350,7 @@ export function PortalRoadmap({ project, phases, userRole, currentUserId }: Port
         ) : (
           <div className="relative space-y-8">
             {/* Vertical connecting line */}
-            <div className="absolute left-4 top-6 bottom-6 w-0.5 bg-neutral-200" />
+            <div className="absolute bottom-6 left-4 top-6 w-0.5 bg-neutral-200" />
 
             {phases.map((phase, index) => {
               const isLast = index === phases.length - 1;

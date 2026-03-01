@@ -101,7 +101,6 @@ export function PhaseCommentThread({
 
       if (!result.success) {
         setError(result.error || 'Failed to create comment');
-        // Revert optimistic update by re-fetching would happen on next render
       }
     });
   };
@@ -147,9 +146,7 @@ export function PhaseCommentThread({
                 key={comment.id}
                 className={cn(
                   'rounded-lg border p-4 transition-colors',
-                  showInternal
-                    ? 'border-amber-200 bg-amber-50'
-                    : 'border-neutral-200 bg-white'
+                  showInternal ? 'border-amber-200 bg-amber-50' : 'border-neutral-200 bg-white'
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -182,7 +179,7 @@ export function PhaseCommentThread({
                       </span>
                     </div>
 
-                    <p className="text-sm text-neutral-700 whitespace-pre-wrap">
+                    <p className="whitespace-pre-wrap text-sm text-neutral-700">
                       {comment.comment_text}
                     </p>
                   </div>

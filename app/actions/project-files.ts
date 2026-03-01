@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ProjectFile } from '@/types/database';
 import { canAccessProject, canDeleteProjectFile } from './shared';
+import { canAccessProject as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
 
 export type ActionResult = {
@@ -61,9 +62,11 @@ export async function getProjectFiles(
     return [];
   }
 
-  // Authorization: Only workspace members can access project files
+  // Authorization: workspace members OR clients with project access
   const canAccess = await canAccessProject(user.id, projectId);
-  if (!canAccess) {
+  const clientAccess =
+    !canAccess && clientVisibleOnly ? await canClientAccessProject(user.id, projectId) : false;
+  if (!canAccess && !clientAccess) {
     console.error('[getProjectFiles] User does not have access to this project');
     return [];
   }
