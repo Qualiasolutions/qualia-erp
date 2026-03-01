@@ -811,3 +811,112 @@ export async function unscheduleTask(taskId: string): Promise<ActionResult> {
   revalidatePath('/inbox');
   return { success: true };
 }
+
+/**
+ * Get backlog tasks (unscheduled, not done)
+ */
+export async function getBacklogTasks(workspaceId?: string | null): Promise<Task[]> {
+  const supabase = await createClient();
+
+  let wsId = workspaceId;
+  if (!wsId) {
+    wsId = await getCurrentWorkspaceId();
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  let query = supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      workspace_id,
+      creator_id,
+      assignee_id,
+      project_id,
+      title,
+      description,
+      status,
+      priority,
+      item_type,
+      phase_name,
+      sort_order,
+      due_date,
+      completed_at,
+      scheduled_start_time,
+      scheduled_end_time,
+      show_in_inbox,
+      created_at,
+      updated_at,
+      creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
+      project:projects (id, name, project_type)
+    `
+    )
+    .is('scheduled_start_time', null)
+    .in('status', ['Todo', 'In Progress'])
+    .order('sort_order', { ascending: true })
+    .limit(20);
+
+  if (wsId) {
+    query = query.eq('workspace_id', wsId);
+  }
+
+  const { data: tasks, error } = await query;
+
+  if (error) {
+    console.error('[getBacklogTasks] Error:', error);
+    return [];
+  }
+
+  return (tasks || []).map((task) => {
+    const t = task as unknown as {
+      creator: Task['creator'] | Task['creator'][] | null;
+      assignee: Task['assignee'] | Task['assignee'][] | null;
+      project: Task['project'] | Task['project'][];
+    };
+    return {
+      ...task,
+      creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
+      assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+      project: Array.isArray(t.project) ? t.project[0] : t.project,
+    } as Task;
+  });
+}
+
+/**
+ * Quick toggle task status between Todo/Done (for schedule block checkboxes)
+ */
+export async function quickToggleTaskStatus(taskId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) return { success: false, error: 'No permission' };
+
+  // Get current status
+  const { data: task } = await supabase.from('tasks').select('status').eq('id', taskId).single();
+
+  if (!task) return { success: false, error: 'Task not found' };
+
+  const newStatus = task.status === 'Done' ? 'Todo' : 'Done';
+  const completedAt = newStatus === 'Done' ? new Date().toISOString() : null;
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ status: newStatus, completed_at: completedAt })
+    .eq('id', taskId);
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/schedule');
+  return { success: true, data: { newStatus } };
+}

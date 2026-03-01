@@ -1,7 +1,7 @@
 import { Suspense, use } from 'react';
 import { connection } from 'next/server';
-import { getMeetings } from '@/app/actions';
-import { getScheduledTasks } from '@/app/actions/inbox';
+import { getMeetings, getProfiles } from '@/app/actions';
+import { getScheduledTasks, getBacklogTasks } from '@/app/actions/inbox';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { ScheduleContent } from '@/components/schedule-content';
 import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
@@ -9,9 +9,22 @@ import { Calendar } from 'lucide-react';
 
 async function ScheduleLoader({ view }: { view: string }) {
   await connection();
-  const [meetings, tasks] = await Promise.all([getMeetings(), getScheduledTasks()]);
+  const [meetings, tasks, backlog, profiles] = await Promise.all([
+    getMeetings(),
+    getScheduledTasks(),
+    getBacklogTasks(),
+    getProfiles(),
+  ]);
 
-  return <ScheduleContent view={view} initialMeetings={meetings} initialTasks={tasks} />;
+  return (
+    <ScheduleContent
+      view={view}
+      initialMeetings={meetings}
+      initialTasks={tasks}
+      initialBacklog={backlog}
+      profiles={profiles}
+    />
+  );
 }
 
 function ScheduleSkeleton() {
