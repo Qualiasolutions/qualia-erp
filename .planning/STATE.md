@@ -5,24 +5,24 @@
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Moayad executes project phases independently with clear guidance; clients see real-time progress without internal complexity
-**Current focus:** Phase 2 - Client Portal Core
+**Current focus:** Phase 3 - Client Portal Features
 
 ## Current Position
 
-Phase: 2 of 3 (Client Portal Core)
-Plan: 2 of 2
-Status: Phase 2 complete
-Last activity: 2026-03-01 — Completed 02-02-PLAN.md (portal-layout)
+Phase: 3 of 3 (Client Portal Features)
+Plan: 1 of 4
+Status: In progress
+Last activity: 2026-03-01 — Completed 03-01-PLAN.md (admin-client-invite)
 
-Progress: [███████░░░] 70% (Phase 0, 1, and 2 complete)
+Progress: [████████░░] 75% (Phase 0, 1, 2 complete; Phase 3 started)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 4
-- Average duration: 3.1 min
-- Total execution time: 12.5 min
+- Total plans completed: 5
+- Average duration: 2.9 min
+- Total execution time: 14.5 min
 
 **By Phase:**
 
@@ -31,11 +31,12 @@ Progress: [███████░░░] 70% (Phase 0, 1, and 2 complete)
 | 0. Foundation                 | N/A   | N/A      | N/A      |
 | 1. Trainee Interactive System | 2     | 6 min    | 3 min    |
 | 2. Client Portal Core         | 2     | 6.5 min  | 3.25 min |
+| 3. Client Portal Features     | 1     | 2 min    | 2 min    |
 
 **Recent Trend:**
 
-- Last 3 plans: 3.3 min average
-- Trend: Consistent velocity, Phase 2 complete
+- Last 3 plans: 2.6 min average
+- Trend: Velocity improving, Phase 3 in progress
 
 _Updated after each plan completion_
 
@@ -58,6 +59,9 @@ Recent decisions affecting current work:
 - TaskInstructionCard shows helper text inline instead of modal — Faster scanning for trainees
 - Progress calculated from project_status for client view — Simpler than phase-based calculation
 - Phase timeline shows status/dates only, no task details — Read-only client view
+- Admin users see add/remove controls; non-admin users see read-only project list — Role-based rendering
+- Optimistic UI updates provide immediate feedback before server confirmation — Better UX
+- Filter active projects only (Active/Demos/Delayed) for admin dropdown — Exclude archived projects
 
 ### Pending Todos
 
@@ -70,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-01 (phase execution)
-Stopped at: Phase 2 complete (portal-layout). Ready for Phase 3.
-Resume file: .planning/phases/02-client-portal-core/02-02-SUMMARY.md
+Stopped at: Phase 3 Plan 1 complete (admin-client-invite). Ready for Plan 2.
+Resume file: .planning/phases/03-client-portal-features/03-01-SUMMARY.md
