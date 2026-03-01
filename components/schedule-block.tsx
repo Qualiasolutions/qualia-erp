@@ -421,28 +421,32 @@ export function ScheduleBlock({
               className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
             />
           </form>
-          <div className="flex items-center rounded-lg border border-border bg-card">
-            {filterButtons.map((f, i) => (
-              <button
-                key={f.key}
-                onClick={() => setActiveFilter(f.key)}
-                className={cn(
-                  'h-9 px-3.5 text-xs font-semibold uppercase tracking-wider transition-colors',
-                  i === 0 && 'rounded-l-lg',
-                  i === filterButtons.length - 1 && 'rounded-r-lg',
-                  activeFilter === f.key
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+          {filterButtons.length > 2 && (
+            <div className="flex items-center rounded-lg border border-border bg-card">
+              {filterButtons.map((f, i) => (
+                <button
+                  type="button"
+                  key={f.key}
+                  onClick={() => setActiveFilter(f.key)}
+                  className={cn(
+                    'h-9 px-3.5 text-xs font-semibold uppercase tracking-wider transition-colors',
+                    i === 0 && 'rounded-l-lg',
+                    i === filterButtons.length - 1 && 'rounded-r-lg',
+                    activeFilter === f.key
+                      ? 'bg-foreground text-background'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Backlog Toggle */}
         <button
+          type="button"
           onClick={() => setBacklogOpen(!backlogOpen)}
           className="mb-3 flex items-center gap-2 px-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
         >
@@ -490,19 +494,10 @@ export function ScheduleBlock({
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           {/* Member Headers */}
           <div
-            className={cn(
-              'grid border-b border-border',
-              filteredMembers.length === 2
-                ? 'grid-cols-[56px_1fr_1fr]'
-                : filteredMembers.length === 1
-                  ? 'grid-cols-[56px_1fr]'
-                  : `grid-cols-[56px_repeat(${filteredMembers.length},1fr)]`
-            )}
-            style={
-              filteredMembers.length > 2
-                ? { gridTemplateColumns: `56px repeat(${filteredMembers.length}, 1fr)` }
-                : undefined
-            }
+            className="grid border-b border-border"
+            style={{
+              gridTemplateColumns: `56px repeat(${filteredMembers.length}, 1fr)`,
+            }}
           >
             <div className="border-r border-border" />
             {filteredMembers.map((member, i) => {
@@ -531,6 +526,7 @@ export function ScheduleBlock({
                     </span>
                   </div>
                   <button
+                    type="button"
                     className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                     aria-label={`More options for ${member.name}`}
                   >
@@ -551,20 +547,11 @@ export function ScheduleBlock({
                   key={time}
                   className={cn(
                     'grid',
-                    filteredMembers.length === 2
-                      ? 'grid-cols-[56px_1fr_1fr]'
-                      : filteredMembers.length === 1
-                        ? 'grid-cols-[56px_1fr]'
-                        : undefined,
                     timeIdx < TIME_SLOTS.length - 1 && 'border-b border-border/50'
                   )}
-                  style={
-                    filteredMembers.length > 2
-                      ? {
-                          gridTemplateColumns: `56px repeat(${filteredMembers.length}, 1fr)`,
-                        }
-                      : undefined
-                  }
+                  style={{
+                    gridTemplateColumns: `56px repeat(${filteredMembers.length}, 1fr)`,
+                  }}
                 >
                   {/* Time Label */}
                   <div className="flex items-start justify-end border-r border-border px-2.5 pt-3">
@@ -606,6 +593,7 @@ export function ScheduleBlock({
                           >
                             {!isMeetingItem ? (
                               <button
+                                type="button"
                                 onClick={() => toggleComplete(task)}
                                 disabled={isPending}
                                 className="mt-[1px] shrink-0 transition-transform active:scale-90"
@@ -718,6 +706,7 @@ export function ScheduleBlock({
                           </div>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => {
                               setNewTaskTime(`${hour}:00`);
                               setIsTaskModalOpen(true);
@@ -752,6 +741,7 @@ export function ScheduleBlock({
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setIsTaskModalOpen(true)}
               className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
             >
