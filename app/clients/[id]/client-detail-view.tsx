@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
 import { EditClientModal } from '@/components/edit-client-modal';
 import { LogoUpload } from '@/components/logo-upload';
+import { ClientProjectAccess } from '@/components/clients/client-project-access';
 
 const statusConfig = {
   dropped: { label: 'Dropped', bg: 'bg-gray-100', color: 'text-gray-600' },
@@ -27,8 +28,18 @@ interface ExtendedClient extends Client {
   projects?: { id: string; name: string; project_type: string | null; status: string }[];
 }
 
+interface Project {
+  id: string;
+  name: string;
+  project_type?: string | null;
+  project_status?: string | null;
+}
+
 interface ClientDetailViewProps {
   client: ExtendedClient;
+  assignedProjects: Project[];
+  availableProjects: Project[];
+  isAdmin: boolean;
 }
 
 // Work items mapping for clients
@@ -68,7 +79,12 @@ function getClientWorkItems(clientName: string | null): Array<{
   return [];
 }
 
-export function ClientDetailView({ client: initialClient }: ClientDetailViewProps) {
+export function ClientDetailView({
+  client: initialClient,
+  assignedProjects,
+  availableProjects,
+  isAdmin,
+}: ClientDetailViewProps) {
   const [client, setClient] = useState(initialClient);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const status = statusConfig[client.lead_status || 'cold'] || statusConfig.cold;
@@ -276,6 +292,14 @@ export function ClientDetailView({ client: initialClient }: ClientDetailViewProp
             </CardContent>
           </Card>
         )}
+
+        {/* Project Access Management */}
+        <ClientProjectAccess
+          clientId={client.id}
+          initialProjects={assignedProjects}
+          availableProjects={availableProjects}
+          isAdmin={isAdmin}
+        />
 
         {/* Work Showcase */}
         {workItems.length > 0 && (

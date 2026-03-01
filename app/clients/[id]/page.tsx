@@ -5,6 +5,9 @@ import { ClientDetailView } from './client-detail-view';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@/lib/supabase/server';
+import { isUserAdmin } from '@/app/actions/shared';
+import { normalizeFKResponse } from '@/lib/server-utils';
 
 function ClientDetailSkeleton() {
   return (
@@ -27,6 +30,8 @@ interface ClientLoaderProps {
 }
 
 async function ClientLoader({ id }: ClientLoaderProps) {
+  const supabase = await createClient();
+
   // Fetch client data on the server
   const client = await getClientById(id);
 
@@ -34,7 +39,57 @@ async function ClientLoader({ id }: ClientLoaderProps) {
     notFound();
   }
 
-  return <ClientDetailView client={client} />;
+  // Get current user and check if admin
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAdmin = user ? await isUserAdmin(user.id) : false;
+
+  // Fetch assigned projects via client_projects
+  const { data: clientProjectsData } = await supabase
+    .from('client_projects')
+    .select(
+      `
+      id,
+      project:projects (
+        id,
+        name,
+        project_type,
+        project_status
+      )
+    `
+    )
+    .eq('client_id', id);
+
+  const assignedProjects =
+    clientProjectsData?.map((cp) => normalizeFKResponse(cp.project)).filter(Boolean) || [];
+
+  // Fetch all active projects for dropdown (admin only)
+  let allProjects: Array<{
+    id: string;
+    name: string;
+    project_type?: string | null;
+    project_status?: string | null;
+  }> = [];
+
+  if (isAdmin) {
+    const { data: projectsData } = await supabase
+      .from('projects')
+      .select('id, name, project_type, project_status')
+      .in('project_status', ['Active', 'Demos', 'Delayed'])
+      .order('name');
+
+    allProjects = projectsData || [];
+  }
+
+  return (
+    <ClientDetailView
+      client={client}
+      assignedProjects={assignedProjects}
+      availableProjects={allProjects}
+      isAdmin={isAdmin}
+    />
+  );
 }
 
 interface PageProps {
