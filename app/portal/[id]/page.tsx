@@ -25,6 +25,17 @@ export default async function PortalProjectPage({ params }: PortalProjectPagePro
     redirect('/portal');
   }
 
+  // Fetch user profile for role detection
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  const userRole = profile?.role === 'admin' || profile?.role === 'employee'
+    ? profile.role
+    : 'client';
+
   // Fetch project details
   const { data: project } = await supabase
     .from('projects')
@@ -68,7 +79,12 @@ export default async function PortalProjectPage({ params }: PortalProjectPagePro
         </div>
       </div>
 
-      <PortalRoadmap project={project} phases={phases || []} />
+      <PortalRoadmap
+        project={project}
+        phases={phases || []}
+        userRole={userRole}
+        currentUserId={user.id}
+      />
     </div>
   );
 }
