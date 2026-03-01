@@ -77,25 +77,30 @@ Plans:
 
 ### Phase 3: Client Portal Features
 
-**Goal**: Clients can download shared files, leave comments on phases, and see a timeline of project updates
+**Goal**: Admin can invite clients to projects, clients can download shared files, leave comments on phases, and see a timeline of project updates
 **Depends on**: Phase 2
-**Requirements**: FILE-01, FILE-02, FILE-03, CMNT-01, CMNT-02, CMNT-03, FEED-01, FEED-02, FEED-03
+**Requirements**: AUTH-03, FILE-01, FILE-02, FILE-03, CMNT-01, CMNT-02, CMNT-03, FEED-01, FEED-02, FEED-03
+**Gap Closure**: AUTH-03 merged from Phase 2 verification gap (admin invite UI missing)
 **Success Criteria** (what must be TRUE):
 
-1. Admin can upload files to a project with visibility toggle (client-visible or internal-only)
-2. Client sees client-visible files at /portal/[id]/files with download buttons
-3. Files show phase association, description, and upload date
-4. Client can leave comments at the phase level
-5. Admin can reply to client comments in the same thread
-6. Internal comments are hidden from clients (only admins/employees see them)
-7. Client sees timeline of project events at /portal/[id]/updates (phase completions, file uploads, comments)
-8. Activity feed entries are filtered by is_client_visible=true
+1. Admin can invite a client to a project via UI (wires existing inviteClientToProject action)
+2. Admin can remove client project access via UI (wires existing removeClientFromProject action)
+3. Admin can upload files to a project with visibility toggle (client-visible or internal-only)
+4. Client sees client-visible files at /portal/[id]/files with download buttons
+5. Files show phase association, description, and upload date
+6. Client can leave comments at the phase level
+7. Admin can reply to client comments in the same thread
+8. Internal comments are hidden from clients (only admins/employees see them)
+9. Client sees timeline of project events at /portal/[id]/updates (phase completions, file uploads, comments)
+10. Activity feed entries are filtered by is_client_visible=true
    **Plans**: TBD
 
 Plans:
 
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
+- [ ] 03-01: Admin client invite UI (gap closure)
+- [ ] 03-02: Shared files with visibility toggle
+- [ ] 03-03: Client comments on phases
+- [ ] 03-04: Client activity feed
 
 ## Progress
 
