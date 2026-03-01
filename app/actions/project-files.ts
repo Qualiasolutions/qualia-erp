@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ProjectFile } from '@/types/database';
 import { canAccessProject, canDeleteProjectFile } from './shared';
+import { createActivityLogEntry } from './activity-feed';
 
 export type ActionResult = {
   success: boolean;
@@ -217,6 +218,18 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     await supabase.storage.from('project-files').remove([storagePath]);
     return { success: false, error: 'Failed to save file record' };
   }
+
+  // Log activity (only if upload succeeds)
+  await createActivityLogEntry({
+    projectId,
+    actionType: 'file_uploaded',
+    actionData: {
+      file_name: file.name,
+      description: description || undefined,
+      is_client_visible: isClientVisible === 'true',
+    },
+    isClientVisible: isClientVisible === 'true',
+  });
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath(`/projects/${projectId}/files`);
