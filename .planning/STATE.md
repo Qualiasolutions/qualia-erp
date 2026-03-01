@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 Phase: v1.0 complete — all 4 phases (0-3) shipped
 Plan: Not started
 Status: Ready to plan next milestone
-Last activity: 2026-03-01 — v1.0 milestone complete
+Last activity: 2026-03-01 — Completed quick task 001: client portal remaining features
 
 Progress: [██████████] 100% (v1.0 shipped)
 
@@ -48,6 +48,13 @@ None.
 ### Blockers/Concerns
 
 - Pre-commit hook broken (eslint ENOENT error) — needs fixing but not blocking
+- `SUPABASE_SERVICE_ROLE_KEY` must be set in Vercel for client invite flow
+
+### Quick Tasks Completed
+
+| #   | Description                                                                       | Date       | Commit  | Directory                                                           |
+| --- | --------------------------------------------------------------------------------- | ---------- | ------- | ------------------------------------------------------------------- |
+| 001 | Password reset, client invite, progress calc, phase notifications, error page fix | 2026-03-01 | 5f154be | [001-client-portal-remaining](./quick/001-client-portal-remaining/) |
 
 ## Session Continuity
 
