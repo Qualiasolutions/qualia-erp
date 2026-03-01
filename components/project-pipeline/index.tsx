@@ -18,10 +18,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface ProjectPipelineProps {
   projectId: string;
   workspaceId: string;
+  userRole?: 'admin' | 'employee' | 'client';
   className?: string;
 }
 
-export function ProjectPipeline({ projectId, workspaceId, className }: ProjectPipelineProps) {
+export function ProjectPipeline({
+  projectId,
+  workspaceId,
+  userRole,
+  className,
+}: ProjectPipelineProps) {
   const [phases, setPhases] = useState<PhaseWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activePhaseId, setActivePhaseId] = useState<string | null>(null);
@@ -135,6 +141,7 @@ export function ProjectPipeline({ projectId, workspaceId, className }: ProjectPi
               }}
               projectId={projectId}
               workspaceId={workspaceId}
+              userRole={userRole}
               isActive={phase.id === activePhaseId}
               onSelect={() => setActivePhaseId(phase.id)}
               onDataChange={handleDataChange}

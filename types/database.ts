@@ -45,6 +45,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      activity_log: {
+        Row: {
+          id: string;
+          project_id: string;
+          action_type: string;
+          actor_id: string;
+          action_data: Json | null;
+          is_client_visible: boolean | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          action_type: string;
+          actor_id: string;
+          action_data?: Json | null;
+          is_client_visible?: boolean | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          action_type?: string;
+          actor_id?: string;
+          action_data?: Json | null;
+          is_client_visible?: boolean | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
       client_activities: {
         Row: {
           client_id: string;
@@ -105,6 +135,33 @@ export type Database = {
           name?: string;
           phone?: string | null;
           position?: string | null;
+        };
+        Relationships: [];
+      };
+      client_projects: {
+        Row: {
+          id: string;
+          client_id: string;
+          project_id: string;
+          access_level: string | null;
+          invited_at: string | null;
+          invited_by: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          project_id: string;
+          access_level?: string | null;
+          invited_at?: string | null;
+          invited_by?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          project_id?: string;
+          access_level?: string | null;
+          invited_at?: string | null;
+          invited_by?: string | null;
         };
         Relationships: [];
       };
@@ -453,6 +510,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      phase_comments: {
+        Row: {
+          id: string;
+          project_id: string;
+          phase_name: string;
+          task_key: string | null;
+          commented_by: string;
+          comment_text: string;
+          is_internal: boolean | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          phase_name: string;
+          task_key?: string | null;
+          commented_by: string;
+          comment_text: string;
+          is_internal?: boolean | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          phase_name?: string;
+          task_key?: string | null;
+          commented_by?: string;
+          comment_text?: string;
+          is_internal?: boolean | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
       phase_items: {
         Row: {
           completed_at: string | null;
@@ -504,6 +594,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      phase_reviews: {
+        Row: {
+          id: string;
+          project_id: string;
+          phase_id: string;
+          phase_name: string;
+          submitted_by: string;
+          submitted_at: string | null;
+          status: string;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          feedback: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          phase_id: string;
+          phase_name: string;
+          submitted_by: string;
+          submitted_at?: string | null;
+          status?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          feedback?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          phase_id?: string;
+          phase_name?: string;
+          submitted_by?: string;
+          submitted_at?: string | null;
+          status?: string;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          feedback?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
       project_phases: {
         Row: {
           created_at: string | null;
@@ -549,6 +681,36 @@ export type Database = {
           template_key?: string | null;
           updated_at?: string | null;
           workspace_id?: string;
+        };
+        Relationships: [];
+      };
+      project_integrations: {
+        Row: {
+          id: string;
+          project_id: string;
+          service_type: string;
+          external_url: string;
+          external_id: string | null;
+          metadata: Json | null;
+          connected_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          project_id: string;
+          service_type: string;
+          external_url: string;
+          external_id?: string | null;
+          metadata?: Json | null;
+          connected_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          project_id?: string;
+          service_type?: string;
+          external_url?: string;
+          external_id?: string | null;
+          metadata?: Json | null;
+          connected_at?: string | null;
         };
         Relationships: [];
       };
@@ -1048,7 +1210,7 @@ export type Database = {
       project_type: 'web_design' | 'ai_agent' | 'voice_agent' | 'ai_platform' | 'seo' | 'ads';
       task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       task_status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
-      user_role: 'admin' | 'employee';
+      user_role: 'admin' | 'employee' | 'client';
       integration_provider: 'github' | 'vercel' | 'vapi';
       provisioning_status:
         | 'not_started'
@@ -1096,6 +1258,13 @@ export type Notification = Tables<'notifications'>;
 export type ProjectPhase = Tables<'project_phases'>;
 export type PhaseItem = Tables<'phase_items'>;
 export type Task = Tables<'tasks'>;
+
+// Portal & Trainee system types
+export type ActivityLog = Tables<'activity_log'>;
+export type ClientProject = Tables<'client_projects'>;
+export type PhaseComment = Tables<'phase_comments'>;
+export type PhaseReview = Tables<'phase_reviews'>;
+export type ProjectIntegration = Tables<'project_integrations'>;
 
 // Task enum types
 export type TaskStatus = Enums<'task_status'>;

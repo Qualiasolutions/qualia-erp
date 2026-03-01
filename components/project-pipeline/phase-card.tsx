@@ -7,6 +7,7 @@ import {
   getPhaseStatusConfig,
   type PhaseStatus,
 } from '@/lib/pipeline-constants';
+import { getPhasePromptData } from '@/lib/gsd-templates';
 import { PhaseTasks } from './phase-tasks';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +32,8 @@ import {
   Lock,
   Unlock,
   Sparkles,
+  Clock,
+  AlertCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -41,6 +44,9 @@ import {
 } from '@/app/actions/pipeline';
 import { unlockPhase } from '@/app/actions/phases';
 import { PhasePromptModal } from './phase-prompt-modal';
+import { PhaseReviewButton } from '@/components/phase-review-button';
+import { AdminReviewPanel } from '@/components/admin-review-panel';
+import { getPhaseReview, type PhaseReviewWithDetails } from '@/app/actions/phase-reviews';
 
 interface Task {
   id: string;
@@ -73,6 +79,7 @@ interface PhaseCardProps {
   };
   projectId: string;
   workspaceId: string;
+  userRole?: 'admin' | 'employee' | 'client';
   isActive?: boolean;
   onSelect?: () => void;
   onDataChange?: () => void;
@@ -82,6 +89,7 @@ export function PhaseCard({
   phase,
   projectId,
   workspaceId,
+  userRole = 'employee',
   isActive,
   onSelect,
   onDataChange,
@@ -93,6 +101,7 @@ export function PhaseCard({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editingName, setEditingName] = useState(phase.name);
   const [showPromptModal, setShowPromptModal] = useState(false);
+  const [review, setReview] = useState<PhaseReviewWithDetails | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const phaseConfig = getPipelinePhaseConfig(phase.name);
@@ -107,17 +116,18 @@ export function PhaseCard({
     }
   }, [isEditingName]);
 
-  // Load tasks when expanded
+  // Load tasks and review when expanded
   useEffect(() => {
     if (!isExpanded) return;
 
     let cancelled = false;
     setIsLoading(true);
 
-    getPhaseTasks(phase.id)
-      .then((tasksData) => {
+    Promise.all([getPhaseTasks(phase.id), getPhaseReview(projectId, phase.name)])
+      .then(([tasksData, reviewData]) => {
         if (!cancelled) {
           setTasks(tasksData as Task[]);
+          setReview(reviewData);
         }
       })
       .finally(() => {
@@ -127,13 +137,16 @@ export function PhaseCard({
     return () => {
       cancelled = true;
     };
-  }, [isExpanded, phase.id]);
+  }, [isExpanded, phase.id, projectId, phase.name]);
 
   const refreshData = () => {
-    getPhaseTasks(phase.id).then((tasksData) => {
-      setTasks(tasksData as Task[]);
-      onDataChange?.();
-    });
+    Promise.all([getPhaseTasks(phase.id), getPhaseReview(projectId, phase.name)]).then(
+      ([tasksData, reviewData]) => {
+        setTasks(tasksData as Task[]);
+        setReview(reviewData);
+        onDataChange?.();
+      }
+    );
   };
 
   const handleStatusChange = (newStatus: PhaseStatus) => {
@@ -265,6 +278,18 @@ export function PhaseCard({
                 {phase.status === 'completed' && (
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
                 )}
+                {review?.status === 'pending' && (
+                  <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                    <Clock className="h-3 w-3" />
+                    Review
+                  </span>
+                )}
+                {review?.status === 'changes_requested' && (
+                  <span className="flex items-center gap-1 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 dark:text-red-400">
+                    <AlertCircle className="h-3 w-3" />
+                    Changes
+                  </span>
+                )}
               </>
             )}
           </div>
@@ -319,6 +344,29 @@ export function PhaseCard({
             className="overflow-hidden"
           >
             <div className="border-t border-border/50">
+              {/* Locked phase message */}
+              {isLocked && (
+                <div className="flex items-center gap-2 bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+                  <Lock className="h-4 w-4 shrink-0" />
+                  <span>Complete and get the previous phase approved to unlock this one.</span>
+                  {userRole === 'admin' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="ml-auto h-7 gap-1.5 text-xs text-amber-600"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUnlockPhase();
+                      }}
+                      disabled={isPending}
+                    >
+                      <Unlock className="h-3.5 w-3.5" />
+                      Override
+                    </Button>
+                  )}
+                </div>
+              )}
+
               {/* Quick Action Bar */}
               <div className="flex items-center justify-between border-b border-border/30 bg-muted/30 px-4 py-2">
                 <span className="text-xs font-medium text-muted-foreground">
@@ -427,6 +475,26 @@ export function PhaseCard({
                   />
                 )}
               </div>
+
+              {/* Review Section */}
+              {!isLoading && (
+                <div className="border-t border-border/30 p-4">
+                  {userRole === 'admin' && review?.status === 'pending' ? (
+                    <AdminReviewPanel review={review} onReviewChange={refreshData} />
+                  ) : (
+                    <PhaseReviewButton
+                      projectId={projectId}
+                      phaseId={phase.id}
+                      phaseName={phase.name}
+                      review={review}
+                      allTasksDone={
+                        phase.task_count > 0 && phase.completed_task_count === phase.task_count
+                      }
+                      onReviewChange={refreshData}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -438,6 +506,8 @@ export function PhaseCard({
         onOpenChange={setShowPromptModal}
         phaseName={phase.name}
         prompt={phase.helper_text || ''}
+        gsdCommand={getPhasePromptData(phase.template_key)?.gsdCommand}
+        qualiaSkills={getPhasePromptData(phase.template_key)?.qualiaSkills}
       />
     </motion.div>
   );

@@ -6,7 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { InlineText } from '@/components/ui/inline-edit';
-import { Calendar, Trash2 } from 'lucide-react';
+import { Calendar, Trash2, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { isPast, isToday, parseISO } from 'date-fns';
 
@@ -99,6 +99,14 @@ function TaskItemComponent({
           disabled={disabled || isDone || isUpdating}
           placeholder="Task title"
         />
+
+        {/* Helper text / instructions */}
+        {task.description && !isDone && (
+          <div className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+            <Info className="mt-0.5 h-3 w-3 shrink-0 text-primary/50" />
+            <span className="leading-relaxed">{task.description}</span>
+          </div>
+        )}
 
         {/* Meta - due date & assignee */}
         {(task.due_date || task.assignee) && !isDone && (
