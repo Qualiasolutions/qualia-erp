@@ -82,7 +82,7 @@ export async function getProjectActivityFeed(
   }
 
   // Normalize FK response
-  const normalized = (data || []).map((entry) => ({
+  const normalized = (data || []).map((entry: any) => ({
     ...entry,
     actor: normalizeFKResponse(entry.actor),
   }));
