@@ -29,10 +29,10 @@ export default async function PortalLayout({ children }: { children: React.React
   const isAdminViewing = userRole === 'admin';
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-background">
       <PortalHeader user={user} profile={profile} isAdminViewing={isAdminViewing} />
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
-      <footer className="border-t border-neutral-200 bg-white py-6 text-center text-sm text-neutral-600">
+      <footer className="border-t border-border bg-card py-6 text-center text-sm text-muted-foreground">
         <div className="mx-auto max-w-7xl px-4">
           &copy; {new Date().getFullYear()} Qualia Solutions. Need help?{' '}
           <a

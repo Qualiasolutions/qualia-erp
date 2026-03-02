@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { ArrowLeft } from 'lucide-react';
 import { User } from '@supabase/supabase-js';
 import { cn } from '@/lib/utils';
@@ -41,7 +42,7 @@ export function PortalHeader({ user, profile, isAdminViewing }: PortalHeaderProp
   const displayEmail = profile?.email || user.email;
 
   return (
-    <header className="border-b border-neutral-200 bg-white">
+    <header className="border-b border-border bg-card">
       {/* Admin banner */}
       {isAdminViewing && (
         <div className="border-b border-qualia-200 bg-qualia-50 px-4 py-2">
@@ -72,51 +73,55 @@ export function PortalHeader({ user, profile, isAdminViewing }: PortalHeaderProp
             <span className="text-base font-bold text-white">Q</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-neutral-900">Qualia</span>
-            <span className="text-xs text-neutral-500">Client Portal</span>
+            <span className="text-sm font-semibold text-foreground">Qualia</span>
+            <span className="text-xs text-muted-foreground/80">Client Portal</span>
           </div>
         </div>
 
-        {/* User Menu */}
-        <DropdownMenu open={open} onOpenChange={setOpen}>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
-                'text-neutral-700 hover:bg-neutral-100',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-qualia-600'
+        {/* Theme Toggle and User Menu */}
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+
+          <DropdownMenu open={open} onOpenChange={setOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                className={cn(
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                  'text-muted-foreground hover:bg-muted/50',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-qualia-600'
+                )}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-qualia-100">
+                  <span className="text-sm font-semibold text-qualia-700">
+                    {displayName.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="hidden flex-col items-start text-left sm:flex">
+                  <span className="text-sm font-medium text-foreground">{displayName}</span>
+                  <span className="text-xs text-muted-foreground/80">{displayEmail}</span>
+                </div>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">{displayName}</p>
+                  <p className="text-xs text-muted-foreground/80">{displayEmail}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {isAdminViewing && (
+                <>
+                  <DropdownMenuItem onClick={() => router.push('/')}>
+                    Back to Admin Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
               )}
-            >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-qualia-100">
-                <span className="text-sm font-semibold text-qualia-700">
-                  {displayName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="hidden flex-col items-start text-left sm:flex">
-                <span className="text-sm font-medium text-neutral-900">{displayName}</span>
-                <span className="text-xs text-neutral-500">{displayEmail}</span>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">{displayName}</p>
-                <p className="text-xs text-neutral-500">{displayEmail}</p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {isAdminViewing && (
-              <>
-                <DropdownMenuItem onClick={() => router.push('/')}>
-                  Back to Admin Dashboard
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuItem onClick={handleSignOut}>Sign Out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              <DropdownMenuItem onClick={handleSignOut}>Sign Out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );
