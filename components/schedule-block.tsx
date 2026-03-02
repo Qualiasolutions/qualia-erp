@@ -15,6 +15,12 @@ import { format, parseISO, isSameDay, startOfDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
 import { quickToggleTaskStatus, createTask } from '@/app/actions/inbox';
 import type { Task } from '@/app/actions/inbox';
 import type { MeetingWithRelations } from '@/lib/swr';
@@ -619,13 +625,34 @@ export function ScheduleBlock({
                           {member.name}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                        aria-label={`More options for ${member.name}`}
-                      >
-                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            type="button"
+                            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                            aria-label={`Filter schedule members`}
+                          >
+                            <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-36">
+                          {filterButtons.map((f) => (
+                            <DropdownMenuItem
+                              key={f.key}
+                              onClick={() => setActiveFilter(f.key)}
+                              className={cn(
+                                'text-xs font-medium',
+                                activeFilter === f.key && 'bg-accent'
+                              )}
+                            >
+                              {f.label}
+                              {activeFilter === f.key && (
+                                <span className="ml-auto text-qualia-500">●</span>
+                              )}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </>
                   )}
                 </div>
