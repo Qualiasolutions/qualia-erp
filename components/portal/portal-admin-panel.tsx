@@ -28,6 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Users,
   UserPlus,
@@ -40,12 +41,14 @@ import {
   KeyRound,
   FolderOpen,
   ExternalLink,
+  Plus,
 } from 'lucide-react';
 import {
   inviteClientByEmail,
   removeClientFromProject,
   inviteClientToProject,
   sendClientPasswordReset,
+  createProjectFromPortal,
 } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -82,14 +85,21 @@ interface PortalAdminPanelProps {
 }
 
 export function PortalAdminPanel({
-  projects,
+  projects: initialProjects,
   clients: initialClients,
   assignments: initialAssignments,
 }: PortalAdminPanelProps) {
+  const [projects, setProjects] = useState(initialProjects);
   const [clients, setClients] = useState(initialClients);
   const [assignments, setAssignments] = useState(initialAssignments);
   const [isPending, startTransition] = useTransition();
   const [copied, setCopied] = useState(false);
+
+  // Create project form state
+  const [createProjectOpen, setCreateProjectOpen] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectType, setNewProjectType] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
 
   // Invite form state
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -109,6 +119,35 @@ export function PortalAdminPanel({
     setCopied(true);
     toast.success('Portal URL copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleCreateProject = () => {
+    if (!newProjectName.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await createProjectFromPortal({
+        name: newProjectName.trim(),
+        project_type: newProjectType,
+        description: newProjectDescription.trim() || undefined,
+      });
+
+      if (!result.success) {
+        toast.error(result.error || 'Failed to create project');
+        return;
+      }
+
+      const newProject = result.data as Project;
+      setProjects((prev) => [newProject, ...prev]);
+      toast.success(`Project "${newProject.name}" created`);
+
+      setNewProjectName('');
+      setNewProjectType('');
+      setNewProjectDescription('');
+      setCreateProjectOpen(false);
+    });
   };
 
   const handleInvite = () => {
@@ -285,6 +324,75 @@ export function PortalAdminPanel({
           <ExternalLink className="h-3.5 w-3.5" />
           Open Portal
         </a>
+
+        <Dialog open={createProjectOpen} onOpenChange={setCreateProjectOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Plus className="h-3.5 w-3.5" />
+              Create Project
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Project</DialogTitle>
+              <DialogDescription>
+                Create a project, then invite a client and link them to it.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Project Name *</label>
+                <Input
+                  type="text"
+                  placeholder="e.g. ACME Website Redesign"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Project Type</label>
+                <Select value={newProjectType} onValueChange={setNewProjectType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="web_design">Web Design</SelectItem>
+                    <SelectItem value="ai_agent">AI Agent</SelectItem>
+                    <SelectItem value="voice_agent">Voice Agent</SelectItem>
+                    <SelectItem value="seo">SEO</SelectItem>
+                    <SelectItem value="ads">Ads</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Description</label>
+                <Textarea
+                  placeholder="Brief project description (optional)"
+                  value={newProjectDescription}
+                  onChange={(e) => setNewProjectDescription(e.target.value)}
+                  className="min-h-[80px] resize-none"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setCreateProjectOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleCreateProject}
+                  disabled={isPending || !newProjectName.trim()}
+                  className="gap-2"
+                >
+                  {isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                  Create Project
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
           <DialogTrigger asChild>
@@ -543,7 +651,7 @@ export function PortalAdminPanel({
                         disabled={isPending}
                         className={cn(
                           'h-8 w-8 p-0',
-                          'text-muted-foreground/60 hover:bg-red-50 hover:text-red-600'
+                          'text-muted-foreground/60 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400'
                         )}
                         title="Remove access"
                       >

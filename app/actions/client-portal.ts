@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { type ActionResult, isUserAdmin } from './shared';
+import { getCurrentWorkspaceId } from './workspace';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
 
@@ -422,6 +423,83 @@ export async function sendClientPasswordReset(email: string): Promise<ActionResu
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send reset email',
+    };
+  }
+}
+
+/**
+ * Create a project from the portal admin panel.
+ * Simplified version — auto-assigns workspace and first available team.
+ */
+export async function createProjectFromPortal(input: {
+  name: string;
+  project_type: string;
+  description?: string;
+}): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    if (!input.name.trim()) {
+      return { success: false, error: 'Project name is required' };
+    }
+
+    // Get workspace
+    const workspaceId = await getCurrentWorkspaceId();
+    if (!workspaceId) {
+      return { success: false, error: 'No workspace found' };
+    }
+
+    // Get first available team in workspace
+    const { data: team } = await supabase
+      .from('teams')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .limit(1)
+      .single();
+
+    if (!team) {
+      return { success: false, error: 'No team found in workspace' };
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        name: input.name.trim(),
+        description: input.description?.trim() || null,
+        project_type: input.project_type || null,
+        status: 'Active',
+        team_id: team.id,
+        lead_id: user.id,
+        workspace_id: workspaceId,
+      })
+      .select('id, name, status, project_type')
+      .single();
+
+    if (error) {
+      console.error('[createProjectFromPortal] Error:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/projects');
+    revalidatePath('/portal');
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('[createProjectFromPortal] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create project',
     };
   }
 }
