@@ -60,8 +60,8 @@ export default async function PortalPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Portal Management</h1>
-          <p className="mt-1 text-sm text-neutral-600">
+          <h1 className="text-2xl font-bold text-foreground">Portal Management</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage client access, invite clients, and share project credentials
           </p>
         </div>
@@ -81,8 +81,8 @@ export default async function PortalPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-neutral-900">Error Loading Projects</h2>
-          <p className="mt-2 text-sm text-neutral-600">{result.error}</p>
+          <h2 className="text-lg font-semibold text-foreground">Error Loading Projects</h2>
+          <p className="mt-2 text-sm text-muted-foreground">{result.error}</p>
         </div>
       </div>
     );
@@ -129,8 +129,8 @@ export default async function PortalPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Your Projects</h1>
-        <p className="mt-1 text-sm text-neutral-600">
+        <h1 className="text-2xl font-bold text-foreground">Your Projects</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           View the status and progress of your active projects
         </p>
       </div>

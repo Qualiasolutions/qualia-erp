@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectFiles } from '@/app/actions/project-files';
 import { PortalFileList } from '@/components/portal/portal-file-list';
@@ -47,9 +48,9 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center gap-4">
-        <a
+        <Link
           href="/portal"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
         >
           <svg
             className="h-4 w-4"
@@ -60,11 +61,11 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
-        </a>
+        </Link>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{project.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
           {project.description && (
-            <p className="mt-1 text-sm text-neutral-600">{project.description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
           )}
         </div>
       </div>
@@ -72,8 +73,8 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
       <PortalTabs projectId={projectId} />
 
       {/* Info Banner */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p className="text-sm text-blue-900">
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-300">
           These are files and deliverables shared by your project team. Click to download any file.
         </p>
       </div>

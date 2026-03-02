@@ -28,7 +28,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   const getFileIcon = (mimeType: string | null) => {
-    if (!mimeType) return <File className="h-8 w-8 text-neutral-400" />;
+    if (!mimeType) return <File className="h-8 w-8 text-muted-foreground/60" />;
 
     if (mimeType.startsWith('image/')) {
       return <FileImage className="h-8 w-8 text-blue-500" />;
@@ -39,18 +39,14 @@ export function PortalFileList({ files }: PortalFileListProps) {
     if (mimeType.startsWith('audio/')) {
       return <FileAudio className="h-8 w-8 text-green-500" />;
     }
-    if (
-      mimeType.includes('zip') ||
-      mimeType.includes('rar') ||
-      mimeType.includes('archive')
-    ) {
+    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) {
       return <FileArchive className="h-8 w-8 text-orange-500" />;
     }
     if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) {
       return <FileText className="h-8 w-8 text-red-500" />;
     }
 
-    return <File className="h-8 w-8 text-neutral-400" />;
+    return <File className="h-8 w-8 text-muted-foreground/60" />;
   };
 
   const handleDownload = async (fileId: string, fileName: string) => {
@@ -87,9 +83,9 @@ export function PortalFileList({ files }: PortalFileListProps) {
   if (files.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-        <File className="mb-4 h-12 w-12 text-neutral-400" />
-        <h3 className="mb-2 text-lg font-semibold text-neutral-900">No files shared yet</h3>
-        <p className="text-sm text-neutral-600">
+        <File className="mb-4 h-12 w-12 text-muted-foreground/60" />
+        <h3 className="mb-2 text-lg font-semibold text-foreground">No files shared yet</h3>
+        <p className="text-sm text-muted-foreground">
           Your project manager will upload files here when available.
         </p>
       </div>
@@ -116,7 +112,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
           <CardContent className="space-y-3">
             {/* Description */}
             {file.description && (
-              <p className="text-sm text-neutral-600 line-clamp-2">{file.description}</p>
+              <p className="line-clamp-2 text-sm text-muted-foreground">{file.description}</p>
             )}
 
             {/* Phase Badge */}
@@ -127,7 +123,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
             )}
 
             {/* Upload Date */}
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-muted-foreground/80">
               Uploaded {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
             </p>
 

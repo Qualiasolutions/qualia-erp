@@ -134,7 +134,7 @@ export function PhaseCommentThread({
     <div className="space-y-4">
       {/* Comment List */}
       {optimisticComments.length === 0 ? (
-        <div className="py-8 text-center text-sm text-neutral-500">No comments yet</div>
+        <div className="py-8 text-center text-sm text-muted-foreground/80">No comments yet</div>
       ) : (
         <div className="space-y-4">
           {optimisticComments.map((comment) => {
@@ -146,7 +146,9 @@ export function PhaseCommentThread({
                 key={comment.id}
                 className={cn(
                   'rounded-lg border p-4 transition-colors',
-                  showInternal ? 'border-amber-200 bg-amber-50' : 'border-neutral-200 bg-white'
+                  showInternal
+                    ? 'border-amber-500/30 bg-amber-500/10 dark:border-amber-500/20 dark:bg-amber-500/5'
+                    : 'border-border bg-card'
                 )}
               >
                 <div className="flex items-start gap-3">
@@ -159,7 +161,7 @@ export function PhaseCommentThread({
 
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-neutral-900">
+                      <span className="text-sm font-medium text-foreground">
                         {comment.profile?.full_name || 'Unknown User'}
                       </span>
                       {showInternal && (
@@ -170,7 +172,7 @@ export function PhaseCommentThread({
                           Internal
                         </Badge>
                       )}
-                      <span className="text-xs text-neutral-500">
+                      <span className="text-xs text-muted-foreground/80">
                         {comment.created_at
                           ? formatDistanceToNow(new Date(comment.created_at), {
                               addSuffix: true,
@@ -179,7 +181,7 @@ export function PhaseCommentThread({
                       </span>
                     </div>
 
-                    <p className="whitespace-pre-wrap text-sm text-neutral-700">
+                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
                       {comment.comment_text}
                     </p>
                   </div>
@@ -187,7 +189,7 @@ export function PhaseCommentThread({
                   {canDelete && (
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="shrink-0 rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-red-600"
+                      className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-red-600"
                       disabled={isPending}
                     >
                       <svg
@@ -226,19 +228,19 @@ export function PhaseCommentThread({
             <span
               className={cn(
                 'text-xs',
-                commentText.length > 2000 ? 'text-red-600' : 'text-neutral-500'
+                commentText.length > 2000 ? 'text-red-600' : 'text-muted-foreground/80'
               )}
             >
               {commentText.length} / 2000
             </span>
             {canCreateInternal && (
-              <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <input
                   type="checkbox"
                   checked={isInternal}
                   onChange={(e) => setIsInternal(e.target.checked)}
                   disabled={isPending}
-                  className="rounded border-neutral-300"
+                  className="rounded border-border"
                 />
                 Internal comment (only visible to team)
               </label>

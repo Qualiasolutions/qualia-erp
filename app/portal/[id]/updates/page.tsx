@@ -50,7 +50,7 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
       <div className="flex items-center gap-4">
         <Link
           href="/portal"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
         >
           <svg
             className="h-4 w-4"
@@ -63,9 +63,9 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
           </svg>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{project.name}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
           {project.description && (
-            <p className="mt-1 text-sm text-neutral-600">{project.description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
           )}
         </div>
       </div>
@@ -73,8 +73,8 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
       <PortalTabs projectId={projectId} />
 
       {/* Info Banner */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <p className="text-sm text-blue-900">
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
+        <p className="text-sm text-blue-800 dark:text-blue-300">
           Track the latest updates, milestones, and activities on your project.
         </p>
       </div>
