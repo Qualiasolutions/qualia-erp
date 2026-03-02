@@ -104,14 +104,16 @@ export function ScheduleBlock({
   const [newTaskTime, setNewTaskTime] = useState<string | null>(null);
   const [newTaskAssigneeId, setNewTaskAssigneeId] = useState<string | null>(null);
 
-  // Build team members from profiles
+  // Build team members from profiles (exclude profiles without names)
   const teamMembers: TeamMember[] = useMemo(() => {
-    return profiles.map((p) => ({
-      id: p.full_name?.toLowerCase().replace(/\s+/g, '-') || p.id,
-      name: p.full_name?.split(' ')[0] || 'Unknown',
-      initial: (p.full_name?.[0] || 'U').toUpperCase(),
-      profileId: p.id,
-    }));
+    return profiles
+      .filter((p) => p.full_name)
+      .map((p) => ({
+        id: p.full_name!.toLowerCase().replace(/\s+/g, '-'),
+        name: p.full_name!.split(' ')[0],
+        initial: p.full_name![0].toUpperCase(),
+        profileId: p.id,
+      }));
   }, [profiles]);
 
   // Get current date in timezone
