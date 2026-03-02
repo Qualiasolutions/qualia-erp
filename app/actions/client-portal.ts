@@ -314,3 +314,114 @@ export async function getClientProjects(clientId: string): Promise<ActionResult>
     };
   }
 }
+
+/**
+ * Get admin portal management data:
+ * - All projects with their assigned client count
+ * - All client accounts with their project assignments
+ */
+export async function getPortalAdminData(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Get all client accounts
+    const { data: clients, error: clientsError } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role, created_at')
+      .eq('role', 'client')
+      .order('created_at', { ascending: false });
+
+    if (clientsError) {
+      return { success: false, error: clientsError.message };
+    }
+
+    // Get all client-project assignments
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('client_projects')
+      .select(
+        `
+        id,
+        client_id,
+        project_id,
+        access_level,
+        invited_at,
+        invited_by,
+        client:profiles!client_id(id, full_name, email),
+        project:projects!project_id(id, name, status, project_type)
+      `
+      )
+      .order('invited_at', { ascending: false });
+
+    if (assignmentsError) {
+      return { success: false, error: assignmentsError.message };
+    }
+
+    // Normalize FK arrays
+    const normalizedAssignments = (assignments || []).map((a) => ({
+      ...a,
+      client: Array.isArray(a.client) ? a.client[0] || null : a.client,
+      project: Array.isArray(a.project) ? a.project[0] || null : a.project,
+    }));
+
+    return {
+      success: true,
+      data: {
+        clients: clients || [],
+        assignments: normalizedAssignments,
+      },
+    };
+  } catch (error) {
+    console.error('[getPortalAdminData] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load admin data',
+    };
+  }
+}
+
+/**
+ * Reset a client's password by sending a reset email
+ */
+export async function sendClientPasswordReset(email: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${APP_URL}/auth/reset-password/confirm`,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[sendClientPasswordReset] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send reset email',
+    };
+  }
+}

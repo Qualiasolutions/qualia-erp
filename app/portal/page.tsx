@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getClientProjects } from '@/app/actions/client-portal';
+import { getClientProjects, getPortalAdminData } from '@/app/actions/client-portal';
 import { calculateProjectsProgress } from '@/app/actions/phases';
 import { getUserRole } from '@/lib/portal-utils';
 import { PortalProjectsList } from '@/components/portal/portal-projects-list';
+import { PortalAdminPanel } from '@/components/portal/portal-admin-panel';
 
 export default async function PortalPage() {
   const supabase = await createClient();
@@ -18,7 +19,76 @@ export default async function PortalPage() {
   const userRole = await getUserRole(user.id);
   const isAdmin = userRole === 'admin';
 
-  let projects: Array<{
+  // Admin view: management panel + project preview
+  if (isAdmin) {
+    // Get all projects for the management panel
+    const { data: allProjects } = await supabase
+      .from('projects')
+      .select('id, name, status, project_type')
+      .not('status', 'eq', 'Canceled')
+      .order('name');
+
+    // Get admin data (clients + assignments)
+    const adminResult = await getPortalAdminData();
+    const adminData = adminResult.success
+      ? (adminResult.data as {
+          clients: Array<{
+            id: string;
+            full_name: string | null;
+            email: string | null;
+            role: string;
+            created_at: string;
+          }>;
+          assignments: Array<{
+            id: string;
+            client_id: string;
+            project_id: string;
+            access_level: string | null;
+            invited_at: string | null;
+            invited_by: string | null;
+            client: { id: string; full_name: string | null; email: string | null } | null;
+            project: {
+              id: string;
+              name: string;
+              status: string | null;
+              project_type: string | null;
+            } | null;
+          }>;
+        })
+      : { clients: [], assignments: [] };
+
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900">Portal Management</h1>
+          <p className="mt-1 text-sm text-neutral-600">
+            Manage client access, invite clients, and share project credentials
+          </p>
+        </div>
+
+        <PortalAdminPanel
+          projects={allProjects || []}
+          clients={adminData.clients}
+          assignments={adminData.assignments}
+        />
+      </div>
+    );
+  }
+
+  // Client view: their assigned projects
+  const result = await getClientProjects(user.id);
+  if (!result.success) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-neutral-900">Error Loading Projects</h2>
+          <p className="mt-2 text-sm text-neutral-600">{result.error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  type ClientProjectRow = {
     id: string;
     project_id: string;
     access_level: string | null;
@@ -42,49 +112,11 @@ export default async function PortalPage() {
           start_date: string | null;
           end_date: string | null;
         }>;
-  }> = [];
+  };
 
-  if (isAdmin) {
-    // Admins see ALL projects
-    const { data: allProjects } = await supabase
-      .from('projects')
-      .select('id, name, description, project_type, project_status:status, start_date, end_date')
-      .not('status', 'eq', 'Canceled')
-      .order('updated_at', { ascending: false });
+  const projects = (result.data || []) as ClientProjectRow[];
 
-    // Map to the same shape as client_projects for the PortalProjectsList component
-    projects = (allProjects || []).map((p) => ({
-      id: p.id,
-      project_id: p.id,
-      access_level: 'admin',
-      invited_at: null,
-      project: {
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        project_type: p.project_type,
-        project_status: p.project_status,
-        start_date: p.start_date,
-        end_date: p.end_date,
-      },
-    }));
-  } else {
-    // Clients see only their assigned projects
-    const result = await getClientProjects(user.id);
-    if (!result.success) {
-      return (
-        <div className="flex min-h-[400px] items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-lg font-semibold text-neutral-900">Error Loading Projects</h2>
-            <p className="mt-2 text-sm text-neutral-600">{result.error}</p>
-          </div>
-        </div>
-      );
-    }
-    projects = (result.data || []) as typeof projects;
-  }
-
-  // Calculate real progress from phases for all projects
+  // Calculate real progress from phases
   const projectIds = projects
     .map((cp) => {
       const p = Array.isArray(cp.project) ? cp.project[0] : cp.project;
@@ -97,13 +129,9 @@ export default async function PortalPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">
-          {isAdmin ? 'All Projects' : 'Your Projects'}
-        </h1>
+        <h1 className="text-2xl font-bold text-neutral-900">Your Projects</h1>
         <p className="mt-1 text-sm text-neutral-600">
-          {isAdmin
-            ? 'Overview of all projects from the client perspective'
-            : 'View the status and progress of your active projects'}
+          View the status and progress of your active projects
         </p>
       </div>
 
