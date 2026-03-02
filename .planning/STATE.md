@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 Phase: v1.0 complete — all 4 phases (0-3) shipped
 Plan: Not started
 Status: Ready to plan next milestone
-Last activity: 2026-03-02 — Completed quick task 003: Dashboard schedule toggle + unified view
+Last activity: 2026-03-02 — Completed quick task 004: Client portal dark mode + design system migration
 
 Progress: [██████████] 100% (v1.0 shipped)
 
@@ -52,14 +52,15 @@ None.
 
 ### Quick Tasks Completed
 
-| #   | Description                                                                       | Date       | Commit  | Directory                                                                               |
-| --- | --------------------------------------------------------------------------------- | ---------- | ------- | --------------------------------------------------------------------------------------- |
-| 001 | Password reset, client invite, progress calc, phase notifications, error page fix | 2026-03-01 | 5f154be | [001-client-portal-remaining](./quick/001-client-portal-remaining/)                     |
-| 002 | Add Pre-Production pipeline column between Building and Live                      | 2026-03-02 | 0d20f29 | [002-add-pre-production-status](./quick/002-add-pre-production-status/)                 |
-| 003 | Dashboard schedule toggle + schedule page unified view                            | 2026-03-02 | 9011fc1 | [003-dashboard-schedule-toggle-unified](./quick/003-dashboard-schedule-toggle-unified/) |
+| #   | Description                                                                       | Date       | Commit  | Directory                                                                                             |
+| --- | --------------------------------------------------------------------------------- | ---------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| 001 | Password reset, client invite, progress calc, phase notifications, error page fix | 2026-03-01 | 5f154be | [001-client-portal-remaining](./quick/001-client-portal-remaining/)                                   |
+| 002 | Add Pre-Production pipeline column between Building and Live                      | 2026-03-02 | 0d20f29 | [002-add-pre-production-status](./quick/002-add-pre-production-status/)                               |
+| 003 | Dashboard schedule toggle + schedule page unified view                            | 2026-03-02 | 9011fc1 | [003-dashboard-schedule-toggle-unified](./quick/003-dashboard-schedule-toggle-unified/)               |
+| 004 | Client portal dark mode + design system migration (13 files)                      | 2026-03-02 | a8a4046 | [004-client-portal-aesthetic-overhaul-light-d](./quick/004-client-portal-aesthetic-overhaul-light-d/) |
 
 ## Session Continuity
 
-Last session: 2026-03-02 (quick task 003)
-Stopped at: Completed unified schedule mode. Ready for next quick task or milestone planning.
+Last session: 2026-03-02 (quick task 004)
+Stopped at: Completed client portal dark mode migration. All portal components theme-aware. Ready for next quick task or milestone planning.
 Resume file: .planning/MILESTONES.md
