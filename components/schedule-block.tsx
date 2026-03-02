@@ -1,26 +1,11 @@
 'use client';
 
 import { useState, useMemo, useTransition, useCallback } from 'react';
-import {
-  Plus,
-  Circle,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  CalendarDays,
-  MoreHorizontal,
-  Video,
-} from 'lucide-react';
+import { Plus, Circle, CheckCircle2, ChevronDown, Clock, CalendarDays, Video } from 'lucide-react';
 import { format, parseISO, isSameDay, startOfDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from '@/components/ui/dropdown-menu';
 import { quickToggleTaskStatus, createTask } from '@/app/actions/inbox';
 import type { Task } from '@/app/actions/inbox';
 import type { MeetingWithRelations } from '@/lib/swr';
@@ -431,14 +416,19 @@ export function ScheduleBlock({
     return teamMembers.filter((m) => m.profileId === activeFilter);
   }, [unified, activeFilter, teamMembers]);
 
-  // Build filter buttons from team members — Both first, then member names
-  const filterButtons = useMemo(() => {
-    const buttons: { key: string; label: string }[] = [{ key: 'all', label: 'Both' }];
+  // Build filter options from team members — All first, then member names
+  const filterOptions = useMemo(() => {
+    const options: { key: string; label: string }[] = [{ key: 'all', label: 'All' }];
     for (const m of teamMembers) {
-      buttons.push({ key: m.profileId || m.id, label: m.name });
+      options.push({ key: m.profileId || m.id, label: m.name });
     }
-    return buttons;
+    return options;
   }, [teamMembers]);
+
+  // Current filter label for display
+  const activeFilterLabel = useMemo(() => {
+    return filterOptions.find((f) => f.key === activeFilter)?.label || 'All';
+  }, [filterOptions, activeFilter]);
 
   // Determine first/last active time slot
   const activeTimeRange = useMemo(() => {
@@ -462,11 +452,35 @@ export function ScheduleBlock({
       <div className="w-full">
         {/* Top Bar */}
         <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="text-2xl font-semibold tracking-tight text-foreground">Schedule</p>
-            <p className="mt-0.5 text-xs tracking-wide text-muted-foreground">
-              {format(currentDate, 'EEEE, MMMM d, yyyy')}
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <p className="text-2xl font-semibold tracking-tight text-foreground">Schedule</p>
+              <p className="mt-0.5 text-xs tracking-wide text-muted-foreground">
+                {format(currentDate, 'EEEE, MMMM d, yyyy')}
+              </p>
+            </div>
+            {/* Member Toggle */}
+            {!unified && filterOptions.length > 2 && (
+              <div className="flex items-center rounded-lg border border-border bg-card">
+                {filterOptions.map((f, i) => (
+                  <button
+                    type="button"
+                    key={f.key}
+                    onClick={() => setActiveFilter(f.key)}
+                    className={cn(
+                      'h-8 px-3.5 text-xs font-semibold uppercase tracking-wider transition-colors',
+                      i === 0 && 'rounded-l-lg',
+                      i === filterOptions.length - 1 && 'rounded-r-lg',
+                      activeFilter === f.key
+                        ? 'bg-foreground text-background'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5">
@@ -500,42 +514,21 @@ export function ScheduleBlock({
           </div>
         </div>
 
-        {/* Quick-add + Filter */}
-        <div className="mb-3 flex items-center gap-2">
-          <form onSubmit={handleQuickAdd} className="relative flex-1">
+        {/* Quick-add */}
+        <div className="mb-3">
+          <form onSubmit={handleQuickAdd} className="relative">
             <input
               type="text"
               value={quickAddValue}
               onChange={(e) => setQuickAddValue(e.target.value)}
               placeholder={
                 activeFilter !== 'all'
-                  ? `Quick add task for ${filteredMembers[0]?.name || 'member'}...`
+                  ? `Quick add task for ${activeFilterLabel}...`
                   : 'Quick add task...'
               }
               className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
             />
           </form>
-          {!unified && filterButtons.length > 2 && (
-            <div className="flex items-center rounded-lg border border-border bg-card">
-              {filterButtons.map((f, i) => (
-                <button
-                  type="button"
-                  key={f.key}
-                  onClick={() => setActiveFilter(f.key)}
-                  className={cn(
-                    'h-9 px-3.5 text-xs font-semibold uppercase tracking-wider transition-colors',
-                    i === 0 && 'rounded-l-lg',
-                    i === filterButtons.length - 1 && 'rounded-r-lg',
-                    activeFilter === f.key
-                      ? 'bg-foreground text-background'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Backlog Toggle */}
@@ -606,55 +599,21 @@ export function ScheduleBlock({
                     i < filteredMembers.length - 1 && 'border-r border-border'
                   )}
                 >
-                  {unified ? (
+                  <div className="flex items-center gap-3">
+                    {!unified && (
+                      <div
+                        className={cn(
+                          'flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold',
+                          colors ? `${colors.bg} ${colors.text}` : 'bg-foreground text-background'
+                        )}
+                      >
+                        {member.initial}
+                      </div>
+                    )}
                     <span className="text-sm font-semibold tracking-wide text-foreground">
                       {member.name}
                     </span>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            'flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold',
-                            colors ? `${colors.bg} ${colors.text}` : 'bg-foreground text-background'
-                          )}
-                        >
-                          {member.initial}
-                        </div>
-                        <span className="text-sm font-semibold tracking-wide text-foreground">
-                          {member.name}
-                        </span>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            type="button"
-                            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                            aria-label={`Filter schedule members`}
-                          >
-                            <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={1.5} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-36">
-                          {filterButtons.map((f) => (
-                            <DropdownMenuItem
-                              key={f.key}
-                              onClick={() => setActiveFilter(f.key)}
-                              className={cn(
-                                'text-xs font-medium',
-                                activeFilter === f.key && 'bg-accent'
-                              )}
-                            >
-                              {f.label}
-                              {activeFilter === f.key && (
-                                <span className="ml-auto text-qualia-500">●</span>
-                              )}
-                            </DropdownMenuItem>
-                          ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </>
-                  )}
+                  </div>
                 </div>
               );
             })}
