@@ -53,52 +53,52 @@ function getStatusColor(status: string) {
   if (normalized.includes('complete') || normalized.includes('done')) {
     return {
       dot: 'bg-green-500',
-      text: 'text-green-700',
-      bg: 'bg-green-50',
-      border: 'border-green-200',
+      text: 'text-green-700 dark:text-green-400',
+      bg: 'bg-green-500/10',
+      border: 'border-green-500/20',
     };
   }
   if (normalized.includes('progress') || normalized.includes('active')) {
     return {
       dot: 'bg-yellow-500',
-      text: 'text-yellow-700',
-      bg: 'bg-yellow-50',
-      border: 'border-yellow-200',
+      text: 'text-yellow-700 dark:text-yellow-400',
+      bg: 'bg-yellow-500/10',
+      border: 'border-yellow-500/20',
     };
   }
   if (normalized.includes('skip')) {
     return {
-      dot: 'bg-neutral-300',
-      text: 'text-neutral-600',
-      bg: 'bg-neutral-50',
-      border: 'border-neutral-200',
+      dot: 'bg-muted-foreground/30',
+      text: 'text-muted-foreground',
+      bg: 'bg-muted',
+      border: 'border-border',
     };
   }
   // Default: not_started or pending
   return {
-    dot: 'bg-neutral-400',
-    text: 'text-neutral-600',
-    bg: 'bg-neutral-50',
-    border: 'border-neutral-200',
+    dot: 'bg-muted-foreground/40',
+    text: 'text-muted-foreground',
+    bg: 'bg-muted',
+    border: 'border-border',
   };
 }
 
 function getProjectStatusColor(status: string) {
   switch (status) {
     case 'Active':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/20';
     case 'Launched':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/20';
     case 'Demos':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/20';
     case 'Delayed':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
     case 'Archived':
-      return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+      return 'bg-muted text-muted-foreground border-border';
     case 'Canceled':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20';
     default:
-      return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+      return 'bg-muted text-muted-foreground border-border';
   }
 }
 
@@ -184,9 +184,9 @@ function PhaseWithComments({
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-neutral-900">{phase.name}</h3>
+              <h3 className="text-base font-semibold text-foreground">{phase.name}</h3>
               {phase.description && (
-                <p className="mt-2 text-sm text-neutral-600">{phase.description}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{phase.description}</p>
               )}
             </div>
             <Badge className={cn('shrink-0', statusConfig.text)}>
@@ -196,7 +196,7 @@ function PhaseWithComments({
 
           {/* Dates */}
           {(phase.start_date || phase.target_date) && (
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-neutral-600">
+            <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
               {phase.start_date && (
                 <div className="flex items-center gap-1.5">
                   <svg
@@ -237,14 +237,14 @@ function PhaseWithComments({
           )}
 
           {/* Comments Section */}
-          <div className="mt-4 border-t border-neutral-200 pt-4">
+          <div className="mt-4 border-t border-border pt-4">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex w-full items-center justify-between text-sm font-medium text-neutral-900 hover:text-neutral-700"
+              className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-muted-foreground"
             >
               <span className="flex items-center gap-2">
                 <svg
-                  className="h-4 w-4 text-neutral-500"
+                  className="h-4 w-4 text-muted-foreground/80"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -281,7 +281,7 @@ function PhaseWithComments({
             {isExpanded && (
               <div className="mt-4">
                 {isLoading ? (
-                  <div className="py-4 text-center text-sm text-neutral-500">
+                  <div className="py-4 text-center text-sm text-muted-foreground/80">
                     Loading comments...
                   </div>
                 ) : (
@@ -308,28 +308,30 @@ export function PortalRoadmap({ project, phases, userRole, currentUserId }: Port
   return (
     <div className="space-y-6">
       {/* Project Header */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold text-neutral-900">Project Overview</h2>
+          <h2 className="text-xl font-semibold text-foreground">Project Overview</h2>
           <Badge className={cn('shrink-0', getProjectStatusColor(project.project_status))}>
             {project.project_status}
           </Badge>
         </div>
         {project.description && (
-          <p className="mt-3 text-sm leading-relaxed text-neutral-600">{project.description}</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            {project.description}
+          </p>
         )}
       </div>
 
       {/* Roadmap Timeline */}
-      <div className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h2 className="mb-6 text-xl font-semibold text-neutral-900">Project Roadmap</h2>
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h2 className="mb-6 text-xl font-semibold text-foreground">Project Roadmap</h2>
 
         {!hasPhases ? (
           <div className="flex min-h-[200px] items-center justify-center">
             <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                 <svg
-                  className="h-6 w-6 text-neutral-400"
+                  className="h-6 w-6 text-muted-foreground/60"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -342,7 +344,7 @@ export function PortalRoadmap({ project, phases, userRole, currentUserId }: Port
                   />
                 </svg>
               </div>
-              <p className="mt-4 text-sm text-neutral-600">
+              <p className="mt-4 text-sm text-muted-foreground">
                 No phases available yet. Your project manager will set up the roadmap soon.
               </p>
             </div>
@@ -350,7 +352,7 @@ export function PortalRoadmap({ project, phases, userRole, currentUserId }: Port
         ) : (
           <div className="relative space-y-8">
             {/* Vertical connecting line */}
-            <div className="absolute bottom-6 left-4 top-6 w-0.5 bg-neutral-200" />
+            <div className="absolute bottom-6 left-4 top-6 w-0.5 bg-muted" />
 
             {phases.map((phase, index) => {
               const isLast = index === phases.length - 1;

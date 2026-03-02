@@ -280,7 +280,7 @@ export function PortalAdminPanel({
           href={portalUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
         >
           <ExternalLink className="h-3.5 w-3.5" />
           Open Portal
@@ -303,7 +303,7 @@ export function PortalAdminPanel({
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-neutral-700">Email *</label>
+                <label className="text-sm font-medium text-muted-foreground">Email *</label>
                 <Input
                   type="email"
                   placeholder="client@example.com"
@@ -312,7 +312,7 @@ export function PortalAdminPanel({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-neutral-700">Name</label>
+                <label className="text-sm font-medium text-muted-foreground">Name</label>
                 <Input
                   type="text"
                   placeholder="Client name (optional)"
@@ -321,7 +321,9 @@ export function PortalAdminPanel({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-neutral-700">Assign to Project *</label>
+                <label className="text-sm font-medium text-muted-foreground">
+                  Assign to Project *
+                </label>
                 <Select value={inviteProjectId} onValueChange={setInviteProjectId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select project..." />
@@ -371,7 +373,7 @@ export function PortalAdminPanel({
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-700">Client</label>
+                  <label className="text-sm font-medium text-muted-foreground">Client</label>
                   <Select value={linkClientId} onValueChange={setLinkClientId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select client..." />
@@ -386,7 +388,7 @@ export function PortalAdminPanel({
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-neutral-700">Project</label>
+                  <label className="text-sm font-medium text-muted-foreground">Project</label>
                   <Select value={linkProjectId} onValueChange={setLinkProjectId}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select project..." />
@@ -439,11 +441,11 @@ export function PortalAdminPanel({
         <CardContent>
           {clientAssignments.length === 0 ? (
             <div className="py-8 text-center">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-neutral-100">
-                <Users className="h-5 w-5 text-neutral-400" />
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <Users className="h-5 w-5 text-muted-foreground/60" />
               </div>
-              <p className="mt-3 text-sm font-medium text-neutral-900">No client accounts yet</p>
-              <p className="mt-1 text-sm text-neutral-500">
+              <p className="mt-3 text-sm font-medium text-foreground">No client accounts yet</p>
+              <p className="mt-1 text-sm text-muted-foreground/80">
                 Invite your first client to get started.
               </p>
             </div>
@@ -462,11 +464,11 @@ export function PortalAdminPanel({
                 {clientAssignments.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell className="font-medium">{client.full_name || 'No name'}</TableCell>
-                    <TableCell className="text-neutral-600">{client.email}</TableCell>
+                    <TableCell className="text-muted-foreground">{client.email}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {client.projects.length === 0 ? (
-                          <span className="text-sm text-neutral-400">None</span>
+                          <span className="text-sm text-muted-foreground/60">None</span>
                         ) : (
                           client.projects.map((p) =>
                             p ? (
@@ -478,7 +480,7 @@ export function PortalAdminPanel({
                         )}
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-neutral-500">
+                    <TableCell className="text-sm text-muted-foreground/80">
                       {new Date(client.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
@@ -527,10 +529,10 @@ export function PortalAdminPanel({
                 {assignments.map((a) => (
                   <TableRow key={a.id}>
                     <TableCell className="font-medium">{a.project?.name || 'Unknown'}</TableCell>
-                    <TableCell className="text-neutral-600">
+                    <TableCell className="text-muted-foreground">
                       {a.client?.full_name || a.client?.email || 'Unknown'}
                     </TableCell>
-                    <TableCell className="text-sm text-neutral-500">
+                    <TableCell className="text-sm text-muted-foreground/80">
                       {a.invited_at ? new Date(a.invited_at).toLocaleDateString() : '—'}
                     </TableCell>
                     <TableCell>
@@ -541,7 +543,7 @@ export function PortalAdminPanel({
                         disabled={isPending}
                         className={cn(
                           'h-8 w-8 p-0',
-                          'text-neutral-400 hover:bg-red-50 hover:text-red-600'
+                          'text-muted-foreground/60 hover:bg-red-50 hover:text-red-600'
                         )}
                         title="Remove access"
                       >

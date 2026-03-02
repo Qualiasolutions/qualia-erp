@@ -32,30 +32,30 @@ interface PortalProjectsListProps {
 function getStatusColor(status: string) {
   switch (status) {
     case 'Active':
-      return 'bg-green-100 text-green-800 border-green-200';
+      return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/20';
     case 'Launched':
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/20';
     case 'Demos':
-      return 'bg-purple-100 text-purple-800 border-purple-200';
+      return 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/20';
     case 'Delayed':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
     case 'Archived':
-      return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+      return 'bg-muted text-muted-foreground border-border';
     case 'Canceled':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20';
     default:
-      return 'bg-neutral-100 text-neutral-800 border-neutral-200';
+      return 'bg-muted text-muted-foreground border-border';
   }
 }
 
 export function PortalProjectsList({ projects, progressMap = {} }: PortalProjectsListProps) {
   if (!projects || projects.length === 0) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center rounded-lg border-2 border-dashed border-neutral-200 bg-neutral-50">
+      <div className="flex min-h-[400px] items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50">
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <svg
-              className="h-6 w-6 text-neutral-400"
+              className="h-6 w-6 text-muted-foreground/60"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -68,8 +68,10 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
               />
             </svg>
           </div>
-          <h3 className="mt-4 text-sm font-semibold text-neutral-900">No projects assigned</h3>
-          <p className="mt-1 text-sm text-neutral-500">Contact your project manager for access.</p>
+          <h3 className="mt-4 text-sm font-semibold text-foreground">No projects assigned</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Contact your project manager for access.
+          </p>
         </div>
       </div>
     );
@@ -98,7 +100,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-semibold text-neutral-900 group-hover:text-qualia-700">
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-qualia-700">
                     {project.name}
                   </h3>
                   <Badge className={cn('shrink-0', getStatusColor(project.project_status))}>
@@ -106,7 +108,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                   </Badge>
                 </div>
                 {project.description && (
-                  <p className="mt-2 line-clamp-2 text-sm text-neutral-600">
+                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                     {project.description}
                   </p>
                 )}
@@ -114,8 +116,8 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
               <CardContent className="space-y-3">
                 <div>
                   <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="text-neutral-500">Overall Progress</span>
-                    <span className="font-medium text-neutral-700">{progress}%</span>
+                    <span className="text-muted-foreground/80">Overall Progress</span>
+                    <span className="font-medium text-muted-foreground">{progress}%</span>
                   </div>
                   <Progress value={progress} className="h-2 bg-qualia-100">
                     <div
@@ -124,7 +126,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                     />
                   </Progress>
                 </div>
-                <div className="flex items-center justify-between text-xs text-neutral-500">
+                <div className="flex items-center justify-between text-xs text-muted-foreground/80">
                   <span className="capitalize">
                     {project.project_type?.replace(/_/g, ' ') || 'Project'}
                   </span>
