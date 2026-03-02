@@ -16,7 +16,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { updateMeeting, deleteMeeting } from '@/app/actions';
-import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
+import {
+  invalidateMeetings,
+  invalidateTodaysSchedule,
+  invalidateScheduledTasks,
+  invalidateDailyFlow,
+} from '@/lib/swr';
 
 // Time slots in 30-minute increments
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
@@ -134,6 +139,8 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
       if (result.success) {
         invalidateMeetings(true);
         invalidateTodaysSchedule(true);
+        invalidateScheduledTasks(undefined, true);
+        invalidateDailyFlow(true);
         onOpenChange(false);
       } else {
         setError(result.error || 'Failed to update meeting');
@@ -150,6 +157,8 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
         if (result.success) {
           invalidateMeetings(true);
           invalidateTodaysSchedule(true);
+          invalidateScheduledTasks(undefined, true);
+          invalidateDailyFlow(true);
           onOpenChange(false);
         } else {
           setError(result.error || 'Failed to delete meeting');

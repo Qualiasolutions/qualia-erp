@@ -20,7 +20,14 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { updateTask, type Task } from '@/app/actions/inbox';
-import { useProfiles, useProjects, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
+import {
+  useProfiles,
+  useProjects,
+  invalidateInboxTasks,
+  invalidateProjectTasks,
+  invalidateScheduledTasks,
+  invalidateDailyFlow,
+} from '@/lib/swr';
 import { useLearnMode } from '@/components/providers/learn-mode-provider';
 
 interface EditTaskModalProps {
@@ -128,16 +135,18 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         setDueDate(task.due_date ? new Date(task.due_date) : undefined);
 
         // Invalidate caches for refresh
-        invalidateInboxTasks();
+        invalidateInboxTasks(true);
+        invalidateScheduledTasks(undefined, true);
+        invalidateDailyFlow(true);
         if (task.project_id) {
-          invalidateProjectTasks(task.project_id);
+          invalidateProjectTasks(task.project_id, true);
         }
         if (
           selectedProjectId &&
           selectedProjectId !== 'no-project' &&
           selectedProjectId !== task.project_id
         ) {
-          invalidateProjectTasks(selectedProjectId);
+          invalidateProjectTasks(selectedProjectId, true);
         }
 
         return { success: true, error: null };

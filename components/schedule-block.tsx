@@ -13,6 +13,7 @@ import { invalidateScheduledTasks, invalidateInboxTasks, invalidateDailyFlow } f
 import { useTimezone } from '@/lib/schedule-shared';
 import { USER_COLORS } from '@/lib/color-constants';
 import { EditTaskModal } from './edit-task-modal';
+import { EditMeetingModal } from './edit-meeting-modal';
 import { NewTaskModal } from './new-task-modal';
 
 interface TeamMember {
@@ -100,6 +101,7 @@ export function ScheduleBlock({
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [quickAddValue, setQuickAddValue] = useState('');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [editingMeeting, setEditingMeeting] = useState<MeetingWithRelations | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [newTaskTime, setNewTaskTime] = useState<string | null>(null);
   const [newTaskAssigneeId, setNewTaskAssigneeId] = useState<string | null>(null);
@@ -115,6 +117,15 @@ export function ScheduleBlock({
         profileId: p.id,
       }));
   }, [profiles]);
+
+  // Meetings lookup for editing (meeting pseudo-task id → original meeting)
+  const meetingsMap = useMemo(() => {
+    const map = new Map<string, MeetingWithRelations>();
+    for (const m of meetings) {
+      map.set(`meeting-${m.id}`, m);
+    }
+    return map;
+  }, [meetings]);
 
   // Get current date in timezone
   const currentDate = useMemo(() => toZonedTime(new Date(), timezone), [timezone]);
@@ -725,17 +736,27 @@ export function ScheduleBlock({
                                       strokeWidth={1.5}
                                     />
                                   )}
-                                  <div className="min-w-0 flex-1">
+                                  <div
+                                    className="min-w-0 flex-1 cursor-pointer"
+                                    onClick={() => {
+                                      if (itemIsMeeting) {
+                                        const original = meetingsMap.get(item.id);
+                                        if (original) setEditingMeeting(original);
+                                      } else {
+                                        setEditingTask(item);
+                                      }
+                                    }}
+                                  >
                                     <p
                                       className={cn(
-                                        'text-[13px] leading-[1.45]',
+                                        'text-[13px] leading-[1.45] transition-colors',
                                         itemIsDone
                                           ? 'text-muted-foreground line-through decoration-muted-foreground/30'
                                           : itemIsInProgress
-                                            ? 'font-medium text-foreground'
+                                            ? 'font-medium text-foreground hover:text-qualia-600 dark:hover:text-qualia-400'
                                             : itemIsMeeting
-                                              ? 'font-medium text-foreground'
-                                              : 'text-foreground/90'
+                                              ? 'font-medium text-foreground hover:text-violet-600 dark:hover:text-violet-400'
+                                              : 'text-foreground/90 hover:text-foreground'
                                       )}
                                     >
                                       {item.title}
@@ -875,7 +896,47 @@ export function ScheduleBlock({
         <EditTaskModal
           task={editingTask}
           open={!!editingTask}
-          onOpenChange={(open) => !open && setEditingTask(null)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingTask(null);
+              invalidateScheduledTasks(undefined, true);
+              invalidateDailyFlow(true);
+            }
+          }}
+        />
+      )}
+
+      {/* Edit Meeting Modal */}
+      {editingMeeting && (
+        <EditMeetingModal
+          meeting={{
+            id: editingMeeting.id,
+            title: editingMeeting.title,
+            description: editingMeeting.description,
+            start_time: editingMeeting.start_time,
+            end_time: editingMeeting.end_time,
+            meeting_link: editingMeeting.meeting_link,
+            project: editingMeeting.project
+              ? {
+                  id: (Array.isArray(editingMeeting.project)
+                    ? editingMeeting.project[0]
+                    : editingMeeting.project
+                  ).id,
+                  name: (Array.isArray(editingMeeting.project)
+                    ? editingMeeting.project[0]
+                    : editingMeeting.project
+                  ).name,
+                }
+              : null,
+          }}
+          open={!!editingMeeting}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingMeeting(null);
+              invalidateScheduledTasks(undefined, true);
+              invalidateDailyFlow(true);
+            }
+          }}
         />
       )}
 
