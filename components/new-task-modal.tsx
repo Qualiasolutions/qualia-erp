@@ -36,7 +36,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { createTask } from '@/app/actions/inbox';
-import { useProfiles, useProjects, invalidateInboxTasks, invalidateProjectTasks } from '@/lib/swr';
+import {
+  useProfiles,
+  useProjects,
+  invalidateInboxTasks,
+  invalidateProjectTasks,
+  invalidateScheduledTasks,
+  invalidateDailyFlow,
+} from '@/lib/swr';
 import { setHours, setMinutes, addMinutes } from 'date-fns';
 
 interface NewTaskModalProps {
@@ -144,9 +151,11 @@ export function NewTaskModal({
 
     if (result.success) {
       setSuccess(true);
-      invalidateInboxTasks();
+      invalidateInboxTasks(true);
+      invalidateScheduledTasks(undefined, true);
+      invalidateDailyFlow(true);
       if (projectId) {
-        invalidateProjectTasks(projectId);
+        invalidateProjectTasks(projectId, true);
       }
       setTimeout(() => {
         setOpen(false);

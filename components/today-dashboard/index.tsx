@@ -14,7 +14,7 @@ import { BuildingProjectsRow, type PipelineProject } from './building-projects-r
 import { QuickStatsBar } from './quick-stats-bar';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
-import { type MeetingWithRelations } from '@/lib/swr';
+import { type MeetingWithRelations, useMeetings, useScheduledTasks } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { ScheduleBlock } from '@/components/schedule-block';
 
@@ -34,13 +34,24 @@ interface TodayDashboardProps {
 // MAIN DASHBOARD
 // =============================================================================
 
-export function TodayDashboard({ meetings, tasks, building, profiles }: TodayDashboardProps) {
+export function TodayDashboard({
+  meetings: initialMeetings,
+  tasks,
+  building,
+  profiles,
+}: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const now = new Date();
+
+  // SWR hooks for live data (auto-refresh after task creation)
+  const { meetings } = useMeetings(initialMeetings);
+  const { tasks: swrScheduledTasks } = useScheduledTasks(
+    tasks.filter((t) => t.scheduled_start_time && t.scheduled_end_time)
+  );
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -53,11 +64,8 @@ export function TodayDashboard({ meetings, tasks, building, profiles }: TodayDas
     startRefresh(() => router.refresh());
   };
 
-  // Split tasks into scheduled vs backlog for ScheduleBlock
-  const scheduledTasks = useMemo(
-    () => tasks.filter((t) => t.scheduled_start_time && t.scheduled_end_time),
-    [tasks]
-  );
+  // Use SWR scheduled tasks (live data), fallback SSR backlog
+  const scheduledTasks = swrScheduledTasks;
   const backlogTasks = useMemo(
     () =>
       tasks.filter(
