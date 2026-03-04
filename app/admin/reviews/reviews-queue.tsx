@@ -22,8 +22,8 @@ export function ReviewsQueue({ initialReviews }: ReviewsQueueProps) {
   const [reviews, setReviews] = useState(initialReviews);
   const [feedbackMap, setFeedbackMap] = useState<Record<string, string>>({});
   const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const [actionId, setActionId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const [pendingActions, setPendingActions] = useState<Set<string>>(new Set());
 
   const refresh = async () => {
     const updated = await getPendingReviews();
@@ -31,24 +31,33 @@ export function ReviewsQueue({ initialReviews }: ReviewsQueueProps) {
   };
 
   const handleApprove = (reviewId: string, projectId: string) => {
-    setActionId(reviewId);
+    if (pendingActions.has(reviewId)) return;
+    setPendingActions((prev) => new Set(prev).add(reviewId));
     startTransition(async () => {
       await approvePhaseReview(reviewId, projectId);
       await refresh();
-      setActionId(null);
+      setPendingActions((prev) => {
+        const next = new Set(prev);
+        next.delete(reviewId);
+        return next;
+      });
     });
   };
 
   const handleRequestChanges = (reviewId: string, projectId: string) => {
     const feedback = feedbackMap[reviewId];
-    if (!feedback?.trim()) return;
-    setActionId(reviewId);
+    if (!feedback?.trim() || pendingActions.has(reviewId)) return;
+    setPendingActions((prev) => new Set(prev).add(reviewId));
     startTransition(async () => {
       await requestPhaseChanges(reviewId, projectId, feedback.trim());
       setFeedbackMap((prev) => ({ ...prev, [reviewId]: '' }));
       setRejectingId(null);
       await refresh();
-      setActionId(null);
+      setPendingActions((prev) => {
+        const next = new Set(prev);
+        next.delete(reviewId);
+        return next;
+      });
     });
   };
 
@@ -75,9 +84,9 @@ export function ReviewsQueue({ initialReviews }: ReviewsQueueProps) {
           key={review.id}
           className="rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
         >
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="rounded-md bg-amber-500/10 px-2.5 py-1 text-sm font-semibold text-amber-600 dark:text-amber-400">
                   {review.phase_name}
                 </span>
@@ -118,9 +127,9 @@ export function ReviewsQueue({ initialReviews }: ReviewsQueueProps) {
                 variant="outline"
                 className="gap-1.5 border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-600"
                 onClick={() => handleApprove(review.id, review.project_id)}
-                disabled={isPending}
+                disabled={pendingActions.has(review.id)}
               >
-                {isPending && actionId === review.id && rejectingId !== review.id ? (
+                {pendingActions.has(review.id) && rejectingId !== review.id ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -132,7 +141,7 @@ export function ReviewsQueue({ initialReviews }: ReviewsQueueProps) {
                 variant="outline"
                 className="gap-1.5 border-red-500/30 text-red-600 hover:bg-red-500/10 hover:text-red-600"
                 onClick={() => setRejectingId(rejectingId === review.id ? null : review.id)}
-                disabled={isPending}
+                disabled={pendingActions.has(review.id)}
               >
                 <AlertCircle className="h-3.5 w-3.5" />
                 Request Changes
@@ -166,9 +175,9 @@ export function ReviewsQueue({ initialReviews }: ReviewsQueueProps) {
                   size="sm"
                   variant="destructive"
                   onClick={() => handleRequestChanges(review.id, review.project_id)}
-                  disabled={isPending || !feedbackMap[review.id]?.trim()}
+                  disabled={pendingActions.has(review.id) || !feedbackMap[review.id]?.trim()}
                 >
-                  {isPending && actionId === review.id ? (
+                  {pendingActions.has(review.id) ? (
                     <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   ) : null}
                   Send Feedback

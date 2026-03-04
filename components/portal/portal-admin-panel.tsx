@@ -155,6 +155,12 @@ export function PortalAdminPanel({
       toast.error('Email is required');
       return;
     }
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
     if (!inviteProjectId) {
       toast.error('Select a project');
       return;
@@ -558,55 +564,58 @@ export function PortalAdminPanel({
               </p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Projects</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {clientAssignments.map((client) => (
-                  <TableRow key={client.id}>
-                    <TableCell className="font-medium">{client.full_name || 'No name'}</TableCell>
-                    <TableCell className="text-muted-foreground">{client.email}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {client.projects.length === 0 ? (
-                          <span className="text-sm text-muted-foreground/60">None</span>
-                        ) : (
-                          client.projects.map((p) =>
-                            p ? (
-                              <Badge key={p.id} variant="outline" className="text-xs">
-                                {p.name}
-                              </Badge>
-                            ) : null
-                          )
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground/80">
-                      {new Date(client.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => client.email && handleSendPasswordReset(client.email)}
-                        disabled={isPending || !client.email}
-                        title="Send password reset"
-                        className="h-8 w-8 p-0"
-                      >
-                        <KeyRound className="h-3.5 w-3.5" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Projects</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {clientAssignments.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.full_name || 'No name'}</TableCell>
+                      <TableCell className="text-muted-foreground">{client.email}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {client.projects.length === 0 ? (
+                            <span className="text-sm text-muted-foreground/60">None</span>
+                          ) : (
+                            client.projects.map((p) =>
+                              p ? (
+                                <Badge key={p.id} variant="outline" className="text-xs">
+                                  {p.name}
+                                </Badge>
+                              ) : null
+                            )
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground/80">
+                        {new Date(client.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => client.email && handleSendPasswordReset(client.email)}
+                          disabled={isPending || !client.email}
+                          title="Send password reset"
+                          aria-label="Send password reset"
+                          className="h-8 w-8 p-0"
+                        >
+                          <KeyRound className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -624,44 +633,47 @@ export function PortalAdminPanel({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Client</TableHead>
-                  <TableHead>Invited</TableHead>
-                  <TableHead className="w-[60px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {assignments.map((a) => (
-                  <TableRow key={a.id}>
-                    <TableCell className="font-medium">{a.project?.name || 'Unknown'}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {a.client?.full_name || a.client?.email || 'Unknown'}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground/80">
-                      {a.invited_at ? new Date(a.invited_at).toLocaleDateString() : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveAccess(a.id, a.project_id, a.client_id)}
-                        disabled={isPending}
-                        className={cn(
-                          'h-8 w-8 p-0',
-                          'text-muted-foreground/60 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400'
-                        )}
-                        title="Remove access"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Project</TableHead>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Invited</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {assignments.map((a) => (
+                    <TableRow key={a.id}>
+                      <TableCell className="font-medium">{a.project?.name || 'Unknown'}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {a.client?.full_name || a.client?.email || 'Unknown'}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground/80">
+                        {a.invited_at ? new Date(a.invited_at).toLocaleDateString() : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveAccess(a.id, a.project_id, a.client_id)}
+                          disabled={isPending}
+                          className={cn(
+                            'h-8 w-8 p-0',
+                            'text-muted-foreground/60 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400'
+                          )}
+                          title="Remove access"
+                          aria-label="Remove access"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

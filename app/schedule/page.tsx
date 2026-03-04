@@ -10,23 +10,38 @@ import { Calendar } from 'lucide-react';
 
 async function ScheduleLoader({ view }: { view: string }) {
   await connection();
-  const workspaceId = await getCurrentWorkspaceId();
-  const [meetings, tasks, backlog, profiles] = await Promise.all([
-    getMeetings(),
-    getScheduledTasks(),
-    getBacklogTasks(),
-    getProfiles(workspaceId || undefined),
-  ]);
 
-  return (
-    <ScheduleContent
-      view={view}
-      initialMeetings={meetings}
-      initialTasks={tasks}
-      initialBacklog={backlog}
-      profiles={profiles}
-    />
-  );
+  try {
+    const workspaceId = await getCurrentWorkspaceId();
+    const [meetings, tasks, backlog, profiles] = await Promise.all([
+      getMeetings(),
+      getScheduledTasks(),
+      getBacklogTasks(),
+      getProfiles(workspaceId || undefined),
+    ]);
+
+    return (
+      <ScheduleContent
+        view={view}
+        initialMeetings={meetings}
+        initialTasks={tasks}
+        initialBacklog={backlog}
+        profiles={profiles}
+      />
+    );
+  } catch (error) {
+    console.error('Failed to load schedule data:', error);
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-lg font-semibold text-foreground">Failed to load schedule</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Something went wrong loading your schedule. Try refreshing the page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }
 
 function ScheduleSkeleton() {

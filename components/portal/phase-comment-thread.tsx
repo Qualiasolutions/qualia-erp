@@ -42,10 +42,11 @@ export function PhaseCommentThread({
   currentUserId,
 }: PhaseCommentThreadProps) {
   const [isPending, startTransition] = useTransition();
+  const [comments, setComments] = useState(initialComments);
   const [optimisticComments, addOptimisticComment] = useOptimistic<
     CommentWithProfile[],
     CommentWithProfile
-  >(initialComments, (state, newComment) => [...state, newComment]);
+  >(comments, (state, newComment) => [...state, newComment]);
 
   const [commentText, setCommentText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
@@ -87,6 +88,9 @@ export function PhaseCommentThread({
       },
     };
 
+    const savedText = commentText.trim();
+    const savedInternal = canCreateInternal ? isInternal : false;
+
     startTransition(async () => {
       addOptimisticComment(optimisticComment);
       setCommentText('');
@@ -95,12 +99,16 @@ export function PhaseCommentThread({
       const result = await createPhaseComment({
         projectId,
         phaseName,
-        commentText: commentText.trim(),
-        isInternal: canCreateInternal ? isInternal : false,
+        commentText: savedText,
+        isInternal: savedInternal,
       });
 
       if (!result.success) {
         setError(result.error || 'Failed to create comment');
+        // Rollback: don't add to real state, optimistic will revert
+      } else if (result.data) {
+        // Add the real comment (with server-assigned id) to persistent state
+        setComments((prev) => [...prev, result.data as CommentWithProfile]);
       }
     });
   };
@@ -108,10 +116,13 @@ export function PhaseCommentThread({
   const handleDelete = async (commentId: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
+    // Optimistically remove from state
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+
     startTransition(async () => {
       const result = await deletePhaseComment(commentId, projectId);
       if (!result.success) {
-        alert(result.error || 'Failed to delete comment');
+        setError(result.error || 'Failed to delete comment');
       }
     });
   };
@@ -191,6 +202,7 @@ export function PhaseCommentThread({
                       onClick={() => handleDelete(comment.id)}
                       className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-red-600"
                       disabled={isPending}
+                      aria-label="Delete comment"
                     >
                       <svg
                         className="h-4 w-4"

@@ -29,8 +29,11 @@ import { EditTaskModal } from '@/components/edit-task-modal';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
+import { TEAM_MEMBERS } from '@/lib/team-constants';
 
 // ── Config ───────────────────────────────────────────────────────────────────
+const FAWZI_ID = TEAM_MEMBERS.FAWZI_ID;
+const MOAYAD_ID = TEAM_MEMBERS.MOAYAD_ID;
 const START_HOUR = 8;
 const END_HOUR = 18;
 const TOTAL_HOURS = END_HOUR - START_HOUR;
@@ -326,9 +329,6 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const FAWZI_ID = '696cbe99-20fe-437c-97fe-246fb3367d9b';
-  const MOAYAD_ID = 'e0472b7b-4378-4311-9c45-9d3e8ca94bd2';
 
   // Backlog: unscheduled, not done/canceled
   const backlogTasks = useMemo(

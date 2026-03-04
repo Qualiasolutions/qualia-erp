@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectFiles } from '@/app/actions/project-files';
 import { PortalFileList } from '@/components/portal/portal-file-list';
 import { PortalTabs } from '@/components/portal/portal-tabs';
+import { PortalPageHeader } from '@/components/portal/portal-page-header';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -46,29 +46,7 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center gap-4">
-        <Link
-          href="/portal"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-        >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">{project.name}</h1>
-          {project.description && (
-            <p className="mt-1 text-sm text-muted-foreground">{project.description}</p>
-          )}
-        </div>
-      </div>
+      <PortalPageHeader title={project.name} description={project.description} />
 
       <PortalTabs projectId={projectId} />
 

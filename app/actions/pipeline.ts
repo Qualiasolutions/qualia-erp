@@ -1141,6 +1141,19 @@ export async function updateAllProjectPhaseTasks(): Promise<ActionResult> {
 export async function migrateAllProjectsToGSD(): Promise<ActionResult> {
   const supabase = await createClient();
 
+  // Auth check: only admins can run bulk migration
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (profile?.role !== 'admin') return { success: false, error: 'Admin access required' };
+
   // Get all projects with their types
   const { data: projects, error: projectsError } = await supabase
     .from('projects')
