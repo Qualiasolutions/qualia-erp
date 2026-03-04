@@ -105,10 +105,14 @@ export function PhaseCommentThread({
 
       if (!result.success) {
         setError(result.error || 'Failed to create comment');
-        // Rollback: don't add to real state, optimistic will revert
+        // Rollback: Remove the optimistic comment from base state
+        setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id));
       } else if (result.data) {
-        // Add the real comment (with server-assigned id) to persistent state
-        setComments((prev) => [...prev, result.data as CommentWithProfile]);
+        // Replace temp optimistic comment with real data
+        setComments((prev) => [
+          ...prev.filter((c) => c.id !== optimisticComment.id),
+          result.data as CommentWithProfile,
+        ]);
       }
     });
   };
