@@ -503,3 +503,165 @@ export async function createProjectFromPortal(input: {
     };
   }
 }
+
+/**
+ * Get invoices for the current client user
+ */
+export async function getClientInvoices(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const isAdmin = await isUserAdmin(user.id);
+
+    let query = supabase
+      .from('client_invoices')
+      .select(
+        `
+        id,
+        client_id,
+        project_id,
+        invoice_number,
+        amount,
+        currency,
+        status,
+        issued_date,
+        due_date,
+        paid_date,
+        description,
+        file_url,
+        created_at,
+        project:projects(id, name)
+      `
+      )
+      .order('issued_date', { ascending: false });
+
+    if (!isAdmin) {
+      query = query.eq('client_id', user.id);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const normalized = (data || []).map((inv) => ({
+      ...inv,
+      project: Array.isArray(inv.project) ? inv.project[0] || null : inv.project,
+    }));
+
+    return { success: true, data: normalized };
+  } catch (error) {
+    console.error('[getClientInvoices] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get invoices',
+    };
+  }
+}
+
+/**
+ * Get dashboard summary data for a client
+ */
+export async function getClientDashboardData(clientId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Not authorized' };
+    }
+
+    // Get projects count
+    const { count: projectCount } = await supabase
+      .from('client_projects')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId);
+
+    // Get pending requests count
+    const { count: pendingRequests } = await supabase
+      .from('client_feature_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientId)
+      .in('status', ['pending', 'in_review']);
+
+    // Get unpaid invoices count + total
+    const { data: unpaidInvoices } = await supabase
+      .from('client_invoices')
+      .select('amount')
+      .eq('client_id', clientId)
+      .in('status', ['pending', 'overdue']);
+
+    const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.amount), 0);
+
+    // Get recent activity
+    const { data: recentActivity } = await supabase
+      .from('activity_log')
+      .select('id, action_type, action_data, created_at, project:projects(id, name)')
+      .eq('is_client_visible', true)
+      .in(
+        'project_id',
+        (
+          await supabase.from('client_projects').select('project_id').eq('client_id', clientId)
+        ).data?.map((cp) => cp.project_id) || []
+      )
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const normalizedActivity = (recentActivity || []).map((a) => ({
+      ...a,
+      project: Array.isArray(a.project) ? a.project[0] || null : a.project,
+    }));
+
+    return {
+      success: true,
+      data: {
+        projectCount: projectCount || 0,
+        pendingRequests: pendingRequests || 0,
+        unpaidInvoiceCount: (unpaidInvoices || []).length,
+        unpaidTotal,
+        recentActivity: normalizedActivity,
+      },
+    };
+  } catch (error) {
+    console.error('[getClientDashboardData] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get dashboard data',
+    };
+  }
+}
+
+/**
+ * Update client profile (name, etc.)
+ */
+export async function updateClientProfile(updates: { full_name?: string }): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const updateData: Record<string, unknown> = {};
+    if (updates.full_name !== undefined) updateData.full_name = updates.full_name.trim();
+
+    const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
+
+    if (error) throw error;
+
+    revalidatePath('/portal/account');
+    revalidatePath('/portal');
+    return { success: true };
+  } catch (error) {
+    console.error('[updateClientProfile] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update profile',
+    };
+  }
+}

@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
-import { PortalHeader } from '@/components/portal/portal-header';
+import { PortalSidebar } from '@/components/portal/portal-sidebar';
 import { PageTransition } from '@/components/page-transition';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -28,24 +29,27 @@ export default async function PortalLayout({ children }: { children: React.React
     .single();
 
   const isAdminViewing = userRole === 'admin';
+  const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
+  const displayEmail = profile?.email || user.email || '';
 
   return (
-    <div className="min-h-screen bg-background">
-      <PortalHeader user={user} profile={profile} isAdminViewing={isAdminViewing} />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <PageTransition>{children}</PageTransition>
-      </main>
-      <footer className="border-t border-border bg-card py-6 text-center text-sm text-muted-foreground">
-        <div className="mx-auto max-w-7xl px-4">
-          &copy; {new Date().getFullYear()} Qualia Solutions. Need help?{' '}
-          <a
-            href="mailto:support@qualiasolutions.io"
-            className="text-qualia-600 underline hover:text-qualia-700"
-          >
-            Contact Support
-          </a>
-        </div>
-      </footer>
+    <div className="flex h-screen overflow-hidden bg-background">
+      <PortalSidebar
+        displayName={displayName}
+        displayEmail={displayEmail}
+        isAdminViewing={isAdminViewing}
+      />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Minimal top bar for mobile spacing + theme toggle */}
+        <header className="flex h-14 shrink-0 items-center justify-end border-b border-border/40 px-4 md:px-6">
+          <ThemeToggle />
+        </header>
+        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
+          <div className="mx-auto max-w-5xl">
+            <PageTransition>{children}</PageTransition>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
