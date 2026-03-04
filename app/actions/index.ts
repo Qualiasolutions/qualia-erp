@@ -172,8 +172,6 @@ export {
   checkPhaseProgress,
   unlockPhase,
   getPhaseProgressStats,
-  prefillProjectWorkflow,
-  applyWorkflowToExistingProjects,
 } from './phases';
 
 // ============ PROJECT FILES ============

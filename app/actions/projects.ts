@@ -12,7 +12,7 @@ import {
   type CreateProjectWizardInput,
 } from '@/lib/validation';
 import { notifyProjectCreated } from '@/lib/email';
-import { prefillProjectWorkflow } from '@/app/actions/phases';
+
 import { getCurrentWorkspaceId } from './workspace';
 import { createActivity, canDeleteProject, type ActionResult, type ActivityType } from './shared';
 
@@ -730,9 +730,6 @@ export async function createProjectWithRoadmap(
     },
     { name: project.name, project_type, deployment_platform }
   );
-
-  // Prefill workflow phases based on project type
-  await prefillProjectWorkflow(project.id, wsId, project_type);
 
   // Start provisioning if integrations were selected
   // We do this fire-and-forget since the UI will poll for status
