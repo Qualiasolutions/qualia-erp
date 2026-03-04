@@ -8,6 +8,21 @@
    ============================================ */
 
 @layer base {
+  /* Button micro-interactions */
+  [data-slot='button'] {
+    @apply transition-all duration-200;
+  }
+
+  /* Hover: lift effect */
+  [data-slot='button']:not(:disabled):hover {
+    @apply -translate-y-[1px];
+  }
+
+  /* Active: press down effect */
+  [data-slot='button']:not(:disabled):active {
+    @apply translate-y-0 scale-[0.98];
+  }
+
   :root {
     /* Light mode — Clean surfaces, strong navy borders */
     --background: 220 14% 96%;
