@@ -36,7 +36,7 @@ import {
   AlertCircle,
   Code2,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import {
   getPhaseTasks,
   updatePhaseStatus,
@@ -106,6 +106,8 @@ export function PhaseCard({
   const [review, setReview] = useState<PhaseReviewWithDetails | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef(null);
+  const isInView = useInView(cardRef, { once: true, margin: '-100px' });
 
   const phaseConfig = getPipelinePhaseConfig(phase.name);
   const statusConfig = getPhaseStatusConfig(phase.status);
@@ -235,8 +237,13 @@ ${phase.helper_text || ''}`.trim();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
+      ref={cardRef}
+      initial={{ opacity: 0, y: 30 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+      transition={{
+        duration: 0.5,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       whileHover={{
         y: -4,
         transition: { type: 'spring', stiffness: 300, damping: 20 },

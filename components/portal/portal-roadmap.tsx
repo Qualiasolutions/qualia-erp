@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { motion, useInView } from 'framer-motion';
 import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
 import { getProjectStatusColor } from '@/lib/portal-styles';
@@ -104,6 +105,8 @@ function PhaseWithComments({
   const [comments, setComments] = useState<CommentWithProfile[]>([]);
   const [commentCount, setCommentCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const phaseRef = useRef(null);
+  const isInView = useInView(phaseRef, { once: true, margin: '-100px' });
   const statusConfig = getStatusColor(phase.status);
 
   const canSeeInternal = userRole === 'admin' || userRole === 'employee';
@@ -143,7 +146,17 @@ function PhaseWithComments({
   }, [project.id, phase.name, canSeeInternal]);
 
   return (
-    <div key={phase.id} className="relative flex gap-6">
+    <motion.div
+      key={phase.id}
+      ref={phaseRef}
+      initial={{ opacity: 0, y: 30 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+      transition={{
+        duration: 0.5,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="relative flex gap-6"
+    >
       {/* Status Indicator */}
       <div className="relative z-10 flex shrink-0 flex-col items-center">
         <div
@@ -281,7 +294,7 @@ function PhaseWithComments({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
