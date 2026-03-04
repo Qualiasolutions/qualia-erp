@@ -4,6 +4,22 @@
 
 ---
 
+## Workflow Guides (Read These First)
+
+Before diving into project phases, read these practical guides:
+
+| Guide                                               | What it covers                                   |
+| --------------------------------------------------- | ------------------------------------------------ |
+| [Vercel Basics](./guides/vercel-basics.md)          | Deployments, env vars, domains, rollbacks        |
+| [Supabase Basics](./guides/supabase-basics.md)      | Dashboard, API keys, auth setup, storage         |
+| [Environment Variables](./guides/env-vars-guide.md) | Where keys come from, how to set them everywhere |
+| [Qualia Commands](./guides/qualia-commands.md)      | Claude Code slash commands and daily workflows   |
+| [Git Workflow](./guides/git-workflow.md)            | Branches, commits, PRs — the Qualia way          |
+| [Troubleshooting](./guides/troubleshooting.md)      | When things break, check this first              |
+| [Walkthroughs](./walkthroughs.md)                   | Real-world project scenarios step by step        |
+
+---
+
 ## How to Use This Guide
 
 1. **Start each project by copying the appropriate template** from `templates/`
@@ -17,33 +33,34 @@
 
 ## Quick Reference
 
-| Phase | Description | Time |
-|-------|-------------|------|
+| Phase       | Description                      | Time            |
+| ----------- | -------------------------------- | --------------- |
 | **Phase 0** | Client onboarding & requirements | Before starting |
-| **Phase 1** | Project initialization | Day 1 |
-| **Phase 2** | Supabase setup | Day 1 |
-| **Phase 3** | Core development | Ongoing |
-| **Phase 4** | Testing | Before deploy |
-| **Phase 5** | Pre-deployment checklist | Before deploy |
-| **Phase 6** | Vercel deployment | Deploy day |
-| **Phase 7** | Ongoing maintenance | Post-launch |
+| **Phase 1** | Project initialization           | Day 1           |
+| **Phase 2** | Supabase setup                   | Day 1           |
+| **Phase 3** | Core development                 | Ongoing         |
+| **Phase 4** | Testing                          | Before deploy   |
+| **Phase 5** | Pre-deployment checklist         | Before deploy   |
+| **Phase 6** | Vercel deployment                | Deploy day      |
+| **Phase 7** | Ongoing maintenance              | Post-launch     |
 
 ---
 
 ## Project Categories
 
-| Category | Stack | Template | Use Case |
-|----------|-------|----------|----------|
-| **AI Agents** | Next.js 15+ + OpenRouter/Gemini + Supabase + shadcn/ui | `templates/ai-agent-starter/` | Chat agents, AI personas |
-| **Platforms** | Next.js 16+ + Server Actions + SWR + VAPI | `templates/platform-starter/` | Internal tools, dashboards |
-| **Voice** | VAPI + Cloudflare Workers (Deno) | `templates/voice-starter/` | Voice assistants |
-| **Websites** | React + Vite + Tailwind | `templates/website-starter/` | Marketing sites |
+| Category      | Stack                                                  | Template                      | Use Case                   |
+| ------------- | ------------------------------------------------------ | ----------------------------- | -------------------------- |
+| **AI Agents** | Next.js 15+ + OpenRouter/Gemini + Supabase + shadcn/ui | `templates/ai-agent-starter/` | Chat agents, AI personas   |
+| **Platforms** | Next.js 16+ + Server Actions + SWR + VAPI              | `templates/platform-starter/` | Internal tools, dashboards |
+| **Voice**     | VAPI + Cloudflare Workers (Deno)                       | `templates/voice-starter/`    | Voice assistants           |
+| **Websites**  | React + Vite + Tailwind                                | `templates/website-starter/`  | Marketing sites            |
 
 ---
 
 ## Phase 0: Client Onboarding & Requirements
 
 ### 0.1 Initial Client Meeting
+
 - [ ] Understand client's business and goals
 - [ ] Identify target audience
 - [ ] Define project scope (what's in, what's out)
@@ -57,6 +74,7 @@ mkdir -p "Knowledge Base/[client-name]"
 ```
 
 **Required assets:**
+
 - [ ] Logo (SVG, PNG, different variants)
 - [ ] Brand colors (primary, secondary, accent)
 - [ ] Typography (fonts, sizes)
@@ -64,6 +82,7 @@ mkdir -p "Knowledge Base/[client-name]"
 - [ ] Existing website/materials for reference
 
 ### 0.3 Technical Requirements
+
 - [ ] List of features/pages needed
 - [ ] Integration requirements (CRM, email, payment, etc.)
 - [ ] User roles and permissions
@@ -76,20 +95,26 @@ mkdir -p "Knowledge Base/[client-name]"
 # [Project Name] - Brief
 
 ## Client: [Client Name]
+
 ## Category: [ai-agent | platform | voice | website]
+
 ## Start Date: [Date]
 
 ### Goals
+
 - ...
 
 ### Features
+
 - ...
 
 ### Brand
+
 - Primary Color: #...
 - Font: ...
 
 ### Technical Notes
+
 - ...
 ```
 
@@ -154,6 +179,7 @@ npx shadcn@latest add button card dialog dropdown-menu input label select textar
 ### 1.5 Create CLAUDE.md
 
 Edit the template CLAUDE.md with project-specific info:
+
 - Project name and description
 - Client name
 - Specific features
@@ -183,6 +209,7 @@ git push -u origin main
 ### 2.1 Create Supabase Project
 
 **Via Dashboard:**
+
 1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
 2. Click "New Project"
 3. Select organization: Qualia Solutions
@@ -190,6 +217,7 @@ git push -u origin main
 5. Region: Frankfurt (eu-central-1) for EU clients
 
 **Via Claude MCP:**
+
 ```
 Use mcp__supabase__create_project with organization_id
 ```
@@ -197,6 +225,7 @@ Use mcp__supabase__create_project with organization_id
 ### 2.2 Get Credentials
 
 From Supabase Dashboard → Settings → API:
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` (keep secret!)
@@ -250,11 +279,13 @@ CREATE TRIGGER on_auth_user_created
 ### 2.4 Apply Migration
 
 **Via Claude MCP:**
+
 ```
 Use mcp__supabase__apply_migration
 ```
 
 **Via Supabase CLI:**
+
 ```bash
 supabase db push
 ```
@@ -262,6 +293,7 @@ supabase db push
 ### 2.5 Generate TypeScript Types
 
 **Via Claude MCP:**
+
 ```
 Use mcp__supabase__generate_typescript_types
 ```
@@ -284,47 +316,43 @@ npm run dev
 Create `app/actions.ts`:
 
 ```typescript
-'use server'
+'use server';
 
-import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
+import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 // Standard ActionResult type
 export type ActionResult<T = unknown> = {
-  success: boolean
-  error?: string
-  data?: T
-}
+  success: boolean;
+  error?: string;
+  data?: T;
+};
 
 // Example: Create item with Zod validation
 const createItemSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
-})
+});
 
 export async function createItem(formData: FormData): Promise<ActionResult> {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
   const parsed = createItemSchema.safeParse({
     name: formData.get('name'),
     description: formData.get('description'),
-  })
+  });
 
   if (!parsed.success) {
-    return { success: false, error: parsed.error.message }
+    return { success: false, error: parsed.error.message };
   }
 
-  const { data, error } = await supabase
-    .from('items')
-    .insert(parsed.data)
-    .select()
-    .single()
+  const { data, error } = await supabase.from('items').insert(parsed.data).select().single();
 
-  if (error) return { success: false, error: error.message }
+  if (error) return { success: false, error: error.message };
 
-  revalidatePath('/items')
-  return { success: true, data }
+  revalidatePath('/items');
+  return { success: true, data };
 }
 ```
 
@@ -333,15 +361,15 @@ export async function createItem(formData: FormData): Promise<ActionResult> {
 Create `lib/validation.ts`:
 
 ```typescript
-import { z } from 'zod'
+import { z } from 'zod';
 
 export const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   client_id: z.string().uuid().optional(),
   status: z.enum(['draft', 'active', 'completed']).default('draft'),
-})
+});
 
-export type CreateProjectInput = z.infer<typeof createProjectSchema>
+export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 
 // Add more schemas as needed
 ```
@@ -351,19 +379,19 @@ export type CreateProjectInput = z.infer<typeof createProjectSchema>
 Create `lib/swr.ts`:
 
 ```typescript
-import useSWR, { mutate } from 'swr'
+import useSWR, { mutate } from 'swr';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json())
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function useProjects() {
   return useSWR('/api/projects', fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
-  })
+  });
 }
 
 export function invalidateProjects() {
-  mutate('/api/projects')
+  mutate('/api/projects');
 }
 ```
 
@@ -382,12 +410,12 @@ components/
 
 ### 3.5 Useful Skills
 
-| Task | Command |
-|------|---------|
-| Design distinctive UI | `/fd` |
-| Build components | `/fb` |
-| New feature workflow | `/nf` |
-| Debug issues | `/dd` |
+| Task                  | Command |
+| --------------------- | ------- |
+| Design distinctive UI | `/fd`   |
+| Build components      | `/fb`   |
+| New feature workflow  | `/nf`   |
+| Debug issues          | `/dd`   |
 
 ---
 
@@ -396,16 +424,19 @@ components/
 ### 4.1 Setup Testing Framework
 
 **Platforms (Jest):**
+
 ```bash
 npm install -D jest @types/jest ts-jest @testing-library/react @testing-library/jest-dom
 ```
 
 **Websites (Vitest):**
+
 ```bash
 npm install -D vitest @testing-library/react @testing-library/jest-dom
 ```
 
 **E2E (Playwright):**
+
 ```bash
 npm install -D @playwright/test
 npx playwright install
@@ -436,28 +467,33 @@ Aim for **50% coverage minimum** before deployment.
 ## Phase 5: Pre-Deployment Checklist
 
 ### Security
+
 - [ ] RLS policies on ALL tables
 - [ ] No hardcoded secrets in code
 - [ ] Environment variables set in Vercel
 - [ ] Pre-commit hook validates (no secrets, no console.log)
 
 ### Performance
+
 - [ ] Images optimized (WebP/AVIF)
 - [ ] Bundle size analyzed: `ANALYZE=true npm run build`
 - [ ] Database indexes on frequently queried columns
 
 ### Code Quality
+
 - [ ] TypeScript strict mode passing
 - [ ] ESLint/Biome passing: `npm run lint`
 - [ ] Tests passing: `npm test`
 - [ ] Build passing: `npm run build`
 
 ### Documentation
+
 - [ ] CLAUDE.md complete with architecture
 - [ ] README.md updated
 - [ ] Environment variables documented in .env.example
 
 ### Skill to Use
+
 ```
 /pr  # Run production-audit for comprehensive check
 ```
@@ -477,10 +513,12 @@ vercel link
 ### 6.2 Set Environment Variables
 
 **Via Dashboard:**
+
 1. Go to Vercel Dashboard → Project → Settings → Environment Variables
 2. Add all variables from .env.example
 
 **Via CLI:**
+
 ```bash
 vercel env add NEXT_PUBLIC_SUPABASE_URL
 vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
@@ -572,22 +610,23 @@ npm audit fix
 
 ## Quick Skills Reference
 
-| Task | Skill | Description |
-|------|-------|-------------|
-| Design UI | `/fd` | frontend-master --design |
-| Build components | `/fb` | frontend-master --build |
-| Modernize legacy | `/fm` | frontend-master --modernize |
-| Debug issues | `/dd` | deep-debug |
-| Auto-fix | `/sf` | smart-fix |
-| New feature | `/nf` | new-feature (plan→TDD→impl→commit) |
-| Deploy | `/dep` | full-deploy |
-| Production audit | `/pr` | production-audit |
-| Database ops | `/sb` | supabase |
-| Voice agent | `/va` | voice-agent |
-| Git workflow | `/gf` | git-flow |
-| Stack research | `/sr` | stack-researcher |
+| Task             | Skill  | Description                        |
+| ---------------- | ------ | ---------------------------------- |
+| Design UI        | `/fd`  | frontend-master --design           |
+| Build components | `/fb`  | frontend-master --build            |
+| Modernize legacy | `/fm`  | frontend-master --modernize        |
+| Debug issues     | `/dd`  | deep-debug                         |
+| Auto-fix         | `/sf`  | smart-fix                          |
+| New feature      | `/nf`  | new-feature (plan→TDD→impl→commit) |
+| Deploy           | `/dep` | full-deploy                        |
+| Production audit | `/pr`  | production-audit                   |
+| Database ops     | `/sb`  | supabase                           |
+| Voice agent      | `/va`  | voice-agent                        |
+| Git workflow     | `/gf`  | git-flow                           |
+| Stack research   | `/sr`  | stack-researcher                   |
 
 **List all skills:**
+
 ```bash
 ls ~/.claude/skills/
 ```
@@ -597,21 +636,25 @@ ls ~/.claude/skills/
 ## Troubleshooting
 
 ### Supabase Connection Issues
+
 1. Check .env.local has correct values
 2. Verify project is not paused in Supabase dashboard
 3. Check RLS policies aren't blocking access
 
 ### Build Failures
+
 1. Run `npm run lint` for errors
 2. Run `npx tsc --noEmit` for type errors
 3. Check for missing environment variables
 
 ### Deployment Failures
+
 1. Check Vercel build logs
 2. Verify all env vars are set in Vercel
 3. Check for hardcoded localhost URLs
 
 ### Need Help?
+
 - Read project CLAUDE.md first
 - Check similar projects in ~/Desktop/Projects/
 - Use `/dd` (deep-debug) skill
@@ -621,6 +664,7 @@ ls ~/.claude/skills/
 ## Templates Location
 
 All starter templates are at:
+
 ```
 ~/Desktop/Projects/platforms/qualia/templates/
 ├── ai-agent-starter/
