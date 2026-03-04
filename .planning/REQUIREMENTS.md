@@ -73,17 +73,17 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Differentiator Animations
 
-- **ANIM-01**: Stagger animations on list items (tasks, phases, files appear sequentially)
-- **ANIM-02**: Scroll-triggered reveals on roadmap phases
-- **ANIM-03**: Spring physics on interactive elements
-- **ANIM-04**: Gesture-based interactions (swipe to dismiss drawers)
+- [x] **ANIM-01**: Stagger animations on list items (tasks, phases, files appear sequentially)
+- [x] **ANIM-02**: Scroll-triggered reveals on roadmap phases
+- [x] **ANIM-03**: Spring physics on interactive elements
+- [x] **ANIM-04**: Gesture-based interactions (swipe to dismiss drawers)
 
 ### Additional Polish
 
-- **POLISH-01**: Activity feed cursor-based pagination with "Load more"
-- **POLISH-02**: Standardized date formatting across portal
-- **POLISH-03**: useServerAction hook to reduce form submission boilerplate
-- **POLISH-04**: Schedule utility file consolidation (3 files → 2)
+- [ ] **POLISH-01**: Activity feed cursor-based pagination with "Load more"
+- [ ] **POLISH-02**: Standardized date formatting across portal
+- [ ] **POLISH-03**: useServerAction hook to reduce form submission boilerplate
+- [ ] **POLISH-04**: Schedule utility file consolidation (3 files → 2)
 
 ## Out of Scope
 
@@ -101,46 +101,61 @@ Deferred to future release. Tracked but not in current roadmap.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase   | Status  |
-| ----------- | ------- | ------- |
-| LOAD-01     | Phase 4 | Pending |
-| LOAD-02     | Phase 4 | Pending |
-| LOAD-03     | Phase 4 | Pending |
-| LOAD-04     | Phase 4 | Pending |
-| EMPTY-01    | Phase 4 | Pending |
-| EMPTY-02    | Phase 4 | Pending |
-| EMPTY-03    | Phase 4 | Pending |
-| TRANS-01    | Phase 5 | Done    |
-| TRANS-02    | Phase 5 | Done    |
-| TRANS-03    | Phase 5 | Done    |
-| DARK-01     | Phase 5 | Done    |
-| A11Y-01     | Phase 5 | Done    |
-| MICRO-01    | Phase 6 | Pending |
-| MICRO-02    | Phase 6 | Pending |
-| MICRO-03    | Phase 6 | Pending |
-| MICRO-04    | Phase 6 | Pending |
-| EMAIL-01    | Phase 6 | Pending |
-| EMAIL-02    | Phase 6 | Pending |
-| EMAIL-03    | Phase 6 | Pending |
-| FIX-01      | Phase 6 | Pending |
-| FIX-02      | Phase 6 | Pending |
-| GRID-01     | Phase 7 | Pending |
-| GRID-02     | Phase 7 | Pending |
-| GRID-03     | Phase 7 | Pending |
-| GRID-04     | Phase 7 | Pending |
-| MOBILE-01   | Phase 8 | Pending |
-| MOBILE-02   | Phase 8 | Pending |
-| MOBILE-03   | Phase 8 | Pending |
-| MOBILE-04   | Phase 8 | Pending |
-| MOBILE-05   | Phase 8 | Pending |
+### v1.1 Requirements (Phases 4-8)
+
+| Requirement | Phase   | Status   |
+| ----------- | ------- | -------- |
+| LOAD-01     | Phase 4 | Complete |
+| LOAD-02     | Phase 4 | Complete |
+| LOAD-03     | Phase 4 | Complete |
+| LOAD-04     | Phase 4 | Complete |
+| EMPTY-01    | Phase 4 | Complete |
+| EMPTY-02    | Phase 4 | Complete |
+| EMPTY-03    | Phase 4 | Complete |
+| TRANS-01    | Phase 5 | Complete |
+| TRANS-02    | Phase 5 | Complete |
+| TRANS-03    | Phase 5 | Complete |
+| DARK-01     | Phase 5 | Complete |
+| A11Y-01     | Phase 5 | Complete |
+| MICRO-01    | Phase 6 | Complete |
+| MICRO-02    | Phase 6 | Complete |
+| MICRO-03    | Phase 6 | Complete |
+| MICRO-04    | Phase 6 | Complete |
+| EMAIL-01    | Phase 6 | Complete |
+| EMAIL-02    | Phase 6 | Complete |
+| EMAIL-03    | Phase 6 | Complete |
+| FIX-01      | Phase 6 | Complete |
+| FIX-02      | Phase 6 | Complete |
+| GRID-01     | Phase 7 | Complete |
+| GRID-02     | Phase 7 | Complete |
+| GRID-03     | Phase 7 | Complete |
+| GRID-04     | Phase 7 | Complete |
+| MOBILE-01   | Phase 8 | Complete |
+| MOBILE-02   | Phase 8 | Complete |
+| MOBILE-03   | Phase 8 | Complete |
+| MOBILE-04   | Phase 8 | Complete |
+| MOBILE-05   | Phase 8 | Complete |
+
+### v1.2 Requirements (Phases 10-11)
+
+| Requirement | Phase    | Status   |
+| ----------- | -------- | -------- |
+| ANIM-01     | Phase 10 | Complete |
+| ANIM-02     | Phase 10 | Complete |
+| ANIM-03     | Phase 10 | Complete |
+| ANIM-04     | Phase 10 | Complete |
+| POLISH-01   | Phase 11 | Pending  |
+| POLISH-02   | Phase 11 | Pending  |
+| POLISH-03   | Phase 11 | Pending  |
+| POLISH-04   | Phase 11 | Pending  |
 
 **Coverage:**
 
-- v1.1 requirements: 30 total
-- Mapped to phases: 30
-- Unmapped: 0 ✓
+- v1.1 requirements: 30 total, all mapped, all complete
+- v1.2 requirements: 8 total, all mapped (100% coverage)
+- Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-03-04_
-_Last updated: 2026-03-04 after roadmap creation_
+_Last updated: 2026-03-04 for v1.2 roadmap creation_
