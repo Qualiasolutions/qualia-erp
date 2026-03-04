@@ -14,13 +14,13 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Phase:** 11 - Additional Polish
 
-**Plan:** 2 of 4 complete (11-01-SUMMARY.md, 11-02-SUMMARY.md exist)
+**Plan:** 3 of 4 complete (11-01-SUMMARY.md, 11-02-SUMMARY.md, 11-04-SUMMARY.md exist)
 
 **Status:** In progress
 
-**Last activity:** 2026-03-04 — Completed 11-02 (date formatting standardization)
+**Last activity:** 2026-03-04 — Completed 11-04 (schedule utility consolidation)
 
-Progress: [█████░░░░░] 50% (2/4 plans complete in phase 11)
+Progress: [███████░░░] 75% (3/4 plans complete in phase 11)
 
 ## Performance Metrics
 
@@ -43,10 +43,10 @@ Progress: [█████░░░░░] 50% (2/4 plans complete in phase 11)
 
 - Duration: In progress (started 2026-03-04)
 - Target: 2-3 days
-- Plans completed: 5 (10-01, 10-02, 10-03, 11-01, 11-02)
+- Plans completed: 6 (10-01, 10-02, 10-03, 11-01, 11-02, 11-04)
 - Phases: 2 total (10-11)
 - Requirements: 8 (ANIM-01 to 04, POLISH-01 to 04)
-- Progress: ANIM-01, ANIM-02, ANIM-03, ANIM-04 complete (Phase 10 done), POLISH-02 complete (Phase 11 in progress)
+- Progress: ANIM-01, ANIM-02, ANIM-03, ANIM-04 complete (Phase 10 done), POLISH-01, POLISH-02, POLISH-04 complete (Phase 11 in progress)
 
 **Velocity:**
 
@@ -91,11 +91,23 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - DRAWER-02: Extract FormContent component for code sharing — single source of truth for form state/validation/submission between Drawer and Dialog
 - DRAWER-03: Mobile breakpoint at 768px (md) — Tailwind standard, aligns with Phase 8 responsive patterns, gestures natural on phone/small tablet
 
+**Recent decisions from Phase 11-01 (Activity Feed Pagination):**
+
+- PAGINATION-01: Use cursor-based pagination with ISO timestamps instead of offset-based — prevents duplicate/missing items when new activities added during pagination
+- PAGINATION-02: Maintain backward compatibility by checking cursor parameter presence — existing dashboard calls don't need pagination, allows gradual migration
+- PAGINATION-03: Use de-duplication by ID when appending items — prevents duplicates in case of race conditions or concurrent updates
+
 **Recent decisions from Phase 11-02 (Date Formatting):**
 
 - DATE-FORMAT-01: Use centralized formatDate() from lib/utils instead of inline format() calls — single source of truth for date formatting
 - DATE-FORMAT-02: Remove local helper functions that duplicate lib/utils functionality — reduces code duplication
 - DATE-FORMAT-03: Use formatRelativeTime() for "X ago" timestamps — consistent pattern with lib/utils
+
+**Recent decisions from Phase 11-04 (Schedule Consolidation):**
+
+- SCHEDULE-CONSOLIDATE-01: Merge schedule-shared.ts into schedule-utils.ts — creates single comprehensive schedule utility file
+- SCHEDULE-CONSOLIDATE-02: Add 'use client' directive to schedule-utils.ts — required for useTimezone hook, acceptable for all schedule functions
+- SCHEDULE-CONSOLIDATE-03: Organize schedule-utils.ts into logical sections — Timezone, Types, Guards, Hooks, Converters, Scoring for maintainability
 
 ### Pending Todos
 
@@ -108,7 +120,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [x] Implement activity feed cursor-based pagination (POLISH-01) — Completed 11-01
 - [x] Standardize date formatting across portal (POLISH-02) — Completed 11-02
 - [ ] Create useServerAction hook (POLISH-03)
-- [ ] Consolidate schedule utilities (POLISH-04)
+- [x] Consolidate schedule utilities (POLISH-04) — Completed 11-04
 
 **Carried over from TODO-FIXES.md (addressed in v1.2):**
 
@@ -156,19 +168,20 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Next Session Should
 
-1. Continue Phase 11 (Polish Work) — 2 plans remaining (POLISH-03, POLISH-04)
+1. Continue Phase 11 (Polish Work) — 1 plan remaining (POLISH-03: useServerAction hook)
 2. Manual testing recommended for completed work:
    - Activity feed pagination (load more functionality)
    - Date formatting consistency across portal pages
-   - Portal roadmap date display
+   - Schedule component functionality (timezone toggle, task/meeting display)
+   - Schedule utilities imports working correctly
 
 ### Context for Handoff
 
-**What we just completed:** Phase 11 Plan 02 — Date Formatting Standardization
+**What we just completed:** Phase 11 Plan 04 — Schedule Utility Consolidation
 
-**Where we are:** Phase 11 in progress (2/4 plans done: 11-01, 11-02)
+**Where we are:** Phase 11 in progress (3/4 plans done: 11-01, 11-02, 11-04)
 
-**What's next:** Phase 11 remaining plans (POLISH-03: useServerAction hook, POLISH-04: Schedule utilities consolidation)
+**What's next:** Phase 11 remaining plan (POLISH-03: useServerAction hook)
 
 **Critical context:**
 
@@ -204,6 +217,7 @@ Phase 10-02: 2 commits, 3 files modified
 Phase 10-03: 2 commits, 5 files modified
 Phase 11-01: 1 commit, 1 file modified (activity-feed.ts)
 Phase 11-02: 1 commit (a08e15a), 3 files modified (portal-activity-feed.tsx, portal-file-list.tsx, portal-roadmap.tsx)
+Phase 11-04: 2 commits (395c57b, 3bacb6c), 4 files modified (schedule-utils.ts, schedule-block.tsx, weekly-view.tsx, day-view.tsx), 1 file deleted (schedule-shared.ts)
 
 **Summaries created:**
 
@@ -212,9 +226,10 @@ Phase 11-02: 1 commit (a08e15a), 3 files modified (portal-activity-feed.tsx, por
 - `.planning/phases/10-differentiator-animations/10-03-SUMMARY.md`
 - `.planning/phases/11-additional-polish/11-01-SUMMARY.md`
 - `.planning/phases/11-additional-polish/11-02-SUMMARY.md`
+- `.planning/phases/11-additional-polish/11-04-SUMMARY.md`
 
 **Phase 10 complete.** All animation requirements (ANIM-01 to ANIM-04) delivered.
-**Phase 11 in progress.** POLISH-01, POLISH-02 complete. POLISH-03, POLISH-04 remaining.
+**Phase 11 in progress.** POLISH-01, POLISH-02, POLISH-04 complete. POLISH-03 remaining.
 
 ---
 

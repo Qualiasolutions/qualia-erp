@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useOptimistic, useTransition } from 'react';
+import { useState, useOptimistic } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { createPhaseComment, deletePhaseComment } from '@/app/actions/phase-comments';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useServerAction } from '@/lib/hooks/use-server-action';
 
 interface CommentWithProfile {
   id: string;
@@ -41,7 +42,6 @@ export function PhaseCommentThread({
   userRole,
   currentUserId,
 }: PhaseCommentThreadProps) {
-  const [isPending, startTransition] = useTransition();
   const [comments, setComments] = useState(initialComments);
   const [optimisticComments, addOptimisticComment] = useOptimistic<
     CommentWithProfile[],
@@ -50,23 +50,38 @@ export function PhaseCommentThread({
 
   const [commentText, setCommentText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const isAdmin = userRole === 'admin';
   const isEmployee = userRole === 'employee';
   const canCreateInternal = isAdmin || isEmployee;
 
+  const {
+    execute: submitComment,
+    isPending,
+    error,
+  } = useServerAction<CommentWithProfile>(createPhaseComment, {
+    onSuccess: (data?: CommentWithProfile) => {
+      // Replace temp optimistic comment with real data
+      if (data) {
+        setComments((prev) => [...prev.filter((c) => !c.id.startsWith('temp-')), data]);
+      }
+    },
+    onError: () => {
+      // Rollback: Remove optimistic comments from base state
+      setComments((prev) => prev.filter((c) => !c.id.startsWith('temp-')));
+    },
+  });
+
+  const { execute: deleteComment, isPending: isDeleting } = useServerAction(deletePhaseComment);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
 
     if (!commentText.trim()) {
-      setError('Comment cannot be empty');
       return;
     }
 
     if (commentText.length > 2000) {
-      setError('Comment must not exceed 2000 characters');
       return;
     }
 
@@ -91,29 +106,15 @@ export function PhaseCommentThread({
     const savedText = commentText.trim();
     const savedInternal = canCreateInternal ? isInternal : false;
 
-    startTransition(async () => {
-      addOptimisticComment(optimisticComment);
-      setCommentText('');
-      setIsInternal(false);
+    addOptimisticComment(optimisticComment);
+    setCommentText('');
+    setIsInternal(false);
 
-      const result = await createPhaseComment({
-        projectId,
-        phaseName,
-        commentText: savedText,
-        isInternal: savedInternal,
-      });
-
-      if (!result.success) {
-        setError(result.error || 'Failed to create comment');
-        // Rollback: Remove the optimistic comment from base state
-        setComments((prev) => prev.filter((c) => c.id !== optimisticComment.id));
-      } else if (result.data) {
-        // Replace temp optimistic comment with real data
-        setComments((prev) => [
-          ...prev.filter((c) => c.id !== optimisticComment.id),
-          result.data as CommentWithProfile,
-        ]);
-      }
+    await submitComment({
+      projectId,
+      phaseName,
+      commentText: savedText,
+      isInternal: savedInternal,
     });
   };
 
@@ -123,12 +124,7 @@ export function PhaseCommentThread({
     // Optimistically remove from state
     setComments((prev) => prev.filter((c) => c.id !== commentId));
 
-    startTransition(async () => {
-      const result = await deletePhaseComment(commentId, projectId);
-      if (!result.success) {
-        setError(result.error || 'Failed to delete comment');
-      }
-    });
+    await deleteComment(commentId, projectId);
   };
 
   const canDeleteComment = (comment: CommentWithProfile) => {
@@ -205,7 +201,7 @@ export function PhaseCommentThread({
                     <button
                       onClick={() => handleDelete(comment.id)}
                       className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-red-600"
-                      disabled={isPending}
+                      disabled={isPending || isDeleting}
                       aria-label="Delete comment"
                     >
                       <svg
@@ -238,7 +234,7 @@ export function PhaseCommentThread({
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
             className="min-h-[100px] resize-none"
-            disabled={isPending}
+            disabled={isPending || isDeleting}
           />
           <div className="flex items-center justify-between">
             <span
@@ -255,7 +251,7 @@ export function PhaseCommentThread({
                   type="checkbox"
                   checked={isInternal}
                   onChange={(e) => setIsInternal(e.target.checked)}
-                  disabled={isPending}
+                  disabled={isPending || isDeleting}
                   className="rounded border-border"
                 />
                 Internal comment (only visible to team)

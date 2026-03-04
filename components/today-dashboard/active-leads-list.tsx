@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useServerAction } from '@/lib/hooks/use-server-action';
 import {
   Dialog,
   DialogContent,
@@ -122,10 +123,23 @@ function QuickAddLeadDialog({
   onSuccess: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [status, setStatus] = useState<string>('hot');
+
+  const { execute: createLead, isPending } = useServerAction(createClientRecord, {
+    onSuccess: () => {
+      setName('');
+      setPhone('');
+      setStatus('hot');
+      setOpen(false);
+      onSuccess();
+    },
+    onError: (errorMsg: string) => {
+      console.error('Failed to create lead:', errorMsg);
+      alert(errorMsg);
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,19 +151,7 @@ function QuickAddLeadDialog({
     formData.set('lead_status', status);
     formData.set('workspace_id', workspaceId);
 
-    startTransition(async () => {
-      const result = await createClientRecord(formData);
-      if (result.success) {
-        setName('');
-        setPhone('');
-        setStatus('hot');
-        setOpen(false);
-        onSuccess();
-      } else {
-        console.error('Failed to create lead:', result.error);
-        alert(result.error || 'Failed to create lead');
-      }
-    });
+    createLead(formData);
   };
 
   return (
@@ -214,31 +216,34 @@ const LeadRow = React.memo(function LeadRow({
   onRefresh: () => void;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
 
   const status = lead.lead_status || 'cold';
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.cold;
   const StatusIcon = config.icon;
 
+  const { execute: updateStatus, isPending: isUpdating } = useServerAction(toggleClientStatus, {
+    onSuccess: () => {
+      onRefresh();
+    },
+  });
+
+  const { execute: deleteLead, isPending: isDeleting } = useServerAction(deleteClientRecord, {
+    onSuccess: () => {
+      onRefresh();
+    },
+  });
+
   const handleStatusChange = (newStatus: LeadStatus) => {
     if (lead.lead_status === newStatus) return;
-    startTransition(async () => {
-      const result = await toggleClientStatus(lead.id, newStatus);
-      if (result.success) {
-        onRefresh();
-      }
-    });
+    updateStatus(lead.id, newStatus);
   };
 
   const handleDelete = () => {
     if (!confirm('Delete this lead? This cannot be undone.')) return;
-    startTransition(async () => {
-      const result = await deleteClientRecord(lead.id);
-      if (result.success) {
-        onRefresh();
-      }
-    });
+    deleteLead(lead.id);
   };
+
+  const isPending = isUpdating || isDeleting;
 
   const lastContact = lead.last_contacted_at
     ? formatDistanceToNow(new Date(lead.last_contacted_at), { addSuffix: true })
