@@ -3,8 +3,8 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** - Phases 0-3 (shipped 2026-03-01)
-- 🚧 **v1.1 Production Polish** - Phases 4-8 (in progress)
-- 📋 **v1.2 Advanced Features** - Phases 9+ (planned)
+- ✅ **v1.1 Production Polish** - Phases 4-8 (shipped)
+- 🚧 **v1.2 Premium Animations** - Phases 10-11 (in progress)
 
 ## Phases
 
@@ -53,7 +53,8 @@ Plans:
 
 </details>
 
-### 🚧 v1.1 Production Polish (In Progress)
+<details>
+<summary>✅ v1.1 Production Polish - SHIPPED</summary>
 
 **Milestone Goal:** Make client portal and trainee system Apple-level polished, fully functional, and ready to ship to real clients
 
@@ -120,11 +121,12 @@ Plans:
 5. Trainee receives email when admin approves or requests changes on phase
 6. User sees failed comment removed from UI immediately (optimistic rollback works)
 
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
 
-- [ ] 06-01: [TBD during planning]
+- [ ] 06-01-PLAN.md — Button press feedback, card hover states, focus ring animations, task completion success indicator
+- [ ] 06-02-PLAN.md — Phase review email notifications (submit, approve, changes requested) + bug fixes (comment rollback, schedule closure)
 
 #### Phase 7: Schedule Grid Consolidation
 
@@ -141,11 +143,7 @@ Plans:
 3. All existing schedule features work (drag-drop, modals, filters, backlog, time slots)
 4. Approximately 1,700 lines of duplicate code removed from codebase
 
-**Plans**: TBD
-
-Plans:
-
-- [ ] 07-01: [TBD during planning]
+**Plans**: Complete
 
 #### Phase 8: Mobile Responsive Polish
 
@@ -163,17 +161,60 @@ Plans:
 4. Schedule grid collapses gracefully on mobile with single-column layout
 5. Portal admin panel tables are horizontally scrollable on mobile
 
+**Plans**: Complete
+
+</details>
+
+### 🚧 v1.2 Premium Animations (In Progress)
+
+**Milestone Goal:** Add premium differentiator animations and complete final polish items
+
+**Created:** 2026-03-04
+**Depth:** Quick
+**Requirements:** 8 total (ANIM-01 to 04, POLISH-01 to 04)
+
+#### Phase 10: Differentiator Animations
+
+**Goal**: Users experience premium, Apple-level animation polish throughout portal and trainee interfaces
+
+**Depends on**: Phase 8 (v1.1 shipped)
+
+**Requirements**: ANIM-01, ANIM-02, ANIM-03, ANIM-04
+
+**Success Criteria** (what must be TRUE):
+
+1. User sees task/phase/file list items appear sequentially with staggered timing (not all at once)
+2. User sees roadmap phases reveal smoothly as they scroll into view (scroll-triggered animations)
+3. User feels natural spring physics on buttons, cards, and interactive elements (elastic movement on press/release)
+4. User can swipe to dismiss mobile drawers with gesture-based interaction (touch-friendly)
+5. All animations respect prefers-reduced-motion and degrade gracefully
+
 **Plans**: TBD
 
 Plans:
 
-- [ ] 08-01: [TBD during planning]
+- [ ] 10-01: [TBD during planning]
 
-### 📋 v1.2 Advanced Features (Planned)
+#### Phase 11: Additional Polish
 
-**Milestone Goal:** Add differentiator animations, advanced pagination, and GitHub/Vercel API integration
+**Goal**: Portal and trainee system have production-grade data handling, formatting consistency, and reduced code duplication
 
-Requirements deferred to v1.2: ANIM-01 to 04, POLISH-01 to 04, GitHub/Vercel API integration, test coverage increase
+**Depends on**: None (independent from Phase 10)
+
+**Requirements**: POLISH-01, POLISH-02, POLISH-03, POLISH-04
+
+**Success Criteria** (what must be TRUE):
+
+1. User can load more activity feed items incrementally without full page reload (cursor-based pagination)
+2. User sees consistent date formatting across all portal pages (standardized display)
+3. User experiences instant form submission feedback via useServerAction hook (reduced boilerplate, better UX)
+4. Codebase has consolidated schedule utilities with no duplicate logic (3 files reduced to 2)
+
+**Plans**: TBD
+
+Plans:
+
+- [ ] 11-01: [TBD during planning]
 
 ## Progress
 
@@ -185,6 +226,14 @@ Requirements deferred to v1.2: ANIM-01 to 04, POLISH-01 to 04, GitHub/Vercel API
 | 3. Client Portal              | v1.0      | 4/4            | Complete    | 2026-03-01 |
 | 4. Loading & Empty States     | v1.1      | 3/3            | Complete    | 2026-03-04 |
 | 5. Animation System           | v1.1      | 1/1            | Complete    | 2026-03-04 |
-| 6. Micro-Interactions & Email | v1.1      | 0/TBD          | Not started | -          |
-| 7. Schedule Consolidation     | v1.1      | 0/TBD          | Not started | -          |
-| 8. Mobile Responsive          | v1.1      | 0/TBD          | Not started | -          |
+| 6. Micro-Interactions & Email | v1.1      | 0/2            | Not started | -          |
+| 7. Schedule Consolidation     | v1.1      | Complete       | Complete    | -          |
+| 8. Mobile Responsive          | v1.1      | Complete       | Complete    | -          |
+| 10. Differentiator Animations | v1.2      | 0/TBD          | Not started | -          |
+| 11. Additional Polish         | v1.2      | 0/TBD          | Not started | -          |
+
+**v1.2 Progress:** 0/2 phases complete (0%)
+
+---
+
+_Last updated: 2026-03-04_
