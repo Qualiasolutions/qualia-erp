@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
 interface PortalFileListProps {
   files: ProjectFile[];
@@ -93,9 +94,13 @@ export function PortalFileList({ files }: PortalFileListProps) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {files.map((file) => (
-        <Card key={file.id} className="transition-all hover:shadow-md">
+    <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${fadeInClasses}`}>
+      {files.map((file, index) => (
+        <Card
+          key={file.id}
+          style={index < 6 ? getStaggerDelay(index) : undefined}
+          className={`transition-all hover:shadow-md ${index < 6 ? 'animate-fade-in-up fill-mode-both' : ''}`}
+        >
           <CardHeader className="pb-3">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">{getFileIcon(file.mime_type)}</div>

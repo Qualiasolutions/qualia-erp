@@ -5,6 +5,7 @@ import { calculateProjectsProgress } from '@/app/actions/phases';
 import { getUserRole } from '@/lib/portal-utils';
 import { PortalProjectsList } from '@/components/portal/portal-projects-list';
 import { PortalAdminPanel } from '@/components/portal/portal-admin-panel';
+import { fadeInClasses } from '@/lib/transitions';
 
 export default async function PortalPage() {
   const supabase = await createClient();
@@ -58,7 +59,7 @@ export default async function PortalPage() {
       : { clients: [], assignments: [] };
 
     return (
-      <div className="space-y-8">
+      <div className={`space-y-8 ${fadeInClasses}`}>
         <div>
           <h1 className="text-2xl font-bold text-foreground">Portal Management</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -127,7 +128,7 @@ export default async function PortalPage() {
   const progressMap = await calculateProjectsProgress(projectIds);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
         <h1 className="text-2xl font-bold text-foreground">Your Projects</h1>
         <p className="mt-1 text-sm text-muted-foreground">

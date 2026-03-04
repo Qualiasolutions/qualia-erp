@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
 import { getProjectStatusColor } from '@/lib/portal-styles';
+import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
 interface Project {
   id: string;
@@ -332,7 +333,7 @@ export function PortalRoadmap({ project, phases, userRole, currentUserId }: Port
             </div>
           </div>
         ) : (
-          <div className="relative space-y-8">
+          <div className={`relative space-y-8 ${fadeInClasses}`}>
             {/* Vertical connecting line */}
             <div className="absolute bottom-6 left-4 top-6 w-0.5 bg-muted" />
 
@@ -340,15 +341,20 @@ export function PortalRoadmap({ project, phases, userRole, currentUserId }: Port
               const isLast = index === phases.length - 1;
 
               return (
-                <PhaseWithComments
+                <div
                   key={phase.id}
-                  phase={phase}
-                  index={index}
-                  isLast={isLast}
-                  project={project}
-                  userRole={userRole}
-                  currentUserId={currentUserId}
-                />
+                  style={index < 3 ? getStaggerDelay(index) : undefined}
+                  className={index < 3 ? 'animate-fade-in-up fill-mode-both' : ''}
+                >
+                  <PhaseWithComments
+                    phase={phase}
+                    index={index}
+                    isLast={isLast}
+                    project={project}
+                    userRole={userRole}
+                    currentUserId={currentUserId}
+                  />
+                </div>
               );
             })}
           </div>

@@ -6,6 +6,7 @@ import type { ActivityLogEntry } from '@/lib/activity-utils';
 import { PortalActivityFeed } from '@/components/portal/portal-activity-feed';
 import { PortalTabs } from '@/components/portal/portal-tabs';
 import { PortalPageHeader } from '@/components/portal/portal-page-header';
+import { fadeInClasses } from '@/lib/transitions';
 
 interface PortalUpdatesPageProps {
   params: Promise<{ id: string }>;
@@ -45,7 +46,7 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
   const activities = activityResult.success ? (activityResult.data as ActivityLogEntry[]) : [];
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${fadeInClasses}`}>
       <PortalPageHeader title={project.name} description={project.description} />
 
       <PortalTabs projectId={projectId} />

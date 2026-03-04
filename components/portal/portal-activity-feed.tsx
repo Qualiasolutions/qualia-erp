@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Clock,
 } from 'lucide-react';
+import { fadeInClasses } from '@/lib/transitions';
 
 interface PortalActivityFeedProps {
   activities: ActivityLogEntry[];
@@ -89,7 +90,7 @@ export function PortalActivityFeed({ activities }: PortalActivityFeedProps) {
   const groupedActivities = groupActivitiesByDate(activities);
 
   return (
-    <div className="space-y-8">
+    <div className={`space-y-8 ${fadeInClasses}`}>
       {Array.from(groupedActivities.entries()).map(([dateGroup, dateActivities]) => (
         <div key={dateGroup}>
           {/* Date Header */}

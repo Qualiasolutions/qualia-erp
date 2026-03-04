@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { getProjectStatusColor } from '@/lib/portal-styles';
+import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
 interface Project {
   id: string;
@@ -60,8 +61,8 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      {projects.map((clientProject) => {
+    <div className={`grid gap-6 sm:grid-cols-2 lg:grid-cols-3 ${fadeInClasses}`}>
+      {projects.map((clientProject, index) => {
         // Handle Supabase FK array normalization
         const project = Array.isArray(clientProject.project)
           ? clientProject.project[0]
@@ -74,10 +75,12 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
         return (
           <Link key={clientProject.id} href={`/portal/${project.id}`}>
             <Card
+              style={index < 6 ? getStaggerDelay(index) : undefined}
               className={cn(
                 'group h-full transition-all duration-200',
                 'hover:-translate-y-1 hover:shadow-lg hover:shadow-qualia-600/10',
-                'cursor-pointer'
+                'cursor-pointer',
+                index < 6 && 'animate-fade-in-up fill-mode-both'
               )}
             >
               <CardHeader className="pb-3">

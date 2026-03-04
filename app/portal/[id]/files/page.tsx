@@ -5,6 +5,7 @@ import { getProjectFiles } from '@/app/actions/project-files';
 import { PortalFileList } from '@/components/portal/portal-file-list';
 import { PortalTabs } from '@/components/portal/portal-tabs';
 import { PortalPageHeader } from '@/components/portal/portal-page-header';
+import { fadeInClasses } from '@/lib/transitions';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -45,7 +46,7 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
   const files = await getProjectFiles(projectId, true);
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${fadeInClasses}`}>
       <PortalPageHeader title={project.name} description={project.description} />
 
       <PortalTabs projectId={projectId} />

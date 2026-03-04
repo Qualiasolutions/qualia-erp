@@ -4,6 +4,7 @@ import { canAccessProject } from '@/lib/portal-utils';
 import { PortalRoadmap } from '@/components/portal/portal-roadmap';
 import { PortalTabs } from '@/components/portal/portal-tabs';
 import { PortalPageHeader } from '@/components/portal/portal-page-header';
+import { fadeInClasses } from '@/lib/transitions';
 
 interface PortalProjectPageProps {
   params: Promise<{ id: string }>;
@@ -56,7 +57,7 @@ export default async function PortalProjectPage({ params }: PortalProjectPagePro
     .order('order_index', { ascending: true });
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${fadeInClasses}`}>
       <PortalPageHeader title={project.name} description={project.description} />
 
       <PortalTabs projectId={projectId} />
