@@ -216,10 +216,10 @@ Plans:
 
 Plans:
 
-- [ ] 11-01-PLAN.md — Activity feed cursor-based pagination
-- [ ] 11-02-PLAN.md — Standardize date formatting across portal
+- [x] 11-01-PLAN.md — Activity feed cursor-based pagination
+- [x] 11-02-PLAN.md — Standardize date formatting across portal
 - [ ] 11-03-PLAN.md — Create useServerAction hook to reduce form boilerplate
-- [ ] 11-04-PLAN.md — Consolidate schedule utility files (3 → 2)
+- [x] 11-04-PLAN.md — Consolidate schedule utility files (3 → 2)
 
 ## Progress
 
@@ -235,9 +235,9 @@ Plans:
 | 7. Schedule Consolidation     | v1.1      | Complete       | Complete    | -          |
 | 8. Mobile Responsive          | v1.1      | Complete       | Complete    | -          |
 | 10. Differentiator Animations | v1.2      | 3/3            | Complete    | 2026-03-04 |
-| 11. Additional Polish         | v1.2      | 0/4            | Not started | -          |
+| 11. Additional Polish         | v1.2      | 3/4            | In progress | -          |
 
-**v1.2 Progress:** 1/2 phases complete (50%)
+**v1.2 Progress:** 1/2 phases complete (50%), Phase 11: 3/4 plans complete
 
 ---
 
