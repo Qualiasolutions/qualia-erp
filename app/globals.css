@@ -214,6 +214,7 @@
   /* Interactive card */
   .card-interactive {
     @apply card-base;
+    transition: all 0.3s var(--ease-premium);
   }
 
   .card-interactive:hover {
