@@ -73,11 +73,13 @@ Plans:
 4. User sees contextual empty state message when no projects assigned in portal
 5. User sees contextual empty state message when no files shared on files page
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 04-01: [TBD during planning]
+- [ ] 04-01-PLAN.md — Portal skeleton components and loading.tsx files
+- [ ] 04-02-PLAN.md — Crossfade transitions from skeleton to content
+- [ ] 04-03-PLAN.md — Polish empty states to Apple-level quality
 
 #### Phase 5: Animation System Infrastructure
 
