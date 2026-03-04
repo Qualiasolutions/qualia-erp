@@ -17,7 +17,7 @@ import {
   Loader2,
   FolderOpen,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatRelativeTime } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
@@ -140,7 +140,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
 
             {/* Upload Date */}
             <p className="text-xs text-muted-foreground/80">
-              Uploaded {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
+              Uploaded {formatRelativeTime(file.created_at)}
             </p>
 
             {/* Download Button */}

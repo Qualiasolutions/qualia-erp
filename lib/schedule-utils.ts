@@ -1,10 +1,140 @@
+'use client';
+
 /**
- * Schedule utilities for task scoring and block assignment
+ * Schedule utilities for task scoring, block assignment, and timezone handling
+ * Consolidated from schedule-shared.ts and schedule-utils.ts
  */
 
+import { useState, useEffect } from 'react';
 import { isToday, parseISO } from 'date-fns';
 import type { Task } from '@/app/actions/inbox';
 import { TimeBlock, TIME_BLOCKS, parseTimeToMinutes, TaskPriority } from './schedule-constants';
+
+// === Timezone Constants ===
+export const TIMEZONE_CYPRUS = 'Europe/Nicosia';
+export const TIMEZONE_JORDAN = 'Asia/Amman';
+
+// === Schedule Types ===
+export type ScheduleItemType = 'meeting' | 'task' | 'issue';
+
+export interface ScheduleTask {
+  id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  start_time: string;
+  end_time: string;
+  type: 'task';
+  project: {
+    id: string;
+    name: string;
+    project_type?: string | null;
+  } | null;
+  assignee?: {
+    id: string;
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+}
+
+export interface ScheduleMeeting {
+  id: string;
+  title: string;
+  description: string | null;
+  start_time: string;
+  end_time: string;
+  type: 'meeting';
+  location?: string | null;
+  meeting_link?: string | null;
+  project: {
+    id: string;
+    name: string;
+    project_group?: string;
+  } | null;
+  creator?: { id: string; full_name?: string | null; avatar_url?: string | null } | null;
+  attendees?: Array<{ id: string; profile?: { id: string; full_name?: string | null } | null }>;
+}
+
+export type ScheduleItem = ScheduleMeeting | ScheduleTask;
+
+// === Type Guards ===
+export function isScheduleMeeting(item: ScheduleItem): item is ScheduleMeeting {
+  return item.type === 'meeting';
+}
+
+export function isScheduleTask(item: ScheduleItem): item is ScheduleTask {
+  return item.type === 'task';
+}
+
+// === Hooks ===
+/**
+ * Shared timezone hook - get timezone from localStorage or detect from browser
+ * Extracted from day-view, weekly-view, calendar-view, meeting-list
+ */
+export function useTimezone() {
+  const [timezone, setTimezone] = useState(TIMEZONE_CYPRUS);
+
+  useEffect(() => {
+    const loadTimezone = () => {
+      const stored = localStorage.getItem('preferred_timezone');
+      if (stored && (stored === TIMEZONE_CYPRUS || stored === TIMEZONE_JORDAN)) {
+        setTimezone(stored);
+      } else {
+        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (
+          browserTz.includes('Amman') ||
+          browserTz.includes('Jerusalem') ||
+          browserTz.includes('Beirut')
+        ) {
+          setTimezone(TIMEZONE_JORDAN);
+        }
+      }
+    };
+
+    loadTimezone();
+
+    // Listen for timezone changes from the toggle
+    const handleTimezoneChange = () => loadTimezone();
+    window.addEventListener('timezone-change', handleTimezoneChange);
+    return () => window.removeEventListener('timezone-change', handleTimezoneChange);
+  }, []);
+
+  const setAndStoreTimezone = (tz: string) => {
+    setTimezone(tz);
+    localStorage.setItem('preferred_timezone', tz);
+    window.dispatchEvent(new Event('timezone-change'));
+  };
+
+  return { timezone, setTimezone: setAndStoreTimezone };
+}
+
+// === Converters ===
+/**
+ * Convert raw Task[] from getScheduledTasks into ScheduleTask[]
+ */
+export function tasksToScheduleItems(tasks: Task[]): ScheduleTask[] {
+  return tasks
+    .filter((t) => t.scheduled_start_time && t.scheduled_end_time)
+    .map((t) => ({
+      id: t.id,
+      title: t.title,
+      description: t.description,
+      status: t.status,
+      priority: t.priority,
+      start_time: t.scheduled_start_time!,
+      end_time: t.scheduled_end_time!,
+      type: 'task' as const,
+      project: t.project
+        ? { id: t.project.id, name: t.project.name, project_type: t.project.project_type }
+        : null,
+      assignee: t.assignee
+        ? { id: t.assignee.id, full_name: t.assignee.full_name, avatar_url: t.assignee.avatar_url }
+        : null,
+    }));
+}
+
+// === Scoring and Filtering ===
 
 // Scoring weights for task prioritization
 const PRIORITY_SCORES: Record<TaskPriority, number> = {

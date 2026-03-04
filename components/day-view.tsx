@@ -57,7 +57,7 @@ import {
   TIMEZONE_CYPRUS,
   type ScheduleTask,
   tasksToScheduleItems,
-} from '@/lib/schedule-shared';
+} from '@/lib/schedule-utils';
 
 type ScheduleItemType = 'meeting' | 'task' | 'issue';
 
