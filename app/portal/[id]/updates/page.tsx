@@ -41,8 +41,8 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
     redirect('/portal');
   }
 
-  // Fetch client-visible activities (limit 100)
-  const activityResult = await getProjectActivityFeed(projectId, true, 100);
+  // Fetch client-visible activities (first 20 for pagination)
+  const activityResult = await getProjectActivityFeed(projectId, true, 20);
   const activities = activityResult.success ? (activityResult.data as ActivityLogEntry[]) : [];
 
   return (
@@ -59,7 +59,7 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
       </div>
 
       {/* Activity Feed */}
-      <PortalActivityFeed activities={activities} />
+      <PortalActivityFeed activities={activities} projectId={projectId} />
     </div>
   );
 }

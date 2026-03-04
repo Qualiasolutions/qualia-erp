@@ -11,11 +11,16 @@ import {
   UserPlus,
   AlertCircle,
   Clock,
+  Loader2,
 } from 'lucide-react';
 import { fadeInClasses } from '@/lib/transitions';
+import { useState, useTransition } from 'react';
+import { getProjectActivityFeed } from '@/app/actions/activity-feed';
+import { Button } from '@/components/ui/button';
 
 interface PortalActivityFeedProps {
   activities: ActivityLogEntry[];
+  projectId: string;
 }
 
 function getActivityIcon(actionType: string) {
@@ -68,7 +73,51 @@ function groupActivitiesByDate(activities: ActivityLogEntry[]): Map<string, Acti
   return grouped;
 }
 
-export function PortalActivityFeed({ activities }: PortalActivityFeedProps) {
+export function PortalActivityFeed({
+  activities: initialActivities,
+  projectId,
+}: PortalActivityFeedProps) {
+  // State for pagination
+  const [activities, setActivities] = useState<ActivityLogEntry[]>(initialActivities);
+  const [cursor, setCursor] = useState<string | null>(
+    initialActivities.length > 0
+      ? initialActivities[initialActivities.length - 1].created_at || null
+      : null
+  );
+  const [hasMore, setHasMore] = useState(initialActivities.length === 20);
+  const [isPending, startTransition] = useTransition();
+
+  // Load more function
+  const loadMore = async () => {
+    if (!cursor || isPending) return;
+
+    startTransition(async () => {
+      try {
+        const result = await getProjectActivityFeed(projectId, true, 20, cursor);
+
+        if (result.success && result.data) {
+          const responseData = result.data as {
+            items: ActivityLogEntry[];
+            hasMore: boolean;
+            nextCursor: string | null;
+          };
+
+          // De-duplicate by id and append new items
+          const existingIds = new Set(activities.map((a) => a.id));
+          const newItems = responseData.items.filter((item) => !existingIds.has(item.id));
+
+          setActivities((prev) => [...prev, ...newItems]);
+          setHasMore(responseData.hasMore);
+          setCursor(responseData.nextCursor);
+        }
+      } catch (error) {
+        // Silent failure - just stop loading
+        console.error('Failed to load more activities:', error);
+        setHasMore(false);
+      }
+    });
+  };
+
   if (!activities || activities.length === 0) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -93,51 +142,74 @@ export function PortalActivityFeed({ activities }: PortalActivityFeedProps) {
   const groupedActivities = groupActivitiesByDate(activities);
 
   return (
-    <div className={`space-y-8 ${fadeInClasses}`}>
-      {Array.from(groupedActivities.entries()).map(([dateGroup, dateActivities]) => (
-        <div key={dateGroup}>
-          {/* Date Header */}
-          <div className="mb-4 flex items-center gap-3">
-            <h3 className="text-sm font-semibold text-foreground">{dateGroup}</h3>
-            <div className="h-px flex-1 bg-muted" />
-          </div>
+    <div className="space-y-8">
+      <div className={fadeInClasses}>
+        {Array.from(groupedActivities.entries()).map(([dateGroup, dateActivities]) => (
+          <div key={dateGroup} className="mb-8">
+            {/* Date Header */}
+            <div className="mb-4 flex items-center gap-3">
+              <h3 className="text-sm font-semibold text-foreground">{dateGroup}</h3>
+              <div className="h-px flex-1 bg-muted" />
+            </div>
 
-          {/* Timeline */}
-          <div className="relative space-y-6 pl-6">
-            {/* Connecting Line */}
-            <div className="absolute left-2.5 top-2 h-[calc(100%-1rem)] w-px bg-muted" />
+            {/* Timeline */}
+            <div className="relative space-y-6 pl-6">
+              {/* Connecting Line */}
+              <div className="absolute left-2.5 top-2 h-[calc(100%-1rem)] w-px bg-muted" />
 
-            {dateActivities.map((activity) => (
-              <div key={activity.id} className="relative">
-                {/* Icon */}
-                <div className="absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full bg-card">
-                  {getActivityIcon(activity.action_type)}
-                </div>
+              {dateActivities.map((activity) => (
+                <div key={activity.id} className="relative">
+                  {/* Icon */}
+                  <div className="absolute -left-6 flex h-5 w-5 items-center justify-center rounded-full bg-card">
+                    {getActivityIcon(activity.action_type)}
+                  </div>
 
-                {/* Content */}
-                <div className="rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">
-                        {formatActivityMessage(activity)}
-                      </p>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                        {activity.actor?.full_name && (
-                          <>
-                            <span>{activity.actor.full_name}</span>
-                            <span>•</span>
-                          </>
-                        )}
-                        <span>{formatDate(activity.created_at!, 'h:mm a')}</span>
+                  {/* Content */}
+                  <div className="rounded-lg border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-foreground">
+                          {formatActivityMessage(activity)}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          {activity.actor?.full_name && (
+                            <>
+                              <span>{activity.actor.full_name}</span>
+                              <span>•</span>
+                            </>
+                          )}
+                          <span>{formatDate(activity.created_at!, 'h:mm a')}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+        ))}
+      </div>
+
+      {/* Load More Button */}
+      {hasMore && (
+        <div className="mb-8 flex justify-center">
+          <Button
+            variant="outline"
+            onClick={loadMore}
+            disabled={isPending}
+            className="min-w-[140px]"
+          >
+            {isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              'Load more'
+            )}
+          </Button>
         </div>
-      ))}
+      )}
     </div>
   );
 }
