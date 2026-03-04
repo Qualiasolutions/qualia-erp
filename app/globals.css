@@ -18,9 +18,10 @@
     @apply -translate-y-[1px];
   }
 
-  /* Active: press down effect */
+  /* Active: press down effect with spring physics */
   [data-slot='button']:not(:disabled):active {
-    @apply translate-y-0 scale-[0.98];
+    transform: scale(0.97);
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
   :root {
