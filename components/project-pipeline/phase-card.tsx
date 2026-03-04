@@ -238,8 +238,7 @@ ${phase.helper_text || ''}`.trim();
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        'relative flex flex-col overflow-hidden rounded-xl border transition-all',
-        'shadow-sm hover:shadow-md',
+        'card-interactive relative flex flex-col',
         isActive && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background',
         isLocked && 'opacity-60',
         statusConfig.borderColor,

@@ -72,9 +72,8 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             <Card
               style={index < 6 ? getStaggerDelay(index) : undefined}
               className={cn(
-                'group h-full transition-all duration-200',
-                'hover:-translate-y-1 hover:shadow-lg hover:shadow-qualia-600/10',
-                'cursor-pointer',
+                'card-interactive group h-full cursor-pointer',
+                'hover:shadow-qualia-600/10',
                 index < 6 && 'animate-fade-in-up fill-mode-both'
               )}
             >

@@ -105,8 +105,7 @@ const TaskItem = React.memo(function TaskItem({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
       className={cn(
-        'group mx-1 flex items-start gap-3 rounded-xl px-3 py-3 transition-all duration-200',
-        'hover:bg-muted/20',
+        'card-interactive group mx-1 flex items-start gap-3 px-3 py-3',
         isCompleted && 'opacity-50'
       )}
     >
