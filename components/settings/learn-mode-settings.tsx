@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BookOpen, Sparkles, GraduationCap, Flame, Zap } from 'lucide-react';
+import { Sparkles, GraduationCap, Flame, Zap } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -116,17 +116,6 @@ export function LearnModeSettings() {
               </span>
             </div>
             <Progress value={levelProgress} className="h-2" />
-          </div>
-
-          {/* Quick Links */}
-          <div className="flex gap-2 pt-2">
-            <a
-              href="/skills"
-              className="flex items-center gap-1.5 rounded-lg bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition-colors hover:bg-purple-500/20"
-            >
-              <BookOpen className="h-3 w-3" />
-              View All Skills
-            </a>
           </div>
         </div>
       )}

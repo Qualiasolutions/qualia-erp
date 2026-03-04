@@ -493,7 +493,7 @@ export async function notifyPhaseSubmitted(
 
     if (!admins || admins.length === 0) return { success: true };
 
-    const reviewUrl = `${APP_URL}/admin/reviews`;
+    const reviewUrl = `${APP_URL}/projects`;
 
     const emailPromises = admins
       .filter((admin) => admin.email)

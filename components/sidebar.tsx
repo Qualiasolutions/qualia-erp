@@ -15,9 +15,6 @@ import {
   BookOpen,
   FlaskConical,
   ExternalLink,
-  GraduationCap,
-  Sparkles,
-  ClipboardCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -41,12 +38,6 @@ const workspaceNav = [
 const resourcesNav = [
   { name: 'Research', href: '/research', icon: FlaskConical },
   { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
-];
-
-const traineeNav = [
-  { name: 'Guides', href: '/guides', icon: GraduationCap },
-  { name: 'Skills', href: '/skills', icon: Sparkles },
-  { name: 'Reviews', href: '/admin/reviews', icon: ClipboardCheck },
 ];
 
 const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
@@ -201,21 +192,6 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           <SectionLabel>Resources</SectionLabel>
           <div className="space-y-0.5">
             {resourcesNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-                onClick={onLinkClick}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Trainee section */}
-        <div className="space-y-1">
-          <SectionLabel>Training</SectionLabel>
-          <div className="space-y-0.5">
-            {traineeNav.map((item) => (
               <NavLink
                 key={item.name}
                 item={item}

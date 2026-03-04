@@ -3,7 +3,6 @@ import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { NewProjectModal } from '@/components/new-project-modal';
-import { PendingReviewsBadge } from '@/components/projects-pipeline-overview';
 import { Folder } from 'lucide-react';
 import { ProjectsClient } from './projects-client';
 import type { ProjectType } from '@/types/database';
@@ -152,7 +151,6 @@ export default function ProjectsPage() {
           <h1 className="text-sm font-semibold text-foreground">Projects</h1>
         </div>
         <div className="flex items-center gap-3">
-          <PendingReviewsBadge />
           <NewProjectModal />
         </div>
       </header>

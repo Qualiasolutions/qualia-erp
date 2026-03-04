@@ -97,7 +97,7 @@ export async function submitPhaseForReview(
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/admin/reviews');
+  revalidatePath('/projects');
   return { success: true };
 }
 
@@ -183,7 +183,7 @@ export async function approvePhaseReview(
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/admin/reviews');
+  revalidatePath('/projects');
   return { success: true };
 }
 
@@ -268,7 +268,7 @@ export async function requestPhaseChanges(
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/admin/reviews');
+  revalidatePath('/projects');
   return { success: true };
 }
 

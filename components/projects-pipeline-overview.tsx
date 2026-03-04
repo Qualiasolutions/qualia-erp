@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { UNIVERSAL_PIPELINE, getPipelinePhaseConfig } from '@/lib/pipeline-constants';
-import { CheckCircle2, Clock, Circle } from 'lucide-react';
+import { CheckCircle2, Circle } from 'lucide-react';
 import Link from 'next/link';
-import { getPendingReviews } from '@/app/actions/phase-reviews';
 
 interface PipelineProject {
   id: string;
@@ -120,31 +118,4 @@ function PhaseStatusDot({ status, progress }: { status: string; progress: number
     return <span className="text-xs text-muted-foreground">—</span>;
   }
   return <Circle className="mx-auto h-3 w-3 text-border/50" />;
-}
-
-/**
- * Badge showing pending review count for admin header
- */
-export function PendingReviewsBadge() {
-  const [count, setCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    getPendingReviews()
-      .then((reviews) => setCount(reviews.length))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  if (isLoading) return null;
-  if (count === 0) return null;
-
-  return (
-    <Link
-      href="/admin/reviews"
-      className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
-    >
-      <Clock className="h-3 w-3" />
-      {count} review{count !== 1 ? 's' : ''} pending
-    </Link>
-  );
 }
