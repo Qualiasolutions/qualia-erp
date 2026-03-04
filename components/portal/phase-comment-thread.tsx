@@ -55,22 +55,21 @@ export function PhaseCommentThread({
   const isEmployee = userRole === 'employee';
   const canCreateInternal = isAdmin || isEmployee;
 
-  const {
-    execute: submitComment,
-    isPending,
-    error,
-  } = useServerAction<CommentWithProfile>(createPhaseComment, {
-    onSuccess: (data?: CommentWithProfile) => {
-      // Replace temp optimistic comment with real data
-      if (data) {
-        setComments((prev) => [...prev.filter((c) => !c.id.startsWith('temp-')), data]);
-      }
-    },
-    onError: () => {
-      // Rollback: Remove optimistic comments from base state
-      setComments((prev) => prev.filter((c) => !c.id.startsWith('temp-')));
-    },
-  });
+  const { execute: submitComment, isPending } = useServerAction<CommentWithProfile>(
+    createPhaseComment,
+    {
+      onSuccess: (data?: CommentWithProfile) => {
+        // Replace temp optimistic comment with real data
+        if (data) {
+          setComments((prev) => [...prev.filter((c) => !c.id.startsWith('temp-')), data]);
+        }
+      },
+      onError: () => {
+        // Rollback: Remove optimistic comments from base state
+        setComments((prev) => prev.filter((c) => !c.id.startsWith('temp-')));
+      },
+    }
+  );
 
   const { execute: deleteComment, isPending: isDeleting } = useServerAction(deletePhaseComment);
 
