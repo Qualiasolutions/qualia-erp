@@ -71,6 +71,7 @@ function TaskItemComponent({
         opacity: isDone ? 0.5 : 1,
         y: 0,
       }}
+      whileHover={{ y: -2, transition: { type: 'spring', stiffness: 300, damping: 20 } }}
       exit={{ opacity: 0, x: -16, scale: 0.95 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
       className={cn(

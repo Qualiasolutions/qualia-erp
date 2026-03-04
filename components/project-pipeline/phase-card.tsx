@@ -237,6 +237,10 @@ ${phase.helper_text || ''}`.trim();
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      whileHover={{
+        y: -4,
+        transition: { type: 'spring', stiffness: 300, damping: 20 },
+      }}
       className={cn(
         'card-interactive relative flex flex-col',
         isActive && 'ring-2 ring-primary/30 ring-offset-2 ring-offset-background',
