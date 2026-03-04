@@ -97,11 +97,11 @@ Plans:
 4. User sees smooth color transition when toggling dark/light mode (no flash)
 5. All animations respect prefers-reduced-motion setting (disabled for users who request it)
 
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
 
-- [ ] 05-01: [TBD during planning]
+- [ ] 05-01-PLAN.md — Enable page transitions, dark mode transitions, and reduced motion support
 
 #### Phase 6: Micro-Interactions & Email Notifications
 
