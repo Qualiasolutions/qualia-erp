@@ -14,13 +14,13 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Phase:** 06 - Micro-Interactions & Email Notifications
 
-**Plan:** 1 of 2 complete (06-01-SUMMARY.md exists)
+**Plan:** 2 of 2 complete (06-01-SUMMARY.md and 06-02-SUMMARY.md exist)
 
-**Status:** In progress — plan 06-02 pending (email notifications)
+**Status:** Phase complete — ready for phase 7 or phase 10
 
-**Last activity:** 2026-03-04 — Completed 06-01 (micro-interactions)
+**Last activity:** 2026-03-04 — Completed 06-02 (email notifications + UI fixes)
 
-Progress: [█████░░░░░] 50% (1/2 plans complete in phase 06)
+Progress: [██████████] 100% (2/2 plans complete in phase 06)
 
 ## Performance Metrics
 
@@ -60,11 +60,15 @@ Progress: [█████░░░░░] 50% (1/2 plans complete in phase 06)
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
-**Recent decisions from Phase 06-01:**
+**Recent decisions from Phase 06:**
 
 - MICRO-01: Use CSS data-slot selectors for button micro-interactions instead of Tailwind classes — prevents conflicts with variant utilities, ensures 100% button coverage
 - MICRO-02: Extend card-interactive transition from 200ms to 300ms — larger elements need slower transitions for premium feel, creates visual hierarchy
 - MICRO-03: Use spring physics for checkbox completion animation — Framer Motion spring (stiffness 500, damping 30) creates more satisfying success feedback than CSS keyframes
+- EMAIL-01: Email notifications use silent success pattern — if Resend not configured, return success without blocking workflow
+- EMAIL-02: Phase review emails use color-coded gradients — purple (submit), green (approved), amber (changes) for instant visual recognition
+- FIX-01: Optimistic UI rollback explicitly filters temp IDs from base state — prevents ghost comments when server action fails
+- FIX-02: Schedule grid callbacks receive status as parameter — prevents stale closure bugs, improves performance (no re-creation on task changes)
 
 **Recent decisions affecting v1.2:**
 
@@ -133,19 +137,22 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Next Session Should
 
-1. Execute Phase 06 Plan 02 (Email Notifications) — integrate email notifications into phase review actions
-2. OR skip to Phase 10 (Differentiator Animations) if email notifications are lower priority
-3. Verify micro-interactions work across all pages (manual testing recommended)
+1. Execute Phase 7 (Animation Testing) if it exists
+2. OR execute Phase 10 (Differentiator Animations) if ready
+3. OR execute quick tasks for remaining v1.1 polish work
+4. Verify email notifications work (manual test: submit phase → check admin email → approve → check trainee email)
 
 ### Context for Handoff
 
-**What we just completed:** Phase 06 Plan 01 — Apple-level micro-interactions across portal and trainee interfaces
+**What we just completed:** Phase 06 — Micro-Interactions & Email Notifications (both plans complete)
 
-**Where we are:** Phase 06 plan 1 of 2 complete
+**Where we are:** Phase 06 complete (2/2 plans done)
 
-**What's next:** Phase 06 Plan 02 (Email Notifications) or Phase 10 (Differentiator Animations)
+**What's next:** Phase 7 or Phase 10 (depending on what exists/is ready)
 
 **Critical context:**
+
+Phase 06 Plan 01 (Micro-Interactions):
 
 - All button press feedback complete (data-slot CSS selectors)
 - Card hover states applied to portal, trainee, and dashboard cards
@@ -153,15 +160,22 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - Task completion uses spring physics for satisfying feedback
 - All animations respect prefers-reduced-motion (accessibility compliant)
 
+Phase 06 Plan 02 (Email Notifications + Fixes):
+
+- Phase review emails: submit (purple), approved (green), changes (amber)
+- Fixed ghost comment bug (optimistic rollback now filters temp IDs)
+- Fixed stale closure in schedule grid (status passed as parameter)
+- All email notifications non-blocking (silent success pattern)
+
 **Completed files:**
 
-- 5 commits for micro-interactions (677f45d to cad5613)
-- `.planning/phases/06-micro-interactions-email-notifications/06-01-SUMMARY.md` — Execution summary with verification results
-- 6 files modified (globals.css, textarea, task-item, 3 card components)
+Phase 06-01: 5 commits (677f45d to cad5613), 6 files modified
+Phase 06-02: 4 commits (2f24211, ad7b05d, d8211f3, 707a40d), 4 files modified
 
-**Next plan available:**
+**Summaries created:**
 
-- `.planning/phases/06-micro-interactions-email-notifications/06-02-PLAN.md` — Email notification integration (ready to execute)
+- `.planning/phases/06-micro-interactions-email-notifications/06-01-SUMMARY.md`
+- `.planning/phases/06-micro-interactions-email-notifications/06-02-SUMMARY.md`
 
 ---
 
