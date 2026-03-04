@@ -12,15 +12,15 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Milestone:** v1.2 Premium Animations
 
-**Phase:** 10 - Differentiator Animations
+**Phase:** 11 - Additional Polish
 
-**Plan:** 3 of 3 complete (10-01-SUMMARY.md, 10-02-SUMMARY.md, 10-03-SUMMARY.md exist)
+**Plan:** 2 of 4 complete (11-01-SUMMARY.md, 11-02-SUMMARY.md exist)
 
-**Status:** Phase complete — ready for Phase 11
+**Status:** In progress
 
-**Last activity:** 2026-03-04 — Completed 10-03 (gesture-based drawer interactions)
+**Last activity:** 2026-03-04 — Completed 11-02 (date formatting standardization)
 
-Progress: [██████████] 100% (3/3 plans complete in phase 10)
+Progress: [█████░░░░░] 50% (2/4 plans complete in phase 11)
 
 ## Performance Metrics
 
@@ -43,10 +43,10 @@ Progress: [██████████] 100% (3/3 plans complete in phase 10)
 
 - Duration: In progress (started 2026-03-04)
 - Target: 2-3 days
-- Plans completed: 3 (10-01, 10-02, 10-03)
+- Plans completed: 5 (10-01, 10-02, 10-03, 11-01, 11-02)
 - Phases: 2 total (10-11)
 - Requirements: 8 (ANIM-01 to 04, POLISH-01 to 04)
-- Progress: ANIM-01, ANIM-02, ANIM-03, ANIM-04 complete (Phase 10 done)
+- Progress: ANIM-01, ANIM-02, ANIM-03, ANIM-04 complete (Phase 10 done), POLISH-02 complete (Phase 11 in progress)
 
 **Velocity:**
 
@@ -91,6 +91,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - DRAWER-02: Extract FormContent component for code sharing — single source of truth for form state/validation/submission between Drawer and Dialog
 - DRAWER-03: Mobile breakpoint at 768px (md) — Tailwind standard, aligns with Phase 8 responsive patterns, gestures natural on phone/small tablet
 
+**Recent decisions from Phase 11-02 (Date Formatting):**
+
+- DATE-FORMAT-01: Use centralized formatDate() from lib/utils instead of inline format() calls — single source of truth for date formatting
+- DATE-FORMAT-02: Remove local helper functions that duplicate lib/utils functionality — reduces code duplication
+- DATE-FORMAT-03: Use formatRelativeTime() for "X ago" timestamps — consistent pattern with lib/utils
+
 ### Pending Todos
 
 **From v1.2 requirements:**
@@ -99,8 +105,8 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - [x] Add scroll-triggered reveals on roadmap (ANIM-02) — Completed 10-01
 - [x] Integrate spring physics on interactive elements (ANIM-03) — Completed 10-02
 - [x] Enable gesture-based drawer interactions (ANIM-04) — Completed 10-03
-- [ ] Implement activity feed cursor-based pagination (POLISH-01)
-- [ ] Standardize date formatting across portal (POLISH-02)
+- [x] Implement activity feed cursor-based pagination (POLISH-01) — Completed 11-01
+- [x] Standardize date formatting across portal (POLISH-02) — Completed 11-02
 - [ ] Create useServerAction hook (POLISH-03)
 - [ ] Consolidate schedule utilities (POLISH-04)
 
@@ -150,20 +156,19 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Next Session Should
 
-1. Begin Phase 11 (Polish Work) — 4 plans remaining (POLISH-01 to 04)
-2. Manual testing recommended for Phase 10:
-   - Task list stagger animations (dashboard)
-   - Roadmap scroll reveals (admin + portal)
-   - Spring physics on buttons/cards/inputs
-   - Mobile drawer gestures (swipe-to-dismiss)
+1. Continue Phase 11 (Polish Work) — 2 plans remaining (POLISH-03, POLISH-04)
+2. Manual testing recommended for completed work:
+   - Activity feed pagination (load more functionality)
+   - Date formatting consistency across portal pages
+   - Portal roadmap date display
 
 ### Context for Handoff
 
-**What we just completed:** Phase 10 Plan 03 — Gesture-Based Drawer Interactions
+**What we just completed:** Phase 11 Plan 02 — Date Formatting Standardization
 
-**Where we are:** Phase 10 complete (3/3 plans done: 10-01, 10-02, 10-03)
+**Where we are:** Phase 11 in progress (2/4 plans done: 11-01, 11-02)
 
-**What's next:** Phase 11 (Polish Work) — 4 plans remaining
+**What's next:** Phase 11 remaining plans (POLISH-03: useServerAction hook, POLISH-04: Schedule utilities consolidation)
 
 **Critical context:**
 
@@ -194,17 +199,22 @@ Phase 10 Plan 03 (Gesture-Based Drawer Interactions):
 
 **Completed files:**
 
-Phase 10-01: 2 commits (9b86638, d47605a), 4 files modified
-Phase 10-02: 2 commits (d100079, 92a22f5), 3 files modified
-Phase 10-03: 2 commits (2933b9f, e1e69b1), 5 files modified
+Phase 10-01: 2 commits, 4 files modified
+Phase 10-02: 2 commits, 3 files modified
+Phase 10-03: 2 commits, 5 files modified
+Phase 11-01: 1 commit, 1 file modified (activity-feed.ts)
+Phase 11-02: 1 commit (a08e15a), 3 files modified (portal-activity-feed.tsx, portal-file-list.tsx, portal-roadmap.tsx)
 
 **Summaries created:**
 
 - `.planning/phases/10-differentiator-animations/10-01-SUMMARY.md`
 - `.planning/phases/10-differentiator-animations/10-02-SUMMARY.md`
 - `.planning/phases/10-differentiator-animations/10-03-SUMMARY.md`
+- `.planning/phases/11-additional-polish/11-01-SUMMARY.md`
+- `.planning/phases/11-additional-polish/11-02-SUMMARY.md`
 
 **Phase 10 complete.** All animation requirements (ANIM-01 to ANIM-04) delivered.
+**Phase 11 in progress.** POLISH-01, POLISH-02 complete. POLISH-03, POLISH-04 remaining.
 
 ---
 
