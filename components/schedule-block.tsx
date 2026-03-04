@@ -10,7 +10,7 @@ import { quickToggleTaskStatus, createTask } from '@/app/actions/inbox';
 import type { Task } from '@/app/actions/inbox';
 import type { MeetingWithRelations } from '@/lib/swr';
 import { invalidateScheduledTasks, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
-import { useTimezone } from '@/lib/schedule-shared';
+import { useTimezone } from '@/lib/schedule-utils';
 import { USER_COLORS } from '@/lib/color-constants';
 import { EditTaskModal } from './edit-task-modal';
 import { EditMeetingModal } from './edit-meeting-modal';

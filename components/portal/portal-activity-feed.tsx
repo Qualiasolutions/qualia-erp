@@ -1,7 +1,8 @@
 'use client';
 
 import { type ActivityLogEntry, formatActivityMessage } from '@/lib/activity-utils';
-import { format, isToday, isYesterday, parseISO } from 'date-fns';
+import { isToday, isYesterday, parseISO } from 'date-fns';
+import { formatDate } from '@/lib/utils';
 import {
   CheckCircle2,
   FileUp,
@@ -50,12 +51,7 @@ function formatDateGroup(dateString: string): string {
     return 'Yesterday';
   }
 
-  return format(date, 'MMMM d, yyyy');
-}
-
-function formatTime(dateString: string): string {
-  const date = parseISO(dateString);
-  return format(date, 'h:mm a');
+  return formatDate(date, 'MMMM d, yyyy');
 }
 
 function groupActivitiesByDate(activities: ActivityLogEntry[]): Map<string, ActivityLogEntry[]> {
@@ -132,7 +128,7 @@ export function PortalActivityFeed({ activities }: PortalActivityFeedProps) {
                             <span>•</span>
                           </>
                         )}
-                        <span>{formatTime(activity.created_at!)}</span>
+                        <span>{formatDate(activity.created_at!, 'h:mm a')}</span>
                       </div>
                     </div>
                   </div>

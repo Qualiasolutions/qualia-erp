@@ -40,7 +40,7 @@ import {
   TIMEZONE_CYPRUS,
   type ScheduleTask,
   tasksToScheduleItems,
-} from '@/lib/schedule-shared';
+} from '@/lib/schedule-utils';
 
 interface Meeting {
   id: string;

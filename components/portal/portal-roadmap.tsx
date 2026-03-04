@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { cn, formatDate } from '@/lib/utils';
 import { motion, useInView } from 'framer-motion';
 import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
@@ -208,7 +207,7 @@ function PhaseWithComments({
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                     />
                   </svg>
-                  <span>Started: {format(new Date(phase.start_date), 'MMM d, yyyy')}</span>
+                  <span>Started: {formatDate(phase.start_date)}</span>
                 </div>
               )}
               {phase.target_date && (
@@ -226,7 +225,7 @@ function PhaseWithComments({
                       d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                     />
                   </svg>
-                  <span>Target: {format(new Date(phase.target_date), 'MMM d, yyyy')}</span>
+                  <span>Target: {formatDate(phase.target_date)}</span>
                 </div>
               )}
             </div>
