@@ -125,8 +125,8 @@ Plans:
 
 Plans:
 
-- [ ] 06-01-PLAN.md — Button press feedback, card hover states, focus ring animations, task completion success indicator
-- [ ] 06-02-PLAN.md — Phase review email notifications (submit, approve, changes requested) + bug fixes (comment rollback, schedule closure)
+- [x] 06-01-PLAN.md — Button press feedback, card hover states, focus ring animations, task completion success indicator
+- [x] 06-02-PLAN.md — Phase review email notifications (submit, approve, changes requested) + bug fixes (comment rollback, schedule closure)
 
 #### Phase 7: Schedule Grid Consolidation
 
@@ -228,7 +228,7 @@ Plans:
 | 3. Client Portal              | v1.0      | 4/4            | Complete    | 2026-03-01 |
 | 4. Loading & Empty States     | v1.1      | 3/3            | Complete    | 2026-03-04 |
 | 5. Animation System           | v1.1      | 1/1            | Complete    | 2026-03-04 |
-| 6. Micro-Interactions & Email | v1.1      | 0/2            | Not started | -          |
+| 6. Micro-Interactions & Email | v1.1      | 2/2            | Complete    | 2026-03-04 |
 | 7. Schedule Consolidation     | v1.1      | Complete       | Complete    | -          |
 | 8. Mobile Responsive          | v1.1      | Complete       | Complete    | -          |
 | 10. Differentiator Animations | v1.2      | 0/3            | Not started | -          |
