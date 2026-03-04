@@ -18,12 +18,14 @@ interface CreateActivityLogInput {
  * Get activity feed for a project
  * @param projectId - Project ID to fetch activity for
  * @param clientVisibleOnly - If true, only return entries with is_client_visible=true
- * @param limit - Maximum number of entries to return (default: 50)
+ * @param limit - Maximum number of entries to return (default: 20)
+ * @param cursor - Optional ISO timestamp of last item for pagination
  */
 export async function getProjectActivityFeed(
   projectId: string,
   clientVisibleOnly = false,
-  limit = 50
+  limit = 20,
+  cursor?: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -54,6 +56,11 @@ export async function getProjectActivityFeed(
     .order('created_at', { ascending: false })
     .limit(limit);
 
+  // Add cursor filter if provided (fetch items older than cursor)
+  if (cursor) {
+    query = query.lt('created_at', cursor);
+  }
+
   // Filter by client visibility if requested
   if (clientVisibleOnly) {
     query = query.eq('is_client_visible', true);
@@ -73,7 +80,23 @@ export async function getProjectActivityFeed(
     actor: normalizeFKResponse(entry.actor),
   }));
 
-  return { success: true, data: normalized };
+  // For backward compatibility: if no cursor was provided, return simple array
+  if (!cursor && cursor !== '') {
+    return { success: true, data: normalized };
+  }
+
+  // For paginated requests: return with hasMore and nextCursor
+  const hasMore = normalized.length === limit;
+  const nextCursor = normalized.length > 0 ? normalized[normalized.length - 1].created_at : null;
+
+  return {
+    success: true,
+    data: {
+      items: normalized,
+      hasMore,
+      nextCursor,
+    },
+  };
 }
 
 /**
