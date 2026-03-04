@@ -101,7 +101,7 @@ Plans:
 
 Plans:
 
-- [ ] 05-01-PLAN.md — Enable page transitions, dark mode transitions, and reduced motion support
+- [x] 05-01-PLAN.md — Enable page transitions, dark mode transitions, and reduced motion support
 
 #### Phase 6: Micro-Interactions & Email Notifications
 
@@ -184,7 +184,7 @@ Requirements deferred to v1.2: ANIM-01 to 04, POLISH-01 to 04, GitHub/Vercel API
 | 2. Project Context            | v1.0      | 1/1            | Complete    | 2026-03-01 |
 | 3. Client Portal              | v1.0      | 4/4            | Complete    | 2026-03-01 |
 | 4. Loading & Empty States     | v1.1      | 3/3            | Complete    | 2026-03-04 |
-| 5. Animation System           | v1.1      | 0/TBD          | Not started | -          |
+| 5. Animation System           | v1.1      | 1/1            | Complete    | 2026-03-04 |
 | 6. Micro-Interactions & Email | v1.1      | 0/TBD          | Not started | -          |
 | 7. Schedule Consolidation     | v1.1      | 0/TBD          | Not started | -          |
 | 8. Mobile Responsive          | v1.1      | 0/TBD          | Not started | -          |

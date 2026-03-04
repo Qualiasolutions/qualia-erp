@@ -110,11 +110,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EMPTY-01    | Phase 4 | Pending |
 | EMPTY-02    | Phase 4 | Pending |
 | EMPTY-03    | Phase 4 | Pending |
-| TRANS-01    | Phase 5 | Pending |
-| TRANS-02    | Phase 5 | Pending |
-| TRANS-03    | Phase 5 | Pending |
-| DARK-01     | Phase 5 | Pending |
-| A11Y-01     | Phase 5 | Pending |
+| TRANS-01    | Phase 5 | Done    |
+| TRANS-02    | Phase 5 | Done    |
+| TRANS-03    | Phase 5 | Done    |
+| DARK-01     | Phase 5 | Done    |
+| A11Y-01     | Phase 5 | Done    |
 | MICRO-01    | Phase 6 | Pending |
 | MICRO-02    | Phase 6 | Pending |
 | MICRO-03    | Phase 6 | Pending |
