@@ -5,6 +5,11 @@ import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { completePhase } from './phases';
+import {
+  notifyPhaseSubmitted,
+  notifyPhaseApproved,
+  notifyPhaseChangesRequested,
+} from '@/lib/email';
 
 export interface PhaseReviewWithDetails {
   id: string;
@@ -69,6 +74,28 @@ export async function submitPhaseForReview(
     is_client_visible: true,
   });
 
+  // Send email notification to admins
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single();
+
+  const { data: project } = await supabase
+    .from('projects')
+    .select('name')
+    .eq('id', projectId)
+    .single();
+
+  if (profile && project) {
+    await notifyPhaseSubmitted(
+      projectId,
+      project.name,
+      phaseName,
+      profile.full_name || 'Team member'
+    );
+  }
+
   revalidatePath(`/projects/${projectId}`);
   revalidatePath('/admin/reviews');
   return { success: true };
@@ -124,6 +151,35 @@ export async function approvePhaseReview(
 
     // Complete the phase and unlock the next one
     await completePhase(review.phase_id);
+
+    // Send email notification to trainee
+    const { data: reviewer } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const { data: submitter } = await supabase
+      .from('phase_reviews')
+      .select('submitted_by')
+      .eq('id', reviewId)
+      .single();
+
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name')
+      .eq('id', projectId)
+      .single();
+
+    if (reviewer && submitter && project) {
+      await notifyPhaseApproved(
+        projectId,
+        project.name,
+        review.phase_name,
+        submitter.submitted_by,
+        reviewer.full_name || 'Admin'
+      );
+    }
   }
 
   revalidatePath(`/projects/${projectId}`);
@@ -179,6 +235,36 @@ export async function requestPhaseChanges(
       action_data: { phase_name: review.phase_name, phase_id: review.phase_id, feedback },
       is_client_visible: false,
     });
+
+    // Send email notification to trainee
+    const { data: reviewer } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const { data: submitter } = await supabase
+      .from('phase_reviews')
+      .select('submitted_by')
+      .eq('id', reviewId)
+      .single();
+
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name')
+      .eq('id', projectId)
+      .single();
+
+    if (reviewer && submitter && project) {
+      await notifyPhaseChangesRequested(
+        projectId,
+        project.name,
+        review.phase_name,
+        submitter.submitted_by,
+        reviewer.full_name || 'Admin',
+        feedback
+      );
+    }
   }
 
   revalidatePath(`/projects/${projectId}`);
