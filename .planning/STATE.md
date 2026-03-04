@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** Moayad executes project phases independently with clear guidance; clients see real-time progress without internal complexity
-**Current focus:** Production hardening complete — ready for v1.1 features or schedule grid consolidation
+**Current focus:** v1.1 Production Polish — Apple-level design + complete functionality
 
 ## Current Position
 
-Phase: v1.0 complete + 6 quick tasks shipped
-Plan: Not started
-Status: Ready for next work (see Remaining Items below)
-Last activity: 2026-03-04 — Completed quick task 006: Portal & trainee production hardening (14/24 TODO fixes)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.1
+Last activity: 2026-03-04 — Milestone v1.1 started
 
-Progress: [██████████] 100% (v1.0 shipped + production hardened)
+Progress: [░░░░░░░░░░] 0% (v1.1 requirements phase)
 
 ## Performance Metrics
 
@@ -47,7 +47,7 @@ None.
 
 ### Blockers/Concerns
 
-- `SUPABASE_SERVICE_ROLE_KEY` must be set in Vercel for client invite flow
+- ~~`SUPABASE_SERVICE_ROLE_KEY` must be set in Vercel~~ Resolved 2026-03-04 (ref: vbpzaiqovffpsroxaulv)
 
 ### Remaining Items (from TODO-FIXES.md)
 

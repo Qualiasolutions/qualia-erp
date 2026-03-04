@@ -36,32 +36,50 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ### Active
 
-- [ ] Email notifications (phase approved/changes requested, submitted for review, client updates)
-- [ ] Mobile responsiveness testing (portal on phone, admin on tablet)
-- [ ] GitHub/Vercel API integration (commit info, deploy status)
+- [ ] Apple-level design overhaul — portal and trainee system (animations, micro-interactions, pixel-perfect spacing)
+- [ ] Complete email notifications (review workflow: submitted, approved, changes requested)
+- [ ] Fix ghost comment on failure (optimistic rollback)
+- [ ] Activity feed pagination (cursor-based with "Load more")
+- [ ] Schedule grid consolidation (3 duplicates → 1 component)
+- [ ] Mobile responsive perfection (portal + trainee on all screen sizes)
+- [ ] Loading skeletons and polished empty states across all portal/trainee pages
+- [ ] Code cleanup (duplicate constants, utility consolidation, date formatting)
 
 ### Out of Scope
 
 - Screenshot/evidence uploads — trust GSD process + phase review
-- Full GitHub/Vercel OAuth — URL links only for now, API integration planned for v1.1
+- GitHub/Vercel API integration — deferred to v1.2
 - Real-time collaboration — not needed for 2-person team + clients
 - Client editing or task visibility — read-only + comments
 - Complex multi-step approval — simple approve/request changes
 - Offline mode — web-first approach
+- New features — v1.1 is polish only, no new capabilities
+
+## Current Milestone: v1.1 Production Polish
+
+**Goal:** Make the client portal and trainee system Apple-level polished, fully functional, and ready to ship to real clients.
+
+**Target:**
+
+- Apple-level design overhaul (both portal and trainee)
+- Complete all incomplete features (emails, pagination, error handling)
+- Fix all remaining bugs
+- Consolidate duplicate code (~1,700 lines saved)
+- Mobile responsive perfection
 
 ## Context
 
-Shipped v1.0 with 94,314 LOC TypeScript.
+Shipped v1.0 with 94,314 LOC TypeScript. 6 quick tasks shipped post-v1.0 (14/24 TODO fixes, -835 lines).
 Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR.
-53 files created/modified across 4 phases, 8 plans.
-Trainee system and client portal both functional.
-Pre-commit hook has eslint ENOENT issue (not blocking).
+53 files created/modified across 4 phases, 8 plans + 6 quick tasks.
+Trainee system and client portal both functional but not premium quality.
+10 TODO items remain from production hardening audit.
 
 ## Constraints
 
 - **Stack**: Next.js 16 App Router, Supabase, Tailwind/shadcn — must use existing patterns
 - **Auth**: Same Supabase auth for all roles (admin, employee, client) — middleware handles routing
-- **Design**: Clean, professional like Linear/Plane — no flashy effects (per project CLAUDE.md)
+- **Design**: Apple-level polish — every pixel considered, smooth animations, feels expensive
 - **Security**: RLS on every table, auth.uid() derivation, no service_role client-side
 
 ## Key Decisions
@@ -79,6 +97,8 @@ Pre-commit hook has eslint ENOENT issue (not blocking).
 | Files default to internal-only for security                  | Explicit opt-in for client visibility                               | ✓ Good  |
 | Client download requires client_projects + is_client_visible | Defense in depth security                                           | ✓ Good  |
 
+| Apple-level design overhaul for v1.1 | Premium look builds client trust, differentiates Qualia | — Pending |
+
 ---
 
-_Last updated: 2026-03-01 after v1.0 milestone_
+_Last updated: 2026-03-04 after v1.1 milestone start_
