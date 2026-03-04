@@ -463,9 +463,14 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
                 return (
                   <motion.div
                     key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -20 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: virtualRow.index * 0.05,
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
                     style={{
                       position: 'absolute',
                       top: 0,
