@@ -180,8 +180,9 @@ export function NewTaskModal({
 
   const selectedAssignee = profiles.find((p) => p.id === assigneeId);
 
-  // Form content component (shared between Drawer and Dialog)
-  const FormContent = () => (
+  // Form content shared between Drawer and Dialog (JSX variable, not a component,
+  // to avoid remounting on every re-render which causes inputs to lose focus)
+  const formContent = (
     <AnimatePresence mode="wait">
       {success ? (
         <motion.div
@@ -496,7 +497,7 @@ export function NewTaskModal({
             <DrawerTitle>New Task</DrawerTitle>
             <DrawerDescription>Create a new task</DrawerDescription>
           </DrawerHeader>
-          <FormContent />
+          {formContent}
         </DrawerContent>
       </Drawer>
     );
@@ -522,7 +523,7 @@ export function NewTaskModal({
         <DialogHeader className="sr-only">
           <DialogTitle>New Task</DialogTitle>
         </DialogHeader>
-        <FormContent />
+        {formContent}
       </DialogContent>
     </Dialog>
   );

@@ -214,8 +214,9 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
     setLoading(false);
   }
 
-  // Form content component (shared between Drawer and Dialog)
-  const FormContent = () => (
+  // Form content shared between Drawer and Dialog (JSX variable, not a component,
+  // to avoid remounting on every re-render which causes inputs to lose focus)
+  const formContent = (
     <AnimatePresence mode="wait">
       {success ? (
         <motion.div
@@ -570,7 +571,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
             <DrawerTitle>Quick Schedule</DrawerTitle>
             <DrawerDescription>Schedule a new meeting</DrawerDescription>
           </DrawerHeader>
-          <FormContent />
+          {formContent}
         </DrawerContent>
       </Drawer>
     );
@@ -594,7 +595,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
         <DialogHeader className="sr-only">
           <DialogTitle>Quick Schedule</DialogTitle>
         </DialogHeader>
-        <FormContent />
+        {formContent}
       </DialogContent>
     </Dialog>
   );
