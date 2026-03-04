@@ -14,13 +14,13 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Phase:** 10 - Differentiator Animations
 
-**Plan:** 1 of 3 complete (10-02-SUMMARY.md exists)
+**Plan:** 2 of 3 complete (10-01-SUMMARY.md and 10-02-SUMMARY.md exist)
 
-**Status:** In progress — plans 10-01 and 10-03 remaining
+**Status:** In progress — plan 10-03 remaining
 
-**Last activity:** 2026-03-04 — Completed 10-02 (spring physics on buttons and cards)
+**Last activity:** 2026-03-04 — Completed 10-01 (stagger animations & scroll reveals)
 
-Progress: [███░░░░░░░] 33% (1/3 plans complete in phase 10)
+Progress: [██████░░░░] 67% (2/3 plans complete in phase 10)
 
 ## Performance Metrics
 
@@ -43,10 +43,10 @@ Progress: [███░░░░░░░] 33% (1/3 plans complete in phase 10)
 
 - Duration: In progress (started 2026-03-04)
 - Target: 2-3 days
-- Plans completed: 1 (10-02)
+- Plans completed: 2 (10-01, 10-02)
 - Phases: 2 total (10-11)
 - Requirements: 8 (ANIM-01 to 04, POLISH-01 to 04)
-- Progress: ANIM-03 complete (spring physics)
+- Progress: ANIM-01, ANIM-02, ANIM-03 complete
 
 **Velocity:**
 
@@ -89,10 +89,10 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 **From v1.2 requirements:**
 
-- [ ] Implement stagger animations on lists (ANIM-01)
-- [ ] Add scroll-triggered reveals on roadmap (ANIM-02)
+- [x] Implement stagger animations on lists (ANIM-01) — Completed 10-01
+- [x] Add scroll-triggered reveals on roadmap (ANIM-02) — Completed 10-01
 - [x] Integrate spring physics on interactive elements (ANIM-03) — Completed 10-02
-- [ ] Enable gesture-based drawer interactions (ANIM-04)
+- [ ] Enable gesture-based drawer interactions (ANIM-04) — 10-03 next
 - [ ] Implement activity feed cursor-based pagination (POLISH-01)
 - [ ] Standardize date formatting across portal (POLISH-02)
 - [ ] Create useServerAction hook (POLISH-03)
@@ -144,39 +144,51 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Next Session Should
 
-1. Execute Phase 10 Plan 01 (Stagger & Scroll Animations) if not yet complete
-2. OR execute Phase 10 Plan 03 (Gesture Interactions)
-3. OR begin Phase 11 (Polish Work) if Phase 10 complete
-4. Consider manual testing: verify spring physics feel natural on buttons/cards
+1. Execute Phase 10 Plan 03 (Gesture Interactions) — drawer swipe gestures
+2. OR begin Phase 11 (Polish Work) if Phase 10 complete
+3. Manual testing recommended:
+   - Task list stagger animations (dashboard)
+   - Roadmap scroll reveals (admin + portal)
+   - Spring physics on buttons/cards/inputs
 
 ### Context for Handoff
 
-**What we just completed:** Phase 10 Plan 02 — Spring Physics on Buttons and Cards
+**What we just completed:** Phase 10 Plan 01 — Stagger Animations & Scroll Reveals
 
-**Where we are:** Phase 10 in progress (1/3 plans done)
+**Where we are:** Phase 10 in progress (2/3 plans done: 10-01, 10-02)
 
-**What's next:** Plan 10-01 or 10-03 (remaining differentiator animations)
+**What's next:** Plan 10-03 (Gesture Interactions) or Phase 11 (Polish Work)
 
 **Critical context:**
 
+Phase 10 Plan 01 (Stagger Animations & Scroll Reveals):
+
+- Task and inbox lists reveal items sequentially with 50ms stagger delay
+- Roadmap phase cards reveal smoothly on scroll (100px into viewport)
+- Index-based delay for virtualized lists (not staggerChildren)
+- useInView hook with `once: true` for scroll-triggered reveals
+- Premium easing curve [0.16, 1, 0.3, 1] throughout
+- Preserved existing animations and 10-02's whileHover spring
+
 Phase 10 Plan 02 (Spring Physics):
 
-- Button active state uses spring-like cubic-bezier curve (0.34, 1.56, 0.64, 1) for elastic press feedback
-- Card interactive hover enhanced with subtle scale (1.005) and spring-based lift
-- Phase cards use Framer Motion whileHover with spring physics (y: -4, stiffness: 300, damping: 20)
-- Task items use subtle whileHover spring lift (y: -2, same spring config)
-- Portal project cards inherit spring animations via card-interactive class
-- Pattern established: CSS for simple springs, Framer Motion for complex hover states
+- Button active state uses spring-like cubic-bezier curve (0.34, 1.56, 0.64, 1)
+- Card interactive hover with subtle scale (1.005) and spring lift
+- Phase cards use whileHover spring (y: -4, stiffness: 300, damping: 20)
+- Task items use subtle whileHover spring lift (y: -2)
+- Portal project cards inherit via card-interactive class
 
 **Completed files:**
 
+Phase 10-01: 2 commits (9b86638, d47605a), 4 files modified
 Phase 10-02: 2 commits (d100079, 92a22f5), 3 files modified
 
 **Summaries created:**
 
+- `.planning/phases/10-differentiator-animations/10-01-SUMMARY.md`
 - `.planning/phases/10-differentiator-animations/10-02-SUMMARY.md`
 
-**Note:** Plan 10-01 appears to have modified phase-card.tsx concurrently (adding useInView for scroll-triggered reveals). Both changes coexist without conflicts.
+**Integration note:** Plans 10-01 and 10-02 ran in parallel. Both modified phase-card.tsx. 10-01 added scroll-reveal, 10-02 added whileHover spring. Both changes coexist without conflicts.
 
 ---
 
