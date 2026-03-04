@@ -55,7 +55,11 @@ export function PhaseCommentThread({
   const isEmployee = userRole === 'employee';
   const canCreateInternal = isAdmin || isEmployee;
 
-  const { execute: submitComment, isPending } = useServerAction<CommentWithProfile>(
+  const {
+    execute: submitComment,
+    isPending,
+    error,
+  } = useServerAction<CommentWithProfile, Parameters<typeof createPhaseComment>>(
     createPhaseComment,
     {
       onSuccess: (data?: CommentWithProfile) => {

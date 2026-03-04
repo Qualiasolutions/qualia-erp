@@ -2,7 +2,7 @@
 
 /**
  * Schedule utilities for task scoring, block assignment, and timezone handling
- * Consolidated from schedule-shared.ts and schedule-utils.ts
+ * Schedule utilities: types, timezone handling, scoring, block assignment
  */
 
 import { useState, useEffect } from 'react';

@@ -74,11 +74,12 @@ export async function getProjectActivityFeed(
   }
 
   // Normalize FK response
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /* eslint-disable @typescript-eslint/no-explicit-any */
   const normalized = (data || []).map((entry: Record<string, any>) => ({
     ...entry,
     actor: normalizeFKResponse(entry.actor),
-  }));
+  })) as Array<Record<string, any>>;
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   // For backward compatibility: if no cursor was provided, return simple array
   if (!cursor && cursor !== '') {
@@ -87,7 +88,8 @@ export async function getProjectActivityFeed(
 
   // For paginated requests: return with hasMore and nextCursor
   const hasMore = normalized.length === limit;
-  const nextCursor = normalized.length > 0 ? normalized[normalized.length - 1].created_at : null;
+  const lastItem = normalized[normalized.length - 1];
+  const nextCursor = lastItem ? (lastItem.created_at as string) : null;
 
   return {
     success: true,
