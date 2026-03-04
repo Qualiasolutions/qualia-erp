@@ -464,6 +464,243 @@ export async function notifyClientsOfPhaseChange(
 }
 
 // ============================================================================
+// Phase Review Notifications (for trainee workflow)
+// ============================================================================
+
+/**
+ * Notify admins when a trainee submits a phase for review
+ */
+export async function notifyPhaseSubmitted(
+  projectId: string,
+  projectName: string,
+  phaseName: string,
+  submittedByName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyPhaseSubmitted] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get all admin users
+    const { data: admins } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('role', 'admin');
+
+    if (!admins || admins.length === 0) return { success: true };
+
+    const reviewUrl = `${APP_URL}/admin/reviews`;
+
+    const emailPromises = admins
+      .filter((admin) => admin.email)
+      .map(async (admin) => {
+        const subject = `Phase Review Needed: ${phaseName} — ${projectName}`;
+        const recipientName = admin.full_name || 'Admin';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: admin.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia Platform</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${submittedByName}</strong> has submitted the <strong>${phaseName}</strong> phase of <strong>${projectName}</strong> for review.
+    </p>
+    <a href="${reviewUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      Review Now
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      This notification was sent from the Qualia Platform.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\n${submittedByName} has submitted the ${phaseName} phase of ${projectName} for review.\n\nReview it here: ${reviewUrl}\n\n---\nQualia Platform`,
+          });
+
+          if (error) {
+            console.error(`[notifyPhaseSubmitted] Failed to send to ${admin.email}:`, error);
+          }
+        } catch (err) {
+          console.error(`[notifyPhaseSubmitted] Exception sending to ${admin.email}:`, err);
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyPhaseSubmitted] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Notify trainee when admin approves their phase
+ */
+export async function notifyPhaseApproved(
+  projectId: string,
+  projectName: string,
+  phaseName: string,
+  traineeId: string,
+  reviewedByName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyPhaseApproved] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    const { data: trainee } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', traineeId)
+      .single();
+
+    if (!trainee || !trainee.email) return { success: true };
+
+    const projectUrl = `${APP_URL}/projects/${projectId}`;
+    const recipientName = trainee.full_name || 'there';
+    const subject = `Phase Approved: ${phaseName} — ${projectName}`;
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: trainee.email,
+      subject,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Phase Approved</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      Great work! <strong>${reviewedByName}</strong> has approved the <strong>${phaseName}</strong> phase of <strong>${projectName}</strong>.
+    </p>
+    <p style="margin: 0 0 24px; color: #6b7280;">You can now proceed to the next phase.</p>
+    <a href="${projectUrl}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      This notification was sent from the Qualia Platform.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+      text: `Hi ${recipientName},\n\nGreat work! ${reviewedByName} has approved the ${phaseName} phase of ${projectName}.\n\nYou can now proceed to the next phase.\n\nView project: ${projectUrl}\n\n---\nQualia Platform`,
+    });
+
+    if (error) {
+      console.error('[notifyPhaseApproved] Failed to send email:', error);
+      return { success: false, error: String(error) };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyPhaseApproved] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Notify trainee when admin requests changes on their phase
+ */
+export async function notifyPhaseChangesRequested(
+  projectId: string,
+  projectName: string,
+  phaseName: string,
+  traineeId: string,
+  reviewedByName: string,
+  feedback: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyPhaseChangesRequested] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    const { data: trainee } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', traineeId)
+      .single();
+
+    if (!trainee || !trainee.email) return { success: true };
+
+    const projectUrl = `${APP_URL}/projects/${projectId}`;
+    const recipientName = trainee.full_name || 'there';
+    const subject = `Changes Requested: ${phaseName} — ${projectName}`;
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: trainee.email,
+      subject,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Changes Requested</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${reviewedByName}</strong> has requested changes on the <strong>${phaseName}</strong> phase of <strong>${projectName}</strong>.
+    </p>
+    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <h3 style="margin: 0 0 8px; color: #92400e; font-size: 14px; font-weight: 600;">Feedback:</h3>
+      <p style="margin: 0; color: #78350f; white-space: pre-wrap;">${feedback}</p>
+    </div>
+    <a href="${projectUrl}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      This notification was sent from the Qualia Platform.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+      text: `Hi ${recipientName},\n\n${reviewedByName} has requested changes on the ${phaseName} phase of ${projectName}.\n\nFeedback:\n${feedback}\n\nView project: ${projectUrl}\n\n---\nQualia Platform`,
+    });
+
+    if (error) {
+      console.error('[notifyPhaseChangesRequested] Failed to send email:', error);
+      return { success: false, error: String(error) };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyPhaseChangesRequested] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+// ============================================================================
 // Daily Reminder Functions (stub implementations for cron job)
 // ============================================================================
 
