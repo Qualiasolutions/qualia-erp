@@ -101,46 +101,46 @@ Deferred to future release. Tracked but not in current roadmap.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| LOAD-01     | —     | Pending |
-| LOAD-02     | —     | Pending |
-| LOAD-03     | —     | Pending |
-| LOAD-04     | —     | Pending |
-| TRANS-01    | —     | Pending |
-| TRANS-02    | —     | Pending |
-| TRANS-03    | —     | Pending |
-| MICRO-01    | —     | Pending |
-| MICRO-02    | —     | Pending |
-| MICRO-03    | —     | Pending |
-| MICRO-04    | —     | Pending |
-| EMPTY-01    | —     | Pending |
-| EMPTY-02    | —     | Pending |
-| EMPTY-03    | —     | Pending |
-| DARK-01     | —     | Pending |
-| EMAIL-01    | —     | Pending |
-| EMAIL-02    | —     | Pending |
-| EMAIL-03    | —     | Pending |
-| FIX-01      | —     | Pending |
-| FIX-02      | —     | Pending |
-| GRID-01     | —     | Pending |
-| GRID-02     | —     | Pending |
-| GRID-03     | —     | Pending |
-| GRID-04     | —     | Pending |
-| MOBILE-01   | —     | Pending |
-| MOBILE-02   | —     | Pending |
-| MOBILE-03   | —     | Pending |
-| MOBILE-04   | —     | Pending |
-| MOBILE-05   | —     | Pending |
-| A11Y-01     | —     | Pending |
+| Requirement | Phase   | Status  |
+| ----------- | ------- | ------- |
+| LOAD-01     | Phase 4 | Pending |
+| LOAD-02     | Phase 4 | Pending |
+| LOAD-03     | Phase 4 | Pending |
+| LOAD-04     | Phase 4 | Pending |
+| EMPTY-01    | Phase 4 | Pending |
+| EMPTY-02    | Phase 4 | Pending |
+| EMPTY-03    | Phase 4 | Pending |
+| TRANS-01    | Phase 5 | Pending |
+| TRANS-02    | Phase 5 | Pending |
+| TRANS-03    | Phase 5 | Pending |
+| DARK-01     | Phase 5 | Pending |
+| A11Y-01     | Phase 5 | Pending |
+| MICRO-01    | Phase 6 | Pending |
+| MICRO-02    | Phase 6 | Pending |
+| MICRO-03    | Phase 6 | Pending |
+| MICRO-04    | Phase 6 | Pending |
+| EMAIL-01    | Phase 6 | Pending |
+| EMAIL-02    | Phase 6 | Pending |
+| EMAIL-03    | Phase 6 | Pending |
+| FIX-01      | Phase 6 | Pending |
+| FIX-02      | Phase 6 | Pending |
+| GRID-01     | Phase 7 | Pending |
+| GRID-02     | Phase 7 | Pending |
+| GRID-03     | Phase 7 | Pending |
+| GRID-04     | Phase 7 | Pending |
+| MOBILE-01   | Phase 8 | Pending |
+| MOBILE-02   | Phase 8 | Pending |
+| MOBILE-03   | Phase 8 | Pending |
+| MOBILE-04   | Phase 8 | Pending |
+| MOBILE-05   | Phase 8 | Pending |
 
 **Coverage:**
 
 - v1.1 requirements: 30 total
-- Mapped to phases: 0
-- Unmapped: 30 ⚠️
+- Mapped to phases: 30
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-03-04_
-_Last updated: 2026-03-04 after initial definition_
+_Last updated: 2026-03-04 after roadmap creation_
