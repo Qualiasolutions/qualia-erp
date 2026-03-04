@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
 import { PortalHeader } from '@/components/portal/portal-header';
+import { PageTransition } from '@/components/page-transition';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -31,7 +32,9 @@ export default async function PortalLayout({ children }: { children: React.React
   return (
     <div className="min-h-screen bg-background">
       <PortalHeader user={user} profile={profile} isAdminViewing={isAdminViewing} />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <footer className="border-t border-border bg-card py-6 text-center text-sm text-muted-foreground">
         <div className="mx-auto max-w-7xl px-4">
           &copy; {new Date().getFullYear()} Qualia Solutions. Need help?{' '}
