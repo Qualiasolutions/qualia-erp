@@ -1,591 +1,281 @@
-# Technology Stack — Apple-Level Design Polish
+# Technology Stack - Luxury Design Overhaul
 
-**Project:** Qualia Internal Suite (Client Portal + Trainee System)
+**Project:** Aquador Perfume E-commerce
+**Domain:** Luxury e-commerce design transformation
 **Researched:** 2026-03-04
-**Focus:** Design polish additions for existing Next.js 16 + Tailwind + shadcn app
+**Overall Confidence:** HIGH
 
 ## Executive Summary
 
-This milestone adds Apple-level design polish to an already functional app. The stack additions focus on **micro-interactions, smooth animations, premium loading states, and mobile responsiveness** without bloating the bundle or compromising performance.
+This stack research focuses exclusively on NEW additions needed for Aquador's luxury design transformation. The existing Next.js 14, Stripe, Supabase, and Resend stack is validated and functional. This document covers only animation systems, typography optimization, responsive utilities, and premium UX components needed to elevate the design to luxury brand standards.
 
-**Key finding:** Most polish can be achieved with **minimal new dependencies** by leveraging existing infrastructure (Tailwind, shadcn/ui, CSS) and adding only 3 strategic libraries: Framer Motion for complex animations, Vaul for mobile drawers, and react-loading-skeleton for loading states.
+## Core Animation & Motion
 
-**Bundle impact:** +65KB total (Framer Motion 60KB, Vaul 3KB, react-loading-skeleton 2KB)
-**Performance strategy:** Prefer CSS animations for simple transitions, Framer Motion only for complex/gesture-driven interactions
+| Technology          | Version  | Purpose                                                       | Why Recommended                                                                                                                                                                                                                                                                  |
+| ------------------- | -------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **framer-motion**   | ^12.34.5 | React animation library, page transitions, micro-interactions | Industry standard for React animations. 30M+ downloads/month, used by Framer and Figma. 2.5x faster than GSAP for unknown DOM values. 8KB core, SSR-compatible with Next.js 14. Declarative API perfect for component-based luxury interactions.                                 |
+| **lenis**           | ^1.3.18  | Smooth scroll engine                                          | Premium scroll experience used by luxury brands. Lightweight, hardware-accelerated, seamless GSAP integration. Standardizes scroll across devices. "Get smooth or die trying" - Darkroom Engineering. Essential for immersive luxury feel.                                       |
+| **GSAP** (optional) | ^3.x     | Complex timeline animations, scroll-triggered effects         | Use only for advanced artistic animations requiring precise timeline control. 100% free commercial license (2026 update). Consider for hero sections with parallax, product showcases with complex choreography. Overkill for standard interactions - use Framer Motion instead. |
 
----
+**Recommendation:** Start with Framer Motion + Lenis. This covers 90% of luxury animation needs. Add GSAP only if you need professional-grade timeline control for hero sections or product showcases.
 
-## Already Installed (DO NOT ADD)
+**Integration:** Lenis handles smooth scroll foundation, Framer Motion handles component animations, GSAP (if needed) handles complex scroll-triggered timeline sequences.
 
-These dependencies are already in package.json and should be leveraged:
+## Typography Optimization
 
-| Library                   | Current Version | Purpose             | Use For                             |
-| ------------------------- | --------------- | ------------------- | ----------------------------------- |
-| `framer-motion`           | 12.23.26        | Animation library   | **UPGRADE to 12.34.5** (latest)     |
-| `next-themes`             | 0.4.6           | Dark mode           | Smooth theme transitions            |
-| `sonner`                  | 2.0.7           | Toast notifications | **KEEP** — better than alternatives |
-| `tailwindcss-animate`     | 1.0.7           | Animation utilities | Simple CSS animations               |
-| `@tanstack/react-virtual` | 3.13.13         | Virtualization      | Performance for long lists          |
+| Technology                 | Version  | Purpose                                            | Why Recommended                                                                                                                                                                                                |
+| -------------------------- | -------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **next/font**              | Built-in | Font optimization, self-hosting Google/Adobe Fonts | Next.js 14 built-in. Eliminates external requests (GDPR compliance), automatic subsetting, preloading, fallback matching. Zero layout shift. Self-hosts fonts at build time - critical for luxury performance. |
+| **Google Fonts**           | -        | Premium serif/sans options                         | Use via next/font/google. 2026 luxury trends: high-contrast serifs (Playfair Display, Bodoni), minimalist sans (Josefin Sans). Free, optimized, automatically self-hosted.                                     |
+| **Adobe Fonts** (optional) | -        | Premium licensed typefaces                         | Use via next/font/local. Download fonts manually, self-host. Only if brand requires licensed typefaces. Google Fonts covers 95% of luxury needs.                                                               |
 
-**Action required:** Update `framer-motion` from 12.23.26 → 12.34.5 (published Feb 2026, no breaking changes)
+**Typography Trends 2026:**
 
----
+- **High-contrast serifs**: Dramatic thick/thin strokes (Bodoni, Didot, Playfair Display)
+- **Minimalist sans-serifs**: Clarity and premium positioning (Josefin Sans)
+- **Neo-humanist serifs**: Calligraphic, empathetic (for editorial content)
 
-## New Dependencies to Add
+**Anti-pattern:** Do NOT use Inter, Arial, or generic system fonts for luxury branding. These signal commodity, not premium.
 
-### 1. Vaul (Mobile Drawers)
+## Responsive Design Enhancement
 
-| Property     | Value                                                        |
-| ------------ | ------------------------------------------------------------ |
-| **Package**  | `vaul`                                                       |
-| **Version**  | Latest (1.x)                                                 |
-| **Size**     | ~3KB                                                         |
-| **Why**      | Mobile-optimized drawer/sheet component with gesture support |
-| **Replaces** | Generic Dialog on mobile breakpoints                         |
+| Technology                         | Version  | Purpose                               | Why Recommended                                                                                                                                                                                     |
+| ---------------------------------- | -------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tailwind CSS**                   | Existing | Mobile-first responsive utilities     | Already in stack. No changes needed. Use container queries (@container) for component-level responsiveness. Leverage all 5 breakpoints (sm, md, lg, xl, 2xl).                                       |
+| **clsx**                           | ^2.x     | Conditional class names               | Tiny utility (1KB) for conditional styling. Essential for dynamic component states.                                                                                                                 |
+| **tailwind-merge**                 | ^2.x     | Intelligent class conflict resolution | Prevents Tailwind class conflicts when merging props. Combine with clsx via `cn()` utility (standard in shadcn/ui). Critical for reusable luxury components.                                        |
+| **class-variance-authority (CVA)** | ^0.x     | Component variant system              | Type-safe variant management. Powers shadcn/ui variant system. Perfect for luxury components with multiple states (button sizes, card variants). Use for complex components; simple cases use clsx. |
 
-**Rationale:** Apple-level mobile UX requires gesture-based drawers, not desktop modals. Vaul provides:
+**Utility Function Pattern:**
 
-- Swipe-to-dismiss gestures
-- Snap points for partial drawer states
-- WAI-ARIA compliant via Radix UI (matches existing shadcn components)
-- Integrates seamlessly with shadcn/ui Dialog
+```typescript
+// lib/utils.ts
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-**When to use:**
-
-- Forms on mobile (project creation, task editing)
-- Filters and settings panels on tablet/mobile
-- Bottom sheets for actions (share, export)
-
-**Integration:**
-
-```tsx
-import { Drawer } from 'vaul';
-
-// Use Drawer on mobile, Dialog on desktop
-const isMobile = useMediaQuery('(max-width: 768px)');
-return isMobile ? <Drawer.Root>...</Drawer.Root> : <Dialog>...</Dialog>;
-```
-
-**Sources:**
-
-- [Vaul npm package](https://www.npmjs.com/package/vaul)
-- [Vaul documentation](https://vaul.emilkowal.ski/)
-
----
-
-### 2. react-loading-skeleton (Premium Loading States)
-
-| Property     | Value                                                 |
-| ------------ | ----------------------------------------------------- |
-| **Package**  | `react-loading-skeleton`                              |
-| **Version**  | 3.5.0 (latest)                                        |
-| **Size**     | ~2KB                                                  |
-| **Why**      | Auto-sizing skeleton screens that match content shape |
-| **Replaces** | Generic "Loading..." text                             |
-
-**Rationale:** Apple products never show "Loading..." — they show skeletons that mimic the content structure. This library:
-
-- Automatically sizes to match content (no manual width/height)
-- Supports React Server Components and Next.js 13+
-- Respects `prefers-reduced-motion` accessibility settings
-- Customizable theme (integrates with Tailwind colors)
-
-**When to use:**
-
-- Dashboard widgets loading (tasks, meetings, activity feed)
-- Project roadmap phases loading
-- Client list loading
-- Empty states transitioning to populated states
-
-**Implementation pattern:**
-
-```tsx
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
-
-{
-  isLoading ? (
-    <Skeleton
-      count={5}
-      baseColor="hsl(var(--muted))"
-      highlightColor="hsl(var(--muted-foreground))"
-    />
-  ) : (
-    <TasksList tasks={tasks} />
-  );
-}
-```
-
-**Sources:**
-
-- [react-loading-skeleton npm](https://www.npmjs.com/package/react-loading-skeleton)
-- [LogRocket tutorial (Feb 2026)](https://blog.logrocket.com/handling-react-loading-states-react-loading-skeleton/)
-
----
-
-## Libraries to AVOID
-
-| Library             | Why Not                                                  |
-| ------------------- | -------------------------------------------------------- |
-| **react-hot-toast** | Already have Sonner (better DX, smaller bundle)          |
-| **Aceternity UI**   | Pre-built components conflict with existing shadcn/ui    |
-| **GSAP**            | Overkill for this project, heavyweight license           |
-| **Motion One**      | Framer Motion already installed, no need for alternative |
-| **Lottie**          | No requirement for complex vector animations             |
-| **react-spring**    | Framer Motion covers all use cases                       |
-
----
-
-## Animation Strategy (CSS vs Framer Motion)
-
-**Rule:** Use CSS for simple transitions, Framer Motion for complex interactions.
-
-### Use CSS Animations (via tailwindcss-animate) For:
-
-- Hover states (button hovers, card lifts)
-- Fade in/out (modals appearing, toast notifications)
-- Simple slides (dropdown menus, tooltips)
-- Loading spinners
-
-**Performance:** CSS runs on compositor thread (GPU-accelerated), doesn't block main thread.
-
-**Example classes:**
-
-```tsx
-className = 'animate-in fade-in slide-in-from-bottom-4 duration-300';
-className = 'transition-all hover:scale-105 hover:shadow-lg';
-```
-
-### Use Framer Motion For:
-
-- Page transitions (route changes)
-- Drag-and-drop interactions (existing @dnd-kit + motion)
-- Scroll-triggered animations (roadmap phases appearing)
-- Gesture-based interactions (swipe to delete, long press)
-- Layout animations (list reordering, expanding cards)
-- Orchestrated sequences (multi-step onboarding)
-
-**Performance:** Framer Motion uses `requestAnimationFrame` + GPU acceleration, performs as well as CSS for most cases. Bundle size justified by DX + functionality.
-
-**Example:**
-
-```tsx
-import { motion } from 'framer-motion';
-
-<motion.div
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  exit={{ opacity: 0, y: -20 }}
-  transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
->
-  {content}
-</motion.div>;
-```
-
-**Sources:**
-
-- [CSS vs Framer Motion performance (2026)](https://medium.com/@theekshanachamodhya/why-framer-motion-still-beats-css-animations-in-2025-16b3d74eccbd)
-- [Framer Motion Tailwind integration](https://motion.dev/docs/react-tailwind)
-
----
-
-## Page Transitions (Next.js 16 + React 19)
-
-**Two approaches available:**
-
-### 1. React 19 View Transitions API (Experimental)
-
-| Property            | Value                                                  |
-| ------------------- | ------------------------------------------------------ |
-| **Status**          | Experimental in React 19.2 (Feb 2026)                  |
-| **Setup**           | Enable `experimental.viewTransition` in next.config.js |
-| **Bundle**          | 0KB (native browser API)                               |
-| **Browser support** | 85-95% (stable in Chrome, Safari, Firefox)             |
-
-**Rationale:** Native browser API means zero JavaScript cost. Good for simple fade/slide transitions between routes.
-
-**Configuration:**
-
-```js
-// next.config.js
-module.exports = {
-  experimental: {
-    viewTransition: true,
-  },
+export const cn = (...inputs: ClassValue[]) => {
+  return twMerge(clsx(inputs));
 };
 ```
 
-**Usage:**
+## Premium UI Components
 
-```tsx
-import { ViewTransition } from 'react';
+| Technology               | Version | Purpose                                            | Why Recommended                                                                                                                                                                                                                     |
+| ------------------------ | ------- | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Radix UI Primitives**  | ^1.x    | Headless UI components (Dialog, Dropdown, Tooltip) | Zero styling opinions, full design control. Used by Node.js, Vercel, Supabase. WAI-ARIA compliant, keyboard navigation, focus management built-in. Powers shadcn/ui. Perfect for luxury custom designs - no style overrides needed. |
+| **vaul**                 | ^1.1.2  | Mobile drawer component                            | Premium mobile drawer (bottom sheets) used by Vercel, Linear. Gesture-driven, snap points, background scaling. "Makes UI feel premium." Use for mobile cart, filters, product details.                                              |
+| **embla-carousel-react** | ^8.6.0  | Product gallery carousel                           | Lightweight (7KB vs Swiper's 45KB), zero dependencies, full creative control. Perfect for luxury product galleries where branding matters. Swiper alternative for performance-focused luxury sites.                                 |
 
-<ViewTransition>{children}</ViewTransition>;
-```
+**What NOT to use:**
 
-**Limitations:**
+- **Swiper.js**: 45KB gzipped, feature-heavy, opinionated styling. Use only if you need 3D effects or parallax out-of-the-box. For luxury product galleries, Embla gives better performance and brand control.
+- **React Slick**: Outdated, jQuery dependency, accessibility issues. Replaced by Embla/Swiper.
 
-- Limited control over animation details
-- No gesture-based navigation transitions
-- Experimental flag required
+## Image Optimization
 
-**Sources:**
+| Technology     | Version  | Purpose                                            | Why Recommended                                                                                                                                                                                                                                                             |
+| -------------- | -------- | -------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **sharp**      | ^0.x     | Production image optimization                      | Next.js 14 default optimizer. 40-70% file size reduction, WebP/AVIF conversion (25-35% additional savings). Required for standalone mode. Critical for luxury product photography - maintains quality while optimizing performance. Use quality: 85-95 for luxury products. |
+| **next/image** | Built-in | Responsive images, lazy loading, blur placeholders | Next.js 14 built-in. Automatic responsive srcsets, lazy loading, blur-up placeholders. Use priority for above-fold hero images. Essential for luxury product galleries.                                                                                                     |
 
-- [Next.js 16 viewTransition config](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition)
-- [React 19 View Transitions guide](https://rebeccamdeprey.com/blog/view-transition-api)
+**Luxury Product Photography Settings:**
 
-### 2. Framer Motion AnimatePresence (Recommended)
+- Quality: 85-95 (maintain premium feel)
+- Formats: WebP (primary), AVIF (progressive enhancement), JPEG (fallback)
+- Blur placeholders: Use for smooth loading transitions
+- Sizes: Define per breakpoint to prevent over-fetching
 
-| Property   | Value                                         |
-| ---------- | --------------------------------------------- |
-| **Status** | Production-ready                              |
-| **Setup**  | Use `AnimatePresence` + frozen router pattern |
-| **Bundle** | Included in framer-motion (already installed) |
-
-**Rationale:** More control, works in all browsers, integrates with existing Framer Motion animations.
-
-**Implementation pattern:**
-
-```tsx
-import { AnimatePresence, motion } from 'framer-motion';
-
-<AnimatePresence mode="wait">
-  <motion.div
-    key={pathname}
-    initial={{ opacity: 0, x: 20 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: -20 }}
-  >
-    {children}
-  </motion.div>
-</AnimatePresence>;
-```
-
-**Challenge:** Next.js App Router updates context frequently, disrupting animations. Solution: Use FrozenRouter pattern (keeps context stable during transitions).
-
-**Sources:**
-
-- [Solving Framer Motion page transitions in App Router](https://www.imcorfitz.com/posts/adding-framer-motion-page-transitions-to-next-js-app-router)
-- [Next.js App Router Framer Motion issue](https://github.com/vercel/next.js/issues/49279)
-
-**Recommendation:** Start with React 19 View Transitions for simple fades, upgrade to Framer Motion if custom transitions needed.
-
----
-
-## Micro-Interactions Patterns (2026 Best Practices)
-
-Based on [Apple's "Liquid Glass" design system](https://developer.apple.com/videos/play/wwdc2025/356/) and [2026 UI/UX trends research](https://primotech.com/ui-ux-evolution-2026-why-micro-interactions-and-motion-matter-more-than-ever/):
-
-### 1. Button Interactions
-
-```tsx
-// CSS approach (simple)
-<button className="transition-all active:scale-95 hover:scale-105 hover:shadow-lg">
-  Submit
-</button>
-
-// Framer Motion approach (complex)
-<motion.button
-  whileHover={{ scale: 1.05 }}
-  whileTap={{ scale: 0.95 }}
-  transition={{ type: "spring", stiffness: 400, damping: 17 }}
->
-  Submit
-</motion.button>
-```
-
-### 2. Card Hover States
-
-```tsx
-<motion.div
-  className="rounded-lg border p-4"
-  whileHover={{ y: -4, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}
-  transition={{ duration: 0.2 }}
->
-  {content}
-</motion.div>
-```
-
-### 3. Loading States (Progressive Disclosure)
-
-```tsx
-import Skeleton from 'react-loading-skeleton';
-
-// Match actual content structure
-{
-  isLoading ? (
-    <div className="space-y-2">
-      <Skeleton width={200} height={24} /> {/* Title */}
-      <Skeleton count={3} /> {/* Body text */}
-      <Skeleton width={100} height={36} /> {/* Button */}
-    </div>
-  ) : (
-    <ActualContent />
-  );
-}
-```
-
-### 4. Scroll-Triggered Animations
-
-```tsx
-<motion.div
-  initial={{ opacity: 0, y: 50 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  viewport={{ once: true, margin: '-100px' }}
-  transition={{ duration: 0.6, ease: 'easeOut' }}
->
-  {content}
-</motion.div>
-```
-
-### 5. Empty States
-
-```tsx
-<motion.div
-  initial={{ opacity: 0, scale: 0.9 }}
-  animate={{ opacity: 1, scale: 1 }}
-  className="py-12 text-center"
->
-  <motion.div animate={{ y: [0, -10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-    📭
-  </motion.div>
-  <p className="mt-4 text-muted-foreground">No tasks yet</p>
-</motion.div>
-```
-
-**Sources:**
-
-- [Apple HIG Liquid Glass system](https://developer.apple.com/design/human-interface-guidelines/)
-- [Micro-interactions 2026 trends](https://www.techqware.com/blog/motion-design-micro-interactions-what-users-expect)
-
----
-
-## Dark Mode Transitions
-
-Already installed: `next-themes` 0.4.6
-
-**Enhancement:** Add smooth theme transition animations using CSS.
-
-**Implementation:**
-
-```css
-/* globals.css */
-* {
-  transition:
-    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition: none !important;
-  }
-}
-```
-
-**Best practice:** Respect `prefers-reduced-motion` — never force animations on users who disabled them.
-
-**Sources:**
-
-- [next-themes GitHub](https://github.com/pacocoursey/next-themes)
-- [Next.js 16 dark mode guide](https://ui.shadcn.com/docs/dark-mode/next)
-
----
-
-## Performance Optimizations
-
-### 1. CSS Containment
-
-Modern CSS containment improves animation performance by isolating subtrees:
-
-```css
-.card {
-  contain: layout style paint;
-}
-
-.virtualized-list-item {
-  content-visibility: auto;
-  contain-intrinsic-size: 0 200px;
-}
-```
-
-**Impact:** 50-100KB less JavaScript by replacing scroll/tooltip libraries with native CSS. Time to Interactive improved by 0.8s on mobile in benchmarks.
-
-**Sources:**
-
-- [CSS Containment MDN](https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Containment/Using)
-- [CSS in 2026 performance guide](https://blog.logrocket.com/css-in-2026/)
-
-### 2. Animation Performance Checklist
-
-- ✅ Only animate `transform` and `opacity` (GPU-accelerated)
-- ✅ Use `will-change: transform` sparingly (only during animation)
-- ✅ Prefer CSS transitions for simple state changes
-- ✅ Use Framer Motion's layout animations (avoid width/height animations)
-- ✅ Virtualize long lists with @tanstack/react-virtual (already installed)
-- ✅ Lazy load heavy components with `React.lazy()` + `Suspense`
-
-**Sources:**
-
-- [CSS Animation Performance 2026](https://devtoolbox.dedyn.io/blog/css-animations-complete-guide)
-- [Framer Motion Layout Animations](https://www.framer.com/motion/layout-animations/)
-
----
-
-## Installation Commands
+## Installation
 
 ```bash
-# Upgrade existing dependency
-npm install framer-motion@latest  # 12.23.26 → 12.34.5
+# Animation & Motion
+npm install framer-motion@^12.34.5 lenis@^1.3.18
+# Optional: GSAP for advanced timelines
+npm install gsap@^3.x
 
-# Add new dependencies
-npm install vaul react-loading-skeleton
+# Typography (next/font is built-in, no install needed)
 
-# Install types (if needed)
-npm install -D @types/react-loading-skeleton
+# Class Utilities
+npm install clsx@^2.x tailwind-merge@^2.x
+npm install class-variance-authority@^0.x
+
+# Premium UI Components
+npm install @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-tooltip
+npm install vaul@^1.1.2
+npm install embla-carousel-react@^8.6.0
+
+# Image Optimization
+npm install sharp@^0.x
 ```
-
-**Post-install:** Import skeleton CSS in root layout:
-
-```tsx
-// app/layout.tsx
-import 'react-loading-skeleton/dist/skeleton.css';
-```
-
----
-
-## Integration with Existing Stack
-
-### shadcn/ui Components
-
-Vaul is designed to work alongside shadcn's Dialog component:
-
-```tsx
-// components/responsive-dialog.tsx
-const ResponsiveDialog = () => {
-  const isMobile = useMediaQuery('(max-width: 768px)');
-
-  if (isMobile) {
-    return <Drawer.Root>...</Drawer.Root>; // Vaul
-  }
-
-  return <Dialog>...</Dialog>; // shadcn
-};
-```
-
-### Tailwind CSS
-
-All animations use Tailwind utility classes (via tailwindcss-animate):
-
-```tsx
-<div className="duration-300 animate-in slide-in-from-bottom">
-  <Skeleton count={3} />
-</div>
-```
-
-### SWR Data Fetching
-
-Loading states integrate with existing SWR hooks:
-
-```tsx
-const { data: tasks, isLoading } = useInboxTasks();
-
-{
-  isLoading ? <Skeleton count={5} /> : <TasksList tasks={tasks} />;
-}
-```
-
----
-
-## Bundle Size Analysis
-
-| Library                | Size (gzip) | Justification                                    |
-| ---------------------- | ----------- | ------------------------------------------------ |
-| framer-motion          | ~60KB       | Complex animations, layout transitions, gestures |
-| vaul                   | ~3KB        | Mobile drawer UX requirement                     |
-| react-loading-skeleton | ~2KB        | Premium loading states                           |
-| **Total Added**        | **~65KB**   | **Acceptable for polish milestone**              |
-
-**Context:** Next.js 16 bundle already includes React 19 (70KB), Radix UI primitives (~40KB), date-fns (20KB). Adding 65KB for comprehensive animation support is justified for Apple-level polish.
-
-**Mitigation:**
-
-- Tree-shake Framer Motion (only import used features)
-- Lazy load Vaul drawers (code-split mobile-only components)
-- CSS animations cover 70% of use cases (0KB)
-
----
-
-## Confidence Assessment
-
-| Area                   | Confidence | Sources                                                                                     |
-| ---------------------- | ---------- | ------------------------------------------------------------------------------------------- |
-| Framer Motion          | **HIGH**   | npm package (12.34.5 published Feb 2026), official docs, Next.js 16 compatibility confirmed |
-| Vaul                   | **HIGH**   | npm package (active Feb 2026), official docs, shadcn integration verified                   |
-| react-loading-skeleton | **HIGH**   | npm package (3.5.0 stable), React 19 + Next.js 13+ support confirmed                        |
-| View Transitions API   | **MEDIUM** | Experimental in React 19.2, 85-95% browser support, production usage verified               |
-| CSS Containment        | **HIGH**   | MDN docs, stable browser releases, performance benchmarks from LogRocket                    |
-| Animation Patterns     | **HIGH**   | Apple HIG official docs, multiple 2026 UI/UX trend sources                                  |
-
-**Overall:** HIGH confidence. All recommendations based on official documentation, current npm packages, and 2026 web standards.
-
----
 
 ## Alternatives Considered
 
-| Category         | Recommended                      | Alternative     | Why Not                                       |
-| ---------------- | -------------------------------- | --------------- | --------------------------------------------- |
-| Animation        | Framer Motion + CSS              | react-spring    | Framer Motion already installed, better DX    |
-| Animation        | Framer Motion + CSS              | GSAP            | Commercial license required, heavyweight      |
-| Loading States   | react-loading-skeleton           | Custom CSS      | Auto-sizing feature saves dev time            |
-| Mobile Drawers   | Vaul                             | Sheet component | Vaul has gesture support, Radix UI-compatible |
-| Toasts           | Sonner (existing)                | react-hot-toast | Sonner smaller bundle, better TypeScript      |
-| Page Transitions | View Transitions + Framer Motion | Router events   | Deprecated in Next.js App Router              |
+| Recommended    | Alternative         | When to Use Alternative                                                                                                                                                                 | Confidence |
+| -------------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Framer Motion  | GSAP                | Need professional timeline control, complex scroll-triggered sequences, artistic animations. If budget allows, use both - GSAP for timelines, Framer Motion for component interactions. | HIGH       |
+| Framer Motion  | React Spring        | Need physics-based animations. React Spring excels at spring physics, but Framer Motion covers 90% of use cases with better DX.                                                         | HIGH       |
+| Lenis          | GSAP ScrollSmoother | Already using GSAP ecosystem. Lenis is lighter, simpler, and more performant.                                                                                                           | HIGH       |
+| Embla Carousel | Swiper.js           | Need 3D effects, parallax, or elaborate transitions out-of-the-box. Trade-off: 6x larger bundle (45KB vs 7KB).                                                                          | MEDIUM     |
+| next/font      | Manual font loading | Never. next/font eliminates GDPR issues, optimizes automatically, prevents layout shift. No reason to load fonts manually in Next.js 14.                                                | HIGH       |
+| Radix UI       | Headless UI         | Already using Tailwind UI ecosystem. Both are excellent headless libraries. Radix has better TypeScript support and wider adoption.                                                     | MEDIUM     |
+| CVA            | Tailwind Variants   | Need first-class responsive variant API. CVA is framework-agnostic and simpler; Tailwind Variants has deeper Tailwind integration. Both excellent.                                      | MEDIUM     |
 
----
+## What NOT to Use
 
-## Next Steps (Implementation Order)
+| Avoid                 | Why                                                                               | Use Instead                                                         | Confidence |
+| --------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------- | ---------- |
+| **Moment.js**         | 67KB, deprecated status. Outdated in 2026.                                        | date-fns (already in Aquador stack via existing date handling)      | HIGH       |
+| **Lodash**            | 70KB footprint, native JS covers most use cases in 2026.                          | Native JS methods, import specific functions if needed              | HIGH       |
+| **jQuery**            | Ancient for React projects. Causes conflicts, unnecessary overhead.               | Native DOM APIs, React state management                             | HIGH       |
+| **React Slick**       | Outdated carousel library, jQuery dependency, accessibility issues.               | embla-carousel-react or Swiper.js                                   | HIGH       |
+| **Locomotive Scroll** | Heavier, less performant than Lenis. Less active maintenance.                     | Lenis                                                               | MEDIUM     |
+| **Animate.css**       | Pre-built CSS animations feel dated. Not customizable enough for luxury branding. | Framer Motion (full control, branded animations)                    | MEDIUM     |
+| **Bootstrap**         | Generic look, conflicts with Tailwind, overkill for Next.js.                      | Tailwind CSS + Radix UI (already in stack)                          | HIGH       |
+| **Inter/Arial**       | Generic system fonts signal commodity, not luxury.                                | Google Fonts (Playfair Display, Bodoni, Josefin Sans) via next/font | HIGH       |
 
-1. **Upgrade Framer Motion** (12.23.26 → 12.34.5) — 5 minutes
-2. **Install new dependencies** (vaul, react-loading-skeleton) — 5 minutes
-3. **Add skeleton CSS import** to root layout — 2 minutes
-4. **Create animation constants** (easings, durations, spring configs) — 15 minutes
-5. **Build ResponsiveDialog wrapper** (Desktop Dialog vs Mobile Drawer) — 30 minutes
-6. **Replace loading states** with Skeleton components — 1 hour
-7. **Add micro-interactions** to buttons/cards (Tailwind classes) — 2 hours
-8. **Implement page transitions** (View Transitions or AnimatePresence) — 1 hour
-9. **Add scroll-triggered animations** to roadmap phases — 1 hour
-10. **Test performance** (Lighthouse, bundle analyzer) — 30 minutes
+## Stack Patterns by Use Case
 
-**Total estimated effort:** 6-8 hours
+**For luxury product galleries:**
 
----
+- Use Embla Carousel (7KB, full brand control)
+- Integrate Framer Motion for item entrance animations
+- Use next/image with quality: 90+ for product photography
+
+**For hero sections:**
+
+- Use Lenis for smooth scroll foundation
+- Add GSAP + ScrollTrigger for parallax/timeline effects (optional)
+- Framer Motion for button/CTA micro-interactions
+
+**For mobile experience:**
+
+- Use Vaul for cart drawer, filter sheets, product quick view
+- Radix UI Dialog for desktop modals (responsive swap)
+- Embla Carousel for mobile product swiping
+
+**For typography:**
+
+- Load 2-3 font weights max via next/font/google
+- Use variable fonts if available (single file, all weights)
+- Preload critical fonts for above-fold content
+
+## Version Compatibility
+
+| Package                   | Compatible With            | Notes                                                                                                                                                |
+| ------------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| framer-motion@^12.x       | Next.js 14 (React 18)      | Requires 'use client' directive. React 19 support in alpha (v12.0.0-alpha.2). DO NOT upgrade to React 19 until Framer Motion releases stable v12.1+. |
+| lenis@^1.3.x              | GSAP@^3.x                  | Seamless integration with GSAP ScrollTrigger for scroll-based animations.                                                                            |
+| next/font                 | Next.js 14+                | Built-in, no compatibility issues.                                                                                                                   |
+| Radix UI                  | React 18+                  | Full Next.js 14 support. Requires 'use client' for interactive components.                                                                           |
+| embla-carousel-react@^8.x | React 18+                  | Zero dependencies, framework-agnostic core.                                                                                                          |
+| sharp                     | Next.js 14 standalone mode | Required for production image optimization. Automatically used by next/image.                                                                        |
+
+**CRITICAL:** Do NOT upgrade Aquador to React 19 until Framer Motion releases stable support (currently in alpha). Downgrading React causes instability issues.
+
+## React 19 Migration Path (Future)
+
+Current status (March 2026):
+
+- Framer Motion React 19 support: Alpha (v12.0.0-alpha.2)
+- Production readiness: Not yet
+
+When React 19 is needed:
+
+1. Wait for framer-motion stable v12.1+ release
+2. Test alpha with `npm install framer-motion@12.0.0-alpha.2`
+3. Verify all animations work before production deploy
+4. No breaking changes expected in Motion v12 API
+
+**Recommendation:** Stay on React 18 + Next.js 14 until Q3 2026 or when Framer Motion v12.1 stable releases.
+
+## Bundle Size Impact
+
+Expected additions to Aquador bundle:
+
+| Addition                 | Gzipped Size  | Impact                                        |
+| ------------------------ | ------------- | --------------------------------------------- |
+| framer-motion            | ~8KB core     | Low (lazy-load variants)                      |
+| lenis                    | ~8KB          | Low                                           |
+| GSAP (optional)          | ~23KB core    | Medium (use only if needed)                   |
+| clsx + tailwind-merge    | ~3KB combined | Negligible                                    |
+| CVA                      | ~2KB          | Negligible                                    |
+| Radix UI (3 components)  | ~15KB         | Low (tree-shakeable)                          |
+| vaul                     | ~10KB         | Low                                           |
+| embla-carousel-react     | ~7KB          | Low                                           |
+| **Total (without GSAP)** | **~53KB**     | **Acceptable for luxury e-commerce**          |
+| **Total (with GSAP)**    | **~76KB**     | **Use code-splitting for hero-only features** |
+
+**Optimization Strategy:**
+
+- Dynamic import GSAP for hero/landing page only
+- Lazy-load Embla for product detail pages
+- Tree-shake unused Radix components
+- Use Framer Motion's `LazyMotion` for reduced bundle
+
+## Performance Targets for Luxury E-commerce
+
+| Metric                         | Target         | Notes                                                  |
+| ------------------------------ | -------------- | ------------------------------------------------------ |
+| Largest Contentful Paint (LCP) | <2.5s          | Hero images must be optimized (next/image priority)    |
+| First Input Delay (FID)        | <100ms         | Lenis smooth scroll shouldn't block interaction        |
+| Cumulative Layout Shift (CLS)  | <0.1           | next/font prevents font-based shifts                   |
+| Bundle size (JS)               | <200KB gzipped | Luxury feel doesn't mean heavy bundle                  |
+| Animation FPS                  | 60fps          | Use GPU-accelerated transforms (Framer Motion default) |
+
+**Monitoring:** Use Next.js built-in Web Vitals reporting + Vercel Analytics.
 
 ## Sources
 
-**Official Documentation:**
+**Animation & Motion:**
 
-- [Framer Motion](https://motion.dev)
-- [Vaul](https://vaul.emilkowal.ski/)
-- [react-loading-skeleton](https://github.com/dvtng/react-loading-skeleton)
-- [Next.js 16 View Transitions](https://nextjs.org/docs/app/api-reference/config/next-config-js/viewTransition)
-- [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
-- [tailwindcss-animate](https://github.com/jamiebuilds/tailwindcss-animate)
-- [next-themes](https://github.com/pacocoursey/next-themes)
+- [Comparing React Animation Libraries 2026 - LogRocket](https://blog.logrocket.com/best-react-animation-libraries/)
+- [GSAP vs Motion Comparison - Motion.dev](https://motion.dev/docs/gsap-vs-motion)
+- [Framer Motion npm](https://www.npmjs.com/package/framer-motion) - v12.34.5
+- [Motion & Framer Motion Upgrade Guide](https://motion.dev/docs/react-upgrade-guide)
+- [Lenis Smooth Scroll Official](https://lenis.darkroom.engineering/)
+- [Why Lenis Should be Browser Standard - Medium](https://medium.com/@nattupi/why-lenis-smooth-scroll-needs-to-become-a-browser-standard-62bed416c987)
+- [Web Animation Comparison - Semaphore](https://semaphore.io/blog/react-framer-motion-gsap)
 
-**Research Articles (2026):**
+**Typography:**
 
-- [Why Framer Motion Still Beats CSS Animations in 2025](https://medium.com/@theekshanachamodhya/why-framer-motion-still-beats-css-animations-in-2025-16b3d74eccbd)
-- [UI/UX Evolution 2026: Micro-Interactions & Motion](https://primotech.com/ui-ux-evolution-2026-why-micro-interactions-and-motion-matter-more-than-ever/)
-- [CSS in 2026: New Features Reshaping Frontend](https://blog.logrocket.com/css-in-2026/)
-- [Solving Framer Motion Page Transitions in Next.js App Router](https://www.imcorfitz.com/posts/adding-framer-motion-page-transitions-to-next-js-app-router)
-- [Top 9 React Notification Libraries in 2026](https://knock.app/blog/the-top-notification-libraries-for-react)
-- [React Loading Skeleton Tutorial (LogRocket, Feb 2026)](https://blog.logrocket.com/handling-react-loading-states-react-loading-skeleton/)
+- [Next.js Font Optimization Docs](https://nextjs.org/docs/app/getting-started/fonts)
+- [Typography Trends 2026 - Art Coast Design](https://artcoastdesign.com/blog/typography-branding-trends-2026)
+- [Luxury Fonts 2026 - Design Shack](https://designshack.net/articles/inspiration/elegant-luxury-fonts/)
+- [Top Typography Trends 2026 - Authentype](https://authentype.com/2026/03/02/top-10-typography-trends-2026/)
+- [Next.js Font Optimization Guide - Contentful](https://www.contentful.com/blog/next-js-fonts/)
 
-**npm Packages:**
+**Responsive Design:**
 
-- [framer-motion](https://www.npmjs.com/package/framer-motion) — v12.34.5
-- [vaul](https://www.npmjs.com/package/vaul)
-- [react-loading-skeleton](https://www.npmjs.com/package/react-loading-skeleton) — v3.5.0
-- [tailwindcss-animate](https://github.com/jamiebuilds/tailwindcss-animate)
+- [Tailwind CSS Responsive Design](https://tailwindcss.com/docs/responsive-design)
+- [Mastering Responsive Design 2026 - Mobile Viewer](https://mobiview.github.io/mastering-responsive-design)
+- [CVA vs Tailwind Variants - DEV Community](https://dev.to/webdevlapani/cva-vs-tailwind-variants-choosing-the-right-tool-for-your-design-system-12am)
+- [clsx & tailwind-merge - Medium](https://medium.com/@rezazare2088/cva-cn-in-tailwind-css-conditional-classes-in-react-1250b5dfc803)
+
+**UI Components:**
+
+- [Radix UI Primitives Official](https://www.radix-ui.com/primitives)
+- [Headless UI Alternatives - LogRocket](https://blog.logrocket.com/headless-ui-alternatives/)
+- [Vaul Drawer Component](https://vaul.emilkowal.ski/)
+- [Vaul npm](https://www.npmjs.com/package/vaul) - v1.1.2
+- [Embla vs Swiper Comparison - Capaxe Labs](https://www.capaxe.com/blog/20251109-swiperjs-vs-embla-carousel/)
+- [React Carousel Libraries 2026 - Croct](https://blog.croct.com/post/best-react-carousel-slider-libraries)
+- [embla-carousel-react npm](https://www.npmjs.com/package/embla-carousel-react) - v8.6.0
+
+**Image Optimization:**
+
+- [Next.js Image Optimization Guide - Strapi](https://strapi.io/blog/nextjs-image-optimization-developers-guide)
+- [Next.js Image Component Docs](https://nextjs.org/docs/app/getting-started/images)
+- [Sharp Installation - Next.js](https://nextjs.org/docs/messages/install-sharp)
+
+**Anti-patterns:**
+
+- [5 JavaScript Libraries to Avoid 2025 - The New Stack](https://thenewstack.io/5-javascript-libraries-you-should-say-goodbye-to-in-2025/)
+- [JavaScript Graveyard 2025 - Medium](https://medium.com/@nitinsgavane/2025s-javascript-graveyard-bid-farewell-to-these-5-outdated-libraries-9234c2a5e844)
+- [Next.js Advanced Techniques 2026 - Medium](https://medium.com/@elizacodewell72/next-js-advanced-techniques-2026-15-pro-level-tips-every-senior-developer-must-master-0b264649980e)
+
+---
+
+**Stack research for:** Aquador Luxury Design Overhaul
+**Researched:** 2026-03-04
+**Confidence:** HIGH (all packages verified with official docs and npm registry)
+**Next Phase:** Feature implementation research (animation patterns, typography systems)

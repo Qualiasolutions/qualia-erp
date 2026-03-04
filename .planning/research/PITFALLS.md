@@ -1,467 +1,460 @@
-# Domain Pitfalls: Adding Apple-Level Design Polish to Existing Next.js App
+# Pitfalls Research
 
-**Domain:** Design overhaul of working Next.js 16 + shadcn/ui application (client portal + trainee system)
+**Domain:** Luxury Design Integration for Existing Next.js E-commerce
 **Researched:** 2026-03-04
-**Overall Confidence:** HIGH (verified with official sources, 2026 documentation, and codebase analysis)
-
-## Executive Summary
-
-Adding Apple-level design polish to an existing Next.js app introduces **different failure modes than greenfield development**. The three most dangerous pitfalls are: (1) Framer Motion incompatibility with Server Components causing runtime crashes, (2) animation performance degradation from stacking micro-interactions on existing SWR auto-refresh logic, and (3) component consolidation breaking existing behavior due to incomplete state migration. Unlike building fresh, retrofitting polish means navigating **the interaction between new animation libraries and existing patterns** (SWR, dark mode, CSS transitions, server components).
-
-The schedule grid consolidation (952 + 792 = 1,744 lines → 1 component) is a **critical regression risk zone**. You have two different timing systems (time slots vs. hour-based positioning), different interaction patterns (modal vs. inline editing), and different data refresh triggers. Merge conflicts here will manifest as **subtle timing bugs and missing features** rather than obvious crashes.
-
----
+**Confidence:** HIGH
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major issues.
+### Pitfall 1: Animation Waterfall Destroying Performance
 
-### Pitfall 1: Framer Motion + Server Components Runtime Crash
-
-**What goes wrong:** Importing Framer Motion's `motion` component directly in Server Components causes runtime errors because motion components need DOM access. Next.js 16 App Router server components render on the server without DOM, causing "cannot read properties of undefined" or hydration mismatches.
-
-**Why it happens:**
-
-- Developers add `<motion.div>` to existing server components without adding `'use client'` directive
-- Shared components used in both server and client contexts get motion wrappers
-- Page transitions using AnimatePresence fail because Next.js App Router updates context frequently during navigation, causing components to unmount/remount abruptly and disrupting animation flow
-
-**Consequences:**
-
-- Build passes but production crashes at runtime
-- Hydration errors flood console, hard to debug which component caused it
-- AnimatePresence exit animations never fire due to premature unmounting
-- Shared layout animations (Framer's layoutId feature) don't work at all in App Router per [GitHub Issue #1850](https://github.com/framer/motion/issues/1850)
-
-**Prevention:**
-
-1. **Create client-only motion wrappers** (MotionDiv, MotionH1, etc.) with `'use client'` directive
-2. **Use FrozenRouter pattern** for page transitions to prevent context updates during animations
-3. **Audit all motion usage** before deploying - grep for `motion\.` and verify `'use client'` appears above imports
-4. **Test SSR specifically** - disable JavaScript in dev tools and reload to catch server/client mismatches
-
-**Detection:**
-
-- Warning sign: "Cannot read properties of undefined (reading 'style')" in production logs
-- Warning sign: Exit animations work in dev but not production
-- Tool: Run `npm run build && npm start` locally to catch SSR issues before deploy
-
-**Sources:**
-
-- [GitHub Issue #49279 - App router issue with Framer Motion shared layout animations](https://github.com/vercel/next.js/issues/49279)
-- [How to use Framer Motion with Next.js Server Components](https://www.hemantasundaray.com/blog/use-framer-motion-with-nextjs-server-components)
-- [App Router pitfalls: common Next.js mistakes and practical ways to avoid them](https://imidef.com/en/2026-02-11-app-router-pitfalls)
-
----
-
-### Pitfall 2: Animation Performance Degradation from Too Many Micro-Interactions
-
-**What goes wrong:** Stacking Framer Motion animations on components that already re-render frequently (SWR 45s auto-refresh, dashboard live updates) causes frame drops, scroll stutter, and UI freezes. Each micro-interaction adds CPU cost, and when combined with existing state updates, the main thread becomes blocked.
+**What goes wrong:**
+Performance drops from sub-500ms to 3+ seconds on product pages after adding luxury animations. GSAP/Framer Motion libraries reload on every page transition in App Router, causing animations to lag, ScrollTriggers to leak memory, and cumulative layout shift spikes.
 
 **Why it happens:**
+Developers add animation libraries without understanding Next.js App Router's component lifecycle. Each route transition re-initializes animation contexts, creating memory leaks. Heavy animations run on main thread instead of GPU, blocking paint and interaction.
 
-- Animating components during high-frequency state changes (SWR revalidation, live data updates, dashboard filters)
-- Using layout animations (automatic, convenient) instead of transform animations (GPU-accelerated)
-- Not memoizing animated components with React.memo, causing re-renders to cascade through animation tree
-- Animating CSS variables which always trigger paint, not just composite
+**How to avoid:**
 
-**Consequences:**
+- Use CSS transforms and opacity (GPU-accelerated) instead of animating layout properties (top/left, width/height, margin)
+- Initialize GSAP/Framer Motion contexts once at root layout, not per-page
+- Implement proper cleanup in useEffect returns to prevent ScrollTrigger leaks
+- Use `will-change: transform` CSS hint for animated elements
+- Limit simultaneous animations: <100 on low-end Android, <500 on iOS
+- Wrap animation libraries in React.memo() for list items
 
-- Dashboard feels sluggish, especially on older devices
-- Scroll performance degrades (target 60fps → actual 30fps or worse)
-- Task list animations stutter when SWR refreshes data
-- High CPU usage causes battery drain on mobile
+**Warning signs:**
 
-**Prevention:**
+- Lighthouse Performance score drops below 80
+- Main thread blocking time increases >200ms
+- Memory usage grows on each navigation
+- Animations jank on mid-range devices
+- Console warnings about unmounted components
 
-1. **Performance budget:** Limit to 3-5 animated elements per view, test on low-end device
-2. **Use transform/opacity only** for animations (GPU-accelerated), avoid animating width/height/colors
-3. **Wrap animated list items in React.memo** to prevent cascade re-renders
-4. **Disable animations during data refresh** - pause Framer Motion animations when `isValidating` is true
-5. **Use MotionValues instead of state** for frame-by-frame animations to avoid React reconciliation
-6. **Schedule animations in requestAnimationFrame**, cancel with cancelAnimationFrame on unmount
-
-**Detection:**
-
-- Warning sign: Chrome DevTools Performance tab shows "Long Task" warnings (>50ms) during animations
-- Warning sign: FPS counter (Chrome DevTools → Rendering → Frame Rendering Stats) shows <60fps
-- Tool: React DevTools Profiler - look for components re-rendering >10 times per second
-- Tool: Lighthouse performance audit - watch for "Avoid large layout shifts" warnings
-
-**Sources:**
-
-- [Complex animations can greatly enhance user engagement in React applications...](https://www.zigpoll.com/content/can-you-explain-the-best-practices-for-optimizing-web-performance-when-implementing-complex-animations-in-react)
-- [React App Performance Optimization Guide: 2026 Expert Tips](https://www.zignuts.com/blog/react-app-performance-optimization-guide)
-- [Vercel Releases React Best Practices Skill with 40+ Performance Rules for AI Agents](https://www.infoq.com/news/2026/02/vercel-react-best-practices/)
+**Phase to address:**
+Phase 1 (Visual Foundation) - Establish animation patterns with performance budgets before building features
 
 ---
 
-### Pitfall 3: Schedule Grid Consolidation State Loss
+### Pitfall 2: High-Resolution Product Images Killing Mobile Load Times
 
-**What goes wrong:** Merging `schedule-block.tsx` (952 lines) and `daily-schedule-grid.tsx` (792 lines) into one component causes subtle state bugs - tasks don't toggle status, meetings don't update, modals don't close, drag-and-drop positioning calculates wrong times.
+**What goes wrong:**
+Luxury product photography at 4K+ resolution causes mobile load times to balloon from 2s to 8+ seconds. Page abandonment increases 20-30% as images block First Contentful Paint. Despite Next.js Image component, developers serve oversized assets.
 
 **Why it happens:**
+Design team exports full-resolution images (2-5MB each) without optimization. Developers forget to configure remote image domains, use fill layout without sizes prop, or bypass Next.js Image entirely for "pixel-perfect" control. AVIF/WebP fallbacks not configured, serving PNG/JPEG to all browsers.
 
-- **Different timing systems:** schedule-block uses discrete TIME_SLOTS array (`['8 AM', '9 AM', ...]`), daily-schedule-grid uses continuous hour positioning (`START_HOUR = 8, HOUR_HEIGHT = 84`)
-- **Different interaction patterns:** schedule-block opens EditTaskModal, daily-schedule-grid uses inline NewTaskModalControlled
-- **Different invalidation triggers:** schedule-block calls `invalidateScheduledTasks()`, daily-schedule-grid calls `invalidateTodaysSchedule()`
-- **Incomplete state migration:** One component tracks `selectedMember` filter, other doesn't - merged version loses filter capability
-- **Conflicting useTransition hooks:** Both components use `useTransition` for optimistic updates but with different pending states
+**How to avoid:**
 
-**Consequences:**
+- Configure Next.js Image with quality settings: 85 for hero images, 75 for grid thumbnails
+- Set explicit `sizes` prop: `sizes="(max-width: 768px) 100vw, 50vw"` for responsive images
+- Use Sharp compression (built into Next.js): 40-70% size reduction + format conversion (25-35% additional)
+- Enable AVIF format first (20-30% better than WebP), fallback to WebP, then JPEG/PNG
+- Implement blur placeholders: `placeholder="blur"` with low-quality image data URLs
+- Lazy load below-fold product images: `loading="lazy"`
+- Configure remote patterns in next.config.js for Supabase Storage URLs
+- Set image caching headers: `Cache-Control: public, max-age=31536000, immutable`
 
-- Tasks created in unified grid don't appear immediately (SWR cache not invalidated)
-- Time slot calculations break - meetings render at wrong vertical position
-- Drag-drop feature works in one view mode but not others
-- Modal state leaks between day/week/month views
-- Filter by team member stops working
+**Warning signs:**
 
-**Prevention:**
+- Largest Contentful Paint (LCP) >2.5s on mobile
+- Network tab shows 2MB+ images
+- No .webp or .avif in network requests
+- Images served from wrong domains (direct Supabase URLs)
+- Cumulative Layout Shift as images load
 
-1. **Feature parity audit BEFORE refactoring:** Create spreadsheet listing every feature in both components, ensure merged version has all
-2. **Extract shared logic into hooks first:** Create `useScheduleGrid`, `useTaskToggle`, `useScheduleInvalidation` hooks, test in isolation
-3. **Keep both components during migration:** Mark old ones deprecated, run parallel for 1 week, compare behavior
-4. **Write integration tests:** Test task creation → SWR refresh → modal close flow end-to-end
-5. **Preserve all invalidation calls:** Unified component must call ALL cache invalidation functions (scheduled, inbox, daily flow, meetings, today's schedule)
-
-**Detection:**
-
-- Warning sign: "Task created successfully" toast shows but task not visible until manual refresh
-- Warning sign: Different behavior between day/week views of same data
-- Tool: React DevTools Components tab - inspect SWR cache to verify invalidation happens
-- Test: Create task → wait 2 seconds → verify appears without page refresh
-
-**Sources:**
-
-- [Common Sense Refactoring of a Messy React Component](https://alexkondov.com/refactoring-a-messy-react-component/)
-- [Balancing Reuse and Duplication with React](https://www.jnielson.com/balancing-reuse-and-duplication-with-react)
-- Codebase analysis: `/home/qualia/Projects/live/qualia/components/schedule-block.tsx` (952 lines), `/home/qualia/Projects/live/qualia/components/today-dashboard/daily-schedule-grid.tsx` (792 lines)
+**Phase to address:**
+Phase 1 (Visual Foundation) - Set up image optimization pipeline before adding product galleries
 
 ---
 
-## Moderate Pitfalls
+### Pitfall 3: Custom Luxury Fonts Blocking Render and Killing Conversions
 
-### Pitfall 4: Loading Skeleton Flash of Content (FOUC)
-
-**What goes wrong:** Beautiful loading skeletons flash briefly then show unstyled content before styles apply, creating jarring visual experience. Happens when CSS loads after HTML renders or when Framer Motion animations trigger before styles are ready.
+**What goes wrong:**
+Premium serif/display fonts take 3+ seconds to load on mobile, causing Flash of Invisible Text (FOIT) or Flash of Unstyled Text (FOUT). Each font weight/style is a separate 150-250KB download. Research shows 1-second delay = 7% conversion drop; one study found 3s font load caused 20% mobile conversion loss.
 
 **Why it happens:**
+Designers specify 6+ font weights/styles without understanding web performance. Developers import entire font families from Google Fonts or self-host TTF/OTF instead of WOFF2. Font files block render by default. Subsetting not implemented, loading thousands of unused glyphs.
 
-- Dynamic imports with CSS Modules in Next.js App Router load CSS too late
-- Third-party UI library styles (shadcn/ui) imported in components instead of root layout
-- Dark mode SSR mismatch - server doesn't know user's preferred color scheme, renders default theme, then hydration applies dark mode
+**How to avoid:**
 
-**Prevention:**
+- Limit to 2-3 font families, 3-4 weights maximum
+- Use WOFF2 format exclusively (smallest, best browser support)
+- Subset fonts to Latin + required punctuation using Google Fonts API or fonttools
+- Preload critical fonts in layout.tsx: `<link rel="preload" href="/fonts/luxury.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />`
+- Use `font-display: swap` to show fallback immediately while loading
+- Implement local font loading with Next.js Font Optimization (next/font)
+- Define fallback fonts with similar metrics to prevent layout shift: `font-family: 'Luxury', 'Georgia', serif`
+- Variable fonts when possible (one file, multiple weights)
 
-1. **Import all stylesheets in `app/layout.tsx`** before components render
-2. **Preload critical CSS** for above-the-fold components
-3. **Match skeleton to final content shape** - same border-radius, same spacing, same z-index
-4. **Use hydration wrapper** for client-side-only features to prevent SSR/client mismatch
-5. **Add `data-theme` attribute to `<html>` tag** via script in head to prevent dark mode flash
+**Warning signs:**
 
-**Detection:**
+- Total Blocking Time (TBT) >300ms
+- Network tab shows 1MB+ fonts
+- TTF or OTF format in use
+- Multiple font files per family (separate italic/bold/etc)
+- Flash of invisible text on page load
+- Layout shift as fonts swap in
 
-- Warning sign: White flash before dark mode applies on page load
-- Warning sign: Skeleton animates correctly but final content has different layout
-- Tool: Network throttling in DevTools (Slow 3G) makes FOUC more visible
-
-**Sources:**
-
-- [Understanding & Fixing FOUC in Next.js App Router (2025 Guide)](https://dev.to/amritapadhy/understanding-fixing-fouc-in-nextjs-app-router-2025-guide-ojk)
-- [Fixing Dark Mode Flickering (FOUC) in React and Next.js](https://notanumber.in/blog/fixing-react-dark-mode-flickering)
-- [How to Prevent Flash of Unstyled Content (FOUC) in Next.js](https://medium.com/@mohantaankit2002/how-to-prevent-flash-of-unstyled-content-fouc-in-next-js-78fb7c1b0b74)
+**Phase to address:**
+Phase 1 (Visual Foundation) - Font strategy must be set before styling components
 
 ---
 
-### Pitfall 5: CSS Transitions Conflicting with Framer Motion
+### Pitfall 4: Z-Index Chaos Breaking Cart and Checkout Modals
 
-**What goes wrong:** Existing CSS transitions (hover effects, fade-ins) fight with new Framer Motion animations, causing stuttering, double animations, or animations that don't complete. Element animates via CSS, Framer tries to animate same property, values conflict.
+**What goes wrong:**
+New luxury overlays, product quick-views, and animated elements conflict with existing cart modal, checkout flow, and navigation. Users can't complete purchases because clickable elements are hidden behind decorative layers. Mobile hamburger menu appears behind product overlays.
 
 **Why it happens:**
+Developers add z-index values ad-hoc (9999, 99999) without understanding stacking contexts. Position: sticky, transform, and filter properties create new stacking contexts, trapping child z-index values. Existing Stripe checkout modal (usually z-index: 1000) gets buried under new luxury effects.
 
-- Component has `transition: all 0.3s ease` in CSS, then Framer adds `animate={{ opacity: 1 }}` on same element
-- Tailwind utility classes include transitions (`transition-colors`, `hover:scale-105`) that override Framer's spring animations
-- AnimatePresence combined with CSS Modules causes issues in production builds
+**How to avoid:**
 
-**Prevention:**
+- Establish z-index scale in Tailwind config BEFORE adding features:
+  - Base content: 0-9
+  - Sticky headers: 10-19
+  - Dropdowns: 40-49
+  - Modals: 50-59
+  - Popovers: 55-59
+  - Toast notifications: 70-79
+  - Critical overlays (checkout): 90-99
+- Document scale in design system
+- Never use inline z-index or arbitrary values
+- Avoid creating unintended stacking contexts with transform/filter on parent containers
+- Place modals/overlays at root level (portal to body) to escape nested contexts
+- Use browser DevTools "Show Layers" to debug stacking contexts
+- Test checkout flow on mobile after every overlay feature added
 
-1. **Remove CSS transitions from elements using Framer Motion** - use Framer's transition prop instead
-2. **Audit Tailwind classes** - search codebase for `transition-`, `duration-`, `ease-` and remove from Framer-animated elements
-3. **Use Framer for complex animations, CSS for simple state changes** (hover, focus)
-4. **Avoid animating CSS variables with Framer** - they always trigger paint, use MotionValues instead
-5. **Test with Tailwind + Framer together** - AnimatePresence works better with Tailwind than CSS Modules
+**Warning signs:**
 
-**Detection:**
+- Clicking checkout button shows nothing (modal behind overlay)
+- Dropdown menus appear behind other elements
+- Mobile menu doesn't overlay content
+- Can see modal shadow but not modal content
+- DevTools shows z-index arms race (values >1000)
 
-- Warning sign: Animation plays twice (CSS then Framer) or gets "sticky" at intermediate state
-- Warning sign: Spring animation feels linear instead of bouncy
-- Tool: Chrome DevTools → Elements → Computed styles - look for multiple transition properties
-
-**Sources:**
-
-- [Do you still need Framer Motion?](https://motion.dev/blog/do-you-still-need-framer-motion)
-- [CSS / JS Animation Trends 2026: Motion & Micro-Interactions](https://webpeak.org/blog/css-js-animation-trends/)
-- [Fuck Framer Motion, I'm going to CSS instead](https://blog.ryanaque.com/fuck-framer-motion-im-going-to-css-instead/)
+**Phase to address:**
+Phase 1 (Visual Foundation) - Z-index scale must be defined before any overlay features
 
 ---
 
-### Pitfall 6: Design Token Migration Breaking Existing Dark Mode
+### Pitfall 5: Parallax Effects Destroying Mobile UX
 
-**What goes wrong:** Introducing new design tokens (CSS variables for colors, spacing) conflicts with existing portal dark mode implementation. Hard-coded color values don't switch with theme, causing light text on light background or other contrast violations.
+**What goes wrong:**
+Luxury parallax scrolling effects that look stunning on desktop don't work on 50%+ of mobile browsers, cause severe performance issues, or become invisible when user's hand blocks the screen. Mobile Safari and Chrome limit script execution during scroll, so parallax stutters or doesn't run until scrolling stops.
 
 **Why it happens:**
+Developers implement parallax assuming desktop-first usage patterns. Most mobile browsers don't support background-attachment: fixed for performance reasons. Touch interactions differ from mouse scrolling - parallax calculations desync. Script execution throttled during momentum scroll. Effects require reflow calculations 60 times/second, draining battery.
 
-- Portal has `data-color-mode` attribute for dark mode, new design tokens use different `data-theme` attribute
-- Existing components use hard-coded Tailwind colors (`bg-violet-500`), new tokens use semantic names (`bg-primary`)
-- Migration happens incrementally - some components use tokens, others don't, creating inconsistent theming
-- Design tokens not 1:1 match with old color system, requires manual reconciliation
+**How to avoid:**
 
-**Consequences:**
+- Disable parallax on mobile devices entirely: use `useMediaQuery` or `window.matchMedia`
+- Alternative: Use subtle transform animations triggered on viewport intersection, not scroll position
+- If parallax required: Use CSS-only solutions (background-attachment on Firefox only) with fallback to static positioning
+- Implement Intersection Observer API instead of scroll listeners for performance
+- Use `passive: true` flag on scroll listeners to prevent blocking
+- Test on actual low-end Android devices (Galaxy A series), not just dev tools
+- Consider CSS-only solutions: background-size with fixed positioning (limited browser support)
+- Provide "reduce motion" respect via `prefers-reduced-motion` media query
 
-- Mixed theming - some buttons use new system, others use old
-- Contrast violations - text becomes unreadable in dark mode
-- Components flash between old and new theme during page transitions
-- Increased bundle size from shipping both old and new color systems
+**Warning signs:**
 
-**Prevention:**
+- Scroll feels laggy or stuttery on mobile
+- Battery drains quickly during browsing
+- Parallax works on desktop but not mobile Safari
+- Scroll events fire after scrolling stops, not during
+- Animation frame rate drops below 30fps on mobile
+- Touch events conflict with parallax scroll calculations
 
-1. **Centralize all colors in one place first** (`lib/color-constants.ts` already exists) - audit usage before adding tokens
-2. **Use semantic token names** from the start (`primary`, `surface`, `border`) not specific (`violet-500`)
-3. **Run automated migration** with linters/codemods if available (e.g., @atlaskit/eslint-plugin-design-system)
-4. **Never commit partial migration** - entire component must use new system or old, not mixed
-5. **Test both themes** after every component migration - automated screenshot tests help
-
-**Detection:**
-
-- Warning sign: `data-color-mode` and `data-theme` attributes both present on `<html>` tag
-- Warning sign: CSS variables undefined in dark mode (check DevTools → Computed)
-- Tool: Accessibility checker - look for contrast ratio failures in dark mode
-
-**Sources:**
-
-- [Dark mode with design tokens](https://uxdesign.cc/dark-mode-with-design-tokens-8d7b9d9753a)
-- [How to Manage Breaking Changes in Design Tokens](https://designtokens.substack.com/p/how-to-manage-breaking-changes-in)
-- [Why Dark Mode is Mandatory in 2026 The Ultimate Design Guide](https://www.sivadesigner.in/blog/dark-mode-evolution-modern-web-design/)
+**Phase to address:**
+Phase 2 (Product Experience) - Only add parallax after core mobile experience is solid
 
 ---
 
-### Pitfall 7: shadcn/ui Base UI Migration Breaking Components
+### Pitfall 6: Breaking Existing Checkout Flow with Design Changes
 
-**What goes wrong:** shadcn/ui recently migrated from Radix UI primitives to Base UI (January-February 2026). Adding new components after migration can pull in old dependencies, or existing components break when upgraded to new Base UI API.
+**What goes wrong:**
+Luxury design refresh introduces CSS animations, overlays, or form styling that breaks Stripe checkout integration. Form validation animations prevent form submission. New button styles disable click events. Animated overlays hide error messages. Cart abandonment spikes from 70% to 85%+.
 
 **Why it happens:**
+Developers modify checkout components without testing complete flow end-to-end. CSS animations use pointer-events: none during animation, blocking clicks. New z-index rules hide Stripe Elements iframe. Custom form styling overrides Stripe's validation states. Loading animations never clear on API errors. Payment form re-renders destroy Stripe Elements mount state.
 
-- CLI still uses old import pattern even after migration command runs
-- Base UI has different API - `asChild` keyword removed, `checked` requires boolean, `value` requires array
-- Select component completely different between Radix and Base UI (doesn't map 1:1)
-- Base UI Select needs `items` prop instead of deriving from children (SSR + performance improvement but breaking change)
+**How to avoid:**
 
-**Consequences:**
+- Isolate checkout flow from luxury design changes initially
+- Never apply pointer-events: none to checkout buttons
+- Test complete purchase flow after every design change: add to cart → checkout → payment → confirmation
+- Preserve Stripe Elements iframe z-index and positioning (don't wrap in animated containers)
+- Use Stripe webhooks (checkout.session.completed) for fulfillment, never redirect callbacks
+- Implement loading states that clear on error, not just success
+- Log all form validation errors to console during development
+- Place error messages above input fields (accessible during keyboard interaction)
+- Avoid transforms/filters on checkout form containers (creates stacking context issues)
+- Test with intentional failures: declined cards, network errors, timeout scenarios
+- Monitor checkout abandonment rate before and after design changes
 
-- New components fail to render with cryptic errors about missing props
-- Existing dropdowns/selects break after upgrade
-- Build passes but runtime errors in production
-- Need to re-run migration command repeatedly to fix auto-generated components
+**Warning signs:**
 
-**Prevention:**
+- Checkout abandonment rate increases >5%
+- Support tickets about "payment not working"
+- Stripe Elements not visible or clickable
+- Form submits but payment doesn't process
+- Error messages hidden behind overlays
+- Loading spinner never clears on error
+- Console errors about Stripe Element mounting
 
-1. **Check shadcn/ui changelog before adding components** - verify if Base UI migration is complete
-2. **Run migration in isolated branch** - test thoroughly before merging to main
-3. **Avoid "big bang" migration** - replace components incrementally, one at a time
-4. **Read Base UI migration guide** - API differences documented in official docs
-5. **Pin shadcn/ui version** during active migration period to prevent CLI drift
-
-**Detection:**
-
-- Warning sign: `npm install` adds both `@radix-ui/*` and `@base-ui/*` packages
-- Warning sign: Console errors about `asChild` prop not recognized
-- Tool: Check `package.json` dependencies - should be either Radix OR Base UI, not both
-
-**Sources:**
-
-- [February 2026 - Unified Radix UI Package - shadcn/ui](https://ui.shadcn.com/docs/changelog/2026-02-radix-ui)
-- [January 2026 - Base UI Documentation - shadcn/ui](https://ui.shadcn.com/docs/changelog/2026-01-base-ui)
-- [Shadcn UI Migration Guide: Transitioning from Radix UI to Base UI](https://github.com/shadcn-ui/ui/discussions/9562)
-- [[bug]: After migration to new radix style, components are still added as old](https://github.com/shadcn-ui/ui/issues/9547)
+**Phase to address:**
+Phase 3 (Checkout Polish) - Only touch checkout after core luxury features proven stable
 
 ---
 
-## Minor Pitfalls
+### Pitfall 7: Animation Library Bundle Size Explosion
 
-### Pitfall 8: Mobile Responsive Regressions During Redesign
-
-**What goes wrong:** Desktop design looks polished but mobile breaks - overlapping elements, truncated text, unclickable buttons, horizontal scroll on narrow screens.
+**What goes wrong:**
+Adding Framer Motion or GSAP for luxury animations increases JavaScript bundle size by 100-300KB, pushing total bundle over 500KB. First Load JS on mobile exceeds Next.js warning threshold. Time to Interactive (TTI) increases 2-3 seconds on 3G connections, directly impacting mobile conversions.
 
 **Why it happens:**
+Developers import entire animation libraries when only using 10% of features. Framer Motion includes full physics engine, gesture handlers, and layout animations by default. GSAP plugins imported globally. Tree-shaking fails due to barrel imports. Animation code included in initial page bundle instead of code-split per route.
 
-- Designers work in Figma desktop view, don't provide mobile specs
-- Framer Motion animations use fixed pixel values instead of responsive units
-- Complex grid layouts (schedule grid) don't collapse gracefully on mobile
-- Touch targets too small (<44px) for mobile, work fine with mouse
+**How to avoid:**
 
-**Prevention:**
+- Use CSS animations + Intersection Observer for 80% of effects (zero JS cost)
+- If animation library needed:
+  - Framer Motion: Import specific components: `import { motion } from 'framer-motion'` not `import * as motion`
+  - GSAP: Load only required plugins, use dynamic imports for non-critical animations
+  - Motion One: Lighter alternative (5KB) with similar API
+- Dynamic import animation library for non-critical features: `const AnimatedComponent = dynamic(() => import('./AnimatedComponent'), { ssr: false })`
+- Code-split per route: Keep animation libraries in route-specific bundles
+- Use next/bundle-analyzer to track bundle impact: `npm run build -- --analyze`
+- Set performance budgets: Max 250KB initial JS bundle, warn at 200KB
+- Consider CSS-only alternatives: Tailwind CSS animations, keyframes, view transitions API
 
-1. **Mobile-first CSS** - write base styles for mobile, use `@media (min-width:)` for desktop
-2. **Visual regression testing** across device sizes (use tools like Percy, Chromatic)
-3. **Test on real devices** - simulator doesn't catch all touch interaction issues
-4. **Use Tailwind responsive prefixes** consistently (`sm:`, `md:`, `lg:`)
-5. **Check touch target sizes** - minimum 44x44px per WCAG guidelines
+**Warning signs:**
 
-**Sources:**
+- Build output shows "First Load JS shared by all" >150KB
+- Lighthouse flags "Reduce unused JavaScript"
+- Bundle analyzer shows animation library in main chunk
+- Time to Interactive >5s on Fast 3G throttling
+- Large hydration time on mobile
+- Webpack bundle size warnings during build
 
-- [Visual Regression Testing in Mobile QA: The 2026 Guide](https://www.getpanto.ai/blog/visual-regression-testing-in-mobile-qa)
-- [Mastering Responsive Design in 2026](https://mobiview.github.io/mastering-responsive-design)
+**Phase to address:**
+Phase 1 (Visual Foundation) - Choose animation strategy before building components to avoid refactoring
 
 ---
 
-### Pitfall 9: SWR Auto-Refresh Interrupting Animation States
+### Pitfall 8: Overcrowded Luxury Design Killing Conversions
 
-**What goes wrong:** User clicks task to expand details, animation starts, SWR revalidates (45s interval), task re-renders mid-animation, animation resets or element disappears.
+**What goes wrong:**
+Adding too many premium effects (parallax + animations + video backgrounds + complex hover states) creates cognitive overload. Users can't find "Add to Cart" button. Conversion rate drops 10-95% when pages become cluttered. Research shows visitors hesitate when they can't identify next step quickly.
 
 **Why it happens:**
+Designer wants to showcase all luxury capabilities at once. Each stakeholder adds "just one more effect." No hierarchy of visual importance. Every element animated/highlighted equally, so nothing stands out. Call-to-action buttons buried in visual noise.
 
-- SWR revalidates data while user actively interacting with UI
-- Framer Motion animation state stored in component, SWR refresh causes remount
-- Optimistic updates + SWR revalidation race condition
+**How to avoid:**
 
-**Prevention:**
+- Follow luxury website principle: "Less is more" - leave space for content to breathe
+- Establish visual hierarchy:
+  - Level 1: Primary CTA (Add to Cart) - most prominent, minimal animation
+  - Level 2: Product images - high quality but static unless interacted with
+  - Level 3: Secondary info - subtle reveals on scroll
+  - Level 4: Decorative effects - barely noticeable, enhance don't distract
+- Limit animations per viewport:
+  - Desktop: 2-3 major animations visible simultaneously
+  - Mobile: 1 animation max (plus micro-interactions)
+- A/B test conversion rates before/after each luxury feature addition
+- Implement analytics events: Track CTA visibility, clicks, scroll depth
+- User test with 5+ people unfamiliar with site - time to complete purchase
+- "Does this effect help user make purchase decision?" test for every feature
 
-1. **Use layoutId for persistent animations** across re-renders
-2. **Pause SWR revalidation during active animations** - set `revalidateOnFocus: false` temporarily
-3. **Store animation state in URL params or ref** not component state
-4. **Use SWR's `mutate` for optimistic updates** to prevent race conditions
+**Warning signs:**
 
-**Sources:**
+- Conversion rate drops >5% after design updates
+- Heatmaps show users not clicking primary CTAs
+- Session recordings show confusion/hesitation
+- Bounce rate increases on product pages
+- Time to purchase increases significantly
+- Support asks "where is buy button?"
 
-- [SWR Documentation](https://swr.vercel.app/)
-
----
-
-### Pitfall 10: Z-Index Conflicts Between Modals and Animations
-
-**What goes wrong:** Animated elements appear above modals/popovers, or modals get stuck behind other elements. New animations introduce new stacking contexts that break existing z-index hierarchy.
-
-**Why it happens:**
-
-- Framer Motion creates new stacking context with transforms
-- Existing z-index scale not documented (project uses z-dropdown: 40, z-modal: 50, z-popover: 55, z-toast: 70, z-command: 90)
-- Developers pick arbitrary z-index values (999, 9999) instead of using scale
-
-**Prevention:**
-
-1. **Use centralized z-index scale** from `tailwind.config.ts` - never use arbitrary values
-2. **Audit z-index usage** before adding animations - search codebase for `z-[`, `z-999`
-3. **Portals for modals** - render modals at document root to escape stacking context issues
-4. **Document z-index scale** in design system - make it easy to find correct value
-
-**Sources:**
-
-- Codebase: `tailwind.config.ts` defines z-index scale (z-dropdown: 40, z-modal: 50, etc.)
+**Phase to address:**
+Phase 2 (Product Experience) - Add effects incrementally with A/B tests between additions
 
 ---
 
-## Phase-Specific Warnings
+## Technical Debt Patterns
 
-| Phase Topic                              | Likely Pitfall                       | Mitigation                                                                           |
-| ---------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ |
-| **Phase 1: Framer Motion Setup**         | Server component crashes             | Create motion wrappers with 'use client', test SSR build locally before deploy       |
-| **Phase 2: Loading Skeletons**           | FOUC on dark mode toggle             | Import styles in root layout, add data-theme script to HTML head                     |
-| **Phase 3: Micro-Interactions**          | Performance degradation on dashboard | Performance budget (max 5 animated elements), test on low-end device, use React.memo |
-| **Phase 4: Schedule Grid Consolidation** | State loss during merge              | Feature parity audit, extract hooks first, keep both components parallel for 1 week  |
-| **Phase 5: Design Token Migration**      | Dark mode contrast violations        | Migrate entire component at once (not partial), test both themes, use semantic names |
-| **Phase 6: Mobile Polish**               | Responsive regressions               | Mobile-first CSS, visual regression tests, real device testing                       |
+Shortcuts that seem reasonable but create long-term problems.
+
+| Shortcut                               | Immediate Benefit                          | Long-term Cost                                | When Acceptable                                                 |
+| -------------------------------------- | ------------------------------------------ | --------------------------------------------- | --------------------------------------------------------------- |
+| Import entire animation library        | Faster development, access to all features | 100-300KB bundle increase, slower mobile load | Never - always import specific components                       |
+| Skip image optimization "temporarily"  | Speeds up initial build                    | 3-5s mobile load times, 20% conversion loss   | Never - set up pipeline first                                   |
+| Use inline z-index values              | Quick fix for layering issue               | Z-index chaos, unmaintainable stacking        | Never - always use design system scale                          |
+| Duplicate Stripe integration styles    | Get custom look immediately                | Breaks on Stripe updates, payment failures    | Never - use Stripe's customization API                          |
+| Skip mobile parallax testing           | Works in Chrome DevTools                   | Broken UX on 50%+ of mobile traffic           | Never - test on real devices                                    |
+| Load fonts from CDN without subsetting | Easiest setup                              | 150-250KB per font, 3s render blocking        | Only for rapid prototyping, never production                    |
+| Apply animations to all list items     | Consistent UX                              | Re-renders entire list on single change       | Only for lists <20 items, virtualize larger                     |
+| Use client components everywhere       | Easier state management                    | Larger JS bundle, slower hydration            | Only when interactivity required, use Server Components default |
+
+## Integration Gotchas
+
+Common mistakes when connecting to external services.
+
+| Integration      | Common Mistake                                  | Correct Approach                                                                              |
+| ---------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Stripe Checkout  | Wrapping Stripe Elements in animated containers | Keep Stripe iframe in stable DOM position, no transform ancestors                             |
+| Supabase Storage | Using direct publicUrl for product images       | Proxy through Next.js Image API with remote patterns configured                               |
+| Next.js Image    | Not configuring remote domains for Supabase     | Add `remotePatterns: [{ protocol: 'https', hostname: '*.supabase.co' }]` in next.config.js    |
+| Google Fonts     | Importing full font families                    | Use next/font with specific weights: `weight: ['400', '600', '700']`                          |
+| Framer Motion    | Importing from 'framer-motion' barrel           | Import specific: `import { motion, AnimatePresence } from 'framer-motion/dist/framer-motion'` |
+| GSAP             | Adding ScrollTrigger without cleanup            | Always `ScrollTrigger.getAll().forEach(t => t.kill())` in useEffect return                    |
+
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap                                  | Symptoms                   | Prevention                                                   | When It Breaks              |
+| ------------------------------------- | -------------------------- | ------------------------------------------------------------ | --------------------------- |
+| Animating all product grid items      | Smooth with 10 products    | Virtualize lists with @tanstack/react-virtual, memoize items | 50+ products                |
+| Loading all images eagerly            | Fast on desktop            | Lazy load below-fold images, progressive loading             | 20+ product images          |
+| Running animations on scroll listener | Fluid on desktop           | Use Intersection Observer or passive scroll listeners        | Mobile, low-end devices     |
+| Client-side filtering of products     | Instant with small catalog | Server-side pagination + filtering, cache results            | 200+ products               |
+| Unoptimized font loading              | Acceptable on fiber        | Preload critical fonts, use font-display: swap               | Mobile 3G/4G                |
+| No animation limits                   | Impressive on new MacBook  | Limit simultaneous animations, use CSS when possible         | Mid-range Android devices   |
+| High-quality images for all viewports | Crisp on desktop           | Responsive images with srcset/sizes, Next.js Image           | Mobile, metered connections |
+
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake                                 | Risk                              | Prevention                                           |
+| --------------------------------------- | --------------------------------- | ---------------------------------------------------- |
+| Exposing Supabase Storage URLs directly | Image hotlinking, bandwidth theft | Proxy through API route with auth checks             |
+| Allowing arbitrary remote images        | Next.js image optimization abuse  | Restrict remotePatterns to specific domains          |
+| Not validating Stripe webhooks          | Fake payment confirmations        | Always verify webhook signatures with secret         |
+| Storing payment info in local state     | XSS can steal payment data        | Use Stripe Elements, never touch payment data        |
+| Client-side price calculations          | Price manipulation via DevTools   | Calculate totals server-side, validate before Stripe |
+| Public Supabase RLS bypass in admin     | Unauthorized access to orders     | Separate admin API routes, verify role server-side   |
+
+## UX Pitfalls
+
+Common user experience mistakes in this domain.
+
+| Pitfall                                     | User Impact                           | Better Approach                                                           |
+| ------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------- |
+| Auto-playing product videos                 | Annoying, drains battery, uses data   | Play on hover (desktop) or tap (mobile), muted by default                 |
+| Parallax on mobile                          | Jittery, broken, or invisible effects | Disable on mobile, use subtle fade-in instead                             |
+| Animations blocking interaction             | Can't click button during animation   | Use pointer-events: auto on interactive elements, animate containers only |
+| No loading states on luxury animations      | Unclear if site is working            | Show skeleton screens or subtle loaders                                   |
+| Flash of unstyled content (FOUC) with fonts | Unprofessional, layout shift          | Use font-display: swap with similar fallback metrics                      |
+| Overcomplicated checkout animations         | Distraction during critical flow      | Minimal animations on checkout, focus on clarity                          |
+| High-res images without blur placeholder    | Large white boxes during load         | Implement blur-up effect with base64 previews                             |
+| Missing "reduce motion" respect             | Accessibility issue, motion sickness  | Respect prefers-reduced-motion media query                                |
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Image Optimization:** Often missing AVIF format, sizes prop, and blur placeholders — verify Network tab shows .avif/.webp + blur effect on load
+- [ ] **Font Loading:** Often missing preload, font-display, subsetting — verify <3s LCP with fonts, no FOIT/FOUT
+- [ ] **Mobile Testing:** Often tested only in DevTools — verify on real iOS Safari, Android Chrome, low-end devices
+- [ ] **Checkout Flow:** Often tested only happy path — verify with declined cards, network errors, timeout scenarios
+- [ ] **Animation Performance:** Often tested only on dev MacBook — verify 60fps on mid-range Android, <100ms TBT
+- [ ] **Z-Index Scale:** Often has scale defined but not enforced — verify no inline z-index, all values from design system
+- [ ] **Bundle Size:** Often no monitoring set up — verify bundle analyzer run, performance budgets configured
+- [ ] **Accessibility:** Often missing keyboard navigation, reduced motion — verify Tab navigation works, respects prefers-reduced-motion
+- [ ] **Loading States:** Often only handles success — verify error states, loading timeouts, retry mechanisms
+- [ ] **Conversion Tracking:** Often no before/after metrics — verify analytics events firing, A/B test results collected
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall                      | Recovery Cost | Recovery Steps                                                                               |
+| ---------------------------- | ------------- | -------------------------------------------------------------------------------------------- |
+| Animation performance issues | MEDIUM        | Profile with React DevTools, identify re-renders, memoize components, move to CSS animations |
+| Image loading too slow       | LOW           | Implement progressive loading, add blur placeholders, enable AVIF format                     |
+| Font blocking render         | LOW           | Add font-display: swap, preload critical fonts, remove unused weights                        |
+| Z-index conflicts            | MEDIUM        | Audit all z-index values, create global scale, refactor to use Tailwind classes              |
+| Broken checkout flow         | HIGH          | Rollback design changes, isolate Stripe integration, test end-to-end before redeploy         |
+| Mobile parallax broken       | LOW           | Disable parallax on mobile via media query, replace with simpler scroll effects              |
+| Bundle too large             | MEDIUM        | Run bundle analyzer, dynamic import heavy libraries, code-split per route                    |
+| Overcrowded design           | MEDIUM        | A/B test removing effects one by one, user testing to identify confusion points              |
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall                | Prevention Phase            | Verification                                                              |
+| ---------------------- | --------------------------- | ------------------------------------------------------------------------- |
+| Animation performance  | Phase 1: Visual Foundation  | Lighthouse Performance >85, TBT <200ms on mobile                          |
+| Image optimization     | Phase 1: Visual Foundation  | LCP <2.5s, AVIF/WebP in Network tab, blur placeholders visible            |
+| Font loading issues    | Phase 1: Visual Foundation  | No FOIT/FOUT, <3s LCP with fonts loaded                                   |
+| Z-index conflicts      | Phase 1: Visual Foundation  | No z-index >100, all values from Tailwind config, modals functional       |
+| Parallax mobile issues | Phase 2: Product Experience | 60fps scroll on Android mid-range, parallax disabled on mobile            |
+| Broken checkout        | Phase 3: Checkout Polish    | End-to-end payment test with declined card, error states visible          |
+| Bundle size explosion  | Phase 1: Visual Foundation  | Bundle analyzer <250KB initial JS, dynamic imports for heavy libs         |
+| Overcrowded design     | Phase 2: Product Experience | A/B test shows no conversion rate decrease, user testing confirms clarity |
+
+## Sources
+
+**Performance & Next.js:**
+
+- [React & Next.js Best Practices in 2026: Performance, Scale & Cleaner Code](https://fabwebstudio.com/blog/react-nextjs-best-practices-2026-performance-scale)
+- [Optimizing GSAP Animations in Next.js 15: Best Practices](https://medium.com/@thomasaugot/optimizing-gsap-animations-in-next-js-15-best-practices-for-initialization-and-cleanup-2ebaba7d0232)
+- [Rebuilding A Large E-Commerce Website With Next.js](https://www.smashingmagazine.com/2021/09/lessons-learned-ecommerce-nextjs-case-study/)
+- [Next.js Image Optimization | DebugBear](https://www.debugbear.com/blog/nextjs-image-optimization)
+- [Next.js Image Optimization: A Guide for Web Developers](https://strapi.io/blog/nextjs-image-optimization-developers-guide)
+
+**Luxury Design & Performance:**
+
+- [Avoiding Common Web Design Mistakes: A 2026 Guide](https://designedge.ca/avoiding-common-web-design-mistakes-a-2026-guide-for-businesses/)
+- [26 fancy website examples luxury brands can learn from](https://blog.hubspot.com/website/luxury-websites)
+- [8 Common Website Design Mistakes to Avoid in 2026](https://www.zachsean.com/post/8-common-website-design-mistakes-to-avoid-in-2026-for-better-conversions-and-user-experience)
+- [Top 10 Web Design Mistakes & How To Avoid Them In 2025](https://www.digitalsilk.com/digital-trends/web-design-mistakes/)
+
+**Animation Performance:**
+
+- [Choosing a React Animation Library: Performance Trade-Offs](https://www.syncfusion.com/blogs/post/react-animation-libraries-comparison)
+- [Animations with React: How a simple component can affect your performance](https://dev.to/fedekau/animations-with-react-how-a-simple-component-can-affect-your-performance-2a41)
+- [Framer Help: Troubleshooting animation issues](https://www.framer.com/help/articles/troubleshooting-animation-issues/)
+- [Framer Help: Optimizing your site for speed and performance](https://www.framer.com/help/articles/site-optimization/)
+- [Performant Parallaxing | Chrome for Developers](https://developer.chrome.com/blog/performant-parallaxing)
+
+**Checkout & E-commerce:**
+
+- [Checkout UX Best Practices 2025 – Baymard Institute](https://baymard.com/blog/current-state-of-checkout-ux)
+- [Checkout Optimization Best Practices for 2026 Success](https://www.bigcommerce.com/articles/ecommerce/checkout-optimization/)
+- [Stripe Payment Integration: Complete Dev Guide 2026](https://www.digitalapplied.com/blog/stripe-payment-integration-developer-guide-2026)
+- [Stripe Changelog | Stripe Documentation](https://docs.stripe.com/changelog)
+
+**Font Performance:**
+
+- [Why custom fonts are tanking your site's performance](https://www.oncecoupled.com/why-custom-fonts-are-tanking-your-sites-performance-the-hidden-cost-of-visual-appeal/)
+- [Preventing the Performance Hit from Custom Fonts](https://css-tricks.com/preventing-the-performance-hit-from-custom-fonts/)
+- [Custom Fonts on Shopify Without Slowing Down Your Store](https://www.task4store.com/blogs/blogs/custom-fonts-on-shopify-without-slowing-down-your-store)
+- [Your web fonts are killing conversions | Hoverify](https://tryhoverify.com/blog/your-web-fonts-are-killing-conversions/)
+
+**Mobile & Parallax:**
+
+- [Why Doesn't Parallax Scrolling Work on Mobile?](https://wpastra.com/docs/parallax-not-working-on-mobile/)
+- [What Parallax Lacks - Nielsen Norman Group](https://www.nngroup.com/articles/parallax-usability/)
+- [Why parallax scrolling needs to die - Fast Company](https://www.fastcompany.com/90309395/why-parallax-scrolling-needs-to-die)
+
+**Z-Index & Stacking:**
+
+- [4 reasons your z-index isn't working (and how to fix it)](https://coder-coder.com/z-index-isnt-working/)
+- [Why Z-Index Isn't Working: CSS Stacking Contexts](https://playfulprogramming.com/posts/css-stacking-context/)
+- [CSS Position Sticky Z-Index Issue: Modal Behind Overlay](https://www.codegenes.net/blog/css-position-sticky-and-z-index-overlay-modal/)
+
+**Refactoring & Integration:**
+
+- [Refactoring vs. Replatforming: Big Differences + Top Options](https://www.bigcommerce.com/articles/ecommerce-website-development/refactoring-vs-replatforming/)
+- [Code Refactoring: When to Refactor and How to Avoid Mistakes](https://www.tembo.io/blog/code-refactoring)
+- [Outgrowing Your Theme? The 2026 Guide to Scaling E-Commerce](https://www.hristovdevelopment.com/post/scaling-e-commerce-infrastructure-guide-2026)
 
 ---
 
-## Testing Checklist After Design Changes
-
-### Functionality Tests
-
-- [ ] Create task → verify appears without page refresh (SWR cache invalidated)
-- [ ] Toggle task status → verify optimistic update works
-- [ ] Create meeting → verify appears in schedule grid
-- [ ] Filter by team member → verify tasks/meetings filtered correctly
-- [ ] Switch day/week/month view → verify all data loads
-
-### Performance Tests
-
-- [ ] Chrome DevTools Performance tab → no Long Tasks >50ms during animations
-- [ ] FPS counter → maintains 60fps during scroll and interactions
-- [ ] React DevTools Profiler → no components re-rendering >10 times/second
-- [ ] Lighthouse audit → Performance score >90
-
-### Visual Tests
-
-- [ ] Dark mode toggle → no FOUC, all colors switch correctly
-- [ ] Loading skeletons → match final content shape and position
-- [ ] Animations → no double-animation or stuttering
-- [ ] Mobile (375px width) → no horizontal scroll, touch targets >44px
-- [ ] Tablet (768px width) → layout collapses gracefully
-
-### SSR/Hydration Tests
-
-- [ ] `npm run build && npm start` → no hydration errors in console
-- [ ] Disable JavaScript in DevTools → page structure still makes sense
-- [ ] Slow 3G throttling → skeletons appear, no blank screen
-
-### Integration Tests
-
-- [ ] Create task while SWR revalidating → no race condition
-- [ ] Animate element then trigger SWR refresh → animation doesn't reset
-- [ ] Open modal then navigate → modal closes, no portal leak
-- [ ] Drag task to new time slot → position calculates correctly
-
----
-
-## Confidence Assessment
-
-| Area                              | Confidence | Notes                                                                         |
-| --------------------------------- | ---------- | ----------------------------------------------------------------------------- |
-| Framer Motion + Server Components | HIGH       | Official docs, GitHub issues, recent 2026 articles confirm pitfalls           |
-| Animation Performance             | HIGH       | Multiple verified sources, Vercel official best practices                     |
-| Component Consolidation           | HIGH       | Codebase analysis shows exact line counts and different patterns              |
-| FOUC/Loading Skeletons            | HIGH       | Next.js 16 specific documentation and 2025-2026 guides                        |
-| CSS Transitions Conflicts         | MEDIUM     | Community articles, not official Framer docs                                  |
-| Design Token Migration            | MEDIUM     | shadcn/ui migration ongoing, documentation evolving                           |
-| shadcn Base UI                    | HIGH       | Official changelog confirms breaking changes                                  |
-| Mobile Responsive                 | MEDIUM     | General best practices, not Next.js specific                                  |
-| SWR Conflicts                     | LOW        | No specific documentation found, based on general state management principles |
-| Z-Index Conflicts                 | HIGH       | Codebase analysis of existing z-index scale                                   |
-
----
-
-## Gaps to Address
-
-### Topics Needing Deeper Research Later
-
-1. **SWR + Animation State Conflicts** - No official documentation found about SWR revalidation interrupting Framer Motion animations. May need empirical testing during implementation to document specific patterns.
-
-2. **shadcn/ui Base UI Migration Timeline** - Migration announced January 2026, still ongoing as of March 2026. Final API may change. Re-check official docs before Phase 5.
-
-3. **Mobile Device Testing Matrix** - Need to define specific devices for testing (iOS Safari, Android Chrome versions). Visual regression testing tools need evaluation (Percy vs. Chromatic vs. self-hosted).
-
-4. **Performance Budget Numbers** - "Max 5 animated elements" is guideline, not tested. Need to establish actual FPS benchmarks on target low-end device during Phase 3.
-
-5. **Lighthouse Performance Score Baseline** - Current score unknown. Need baseline before adding animations to measure regression.
-
-### Areas Where Research Was Inconclusive
-
-- **Exact SWR configuration to pause revalidation during animations** - SWR docs don't cover this use case explicitly
-- **Best visual regression testing tool for Next.js 16** - multiple options, no clear 2026 winner
-- **Dark mode flash prevention with App Router** - multiple solutions suggested, unclear which is most reliable
-
----
-
-## Key Takeaways for Roadmap Planning
-
-1. **Phase 1 must include motion wrapper creation** - Don't start adding animations before this infrastructure exists, or you'll have to refactor everything when Server Component crashes happen.
-
-2. **Schedule grid consolidation (Phase 4) is highest risk** - 1,744 lines of critical functionality. Needs 2-3x time estimate of greenfield build. Consider keeping both components longer than planned.
-
-3. **Performance testing must happen in Phase 3** - Don't wait until all animations added. Test incrementally, establish budget early.
-
-4. **shadcn/ui Base UI migration is moving target** - Lock version, check changelog weekly, defer component additions until migration stabilizes.
-
-5. **Mobile testing can't be last phase** - Responsive issues compound. Test mobile after each major addition (skeletons, animations, grid).
-
-6. **Design tokens must be all-or-nothing per component** - Never commit partial migration. Creates unfixable theming inconsistencies.
+_Pitfalls research for: Aquador luxury design integration_
+_Researched: 2026-03-04_
