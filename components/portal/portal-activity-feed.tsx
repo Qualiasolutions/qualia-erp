@@ -75,14 +75,21 @@ function groupActivitiesByDate(activities: ActivityLogEntry[]): Map<string, Acti
 export function PortalActivityFeed({ activities }: PortalActivityFeedProps) {
   if (!activities || activities.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16">
-        <div className="rounded-full bg-muted p-6">
-          <MessageSquare className="h-8 w-8 text-muted-foreground/60" />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="max-w-md text-center">
+          {/* Icon Container */}
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-qualia-500/10">
+            <Clock className="h-10 w-10 text-qualia-600/60" />
+          </div>
+
+          {/* Heading */}
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">No activity yet</h3>
+
+          {/* Description */}
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
+            Updates and milestones will appear here as your project progresses. Check back soon!
+          </p>
         </div>
-        <h3 className="mt-4 text-lg font-medium text-foreground">No updates yet</h3>
-        <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
-          Project activity and updates will appear here as your project progresses.
-        </p>
       </div>
     );
   }

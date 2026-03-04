@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { getProjectStatusColor } from '@/lib/portal-styles';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
+import { Briefcase } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -34,26 +35,20 @@ interface PortalProjectsListProps {
 export function PortalProjectsList({ projects, progressMap = {} }: PortalProjectsListProps) {
   if (!projects || projects.length === 0) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/50">
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-            <svg
-              className="h-6 w-6 text-muted-foreground/60"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-              />
-            </svg>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="max-w-md text-center">
+          {/* Icon Container */}
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-qualia-500/10">
+            <Briefcase className="h-10 w-10 text-qualia-600/60" />
           </div>
-          <h3 className="mt-4 text-sm font-semibold text-foreground">No projects assigned</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Contact your project manager for access.
+
+          {/* Heading */}
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">No projects yet</h3>
+
+          {/* Description */}
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
+            Your projects will appear here once you&apos;ve been granted access. Contact your
+            project manager if you need assistance.
           </p>
         </div>
       </div>

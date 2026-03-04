@@ -15,6 +15,7 @@ import {
   FileAudio,
   FileArchive,
   Loader2,
+  FolderOpen,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -83,12 +84,22 @@ export function PortalFileList({ files }: PortalFileListProps) {
 
   if (files.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-        <File className="mb-4 h-12 w-12 text-muted-foreground/60" />
-        <h3 className="mb-2 text-lg font-semibold text-foreground">No files shared yet</h3>
-        <p className="text-sm text-muted-foreground">
-          Your project manager will upload files here when available.
-        </p>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="max-w-md text-center">
+          {/* Icon Container */}
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-qualia-500/10">
+            <FolderOpen className="h-10 w-10 text-qualia-600/60" />
+          </div>
+
+          {/* Heading */}
+          <h3 className="text-xl font-semibold tracking-tight text-foreground">No files yet</h3>
+
+          {/* Description */}
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
+            Deliverables and project files will be shared here. Your team will upload files when
+            they&apos;re ready.
+          </p>
+        </div>
       </div>
     );
   }
