@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 ## Current Position
 
-**Milestone:** v1.1 Premium Polish (continued)
+**Milestone:** v1.2 Premium Animations
 
-**Phase:** 06 - Micro-Interactions & Email Notifications
+**Phase:** 10 - Differentiator Animations
 
-**Plan:** 2 of 2 complete (06-01-SUMMARY.md and 06-02-SUMMARY.md exist)
+**Plan:** 1 of 3 complete (10-02-SUMMARY.md exists)
 
-**Status:** Phase complete — ready for phase 7 or phase 10
+**Status:** In progress — plans 10-01 and 10-03 remaining
 
-**Last activity:** 2026-03-04 — Completed 06-02 (email notifications + UI fixes)
+**Last activity:** 2026-03-04 — Completed 10-02 (spring physics on buttons and cards)
 
-Progress: [██████████] 100% (2/2 plans complete in phase 06)
+Progress: [███░░░░░░░] 33% (1/3 plans complete in phase 10)
 
 ## Performance Metrics
 
@@ -41,11 +41,12 @@ Progress: [██████████] 100% (2/2 plans complete in phase 06)
 
 **v1.2 Milestone (Current):**
 
-- Duration: Not started
+- Duration: In progress (started 2026-03-04)
 - Target: 2-3 days
-- Plans: 2 planned
+- Plans completed: 1 (10-02)
 - Phases: 2 total (10-11)
 - Requirements: 8 (ANIM-01 to 04, POLISH-01 to 04)
+- Progress: ANIM-03 complete (spring physics)
 
 **Velocity:**
 
@@ -78,13 +79,19 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - v1.2: Group all differentiator animations in Phase 10 — natural delivery boundary
 - v1.2: Separate polish work in Phase 11 — independent work stream, no dependencies
 
+**Recent decisions from Phase 10-02 (Spring Physics):**
+
+- SPRING-01: Use CSS spring curves for buttons instead of Framer Motion wrapper — preserves existing Slot.Root pattern, works with all variants
+- SPRING-02: Framer Motion whileHover for cards with spring config (stiffness 300, damping 20) — provides natural elastic hover lift
+- SPRING-03: Portal projects inherit spring animations via card-interactive class — no code changes needed, automatic consistency
+
 ### Pending Todos
 
 **From v1.2 requirements:**
 
 - [ ] Implement stagger animations on lists (ANIM-01)
 - [ ] Add scroll-triggered reveals on roadmap (ANIM-02)
-- [ ] Integrate spring physics on interactive elements (ANIM-03)
+- [x] Integrate spring physics on interactive elements (ANIM-03) — Completed 10-02
 - [ ] Enable gesture-based drawer interactions (ANIM-04)
 - [ ] Implement activity feed cursor-based pagination (POLISH-01)
 - [ ] Standardize date formatting across portal (POLISH-02)
@@ -137,45 +144,39 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 ### Next Session Should
 
-1. Execute Phase 7 (Animation Testing) if it exists
-2. OR execute Phase 10 (Differentiator Animations) if ready
-3. OR execute quick tasks for remaining v1.1 polish work
-4. Verify email notifications work (manual test: submit phase → check admin email → approve → check trainee email)
+1. Execute Phase 10 Plan 01 (Stagger & Scroll Animations) if not yet complete
+2. OR execute Phase 10 Plan 03 (Gesture Interactions)
+3. OR begin Phase 11 (Polish Work) if Phase 10 complete
+4. Consider manual testing: verify spring physics feel natural on buttons/cards
 
 ### Context for Handoff
 
-**What we just completed:** Phase 06 — Micro-Interactions & Email Notifications (both plans complete)
+**What we just completed:** Phase 10 Plan 02 — Spring Physics on Buttons and Cards
 
-**Where we are:** Phase 06 complete (2/2 plans done)
+**Where we are:** Phase 10 in progress (1/3 plans done)
 
-**What's next:** Phase 7 or Phase 10 (depending on what exists/is ready)
+**What's next:** Plan 10-01 or 10-03 (remaining differentiator animations)
 
 **Critical context:**
 
-Phase 06 Plan 01 (Micro-Interactions):
+Phase 10 Plan 02 (Spring Physics):
 
-- All button press feedback complete (data-slot CSS selectors)
-- Card hover states applied to portal, trainee, and dashboard cards
-- Form focus ring animations smooth and consistent
-- Task completion uses spring physics for satisfying feedback
-- All animations respect prefers-reduced-motion (accessibility compliant)
-
-Phase 06 Plan 02 (Email Notifications + Fixes):
-
-- Phase review emails: submit (purple), approved (green), changes (amber)
-- Fixed ghost comment bug (optimistic rollback now filters temp IDs)
-- Fixed stale closure in schedule grid (status passed as parameter)
-- All email notifications non-blocking (silent success pattern)
+- Button active state uses spring-like cubic-bezier curve (0.34, 1.56, 0.64, 1) for elastic press feedback
+- Card interactive hover enhanced with subtle scale (1.005) and spring-based lift
+- Phase cards use Framer Motion whileHover with spring physics (y: -4, stiffness: 300, damping: 20)
+- Task items use subtle whileHover spring lift (y: -2, same spring config)
+- Portal project cards inherit spring animations via card-interactive class
+- Pattern established: CSS for simple springs, Framer Motion for complex hover states
 
 **Completed files:**
 
-Phase 06-01: 5 commits (677f45d to cad5613), 6 files modified
-Phase 06-02: 4 commits (2f24211, ad7b05d, d8211f3, 707a40d), 4 files modified
+Phase 10-02: 2 commits (d100079, 92a22f5), 3 files modified
 
 **Summaries created:**
 
-- `.planning/phases/06-micro-interactions-email-notifications/06-01-SUMMARY.md`
-- `.planning/phases/06-micro-interactions-email-notifications/06-02-SUMMARY.md`
+- `.planning/phases/10-differentiator-animations/10-02-SUMMARY.md`
+
+**Note:** Plan 10-01 appears to have modified phase-card.tsx concurrently (adding useInView for scroll-triggered reveals). Both changes coexist without conflicts.
 
 ---
 
