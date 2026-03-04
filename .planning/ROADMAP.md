@@ -189,11 +189,13 @@ Plans:
 4. User can swipe to dismiss mobile drawers with gesture-based interaction (touch-friendly)
 5. All animations respect prefers-reduced-motion and degrade gracefully
 
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
 
-- [ ] 10-01: [TBD during planning]
+- [ ] 10-01-PLAN.md — Stagger animations on lists + scroll-triggered reveals on roadmap
+- [ ] 10-02-PLAN.md — Spring physics on buttons and cards
+- [ ] 10-03-PLAN.md — Gesture-based drawer interactions with Vaul
 
 #### Phase 11: Additional Polish
 
@@ -229,7 +231,7 @@ Plans:
 | 6. Micro-Interactions & Email | v1.1      | 0/2            | Not started | -          |
 | 7. Schedule Consolidation     | v1.1      | Complete       | Complete    | -          |
 | 8. Mobile Responsive          | v1.1      | Complete       | Complete    | -          |
-| 10. Differentiator Animations | v1.2      | 0/TBD          | Not started | -          |
+| 10. Differentiator Animations | v1.2      | 0/3            | Not started | -          |
 | 11. Additional Polish         | v1.2      | 0/TBD          | Not started | -          |
 
 **v1.2 Progress:** 0/2 phases complete (0%)
