@@ -219,7 +219,7 @@ function TaskCard({
   item: ScheduleItem;
   style: React.CSSProperties;
   onTaskClick: (task: Task) => void;
-  onTaskComplete: (taskId: string) => void;
+  onTaskComplete: (taskId: string, currentStatus: string) => void;
   onTaskDelete: (taskId: string) => void;
 }) {
   const task = item.task;
@@ -271,7 +271,7 @@ function TaskCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onTaskComplete(task.id);
+            onTaskComplete(task.id, task.status);
           }}
           className="mt-[1px] shrink-0"
         >
@@ -393,15 +393,12 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     });
   }, []);
 
-  const handleComplete = useCallback(
-    async (taskId: string) => {
-      const t = tasks.find((x) => x.id === taskId);
-      await quickUpdateTask(taskId, { status: t?.status === 'Done' ? 'Todo' : 'Done' });
-      invalidateInboxTasks();
-      invalidateDailyFlow();
-    },
-    [tasks]
-  );
+  const handleComplete = useCallback(async (taskId: string, currentStatus: string) => {
+    // No dependency on tasks array - status passed directly from TaskCard
+    await quickUpdateTask(taskId, { status: currentStatus === 'Done' ? 'Todo' : 'Done' });
+    invalidateInboxTasks(true);
+    invalidateDailyFlow(true);
+  }, []);
 
   const handleDeleteTask = useCallback((taskId: string) => {
     if (!confirm('Delete this task?')) return;
@@ -592,7 +589,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                   key={t.id}
                   className="group/chip flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1 transition-colors hover:border-border/60"
                 >
-                  <button onClick={() => handleComplete(t.id)} className="shrink-0">
+                  <button onClick={() => handleComplete(t.id, t.status)} className="shrink-0">
                     <Circle className="size-3 text-border/50 transition-colors hover:text-border" />
                   </button>
                   <button
