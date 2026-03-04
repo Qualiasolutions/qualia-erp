@@ -14,13 +14,13 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Phase:** 11 - Additional Polish
 
-**Plan:** 3 of 4 complete (11-01-SUMMARY.md, 11-02-SUMMARY.md, 11-04-SUMMARY.md exist)
+**Plan:** 4 of 4 complete (11-01-SUMMARY.md, 11-02-SUMMARY.md, 11-03-SUMMARY.md, 11-04-SUMMARY.md exist)
 
-**Status:** In progress
+**Status:** Phase complete
 
-**Last activity:** 2026-03-04 — Completed 11-04 (schedule utility consolidation)
+**Last activity:** 2026-03-04 — Completed 11-03 (useServerAction hook)
 
-Progress: [███████░░░] 75% (3/4 plans complete in phase 11)
+Progress: [██████████] 100% (4/4 plans complete in phase 11)
 
 ## Performance Metrics
 
@@ -43,10 +43,10 @@ Progress: [███████░░░] 75% (3/4 plans complete in phase 11)
 
 - Duration: In progress (started 2026-03-04)
 - Target: 2-3 days
-- Plans completed: 6 (10-01, 10-02, 10-03, 11-01, 11-02, 11-04)
+- Plans completed: 7 (10-01, 10-02, 10-03, 11-01, 11-02, 11-03, 11-04)
 - Phases: 2 total (10-11)
 - Requirements: 8 (ANIM-01 to 04, POLISH-01 to 04)
-- Progress: ANIM-01, ANIM-02, ANIM-03, ANIM-04 complete (Phase 10 done), POLISH-01, POLISH-02, POLISH-04 complete (Phase 11 in progress)
+- Progress: All complete! ANIM-01 through ANIM-04 (Phase 10 done), POLISH-01 through POLISH-04 (Phase 11 complete)
 
 **Velocity:**
 
@@ -108,6 +108,12 @@ Decisions are logged in PROJECT.md Key Decisions table.
 - SCHEDULE-CONSOLIDATE-01: Merge schedule-shared.ts into schedule-utils.ts — creates single comprehensive schedule utility file
 - SCHEDULE-CONSOLIDATE-02: Add 'use client' directive to schedule-utils.ts — required for useTimezone hook, acceptable for all schedule functions
 - SCHEDULE-CONSOLIDATE-03: Organize schedule-utils.ts into logical sections — Timezone, Types, Guards, Hooks, Converters, Scoring for maintainability
+
+**Recent decisions from Phase 11-03 (useServerAction Hook):**
+
+- HOOK-01: Create reusable useServerAction hook pattern — standardizes form submission state management across 30+ components
+- HOOK-02: Support optimistic updates via callback instead of automatic behavior — gives components full control over optimistic UI patterns
+- HOOK-03: Type-safe with generic TArgs parameter — preserves action parameter types without explicit any types
 
 ### Pending Todos
 
