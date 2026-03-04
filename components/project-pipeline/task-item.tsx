@@ -79,13 +79,19 @@ function TaskItemComponent({
         isUpdating && 'pointer-events-none opacity-70'
       )}
     >
-      {/* Checkbox - larger */}
-      <Checkbox
-        checked={isDone}
-        onCheckedChange={() => onToggle(task.id, task.status)}
-        className="mt-0.5 h-[18px] w-[18px] rounded-md border-border/60 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
-        disabled={disabled || isUpdating}
-      />
+      {/* Checkbox - larger with success animation */}
+      <motion.div
+        initial={false}
+        animate={isDone ? { scale: [1, 0.85, 1.1, 1] } : { scale: 1 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 30, duration: 0.35 }}
+      >
+        <Checkbox
+          checked={isDone}
+          onCheckedChange={() => onToggle(task.id, task.status)}
+          className="mt-0.5 h-[18px] w-[18px] rounded-md border-border/60 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
+          disabled={disabled || isUpdating}
+        />
+      </motion.div>
 
       {/* Content */}
       <div className="min-w-0 flex-1">
