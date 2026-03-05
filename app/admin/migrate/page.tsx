@@ -23,7 +23,7 @@ export default function MigratePage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-8">
+    <div className="p-4 sm:p-6 lg:p-8">
       <h1 className="mb-4 text-2xl font-bold">GSD Pipeline Migration</h1>
 
       <div className="space-y-6">

@@ -548,7 +548,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="space-y-6 p-4 sm:p-6 lg:p-8">
           {/* Search and Filters */}
           <div className="flex flex-col gap-4 sm:flex-row">
             <div className="relative flex-1">
