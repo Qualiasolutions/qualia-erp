@@ -12,8 +12,10 @@ import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
 import { QuickStatsBar } from './quick-stats-bar';
+import { AdminNotesWidget } from './admin-notes-widget';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
+import { type DashboardNote } from '@/app/actions/dashboard-notes';
 import { type MeetingWithRelations, useMeetings, useScheduledTasks } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { ScheduleBlock } from '@/components/schedule-block';
@@ -28,6 +30,8 @@ interface TodayDashboardProps {
     email: string | null;
     avatar_url: string | null;
   }[];
+  dashboardNotes: DashboardNote[];
+  isManagerOrAbove: boolean;
 }
 
 // =============================================================================
@@ -39,6 +43,8 @@ export function TodayDashboard({
   tasks,
   building,
   profiles,
+  dashboardNotes,
+  isManagerOrAbove,
 }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
@@ -147,9 +153,14 @@ export function TodayDashboard({
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-4 sm:px-6">
-          {/* ── QUICK STATS STRIP ─────────────────────────────────────── */}
-          <div className="mb-4 shrink-0">
-            <QuickStatsBar {...statsData} />
+          {/* ── QUICK STATS + NOTES ROW ────────────────────────────────── */}
+          <div className="mb-4 flex shrink-0 flex-col gap-4 lg:flex-row">
+            <div className="flex-1">
+              <QuickStatsBar {...statsData} />
+            </div>
+            <div className="w-full lg:w-[380px]">
+              <AdminNotesWidget notes={dashboardNotes} isManagerOrAbove={isManagerOrAbove} />
+            </div>
           </div>
 
           {/* ── FULL-WIDTH SCHEDULE ───────────────────────────────────── */}
