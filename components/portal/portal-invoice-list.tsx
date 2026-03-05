@@ -73,14 +73,19 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
           style={index < 6 ? getStaggerDelay(index) : undefined}
           className={cn(index < 6 && 'animate-fade-in-up fill-mode-both')}
         >
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-4">
+          <CardContent className="p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-foreground">{invoice.invoice_number}</h3>
-                  <Badge className={cn('text-xs', getInvoiceStatusColor(invoice.status))}>
-                    {invoice.status}
-                  </Badge>
+                <div className="flex items-center justify-between gap-2 sm:justify-start">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium text-foreground">{invoice.invoice_number}</h3>
+                    <Badge className={cn('text-xs', getInvoiceStatusColor(invoice.status))}>
+                      {invoice.status}
+                    </Badge>
+                  </div>
+                  <p className="text-lg font-bold text-foreground sm:hidden">
+                    {formatCurrency(invoice.amount, invoice.currency)}
+                  </p>
                 </div>
                 {invoice.description && (
                   <p className="mt-1 text-sm text-muted-foreground">{invoice.description}</p>
@@ -98,7 +103,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
                   )}
                 </div>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-2">
+              <div className="hidden shrink-0 flex-col items-end gap-2 sm:flex">
                 <p className="text-lg font-bold text-foreground">
                   {formatCurrency(invoice.amount, invoice.currency)}
                 </p>
@@ -114,6 +119,17 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
                   </a>
                 )}
               </div>
+              {invoice.file_url && (
+                <a
+                  href={invoice.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-xs text-qualia-600 hover:text-qualia-700 sm:hidden"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View PDF
+                </a>
+              )}
             </div>
           </CardContent>
         </Card>

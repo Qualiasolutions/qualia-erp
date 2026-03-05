@@ -315,10 +315,10 @@ export default async function PortalDashboard() {
               {dashboard.recentActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className="flex items-center justify-between rounded-lg border border-border/50 px-4 py-3 transition-colors hover:bg-muted/30"
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border/50 px-3 py-3 transition-colors hover:bg-muted/30 sm:items-center sm:px-4"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-1.5 w-1.5 rounded-full bg-qualia-500" />
+                  <div className="flex items-start gap-2.5 sm:items-center sm:gap-3">
+                    <div className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-qualia-500 sm:mt-0" />
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         {formatActivityLabel(activity.action_type)}

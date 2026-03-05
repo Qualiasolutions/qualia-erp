@@ -90,7 +90,7 @@ export function PortalHeader({ user, profile, isAdminViewing }: PortalHeaderProp
         </div>
       )}
 
-      <div className="flex h-12 items-center justify-between px-4 md:px-6">
+      <div className="flex h-12 items-center justify-between pl-14 pr-4 md:px-6">
         {/* Breadcrumbs */}
         <nav className="hidden items-center gap-1 text-sm md:flex">
           {breadcrumbs.map((crumb, i) => (

@@ -18,8 +18,8 @@ export function PortalTabs({ projectId }: PortalTabsProps) {
   const pathname = usePathname();
 
   return (
-    <div className="border-b border-border">
-      <nav className="-mb-px flex gap-8" aria-label="Tabs">
+    <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">
+      <nav className="-mb-px flex gap-6 overflow-x-auto sm:gap-8" aria-label="Tabs">
         {tabs.map((tab) => {
           const fullHref = `/portal/${projectId}${tab.href}`;
           const isActive = pathname === fullHref;

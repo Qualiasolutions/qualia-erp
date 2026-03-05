@@ -154,7 +154,7 @@ function PhaseWithComments({
         duration: 0.5,
         ease: [0.16, 1, 0.3, 1],
       }}
-      className="relative flex gap-6"
+      className="relative flex gap-3 sm:gap-6"
     >
       {/* Status Indicator */}
       <div className="relative z-10 flex shrink-0 flex-col items-center">
@@ -172,7 +172,7 @@ function PhaseWithComments({
       <div className={cn('flex-1 pb-8', isLast && 'pb-0')}>
         <div
           className={cn(
-            'rounded-lg border p-4 transition-shadow hover:shadow-md',
+            'rounded-lg border p-3 transition-shadow hover:shadow-md sm:p-4',
             statusConfig.border,
             statusConfig.bg
           )}

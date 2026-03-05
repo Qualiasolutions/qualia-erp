@@ -174,7 +174,7 @@ export function PhaseCommentThread({
                   </Avatar>
 
                   <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="text-sm font-medium text-foreground">
                         {comment.profile?.full_name || 'Unknown User'}
                       </span>
@@ -239,7 +239,7 @@ export function PhaseCommentThread({
             className="min-h-[100px] resize-none"
             disabled={isPending || isDeleting}
           />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <span
               className={cn(
                 'text-xs',
@@ -257,7 +257,7 @@ export function PhaseCommentThread({
                   disabled={isPending || isDeleting}
                   className="rounded border-border"
                 />
-                Internal comment (only visible to team)
+                <span className="leading-tight">Internal comment (team only)</span>
               </label>
             )}
           </div>
