@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
 import { getClientProjects } from '@/app/actions/client-portal';
 import { getUserRole } from '@/lib/portal-utils';
-import { PortalRequestForm } from '@/components/portal/portal-request-form';
+import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { fadeInClasses } from '@/lib/transitions';
 
@@ -59,22 +59,18 @@ export default async function PortalRequestsPage() {
   }
 
   return (
-    <div className={`space-y-8 ${fadeInClasses}`}>
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Feature Requests</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Submit and track your feature requests and change suggestions
-        </p>
+    <div className={`space-y-6 ${fadeInClasses}`}>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Requests</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Submit and track your feature requests and changes
+          </p>
+        </div>
+        {!isAdmin && <PortalRequestDialog projects={projects} />}
       </div>
 
-      {!isAdmin && <PortalRequestForm projects={projects} />}
-
-      <div>
-        <h2 className="mb-4 text-lg font-semibold text-foreground">
-          {isAdmin ? 'All Requests' : 'Your Requests'}
-        </h2>
-        <PortalRequestList requests={requests} />
-      </div>
+      <PortalRequestList requests={requests} />
     </div>
   );
 }

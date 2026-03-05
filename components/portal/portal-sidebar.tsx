@@ -8,8 +8,7 @@ import {
   Folder,
   Lightbulb,
   Receipt,
-  HelpCircle,
-  UserCog,
+  MessageSquare,
   LogOut,
   ChevronUp,
   Menu,
@@ -29,10 +28,9 @@ import { createClient } from '@/lib/supabase/client';
 const portalNav = [
   { name: 'Dashboard', href: '/portal', icon: LayoutDashboard, exact: true },
   { name: 'Projects', href: '/portal/projects', icon: Folder },
+  { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
   { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
-  { name: 'Invoices', href: '/portal/invoices', icon: Receipt },
-  { name: 'Support', href: '/portal/support', icon: HelpCircle },
-  { name: 'Account', href: '/portal/account', icon: UserCog },
+  { name: 'Billing', href: '/portal/billing', icon: Receipt },
 ];
 
 interface PortalSidebarProps {

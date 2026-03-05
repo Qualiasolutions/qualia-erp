@@ -1,10 +1,12 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
-import { Lightbulb, MessageSquare } from 'lucide-react';
+import { Lightbulb, MessageSquare, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FeatureRequest {
   id: string;
@@ -20,6 +22,37 @@ interface FeatureRequest {
 interface PortalRequestListProps {
   requests: FeatureRequest[];
 }
+
+const statusTabs = [
+  { value: 'all', label: 'All' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'in_review', label: 'In Review' },
+  { value: 'planned', label: 'Planned' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'declined', label: 'Declined' },
+];
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest first' },
+  { value: 'priority', label: 'Priority' },
+  { value: 'status', label: 'Status' },
+];
+
+const priorityOrder: Record<string, number> = {
+  high: 0,
+  medium: 1,
+  low: 2,
+};
+
+const statusOrder: Record<string, number> = {
+  pending: 0,
+  in_review: 1,
+  planned: 2,
+  in_progress: 3,
+  completed: 4,
+  declined: 5,
+};
 
 function getStatusColor(status: string) {
   switch (status) {
@@ -54,6 +87,54 @@ function getPriorityColor(priority: string) {
 }
 
 export function PortalRequestList({ requests }: PortalRequestListProps) {
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const filtered = useMemo(() => {
+    let result = [...requests];
+
+    // Filter
+    if (statusFilter !== 'all') {
+      result = result.filter((r) => r.status === statusFilter);
+    }
+
+    // Sort
+    switch (sortBy) {
+      case 'priority':
+        result.sort(
+          (a, b) => (priorityOrder[a.priority] ?? 99) - (priorityOrder[b.priority] ?? 99)
+        );
+        break;
+      case 'status':
+        result.sort((a, b) => (statusOrder[a.status] ?? 99) - (statusOrder[b.status] ?? 99));
+        break;
+      case 'newest':
+      default:
+        result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    return result;
+  }, [requests, statusFilter, sortBy]);
+
+  // Count per status for tabs
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: requests.length };
+    for (const r of requests) {
+      counts[r.status] = (counts[r.status] || 0) + 1;
+    }
+    return counts;
+  }, [requests]);
+
   if (requests.length === 0) {
     return (
       <div className="flex min-h-[300px] items-center justify-center">
@@ -63,7 +144,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
           </div>
           <h3 className="text-xl font-semibold tracking-tight text-foreground">No requests yet</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
-            Use the form above to submit your first feature request or change.
+            Click &ldquo;New Request&rdquo; to submit your first feature request or change.
           </p>
         </div>
       </div>
@@ -71,54 +152,137 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
   }
 
   return (
-    <div className={`space-y-3 ${fadeInClasses}`}>
-      {requests.map((request, index) => (
-        <Card
-          key={request.id}
-          style={index < 6 ? getStaggerDelay(index) : undefined}
-          className={cn(index < 6 && 'animate-fade-in-up fill-mode-both')}
-        >
-          <CardContent className="p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h3 className="font-medium text-foreground">{request.title}</h3>
-                {request.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                    {request.description}
-                  </p>
+    <div className="space-y-4">
+      {/* Filter tabs + sort */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-1">
+          {statusTabs.map((tab) => {
+            const count = statusCounts[tab.value] || 0;
+            if (tab.value !== 'all' && count === 0) return null;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={cn(
+                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                  statusFilter === tab.value
+                    ? 'bg-qualia-600/10 text-qualia-700'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                 )}
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Badge className={cn('text-xs', getStatusColor(request.status))}>
-                    {request.status.replace(/_/g, ' ')}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className={cn('text-xs', getPriorityColor(request.priority))}
-                  >
-                    {request.priority}
-                  </Badge>
-                  {request.project && (
-                    <span className="text-xs text-muted-foreground">{request.project.name}</span>
-                  )}
-                  <span className="text-xs text-muted-foreground/60">
-                    {new Date(request.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </div>
+              >
+                {tab.label}
+                {count > 0 && <span className="ml-1 text-[10px] opacity-60">{count}</span>}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+          {sortOptions.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setSortBy(opt.value)}
+              className={cn(
+                'rounded px-2 py-0.5 text-[11px] font-medium transition-colors',
+                sortBy === opt.value
+                  ? 'bg-muted text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
-            {request.admin_response && (
-              <div className="mt-4 rounded-lg border border-qualia-200 bg-qualia-50/50 p-3">
-                <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-qualia-700">
-                  <MessageSquare className="h-3 w-3" />
-                  Response from Qualia
+      {/* Request list */}
+      <div className={`space-y-3 ${fadeInClasses}`}>
+        {filtered.map((request, index) => (
+          <Card
+            key={request.id}
+            style={index < 6 ? getStaggerDelay(index) : undefined}
+            className={cn(index < 6 && 'animate-fade-in-up fill-mode-both')}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-foreground">{request.title}</h3>
+                  {request.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                      {request.description}
+                    </p>
+                  )}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <Badge className={cn('text-xs', getStatusColor(request.status))}>
+                      {request.status.replace(/_/g, ' ')}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className={cn('text-xs', getPriorityColor(request.priority))}
+                    >
+                      {request.priority}
+                    </Badge>
+                    {request.project && (
+                      <span className="text-xs text-muted-foreground">{request.project.name}</span>
+                    )}
+                    <span className="text-xs text-muted-foreground/60">
+                      {new Date(request.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
                 </div>
-                <p className="text-sm text-qualia-800">{request.admin_response}</p>
+
+                {/* Expand/collapse for admin response */}
+                {request.admin_response && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 shrink-0 p-0"
+                    onClick={() => toggleExpanded(request.id)}
+                  >
+                    {expandedIds.has(request.id) ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
+
+              {request.admin_response && expandedIds.has(request.id) && (
+                <div className="mt-4 rounded-lg border border-qualia-200 bg-qualia-50/50 p-3 dark:border-qualia-800/30 dark:bg-qualia-950/20">
+                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-qualia-700 dark:text-qualia-400">
+                    <MessageSquare className="h-3 w-3" />
+                    Response from Qualia
+                  </div>
+                  <p className="text-sm text-qualia-800 dark:text-qualia-300">
+                    {request.admin_response}
+                  </p>
+                </div>
+              )}
+
+              {/* Indicator that there's a response */}
+              {request.admin_response && !expandedIds.has(request.id) && (
+                <button
+                  onClick={() => toggleExpanded(request.id)}
+                  className="mt-2 flex items-center gap-1 text-xs text-qualia-600 hover:text-qualia-700"
+                >
+                  <MessageSquare className="h-3 w-3" />
+                  View response
+                </button>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="py-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              No requests matching &ldquo;{statusTabs.find((t) => t.value === statusFilter)?.label}
+              &rdquo;
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

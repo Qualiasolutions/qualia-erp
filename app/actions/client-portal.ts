@@ -637,6 +637,177 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
 }
 
 /**
+ * Get client dashboard projects with phase progress
+ */
+export async function getClientDashboardProjects(clientId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Not authorized' };
+    }
+
+    // Get client's project IDs
+    const { data: clientProjects } = await supabase
+      .from('client_projects')
+      .select('project_id')
+      .eq('client_id', clientId);
+
+    if (!clientProjects || clientProjects.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const projectIds = clientProjects.map((cp) => cp.project_id);
+
+    // Get project details
+    const { data: projects } = await supabase
+      .from('projects')
+      .select('id, name, status, project_type, description')
+      .in('id', projectIds)
+      .order('name');
+
+    if (!projects || projects.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    // Get all phases for these projects
+    const { data: phases } = await supabase
+      .from('project_phases')
+      .select('id, project_id, name, status, sort_order')
+      .in('project_id', projectIds)
+      .order('sort_order', { ascending: true });
+
+    // Build response with phase data per project
+    const projectsWithPhases = projects.map((project) => {
+      const projectPhases = (phases || []).filter((p) => p.project_id === project.id);
+      const completedCount = projectPhases.filter(
+        (p) => p.status === 'completed' || p.status === 'done'
+      ).length;
+      const progress =
+        projectPhases.length > 0 ? Math.round((completedCount / projectPhases.length) * 100) : 0;
+
+      // Find current phase (first non-completed)
+      const currentPhase = projectPhases.find(
+        (p) => p.status !== 'completed' && p.status !== 'done'
+      );
+      const currentPhaseIndex = currentPhase ? projectPhases.indexOf(currentPhase) : -1;
+      const nextPhase =
+        currentPhaseIndex >= 0 && currentPhaseIndex < projectPhases.length - 1
+          ? projectPhases[currentPhaseIndex + 1]
+          : null;
+
+      return {
+        id: project.id,
+        name: project.name,
+        status: project.status,
+        project_type: project.project_type,
+        description: project.description,
+        progress,
+        totalPhases: projectPhases.length,
+        completedPhases: completedCount,
+        currentPhase: currentPhase
+          ? { name: currentPhase.name, status: currentPhase.status }
+          : null,
+        nextPhase: nextPhase ? { name: nextPhase.name } : null,
+      };
+    });
+
+    return { success: true, data: projectsWithPhases };
+  } catch (error) {
+    console.error('[getClientDashboardProjects] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get dashboard projects',
+    };
+  }
+}
+
+/**
+ * Get cross-project activity feed for a client (Messages page)
+ */
+export async function getClientActivityFeed(
+  clientId: string,
+  limit = 20,
+  cursor?: string
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+      return { success: false, error: 'Not authorized' };
+    }
+
+    // Get client's project IDs
+    const { data: clientProjects } = await supabase
+      .from('client_projects')
+      .select('project_id')
+      .eq('client_id', clientId);
+
+    if (!clientProjects || clientProjects.length === 0) {
+      return { success: true, data: { items: [], hasMore: false, nextCursor: null } };
+    }
+
+    const projectIds = clientProjects.map((cp) => cp.project_id);
+
+    let query = supabase
+      .from('activity_log')
+      .select(
+        `
+        id,
+        project_id,
+        action_type,
+        actor_id,
+        action_data,
+        is_client_visible,
+        created_at,
+        project:projects(id, name),
+        actor:profiles!activity_log_actor_id_fkey(id, full_name, avatar_url)
+      `
+      )
+      .eq('is_client_visible', true)
+      .in('project_id', projectIds)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (cursor) {
+      query = query.lt('created_at', cursor);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const normalized = (data || []).map((entry) => ({
+      ...entry,
+      project: Array.isArray(entry.project) ? entry.project[0] || null : entry.project,
+      actor: Array.isArray(entry.actor) ? entry.actor[0] || null : entry.actor,
+    }));
+
+    const hasMore = normalized.length === limit;
+    const lastItem = normalized[normalized.length - 1];
+    const nextCursor = lastItem ? lastItem.created_at : null;
+
+    return {
+      success: true,
+      data: { items: normalized, hasMore, nextCursor },
+    };
+  } catch (error) {
+    console.error('[getClientActivityFeed] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get activity feed',
+    };
+  }
+}
+
+/**
  * Update client profile (name, etc.)
  */
 export async function updateClientProfile(updates: { full_name?: string }): Promise<ActionResult> {

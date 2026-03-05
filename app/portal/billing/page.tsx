@@ -2,9 +2,10 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientInvoices } from '@/app/actions/client-portal';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
+import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
 import { fadeInClasses } from '@/lib/transitions';
 
-export default async function PortalInvoicesPage() {
+export default async function PortalBillingPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,11 +33,13 @@ export default async function PortalInvoicesPage() {
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Invoices</h1>
+        <h1 className="text-2xl font-bold text-foreground">Billing</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           View and track your invoices and payment history
         </p>
       </div>
+
+      {invoices.length > 0 && <PortalBillingSummary invoices={invoices} />}
 
       <PortalInvoiceList invoices={invoices} />
     </div>
