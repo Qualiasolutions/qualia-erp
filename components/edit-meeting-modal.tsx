@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { CalendarIcon, Clock, Video, Link2, X, Users } from 'lucide-react';
+import { CalendarIcon, Clock, Video, Link2, Trash2, Check, FileText } from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, parseISO, differenceInMinutes } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -18,14 +18,41 @@ import { cn } from '@/lib/utils';
 import { updateMeeting, deleteMeeting } from '@/app/actions';
 import { addMeetingAttendee, removeMeetingAttendee } from '@/app/actions/meetings';
 import {
-  useProfiles,
   invalidateMeetings,
   invalidateTodaysSchedule,
   invalidateScheduledTasks,
   invalidateDailyFlow,
 } from '@/lib/swr';
+import { TEAM_MEMBERS } from '@/lib/team-constants';
 
-// Time slots in 30-minute increments
+// Hardcoded team — the 4 of us
+const TEAM = [
+  { id: TEAM_MEMBERS.FAWZI_ID, name: 'Fawzi', initial: 'F', color: 'qualia' },
+  { id: TEAM_MEMBERS.MOAYAD_ID, name: 'Moayad', initial: 'M', color: 'indigo' },
+  { id: TEAM_MEMBERS.HASAN_ID, name: 'Hasan', initial: 'H', color: 'amber' },
+  { id: TEAM_MEMBERS.SALLY_ID, name: 'Sally', initial: 'S', color: 'rose' },
+] as const;
+
+const COLOR_MAP = {
+  qualia: {
+    active: 'bg-qualia-500 text-white ring-2 ring-qualia-500/30',
+    idle: 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400 hover:bg-qualia-500/20',
+  },
+  indigo: {
+    active: 'bg-indigo-500 text-white ring-2 ring-indigo-500/30',
+    idle: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20',
+  },
+  amber: {
+    active: 'bg-amber-500 text-white ring-2 ring-amber-500/30',
+    idle: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20',
+  },
+  rose: {
+    active: 'bg-rose-500 text-white ring-2 ring-rose-500/30',
+    idle: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20',
+  },
+} as const;
+
+// Time slots in 30-minute increments (7:00 AM - 8:00 PM)
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   const hour = Math.floor(i / 2);
   const minute = (i % 2) * 30;
@@ -36,7 +63,6 @@ const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
   return { value: time, label: display };
 });
 
-// Common meeting durations
 const DURATION_OPTIONS = [
   { value: 15, label: '15 min' },
   { value: 30, label: '30 min' },
@@ -78,7 +104,6 @@ interface EditMeetingModalProps {
 export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingModalProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const { profiles } = useProfiles();
 
   // Form state
   const [title, setTitle] = useState('');
@@ -139,7 +164,6 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
     });
   };
 
-  // Calculate start and end times
   const getStartDateTime = () => {
     if (!selectedDate) return '';
     const [hours, minutes] = selectedTime.split(':').map(Number);
@@ -162,7 +186,6 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
     setError(null);
 
     startTransition(async () => {
-      // Update meeting details
       const result = await updateMeeting({
         id: meeting.id,
         title: title.trim(),
@@ -186,9 +209,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
         }
       }
 
-      // Add new attendees
       const toAdd = [...selectedAttendees].filter((id) => !currentAttendeeIds.has(id));
-      // Remove old attendees
       const toRemove = [...currentAttendeeIds].filter((id) => !selectedAttendees.has(id));
 
       await Promise.all([
@@ -207,7 +228,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
   async function handleDelete() {
     if (!meeting) return;
 
-    if (confirm('Are you sure you want to delete this meeting?')) {
+    if (confirm('Delete this meeting? This cannot be undone.')) {
       startTransition(async () => {
         const result = await deleteMeeting(meeting.id);
         if (result.success) {
@@ -225,218 +246,210 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-border bg-card text-foreground sm:max-w-[420px]">
-        <DialogHeader>
-          <DialogTitle className="text-lg">Edit Meeting</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Title */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Title</label>
+      <DialogContent className="gap-0 overflow-hidden border-border bg-card p-0 text-foreground sm:max-w-[440px] sm:rounded-2xl">
+        {/* Header */}
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="text-base font-semibold tracking-tight">Edit Meeting</h2>
+          {meeting?.project && (
+            <p className="mt-0.5 text-xs text-muted-foreground">{meeting.project.name}</p>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <div className="space-y-4 px-5 py-4">
+            {/* Title */}
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Meeting title"
               required
-              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
-          </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              Description
-              <span className="ml-1 text-xs font-normal text-muted-foreground">(optional)</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add meeting notes..."
-              rows={2}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-          </div>
+            {/* Description */}
+            <div className="relative">
+              <FileText className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground/50" />
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Notes (optional)"
+                rows={2}
+                className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
 
-          {/* Attendees */}
-          {profiles.length > 0 && (
+            {/* Team Selector */}
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Attendees
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {profiles.map((profile) => {
-                  const isSelected = selectedAttendees.has(profile.id);
-                  const name = profile.full_name || profile.email || 'Unknown';
-                  const initial = name[0]?.toUpperCase() || '?';
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Who&apos;s joining
+              </span>
+              <div className="flex gap-2">
+                {TEAM.map((member) => {
+                  const isSelected = selectedAttendees.has(member.id);
+                  const colors = COLOR_MAP[member.color];
 
                   return (
                     <button
-                      key={profile.id}
+                      key={member.id}
                       type="button"
-                      onClick={() => toggleAttendee(profile.id)}
+                      onClick={() => toggleAttendee(member.id)}
                       className={cn(
-                        'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-all',
-                        isSelected
-                          ? 'border-violet-500/40 bg-violet-500/10 text-foreground'
-                          : 'border-border bg-background text-muted-foreground hover:border-border/80 hover:text-foreground'
+                        'group relative flex flex-1 flex-col items-center gap-1.5 rounded-xl py-2.5 transition-all',
+                        isSelected ? colors.active : colors.idle
                       )}
                     >
                       <span
                         className={cn(
-                          'flex size-5 items-center justify-center rounded-full text-[10px] font-semibold',
-                          isSelected ? 'bg-violet-500 text-white' : 'bg-muted text-muted-foreground'
+                          'flex size-8 items-center justify-center rounded-full text-xs font-bold transition-all',
+                          isSelected ? 'bg-white/20 text-white' : 'bg-current/10'
                         )}
                       >
-                        {initial}
+                        {isSelected ? <Check className="h-4 w-4" /> : member.initial}
                       </span>
-                      <span className="font-medium">{name.split(' ')[0]}</span>
+                      <span className="text-[11px] font-semibold">{member.name}</span>
                     </button>
                   );
                 })}
               </div>
             </div>
-          )}
 
-          {/* Date Selection */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  'h-11 w-full justify-start border-border bg-background text-left font-normal',
-                  !selectedDate && 'text-muted-foreground'
-                )}
-              >
-                <CalendarIcon className="mr-3 h-4 w-4 text-muted-foreground" />
-                {selectedDate ? format(selectedDate, 'EEE, MMM d, yyyy') : 'Pick a date'}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto border-border bg-card p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
+            {/* Date & Time Row */}
+            <div className="grid grid-cols-3 gap-2">
+              {/* Date */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      'col-span-1 h-10 justify-start border-border bg-background px-3 text-left text-xs font-normal',
+                      !selectedDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                      {selectedDate ? format(selectedDate, 'MMM d') : 'Date'}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto border-border bg-card p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
 
-          {/* Time & Duration */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Time */}
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-11 justify-start border-border bg-background text-left font-normal"
-                >
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  {TIME_SLOTS.find((t) => t.value === selectedTime)?.label || selectedTime}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-44 border-border bg-card p-1" align="start">
-                <div className="max-h-56 overflow-y-auto">
-                  {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
-                    <button
-                      key={slot.value}
-                      type="button"
-                      onClick={() => setSelectedTime(slot.value)}
-                      className={cn(
-                        'w-full rounded-md px-3 py-2 text-left text-sm transition-colors',
-                        selectedTime === slot.value
-                          ? 'bg-primary text-primary-foreground'
-                          : 'hover:bg-accent'
-                      )}
-                    >
-                      {slot.label}
-                    </button>
+              {/* Time */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="col-span-1 h-10 justify-start border-border bg-background px-3 text-left text-xs font-normal"
+                  >
+                    <Clock className="mr-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                      {TIME_SLOTS.find((t) => t.value === selectedTime)?.label || selectedTime}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-44 border-border bg-card p-1" align="start">
+                  <div className="max-h-56 overflow-y-auto">
+                    {TIME_SLOTS.filter((_, i) => i >= 14 && i <= 40).map((slot) => (
+                      <button
+                        key={slot.value}
+                        type="button"
+                        onClick={() => setSelectedTime(slot.value)}
+                        className={cn(
+                          'w-full rounded-md px-3 py-1.5 text-left text-sm transition-colors',
+                          selectedTime === slot.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-accent'
+                        )}
+                      >
+                        {slot.label}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Duration */}
+              <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
+                <SelectTrigger className="col-span-1 h-10 border-border bg-background text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  {DURATION_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value.toString()}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Duration */}
-            <Select value={duration.toString()} onValueChange={(v) => setDuration(Number(v))}>
-              <SelectTrigger className="h-11 border-border bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-card">
-                {DURATION_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value.toString()}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Meeting Link */}
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-              <Video className="h-4 w-4 text-muted-foreground" />
-              Meeting Link
-              <span className="text-xs font-normal text-muted-foreground">(optional)</span>
-            </label>
+            {/* Meeting Link */}
             <div className="relative">
-              <Link2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Link2 className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
+              {meetingLink && (
+                <Video className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-emerald-500" />
+              )}
               <input
                 type="url"
-                placeholder="Paste Google Meet, Zoom, or other link..."
+                placeholder="Meeting link (optional)"
                 value={meetingLink}
                 onChange={(e) => setMeetingLink(e.target.value)}
-                className="h-10 w-full rounded-lg border border-border bg-background pl-10 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-9 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
             </div>
           </div>
 
-          {/* Summary */}
+          {/* Summary bar */}
           {selectedDate && (
-            <div className="rounded-lg bg-secondary/50 px-3 py-2.5 text-sm">
-              <span className="text-muted-foreground">Updated schedule: </span>
-              <span className="font-medium text-foreground">{title || 'Untitled'}</span>
-              <div className="mt-1 text-xs text-muted-foreground">
-                {format(selectedDate, 'EEEE, MMM d')} at{' '}
-                {TIME_SLOTS.find((t) => t.value === selectedTime)?.label || selectedTime} (
-                {DURATION_OPTIONS.find((d) => d.value === duration)?.label})
-              </div>
-              {selectedAttendees.size > 0 && (
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {selectedAttendees.size} attendee{selectedAttendees.size !== 1 ? 's' : ''}
-                </div>
-              )}
-              {meetingLink && (
-                <div className="mt-1.5 flex items-center gap-1 text-emerald-500">
-                  <Video className="h-3 w-3" />
-                  <span className="text-xs font-medium">Video link attached</span>
-                </div>
-              )}
+            <div className="mx-5 mb-4 flex items-center gap-2 rounded-lg bg-secondary/50 px-3 py-2 text-xs text-muted-foreground">
+              <CalendarIcon className="h-3 w-3 shrink-0" />
+              <span>
+                {format(selectedDate, 'EEE, MMM d')} &middot;{' '}
+                {TIME_SLOTS.find((t) => t.value === selectedTime)?.label} &middot;{' '}
+                {DURATION_OPTIONS.find((d) => d.value === duration)?.label}
+                {selectedAttendees.size > 0 && (
+                  <>
+                    {' '}
+                    &middot; {selectedAttendees.size} attendee
+                    {selectedAttendees.size !== 1 ? 's' : ''}
+                  </>
+                )}
+              </span>
             </div>
           )}
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="mx-5 mb-3 text-sm text-destructive">{error}</p>}
 
           {/* Actions */}
-          <div className="flex gap-2">
+          <div className="flex items-center justify-between border-t border-border px-5 py-3">
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
+              size="sm"
               onClick={handleDelete}
               disabled={isPending}
-              className="border-red-500/30 text-red-500 hover:bg-red-500/10 hover:text-red-500"
+              className="h-8 gap-1.5 text-red-500 hover:bg-red-500/10 hover:text-red-500"
             >
-              <X className="mr-1.5 h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
               Delete
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={isPending || !title.trim()}
-              className="flex-1 bg-primary font-medium hover:bg-primary/90"
+              className="h-8 min-w-[100px] bg-primary font-medium hover:bg-primary/90"
             >
-              {isPending ? 'Saving...' : 'Save Changes'}
+              {isPending ? 'Saving...' : 'Save'}
             </Button>
           </div>
         </form>
