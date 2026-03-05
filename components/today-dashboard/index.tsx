@@ -11,10 +11,8 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
-import { AdminNotesWidget } from './admin-notes-widget';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
-import { type DashboardNote } from '@/app/actions/dashboard-notes';
 import { type MeetingWithRelations, useMeetings, useScheduledTasks } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { ScheduleBlock } from '@/components/schedule-block';
@@ -29,8 +27,6 @@ interface TodayDashboardProps {
     email: string | null;
     avatar_url: string | null;
   }[];
-  dashboardNotes: DashboardNote[];
-  isManagerOrAbove: boolean;
 }
 
 // =============================================================================
@@ -42,8 +38,6 @@ export function TodayDashboard({
   tasks,
   building,
   profiles,
-  dashboardNotes,
-  isManagerOrAbove,
 }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
@@ -129,37 +123,18 @@ export function TodayDashboard({
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1800px] flex-1 gap-0 px-0 sm:px-0">
-          {/* ── LEFT: TEAM NOTES SIDEBAR ──────────────────────────────── */}
-          <div className="hidden w-[340px] shrink-0 border-r border-border/40 lg:flex xl:w-[400px]">
-            <AdminNotesWidget
-              notes={dashboardNotes}
-              isManagerOrAbove={isManagerOrAbove}
-              fullHeight
-            />
-          </div>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
+          <ScheduleBlock
+            scheduledTasks={scheduledTasks}
+            backlogTasks={backlogTasks}
+            meetings={meetings}
+            profiles={profiles}
+          />
 
-          {/* ── RIGHT: SCHEDULE + BUILDING ────────────────────────────── */}
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-            {/* Mobile-only notes */}
-            <div className="shrink-0 border-b border-border/40 px-5 py-4 lg:hidden">
-              <AdminNotesWidget notes={dashboardNotes} isManagerOrAbove={isManagerOrAbove} />
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
-              <ScheduleBlock
-                scheduledTasks={scheduledTasks}
-                backlogTasks={backlogTasks}
-                meetings={meetings}
-                profiles={profiles}
-              />
-
-              {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
-              <div className="mt-4">
-                <BuildingProjectsRow building={building} />
-              </div>
-            </div>
+          {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
+          <div className="mt-4 shrink-0">
+            <BuildingProjectsRow building={building} />
           </div>
         </div>
       </main>

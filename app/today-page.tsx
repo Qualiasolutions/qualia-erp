@@ -1,6 +1,5 @@
 import { getCurrentWorkspaceId, getMeetings, getProfiles } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
-import { getDashboardNotes } from '@/app/actions/dashboard-notes';
 import { TodayDashboard } from '@/components/today-dashboard';
 import { createClient } from '@/lib/supabase/server';
 import type { ProjectType } from '@/types/database';
@@ -19,22 +18,12 @@ export default async function TodayPage() {
 
   // Fetch all data in parallel
   const supabase = await createClient();
-  const [meetingsRaw, tasksRaw, projectsRaw, profiles, dashboardNotes] = await Promise.all([
+  const [meetingsRaw, tasksRaw, projectsRaw, profiles] = await Promise.all([
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
     getProfiles(workspaceId),
-    getDashboardNotes(),
   ]);
-
-  // Get current user's role
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: currentProfile } = user
-    ? await supabase.from('profiles').select('role').eq('id', user.id).single()
-    : { data: null };
-  const isManagerOrAbove = currentProfile?.role === 'admin' || currentProfile?.role === 'manager';
 
   const meetings = meetingsRaw;
 
@@ -94,13 +83,6 @@ export default async function TodayPage() {
   const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
 
   return (
-    <TodayDashboard
-      meetings={meetings}
-      tasks={tasks}
-      building={building}
-      profiles={profiles}
-      dashboardNotes={dashboardNotes}
-      isManagerOrAbove={isManagerOrAbove}
-    />
+    <TodayDashboard meetings={meetings} tasks={tasks} building={building} profiles={profiles} />
   );
 }
