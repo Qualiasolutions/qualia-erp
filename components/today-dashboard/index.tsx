@@ -11,7 +11,6 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
-import { QuickStatsBar } from './quick-stats-bar';
 import { AdminNotesWidget } from './admin-notes-widget';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
@@ -80,27 +79,6 @@ export function TodayDashboard({
     [tasks]
   );
 
-  // Compute stats from existing data
-  const statsData = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    const tasksDueToday = tasks.filter((t) => {
-      if (!t.due_date || t.status === 'Done') return false;
-      const due = new Date(t.due_date);
-      return due < tomorrow;
-    }).length;
-
-    return {
-      tasksDueToday,
-      meetingsToday: meetings.length,
-      activeProjects: building.length,
-      buildingCount: building.length,
-    };
-  }, [tasks, meetings, building]);
-
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
@@ -151,31 +129,37 @@ export function TodayDashboard({
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-4 sm:px-6">
-          {/* ── QUICK STATS + NOTES ROW ────────────────────────────────── */}
-          <div className="mb-4 flex shrink-0 flex-col gap-4 lg:flex-row">
-            <div className="flex-1">
-              <QuickStatsBar {...statsData} />
-            </div>
-            <div className="w-full lg:w-[380px]">
-              <AdminNotesWidget notes={dashboardNotes} isManagerOrAbove={isManagerOrAbove} />
-            </div>
-          </div>
-
-          {/* ── FULL-WIDTH SCHEDULE ───────────────────────────────────── */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <ScheduleBlock
-              scheduledTasks={scheduledTasks}
-              backlogTasks={backlogTasks}
-              meetings={meetings}
-              profiles={profiles}
+      <main className="flex min-h-0 flex-1 overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1800px] flex-1 gap-0 px-0 sm:px-0">
+          {/* ── LEFT: TEAM NOTES SIDEBAR ──────────────────────────────── */}
+          <div className="hidden w-[340px] shrink-0 border-r border-border/40 lg:flex xl:w-[400px]">
+            <AdminNotesWidget
+              notes={dashboardNotes}
+              isManagerOrAbove={isManagerOrAbove}
+              fullHeight
             />
           </div>
 
-          {/* ── CURRENTLY BUILDING ROW ────────────────────────────────── */}
-          <div className="mt-4 shrink-0">
-            <BuildingProjectsRow building={building} />
+          {/* ── RIGHT: SCHEDULE + BUILDING ────────────────────────────── */}
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+            {/* Mobile-only notes */}
+            <div className="shrink-0 border-b border-border/40 px-5 py-4 lg:hidden">
+              <AdminNotesWidget notes={dashboardNotes} isManagerOrAbove={isManagerOrAbove} />
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
+              <ScheduleBlock
+                scheduledTasks={scheduledTasks}
+                backlogTasks={backlogTasks}
+                meetings={meetings}
+                profiles={profiles}
+              />
+
+              {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
+              <div className="mt-4">
+                <BuildingProjectsRow building={building} />
+              </div>
+            </div>
           </div>
         </div>
       </main>

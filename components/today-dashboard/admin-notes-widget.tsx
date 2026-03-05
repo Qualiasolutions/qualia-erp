@@ -18,6 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface AdminNotesWidgetProps {
   notes: DashboardNote[];
   isManagerOrAbove: boolean;
+  fullHeight?: boolean;
 }
 
 const NoteItem = React.memo(function NoteItem({
@@ -169,7 +170,7 @@ const NoteItem = React.memo(function NoteItem({
   );
 });
 
-export function AdminNotesWidget({ notes, isManagerOrAbove }: AdminNotesWidgetProps) {
+export function AdminNotesWidget({ notes, isManagerOrAbove, fullHeight }: AdminNotesWidgetProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [newNote, setNewNote] = useState('');
@@ -209,12 +210,13 @@ export function AdminNotesWidget({ notes, isManagerOrAbove }: AdminNotesWidgetPr
   return (
     <div
       className={cn(
-        'flex flex-col overflow-hidden rounded-2xl border border-border/50 bg-card',
+        'flex flex-col overflow-hidden bg-card',
+        fullHeight ? 'h-full' : 'rounded-2xl border border-border/50',
         isPending && 'pointer-events-none opacity-60'
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-5 py-3.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
             <MessageSquare className="h-3.5 w-3.5 text-primary" />
@@ -225,7 +227,7 @@ export function AdminNotesWidget({ notes, isManagerOrAbove }: AdminNotesWidgetPr
       </div>
 
       {/* Notes list */}
-      <div className="max-h-[300px] flex-1 overflow-y-auto px-1 py-1">
+      <div className={cn('flex-1 overflow-y-auto px-1 py-1', !fullHeight && 'max-h-[300px]')}>
         {notes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <MessageSquare className="mb-2 h-6 w-6 text-muted-foreground/20" />
