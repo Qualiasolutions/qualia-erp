@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { CalendarIcon, Clock, Video, Link2, X } from 'lucide-react';
+import { CalendarIcon, Clock, Video, Link2, X, Users } from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, parseISO, differenceInMinutes } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { updateMeeting, deleteMeeting } from '@/app/actions';
+import { addMeetingAttendee, removeMeetingAttendee } from '@/app/actions/meetings';
 import {
+  useProfiles,
   invalidateMeetings,
   invalidateTodaysSchedule,
   invalidateScheduledTasks,
@@ -44,6 +46,15 @@ const DURATION_OPTIONS = [
   { value: 120, label: '2 hours' },
 ];
 
+interface MeetingAttendee {
+  id: string;
+  profile?: {
+    id: string;
+    full_name?: string | null;
+    email?: string | null;
+  } | null;
+}
+
 interface Meeting {
   id: string;
   title: string;
@@ -55,6 +66,7 @@ interface Meeting {
     id: string;
     name: string;
   } | null;
+  attendees?: MeetingAttendee[];
 }
 
 interface EditMeetingModalProps {
@@ -66,6 +78,7 @@ interface EditMeetingModalProps {
 export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingModalProps) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const { profiles } = useProfiles();
 
   // Form state
   const [title, setTitle] = useState('');
@@ -74,6 +87,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
   const [selectedTime, setSelectedTime] = useState<string>('09:00');
   const [duration, setDuration] = useState<number>(60);
   const [meetingLink, setMeetingLink] = useState<string>('');
+  const [selectedAttendees, setSelectedAttendees] = useState<Set<string>>(new Set());
 
   // Initialize form when meeting changes
   useEffect(() => {
@@ -92,7 +106,6 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
       setSelectedTime(`${hours}:${minutes}`);
 
       const meetingDuration = differenceInMinutes(endDate, startDate);
-      // Find closest duration option
       const closestDuration = DURATION_OPTIONS.reduce((prev, curr) =>
         Math.abs(curr.value - meetingDuration) < Math.abs(prev.value - meetingDuration)
           ? curr
@@ -100,9 +113,31 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
       );
       setDuration(closestDuration.value);
 
+      // Initialize attendees
+      const attendeeIds = new Set<string>();
+      if (meeting.attendees) {
+        for (const a of meeting.attendees) {
+          const profile = Array.isArray(a.profile) ? a.profile[0] : a.profile;
+          if (profile?.id) attendeeIds.add(profile.id);
+        }
+      }
+      setSelectedAttendees(attendeeIds);
+
       setError(null);
     }
   }, [meeting]);
+
+  const toggleAttendee = (profileId: string) => {
+    setSelectedAttendees((prev) => {
+      const next = new Set(prev);
+      if (next.has(profileId)) {
+        next.delete(profileId);
+      } else {
+        next.add(profileId);
+      }
+      return next;
+    });
+  };
 
   // Calculate start and end times
   const getStartDateTime = () => {
@@ -127,6 +162,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
     setError(null);
 
     startTransition(async () => {
+      // Update meeting details
       const result = await updateMeeting({
         id: meeting.id,
         title: title.trim(),
@@ -136,15 +172,35 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
         meeting_link: meetingLink.trim() || null,
       });
 
-      if (result.success) {
-        invalidateMeetings(true);
-        invalidateTodaysSchedule(true);
-        invalidateScheduledTasks(undefined, true);
-        invalidateDailyFlow(true);
-        onOpenChange(false);
-      } else {
+      if (!result.success) {
         setError(result.error || 'Failed to update meeting');
+        return;
       }
+
+      // Sync attendees — compute diff
+      const currentAttendeeIds = new Set<string>();
+      if (meeting.attendees) {
+        for (const a of meeting.attendees) {
+          const profile = Array.isArray(a.profile) ? a.profile[0] : a.profile;
+          if (profile?.id) currentAttendeeIds.add(profile.id);
+        }
+      }
+
+      // Add new attendees
+      const toAdd = [...selectedAttendees].filter((id) => !currentAttendeeIds.has(id));
+      // Remove old attendees
+      const toRemove = [...currentAttendeeIds].filter((id) => !selectedAttendees.has(id));
+
+      await Promise.all([
+        ...toAdd.map((id) => addMeetingAttendee(meeting.id, id)),
+        ...toRemove.map((id) => removeMeetingAttendee(meeting.id, id)),
+      ]);
+
+      invalidateMeetings(true);
+      invalidateTodaysSchedule(true);
+      invalidateScheduledTasks(undefined, true);
+      invalidateDailyFlow(true);
+      onOpenChange(false);
     });
   }
 
@@ -201,6 +257,47 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
           </div>
+
+          {/* Attendees */}
+          {profiles.length > 0 && (
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                Attendees
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {profiles.map((profile) => {
+                  const isSelected = selectedAttendees.has(profile.id);
+                  const name = profile.full_name || profile.email || 'Unknown';
+                  const initial = name[0]?.toUpperCase() || '?';
+
+                  return (
+                    <button
+                      key={profile.id}
+                      type="button"
+                      onClick={() => toggleAttendee(profile.id)}
+                      className={cn(
+                        'flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition-all',
+                        isSelected
+                          ? 'border-violet-500/40 bg-violet-500/10 text-foreground'
+                          : 'border-border bg-background text-muted-foreground hover:border-border/80 hover:text-foreground'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'flex size-5 items-center justify-center rounded-full text-[10px] font-semibold',
+                          isSelected ? 'bg-violet-500 text-white' : 'bg-muted text-muted-foreground'
+                        )}
+                      >
+                        {initial}
+                      </span>
+                      <span className="font-medium">{name.split(' ')[0]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Date Selection */}
           <Popover>
@@ -306,6 +403,11 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
                 {TIME_SLOTS.find((t) => t.value === selectedTime)?.label || selectedTime} (
                 {DURATION_OPTIONS.find((d) => d.value === duration)?.label})
               </div>
+              {selectedAttendees.size > 0 && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {selectedAttendees.size} attendee{selectedAttendees.size !== 1 ? 's' : ''}
+                </div>
+              )}
               {meetingLink && (
                 <div className="mt-1.5 flex items-center gap-1 text-emerald-500">
                   <Video className="h-3 w-3" />

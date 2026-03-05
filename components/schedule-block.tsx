@@ -15,6 +15,8 @@ import { USER_COLORS } from '@/lib/color-constants';
 import { EditTaskModal } from './edit-task-modal';
 import { EditMeetingModal } from './edit-meeting-modal';
 import { NewTaskModal } from './new-task-modal';
+import { TaskDetailDialog } from './task-detail-dialog';
+import { MeetingDetailDialog } from './meeting-detail-dialog';
 
 interface TeamMember {
   id: string;
@@ -100,6 +102,8 @@ export function ScheduleBlock({
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [quickAddValue, setQuickAddValue] = useState('');
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
+  const [viewingMeeting, setViewingMeeting] = useState<MeetingWithRelations | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editingMeeting, setEditingMeeting] = useState<MeetingWithRelations | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -568,10 +572,24 @@ export function ScheduleBlock({
               backlogTasks.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-secondary/60"
+                  className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-secondary/60"
                 >
-                  <Circle className="h-3.5 w-3.5 text-muted-foreground/40" strokeWidth={1.5} />
-                  <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => toggleComplete(item)}
+                    disabled={isPending}
+                    className="group/check flex size-7 shrink-0 items-center justify-center rounded-full transition-all hover:bg-muted/60 active:scale-90"
+                    aria-label="Mark complete"
+                  >
+                    <Circle
+                      className="size-4 text-muted-foreground/40 transition-colors group-hover/check:text-qualia-400"
+                      strokeWidth={1.5}
+                    />
+                  </button>
+                  <span
+                    className="min-w-0 flex-1 cursor-pointer truncate text-sm text-foreground transition-colors hover:text-foreground/80"
+                    onClick={() => setViewingTask(item)}
+                  >
                     {item.title}
                   </span>
                   {item.assignee && (
@@ -710,40 +728,37 @@ export function ScheduleBlock({
                                       type="button"
                                       onClick={() => toggleComplete(item)}
                                       disabled={isPending}
-                                      className="mt-[1px] shrink-0 transition-transform active:scale-90"
+                                      className="group/check -ml-1 flex size-7 shrink-0 items-center justify-center rounded-full transition-all hover:bg-muted/60 active:scale-90"
                                       aria-label={itemIsDone ? 'Mark incomplete' : 'Mark complete'}
                                     >
                                       {itemIsDone ? (
                                         <CheckCircle2
-                                          className="h-[15px] w-[15px] text-qualia-500"
+                                          className="size-4 text-qualia-500 transition-colors group-hover/check:text-qualia-400"
                                           strokeWidth={2}
                                         />
                                       ) : (
                                         <Circle
                                           className={cn(
-                                            'h-[15px] w-[15px] transition-colors',
-                                            itemIsInProgress
-                                              ? 'text-qualia-500'
-                                              : 'text-border hover:text-foreground/40'
+                                            'size-4 transition-colors group-hover/check:text-qualia-400',
+                                            itemIsInProgress ? 'text-qualia-500' : 'text-border'
                                           )}
                                           strokeWidth={1.5}
                                         />
                                       )}
                                     </button>
                                   ) : (
-                                    <Video
-                                      className="mt-[1px] h-[15px] w-[15px] shrink-0 text-violet-500"
-                                      strokeWidth={1.5}
-                                    />
+                                    <div className="flex size-7 shrink-0 items-center justify-center">
+                                      <Video className="size-4 text-violet-500" strokeWidth={1.5} />
+                                    </div>
                                   )}
                                   <div
                                     className="min-w-0 flex-1 cursor-pointer"
                                     onClick={() => {
                                       if (itemIsMeeting) {
                                         const original = meetingsMap.get(item.id);
-                                        if (original) setEditingMeeting(original);
+                                        if (original) setViewingMeeting(original);
                                       } else {
-                                        setEditingTask(item);
+                                        setViewingTask(item);
                                       }
                                     }}
                                   >
@@ -891,6 +906,36 @@ export function ScheduleBlock({
         </div>
       </div>
 
+      {/* Task Detail Dialog */}
+      <TaskDetailDialog
+        task={viewingTask}
+        open={!!viewingTask}
+        onOpenChange={(open) => {
+          if (!open) setViewingTask(null);
+        }}
+        onEdit={(task) => {
+          setViewingTask(null);
+          setEditingTask(task);
+        }}
+        onToggleDone={(task) => {
+          toggleComplete(task);
+        }}
+        isDone={viewingTask ? isTaskDone(viewingTask) : false}
+      />
+
+      {/* Meeting Detail Dialog */}
+      <MeetingDetailDialog
+        meeting={viewingMeeting}
+        open={!!viewingMeeting}
+        onOpenChange={(open) => {
+          if (!open) setViewingMeeting(null);
+        }}
+        onEdit={(meeting) => {
+          setViewingMeeting(null);
+          setEditingMeeting(meeting);
+        }}
+      />
+
       {/* Edit Task Modal */}
       {editingTask && (
         <EditTaskModal
@@ -928,6 +973,7 @@ export function ScheduleBlock({
                   ).name,
                 }
               : null,
+            attendees: editingMeeting.attendees,
           }}
           open={!!editingMeeting}
           onOpenChange={(open) => {
