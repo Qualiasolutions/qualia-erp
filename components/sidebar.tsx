@@ -15,9 +15,11 @@ import {
   BookOpen,
   FlaskConical,
   ExternalLink,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
+import { useAdminContext } from '@/components/admin-provider';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -41,6 +43,7 @@ const resourcesNav = [
 ];
 
 const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
+const adminNav = [{ name: 'Admin', href: '/admin', icon: Shield }];
 
 type NavItem = (typeof workspaceNav)[0];
 
@@ -141,6 +144,7 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
 
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
+  const { isManagerOrAbove } = useAdminContext();
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -216,6 +220,23 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
             ))}
           </div>
         </div>
+
+        {/* Admin section — managers and admins only */}
+        {isManagerOrAbove && (
+          <div className="space-y-1">
+            <SectionLabel>Admin</SectionLabel>
+            <div className="space-y-0.5">
+              {adminNav.map((item) => (
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item.href)}
+                  onClick={onLinkClick}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Bottom section — account menu */}

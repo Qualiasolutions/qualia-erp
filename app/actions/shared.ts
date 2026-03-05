@@ -34,11 +34,25 @@ export type ProfileRef = {
 
 // ============ AUTHORIZATION HELPERS ============
 
-// Check if user is an admin
+// Check if user is an admin (owner)
 export async function isUserAdmin(userId: string): Promise<boolean> {
   const supabase = await createClient();
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
   return data?.role === 'admin';
+}
+
+// Check if user is manager or above (manager + admin)
+export async function isUserManagerOrAbove(userId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+  return data?.role === 'admin' || data?.role === 'manager';
+}
+
+// Get user's role
+export async function getUserRole(userId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+  return data?.role || null;
 }
 
 // Check if user can delete an issue (creator or admin)

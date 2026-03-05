@@ -86,9 +86,21 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Employee users: redirect to dashboard if trying to access portal
-    // Admins are allowed to access portal for preview/oversight
-    if (userRole === 'employee' && pathname.startsWith('/portal')) {
+    // Admin-only routes
+    const adminOnlyRoutes = ['/admin'];
+    if (
+      userRole !== 'admin' &&
+      userRole !== 'manager' &&
+      adminOnlyRoutes.some((route) => pathname.startsWith(route))
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+
+    // Employee/manager users: redirect to dashboard if trying to access portal
+    // Only admins are allowed to access portal for preview/oversight
+    if ((userRole === 'employee' || userRole === 'manager') && pathname.startsWith('/portal')) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);

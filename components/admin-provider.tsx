@@ -9,6 +9,9 @@ const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
 interface AdminContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isManager: boolean;
+  isManagerOrAbove: boolean;
+  userRole: string | null;
   userEmail: string | null;
   userId: string | null;
   loading: boolean;
@@ -17,6 +20,9 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType>({
   isAdmin: false,
   isSuperAdmin: false,
+  isManager: false,
+  isManagerOrAbove: false,
+  userRole: null,
   userEmail: null,
   userId: null,
   loading: true,
@@ -34,6 +40,9 @@ export function AdminProvider({ children }: AdminProviderProps) {
   const [state, setState] = useState<AdminContextType>({
     isAdmin: false,
     isSuperAdmin: false,
+    isManager: false,
+    isManagerOrAbove: false,
+    userRole: null,
     userEmail: null,
     userId: null,
     loading: true,
@@ -51,6 +60,9 @@ export function AdminProvider({ children }: AdminProviderProps) {
         setState({
           isAdmin: false,
           isSuperAdmin: false,
+          isManager: false,
+          isManagerOrAbove: false,
+          userRole: null,
           userEmail: null,
           userId: null,
           loading: false,
@@ -61,18 +73,24 @@ export function AdminProvider({ children }: AdminProviderProps) {
       // Check if super admin by email
       const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL;
 
-      // Check if admin role in profiles
+      // Check role in profiles
       const { data: profile } = await supabase
         .from('profiles')
         .select('role, email')
         .eq('id', user.id)
         .single();
 
-      const isAdmin = profile?.role === 'admin' || isSuperAdmin;
+      const userRole = profile?.role || null;
+      const isAdmin = userRole === 'admin' || isSuperAdmin;
+      const isManager = userRole === 'manager';
+      const isManagerOrAbove = isAdmin || isManager;
 
       setState({
         isAdmin,
         isSuperAdmin,
+        isManager,
+        isManagerOrAbove,
+        userRole,
         userEmail: user.email || null,
         userId: user.id,
         loading: false,

@@ -1222,7 +1222,7 @@ export type Database = {
       project_type: 'web_design' | 'ai_agent' | 'voice_agent' | 'ai_platform' | 'seo' | 'ads';
       task_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       task_status: 'Todo' | 'In Progress' | 'Done' | 'Canceled';
-      user_role: 'admin' | 'employee' | 'client';
+      user_role: 'admin' | 'manager' | 'employee' | 'client';
       integration_provider: 'github' | 'vercel' | 'vapi';
       provisioning_status:
         | 'not_started'
