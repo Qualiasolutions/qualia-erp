@@ -92,23 +92,30 @@ cp .env.example .env.local
 # Fill in the values
 ```
 
-### Step 3: Add to Vercel
+### Step 3: Add to Vercel (via Dashboard)
 
-```bash
-# Option A: Via CLI (one at a time)
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-# It will prompt for the value and environment
+We manage environment variables through the Vercel Dashboard:
 
-# Option B: Via dashboard (easier for many vars)
-# Go to Vercel → Project → Settings → Environment Variables
-# Add them all through the UI
-```
+**How to add env vars:**
+
+1. Go to [vercel.com](https://vercel.com) → Log in → Select your project
+2. Click **Settings** (top nav)
+3. Click **Environment Variables** (left sidebar)
+4. For each variable:
+   - Type the variable name (e.g., `NEXT_PUBLIC_SUPABASE_URL`)
+   - Paste the value
+   - Select which environments it applies to: **Production**, **Preview**, **Development**
+   - Click **Save**
+5. **After adding or changing env vars, you must redeploy** for the changes to take effect:
+   ```bash
+   vercel --prod
+   ```
 
 ### Step 4: Verify
 
 ```bash
 # Pull from Vercel to make sure they match
-npx vercel env pull .env.check --environment production
+npx vercel env pull .env.check --environment production --yes
 # Compare with your .env.local
 # Then delete the check file
 rm .env.check
@@ -145,13 +152,13 @@ vercel --prod
 
 **Cause**: Code references an env var that doesn't exist in the build environment.
 
-**Fix**: Add the missing variable in Vercel. Check the build logs to see which one is missing.
+**Fix**: Add the missing variable in the Vercel Dashboard. Check the build logs to see which one is missing.
 
 ### "API returns 401 Unauthorized"
 
 **Cause**: Wrong API key, or the key expired.
 
-**Fix**: Check the service dashboard (Supabase, Resend, etc.) for the correct key. Update it in both `.env.local` and Vercel.
+**Fix**: Check the service dashboard (Supabase, Resend, etc.) for the correct key. Update it in both `.env.local` and the Vercel Dashboard.
 
 ### "Supabase says 'Invalid API key'"
 
@@ -165,6 +172,6 @@ vercel --prod
 
 1. **Never hardcode keys in code.** Always use `process.env.VAR_NAME`.
 2. **Never commit `.env` files.** They should always be in `.gitignore`.
-3. **Never share keys in Slack/WhatsApp.** Use the dashboard or `vercel env pull`.
-4. **Always add to both** `.env.local` (local) AND Vercel (production).
+3. **Never share keys in Slack/WhatsApp.** Use the Vercel Dashboard or `vercel env pull`.
+4. **Always add to both** `.env.local` (local) AND Vercel Dashboard (production).
 5. **When in doubt**, pull from Vercel: `npx vercel env pull .env.local`.

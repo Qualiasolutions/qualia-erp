@@ -171,7 +171,7 @@ If either service is down, there's nothing you can do but wait and let the clien
 Run through this in order:
 
 1. Check if someone deployed recently (`vercel ls`)
-2. Check if an env var was changed or deleted (`vercel env ls`)
+2. Check if an env var was changed or deleted (Vercel Dashboard → Settings → Environment Variables)
 3. Check if the Supabase project is paused
 4. Check Vercel and Supabase status pages
 5. Check the domain DNS (if using custom domain)

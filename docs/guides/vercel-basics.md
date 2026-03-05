@@ -1,6 +1,6 @@
 # Vercel — How We Deploy
 
-> Every Qualia project is deployed on Vercel. This guide covers what you actually need to know day-to-day.
+> Every Qualia project (except armenius which uses Cloudflare Workers) is deployed on Vercel. This guide covers what you actually need to know day-to-day.
 
 ---
 
@@ -47,7 +47,7 @@ Or just check the Vercel dashboard — it shows all deployments with green/red s
 
 ---
 
-## Environment Variables (Env Vars)
+## Environment Variables
 
 This is the #1 thing trainees mess up. Env vars are secret values your app needs to work — API keys, database URLs, etc.
 
@@ -58,28 +58,34 @@ This is the #1 thing trainees mess up. Env vars are secret values your app needs
 | `.env.local`     | Your local machine only. Never committed to git.     |
 | Vercel Dashboard | Production/Preview. This is what the live site uses. |
 
-### Adding env vars in Vercel
+### How We Set Env Vars at Qualia
 
-**Via Dashboard (easier):**
+We manage environment variables through the **Vercel Dashboard**. It gives you a clear visual overview, lets you edit easily, and avoids typos.
 
-1. Go to [vercel.com](https://vercel.com) → Select your project
-2. Settings → Environment Variables
-3. Add each variable with name and value
-4. Select which environments: Production, Preview, Development
-5. Click Save
+**How to add env vars:**
 
-**Via CLI:**
+1. Go to [vercel.com](https://vercel.com) → Log in → Select your project
+2. Click **Settings** (top nav)
+3. Click **Environment Variables** (left sidebar)
+4. For each variable:
+   - Type the variable name (e.g., `NEXT_PUBLIC_SUPABASE_URL`)
+   - Paste the value
+   - Select which environments it applies to: **Production**, **Preview**, **Development**
+   - Click **Save**
+5. **After adding or changing env vars, you must redeploy** for the changes to take effect:
+   ```bash
+   vercel --prod
+   ```
+
+### Pulling env vars for local development
+
+When joining a project that's already set up, pull the production env vars so you can run locally:
 
 ```bash
-# Add a variable
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-
-# List all variables
-vercel env ls
-
-# Pull production vars to local file (useful for debugging)
-npx vercel env pull .env.local --environment production
+npx vercel env pull .env.local --environment production --yes
 ```
+
+This creates your `.env.local` from whatever is already in the Vercel dashboard. You don't need to hunt for keys.
 
 ### Common env vars in every project
 
@@ -94,8 +100,8 @@ npx vercel env pull .env.local --environment production
 
 ### Rules
 
-- **NEVER** put env vars in code. No `const API_KEY = "sk-..."` anywhere.
-- **NEVER** commit `.env` files. They're in `.gitignore` for a reason.
+- Don't put env vars in code. No `const API_KEY = "sk-..."` anywhere.
+- Don't commit `.env` files. They're in `.gitignore` for a reason.
 - If a variable starts with `NEXT_PUBLIC_`, it's visible in the browser. Only use this for safe public keys.
 - Everything else (service role keys, API secrets) stays server-only.
 
@@ -176,14 +182,13 @@ This instantly restores the old version while you fix the issue.
 
 ## Quick Reference
 
-| Task                  | Command                          |
-| --------------------- | -------------------------------- |
-| Deploy to production  | `vercel --prod`                  |
-| Deploy preview        | `vercel`                         |
-| List deployments      | `vercel ls`                      |
-| Add env var           | `vercel env add VAR_NAME`        |
-| List env vars         | `vercel env ls`                  |
-| Pull env vars locally | `npx vercel env pull .env.local` |
-| Link project          | `vercel link`                    |
-| Rollback              | `vercel promote [url] --yes`     |
-| Check logs            | `vercel logs`                    |
+| Task                  | How                                                       |
+| --------------------- | --------------------------------------------------------- |
+| Deploy to production  | `vercel --prod`                                           |
+| Deploy preview        | `vercel`                                                  |
+| List deployments      | `vercel ls`                                               |
+| Add/edit env vars     | **Vercel Dashboard → Settings → Environment Variables**   |
+| Pull env vars locally | `npx vercel env pull .env.local --environment production` |
+| Link project          | `vercel link`                                             |
+| Rollback              | `vercel promote [url] --yes`                              |
+| Check logs            | `vercel logs`                                             |

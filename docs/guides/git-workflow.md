@@ -202,8 +202,9 @@ gh repo create qualiasolutions/project-name --private
 
 ## Rules
 
-1. **Never push directly to `main` or `master`.** Always use a feature branch.
+1. **Never push directly to `main` or `master`.** Always use a feature branch. (We have a branch guard script that blocks direct pushes to main.)
 2. **Write clear commit messages.** Future-you will thank you.
 3. **Commit often.** Small commits are easier to understand and revert.
 4. **Pull before you push.** Run `git pull` on main before creating a branch.
 5. **Don't commit secrets.** No `.env` files, no API keys in code.
+6. **Stage specific files.** Use `git add [file1] [file2]` instead of `git add .` to avoid accidentally staging sensitive files.

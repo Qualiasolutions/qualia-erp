@@ -4,6 +4,19 @@
 
 ---
 
+## The Qualia Workflow
+
+At Qualia, we use a structured workflow (previously called "GSD" — Get Shit Done) to manage projects. The core idea is simple: **discover → plan → execute → verify**. Every project goes through phases with clear milestones, and we track state using planning files (`.planning/STATE.md` and `.planning/ROADMAP.md`) in each project.
+
+Key principles:
+
+- **Read before you write.** Always understand the existing codebase before making changes.
+- **MVP first.** Ship the minimum viable version, then iterate. Don't over-engineer.
+- **Feature branches only.** Never push directly to `main` or `master`.
+- **Verify after every deploy.** Every deployment gets 4 checks: HTTP 200, auth flow, console errors, API latency < 500ms.
+
+---
+
 ## Workflow Guides (Read These First)
 
 Before diving into project phases, read these practical guides:
@@ -137,7 +150,7 @@ gh repo create qualiasolutions/[project-name] --private
 
 ```bash
 # Navigate to correct category
-cd ~/Desktop/Projects/[category]/  # aiagents, platforms, voice, websites
+cd ~/Projects/[category]/  # aiagents, platforms, voice, websites
 
 # Clone the repo
 git clone git@github.com:qualiasolutions/[project-name].git
@@ -148,7 +161,7 @@ cd [project-name]
 
 ```bash
 # Copy the appropriate template
-cp -r ~/Desktop/Projects/platforms/qualia/templates/[category]-starter/* .
+cp -r ~/Projects/platforms/qualia/templates/[category]-starter/* .
 
 # Install dependencies
 npm install
@@ -408,14 +421,16 @@ components/
 └── providers/             # Context providers
 ```
 
-### 3.5 Useful Skills
+### 3.5 Useful Commands During Development
 
-| Task                  | Command |
-| --------------------- | ------- |
-| Design distinctive UI | `/fd`   |
-| Build components      | `/fb`   |
-| New feature workflow  | `/nf`   |
-| Debug issues          | `/dd`   |
+| Task                 | Command                 | What it does                              |
+| -------------------- | ----------------------- | ----------------------------------------- |
+| Build + ship fast    | `/qualia:quick`         | The go-to command for most tasks          |
+| Build distinctive UI | `/frontend-master`      | React components with animations, styling |
+| Plan a phase         | `/qualia:plan-phase`    | Plan a project phase with milestones      |
+| Execute a phase      | `/qualia:execute-phase` | Execute the planned phase                 |
+
+Most of the time, just describe what you want and say "and ship" — Claude handles the rest.
 
 ---
 
@@ -470,7 +485,7 @@ Aim for **50% coverage minimum** before deployment.
 
 - [ ] RLS policies on ALL tables
 - [ ] No hardcoded secrets in code
-- [ ] Environment variables set in Vercel
+- [ ] Environment variables set in Vercel Dashboard
 - [ ] Pre-commit hook validates (no secrets, no console.log)
 
 ### Performance
@@ -492,10 +507,10 @@ Aim for **50% coverage minimum** before deployment.
 - [ ] README.md updated
 - [ ] Environment variables documented in .env.example
 
-### Skill to Use
+### Command to Use
 
 ```
-/pr  # Run production-audit for comprehensive check
+/review  # Code review and security audit before shipping
 ```
 
 ---
@@ -512,42 +527,46 @@ vercel link
 
 ### 6.2 Set Environment Variables
 
-**Via Dashboard:**
+We set env vars through the **Vercel Dashboard** (not the CLI):
 
-1. Go to Vercel Dashboard → Project → Settings → Environment Variables
-2. Add all variables from .env.example
+1. Go to [vercel.com](https://vercel.com) → Log in → Select your project
+2. Click **Settings** → **Environment Variables**
+3. Add all variables from your `.env.example`:
+   - Type the variable name
+   - Paste the value
+   - Select environments: **Production**, **Preview**, **Development**
+   - Click **Save**
+4. Repeat for every variable
 
-**Via CLI:**
-
-```bash
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-# ... repeat for all variables
-```
+See the [Environment Variables Guide](./guides/env-vars-guide.md) for the full list of common variables and where to find each key.
 
 ### 6.3 Deploy
 
 ```bash
-# Preview deployment
+# Preview deployment (test first)
 vercel
 
 # Production deployment
 vercel --prod
 ```
 
-### 6.4 Verify Deployment
+### 6.4 Verify Deployment (4-Check Verification)
 
-- [ ] Site loads correctly
-- [ ] Auth flow works (login, logout)
-- [ ] Database operations work (CRUD)
-- [ ] No console errors
-- [ ] Mobile responsive
+After every deploy, run through these checks:
+
+- [ ] **HTTP 200**: Site loads correctly (`curl -s -o /dev/null -w "%{http_code}" https://yoursite.vercel.app`)
+- [ ] **Auth flow**: Login and logout work
+- [ ] **Console clean**: No errors in browser DevTools console
+- [ ] **Latency**: API responses under 500ms
 
 ### 6.5 Custom Domain (if needed)
 
 1. Vercel Dashboard → Project → Settings → Domains
 2. Add domain
-3. Update DNS records at registrar
+3. Update DNS records at registrar:
+   - A record: `76.76.21.21`
+   - CNAME for www: `cname.vercel-dns.com`
+4. SSL is automatic
 
 ---
 
@@ -559,13 +578,13 @@ vercel --prod
 # Always check status first
 git status && git branch
 
-# Create feature branch
+# Create feature branch (NEVER work directly on main)
 git checkout -b feature/[name]
 
 # Make changes...
 
 # Commit with conventional commits
-git add .
+git add [specific files]
 git commit -m "feat: add new feature"
 # or: fix:, docs:, refactor:, test:, chore:
 
@@ -573,18 +592,16 @@ git commit -m "feat: add new feature"
 git push -u origin feature/[name]
 ```
 
-### 7.2 Useful Git Skills
+### 7.2 Deploy Changes
 
-```
-/gf  # Smart git workflow
-```
+Just tell Claude to ship it. In practice, you say "and ship" or use `/ship` — Claude handles the git, build, deploy, and verification.
 
 ### 7.3 Update Qualia Internal Suite
 
 After learning new patterns or fixing issues:
 
 ```bash
-cd ~/Desktop/Projects/platforms/qualia
+cd ~/Projects/platforms/qualia
 
 # Update relevant files
 # - docs/ for documentation
@@ -598,9 +615,6 @@ git push
 ### 7.4 Regular Maintenance
 
 ```bash
-# Run cleanup script weekly
-~/.claude/scripts/cleanup.sh
-
 # Update dependencies monthly
 npm update
 npm audit fix
@@ -608,27 +622,32 @@ npm audit fix
 
 ---
 
-## Quick Skills Reference
+## Quick Commands Reference
 
-| Task             | Skill  | Description                        |
-| ---------------- | ------ | ---------------------------------- |
-| Design UI        | `/fd`  | frontend-master --design           |
-| Build components | `/fb`  | frontend-master --build            |
-| Modernize legacy | `/fm`  | frontend-master --modernize        |
-| Debug issues     | `/dd`  | deep-debug                         |
-| Auto-fix         | `/sf`  | smart-fix                          |
-| New feature      | `/nf`  | new-feature (plan→TDD→impl→commit) |
-| Deploy           | `/dep` | full-deploy                        |
-| Production audit | `/pr`  | production-audit                   |
-| Database ops     | `/sb`  | supabase                           |
-| Voice agent      | `/va`  | voice-agent                        |
-| Git workflow     | `/gf`  | git-flow                           |
-| Stack research   | `/sr`  | stack-researcher                   |
+These are the commands we actually use day to day:
 
-**List all skills:**
+| Task                    | Command                     | Description                                   |
+| ----------------------- | --------------------------- | --------------------------------------------- |
+| Build + ship (go-to)    | `/qualia:quick`             | Fast all-purpose workflow — the most used one |
+| Plan a project phase    | `/qualia:plan-phase`        | Plan phase milestones for bigger projects     |
+| Execute a project phase | `/qualia:execute-phase`     | Execute the planned phase                     |
+| Build premium UI        | `/frontend-master`          | Distinctive, animated, professional UI        |
+| Deploy (full pipeline)  | `/ship`                     | Quality gates → git → deploy → verify         |
+| Deploy website          | `/ship-website`             | Website-specific deploy with SEO checks       |
+| Deploy AI agent         | `/ship-agent`               | AI agent deploy with safety checks            |
+| Deploy voice agent      | `/ship-voice`               | Voice agent deploy with webhook verification  |
+| Code review             | `/review`                   | Security + quality audit                      |
+| Project status          | `/status`                   | HTTP status, SSL, Supabase, response times    |
+| Optimize performance    | `/performance-optimization` | Analyze and fix performance issues            |
+| Learn from mistake      | `/learn`                    | Save a note for future sessions               |
+| View saved notes        | `/memory`                   | See what Claude remembers                     |
+
+Most of the time you don't need a specific command — just describe what you want and say "and ship".
+
+**List all available commands:**
 
 ```bash
-ls ~/.claude/skills/
+ls ~/.claude/commands/
 ```
 
 ---
@@ -650,14 +669,15 @@ ls ~/.claude/skills/
 ### Deployment Failures
 
 1. Check Vercel build logs
-2. Verify all env vars are set in Vercel
+2. Verify all env vars are set in the **Vercel Dashboard**
 3. Check for hardcoded localhost URLs
 
 ### Need Help?
 
 - Read project CLAUDE.md first
-- Check similar projects in ~/Desktop/Projects/
-- Use `/dd` (deep-debug) skill
+- Check similar projects in `~/Projects/`
+- Just paste the error to Claude Code — it'll figure it out
+- Escalate to Fawzi after 30 minutes of being stuck
 
 ---
 
@@ -666,7 +686,7 @@ ls ~/.claude/skills/
 All starter templates are at:
 
 ```
-~/Desktop/Projects/platforms/qualia/templates/
+~/Projects/platforms/qualia/templates/
 ├── ai-agent-starter/
 ├── platform-starter/
 ├── voice-starter/

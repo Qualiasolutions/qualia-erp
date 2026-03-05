@@ -52,7 +52,7 @@ Every project needs these keys. Here's where to find them:
 Copy these and add them to:
 
 - Your `.env.local` file (for local development)
-- Vercel environment variables (for production) — see [Vercel Guide](./vercel-basics.md)
+- **Vercel Dashboard** → Settings → Environment Variables (for production) — see [Vercel Guide](./vercel-basics.md)
 
 ---
 
