@@ -197,7 +197,7 @@ function ProjectRow({
       <div
         onClick={handleClick}
         className={cn(
-          'group relative flex cursor-pointer items-center gap-3 rounded-lg border bg-card/40 px-3.5 py-2.5 transition-all duration-200',
+          'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card/40 px-3.5 py-2.5 transition-all duration-200',
           'hover:border-primary/20 hover:bg-card hover:shadow-sm',
           isPartnership ? 'border-orange-500/30' : 'border-border/40',
           isComplete && 'opacity-40',
@@ -217,7 +217,7 @@ function ProjectRow({
         {/* Name + client */}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-medium text-foreground">{project.name}</span>
+            <span className="text-sm font-medium leading-snug text-foreground">{project.name}</span>
             {isPartnership && <span className="text-xs">🤝</span>}
           </div>
           {project.client_name && (

@@ -848,6 +848,547 @@ export const guides: Guide[] = [
 
   // ==================== WORKFLOWS ====================
   {
+    slug: 'vercel-basics',
+    title: 'Vercel — How We Deploy',
+    subtitle: 'Deployments, env vars, domains, rollbacks',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'vb-1',
+        title: 'What is Vercel?',
+        description:
+          'Vercel hosts our websites and apps. When you push code to GitHub, Vercel automatically builds and deploys it. Every project gets a URL like yourproject.vercel.app.',
+      },
+      {
+        id: 'vb-2',
+        title: 'Deploying Your Project',
+        description: 'The normal way: push to GitHub and Vercel auto-deploys from the main branch.',
+        commands: ['git push origin main'],
+        tips: [
+          'For manual deploy: vercel --prod',
+          'Preview deploys happen on every branch push — use them to test before merging',
+        ],
+      },
+      {
+        id: 'vb-3',
+        title: 'Adding Environment Variables',
+        description:
+          'Go to Vercel → Your Project → Settings → Environment Variables. Add each variable your app needs (Supabase URL, API keys, etc.).',
+        tips: [
+          'Select which environments need it: Production, Preview, Development',
+          'After adding vars, you must redeploy for them to take effect',
+          'Never put secrets in your code — always use env vars',
+        ],
+      },
+      {
+        id: 'vb-4',
+        title: 'Pulling Env Vars Locally',
+        description: 'Instead of copying vars one by one, pull them all at once:',
+        commands: ['npx vercel env pull .env.local'],
+        tips: ['.env.local is gitignored — it never gets committed'],
+      },
+      {
+        id: 'vb-5',
+        title: 'Custom Domains',
+        description:
+          'Vercel → Project → Settings → Domains → Add your domain. Then update DNS at the registrar:',
+        tips: [
+          'A record → 76.76.21.21',
+          'CNAME (www) → cname.vercel-dns.com',
+          'SSL is automatic — just wait a few minutes after DNS propagates',
+        ],
+      },
+      {
+        id: 'vb-6',
+        title: 'Checking Deployment Status',
+        commands: ['vercel ls', 'vercel inspect [deployment-url]'],
+        tips: [
+          'Green = deployed successfully',
+          'Red = build failed — check the build logs',
+          'Every push creates a unique deployment URL you can share for testing',
+        ],
+      },
+      {
+        id: 'vb-7',
+        title: 'Rolling Back if Something Breaks',
+        description:
+          "If a deploy breaks the site, don't panic. Promote the previous working deployment:",
+        commands: ['vercel ls', 'vercel promote [previous-deployment-url] --yes'],
+        tips: ['This instantly restores the old version while you figure out the fix'],
+      },
+    ],
+    checklist: {
+      title: 'Vercel Quick Reference',
+      items: [
+        'All env vars set in Vercel dashboard',
+        'Production branch is correct (usually main/master)',
+        'Custom domain DNS configured',
+        'Build passes before pushing',
+        'Know how to rollback if needed',
+      ],
+    },
+  },
+  {
+    slug: 'supabase-basics',
+    title: 'Supabase — Our Database',
+    subtitle: 'Dashboard, API keys, auth setup, storage',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'sb-1',
+        title: 'What is Supabase?',
+        description:
+          'Supabase is our database + auth + file storage. Every project gets its own Supabase project with a PostgreSQL database, user authentication, and file storage.',
+      },
+      {
+        id: 'sb-2',
+        title: 'Finding Your API Keys',
+        description: 'Supabase Dashboard → Settings → API. You need two keys for every project:',
+        tips: [
+          'Project URL: https://[ref].supabase.co — goes in NEXT_PUBLIC_SUPABASE_URL',
+          'anon/public key: goes in NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — safe for frontend',
+          'service_role key: NEVER in frontend code — only for server-side or admin scripts',
+        ],
+        warning: 'The service_role key bypasses all security. Never expose it in client-side code.',
+      },
+      {
+        id: 'sb-3',
+        title: 'Setting Up Auth Redirect URLs',
+        description:
+          'This is the #1 thing trainees forget. Go to: Authentication → URL Configuration',
+        tips: [
+          'Site URL: set to your production URL (https://yourproject.vercel.app)',
+          'Redirect URLs: add https://yourproject.vercel.app/** AND http://localhost:3000/**',
+          'Without these, login/signup will fail or redirect to the wrong place',
+        ],
+      },
+      {
+        id: 'sb-4',
+        title: 'Checking Your Tables',
+        description:
+          'Table Editor shows all your data. Use it to verify data is being saved correctly, check if tables exist, and debug "no data showing" issues.',
+      },
+      {
+        id: 'sb-5',
+        title: 'Storage (File Uploads)',
+        description:
+          'Supabase Storage handles file uploads (logos, documents, images). Go to Storage in the dashboard to see buckets and files.',
+        tips: [
+          'Files are organized in buckets (like folders)',
+          'Each bucket has its own access policies',
+          'Public buckets = anyone can view. Private = need auth token',
+        ],
+      },
+      {
+        id: 'sb-6',
+        title: 'Paused Projects',
+        description:
+          'Free-tier projects pause after 7 days of inactivity. If a site suddenly stops loading data, check if the Supabase project is paused.',
+        tips: [
+          'Go to the Supabase Dashboard → the project will show a "Restore" button',
+          'Paid projects never pause',
+        ],
+      },
+      {
+        id: 'sb-7',
+        title: 'Logs (When Things Go Wrong)',
+        description:
+          'Database → Logs shows all queries, errors, and auth events. Check here when data queries fail or auth stops working.',
+      },
+    ],
+    checklist: {
+      title: 'Supabase Quick Reference',
+      items: [
+        'Know where to find API keys (Settings → API)',
+        'Auth redirect URLs configured for both local and production',
+        'Understand anon key vs service_role key',
+        'Know how to check if project is paused',
+        'Know where to find logs',
+      ],
+    },
+  },
+  {
+    slug: 'env-vars-guide',
+    title: 'Environment Variables',
+    subtitle: 'Where keys come from, how to set them everywhere',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'ev-1',
+        title: 'What Are Env Vars?',
+        description:
+          'Environment variables are secrets (API keys, database URLs) that your app needs but should never be in your code. They live in .env files locally and in Vercel for production.',
+      },
+      {
+        id: 'ev-2',
+        title: 'Local Setup (.env.local)',
+        description:
+          'Create a .env.local file in your project root. This file is gitignored — it stays on your machine only.',
+        commands: ['cp .env.example .env.local'],
+        tips: [
+          'Or pull from Vercel: npx vercel env pull .env.local',
+          'After changing .env.local, restart your dev server (npm run dev)',
+        ],
+      },
+      {
+        id: 'ev-3',
+        title: 'The NEXT_PUBLIC_ Rule',
+        description:
+          'Variables that start with NEXT_PUBLIC_ are visible in the browser. Everything else is server-only.',
+        tips: [
+          "NEXT_PUBLIC_SUPABASE_URL — OK in browser (it's just a URL)",
+          'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — OK in browser (read-only key)',
+          'SUPABASE_SERVICE_ROLE_KEY — NEVER public (full database access)',
+          'OPENAI_API_KEY — NEVER public (costs money if leaked)',
+        ],
+        warning:
+          'If a secret key starts with NEXT_PUBLIC_, anyone can see it. Double-check before adding.',
+      },
+      {
+        id: 'ev-4',
+        title: 'Where Each Key Comes From',
+        description: 'Quick reference for finding API keys:',
+        tips: [
+          'Supabase URL + anon key → Supabase Dashboard → Settings → API',
+          'Supabase service_role → same place, keep it secret',
+          'OpenAI/Google AI keys → Their developer dashboards',
+          'VAPI keys → VAPI Dashboard → Settings',
+          'Resend (email) → Resend Dashboard → API Keys',
+        ],
+      },
+      {
+        id: 'ev-5',
+        title: 'Adding to Vercel',
+        description:
+          'Vercel → Project → Settings → Environment Variables. Add each one and select which environments need it.',
+        tips: [
+          'You MUST redeploy after adding/changing env vars',
+          'Use "vercel env ls" to see what\'s currently set',
+        ],
+      },
+      {
+        id: 'ev-6',
+        title: 'Common Problems',
+        description: "If your app can't connect to the database or an API:",
+        tips: [
+          "Check if the var exists in Vercel (maybe it's only local)",
+          'Check for typos in the variable name',
+          'Check if you redeployed after adding the var',
+          'Check if the key is expired or revoked',
+          'Check .env.example to see what vars are needed',
+        ],
+      },
+    ],
+    checklist: {
+      title: 'Env Vars Checklist',
+      items: [
+        '.env.local exists and has all needed vars',
+        'Same vars are in Vercel for production',
+        'No secrets start with NEXT_PUBLIC_',
+        '.env.local is in .gitignore',
+        'Redeployed after changing Vercel vars',
+      ],
+    },
+  },
+  {
+    slug: 'git-workflow',
+    title: 'Git & GitHub Workflow',
+    subtitle: 'Branches, commits, PRs — the Qualia way',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'gw-1',
+        title: 'The Golden Rule',
+        description: 'Never commit directly to main/master. Always use a feature branch.',
+        warning:
+          'Pushing broken code to main breaks the live site (Vercel auto-deploys from main).',
+      },
+      {
+        id: 'gw-2',
+        title: 'Starting New Work',
+        description: 'Always start from the latest main branch:',
+        commands: [
+          'git checkout main',
+          'git pull origin main',
+          'git checkout -b feature/what-youre-building',
+        ],
+        tips: [
+          'Branch names: feature/xyz for new stuff, fix/xyz for bug fixes',
+          'Keep branch names short and descriptive',
+        ],
+      },
+      {
+        id: 'gw-3',
+        title: 'Saving Your Work (Commits)',
+        description: 'Commit often with clear messages:',
+        commands: ['git add [specific files]', 'git commit -m "feat: add contact form"'],
+        tips: [
+          'feat: = new feature',
+          'fix: = bug fix',
+          'style: = CSS/visual changes',
+          'docs: = documentation',
+          'refactor: = restructuring code (no behavior change)',
+        ],
+      },
+      {
+        id: 'gw-4',
+        title: 'Pushing to GitHub',
+        commands: ['git push -u origin feature/your-branch-name'],
+        tips: [
+          'The -u flag links your local branch to the remote one',
+          'After the first push, just "git push" works',
+          'Pushing creates a preview deployment on Vercel automatically',
+        ],
+      },
+      {
+        id: 'gw-5',
+        title: 'Creating a Pull Request',
+        description: 'After pushing, create a PR to merge your work into main:',
+        commands: [
+          'gh pr create --title "feat: add contact form" --body "Added contact form with validation"',
+        ],
+        tips: [
+          'Or go to GitHub → your repo → "Compare & pull request" button',
+          'Write a short description of what you changed and why',
+        ],
+      },
+      {
+        id: 'gw-6',
+        title: 'After PR is Approved',
+        commands: ['gh pr merge', 'git checkout main', 'git pull origin main'],
+        tips: ['Vercel auto-deploys when main is updated'],
+      },
+      {
+        id: 'gw-7',
+        title: 'Common Situations',
+        description: 'Things that happen and how to handle them:',
+        tips: [
+          'Wrong branch? git stash → git checkout right-branch → git stash pop',
+          'Behind main? git checkout main → git pull → git checkout your-branch → git merge main',
+          'Need to undo last commit? git reset --soft HEAD~1',
+          'Messed everything up? Ask Fawzi before doing anything destructive',
+        ],
+      },
+    ],
+    checklist: {
+      title: 'Git Quick Reference',
+      items: [
+        'Working on a feature branch (not main)',
+        'Commits have clear prefix messages',
+        'Pushed to GitHub before EOD',
+        'PR created for review',
+        'No .env files in the commit',
+      ],
+    },
+  },
+  {
+    slug: 'qualia-commands',
+    title: 'Claude Code Commands',
+    subtitle: 'Slash commands and daily workflows',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'qc-1',
+        title: 'Starting Claude Code',
+        description:
+          'Open your terminal, navigate to the project folder, and type "claude". Claude reads the project\'s CLAUDE.md file to understand the codebase.',
+        commands: ['cd ~/Desktop/Projects/[category]/[project]', 'claude'],
+      },
+      {
+        id: 'qc-2',
+        title: 'Building Features (GSD Commands)',
+        description: 'These commands manage the full build cycle:',
+        commands: [
+          '/qualia:new-project — Start a brand new project',
+          '/qualia:plan-phase 1 — Plan what to build',
+          '/qualia:execute-phase 1 — Build it',
+          '/qualia:verify-work — Check everything works',
+          '/qualia:quick — Quick task (skip full planning)',
+        ],
+      },
+      {
+        id: 'qc-3',
+        title: 'Specialist Commands',
+        description: 'Call in specialists for specific work:',
+        commands: [
+          '/frontend-master — Build UI components and design',
+          '/supabase — Database operations (tables, RLS, migrations)',
+          '/voice-agent — Build/modify VAPI voice agents',
+          '/debug — Fix bugs systematically',
+          '/responsive — Fix mobile/tablet layout issues',
+        ],
+      },
+      {
+        id: 'qc-4',
+        title: 'Deployment Commands',
+        description: 'Get your code live:',
+        commands: [
+          '/ship — Full deploy pipeline (lint, test, build, deploy, verify)',
+          '/deploy — Deploy to Vercel',
+          '/deploy-verify — Run post-deploy checks',
+        ],
+      },
+      {
+        id: 'qc-5',
+        title: 'Quality Commands',
+        description: 'Check code quality:',
+        commands: [
+          '/review — Code review and security audit',
+          '/audit — Quick project health check',
+          '/test-runner — Run tests and generate coverage',
+        ],
+      },
+      {
+        id: 'qc-6',
+        title: 'Daily Workflow',
+        description: 'A typical workday using Claude Code:',
+        tips: [
+          '1. Open terminal → cd to project → "claude"',
+          '2. Check what needs doing: /qualia:progress',
+          '3. Build: /qualia:execute-phase or /qualia:quick for small tasks',
+          '4. Test: /qualia:verify-work',
+          '5. Deploy: /ship or /deploy',
+          '6. Before closing: /handoff to save context',
+        ],
+      },
+      {
+        id: 'qc-7',
+        title: 'Talking to Claude',
+        description: 'You can just talk to Claude in plain English:',
+        tips: [
+          '"Add a contact form to the homepage" — Claude builds it',
+          '"This button doesn\'t work" — Claude debugs it',
+          '"Make this look better on mobile" — Claude fixes responsive',
+          '"Deploy this to production" — Claude runs the deploy pipeline',
+          'Be specific about what you want. More detail = better results.',
+        ],
+      },
+    ],
+    checklist: {
+      title: 'Commands Quick Reference',
+      items: [
+        'Know the build cycle: plan → execute → verify',
+        'Know specialist commands for UI, DB, voice',
+        'Know how to deploy: /ship or /deploy',
+        'Know how to check progress: /qualia:progress',
+        'Save context before closing: /handoff',
+      ],
+    },
+  },
+  {
+    slug: 'troubleshooting',
+    title: 'When Things Break',
+    subtitle: 'Systematic checklist for common problems',
+    category: 'workflow',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'ts-1',
+        title: 'White Screen / "Application Error"',
+        description: 'Usually a build error or missing env var.',
+        tips: [
+          'Run "npm run build" locally — does it pass?',
+          'Check Vercel → Deployments → build logs for errors',
+          'Check Vercel → Settings → Environment Variables — all vars present?',
+          'Common: a file was deleted but still imported somewhere',
+        ],
+      },
+      {
+        id: 'ts-2',
+        title: "Login Doesn't Work",
+        description: 'Almost always a Supabase auth URL issue.',
+        tips: [
+          'Supabase → Authentication → URL Configuration',
+          'Site URL must be your production URL (not localhost)',
+          'Redirect URLs must include both production/** and localhost:3000/**',
+          'After changing these, test in an incognito window',
+        ],
+      },
+      {
+        id: 'ts-3',
+        title: "Data Doesn't Load",
+        description: 'Could be Supabase connection, RLS, or paused project.',
+        tips: [
+          'Is the Supabase project paused? (free tier pauses after 7 days)',
+          'Are the env vars correct? (check project ref matches)',
+          'Is the table actually empty? Check Table Editor',
+          'Is RLS blocking? Ask your lead to check policies',
+        ],
+      },
+      {
+        id: 'ts-4',
+        title: '500 Server Error',
+        description: 'A server action or API route is crashing.',
+        tips: [
+          'Check Vercel function logs: "vercel logs"',
+          'Run locally: "npm run dev" and reproduce the error',
+          'Look at the terminal — the error message tells you the cause',
+          'Common: missing env var, changed DB column, expired API key',
+        ],
+      },
+      {
+        id: 'ts-5',
+        title: 'Site Looks Broken (CSS Issues)',
+        description: 'CSS not loading or layout messed up.',
+        tips: [
+          'Hard refresh: Ctrl+Shift+R (Cmd+Shift+R on Mac)',
+          "Check if it's only the custom domain (open vercel URL directly)",
+          'Redeploy: "vercel --prod"',
+          'For mobile issues use: /responsive',
+        ],
+      },
+      {
+        id: 'ts-6',
+        title: 'Site is Completely Down',
+        description: 'Could be Vercel or Supabase outage.',
+        tips: [
+          'Check vercel-status.com and status.supabase.com',
+          'Check if someone deployed recently: "vercel ls"',
+          'Check if an env var was deleted: "vercel env ls"',
+          'Nuclear option: rollback to previous deployment',
+        ],
+      },
+      {
+        id: 'ts-7',
+        title: 'Emergency Rollback',
+        description: "If the site is down for a client and you can't find the fix:",
+        commands: ['vercel ls', 'vercel promote [previous-working-url] --yes'],
+        tips: [
+          'This restores the old version instantly',
+          'Then investigate the root cause calmly',
+          'Always tell Fawzi when you do an emergency rollback',
+        ],
+      },
+      {
+        id: 'ts-8',
+        title: 'When to Escalate',
+        description: "Don't spend more than 30 minutes stuck. Reach out to Fawzi with:",
+        tips: [
+          "What's broken (specific error message or behavior)",
+          'What you tried (list what you checked)',
+          'Screenshots (error, logs, browser console)',
+          'A clear bug report saves everyone time',
+        ],
+      },
+    ],
+    checklist: {
+      title: 'Troubleshooting Quick Reference',
+      items: [
+        'Identify the symptom first (white screen? no data? 500 error?)',
+        'Check the obvious things (env vars, build, Supabase status)',
+        'Read error messages carefully — they usually tell you the cause',
+        "Don't guess — investigate systematically",
+        'Escalate after 30 minutes if stuck',
+        'Know how to rollback in emergencies',
+      ],
+    },
+  },
+  {
     slug: 'daily-research',
     title: 'Daily AI Research',
     subtitle: 'Use Gemini Deep Research + NotebookLM to research daily',
