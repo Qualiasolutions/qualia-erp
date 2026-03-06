@@ -1136,3 +1136,260 @@ export async function notifyEmployeesOfClientActivity(
     return { success: false, error: String(error) };
   }
 }
+
+// ============================================================================
+// Client Notification Functions (Phase 14-03)
+// ============================================================================
+
+/**
+ * Notify clients when a project status changes
+ */
+export async function notifyClientOfProjectStatusChange(
+  projectId: string,
+  employeeName: string,
+  oldStatus: string,
+  newStatus: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyClientOfProjectStatusChange] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project details
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name, description, workspace_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get all clients with access to this project
+    const { data: clientLinks } = await supabase
+      .from('client_projects')
+      .select('user_id')
+      .eq('project_id', projectId);
+
+    if (!clientLinks || clientLinks.length === 0) {
+      return { success: true }; // No clients to notify
+    }
+
+    const clientIds = clientLinks.map((cl) => cl.user_id);
+
+    // Get client profiles
+    const { data: clients } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', clientIds);
+
+    if (!clients || clients.length === 0) {
+      return { success: true };
+    }
+
+    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+
+    const emailPromises = clients
+      .filter((c) => c.email)
+      .map(async (client) => {
+        // Check if client wants email notifications for project status changes
+        const shouldSend = await shouldSendEmail(client.id, project.workspace_id, 'project_update');
+
+        if (!shouldSend) {
+          console.log(
+            `[notifyClientOfProjectStatusChange] Skipping email to ${client.email} (preferences)`
+          );
+          return;
+        }
+
+        const subject = `${project.name} status updated to ${newStatus}`;
+        const recipientName = client.full_name || 'there';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: client.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Project Status Update</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${employeeName}</strong> updated the status of <strong>${project.name}</strong>:
+    </p>
+    <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0;"><strong>Old Status:</strong> ${oldStatus}</p>
+      <p style="margin: 8px 0 0;"><strong>New Status:</strong> ${newStatus}</p>
+    </div>
+    <a href="${portalUrl}" style="display: inline-block; background: #10b981; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this as a project stakeholder. Manage notification preferences in your account settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\n${employeeName} updated the status of ${project.name}:\n\nOld Status: ${oldStatus}\nNew Status: ${newStatus}\n\nView project: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
+          });
+
+          if (error) {
+            console.error(
+              `[notifyClientOfProjectStatusChange] Failed to send to ${client.email}:`,
+              error
+            );
+          }
+        } catch (err) {
+          console.error(
+            `[notifyClientOfProjectStatusChange] Exception sending to ${client.email}:`,
+            err
+          );
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyClientOfProjectStatusChange] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Notify clients when a phase milestone is reached
+ */
+export async function notifyClientOfPhaseMilestone(
+  projectId: string,
+  employeeName: string,
+  phaseName: string,
+  milestoneType: 'started' | 'completed'
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyClientOfPhaseMilestone] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project details
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name, workspace_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get all clients with access to this project
+    const { data: clientLinks } = await supabase
+      .from('client_projects')
+      .select('user_id')
+      .eq('project_id', projectId);
+
+    if (!clientLinks || clientLinks.length === 0) {
+      return { success: true }; // No clients to notify
+    }
+
+    const clientIds = clientLinks.map((cl) => cl.user_id);
+
+    // Get client profiles
+    const { data: clients } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', clientIds);
+
+    if (!clients || clients.length === 0) {
+      return { success: true };
+    }
+
+    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const milestoneLabel = milestoneType === 'completed' ? 'Completed' : 'Started';
+
+    const emailPromises = clients
+      .filter((c) => c.email)
+      .map(async (client) => {
+        // Check if client wants email notifications for phase milestones
+        const shouldSend = await shouldSendEmail(client.id, project.workspace_id, 'project_update');
+
+        if (!shouldSend) {
+          console.log(
+            `[notifyClientOfPhaseMilestone] Skipping email to ${client.email} (preferences)`
+          );
+          return;
+        }
+
+        const subject = `${project.name}: ${phaseName} ${milestoneLabel}`;
+        const recipientName = client.full_name || 'there';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: client.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Phase Milestone</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${employeeName}</strong> marked the <strong>${phaseName}</strong> phase of <strong>${project.name}</strong> as <strong>${milestoneLabel}</strong>.
+    </p>
+    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0;"><strong>Phase:</strong> ${phaseName}</p>
+      <p style="margin: 8px 0 0;"><strong>Status:</strong> ${milestoneLabel}</p>
+    </div>
+    <a href="${portalUrl}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Roadmap
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this as a project stakeholder. Manage notification preferences in your account settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\n${employeeName} marked the ${phaseName} phase of ${project.name} as ${milestoneLabel}.\n\nView roadmap: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
+          });
+
+          if (error) {
+            console.error(
+              `[notifyClientOfPhaseMilestone] Failed to send to ${client.email}:`,
+              error
+            );
+          }
+        } catch (err) {
+          console.error(
+            `[notifyClientOfPhaseMilestone] Exception sending to ${client.email}:`,
+            err
+          );
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyClientOfPhaseMilestone] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}

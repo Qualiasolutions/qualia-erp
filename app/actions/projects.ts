@@ -300,8 +300,24 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     return { success: false, error: validation.error };
   }
 
-  const { id, name, description, project_group, project_type, lead_id, target_date, metadata } =
-    validation.data;
+  const {
+    id,
+    name,
+    description,
+    project_group,
+    project_type,
+    lead_id,
+    target_date,
+    metadata,
+    status,
+  } = validation.data;
+
+  // Get current project status if status is being updated
+  let existingProject = null;
+  if (status !== undefined) {
+    const { data } = await supabase.from('projects').select('status').eq('id', id).single();
+    existingProject = data;
+  }
 
   // Parse metadata JSON if provided
   let parsedMetadata: Record<string, unknown> | undefined;
@@ -323,6 +339,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
       ...(lead_id !== undefined && { lead_id: lead_id || null }),
       ...(target_date !== undefined && { target_date: target_date || null }),
       ...(parsedMetadata !== undefined && { metadata: parsedMetadata }),
+      ...(status !== undefined && { status }),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
@@ -332,6 +349,23 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
   if (error) {
     console.error('Error updating project:', error);
     return { success: false, error: error.message };
+  }
+
+  // Notify clients if status changed
+  if (status !== undefined && existingProject && existingProject.status !== status) {
+    const { data: employee } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const { notifyClientOfProjectStatusChange } = await import('@/lib/email');
+    await notifyClientOfProjectStatusChange(
+      id,
+      employee?.full_name || 'Team member',
+      existingProject.status,
+      status
+    );
   }
 
   revalidatePath(`/projects/${id}`);
