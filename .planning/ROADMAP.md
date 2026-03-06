@@ -142,12 +142,12 @@ Plans:
 2. Admin can reassign employee between projects without data loss
 3. Admin can view all current employee-project assignments in overview table
 4. System tracks complete assignment history with timestamps for audit trail
-   **Plans**: TBD
+   **Plans**: 2 plans in 2 waves
 
 Plans:
 
-- [ ] 12-01: TBD
-- [ ] 12-02: TBD
+- [ ] 12-01-PLAN.md — Database foundation and server actions for assignments
+- [ ] 12-02-PLAN.md — Admin UI with assignment manager and history table
 
 #### Phase 13: ERP-Portal Integration
 
@@ -242,7 +242,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 8. Schedule Consolidation & Mobile Polish | v1.1      | 2/2            | Complete    | 2026-03-04 |
 | 10. Differentiator Animations             | v1.2      | 4/4            | Complete    | 2026-03-04 |
 | 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete    | 2026-03-04 |
-| 12. Employee-Project Assignment System    | v1.3      | 0/0            | Not started | -          |
+| 12. Employee-Project Assignment System    | v1.3      | 0/2            | Not started | -          |
 | 13. ERP-Portal Integration                | v1.3      | 0/0            | Not started | -          |
 | 14. Unified Notification System           | v1.3      | 0/0            | Not started | -          |
 | 15. Portal Design System                  | v1.3      | 0/0            | Not started | -          |
