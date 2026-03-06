@@ -57,7 +57,12 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ### Active
 
-(None — planning next milestone)
+- [ ] Employee-project assignment with automatic notifications
+- [ ] Unified notification system via Resend for all stakeholder interactions
+- [ ] Complete client portal design overhaul (Apple-like aesthetic matching ERP)
+- [ ] All portal pages functional: roadmap, features, UI, invoices, requests, settings
+- [ ] Two-way project synchronization (portal ↔ ERP + client mapping)
+- [ ] Real-time status sync between ERP and portal systems
 
 ### Out of Scope
 
@@ -68,6 +73,19 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - Offline mode — web-first approach
 - Test coverage increase — important but separate effort
 
+## Current Milestone: v1.3 Full ERP-Portal Integration
+
+**Goal:** Bridge the complete gap between employees, ERP, projects, client portal, and clients with unified notifications and seamless two-way sync.
+
+**Target features:**
+
+- Employee-project assignment integration with automatic Resend notifications
+- Unified notification system (Hassan gets alerts when assigned project clients take actions)
+- Complete client portal design overhaul to match ERP's Apple-like aesthetic
+- All portal pages functional and styled (roadmap, features, UI, invoices, requests, settings)
+- Two-way project synchronization (every portal project connected to ERP project + client)
+- Real-time status sync between ERP and portal
+
 ## Context
 
 Shipped v1.2 with 135,828 LOC TypeScript. 3 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations).
@@ -75,6 +93,7 @@ Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul.
 11 phases completed across 3 milestones, 24+ plans executed.
 Trainee system and client portal both functional with premium animation polish.
 useServerAction hook adopted in 2 components, ready for remaining 28+.
+Ready for comprehensive ERP-Portal integration and design completion.
 
 ## Constraints
 
@@ -106,4 +125,4 @@ useServerAction hook adopted in 2 components, ready for remaining 28+.
 
 ---
 
-_Last updated: 2026-03-05 after v1.2 milestone_
+_Last updated: 2026-03-06 after milestone v1.3 started_
