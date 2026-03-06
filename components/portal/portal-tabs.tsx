@@ -10,6 +10,7 @@ interface PortalTabsProps {
 
 const tabs = [
   { name: 'Roadmap', href: '' },
+  { name: 'Features', href: '/features' },
   { name: 'Files', href: '/files' },
   { name: 'Updates', href: '/updates' },
 ];
