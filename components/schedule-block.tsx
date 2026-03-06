@@ -36,6 +36,7 @@ interface ScheduleBlockProps {
     avatar_url: string | null;
   }[];
   unified?: boolean;
+  readOnly?: boolean;
 }
 
 const TIME_SLOTS = [
@@ -94,6 +95,7 @@ export function ScheduleBlock({
   meetings,
   profiles,
   unified = false,
+  readOnly = false,
 }: ScheduleBlockProps) {
   const { timezone } = useTimezone();
   const [isPending, startTransition] = useTransition();
@@ -532,39 +534,43 @@ export function ScheduleBlock({
         </div>
 
         {/* Quick-add */}
-        <div className="mb-3">
-          <form onSubmit={handleQuickAdd} className="relative">
-            <input
-              type="text"
-              value={quickAddValue}
-              onChange={(e) => setQuickAddValue(e.target.value)}
-              placeholder={
-                activeFilter !== 'all'
-                  ? `Quick add task for ${activeFilterLabel}...`
-                  : 'Quick add task...'
-              }
-              className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
-            />
-          </form>
-        </div>
+        {!readOnly && (
+          <div className="mb-3">
+            <form onSubmit={handleQuickAdd} className="relative">
+              <input
+                type="text"
+                value={quickAddValue}
+                onChange={(e) => setQuickAddValue(e.target.value)}
+                placeholder={
+                  activeFilter !== 'all'
+                    ? `Quick add task for ${activeFilterLabel}...`
+                    : 'Quick add task...'
+                }
+                className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
+              />
+            </form>
+          </div>
+        )}
 
         {/* Backlog Toggle */}
-        <button
-          type="button"
-          onClick={() => setBacklogOpen(!backlogOpen)}
-          className="mb-3 flex items-center gap-2 px-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronDown
-            className={cn('h-3.5 w-3.5 transition-transform', backlogOpen && 'rotate-180')}
-            strokeWidth={1.5}
-          />
-          <span className="font-medium uppercase tracking-wide">Backlog</span>
-          <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
-            {backlogTasks.length}
-          </span>
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => setBacklogOpen(!backlogOpen)}
+            className="mb-3 flex items-center gap-2 px-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronDown
+              className={cn('h-3.5 w-3.5 transition-transform', backlogOpen && 'rotate-180')}
+              strokeWidth={1.5}
+            />
+            <span className="font-medium uppercase tracking-wide">Backlog</span>
+            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
+              {backlogTasks.length}
+            </span>
+          </button>
+        )}
 
-        {backlogOpen && (
+        {backlogOpen && !readOnly && (
           <div className="mb-3 space-y-1 rounded-xl border border-border bg-card p-3">
             {backlogTasks.length === 0 ? (
               <p className="px-3 py-2 text-sm text-muted-foreground">No backlog tasks</p>
@@ -854,7 +860,7 @@ export function ScheduleBlock({
                               );
                             })}
                           </div>
-                        ) : (
+                        ) : !readOnly ? (
                           <button
                             type="button"
                             onClick={() => {
@@ -867,7 +873,7 @@ export function ScheduleBlock({
                           >
                             <Plus className="h-4 w-4 text-muted-foreground/40" strokeWidth={1.5} />
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     );
                   })}
@@ -891,17 +897,19 @@ export function ScheduleBlock({
                 />
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setNewTaskAssigneeId(activeFilter !== 'all' ? activeFilter : null);
-                setIsTaskModalOpen(true);
-              }}
-              className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <Plus className="h-3 w-3" strokeWidth={1.5} />
-              Add task
-            </button>
+            {!readOnly && (
+              <button
+                type="button"
+                onClick={() => {
+                  setNewTaskAssigneeId(activeFilter !== 'all' ? activeFilter : null);
+                  setIsTaskModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Plus className="h-3 w-3" strokeWidth={1.5} />
+                Add task
+              </button>
+            )}
           </div>
         </div>
       </div>

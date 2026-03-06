@@ -27,6 +27,8 @@ interface TodayDashboardProps {
     email: string | null;
     avatar_url: string | null;
   }[];
+  currentUserId: string | null;
+  userRole: string | null;
 }
 
 // =============================================================================
@@ -38,12 +40,15 @@ export function TodayDashboard({
   tasks,
   building,
   profiles,
+  currentUserId,
+  userRole,
 }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const isEmployee = userRole === 'employee';
   const now = new Date();
 
   // SWR hooks for live data (auto-refresh after task creation)
@@ -94,14 +99,16 @@ export function TodayDashboard({
 
         {/* Right */}
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8"
-            onClick={() => setShowNewTaskModal(true)}
-          >
-            <Plus className="size-3.5" />
-          </Button>
+          {!isEmployee && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              onClick={() => setShowNewTaskModal(true)}
+            >
+              <Plus className="size-3.5" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -114,11 +121,13 @@ export function TodayDashboard({
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
-          <Button variant="ghost" size="icon" className="size-8" asChild>
-            <Link href="/settings">
-              <Settings className="size-3.5" />
-            </Link>
-          </Button>
+          {!isEmployee && (
+            <Button variant="ghost" size="icon" className="size-8" asChild>
+              <Link href="/settings">
+                <Settings className="size-3.5" />
+              </Link>
+            </Button>
+          )}
         </div>
       </header>
 
@@ -129,13 +138,17 @@ export function TodayDashboard({
             scheduledTasks={scheduledTasks}
             backlogTasks={backlogTasks}
             meetings={meetings}
-            profiles={profiles}
+            profiles={isEmployee ? profiles.filter((p) => p.id === currentUserId) : profiles}
+            unified={isEmployee}
+            readOnly={isEmployee}
           />
 
           {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
-          <div className="mt-4 shrink-0">
-            <BuildingProjectsRow building={building} />
-          </div>
+          {!isEmployee && (
+            <div className="mt-4 shrink-0">
+              <BuildingProjectsRow building={building} />
+            </div>
+          )}
         </div>
       </main>
 

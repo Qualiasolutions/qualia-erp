@@ -16,8 +16,14 @@ export default async function TodayPage() {
     );
   }
 
-  // Fetch all data in parallel
+  // Get current user info
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: currentProfile } = user
+    ? await supabase.from('profiles').select('id, role').eq('id', user.id).single()
+    : { data: null };
   const [meetingsRaw, tasksRaw, projectsRaw, profiles] = await Promise.all([
     getMeetings(workspaceId),
     getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
@@ -83,6 +89,13 @@ export default async function TodayPage() {
   const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
 
   return (
-    <TodayDashboard meetings={meetings} tasks={tasks} building={building} profiles={profiles} />
+    <TodayDashboard
+      meetings={meetings}
+      tasks={tasks}
+      building={building}
+      profiles={profiles}
+      currentUserId={currentProfile?.id || null}
+      userRole={currentProfile?.role || null}
+    />
   );
 }
