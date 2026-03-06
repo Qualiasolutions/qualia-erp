@@ -6,6 +6,7 @@ import type { ProjectFile } from '@/types/database';
 import { canAccessProject, canDeleteProjectFile } from './shared';
 import { canAccessProject as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
+import { notifyEmployeesOfClientFileUpload } from '@/lib/email';
 
 export type ActionResult = {
   success: boolean;
@@ -233,6 +234,25 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     },
     isClientVisible: isClientVisible === 'true',
   });
+
+  // Notify assigned employees if file is client-visible
+  if (isClientVisible === 'true') {
+    const { data: uploader } = await supabase
+      .from('profiles')
+      .select('full_name, role')
+      .eq('id', user.id)
+      .single();
+
+    // Only notify if uploader is a client (not admin/employee)
+    if (uploader && uploader.role !== 'admin' && uploader.role !== 'employee') {
+      await notifyEmployeesOfClientFileUpload(
+        projectId,
+        uploader.full_name || 'A client',
+        file.name,
+        description || undefined
+      );
+    }
+  }
 
   revalidatePath(`/projects/${projectId}`);
   revalidatePath(`/projects/${projectId}/files`);

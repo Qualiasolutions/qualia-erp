@@ -6,6 +6,7 @@ import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { createActivityLogEntry } from './activity-feed';
+import { notifyEmployeesOfClientComment } from '@/lib/email';
 
 interface CreatePhaseCommentInput {
   projectId: string;
@@ -79,6 +80,21 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
     },
     isClientVisible: !finalIsInternal,
   });
+
+  // Notify assigned employees if comment is from a client
+  if (isClient) {
+    const { data: author } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    await notifyEmployeesOfClientComment(
+      projectId,
+      author?.full_name || 'A client',
+      commentText.trim()
+    );
+  }
 
   // Revalidate portal and roadmap paths
   revalidatePath(`/portal/${projectId}`);
