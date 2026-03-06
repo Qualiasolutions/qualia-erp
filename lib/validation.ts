@@ -202,6 +202,28 @@ export const updateProjectProgressSchema = z.object({
   progress: z.record(z.string(), z.array(z.number())),
 });
 
+// ============ PROJECT ASSIGNMENT SCHEMAS ============
+
+export const assignEmployeeSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID'),
+  employee_id: z.string().uuid('Invalid employee ID'),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+export const reassignEmployeeSchema = z.object({
+  assignment_id: z.string().uuid('Invalid assignment ID'),
+  new_project_id: z.string().uuid('Invalid project ID'),
+  notes: z.string().max(500).optional().nullable(),
+});
+
+export const removeAssignmentSchema = z.object({
+  assignment_id: z.string().uuid('Invalid assignment ID'),
+});
+
+export type AssignEmployeeInput = z.infer<typeof assignEmployeeSchema>;
+export type ReassignEmployeeInput = z.infer<typeof reassignEmployeeSchema>;
+export type RemoveAssignmentInput = z.infer<typeof removeAssignmentSchema>;
+
 // =====================
 // Team Schemas
 // =====================
