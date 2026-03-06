@@ -174,7 +174,7 @@ function PhaseWithComments({
       <div className={cn('flex-1 pb-8', isLast && 'pb-0')}>
         <div
           className={cn(
-            'rounded-lg border p-3 transition-shadow hover:shadow-md sm:p-4',
+            'rounded-lg border border-border/40 bg-card p-3 shadow-elevation-1 hover:shadow-elevation-2 transition-shadow duration-200 ease-premium sm:p-4',
             statusConfig.border,
             statusConfig.bg
           )}

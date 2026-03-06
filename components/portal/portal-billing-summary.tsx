@@ -64,7 +64,7 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {cards.map((card, index) => (
-        <Card key={card.label} style={getStaggerDelay(index)}>
+        <Card key={card.label} className="shadow-elevation-1" style={getStaggerDelay(index)}>
           <CardContent className="flex items-center gap-4 p-5">
             <div
               className={cn(
