@@ -3648,6 +3648,7 @@ export type Database = {
       issue_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       issue_status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
       lead_status: 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';
+      notification_delivery_method: 'email' | 'in_app' | 'both';
       project_group:
         | 'salman_kuwait'
         | 'tasos_kyriakides'
@@ -3821,6 +3822,7 @@ export const Constants = {
       issue_priority: ['No Priority', 'Urgent', 'High', 'Medium', 'Low'],
       issue_status: ['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'],
       lead_status: ['dropped', 'cold', 'hot', 'active_client', 'inactive_client', 'dead_lead'],
+      notification_delivery_method: ['email', 'in_app', 'both'],
       project_group: [
         'salman_kuwait',
         'tasos_kyriakides',
@@ -3847,3 +3849,38 @@ export const Constants = {
     },
   },
 } as const;
+
+// Convenience type aliases for common tables
+export type Profile = Tables<'profiles'>;
+export type Client = Tables<'clients'>;
+export type Project = Tables<'projects'>;
+export type Task = Tables<'tasks'>;
+export type Issue = Tables<'issues'>;
+export type Meeting = Tables<'meetings'>;
+export type Activity = Tables<'activities'>;
+export type Notification = Tables<'notifications'>;
+export type ProjectFile = Tables<'documents'>;
+export type Skill = Tables<'skills'>;
+export type UserSkill = Tables<'user_skills'>;
+export type Achievement = Tables<'achievements'>;
+export type UserAchievement = Tables<'user_achievements'>;
+export type TeachingNote = Tables<'teaching_notes'>;
+export type TaskReflection = Tables<'task_reflections'>;
+export type ExtendedProfile = Profile & { user_skills?: UserSkill[] };
+
+// Enum type aliases
+export type ProjectType = Enums<'project_type'>;
+export type ProjectStatus = Enums<'project_status'>;
+export type TaskStatus = Enums<'task_status'>;
+export type TaskPriority = Enums<'task_priority'>;
+export type IssueStatus = Enums<'issue_status'>;
+export type IssuePriority = Enums<'issue_priority'>;
+export type LeadStatus = Enums<'lead_status'>;
+export type UserRole = Enums<'user_role'>;
+export type DeploymentPlatform = Enums<'deployment_platform'>;
+export type IntegrationProvider = Enums<'integration_provider'>;
+export type TeachingNoteType = string; // teaching_note_type enum
+export type SkillCategory = string; // skill_category enum
+export type ProjectGroup = Enums<'project_group'>;
+export type TaskDifficulty = string; // task_difficulty enum
+export type ReviewStatus = string; // review_status enum

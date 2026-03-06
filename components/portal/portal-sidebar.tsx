@@ -120,8 +120,8 @@ function UserMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-48">
         <div className="px-2 py-1.5">
-          <p className="text-sm font-medium">{displayName}</p>
-          <p className="text-xs text-muted-foreground">{displayEmail}</p>
+          <p className="text-sm font-medium tracking-tight">{displayName}</p>
+          <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
         </div>
         <DropdownMenuSeparator />
         {isAdminViewing && (
