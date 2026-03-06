@@ -48,6 +48,7 @@ export async function createProjectPhase(projectId: string, name: string) {
   }
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal');
   return { success: true, data };
 }
 
@@ -62,6 +63,7 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
   }
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal');
   return { success: true };
 }
 
@@ -76,6 +78,7 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
   }
 
   revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal');
   return { success: true };
 }
 
@@ -144,6 +147,7 @@ export async function completePhase(phaseId: string) {
 
   revalidatePath(`/projects/${phase.project_id}`);
   revalidatePath(`/projects/${phase.project_id}/roadmap`);
+  revalidatePath('/portal');
   return { success: true };
 }
 
@@ -224,6 +228,7 @@ export async function unlockPhase(phaseId: string) {
 
   revalidatePath(`/projects/${phase.project_id}`);
   revalidatePath(`/projects/${phase.project_id}/roadmap`);
+  revalidatePath('/portal');
   return { success: true };
 }
 
