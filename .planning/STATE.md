@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Moayad can independently execute project phases with clear guidance while Fawzi reviews at phase boundaries — and clients see real-time project progress without internal complexity.
-**Current focus:** Phase 12 - Employee-Project Assignment System (complete, pending verification)
+**Current focus:** Phase 13 - ERP-Portal Integration (in progress)
 
 ## Current Position
 
-Phase: 12 of 16 (Employee-Project Assignment System)
-Plan: 2 of 2 in current phase (all plans complete)
-Status: Awaiting verification
-Last activity: 2026-03-06 — Completed 12-02-PLAN.md (admin UI components)
+Phase: 13 of 16 (ERP-Portal Integration)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-03-06 — Completed 13-01-PLAN.md (database integration foundation)
 
-Progress: [██████████████░░░░░░] 70% (26 plans complete across 12 phases, 4 phases remaining)
+Progress: [███████████████░░░░░] 72% (27 plans complete across 13 phases, 3 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 26 (24 from v1.0-v1.2, 2 from v1.3)
-- Average duration: ~6 minutes per plan
+- Total plans completed: 27 (24 from v1.0-v1.2, 3 from v1.3)
+- Average duration: ~5 minutes per plan (recent trend: 2-6 min)
 - Total execution time: 3 days (2026-03-01 to 2026-03-04) + v1.3 in progress
 
 **By Milestone:**
@@ -38,7 +38,7 @@ Progress: [██████████████░░░░░░] 70% (26
 - Last 3 milestones: 1 day, 1 day, 1 day (sprint execution pattern)
 - Trend: Stable (consistent daily milestone delivery)
 
-_Updated: 2026-03-06 after Phase 12 execution_
+_Updated: 2026-03-06 after Phase 13 Plan 01 execution_
 
 ## Accumulated Context
 
@@ -55,6 +55,9 @@ Recent decisions affecting v1.3 work:
 - Partial unique index for active assignments only (12-01) — prevents duplicates while allowing history
 - Admin-only assignment mutations (12-01) — centralized control over employee assignments
 - AssignmentRow interface for type-safe reassignment state (12-02)
+- Database view for integration mappings (13-01) — portal_project_mappings avoids N+1 queries
+- Rich status objects over booleans (13-01) — structured integration status for better UI feedback
+- Admin-only integration management (13-01) — prevents employees from modifying CRM linkages
 
 ### Pending Todos
 
@@ -62,7 +65,7 @@ None yet for v1.3.
 
 ### Blockers/Concerns
 
-None. Phase 12 execution complete.
+None. Phase 13 Plan 01 complete, ready for Plan 02.
 
 **Phase Dependencies:**
 
@@ -74,7 +77,7 @@ None. Phase 12 execution complete.
 ## Session Continuity
 
 Last session: 2026-03-06 (phase execution)
-Stopped at: Completed all Phase 12 plans, awaiting verification
-Resume file: N/A — phase complete
+Stopped at: Completed Phase 13 Plan 01 (database integration foundation)
+Resume file: .planning/phases/13-erp-portal-integration/13-02-PLAN.md (when created)
 
-**Next action:** Verify Phase 12, then plan Phase 13
+**Next action:** Execute Phase 13 Plan 02 (Portal Project Details Integration)
