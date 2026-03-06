@@ -18,7 +18,11 @@ import {
   PanelRightOpen,
   Link as LinkIcon,
   MessageSquare,
+  Users,
 } from 'lucide-react';
+import { useProjectAssignments } from '@/lib/swr';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { formatDate } from '@/lib/utils';
 import { ProjectWorkflow } from '@/components/project-workflow';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -358,6 +362,19 @@ export function ProjectDetailView({
               )}
             </div>
 
+            {/* Assigned Employees */}
+            <div className="shrink-0 space-y-3 border-b border-border/50 p-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border/50 bg-purple-500/10">
+                  <Users className="h-3.5 w-3.5 text-purple-400" />
+                </div>
+                <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Assigned Team
+                </p>
+              </div>
+              <AssignedEmployeesList projectId={project.id} />
+            </div>
+
             {/* Resources */}
             <div className="min-h-0 flex-1 border-b border-border/50">
               <ProjectResources
@@ -545,6 +562,50 @@ export function ProjectDetailView({
           </Tabs>
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+// Inline client component for assigned employees list
+function AssignedEmployeesList({ projectId }: { projectId: string }) {
+  const { data: assignments, isLoading } = useProjectAssignments(projectId);
+
+  const activeAssignments = Array.isArray(assignments)
+    ? assignments.filter((a) => !a.removed_at)
+    : [];
+
+  if (isLoading) {
+    return <p className="text-xs text-muted-foreground">Loading...</p>;
+  }
+
+  if (activeAssignments.length === 0) {
+    return (
+      <p className="text-xs text-muted-foreground">
+        No employees assigned yet. Contact an admin to assign employees.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {activeAssignments.map((assignment) => (
+        <div key={assignment.id} className="flex items-center gap-2">
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={assignment.employee?.avatar_url || ''} />
+            <AvatarFallback className="text-[10px]">
+              {assignment.employee?.full_name?.[0] || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-medium text-foreground">
+              {assignment.employee?.full_name || assignment.employee?.email}
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              Since {formatDate(assignment.assigned_at, 'MMM d')}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
