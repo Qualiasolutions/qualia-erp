@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import { X, Download, Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 
@@ -15,6 +16,7 @@ interface Feature {
   file_size: number;
   mime_type: string | null;
   storage_path: string;
+  phase_name: string | null;
   created_at: string;
   url: string | null;
   uploader: {
@@ -104,6 +106,14 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
             {/* Overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100">
               <div className="absolute bottom-0 left-0 right-0 p-4">
+                {feature.phase_name && (
+                  <Badge
+                    variant="secondary"
+                    className="mb-2 bg-qualia-500/20 text-qualia-100 hover:bg-qualia-500/30"
+                  >
+                    {feature.phase_name}
+                  </Badge>
+                )}
                 <h3 className="truncate text-sm font-semibold text-white">
                   {feature.description || feature.original_name}
                 </h3>
@@ -125,9 +135,16 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/40 p-4">
               <div className="flex-1 pr-4">
-                <h2 className="truncate text-lg font-semibold">
-                  {currentFeature?.description || currentFeature?.original_name}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate text-lg font-semibold">
+                    {currentFeature?.description || currentFeature?.original_name}
+                  </h2>
+                  {currentFeature?.phase_name && (
+                    <Badge variant="secondary" className="shrink-0">
+                      {currentFeature.phase_name}
+                    </Badge>
+                  )}
+                </div>
                 <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
                   {currentFeature?.created_at && (
                     <span className="flex items-center gap-1">
