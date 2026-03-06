@@ -92,7 +92,6 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
       <div>
         <h2 className="mb-4 text-lg font-semibold text-neutral-900">All Files</h2>
         <FileList
-          projectId={projectId}
           files={files}
           onFileDeleted={() => {
             // Trigger revalidation by forcing a refresh

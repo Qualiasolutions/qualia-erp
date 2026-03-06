@@ -40,12 +40,11 @@ import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 interface FileListProps {
-  projectId: string;
   files: ProjectFile[];
   onFileDeleted?: () => void;
 }
 
-export function FileList({ projectId, files, onFileDeleted }: FileListProps) {
+export function FileList({ files, onFileDeleted }: FileListProps) {
   const { toast } = useToast();
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
@@ -63,11 +62,7 @@ export function FileList({ projectId, files, onFileDeleted }: FileListProps) {
     if (mimeType.startsWith('audio/')) {
       return <FileAudio className="h-5 w-5 text-green-500" />;
     }
-    if (
-      mimeType.includes('zip') ||
-      mimeType.includes('rar') ||
-      mimeType.includes('archive')
-    ) {
+    if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) {
       return <FileArchive className="h-5 w-5 text-orange-500" />;
     }
     if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) {
@@ -185,7 +180,9 @@ export function FileList({ projectId, files, onFileDeleted }: FileListProps) {
                 {/* Description */}
                 <TableCell className="hidden max-w-xs truncate md:table-cell">
                   <span className="text-sm text-neutral-600">
-                    {file.description || <span className="italic text-neutral-400">No description</span>}
+                    {file.description || (
+                      <span className="italic text-neutral-400">No description</span>
+                    )}
                   </span>
                 </TableCell>
 
@@ -203,7 +200,10 @@ export function FileList({ projectId, files, onFileDeleted }: FileListProps) {
                 {/* Visibility */}
                 <TableCell className="hidden sm:table-cell">
                   {file.is_client_visible ? (
-                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                    <Badge
+                      variant="outline"
+                      className="border-green-200 bg-green-50 text-green-700"
+                    >
                       <Eye className="mr-1 h-3 w-3" />
                       Client visible
                     </Badge>

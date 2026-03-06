@@ -31,6 +31,7 @@ import {
   Globe,
   TrendingUp,
   Megaphone,
+  Sparkles,
 } from 'lucide-react';
 import { getProjectById, updateProject, deleteProject, updateProjectStatus } from '@/app/actions';
 import { invalidateProjectStats } from '@/lib/swr';
@@ -318,18 +319,55 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
               Start Building
             </DialogTitle>
             <DialogDescription>
-              Convert &quot;{demo.name}&quot; from a demo to an active project. Choose the project type:
+              Convert &quot;{demo.name}&quot; from a demo to an active project. Choose the project
+              type:
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-2 gap-3 py-4">
             {[
-              { type: 'web_design' as const, label: 'Website', icon: Globe, color: 'text-sky-400', bgColor: 'bg-sky-500/10' },
-              { type: 'ai_agent' as const, label: 'AI Agent', icon: Bot, color: 'text-violet-400', bgColor: 'bg-violet-500/10' },
-              { type: 'voice_agent' as const, label: 'Voice Agent', icon: Phone, color: 'text-pink-400', bgColor: 'bg-pink-500/10' },
-              { type: 'ai_platform' as const, label: 'AI Platform', icon: Sparkles, color: 'text-indigo-400', bgColor: 'bg-indigo-500/10' },
-              { type: 'seo' as const, label: 'SEO', icon: TrendingUp, color: 'text-emerald-400', bgColor: 'bg-emerald-500/10' },
-              { type: 'ads' as const, label: 'Ads', icon: Megaphone, color: 'text-amber-400', bgColor: 'bg-amber-500/10' },
+              {
+                type: 'web_design' as const,
+                label: 'Website',
+                icon: Globe,
+                color: 'text-sky-400',
+                bgColor: 'bg-sky-500/10',
+              },
+              {
+                type: 'ai_agent' as const,
+                label: 'AI Agent',
+                icon: Bot,
+                color: 'text-violet-400',
+                bgColor: 'bg-violet-500/10',
+              },
+              {
+                type: 'voice_agent' as const,
+                label: 'Voice Agent',
+                icon: Phone,
+                color: 'text-pink-400',
+                bgColor: 'bg-pink-500/10',
+              },
+              {
+                type: 'ai_platform' as const,
+                label: 'AI Platform',
+                icon: Sparkles,
+                color: 'text-indigo-400',
+                bgColor: 'bg-indigo-500/10',
+              },
+              {
+                type: 'seo' as const,
+                label: 'SEO',
+                icon: TrendingUp,
+                color: 'text-emerald-400',
+                bgColor: 'bg-emerald-500/10',
+              },
+              {
+                type: 'ads' as const,
+                label: 'Ads',
+                icon: Megaphone,
+                color: 'text-amber-400',
+                bgColor: 'bg-amber-500/10',
+              },
             ].map(({ type, label, icon: Icon, color, bgColor }) => (
               <button
                 key={type}
@@ -345,10 +383,12 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
                 <div className={cn('rounded-lg p-2', bgColor)}>
                   <Icon className={cn('h-5 w-5', color)} />
                 </div>
-                <span className={cn(
-                  'text-sm font-medium',
-                  selectedType === type ? 'text-foreground' : 'text-muted-foreground'
-                )}>
+                <span
+                  className={cn(
+                    'text-sm font-medium',
+                    selectedType === type ? 'text-foreground' : 'text-muted-foreground'
+                  )}
+                >
                   {label}
                 </span>
               </button>
@@ -356,10 +396,13 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setStartBuildingOpen(false);
-              setSelectedType(null);
-            }}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setStartBuildingOpen(false);
+                setSelectedType(null);
+              }}
+            >
               Cancel
             </Button>
             <Button
