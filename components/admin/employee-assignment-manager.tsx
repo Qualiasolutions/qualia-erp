@@ -42,6 +42,15 @@ import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import { Trash2, UserPlus, Pencil } from 'lucide-react';
 
+interface AssignmentRow {
+  id: string;
+  employee?: { full_name?: string; email?: string; avatar_url?: string } | null;
+  project?: { id: string; name?: string } | null;
+  assigned_at: string;
+  removed_at?: string | null;
+  notes?: string | null;
+}
+
 export function EmployeeAssignmentManager() {
   // State
   const [selectedProject, setSelectedProject] = useState<string>('');
@@ -50,7 +59,7 @@ export function EmployeeAssignmentManager() {
 
   // Reassignment state
   const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
-  const [reassigningAssignment, setReassigningAssignment] = useState<unknown>(null);
+  const [reassigningAssignment, setReassigningAssignment] = useState<AssignmentRow | null>(null);
   const [newProjectId, setNewProjectId] = useState('');
   const [reassignNotes, setReassignNotes] = useState('');
 
@@ -138,7 +147,7 @@ export function EmployeeAssignmentManager() {
     await reassign(formData);
   };
 
-  const openReassignDialog = (assignment: unknown) => {
+  const openReassignDialog = (assignment: AssignmentRow) => {
     setReassigningAssignment(assignment);
     setNewProjectId('');
     setReassignNotes('');
