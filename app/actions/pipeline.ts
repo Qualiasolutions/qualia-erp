@@ -467,11 +467,18 @@ export async function updatePhaseStatus(
     return { success: false, error: error.message };
   }
 
-  // Notify clients for significant status changes (completed/blocked)
+  // Notify clients for significant status changes (preference-aware)
   if (oldPhase && oldPhase.status !== status && (status === 'completed' || status === 'skipped')) {
-    // Fire-and-forget: don't block the response on email delivery
-    import('@/lib/email').then(({ notifyClientsOfPhaseChange }) => {
-      notifyClientsOfPhaseChange(projectId, oldPhase.name, status).catch((err) =>
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const empName = user
+      ? (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
+          ?.full_name || 'Team member'
+      : 'Team member';
+    const milestoneType = status === 'completed' ? ('completed' as const) : ('started' as const);
+    import('@/lib/email').then(({ notifyClientOfPhaseMilestone }) => {
+      notifyClientOfPhaseMilestone(projectId, empName, oldPhase.name, milestoneType).catch((err) =>
         console.error('[updatePhaseStatus] Notification error:', err)
       );
     });

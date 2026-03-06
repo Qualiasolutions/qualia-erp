@@ -121,12 +121,22 @@ export async function completePhase(phaseId: string) {
     return { success: false, error: updateError.message };
   }
 
-  // Notify clients of phase completion (fire-and-forget)
+  // Notify clients of phase completion (fire-and-forget, preference-aware)
   if (phaseDetail?.name) {
-    import('@/lib/email').then(({ notifyClientsOfPhaseChange }) => {
-      notifyClientsOfPhaseChange(phase.project_id, phaseDetail.name, 'completed').catch((err) =>
-        console.error('[completePhase] Notification error:', err)
-      );
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const employeeName = user
+      ? (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
+          ?.full_name || 'Team member'
+      : 'Team member';
+    import('@/lib/email').then(({ notifyClientOfPhaseMilestone }) => {
+      notifyClientOfPhaseMilestone(
+        phase.project_id,
+        employeeName,
+        phaseDetail.name,
+        'completed'
+      ).catch((err) => console.error('[completePhase] Notification error:', err));
     });
   }
 
