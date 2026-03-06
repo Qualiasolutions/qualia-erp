@@ -54,15 +54,16 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - ✓ Standardized date formatting across portal — v1.2
 - ✓ useServerAction hook for form boilerplate reduction — v1.2
 - ✓ Schedule utility consolidation (3 → 2 files) — v1.2
+- ✓ Employee-project assignment with automatic notifications — v1.3
+- ✓ Unified notification system via Resend for all stakeholder interactions — v1.3
+- ✓ Complete client portal design overhaul (Apple-like aesthetic matching ERP) — v1.3
+- ✓ All portal pages functional: roadmap, features, UI, invoices, requests, settings — v1.3
+- ✓ Two-way project synchronization (portal ↔ ERP + client mapping) — v1.3
+- ✓ Real-time status sync between ERP and portal systems — v1.3
 
 ### Active
 
-- [ ] Employee-project assignment with automatic notifications
-- [ ] Unified notification system via Resend for all stakeholder interactions
-- [ ] Complete client portal design overhaul (Apple-like aesthetic matching ERP)
-- [ ] All portal pages functional: roadmap, features, UI, invoices, requests, settings
-- [ ] Two-way project synchronization (portal ↔ ERP + client mapping)
-- [ ] Real-time status sync between ERP and portal systems
+See next milestone planning.
 
 ### Out of Scope
 
@@ -73,27 +74,20 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - Offline mode — web-first approach
 - Test coverage increase — important but separate effort
 
-## Current Milestone: v1.3 Full ERP-Portal Integration
+## Current Milestone: TBD
 
-**Goal:** Bridge the complete gap between employees, ERP, projects, client portal, and clients with unified notifications and seamless two-way sync.
+**Goal:** Next milestone planning in progress.
 
-**Target features:**
-
-- Employee-project assignment integration with automatic Resend notifications
-- Unified notification system (Hassan gets alerts when assigned project clients take actions)
-- Complete client portal design overhaul to match ERP's Apple-like aesthetic
-- All portal pages functional and styled (roadmap, features, UI, invoices, requests, settings)
-- Two-way project synchronization (every portal project connected to ERP project + client)
-- Real-time status sync between ERP and portal
+**Target features:** TBD after milestone planning session.
 
 ## Context
 
-Shipped v1.2 with 135,828 LOC TypeScript. 3 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations).
-Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul.
-11 phases completed across 3 milestones, 24+ plans executed.
-Trainee system and client portal both functional with premium animation polish.
-useServerAction hook adopted in 2 components, ready for remaining 28+.
-Ready for comprehensive ERP-Portal integration and design completion.
+Shipped v1.3 with 112,326 LOC TypeScript. 4 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations, v1.3 Full ERP-Portal Integration).
+Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul, Resend.
+16 phases completed across 4 milestones, 38 plans executed.
+Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, and Apple-like design system.
+Employee-project assignments, notification preferences, and complete portal pages shipped.
+Ready for next milestone planning.
 
 ## Constraints
 
@@ -122,7 +116,15 @@ Ready for comprehensive ERP-Portal integration and design completion.
 | Cursor-based pagination over offset-based                    | Prevents duplicate/missing items with real-time data                | ✓ Good  |
 | useServerAction hook for form state standardization          | 50%+ boilerplate reduction, consistent patterns                     | ✓ Good  |
 | Schedule-shared.ts merged into schedule-utils.ts             | Single source of schedule logic, reduced file count                 | ✓ Good  |
+| Soft delete pattern for project assignments                  | Preserves complete audit trail, enables reassignment history        | ✓ Good  |
+| Database view for integration mappings                       | portal_project_mappings avoids N+1 queries                          | ✓ Good  |
+| 45s SWR refresh interval for portal                          | Balances real-time feel with API efficiency                         | ✓ Good  |
+| Notification routing via project_assignments                 | Leverages Phase 12 foundation, routes to assigned employees         | ✓ Good  |
+| Activity log with is_client_visible flag                     | Enables unified ERP/portal timeline with selective visibility       | ✓ Good  |
+| Default all notification types enabled                       | Ensures users don't miss critical notifications                     | ✓ Good  |
+| Silent failure pattern for email notifications               | Delivery failures don't block user actions                          | ✓ Good  |
+| Hybrid server-client pattern for portal pages                | Auth on server, SWR on client for real-time sync                    | ✓ Good  |
 
 ---
 
-_Last updated: 2026-03-06 after milestone v1.3 started_
+_Last updated: 2026-03-06 after milestone v1.3 completion_

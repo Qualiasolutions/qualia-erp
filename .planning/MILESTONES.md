@@ -1,5 +1,35 @@
 # Milestones: Qualia Portal & Trainee System
 
+## v1.3 Full ERP-Portal Integration (Shipped: 2026-03-06)
+
+**Delivered:** Complete bridge between ERP and client portal with employee assignments, real-time sync, unified notifications, design system alignment, and full portal pages.
+
+**Phases completed:** 12-16 (13 plans total)
+
+**Key accomplishments:**
+
+- Employee-project assignment system with audit history and soft-delete pattern
+- Two-way ERP-portal sync with SWR auto-refresh (45s interval)
+- Unified email notifications via Resend with preference management
+- Portal design system matching ERP aesthetic (typography, elevation, spacing)
+- Complete portal pages: settings, features gallery, enhanced dashboard
+- Notification preferences UI with per-type toggles and delivery method selection
+- Real-time status sync between ERP and portal systems
+- Integration status badges and admin management UI
+
+**Stats:**
+
+- 59 commits
+- 112,326 lines of TypeScript (total project)
+- 5 phases, 13 plans
+- 1 day (2026-03-06)
+
+**Git range:** `feat(12-01)` → `feat(16-03)`
+
+**What's next:** TBD — next milestone planning needed
+
+---
+
 ## v1.2 Premium Animations (Shipped: 2026-03-04)
 
 **Delivered:** Premium differentiator animations (stagger, scroll-reveal, spring physics, gesture drawers) and final polish (activity feed pagination, date standardization, useServerAction hook, schedule consolidation).

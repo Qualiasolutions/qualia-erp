@@ -5,7 +5,7 @@
 - ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-03-01)
 - ✅ **v1.1 Production Polish** - Phases 4-8 (shipped 2026-03-04)
 - ✅ **v1.2 Premium Animations** - Phases 10-11 (shipped 2026-03-04)
-- 🚧 **v1.3 Full ERP-Portal Integration** - Phases 12-16 (in progress)
+- ✅ **v1.3 Full ERP-Portal Integration** - Phases 12-16 (shipped 2026-03-06)
 
 ## Phases
 
@@ -127,7 +127,8 @@ Plans:
 
 </details>
 
-### 🚧 v1.3 Full ERP-Portal Integration (In Progress)
+<details>
+<summary>✅ v1.3 Full ERP-Portal Integration (Phases 12-16) - SHIPPED 2026-03-06</summary>
 
 **Milestone Goal:** Bridge the complete gap between employees, ERP, projects, client portal, and clients with unified notifications and seamless two-way sync.
 
@@ -142,9 +143,8 @@ Plans:
 2. Admin can reassign employee between projects without data loss
 3. Admin can view all current employee-project assignments in overview table
 4. System tracks complete assignment history with timestamps for audit trail
-   **Plans**: 2 plans in 2 waves
 
-Plans:
+**Plans**: 2 plans in 2 waves
 
 - [x] 12-01-PLAN.md — Database foundation and server actions for assignments
 - [x] 12-02-PLAN.md — Admin UI with assignment manager and history table
@@ -161,9 +161,8 @@ Plans:
 3. Client activities in portal appear in unified ERP activity timeline immediately
 4. ERP project updates trigger real-time portal data refresh for connected clients
 5. All project data syncs bidirectionally without manual intervention
-   **Plans**: 3 plans in 3 waves
 
-Plans:
+**Plans**: 3 plans in 3 waves
 
 - [x] 13-01-PLAN.md — Data linkage between ERP and portal (client_id FK, integration helpers)
 - [x] 13-02-PLAN.md — Real-time sync with SWR and integration status badges
@@ -181,9 +180,8 @@ Plans:
 3. Employee can configure notification types and delivery preferences in settings
 4. Client receives email when assigned employee updates project status or milestone
 5. Notification preferences persist and apply correctly to all future notifications
-   **Plans**: 3 plans in 2 waves
 
-Plans:
+**Plans**: 3 plans in 2 waves
 
 - [x] 14-01-PLAN.md — Notification preferences infrastructure (DB, RLS, CRUD actions)
 - [x] 14-02-PLAN.md — Employee email notifications for client actions
@@ -201,12 +199,11 @@ Plans:
 3. Portal animations and transitions match ERP's premium feel and timing
 4. Portal responsive design works seamlessly across all device sizes (375px+)
 5. Visual inspection shows no discernible difference in aesthetic quality between systems
-   **Plans**: 2 plans in 2 waves
 
-Plans:
+**Plans**: 2 plans in 2 waves
 
-- [ ] 15-01-PLAN.md — Typography, spacing, and elevation system foundation
-- [ ] 15-02-PLAN.md — Interaction patterns, form styling, and responsive polish
+- [x] 15-01-PLAN.md — Typography, spacing, and elevation system foundation
+- [x] 15-02-PLAN.md — Interaction patterns, form styling, and responsive polish
 
 #### Phase 16: Complete Portal Pages
 
@@ -220,38 +217,34 @@ Plans:
 3. Client can submit feature requests and support tickets via requests page with confirmation
 4. Client can view and update account settings and notification preferences
 5. Enhanced roadmap page displays with improved layout matching design system
-   **Plans**: 3 plans in 1 wave
 
-Plans:
+**Plans**: 3 plans in 1 wave
 
-- [ ] 16-01-PLAN.md — Account settings page with profile and notification preferences
-- [ ] 16-02-PLAN.md — Features gallery with lightbox and phase association
-- [ ] 16-03-PLAN.md — Enhanced dashboard with SWR auto-refresh and organized components
+- [x] 16-01-PLAN.md — Account settings page with profile and notification preferences
+- [x] 16-02-PLAN.md — Features gallery with lightbox and phase association
+- [x] 16-03-PLAN.md — Enhanced dashboard with SWR auto-refresh and organized components
 
-Plans:
-
-- [ ] 16-01: TBD
-- [ ] 16-02: TBD
+</details>
 
 ## Progress
 
 **Execution Order:**
 Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 
-| Phase                                     | Milestone | Plans Complete | Status      | Completed  |
-| ----------------------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1. Database & Core Infrastructure         | v1.0      | 2/2            | Complete    | 2026-03-01 |
-| 2. Trainee Execution System               | v1.0      | 3/3            | Complete    | 2026-03-01 |
-| 3. Client Portal Foundation               | v1.0      | 3/3            | Complete    | 2026-03-01 |
-| 4. Loading States & Skeleton UI           | v1.1      | 2/2            | Complete    | 2026-03-04 |
-| 5. Page & Modal Transitions               | v1.1      | 1/1            | Complete    | 2026-03-04 |
-| 6. Micro-Interactions                     | v1.1      | 1/1            | Complete    | 2026-03-04 |
-| 7. Email Notifications                    | v1.1      | 2/2            | Complete    | 2026-03-04 |
-| 8. Schedule Consolidation & Mobile Polish | v1.1      | 2/2            | Complete    | 2026-03-04 |
-| 10. Differentiator Animations             | v1.2      | 4/4            | Complete    | 2026-03-04 |
-| 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete    | 2026-03-04 |
-| 12. Employee-Project Assignment System    | v1.3      | 2/2            | Complete    | 2026-03-06 |
-| 13. ERP-Portal Integration                | v1.3      | 3/3            | Complete    | 2026-03-06 |
-| 14. Unified Notification System           | v1.3      | 3/3            | Complete    | 2026-03-06 |
-| 15. Portal Design System                  | v1.3      | 2/2            | Complete    | 2026-03-06 |
-| 16. Complete Portal Pages                 | v1.3      | 0/0            | Not started | -          |
+| Phase                                     | Milestone | Plans Complete | Status   | Completed  |
+| ----------------------------------------- | --------- | -------------- | -------- | ---------- |
+| 1. Database & Core Infrastructure         | v1.0      | 2/2            | Complete | 2026-03-01 |
+| 2. Trainee Execution System               | v1.0      | 3/3            | Complete | 2026-03-01 |
+| 3. Client Portal Foundation               | v1.0      | 3/3            | Complete | 2026-03-01 |
+| 4. Loading States & Skeleton UI           | v1.1      | 2/2            | Complete | 2026-03-04 |
+| 5. Page & Modal Transitions               | v1.1      | 1/1            | Complete | 2026-03-04 |
+| 6. Micro-Interactions                     | v1.1      | 1/1            | Complete | 2026-03-04 |
+| 7. Email Notifications                    | v1.1      | 2/2            | Complete | 2026-03-04 |
+| 8. Schedule Consolidation & Mobile Polish | v1.1      | 2/2            | Complete | 2026-03-04 |
+| 10. Differentiator Animations             | v1.2      | 4/4            | Complete | 2026-03-04 |
+| 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete | 2026-03-04 |
+| 12. Employee-Project Assignment System    | v1.3      | 2/2            | Complete | 2026-03-06 |
+| 13. ERP-Portal Integration                | v1.3      | 3/3            | Complete | 2026-03-06 |
+| 14. Unified Notification System           | v1.3      | 3/3            | Complete | 2026-03-06 |
+| 15. Portal Design System                  | v1.3      | 2/2            | Complete | 2026-03-06 |
+| 16. Complete Portal Pages                 | v1.3      | 3/3            | Complete | 2026-03-06 |
