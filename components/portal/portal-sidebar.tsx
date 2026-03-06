@@ -13,6 +13,7 @@ import {
   ChevronUp,
   Menu,
   ArrowLeft,
+  Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -31,6 +32,7 @@ const portalNav = [
   { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
   { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
   { name: 'Billing', href: '/portal/billing', icon: Receipt },
+  { name: 'Settings', href: '/portal/settings', icon: Settings },
 ];
 
 interface PortalSidebarProps {
@@ -53,7 +55,7 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-10 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-200 ease-premium',
+        'group relative flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium tracking-tight transition-all duration-200 ease-premium',
         isActive
           ? 'bg-qualia-600/10 text-foreground'
           : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
@@ -100,20 +102,20 @@ function UserMenu({
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200 ease-premium',
-            'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
+            'flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ease-premium',
+            'text-muted-foreground hover:bg-muted/40 hover:text-foreground',
             'focus:outline-none focus-visible:ring-1 focus-visible:ring-qualia-600/30'
           )}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-qualia-600/10">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-qualia-600/10">
             <span className="text-xs font-semibold text-qualia-600">
               {displayName.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="min-w-0 flex-1 text-left">
-            <span className="block truncate text-[13px] font-medium">{displayName}</span>
+            <span className="block truncate text-sm font-medium tracking-tight">{displayName}</span>
           </div>
-          <ChevronUp className="ml-auto h-3 w-3 shrink-0 opacity-30" />
+          <ChevronUp className="ml-auto h-3.5 w-3.5 shrink-0 opacity-30" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-48">
@@ -165,24 +167,24 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col bg-gradient-to-b from-card to-card/95">
       {/* Logo */}
-      <div className="relative flex h-[60px] items-center border-b border-border/50 px-4">
+      <div className="relative flex h-16 items-center border-b border-border/40 px-4">
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-qualia-600">
             <span className="text-sm font-bold text-white">Q</span>
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-foreground">Qualia</span>
-            <span className="text-[10px] text-muted-foreground/70">Client Portal</span>
+            <span className="text-sm font-semibold tracking-tight text-foreground">Qualia</span>
+            <span className="text-xs text-muted-foreground/70">Client Portal</span>
           </div>
         </Link>
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border/40 to-transparent" />
       </div>
 
       {/* Admin banner */}
       {isAdminViewing && (
-        <div className="mx-3 mt-3 rounded-md border border-qualia-200 bg-qualia-50 px-3 py-2">
+        <div className="mx-3 mt-4 rounded-lg border border-qualia-200 bg-qualia-50 px-3 py-2">
           <div className="flex items-center gap-2 text-xs">
-            <span className="inline-flex items-center rounded-full bg-qualia-100 px-1.5 py-0.5 text-[10px] font-medium text-qualia-800">
+            <span className="inline-flex items-center rounded-full bg-qualia-100 px-2 py-0.5 text-xs font-medium text-qualia-800">
               Admin
             </span>
             <span className="text-qualia-600">Preview mode</span>
@@ -191,14 +193,14 @@ function SidebarContent({
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-0.5 px-3 pt-4">
+      <nav className="flex-1 space-y-1 px-3 pt-6">
         {portalNav.map((item) => (
           <NavLink key={item.name} item={item} isActive={isActive(item)} onClick={onLinkClick} />
         ))}
       </nav>
 
       {/* Bottom — user menu */}
-      <div className="border-t border-border/50 px-3 py-2.5">
+      <div className="border-t border-border/40 px-3 py-3">
         <UserMenu
           displayName={displayName}
           displayEmail={displayEmail}
@@ -234,7 +236,7 @@ export function PortalSidebar(props: PortalSidebarProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-card md:block">
+      <aside className="hidden h-full w-60 flex-shrink-0 border-r border-border/40 bg-card md:block">
         <SidebarContent {...props} onLinkClick={handleLinkClick} />
       </aside>
     </>
