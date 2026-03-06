@@ -3916,7 +3916,24 @@ export type Issue = Tables<'issues'>;
 export type Meeting = Tables<'meetings'>;
 export type Activity = Tables<'activities'>;
 export type Notification = Tables<'notifications'>;
-export type ProjectFile = Tables<'documents'>;
+export type ProjectFile = {
+  id: string;
+  project_id: string;
+  workspace_id: string | null;
+  name: string;
+  original_name: string;
+  storage_path: string;
+  file_size: number;
+  mime_type: string;
+  uploaded_by: string;
+  created_at: string;
+  updated_at: string;
+  description: string | null;
+  phase_id: string | null;
+  is_client_visible: boolean;
+  uploader?: { id: string; full_name: string; email: string; avatar_url: string | null } | null;
+  phase?: { id: string; phase_name: string } | null;
+};
 export type Skill = Tables<'skills'>;
 export type UserSkill = Tables<'user_skills'>;
 export type Achievement = Tables<'achievements'>;
@@ -3924,6 +3941,7 @@ export type UserAchievement = Tables<'user_achievements'>;
 export type TeachingNote = Tables<'teaching_notes'>;
 export type TaskReflection = Tables<'task_reflections'>;
 export type ExtendedProfile = Profile & { user_skills?: UserSkill[] };
+export type ProjectIntegration = Tables<'project_integrations'>;
 
 // Time Entry type (time_entries table exists but not auto-generated yet)
 export type TimeEntry = {
@@ -3953,8 +3971,8 @@ export type LeadStatus = Enums<'lead_status'>;
 export type UserRole = Enums<'user_role'>;
 export type DeploymentPlatform = Enums<'deployment_platform'>;
 export type IntegrationProvider = Enums<'integration_provider'>;
-export type TeachingNoteType = string; // teaching_note_type enum
-export type SkillCategory = string; // skill_category enum
+export type TeachingNoteType = 'hint' | 'explanation' | 'resource' | 'warning' | 'encouragement';
+export type SkillCategory = string;
 export type ProjectGroup = Enums<'project_group'>;
-export type TaskDifficulty = string; // task_difficulty enum
-export type ReviewStatus = string; // review_status enum
+export type TaskDifficulty = 'starter' | 'easy' | 'medium' | 'hard' | 'expert';
+export type ReviewStatus = 'pending' | 'approved' | 'needs_revision';
