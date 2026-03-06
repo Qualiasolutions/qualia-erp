@@ -209,8 +209,8 @@ Plans:
 
 #### Phase 16: Complete Portal Pages
 
-**Goal**: All portal pages are functional, beautifully designed, and data-connected
-**Depends on**: Phase 13, Phase 15
+**Goal**: Complete all portal pages with full functionality, auto-refresh, and professional UI - settings, features gallery, and enhanced dashboard
+**Depends on**: Phase 13
 **Requirements**: PORTAL-01, PORTAL-02, PORTAL-03, PORTAL-04, PORTAL-05, PORTAL-06
 **Success Criteria** (what must be TRUE):
 
@@ -219,7 +219,13 @@ Plans:
 3. Client can submit feature requests and support tickets via requests page with confirmation
 4. Client can view and update account settings and notification preferences
 5. Enhanced roadmap page displays with improved layout matching design system
-   **Plans**: TBD
+   **Plans**: 3 plans in 1 wave
+
+Plans:
+
+- [ ] 16-01-PLAN.md — Account settings page with profile and notification preferences
+- [ ] 16-02-PLAN.md — Features gallery with lightbox and phase association
+- [ ] 16-03-PLAN.md — Enhanced dashboard with SWR auto-refresh and organized components
 
 Plans:
 
