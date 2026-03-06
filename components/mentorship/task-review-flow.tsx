@@ -66,7 +66,7 @@ export function TaskReviewFlow({
 
   // Show review status badge
   if (reviewStatus && reviewStatus !== 'pending') {
-    const config = REVIEW_STATUS_COLORS[reviewStatus];
+    const config = REVIEW_STATUS_COLORS[reviewStatus as keyof typeof REVIEW_STATUS_COLORS];
     return (
       <div className="space-y-2">
         <Badge className={cn(config.bg, config.text, config.border, 'border')}>

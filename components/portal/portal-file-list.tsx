@@ -106,64 +106,68 @@ export function PortalFileList({ files }: PortalFileListProps) {
 
   return (
     <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${fadeInClasses}`}>
-      {files.map((file, index) => (
-        <Card
-          key={file.id}
-          style={index < 6 ? getStaggerDelay(index) : undefined}
-          className={`shadow-elevation-1 hover:shadow-elevation-2 transition-shadow duration-200 ease-premium ${index < 6 ? 'animate-fade-in-up fill-mode-both' : ''}`}
-        >
-          <CardHeader className="pb-3">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">{getFileIcon(file.mime_type)}</div>
-              <div className="min-w-0 flex-1">
-                <CardTitle className="truncate text-base" title={file.original_name}>
-                  {file.original_name}
-                </CardTitle>
-                <CardDescription className="mt-1 text-xs">
-                  {(file.file_size / 1024).toFixed(2)} KB
-                </CardDescription>
+      {files.map((file, index) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const f = file as any;
+        return (
+          <Card
+            key={file.id}
+            style={index < 6 ? getStaggerDelay(index) : undefined}
+            className={`shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2 ${index < 6 ? 'animate-fade-in-up fill-mode-both' : ''}`}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">{getFileIcon(f.mime_type)}</div>
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="truncate text-base" title={f.original_name}>
+                    {f.original_name}
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-xs">
+                    {(f.file_size / 1024).toFixed(2)} KB
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {/* Description */}
-            {file.description && (
-              <p className="line-clamp-2 text-sm text-muted-foreground">{file.description}</p>
-            )}
-
-            {/* Phase Badge */}
-            {file.phase && (
-              <Badge variant="outline" className="text-xs">
-                {file.phase.phase_name}
-              </Badge>
-            )}
-
-            {/* Upload Date */}
-            <p className="text-xs text-muted-foreground/80">
-              Uploaded {formatRelativeTime(file.created_at)}
-            </p>
-
-            {/* Download Button */}
-            <Button
-              onClick={() => handleDownload(file.id, file.original_name)}
-              disabled={downloadingFileId === file.id}
-              className="w-full"
-            >
-              {downloadingFileId === file.id ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Description */}
+              {f.description && (
+                <p className="line-clamp-2 text-sm text-muted-foreground">{f.description}</p>
               )}
-            </Button>
-          </CardContent>
-        </Card>
-      ))}
+
+              {/* Phase Badge */}
+              {f.phase && (
+                <Badge variant="outline" className="text-xs">
+                  {f.phase.phase_name}
+                </Badge>
+              )}
+
+              {/* Upload Date */}
+              <p className="text-xs text-muted-foreground/80">
+                Uploaded {formatRelativeTime(file.created_at)}
+              </p>
+
+              {/* Download Button */}
+              <Button
+                onClick={() => handleDownload(file.id, f.original_name)}
+                disabled={downloadingFileId === file.id}
+                className="w-full"
+              >
+                {downloadingFileId === file.id ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Downloading...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

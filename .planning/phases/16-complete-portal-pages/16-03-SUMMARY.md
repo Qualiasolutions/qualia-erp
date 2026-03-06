@@ -36,15 +36,15 @@ key-files:
     - app/portal/page.tsx (converted to thin server component)
 
 key-decisions:
-  - "Hybrid server-client pattern: server handles auth only, client fetches data via SWR"
-  - "45s auto-refresh interval matching Phase 13 real-time sync pattern"
-  - "Loading skeletons instead of spinners for better perceived performance"
-  - "Subtle pulsing indicator for background revalidation (non-intrusive)"
+  - 'Hybrid server-client pattern: server handles auth only, client fetches data via SWR'
+  - '45s auto-refresh interval matching Phase 13 real-time sync pattern'
+  - 'Loading skeletons instead of spinners for better perceived performance'
+  - 'Subtle pulsing indicator for background revalidation (non-intrusive)'
 
 patterns-established:
-  - "Portal pages should be thin server components (auth only) with client components for data fetching"
-  - "Dashboard stats should show loading state, current value, and click through to detail pages"
-  - "Activity feeds should display subtle visual feedback during background refresh"
+  - 'Portal pages should be thin server components (auth only) with client components for data fetching'
+  - 'Dashboard stats should show loading state, current value, and click through to detail pages'
+  - 'Activity feeds should display subtle visual feedback during background refresh'
 
 # Metrics
 duration: 3min
@@ -64,6 +64,7 @@ completed: 2026-03-06
 - **Files modified:** 5
 
 ## Accomplishments
+
 - Portal dashboard auto-refreshes every 45s without manual page reload
 - Hybrid server-client pattern reduces server load (auth only on server, data fetching on client)
 - Loading skeletons provide instant feedback during initial data fetch
@@ -93,6 +94,7 @@ Each task was committed atomically:
 **Plan metadata:** (pending - will be committed after SUMMARY.md creation)
 
 ## Files Created/Modified
+
 - `lib/swr.ts` - Added usePortalDashboard hook with 45s auto-refresh
 - `app/portal/page.tsx` - Converted to thin server component (auth only)
 - `app/portal/portal-dashboard-content.tsx` - Client component orchestrating dashboard UI
@@ -118,12 +120,14 @@ Each task was committed atomically:
 None - plan executed exactly as written.
 
 The plan specified:
+
 - usePortalDashboard SWR hook → Created with 45s polling
 - PortalDashboardStats component with loading states → Implemented
 - Hybrid server-client pattern → Applied
 - PortalRecentActivity component → Built with progress bars and phase info
 
 All verification criteria met:
+
 - Dashboard auto-refreshes every 45s ✅
 - Stats show loading skeletons ✅
 - Background revalidation indicator displays ✅
@@ -145,6 +149,7 @@ None - no external service configuration required.
 **Phase 16 complete** - All 3 portal pages finished (projects, features gallery, dashboard).
 
 **v1.3 milestone complete** - Full ERP-Portal Integration shipped:
+
 - Phase 12: Employee project assignments ✅
 - Phase 13: Portal infrastructure with real-time sync ✅
 - Phase 14: Notification system with email delivery ✅
@@ -156,5 +161,6 @@ None - no external service configuration required.
 **Deployment:** Portal ready for client preview at https://qualia-erp.vercel.app/portal
 
 ---
-*Phase: 16-complete-portal-pages*
-*Completed: 2026-03-06*
+
+_Phase: 16-complete-portal-pages_
+_Completed: 2026-03-06_

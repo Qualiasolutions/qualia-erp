@@ -39,8 +39,8 @@ interface TeachingNoteCardProps {
 }
 
 export function TeachingNoteCard({ note, onDelete, canDelete }: TeachingNoteCardProps) {
-  const config = TEACHING_NOTE_COLORS[note.note_type];
-  const Icon = NOTE_ICONS[note.note_type];
+  const config = TEACHING_NOTE_COLORS[note.note_type as keyof typeof TEACHING_NOTE_COLORS];
+  const Icon = NOTE_ICONS[note.note_type as keyof typeof NOTE_ICONS];
   const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
@@ -176,8 +176,8 @@ function AddTeachingNoteForm({ issueId, phaseItemId, onSuccess }: AddTeachingNot
           </SelectTrigger>
           <SelectContent>
             {(Object.keys(TEACHING_NOTE_COLORS) as TeachingNoteType[]).map((type) => {
-              const config = TEACHING_NOTE_COLORS[type];
-              const Icon = NOTE_ICONS[type];
+              const config = TEACHING_NOTE_COLORS[type as keyof typeof TEACHING_NOTE_COLORS];
+              const Icon = NOTE_ICONS[type as keyof typeof NOTE_ICONS];
               return (
                 <SelectItem key={type} value={type}>
                   <div className="flex items-center gap-2">

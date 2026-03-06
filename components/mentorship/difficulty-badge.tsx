@@ -28,8 +28,8 @@ export function DifficultyBadge({
   showDescription = false,
   className,
 }: DifficultyBadgeProps) {
-  const config = TASK_DIFFICULTY_COLORS[difficulty];
-  const Icon = DIFFICULTY_ICONS[difficulty];
+  const config = TASK_DIFFICULTY_COLORS[difficulty as keyof typeof TASK_DIFFICULTY_COLORS];
+  const Icon = DIFFICULTY_ICONS[difficulty as keyof typeof DIFFICULTY_ICONS];
 
   const sizeClasses = {
     sm: 'text-[11px] px-1.5 py-0.5 gap-1',
@@ -75,8 +75,8 @@ export function DifficultySelect({ value, onChange, className }: DifficultySelec
   return (
     <div className={cn('flex flex-wrap gap-2', className)}>
       {difficulties.map((difficulty) => {
-        const config = TASK_DIFFICULTY_COLORS[difficulty];
-        const Icon = DIFFICULTY_ICONS[difficulty];
+        const config = TASK_DIFFICULTY_COLORS[difficulty as keyof typeof TASK_DIFFICULTY_COLORS];
+        const Icon = DIFFICULTY_ICONS[difficulty as keyof typeof DIFFICULTY_ICONS];
         const isSelected = value === difficulty;
 
         return (
