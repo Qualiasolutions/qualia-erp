@@ -224,6 +224,15 @@ export type AssignEmployeeInput = z.infer<typeof assignEmployeeSchema>;
 export type ReassignEmployeeInput = z.infer<typeof reassignEmployeeSchema>;
 export type RemoveAssignmentInput = z.infer<typeof removeAssignmentSchema>;
 
+// ============ ERP-PORTAL INTEGRATION SCHEMAS ============
+
+export const linkProjectToClientSchema = z.object({
+  project_id: z.string().uuid('Invalid project ID'),
+  client_id: z.string().uuid('Invalid client ID'),
+});
+
+export type LinkProjectToClientInput = z.infer<typeof linkProjectToClientSchema>;
+
 // =====================
 // Team Schemas
 // =====================
