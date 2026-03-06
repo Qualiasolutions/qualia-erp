@@ -190,7 +190,7 @@ Plans:
 
 #### Phase 15: Portal Design System
 
-**Goal**: Portal matches ERP's Apple-like aesthetic completely with cohesive design language
+**Goal**: Portal matches ERP's Apple-like aesthetic completely with cohesive design language, using identical typography hierarchy, spacing system, elevation shadows, and interaction patterns for indistinguishable quality perception.
 **Depends on**: Phase 13 (can partially parallel)
 **Requirements**: DESIGN-01, DESIGN-02, DESIGN-03, DESIGN-04, DESIGN-05
 **Success Criteria** (what must be TRUE):
@@ -200,12 +200,12 @@ Plans:
 3. Portal animations and transitions match ERP's premium feel and timing
 4. Portal responsive design works seamlessly across all device sizes (375px+)
 5. Visual inspection shows no discernible difference in aesthetic quality between systems
-   **Plans**: TBD
+   **Plans**: 2 plans in 2 waves
 
 Plans:
 
-- [ ] 15-01: TBD
-- [ ] 15-02: TBD
+- [ ] 15-01-PLAN.md — Typography, spacing, and elevation system foundation
+- [ ] 15-02-PLAN.md — Interaction patterns, form styling, and responsive polish
 
 #### Phase 16: Complete Portal Pages
 
@@ -246,5 +246,5 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 12. Employee-Project Assignment System    | v1.3      | 2/2            | Complete    | 2026-03-06 |
 | 13. ERP-Portal Integration                | v1.3      | 3/3            | Complete    | 2026-03-06 |
 | 14. Unified Notification System           | v1.3      | 0/0            | Not started | -          |
-| 15. Portal Design System                  | v1.3      | 0/0            | Not started | -          |
+| 15. Portal Design System                  | v1.3      | 2/2            | Not started | -          |
 | 16. Complete Portal Pages                 | v1.3      | 0/0            | Not started | -          |
