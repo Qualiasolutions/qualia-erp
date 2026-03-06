@@ -351,7 +351,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  // Notify clients if status changed
+  // Notify clients if status changed (fire-and-forget)
   if (status !== undefined && existingProject && existingProject.status !== status) {
     const { data: employee } = await supabase
       .from('profiles')
@@ -360,12 +360,12 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
       .single();
 
     const { notifyClientOfProjectStatusChange } = await import('@/lib/email');
-    await notifyClientOfProjectStatusChange(
+    notifyClientOfProjectStatusChange(
       id,
       employee?.full_name || 'Team member',
       existingProject.status,
       status
-    );
+    ).catch((err) => console.error('[updateProject] Client notification error:', err));
   }
 
   revalidatePath(`/projects/${id}`);
@@ -501,6 +501,13 @@ export async function updateProjectStatus(
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Get current project status before updating
+  const { data: existingProject } = await supabase
+    .from('projects')
+    .select('status')
+    .eq('id', projectId)
+    .single();
+
   const { error } = await supabase
     .from('projects')
     .update({
@@ -513,6 +520,23 @@ export async function updateProjectStatus(
   if (error) {
     console.error('Error updating project status:', error);
     return { success: false, error: error.message };
+  }
+
+  // Notify clients if status changed (fire-and-forget)
+  if (existingProject && existingProject.status !== newStatus) {
+    const { data: employee } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single();
+
+    const { notifyClientOfProjectStatusChange } = await import('@/lib/email');
+    notifyClientOfProjectStatusChange(
+      projectId,
+      employee?.full_name || 'Team member',
+      existingProject.status,
+      newStatus
+    ).catch((err) => console.error('[updateProjectStatus] Client notification error:', err));
   }
 
   revalidatePath('/projects');
