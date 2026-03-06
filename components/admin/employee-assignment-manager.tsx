@@ -5,7 +5,11 @@ import { useServerAction } from '@/lib/hooks/use-server-action';
 import { useProjects } from '@/lib/swr';
 import { useProfiles } from '@/lib/swr';
 import { useAllAssignments, invalidateAllAssignments } from '@/lib/swr';
-import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
+import {
+  assignEmployeeToProject,
+  removeAssignment,
+  reassignEmployee,
+} from '@/app/actions/project-assignments';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -26,15 +30,29 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
-import { Trash2, UserPlus } from 'lucide-react';
+import { Trash2, UserPlus, Pencil } from 'lucide-react';
 
 export function EmployeeAssignmentManager() {
   // State
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [notes, setNotes] = useState('');
+
+  // Reassignment state
+  const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
+  const [reassigningAssignment, setReassigningAssignment] = useState<unknown>(null);
+  const [newProjectId, setNewProjectId] = useState('');
+  const [reassignNotes, setReassignNotes] = useState('');
 
   // Data fetching
   const { projects } = useProjects();
@@ -72,6 +90,20 @@ export function EmployeeAssignmentManager() {
     },
   });
 
+  const { execute: reassign, isPending: isReassigning } = useServerAction(reassignEmployee, {
+    onSuccess: () => {
+      toast.success('Employee reassigned successfully');
+      invalidateAllAssignments(true);
+      setReassignDialogOpen(false);
+      setReassigningAssignment(null);
+      setNewProjectId('');
+      setReassignNotes('');
+    },
+    onError: (error) => {
+      toast.error(error || 'Failed to reassign employee');
+    },
+  });
+
   // Handlers
   const handleAssign = async () => {
     if (!selectedProject || !selectedEmployee) {
@@ -90,6 +122,27 @@ export function EmployeeAssignmentManager() {
   const handleRemove = async (assignmentId: string) => {
     if (!confirm('Remove this assignment?')) return;
     await remove(assignmentId);
+  };
+
+  const handleReassign = async () => {
+    if (!newProjectId || !reassigningAssignment) {
+      toast.error('Please select a new project');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('assignment_id', reassigningAssignment.id);
+    formData.append('new_project_id', newProjectId);
+    if (reassignNotes) formData.append('notes', reassignNotes);
+
+    await reassign(formData);
+  };
+
+  const openReassignDialog = (assignment: unknown) => {
+    setReassigningAssignment(assignment);
+    setNewProjectId('');
+    setReassignNotes('');
+    setReassignDialogOpen(true);
   };
 
   // Filter active assignments only
@@ -216,14 +269,24 @@ export function EmployeeAssignmentManager() {
                       {assignment.notes || '—'}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemove(assignment.id)}
-                        disabled={isRemoving}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openReassignDialog(assignment)}
+                          disabled={isReassigning}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(assignment.id)}
+                          disabled={isRemoving}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -232,6 +295,60 @@ export function EmployeeAssignmentManager() {
           )}
         </CardContent>
       </Card>
+
+      {/* Reassignment Dialog */}
+      <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reassign Employee</DialogTitle>
+            <DialogDescription>
+              Move {reassigningAssignment?.employee?.full_name || 'this employee'} from{' '}
+              {reassigningAssignment?.project?.name} to a different project
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>New Project</Label>
+              <Select value={newProjectId} onValueChange={setNewProjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select new project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects
+                    ?.filter((p) => p.id !== reassigningAssignment?.project?.id)
+                    .map((project) => (
+                      <SelectItem key={project.id} value={project.id}>
+                        {project.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                value={reassignNotes}
+                onChange={(e) => setReassignNotes(e.target.value)}
+                placeholder="Reason for reassignment..."
+                rows={2}
+                maxLength={500}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setReassignDialogOpen(false)}
+              disabled={isReassigning}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleReassign} disabled={isReassigning || !newProjectId}>
+              {isReassigning ? 'Reassigning...' : 'Reassign'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
