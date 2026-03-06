@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-06)
 
 **Core value:** Moayad can independently execute project phases with clear guidance while Fawzi reviews at phase boundaries — and clients see real-time project progress without internal complexity.
-**Current focus:** Phase 13 - ERP-Portal Integration (in progress)
+**Current focus:** Phase 15 - Portal Design System (next up)
 
 ## Current Position
 
 Phase: 14 of 16 (Unified Notification System)
 Plan: 3 of 3 in current phase
 Status: Phase complete
-Last activity: 2026-03-06 — Completed 14-03-PLAN.md (client notifications + settings UI)
+Last activity: 2026-03-06 — Completed Phase 14 (all 3 plans + gap closure)
 
 Progress: [██████████████████░░] 84% (34 plans complete, Phase 14 complete, 2 phases remaining)
 
@@ -92,7 +92,7 @@ None. Phase 13 and 14 complete. Ready for Phase 15 or 16.
 ## Session Continuity
 
 Last session: 2026-03-06 (phase execution)
-Stopped at: Completed Phase 14 Plan 03 (client notifications + settings UI)
-Resume file: .planning/phases/15-portal-design-system/15-02-PLAN.md or .planning/phases/16-portal-file-management/16-01-PLAN.md
+Stopped at: Phase 14 complete (all plans + verification gaps closed)
+Resume file: .planning/phases/15-portal-design-system/15-01-PLAN.md
 
-**Next action:** Continue Phase 15 with Plan 02 (portal animation polish) or start Phase 16 (file management). Phase 14 is complete.
+**Next action:** Execute Phase 15 (Portal Design System) — 2 plans. Then Phase 16 (Complete Portal Pages) to finish v1.3.
