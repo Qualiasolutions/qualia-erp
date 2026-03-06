@@ -13,6 +13,11 @@ import {
 import { getTasks, getProjectTasks, getScheduledTasks } from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
 import { getConversations, getMessages } from '@/app/actions/ai-conversations';
+import {
+  getProjectAssignments,
+  getEmployeeAssignments,
+  getAssignmentHistory,
+} from '@/app/actions/project-assignments';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
 // Type for meetings with all relations
@@ -52,6 +57,9 @@ export const cacheKeys = {
   aiConversations: 'ai-conversations',
   aiMessages: (conversationId: string) => `ai-messages-${conversationId}`,
   aiUserContext: (userId: string) => `ai-user-context-${userId}`,
+  projectAssignments: (projectId: string) => `/api/assignments/project/${projectId}`,
+  employeeAssignments: (employeeId: string) => `/api/assignments/employee/${employeeId}`,
+  allAssignments: '/api/assignments/all',
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -958,5 +966,133 @@ export function invalidateAIUserContext(userId: string, immediate = true) {
     mutate(cacheKeys.aiUserContext(userId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.aiUserContext(userId));
+  }
+}
+
+// ============ ASSIGNMENT HOOKS ============
+
+/**
+ * Hook to fetch project assignments with auto-refresh
+ */
+export function useProjectAssignments(projectId: string | undefined) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.projectAssignments(projectId) : null,
+    async () => {
+      if (!projectId) return null;
+      const result = await getProjectAssignments(projectId);
+      return result.success ? result.data : null;
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    data: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch employee assignments with auto-refresh
+ */
+export function useEmployeeAssignments(employeeId: string | undefined) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    employeeId ? cacheKeys.employeeAssignments(employeeId) : null,
+    async () => {
+      if (!employeeId) return null;
+      const result = await getEmployeeAssignments(employeeId);
+      return result.success ? result.data : null;
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    data: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch all assignments with auto-refresh
+ */
+export function useAllAssignments() {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    cacheKeys.allAssignments,
+    async () => {
+      const result = await getAssignmentHistory();
+      return result.success ? result.data : null;
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    data: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate project assignments cache
+ */
+export function invalidateProjectAssignments(projectId: string, immediate = false) {
+  if (immediate) {
+    mutate(cacheKeys.projectAssignments(projectId), undefined, { revalidate: true });
+    mutate(cacheKeys.allAssignments, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.projectAssignments(projectId));
+    mutate(cacheKeys.allAssignments);
+  }
+}
+
+/**
+ * Invalidate employee assignments cache
+ */
+export function invalidateEmployeeAssignments(employeeId: string, immediate = false) {
+  if (immediate) {
+    mutate(cacheKeys.employeeAssignments(employeeId), undefined, { revalidate: true });
+    mutate(cacheKeys.allAssignments, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.employeeAssignments(employeeId));
+    mutate(cacheKeys.allAssignments);
+  }
+}
+
+/**
+ * Invalidate all assignments cache
+ */
+export function invalidateAllAssignments(immediate = false) {
+  if (immediate) {
+    mutate(cacheKeys.allAssignments, undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.allAssignments);
   }
 }
