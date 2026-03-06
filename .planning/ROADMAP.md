@@ -161,12 +161,13 @@ Plans:
 3. Client activities in portal appear in unified ERP activity timeline immediately
 4. ERP project updates trigger real-time portal data refresh for connected clients
 5. All project data syncs bidirectionally without manual intervention
-   **Plans**: 2 plans in 2 waves
+   **Plans**: 3 plans in 3 waves
 
 Plans:
 
 - [x] 13-01-PLAN.md — Data linkage between ERP and portal (client_id FK, integration helpers)
 - [x] 13-02-PLAN.md — Real-time sync with SWR and integration status badges
+- [ ] 13-03-PLAN.md — Gap closure: Enable portal auto-refresh with SWR hooks
 
 #### Phase 14: Unified Notification System
 
