@@ -836,3 +836,79 @@ export async function updateClientProfile(updates: { full_name?: string }): Prom
     };
   }
 }
+
+/**
+ * Get project features (screenshots, mockups, design images)
+ * Returns image files marked as client-visible for the features gallery
+ */
+export async function getProjectFeatures(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    // Authorization: user must have access to this project
+    if (!(await isUserAdmin(user.id))) {
+      // Check client access
+      const { data: clientProject } = await supabase
+        .from('client_projects')
+        .select('id')
+        .eq('client_id', user.id)
+        .eq('project_id', projectId)
+        .single();
+
+      if (!clientProject) {
+        return { success: false, error: 'Not authorized to view this project' };
+      }
+    }
+
+    // Get image files that are client-visible
+    const { data, error } = await supabase
+      .from('project_files')
+      .select(
+        `
+        id,
+        name,
+        original_name,
+        description,
+        file_size,
+        mime_type,
+        storage_path,
+        created_at,
+        uploaded_by,
+        uploader:profiles!project_files_uploaded_by_fkey(id, full_name, avatar_url)
+      `
+      )
+      .eq('project_id', projectId)
+      .eq('is_client_visible', true)
+      .or('mime_type.like.image/%')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Normalize FK arrays and get signed URLs
+    const features = await Promise.all(
+      (data || []).map(async (file) => {
+        const { data: urlData } = await supabase.storage
+          .from('project-files')
+          .createSignedUrl(file.storage_path, 3600); // 1 hour expiry
+
+        return {
+          ...file,
+          uploader: Array.isArray(file.uploader) ? file.uploader[0] || null : file.uploader,
+          url: urlData?.signedUrl || null,
+        };
+      })
+    );
+
+    return { success: true, data: features };
+  } catch (error) {
+    console.error('[getProjectFeatures] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get project features',
+    };
+  }
+}
