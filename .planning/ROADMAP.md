@@ -161,12 +161,12 @@ Plans:
 3. Client activities in portal appear in unified ERP activity timeline immediately
 4. ERP project updates trigger real-time portal data refresh for connected clients
 5. All project data syncs bidirectionally without manual intervention
-   **Plans**: TBD
+   **Plans**: 2 plans in 2 waves
 
 Plans:
 
-- [ ] 13-01: TBD
-- [ ] 13-02: TBD
+- [ ] 13-01-PLAN.md — Data linkage between ERP and portal (client_id FK, integration helpers)
+- [ ] 13-02-PLAN.md — Real-time sync with SWR and integration status badges
 
 #### Phase 14: Unified Notification System
 
@@ -243,7 +243,7 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 10. Differentiator Animations             | v1.2      | 4/4            | Complete    | 2026-03-04 |
 | 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete    | 2026-03-04 |
 | 12. Employee-Project Assignment System    | v1.3      | 0/2            | Not started | -          |
-| 13. ERP-Portal Integration                | v1.3      | 0/0            | Not started | -          |
+| 13. ERP-Portal Integration                | v1.3      | 0/2            | Not started | -          |
 | 14. Unified Notification System           | v1.3      | 0/0            | Not started | -          |
 | 15. Portal Design System                  | v1.3      | 0/0            | Not started | -          |
 | 16. Complete Portal Pages                 | v1.3      | 0/0            | Not started | -          |
