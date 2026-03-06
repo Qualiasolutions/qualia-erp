@@ -121,7 +121,7 @@ export async function getProjectFiles(
     ...file,
     uploader: Array.isArray(file.uploader) ? file.uploader[0] || null : file.uploader,
     phase: Array.isArray(file.phase) ? file.phase[0] || null : file.phase,
-  })) as ProjectFile[];
+  })) as unknown as ProjectFile[];
 }
 
 /**
