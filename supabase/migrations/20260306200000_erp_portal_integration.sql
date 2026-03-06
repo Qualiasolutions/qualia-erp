@@ -22,7 +22,7 @@ SELECT
   pc.full_name as portal_client_name,
   pc.email as portal_client_email,
   c.name as erp_client_name,
-  c.company_name as erp_company_name
+  c.display_name as erp_company_name
 FROM client_projects cp
 JOIN projects p ON cp.project_id = p.id
 JOIN profiles pc ON cp.client_id = pc.id
