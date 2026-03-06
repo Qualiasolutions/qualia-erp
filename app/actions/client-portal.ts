@@ -808,9 +808,12 @@ export async function getClientActivityFeed(
 }
 
 /**
- * Update client profile (name, etc.)
+ * Update client profile (name, company)
  */
-export async function updateClientProfile(updates: { full_name?: string }): Promise<ActionResult> {
+export async function updateClientProfile(updates: {
+  full_name?: string;
+  company?: string | null;
+}): Promise<ActionResult> {
   try {
     const supabase = await createClient();
     const {
@@ -820,12 +823,13 @@ export async function updateClientProfile(updates: { full_name?: string }): Prom
 
     const updateData: Record<string, unknown> = {};
     if (updates.full_name !== undefined) updateData.full_name = updates.full_name.trim();
+    if (updates.company !== undefined) updateData.company = updates.company?.trim() || null;
 
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
 
     if (error) throw error;
 
-    revalidatePath('/portal/account');
+    revalidatePath('/portal/settings');
     revalidatePath('/portal');
     return { success: true };
   } catch (error) {
@@ -833,6 +837,105 @@ export async function updateClientProfile(updates: { full_name?: string }): Prom
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update profile',
+    };
+  }
+}
+
+/**
+ * Get notification preferences for the current user
+ */
+export async function getNotificationPreferences(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const workspaceId = await getCurrentWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'No workspace found' };
+
+    const { data, error } = await supabase
+      .from('notification_preferences')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('workspace_id', workspaceId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    // If no preferences exist, return defaults
+    if (!data) {
+      return {
+        success: true,
+        data: {
+          task_assigned: true,
+          task_due_soon: true,
+          project_update: true,
+          meeting_reminder: true,
+          client_activity: true,
+          delivery_method: 'both',
+        },
+      };
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('[getNotificationPreferences] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get notification preferences',
+    };
+  }
+}
+
+/**
+ * Update notification preferences for the current user
+ */
+export async function updateNotificationPreferences(preferences: {
+  task_assigned?: boolean;
+  task_due_soon?: boolean;
+  project_update?: boolean;
+  meeting_reminder?: boolean;
+  client_activity?: boolean;
+  delivery_method?: 'email' | 'in_app' | 'both';
+}): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
+    const workspaceId = await getCurrentWorkspaceId();
+    if (!workspaceId) return { success: false, error: 'No workspace found' };
+
+    // Upsert preferences (create if doesn't exist, update if it does)
+    const { error } = await supabase
+      .from('notification_preferences')
+      .upsert(
+        {
+          user_id: user.id,
+          workspace_id: workspaceId,
+          ...preferences,
+        },
+        {
+          onConflict: 'user_id,workspace_id',
+        }
+      )
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    revalidatePath('/portal/settings');
+    revalidatePath('/portal');
+    return { success: true };
+  } catch (error) {
+    console.error('[updateNotificationPreferences] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update notification preferences',
     };
   }
 }

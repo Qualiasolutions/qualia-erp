@@ -431,3 +431,27 @@ export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
 export type UpdateMeetingInput = z.infer<typeof updateMeetingSchema>;
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
+
+// =====================
+// Client Portal Schemas
+// =====================
+export const clientProfileSchema = z.object({
+  full_name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(200, 'Name must be less than 200 characters')
+    .optional(),
+  company: z.string().max(200, 'Company name too long').optional().nullable(),
+});
+
+export const notificationPreferencesSchema = z.object({
+  task_assigned: z.boolean().default(true),
+  task_due_soon: z.boolean().default(true),
+  project_update: z.boolean().default(true),
+  meeting_reminder: z.boolean().default(true),
+  client_activity: z.boolean().default(true),
+  delivery_method: z.enum(['email', 'in_app', 'both']).default('both'),
+});
+
+export type ClientProfileInput = z.infer<typeof clientProfileSchema>;
+export type NotificationPreferencesInput = z.infer<typeof notificationPreferencesSchema>;
