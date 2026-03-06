@@ -71,9 +71,8 @@ Recent decisions affecting v1.3 work:
 - Silent failure pattern for emails (14-02) — delivery failures don't block user actions
 - Client role detection before notifying (14-02) — prevents notifications for employee actions
 - Qualia teal gradient branding in emails (14-02) — #00A4AC to #008B92 for brand consistency
-- Server-client hybrid for settings pages (14-03) — auth on server, interactivity on client for best UX
-- Role-based toggle visibility (14-03) — clients see 2 notification types, employees see 5, cleaner than disabled state
-- Green gradient for client status emails (14-03) — conveys progress/success, distinct from internal purple
+- Fire-and-forget notification pattern (14-03) — email sending doesn't block HTTP responses
+- Self-fetching settings components (14-03) — consistent with LearnModeSettings, avoids prop drilling
 
 ### Pending Todos
 
