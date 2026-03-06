@@ -83,13 +83,62 @@ export const TIME_BLOCKS: TimeBlock[] = [
   },
 ] as const;
 
+// Hasan's Working Hours: 7:00 PM - 12:00 AM (5 hours)
+export const HASAN_TIME_BLOCKS: TimeBlock[] = [
+  {
+    id: 'hasan-standup',
+    label: 'Evening Standup',
+    start: '19:00',
+    end: '19:30',
+    type: 'standup',
+    description: 'Review day, sync priorities',
+    durationMinutes: 30,
+  },
+  {
+    id: 'hasan-focus-1',
+    label: 'Focus Block 1',
+    start: '19:30',
+    end: '21:00',
+    type: 'focus',
+    description: 'Deep work - high priority tasks',
+    durationMinutes: 90,
+  },
+  {
+    id: 'hasan-break',
+    label: 'Short Break',
+    start: '21:00',
+    end: '21:15',
+    type: 'break',
+    description: 'Rest and recharge',
+    durationMinutes: 15,
+  },
+  {
+    id: 'hasan-focus-2',
+    label: 'Focus Block 2',
+    start: '21:15',
+    end: '23:00',
+    type: 'focus',
+    description: 'Development and training',
+    durationMinutes: 105,
+  },
+  {
+    id: 'hasan-wrapup',
+    label: 'Wrap-up',
+    start: '23:00',
+    end: '00:00',
+    type: 'wrapup',
+    description: 'Review progress, plan tomorrow',
+    durationMinutes: 60,
+  },
+] as const;
+
 // Team Member Configuration
 export interface TeamMember {
   id: string;
   email: string;
   name: string;
   role: 'admin' | 'trainee';
-  colorKey: 'fawzi' | 'moayad';
+  colorKey: 'fawzi' | 'moayad' | 'hasan';
 }
 
 export const TEAM_MEMBERS: Record<string, TeamMember> = {
@@ -106,6 +155,13 @@ export const TEAM_MEMBERS: Record<string, TeamMember> = {
     name: 'Moayad',
     role: 'trainee',
     colorKey: 'moayad',
+  },
+  hasan: {
+    id: 'hasan',
+    email: 'hasan@qualiasolutions.net',
+    name: 'Hasan',
+    role: 'trainee',
+    colorKey: 'hasan',
   },
 } as const;
 

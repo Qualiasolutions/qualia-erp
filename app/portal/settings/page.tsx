@@ -234,7 +234,11 @@ export default function PortalSettingsPage() {
               />
             </div>
 
-            <Button type="submit" disabled={profileSaving} className="bg-qualia-600 hover:bg-qualia-700">
+            <Button
+              type="submit"
+              disabled={profileSaving}
+              className="bg-qualia-600 hover:bg-qualia-700"
+            >
               {profileSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -360,7 +364,7 @@ export default function PortalSettingsPage() {
               <Label>Delivery Method</Label>
               <RadioGroup
                 value={notificationPrefs.delivery_method}
-                onValueChange={(value) =>
+                onValueChange={(value: string) =>
                   setNotificationPrefs({
                     ...notificationPrefs,
                     delivery_method: value as 'email' | 'in_app' | 'both',

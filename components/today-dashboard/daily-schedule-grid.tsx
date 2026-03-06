@@ -34,12 +34,14 @@ import { TEAM_MEMBERS } from '@/lib/team-constants';
 // ── Config ───────────────────────────────────────────────────────────────────
 const FAWZI_ID = TEAM_MEMBERS.FAWZI_ID;
 const MOAYAD_ID = TEAM_MEMBERS.MOAYAD_ID;
+const HASAN_ID = TEAM_MEMBERS.HASAN_ID;
 const START_HOUR = 8;
-const END_HOUR = 18;
+const END_HOUR = 24; // Extended to midnight for Hasan's evening shift
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 const HOUR_HEIGHT = 84;
 const TOTAL_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;
 const TIME_GUTTER = 56;
+const NUM_COLUMNS = 3;
 
 interface ScheduleItem {
   id: string;
@@ -325,7 +327,9 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [newTaskDefaultTime, setNewTaskDefaultTime] = useState<string | null>(null);
   const [collapsedMeetings, setCollapsedMeetings] = useState<Set<string>>(new Set());
   const [quickInput, setQuickInput] = useState('');
-  const [quickAssignee, setQuickAssignee] = useState<'fawzi' | 'moayad' | 'both'>('fawzi');
+  const [quickAssignee, setQuickAssignee] = useState<'fawzi' | 'moayad' | 'hasan' | 'both'>(
+    'fawzi'
+  );
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -344,7 +348,13 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
     if (!title) return;
 
     const assigneeId =
-      quickAssignee === 'fawzi' ? FAWZI_ID : quickAssignee === 'moayad' ? MOAYAD_ID : null;
+      quickAssignee === 'fawzi'
+        ? FAWZI_ID
+        : quickAssignee === 'moayad'
+          ? MOAYAD_ID
+          : quickAssignee === 'hasan'
+            ? HASAN_ID
+            : null;
 
     const formData = new FormData();
     formData.set('title', title);
@@ -427,10 +437,11 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       if (t.scheduled_start_time && t.scheduled_end_time) {
         const s = parseISO(t.scheduled_start_time);
         if (isToday(s) || isSameDay(s, new Date())) {
-          const isJoint =
-            !t.assignee_id || (t.assignee_id !== FAWZI_ID && t.assignee_id !== MOAYAD_ID);
           let col = 0;
-          if (!isJoint && t.assignee_id === MOAYAD_ID) col = 1;
+          let isJoint = false;
+          if (t.assignee_id === MOAYAD_ID) col = 1;
+          else if (t.assignee_id === HASAN_ID) col = 2;
+          else if (!t.assignee_id || t.assignee_id !== FAWZI_ID) isJoint = true;
           items.push({
             id: `task-${t.id}`,
             type: 'task',
@@ -451,6 +462,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         const isCollapsed = collapsedMeetings.has(m.id);
         if (isCollapsed) {
           const attendees = m.attendees.map((a) => a.profile?.id);
+          const hasHasan = attendees.includes(HASAN_ID) || m.creator?.id === HASAN_ID;
           const hasMoayad = attendees.includes(MOAYAD_ID) || m.creator?.id === MOAYAD_ID;
           items.push({
             id: `meeting-${m.id}`,
@@ -459,7 +471,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
             startTime: s,
             endTime: parseISO(m.end_time),
             meeting: m,
-            col: hasMoayad ? 1 : 0,
+            col: hasHasan ? 2 : hasMoayad ? 1 : 0,
             span: false,
           });
         } else {
@@ -497,20 +509,14 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           right: `${GAP}px`,
           zIndex: 20,
         });
-      } else if (item.col === 0) {
-        map.set(item.id, {
-          top: `${top}px`,
-          height: `${height}px`,
-          left: `${GAP}px`,
-          right: `calc(50% + ${GAP / 2}px)`,
-          zIndex: 10,
-        });
       } else {
+        const colPercent = (item.col / NUM_COLUMNS) * 100;
+        const nextColPercent = ((item.col + 1) / NUM_COLUMNS) * 100;
         map.set(item.id, {
           top: `${top}px`,
           height: `${height}px`,
-          left: `calc(50% + ${GAP / 2}px)`,
-          right: `${GAP}px`,
+          left: `calc(${colPercent}% + ${GAP}px)`,
+          right: `calc(${100 - nextColPercent}% + ${GAP}px)`,
           zIndex: 10,
         });
       }
@@ -539,7 +545,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           className="min-w-0 flex-1 rounded-lg border border-border/40 bg-background/60 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
         />
         <div className="flex items-center gap-1">
-          {(['fawzi', 'moayad', 'both'] as const).map((who) => (
+          {(['fawzi', 'moayad', 'hasan', 'both'] as const).map((who) => (
             <button
               key={who}
               onClick={() => setQuickAssignee(who)}
@@ -550,11 +556,13 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                     ? 'bg-sky-500/15 text-sky-500'
                     : who === 'moayad'
                       ? 'bg-violet-500/15 text-violet-500'
-                      : 'bg-foreground/10 text-foreground/70'
+                      : who === 'hasan'
+                        ? 'bg-amber-500/15 text-amber-500'
+                        : 'bg-foreground/10 text-foreground/70'
                   : 'text-foreground/25 hover:text-foreground/50'
               )}
             >
-              {who === 'fawzi' ? 'F' : who === 'moayad' ? 'M' : 'Both'}
+              {who === 'fawzi' ? 'F' : who === 'moayad' ? 'M' : who === 'hasan' ? 'H' : 'All'}
             </button>
           ))}
         </div>
@@ -626,7 +634,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         </div>
 
         {/* Moayad */}
-        <div className="flex flex-1 items-center justify-between px-3">
+        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border/30 px-3">
           <div className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-500">
               M
@@ -635,6 +643,25 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           </div>
           <button
             onClick={() => handleAddTask(MOAYAD_ID)}
+            className="flex size-5 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
+          >
+            <Plus className="size-2.5" />
+          </button>
+        </div>
+
+        {/* Hasan */}
+        <div className="flex flex-1 items-center justify-between px-3">
+          <div className="flex items-center gap-2">
+            <div className="flex size-6 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-500">
+              H
+            </div>
+            <span className="text-sm font-medium text-foreground">Hasan</span>
+            <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-500/70">
+              7PM–12AM
+            </span>
+          </div>
+          <button
+            onClick={() => handleAddTask(HASAN_ID)}
             className="flex size-5 items-center justify-center rounded text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground"
           >
             <Plus className="size-2.5" />
@@ -678,26 +705,32 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                   style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
                 />
 
-                <div
-                  className="absolute bottom-0 top-0 border-l border-dashed border-border/30"
-                  style={{ left: `calc(50% + ${TIME_GUTTER / 2}px)` }}
-                />
+                {/* Column dividers */}
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="absolute bottom-0 top-0 border-l border-dashed border-border/30"
+                    style={{ left: `calc(${(i * 100) / NUM_COLUMNS}% + ${TIME_GUTTER / 2}px)` }}
+                  />
+                ))}
 
-                <button
-                  className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-muted-foreground/40 transition-all hover:bg-muted/50 hover:text-muted-foreground"
-                  style={{ left: `${TIME_GUTTER + 4}px` }}
-                  onClick={() => handleAddTask(FAWZI_ID, timeStr)}
-                >
-                  <Plus className="size-2.5" />
-                </button>
-
-                <button
-                  className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-muted-foreground/40 transition-all hover:bg-muted/50 hover:text-muted-foreground"
-                  style={{ left: `calc(50% + ${TIME_GUTTER / 2 + 4}px)` }}
-                  onClick={() => handleAddTask(MOAYAD_ID, timeStr)}
-                >
-                  <Plus className="size-2.5" />
-                </button>
+                {/* Per-column add buttons */}
+                {[
+                  { id: FAWZI_ID, col: 0 },
+                  { id: MOAYAD_ID, col: 1 },
+                  { id: HASAN_ID, col: 2 },
+                ].map(({ id, col }) => (
+                  <button
+                    key={col}
+                    className="absolute top-1 z-[5] flex size-4 items-center justify-center rounded text-muted-foreground/40 transition-all hover:bg-muted/50 hover:text-muted-foreground"
+                    style={{
+                      left: `calc(${(col * 100) / NUM_COLUMNS}% + ${TIME_GUTTER / 2 + 4}px)`,
+                    }}
+                    onClick={() => handleAddTask(id, timeStr)}
+                  >
+                    <Plus className="size-2.5" />
+                  </button>
+                ))}
               </div>
             );
           })}
