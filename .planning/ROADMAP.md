@@ -146,8 +146,8 @@ Plans:
 
 Plans:
 
-- [ ] 12-01-PLAN.md — Database foundation and server actions for assignments
-- [ ] 12-02-PLAN.md — Admin UI with assignment manager and history table
+- [x] 12-01-PLAN.md — Database foundation and server actions for assignments
+- [x] 12-02-PLAN.md — Admin UI with assignment manager and history table
 
 #### Phase 13: ERP-Portal Integration
 
@@ -165,8 +165,8 @@ Plans:
 
 Plans:
 
-- [ ] 13-01-PLAN.md — Data linkage between ERP and portal (client_id FK, integration helpers)
-- [ ] 13-02-PLAN.md — Real-time sync with SWR and integration status badges
+- [x] 13-01-PLAN.md — Data linkage between ERP and portal (client_id FK, integration helpers)
+- [x] 13-02-PLAN.md — Real-time sync with SWR and integration status badges
 
 #### Phase 14: Unified Notification System
 
@@ -242,8 +242,8 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 8. Schedule Consolidation & Mobile Polish | v1.1      | 2/2            | Complete    | 2026-03-04 |
 | 10. Differentiator Animations             | v1.2      | 4/4            | Complete    | 2026-03-04 |
 | 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete    | 2026-03-04 |
-| 12. Employee-Project Assignment System    | v1.3      | 0/2            | Not started | -          |
-| 13. ERP-Portal Integration                | v1.3      | 0/2            | Not started | -          |
+| 12. Employee-Project Assignment System    | v1.3      | 2/2            | Complete    | 2026-03-06 |
+| 13. ERP-Portal Integration                | v1.3      | 2/2            | Complete    | 2026-03-06 |
 | 14. Unified Notification System           | v1.3      | 0/0            | Not started | -          |
 | 15. Portal Design System                  | v1.3      | 0/0            | Not started | -          |
 | 16. Complete Portal Pages                 | v1.3      | 0/0            | Not started | -          |

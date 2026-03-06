@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 13 of 16 (ERP-Portal Integration)
-Plan: 1 of 4 in current phase
-Status: In progress
-Last activity: 2026-03-06 — Completed 13-01-PLAN.md (database integration foundation)
+Plan: 2 of 2 in current phase
+Status: Phase complete
+Last activity: 2026-03-06 — Completed 13-02-PLAN.md (bidirectional sync with SWR and notifications)
 
-Progress: [███████████████░░░░░] 72% (27 plans complete across 13 phases, 3 phases remaining)
+Progress: [████████████████░░░░] 76% (29 plans complete across 13 phases, 3 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 27 (24 from v1.0-v1.2, 3 from v1.3)
+- Total plans completed: 29 (24 from v1.0-v1.2, 5 from v1.3)
 - Average duration: ~5 minutes per plan (recent trend: 2-6 min)
 - Total execution time: 3 days (2026-03-01 to 2026-03-04) + v1.3 in progress
 
@@ -38,7 +38,7 @@ Progress: [███████████████░░░░░] 72% (27
 - Last 3 milestones: 1 day, 1 day, 1 day (sprint execution pattern)
 - Trend: Stable (consistent daily milestone delivery)
 
-_Updated: 2026-03-06 after Phase 13 Plan 01 execution_
+_Updated: 2026-03-06 after Phase 13 completion (Plan 02 execution)_
 
 ## Accumulated Context
 
@@ -58,6 +58,10 @@ Recent decisions affecting v1.3 work:
 - Database view for integration mappings (13-01) — portal_project_mappings avoids N+1 queries
 - Rich status objects over booleans (13-01) — structured integration status for better UI feedback
 - Admin-only integration management (13-01) — prevents employees from modifying CRM linkages
+- 45s SWR refresh interval (13-02) — balances real-time feel with API efficiency
+- Path revalidation on all mutations (13-02) — simpler than SWR cache invalidation
+- Notification routing via project_assignments (13-02) — leverages Phase 12 foundation
+- Activity log with is_client_visible flag (13-02) — enables unified ERP/portal timeline
 
 ### Pending Todos
 
@@ -65,7 +69,7 @@ None yet for v1.3.
 
 ### Blockers/Concerns
 
-None. Phase 13 Plan 01 complete, ready for Plan 02.
+None. Phase 13 complete. Ready for Phase 14, 15, or 16.
 
 **Phase Dependencies:**
 
@@ -77,7 +81,7 @@ None. Phase 13 Plan 01 complete, ready for Plan 02.
 ## Session Continuity
 
 Last session: 2026-03-06 (phase execution)
-Stopped at: Completed Phase 13 Plan 01 (database integration foundation)
-Resume file: .planning/phases/13-erp-portal-integration/13-02-PLAN.md (when created)
+Stopped at: Completed Phase 13 Plan 02 (bidirectional sync complete)
+Resume file: Phase 14, 15, or 16 plans (when created)
 
-**Next action:** Execute Phase 13 Plan 02 (Portal Project Details Integration)
+**Next action:** Create plans for Phase 14 (Unified Notification System), Phase 15 (Portal Design System), or Phase 16 (Complete Portal Pages)
