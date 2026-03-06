@@ -3715,7 +3715,7 @@ export type Database = {
         | 'demos'
         | 'other';
       project_status: 'Demos' | 'Active' | 'Launched' | 'Delayed' | 'Archived' | 'Canceled';
-      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads' | 'voice_agent';
+      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads' | 'voice_agent' | 'ai_platform';
       provisioning_status:
         | 'not_started'
         | 'pending'
@@ -3890,7 +3890,7 @@ export const Constants = {
         'other',
       ],
       project_status: ['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'],
-      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent'],
+      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent', 'ai_platform'],
       provisioning_status: [
         'not_started',
         'pending',
