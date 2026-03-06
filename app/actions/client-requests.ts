@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { type ActionResult, isUserAdmin } from './shared';
+import { notifyAssignedEmployees } from '@/lib/notifications';
 
 /**
  * Create a feature request from a client
@@ -37,6 +38,38 @@ export async function createFeatureRequest(input: {
       .single();
 
     if (error) throw error;
+
+    // Add activity log entry and notify assigned employees
+    try {
+      // Get a project for the client to associate with
+      const { data: clientProject } = await supabase
+        .from('client_projects')
+        .select('project_id')
+        .eq('client_id', user.id)
+        .limit(1)
+        .single();
+
+      if (clientProject) {
+        await supabase.from('activity_log').insert({
+          project_id: clientProject.project_id,
+          action_type: 'feature_request',
+          actor_id: user.id,
+          action_data: { request_title: input.title, request_id: data.id },
+          is_client_visible: true,
+        });
+
+        await notifyAssignedEmployees(
+          clientProject.project_id,
+          `Client submitted feature request: ${input.title}`,
+          {
+            request_id: data.id,
+            action_type: 'feature_request',
+          }
+        );
+      }
+    } catch (err) {
+      console.error('[createFeatureRequest] Activity/notification error:', err);
+    }
 
     revalidatePath('/portal/requests');
     revalidatePath('/portal');
