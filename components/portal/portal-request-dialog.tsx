@@ -91,7 +91,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5">
+        <Button size="default" className="h-10 gap-1.5">
           <Plus className="h-4 w-4" />
           New Request
         </Button>
