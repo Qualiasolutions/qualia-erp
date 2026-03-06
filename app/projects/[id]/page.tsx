@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getProjectById, getProfiles, getCurrentUserProfile } from '@/app/actions';
+import { getProjectIntegrationStatus } from '@/lib/integration-utils';
 import { ProjectDetailView } from './project-detail-view';
 
 function ProjectDetailSkeleton() {
@@ -28,10 +29,11 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   await connection();
 
   // Fetch all data in parallel on the server
-  const [project, profiles, userProfile] = await Promise.all([
+  const [project, profiles, userProfile, integrationStatus] = await Promise.all([
     getProjectById(id),
     getProfiles(),
     getCurrentUserProfile(),
+    getProjectIntegrationStatus(id),
   ]);
 
   if (!project) {
@@ -48,6 +50,7 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
       project={project}
       profiles={profiles}
       userRole={userProfile?.role || 'employee'}
+      integrationStatus={integrationStatus}
     />
   );
 }

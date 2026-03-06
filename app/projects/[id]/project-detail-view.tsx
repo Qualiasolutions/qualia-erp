@@ -51,7 +51,9 @@ import { ProjectResources } from '@/components/project-resources';
 import { LogoUpload } from '@/components/logo-upload';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { ProjectIntegrationsDisplay } from '@/components/project-integrations-display';
+import { IntegrationStatusBadge } from '@/components/portal/integration-status-badge';
 import type { ProjectType, ProjectGroup } from '@/types/database';
+import type { IntegrationStatus } from '@/lib/integration-utils';
 
 const PROJECT_TYPES: {
   value: ProjectType;
@@ -122,12 +124,14 @@ interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
   userRole?: 'admin' | 'employee';
+  integrationStatus?: IntegrationStatus;
 }
 
 export function ProjectDetailView({
   project: initialProject,
   profiles,
   userRole = 'employee',
+  integrationStatus,
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -263,6 +267,13 @@ export function ProjectDetailView({
                 >
                   {project.status}
                 </span>
+                {integrationStatus && (
+                  <IntegrationStatusBadge
+                    hasPortalAccess={integrationStatus.hasPortalAccess}
+                    hasERPClient={integrationStatus.hasERPClient}
+                    variant="detailed"
+                  />
+                )}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {selectedProjectType && (
