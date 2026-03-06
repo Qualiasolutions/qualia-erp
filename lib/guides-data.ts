@@ -1,7 +1,14 @@
-// Guide data for trainee workflows
+// Guide data for Qualia workflow walkthroughs
+// Each guide is a comprehensive step-by-step walkthrough of the real Qualia workflow
 
 export type GuideCategory = 'greenfield' | 'brownfield' | 'workflow';
-export type ProjectType = 'website' | 'ai-agent' | 'voice-agent' | 'ai-platform' | 'workflow';
+export type ProjectType =
+  | 'website'
+  | 'ai-agent'
+  | 'voice-agent'
+  | 'ai-platform'
+  | 'mobile-app'
+  | 'workflow';
 
 export interface GuideStep {
   id: string;
@@ -29,1459 +36,1009 @@ export interface Guide {
 }
 
 export const guides: Guide[] = [
-  // ==================== GREENFIELD ====================
+  // ==================== GREENFIELD: NEW WEBSITE ====================
   {
     slug: 'greenfield-website',
     title: 'Build a New Website',
-    subtitle: 'Next.js + Supabase + Vercel',
+    subtitle: 'Full walkthrough: Next.js + Supabase + Vercel from zero to production',
     category: 'greenfield',
     projectType: 'website',
     steps: [
+      // --- SETUP ---
       {
-        id: 'gw-1',
-        title: 'Open Terminal & Go to Project Folder',
-        commands: ['cd ~/Desktop/Projects/websites', 'mkdir my-new-site', 'cd my-new-site'],
+        id: 'nw-1',
+        title: 'Create Your Project Folder',
+        description:
+          'Open your terminal and create a new directory for the project. This is where all your code will live.',
+        commands: ['cd ~/Projects', 'mkdir my-website', 'cd my-website'],
       },
       {
-        id: 'gw-2',
+        id: 'nw-2',
         title: 'Start Claude Code',
+        description:
+          'Launch Claude Code inside your project folder. This is your AI development partner for the entire build.',
         commands: ['claude'],
       },
+      // --- NEW PROJECT ---
       {
-        id: 'gw-3',
-        title: 'Initialize Your Project',
+        id: 'nw-3',
+        title: 'Initialize the Qualia Project',
         description:
-          "Type this command, then answer Claude's questions about what you're building.",
-        commands: ['/gsd:new-project'],
+          "This kicks off the structured project setup. Claude will ask you deep questions about what you're building — your audience, features, pages, design preferences, and goals. Answer thoroughly; this shapes the entire project.",
+        commands: ['/qualia:new-project'],
         tips: [
-          '"I\'m building a landing page for a dentist clinic. It needs a hero section, services section, about section, contact form, and testimonials. Use Next.js 15, Supabase for the contact form submissions, and deploy to Vercel."',
+          'Be specific about what you\'re building. Example: "A landing page for a dental clinic with hero section, services grid, team profiles, testimonials carousel, contact form with Supabase, and Google Maps embed. RTL Arabic support. Modern, clean design with blue/white palette."',
+          'Mention your stack preferences if any — Claude defaults to Next.js 16+, React 19, TypeScript, Tailwind v4, Supabase, Vercel.',
+          'If you have reference sites, mention them: "Similar layout to stripe.com but for healthcare"',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'nw-4',
+        title: 'Claude Creates PROJECT.md',
+        description:
+          'After the Q&A, Claude writes PROJECT.md — a document capturing your requirements, constraints, and decisions. It also picks a project template (website template with ~6 phases) and writes ROADMAP.md with all the phases.',
+        tips: [
+          "Read through PROJECT.md when Claude shows it. Correct anything that's off — this is the source of truth for the whole build.",
+          'The roadmap typically has: Foundation (auth + layout), Core Pages, Dynamic Content, Forms & Interactions, Polish & SEO, Deploy.',
         ],
       },
       {
-        id: 'gw-4',
-        title: 'Discuss Phase 1',
-        description: 'Claude will ask questions to understand exactly what to build.',
-        commands: ['/gsd:discuss-phase 1'],
+        id: 'nw-5',
+        title: 'Environment Setup',
+        description:
+          'Claude detects which services you need (Supabase, Vercel, env vars) and walks you through setup. It will ask if you have these configured.',
+        tips: [
+          'Have your Supabase project URL and anon key ready (from supabase.com dashboard).',
+          'Have your Vercel account linked to your Git repo.',
+          'Claude creates .env.local with your keys — never commit this file.',
+        ],
+        warning:
+          'If you skip environment setup, things will break during execution. Better to set it up now.',
+      },
+      // --- PHASE 1: FOUNDATION ---
+      {
+        id: 'nw-6',
+        title: 'Discuss Phase 1 (Foundation)',
+        description:
+          'Before planning, Claude helps you think through gray areas — decisions that affect implementation. For a website foundation, this might be: navigation style, auth flow, color scheme, layout structure.',
+        commands: ['/qualia:discuss-phase 1'],
+        tips: [
+          'Claude identifies gray areas and lets you pick which to discuss.',
+          'For each area, describe how you imagine it: "I want a sticky header with logo left, nav links center, and a CTA button right"',
+          'Say "Claude\'s Discretion" for areas you don\'t have strong opinions on.',
+          'This creates CONTEXT.md — a decision document that feeds into planning.',
+        ],
       },
       {
-        id: 'gw-5',
+        id: 'nw-7',
+        title: 'Clear Context Window',
+        description:
+          'Discussion filled up context. Clear it before planning so Claude has room to work.',
+        commands: ['/clear'],
+        warning:
+          'Always /clear between major phases (discuss → plan → execute). This is important — a full context window leads to worse output.',
+      },
+      {
+        id: 'nw-8',
         title: 'Plan Phase 1',
-        commands: ['/gsd:plan-phase 1'],
-      },
-      {
-        id: 'gw-6',
-        title: 'Build Phase 1',
-        commands: ['/gsd:execute-phase 1'],
-      },
-      {
-        id: 'gw-7',
-        title: 'Repeat for Each Phase',
-        description: 'Keep going through all phases in your roadmap:',
-        commands: ['/gsd:discuss-phase 2', '/gsd:plan-phase 2', '/gsd:execute-phase 2'],
-        tips: ['Then phase 3, 4, etc. until done.'],
-      },
-      {
-        id: 'gw-8',
-        title: 'If You Need Nice UI Design',
-        commands: ['/fd'],
+        description:
+          'Claude reads your CONTEXT.md decisions and ROADMAP.md goals, then creates detailed implementation plans. Plans are grouped into waves that can execute in parallel. Each plan has specific tasks, acceptance criteria, and skill references.',
+        commands: ['/qualia:plan-phase 1'],
         tips: [
-          '"Design a modern hero section with a gradient background, large headline, subtext, and a CTA button"',
+          'Claude spawns a planner agent, then a checker agent to verify the plans.',
+          'If the checker finds issues, they loop (up to 3 times) until plans are solid.',
+          'Plans reference skills like @supabase and @frontend-master so the executor knows HOW to build.',
         ],
       },
       {
-        id: 'gw-9',
-        title: 'If You Need Database Tables',
-        commands: ['/sb'],
+        id: 'nw-9',
+        title: 'Clear Context Window',
+        commands: ['/clear'],
+      },
+      {
+        id: 'nw-10',
+        title: 'Execute Phase 1',
+        description:
+          'Claude reads the plans and executes them wave by wave. Parallel tasks run simultaneously via subagents. Each completed plan gets a SUMMARY.md documenting what was built.',
+        commands: ['/qualia:execute-phase 1'],
         tips: [
-          '"Create a contact_submissions table with name, email, phone, message, and created_at columns. Add RLS policy so only authenticated users can read."',
+          'This is where actual code gets written — components, layouts, auth, database setup.',
+          'Claude follows the skill files (Supabase patterns, frontend conventions) automatically.',
+          'Each plan execution commits code to git with a descriptive message.',
+          'If something fails, Claude retries up to 3 times before flagging it.',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'nw-11',
+        title: 'Clear Context Window',
+        commands: ['/clear'],
+      },
+      {
+        id: 'nw-12',
+        title: 'Verify Phase 1',
+        description:
+          "Claude runs automated tests (if they exist), then walks you through manual UAT — one test at a time. It tells you what SHOULD happen, and you confirm or describe what's different.",
+        commands: ['/qualia:verify-work 1'],
+        tips: [
+          'Open your app in the browser first: npm run dev',
+          'For each test, Claude describes expected behavior. Type "pass" if it works, or describe the issue.',
+          'Claude infers severity from your description — no need to rate things yourself.',
+          'If issues are found, Claude automatically diagnoses root causes and plans fixes.',
+        ],
+      },
+      // --- PHASES 2-6: REPEAT ---
+      {
+        id: 'nw-13',
+        title: 'Clear Context Window',
+        commands: ['/clear'],
+      },
+      {
+        id: 'nw-14',
+        title: 'Repeat for Phase 2 (Core Pages)',
+        description:
+          'Same cycle: discuss → clear → plan → clear → execute → clear → verify. Phase 2 typically builds your main pages — homepage sections, about, services, etc.',
+        commands: [
+          '/qualia:discuss-phase 2',
+          '/clear',
+          '/qualia:plan-phase 2',
+          '/clear',
+          '/qualia:execute-phase 2',
+          '/clear',
+          '/qualia:verify-work 2',
+        ],
+        tips: [
+          'Each phase builds on the previous one. Phase 1 gave you the shell; Phase 2 fills it with content.',
+          'If you need to stop mid-project, just close the terminal. Run /qualia:resume-work next time.',
         ],
       },
       {
-        id: 'gw-10',
-        title: 'Check Everything Works',
-        commands: ['/gsd:verify-work'],
+        id: 'nw-15',
+        title: 'Continue Through Remaining Phases',
+        description:
+          'Repeat the discuss → plan → execute → verify cycle for each remaining phase. A typical website has 5-6 phases covering dynamic content, forms, polish/SEO, and final integration.',
+        commands: [
+          '/qualia:discuss-phase 3',
+          '/qualia:plan-phase 3',
+          '/qualia:execute-phase 3',
+          '/qualia:verify-work 3',
+        ],
+        tips: [
+          'Later phases handle: dynamic data, contact forms, SEO meta tags, Open Graph images, responsive polish.',
+          "Don't forget /clear between each major step.",
+          'If you skip discuss-phase and go straight to plan, Claude will plan without your context input — works but less tailored.',
+        ],
+      },
+      // --- COMPLETION ---
+      {
+        id: 'nw-16',
+        title: 'Complete the Milestone',
+        description:
+          'When all phases are done, run complete-milestone. Claude checks all summaries, ensures everything is verified, deploys to production (via /ship-website), creates a git tag, and updates STATE.md.',
+        commands: ['/qualia:complete-milestone'],
+        tips: [
+          'Claude runs the full deploy pipeline: TypeScript check → ESLint → Build → SEO check → Responsive check → Preview deploy → Production deploy → Post-deploy verification.',
+          'If any quality gate fails, Claude stops and tells you what to fix.',
+        ],
+        isMilestone: true,
       },
       {
-        id: 'gw-11',
-        title: 'Save Your Code',
-        commands: ['/git-flow'],
+        id: 'nw-17',
+        title: 'Post-Deploy Verification',
+        description:
+          "After deployment, Claude verifies: HTTP 200, auth flow, no console errors, API latency under 500ms, SEO tags present in live HTML. You'll get a full report.",
+        tips: [
+          'Run Lighthouse for a detailed performance/SEO audit: npx lighthouse https://your-site.com',
+          'Test on mobile — resize browser or use Chrome DevTools device mode.',
+          'Check that all environment variables are set in Vercel dashboard.',
+        ],
       },
       {
-        id: 'gw-12',
-        title: 'Deploy to Vercel',
-        commands: ['/quick-deploy'],
-      },
-      {
-        id: 'gw-13',
-        title: 'Mark Project Complete',
-        commands: ['/gsd:complete-milestone'],
+        id: 'nw-18',
+        title: 'Your Website is Live!',
+        description:
+          'The project is tagged, deployed, and verified. Your .planning/ folder contains the full history — PROJECT.md, ROADMAP.md, all phase plans, summaries, and UAT results.',
+        tips: [
+          'To resume work later or add features, use the "Add Feature to Production" walkthrough.',
+          'Your rollback plan: vercel rollback (instant revert to previous deploy).',
+        ],
+        isMilestone: true,
       },
     ],
     checklist: {
-      title: 'Before You Deploy - Check These',
+      title: 'Production Readiness Checklist',
       items: [
-        'Site works on mobile',
-        'All links work',
-        'Forms submit correctly',
-        'Images load fast',
-        'No console errors',
-        'Supabase env vars in Vercel',
+        'All phases verified with /qualia:verify-work',
+        'TypeScript compiles with zero errors (npx tsc --noEmit)',
+        'No ESLint warnings (npx eslint . --max-warnings 0)',
+        'Site works on mobile (responsive)',
+        'All links work and forms submit correctly',
+        'SEO meta tags present (viewport, og:title, og:description)',
+        'Environment variables set in Vercel dashboard',
+        'Supabase RLS policies enabled on all tables',
+        'No console errors in production',
+        'Lighthouse score above 90 for performance',
       ],
     },
   },
+
+  // ==================== GREENFIELD: NEW AI AGENT ====================
   {
     slug: 'greenfield-ai-agent',
     title: 'Build a New AI Chat Agent',
-    subtitle: 'Chatbot with Supabase backend',
+    subtitle: 'Full walkthrough: conversational AI with memory, tools, and safety guardrails',
     category: 'greenfield',
     projectType: 'ai-agent',
     steps: [
       {
-        id: 'ga-1',
-        title: 'Open Terminal & Go to Project Folder',
-        commands: ['cd ~/Desktop/Projects/aiagents', 'mkdir my-chatbot', 'cd my-chatbot'],
+        id: 'na-1',
+        title: 'Create Your Project Folder',
+        commands: ['cd ~/Projects', 'mkdir my-ai-agent', 'cd my-ai-agent'],
       },
       {
-        id: 'ga-2',
+        id: 'na-2',
         title: 'Start Claude Code',
         commands: ['claude'],
       },
       {
-        id: 'ga-3',
-        title: 'Initialize Your Project',
-        commands: ['/gsd:new-project'],
+        id: 'na-3',
+        title: 'Initialize the Qualia Project',
+        description:
+          "Describe your AI agent in detail — what it does, who it's for, what data it accesses, what actions it can take.",
+        commands: ['/qualia:new-project'],
         tips: [
-          '"I\'m building a customer support chatbot for a SaaS product. It should answer questions about pricing, features, and troubleshooting. It needs to save conversation history in Supabase. Use OpenAI GPT-4o for the AI. Build a simple chat interface with Next.js."',
+          'Example: "A customer support agent for an e-commerce store. It answers questions about orders, shipping, returns, and products. It connects to our Supabase database to look up real order data. Uses Claude as the LLM. Has a chat widget that embeds on our website."',
+          'Mention if the agent needs: tool calling, RAG (retrieval), conversation memory, multi-turn context, admin dashboard.',
+          'Specify safety needs: "Agent should never make promises about refunds without checking policy"',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'na-4',
+        title: 'Claude Creates Your Project Structure',
+        description:
+          'Claude picks the AI agent template (~6 phases) and creates PROJECT.md + ROADMAP.md. The AI agent template phases typically cover: Foundation, AI Core (LLM integration), Conversation Management, Tools & Actions, Safety & Guardrails, Deploy.',
+        tips: [
+          'The AI agent template includes production resilience by default: token limits, circuit breakers, timeout protection.',
+          "Review ROADMAP.md — if you need RAG, make sure there's a phase for document ingestion.",
         ],
       },
       {
-        id: 'ga-4',
-        title: 'Work Through Each Phase',
-        description: 'For each phase in your roadmap:',
-        commands: ['/gsd:discuss-phase 1', '/gsd:plan-phase 1', '/gsd:execute-phase 1'],
+        id: 'na-5',
+        title: 'Environment Setup',
+        description:
+          'Set up API keys for your LLM provider, Supabase, and any external services the agent will call.',
+        tips: [
+          "You'll need: ANTHROPIC_API_KEY or OPENAI_API_KEY, SUPABASE_URL, SUPABASE_ANON_KEY.",
+          'If using tool calling with external APIs, have those keys ready too.',
+        ],
+        warning:
+          'AI agents are expensive to run without token limits. Claude configures maxTokens on all AI calls by default.',
+      },
+      // --- PHASE CYCLE ---
+      {
+        id: 'na-6',
+        title: 'Discuss Phase 1 (Foundation)',
+        description:
+          'For an AI agent, foundation gray areas include: chat UI style, message persistence, user identification, streaming vs. non-streaming responses.',
+        commands: ['/qualia:discuss-phase 1'],
       },
       {
-        id: 'ga-5',
-        title: 'Set Up Your Database',
-        commands: ['/sb'],
+        id: 'na-7',
+        title: 'Clear → Plan → Clear → Execute → Clear → Verify',
+        description: 'Run the full cycle for Phase 1. Always clear context between steps.',
+        commands: [
+          '/clear',
+          '/qualia:plan-phase 1',
+          '/clear',
+          '/qualia:execute-phase 1',
+          '/clear',
+          '/qualia:verify-work 1',
+        ],
         tips: [
-          '"Create tables for conversations and messages. Conversations should have id, user_id, created_at, title. Messages should have id, conversation_id, role (user or assistant), content, created_at."',
+          'Phase 1 builds: Next.js app shell, Supabase connection, conversation storage, basic chat UI.',
+          'After verify, Claude diagnoses any issues and plans fixes automatically.',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'na-8',
+        title: 'Phase 2: AI Core',
+        description:
+          'The LLM integration phase — connecting to your AI provider, setting up the chat completion flow, handling streaming, managing system prompts.',
+        commands: [
+          '/qualia:discuss-phase 2',
+          '/clear',
+          '/qualia:plan-phase 2',
+          '/clear',
+          '/qualia:execute-phase 2',
+          '/clear',
+          '/qualia:verify-work 2',
+        ],
+        tips: [
+          'During discuss, specify: "I want streaming responses with a typing indicator" or "batch responses are fine".',
+          'Claude configures token limits and timeout protection on all AI API routes.',
+          'The system prompt is critical — discuss it in detail during discuss-phase.',
         ],
       },
       {
-        id: 'ga-6',
-        title: 'Build the Chat UI',
-        commands: ['/fd'],
-        tips: [
-          '"Design a clean chat interface with a message list, input box at the bottom, and a typing indicator. Make it look modern like ChatGPT."',
+        id: 'na-9',
+        title: 'Phase 3: Conversation Management',
+        description:
+          'Multi-turn context, conversation history, message threading, conversation list/sidebar.',
+        commands: [
+          '/qualia:discuss-phase 3',
+          '/clear',
+          '/qualia:plan-phase 3',
+          '/clear',
+          '/qualia:execute-phase 3',
+          '/clear',
+          '/qualia:verify-work 3',
         ],
       },
       {
-        id: 'ga-7',
-        title: 'Test the Agent',
-        description: 'Run your app locally and have a few test conversations. Make sure:',
+        id: 'na-10',
+        title: 'Phase 4: Tools & Actions',
+        description:
+          'If your agent needs to DO things (look up orders, check inventory, send emails), this phase adds tool calling. Claude sets up function definitions, tool execution, and result formatting.',
+        commands: [
+          '/qualia:discuss-phase 4',
+          '/clear',
+          '/qualia:plan-phase 4',
+          '/clear',
+          '/qualia:execute-phase 4',
+          '/clear',
+          '/qualia:verify-work 4',
+        ],
         tips: [
-          'Messages save to database',
-          'Agent responds correctly',
-          'Conversation history works',
+          'During discuss: list every action the agent should be able to take.',
+          'Claude adds circuit breakers on external API calls to prevent cascading failures.',
         ],
       },
       {
-        id: 'ga-8',
-        title: 'Verify Everything',
-        commands: ['/gsd:verify-work'],
+        id: 'na-11',
+        title: 'Phase 5: Safety & Guardrails',
+        description:
+          'Content filtering, prompt injection protection, rate limiting, usage tracking, admin monitoring dashboard.',
+        commands: [
+          '/qualia:discuss-phase 5',
+          '/clear',
+          '/qualia:plan-phase 5',
+          '/clear',
+          '/qualia:execute-phase 5',
+          '/clear',
+          '/qualia:verify-work 5',
+        ],
+        warning:
+          'Never skip the safety phase for production AI agents. Unguarded agents can be exploited.',
       },
       {
-        id: 'ga-9',
-        title: 'Save & Deploy',
-        commands: ['/git-flow', '/quick-deploy'],
+        id: 'na-12',
+        title: 'Phase 6: Deploy & Production Hardening',
+        description:
+          'Final polish, performance optimization, error monitoring (Sentry), production deployment.',
+        commands: [
+          '/qualia:discuss-phase 6',
+          '/clear',
+          '/qualia:plan-phase 6',
+          '/clear',
+          '/qualia:execute-phase 6',
+          '/clear',
+          '/qualia:verify-work 6',
+        ],
       },
       {
-        id: 'ga-10',
-        title: 'Done!',
-        commands: ['/gsd:complete-milestone'],
+        id: 'na-13',
+        title: 'Complete the Milestone',
+        description:
+          'Claude runs the full production deploy pipeline including: TypeScript check, lint, build, webhook idempotency check, timeout protection check, circuit breaker check, token limits check, Sentry configuration check.',
+        commands: ['/qualia:complete-milestone'],
+        tips: [
+          "The AI agent ship pipeline checks production resilience patterns that don't apply to simple websites.",
+          'Run a load test if your agent will handle concurrent users.',
+        ],
+        isMilestone: true,
       },
     ],
     checklist: {
-      title: 'Before You Deploy - Check These',
+      title: 'AI Agent Production Checklist',
       items: [
-        'OPENAI_API_KEY in Vercel',
-        'Supabase keys in Vercel',
-        'Agent responds correctly',
-        'Messages save to DB',
-        'No API key in frontend code',
-        'Rate limiting works',
+        'All phases verified with /qualia:verify-work',
+        'Token limits set on all AI API calls (maxTokens)',
+        'Timeout protection on API routes (export const maxDuration)',
+        'Circuit breakers on external API calls',
+        'Webhook idempotency implemented (deduplication logic)',
+        'Rate limiting configured per user/IP',
+        'System prompt reviewed for injection vulnerabilities',
+        "Conversation history has size limits (don't send 100K tokens per request)",
+        'Error monitoring active (Sentry configured)',
+        'Supabase RLS policies enabled on all tables',
+        'Environment variables set in production',
+        'Streaming responses handle disconnections gracefully',
       ],
     },
   },
+
+  // ==================== GREENFIELD: NEW VOICE AGENT ====================
   {
     slug: 'greenfield-voice-agent',
     title: 'Build a New Voice Agent',
-    subtitle: 'VAPI + Supabase phone agent',
+    subtitle:
+      'Full walkthrough: real-time voice AI with telephony, transcription, and response generation',
     category: 'greenfield',
     projectType: 'voice-agent',
     steps: [
       {
-        id: 'gv-1',
-        title: 'Open Terminal & Go to Project Folder',
-        commands: ['cd ~/Desktop/Projects/voice', 'mkdir my-voice-agent', 'cd my-voice-agent'],
+        id: 'nv-1',
+        title: 'Create Your Project Folder',
+        commands: ['cd ~/Projects', 'mkdir my-voice-agent', 'cd my-voice-agent'],
       },
       {
-        id: 'gv-2',
+        id: 'nv-2',
         title: 'Start Claude Code',
         commands: ['claude'],
       },
       {
-        id: 'gv-3',
-        title: 'Initialize Your Project',
-        commands: ['/gsd:new-project'],
+        id: 'nv-3',
+        title: 'Initialize the Qualia Project',
+        description:
+          'Describe your voice agent — what calls it handles, what language(s), what integrations, what the conversation flow looks like.',
+        commands: ['/qualia:new-project'],
         tips: [
-          '"I\'m building a voice agent for a restaurant that handles reservations. It should answer phone calls, check available times, book reservations, and send confirmation SMS. Use VAPI for voice, Supabase for storing reservations, and deploy webhooks to Vercel."',
+          'Example: "A voice agent for a restaurant that handles reservations. It answers the phone, asks how many guests, preferred date/time, and name. It checks availability against our Supabase database and confirms or suggests alternatives. Supports English and Arabic. Uses Twilio for telephony, Deepgram for transcription, and Claude for response generation."',
+          'Specify latency requirements — voice needs sub-500ms response time.',
+          'Mention if you need: call recording, sentiment analysis, handoff to human, outbound calling.',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'nv-4',
+        title: 'Claude Creates Your Project Structure',
+        description:
+          'Claude picks the voice agent template (~6 phases). Typical phases: Foundation, Telephony Integration, Speech Pipeline (STT + TTS), Conversation Logic, Call Management, Deploy.',
+        tips: [
+          'Voice agents need edge functions for low latency — Claude uses Supabase Edge Functions or Vercel Edge.',
+          'The template includes latency budgets and real-time WebSocket patterns.',
         ],
       },
       {
-        id: 'gv-4',
-        title: 'Work Through Each Phase',
-        commands: ['/gsd:discuss-phase 1', '/gsd:plan-phase 1', '/gsd:execute-phase 1'],
+        id: 'nv-5',
+        title: 'Environment Setup',
+        description:
+          'Voice agents need more API keys than typical projects — telephony provider, speech-to-text, text-to-speech, LLM.',
+        tips: [
+          'Typical keys needed: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, DEEPGRAM_API_KEY, ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.',
+          'Some providers (like Vapi or Retell) bundle telephony + speech into one SDK.',
+        ],
+        warning:
+          'Voice API costs add up fast. Set up usage alerts in your provider dashboards before going live.',
       },
       {
-        id: 'gv-5',
-        title: 'Set Up Database for Calls',
-        commands: ['/sb'],
+        id: 'nv-6',
+        title: 'Phase 1: Foundation',
+        description:
+          'Base infrastructure — Next.js app, Supabase connection, webhook endpoints, basic call routing.',
+        commands: [
+          '/qualia:discuss-phase 1',
+          '/clear',
+          '/qualia:plan-phase 1',
+          '/clear',
+          '/qualia:execute-phase 1',
+          '/clear',
+          '/qualia:verify-work 1',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'nv-7',
+        title: 'Phase 2: Telephony Integration',
+        description:
+          'Connect to Twilio/Vonage/Vapi — handle inbound calls, set up WebSocket streams, configure phone numbers.',
+        commands: [
+          '/qualia:discuss-phase 2',
+          '/clear',
+          '/qualia:plan-phase 2',
+          '/clear',
+          '/qualia:execute-phase 2',
+          '/clear',
+          '/qualia:verify-work 2',
+        ],
         tips: [
-          '"Create tables for: calls (id, vapi_call_id, phone_number, status, duration, created_at), reservations (id, call_id, customer_name, customer_phone, date, time, party_size, created_at)"',
+          'During discuss: specify your telephony provider and whether you need inbound, outbound, or both.',
+          'Test with your actual phone — Claude will set up ngrok or a tunnel for local testing.',
         ],
       },
       {
-        id: 'gv-6',
-        title: 'Build the VAPI Voice Agent',
-        commands: ['/va'],
+        id: 'nv-8',
+        title: 'Phase 3: Speech Pipeline',
+        description:
+          'Speech-to-text transcription and text-to-speech synthesis. Real-time audio streaming, language detection, voice selection.',
+        commands: [
+          '/qualia:discuss-phase 3',
+          '/clear',
+          '/qualia:plan-phase 3',
+          '/clear',
+          '/qualia:execute-phase 3',
+          '/clear',
+          '/qualia:verify-work 3',
+        ],
         tips: [
-          '"Create a VAPI assistant for restaurant reservations. It should greet callers, ask for their name, party size, preferred date and time, check availability, and confirm the booking. Use a friendly female voice."',
+          'During discuss: pick your voices (male/female, language, accent).',
+          'If supporting Arabic: specify dialect (Gulf, Levantine, Egyptian, MSA).',
+          'Latency is critical here — Claude configures streaming transcription, not batch.',
         ],
       },
       {
-        id: 'gv-7',
-        title: 'Create Webhook Handlers',
-        commands: ['/supabase-edge'],
+        id: 'nv-9',
+        title: 'Phase 4: Conversation Logic',
+        description:
+          'The AI brain — system prompt, conversation state machine, decision making, tool calling (database lookups, booking actions).',
+        commands: [
+          '/qualia:discuss-phase 4',
+          '/clear',
+          '/qualia:plan-phase 4',
+          '/clear',
+          '/qualia:execute-phase 4',
+          '/clear',
+          '/qualia:verify-work 4',
+        ],
         tips: [
-          '"Create an edge function to handle VAPI webhooks. It should handle: function-call events for check_availability and book_reservation, and end-of-call-report to save the call transcript."',
+          'Map out the conversation flow: greeting → identify intent → gather info → take action → confirm → goodbye.',
+          'Handle interruptions — users talk over the agent. Discuss how to handle this.',
+          'Set timeouts — if user goes silent for 10 seconds, what happens?',
         ],
       },
       {
-        id: 'gv-8',
-        title: 'Test in VAPI Dashboard',
-        description: 'Go to VAPI dashboard → Your assistant → Test tab → Make a test call',
+        id: 'nv-10',
+        title: 'Phase 5: Call Management',
+        description:
+          'Call recording, logging, analytics, admin dashboard, human handoff, call queue management.',
+        commands: [
+          '/qualia:discuss-phase 5',
+          '/clear',
+          '/qualia:plan-phase 5',
+          '/clear',
+          '/qualia:execute-phase 5',
+          '/clear',
+          '/qualia:verify-work 5',
+        ],
       },
       {
-        id: 'gv-9',
-        title: 'Connect a Phone Number',
-        description: 'In VAPI dashboard:',
-        tips: ['Go to Phone Numbers', 'Buy or import a number', 'Assign your assistant to it'],
+        id: 'nv-11',
+        title: 'Phase 6: Deploy & Production Hardening',
+        description:
+          'Edge function deployment for low latency, monitoring, error handling, load testing.',
+        commands: [
+          '/qualia:discuss-phase 6',
+          '/clear',
+          '/qualia:plan-phase 6',
+          '/clear',
+          '/qualia:execute-phase 6',
+          '/clear',
+          '/qualia:verify-work 6',
+        ],
       },
       {
-        id: 'gv-10',
-        title: 'Test with Real Phone Call',
-        description: 'Call your number and test the full flow.',
-      },
-      {
-        id: 'gv-11',
-        title: 'Verify & Deploy',
-        commands: ['/gsd:verify-work', '/git-flow', '/quick-deploy', '/gsd:complete-milestone'],
+        id: 'nv-12',
+        title: 'Complete the Milestone',
+        description:
+          'Full deploy pipeline including voice-specific checks: edge function latency, WebSocket stability, telephony webhook verification.',
+        commands: ['/qualia:complete-milestone'],
+        tips: [
+          'Claude checks that edge functions respond under 200ms.',
+          'Webhook endpoints are verified with actual test calls.',
+          'Call quality metrics are baseline-tested before going live.',
+        ],
+        isMilestone: true,
       },
     ],
     checklist: {
-      title: 'Before You Go Live - Check These',
+      title: 'Voice Agent Production Checklist',
       items: [
-        'VAPI_API_KEY in Vercel',
-        'Webhook URL correct in VAPI',
-        'All functions work',
-        'Calls save to database',
-        'No awkward pauses',
-        'Transfer to human works',
+        'All phases verified with /qualia:verify-work',
+        'Edge functions deploy successfully and respond under 200ms',
+        'Telephony webhooks are idempotent (handle duplicate events)',
+        'WebSocket connections handle disconnects gracefully',
+        'Timeout protection on all API routes',
+        'Circuit breakers on external APIs (Twilio, Deepgram, LLM)',
+        'Token limits set on LLM calls',
+        'Call recording complies with local laws (consent requirements)',
+        'Silence/timeout handling tested',
+        'Human handoff path tested end-to-end',
+        'Load tested with concurrent call simulation',
+        'Error monitoring active (Sentry)',
+        'Usage alerts configured on telephony and speech providers',
       ],
     },
   },
+
+  // ==================== GREENFIELD: NEW MOBILE APP ====================
   {
-    slug: 'greenfield-ai-platform',
-    title: 'Build a New AI Platform',
-    subtitle: 'Multi-user platform with admin panel (takes multiple milestones)',
+    slug: 'greenfield-mobile-app',
+    title: 'Build a New Mobile App',
+    subtitle: 'Full walkthrough: React Native Expo + NestJS + Supabase from zero to app stores',
     category: 'greenfield',
-    projectType: 'ai-platform',
+    projectType: 'mobile-app',
     steps: [
       {
-        id: 'gp-1',
-        title: 'Open Terminal & Go to Project Folder',
-        commands: ['cd ~/Desktop/Projects/platforms', 'mkdir my-ai-platform', 'cd my-ai-platform'],
+        id: 'nm-1',
+        title: 'Create Your Project Folder',
+        commands: ['cd ~/Projects', 'mkdir my-app', 'cd my-app'],
       },
       {
-        id: 'gp-2',
+        id: 'nm-2',
         title: 'Start Claude Code',
         commands: ['claude'],
       },
       {
-        id: 'gp-3',
-        title: 'Initialize Your Project',
-        commands: ['/gsd:new-project'],
+        id: 'nm-3',
+        title: 'Initialize the Qualia Project',
+        description:
+          'Describe your mobile app — what it does, target platform (iOS/Android/both), key screens, user roles, and any backend requirements.',
+        commands: ['/qualia:new-project'],
         tips: [
-          '"I\'m building a SaaS platform where businesses can create their own AI chatbots. Features needed: user signup/login, organization management, create multiple AI agents per org, chat interface for end users, admin dashboard to see all conversations, usage analytics, and Stripe billing. Use Next.js, Supabase, OpenAI."',
+          'Example: "A property management app for HOAs in Saudi Arabia. Tenants can view their unit, pay dues, submit maintenance requests, and see announcements. Admins can manage properties, verify tenants, process payments, and send notifications. RTL Arabic + English. Uses Expo for mobile, NestJS for backend API, Supabase for database and auth."',
+          'Mention if you need: push notifications, offline support, camera/gallery access, maps, payment processing.',
+          'Specify platform: "iOS and Android via Expo" — Claude uses the mobile-app template.',
         ],
-      },
-      {
-        id: 'gp-m1',
-        title: 'MILESTONE 1: Auth & Organizations',
         isMilestone: true,
-        description: 'Work through all Phase 1 phases:',
-        commands: ['/gsd:discuss-phase 1', '/gsd:plan-phase 1', '/gsd:execute-phase 1'],
       },
       {
-        id: 'gp-m1-db',
-        title: 'Set up multi-tenant database',
-        commands: ['/sb'],
+        id: 'nm-4',
+        title: 'Claude Creates Your Project Structure',
+        description:
+          'Claude picks the mobile-app template. This is a monorepo structure with separate folders for the Expo app and NestJS backend. Typical phases: Foundation, Auth & User Management, Core Features, Payments & Financial, Notifications, App Store Prep.',
         tips: [
-          '"Create tables: organizations (id, name, created_at), users (id, email, name), memberships (id, user_id, org_id, role). Add RLS so users only see their own org\'s data."',
+          'The monorepo has: /apps/mobile (Expo), /apps/api (NestJS), /packages/shared (types, utils).',
+          'Claude configures Expo Router for file-based navigation.',
+          'RTL support is built in from Phase 1 if you mentioned Arabic.',
         ],
       },
       {
-        id: 'gp-m1-done',
-        title: 'Complete Milestone 1',
-        commands: ['/gsd:verify-work', '/git-flow', '/quick-deploy', '/gsd:complete-milestone'],
+        id: 'nm-5',
+        title: 'Environment Setup',
+        description:
+          'Mobile apps need more setup than web — Expo account, Firebase for push notifications, payment provider keys.',
+        tips: [
+          'Keys needed: SUPABASE_URL, SUPABASE_ANON_KEY, EXPO_PROJECT_ID.',
+          'For push notifications: FIREBASE_PROJECT_ID, google-services.json (Android), GoogleService-Info.plist (iOS).',
+          'For payments: STRIPE_SECRET_KEY or HYPERPAY_ENTITY_ID depending on region.',
+        ],
+        warning:
+          'iOS builds require a Mac with Xcode. Android builds work anywhere. Expo EAS handles both.',
       },
       {
-        id: 'gp-m2',
-        title: 'MILESTONE 2: AI Agents',
+        id: 'nm-6',
+        title: 'Phase 1: Foundation',
+        description:
+          'Expo project setup, navigation structure, Supabase connection, NestJS API scaffold, shared types package, RTL configuration.',
+        commands: [
+          '/qualia:discuss-phase 1',
+          '/clear',
+          '/qualia:plan-phase 1',
+          '/clear',
+          '/qualia:execute-phase 1',
+          '/clear',
+          '/qualia:verify-work 1',
+        ],
+        tips: [
+          'During discuss: specify your navigation pattern — tab bar? drawer? stack-only?',
+          'Claude sets up Expo Router with typed routes from the start.',
+          'Foundation includes: i18n setup (Arabic + English), theme system, base components.',
+        ],
         isMilestone: true,
-        commands: ['/gsd:new-milestone'],
+      },
+      {
+        id: 'nm-7',
+        title: 'Phase 2: Auth & User Management',
+        description:
+          'Login/signup flows (OTP, email, social), role-based access (tenant vs admin), profile management, tenant verification.',
+        commands: [
+          '/qualia:discuss-phase 2',
+          '/clear',
+          '/qualia:plan-phase 2',
+          '/clear',
+          '/qualia:execute-phase 2',
+          '/clear',
+          '/qualia:verify-work 2',
+        ],
         tips: [
-          '"This milestone adds the AI agent functionality. Users can create agents, configure them with custom prompts, and chat with them."',
+          'Supabase Auth handles the heavy lifting. Claude wires up the mobile auth flow.',
+          'For Saudi apps: OTP via SMS is standard. Discuss which SMS provider to use.',
+          'RBAC is configured at the NestJS API level with guards + Supabase RLS at the database level.',
         ],
       },
       {
-        id: 'gp-m2-done',
-        title: 'Complete Milestone 2',
-        description: 'Work through phases, then:',
-        commands: ['/gsd:complete-milestone'],
+        id: 'nm-8',
+        title: 'Phase 3: Core Features',
+        description:
+          'The main screens and functionality — whatever makes your app useful. For a property app: unit dashboard, maintenance requests, announcements, document viewer.',
+        commands: [
+          '/qualia:discuss-phase 3',
+          '/clear',
+          '/qualia:plan-phase 3',
+          '/clear',
+          '/qualia:execute-phase 3',
+          '/clear',
+          '/qualia:verify-work 3',
+        ],
+        tips: [
+          'During discuss: walk through each screen in detail. What does the user see? What can they tap?',
+          'Claude uses React Native best practices: FlatList for lists, proper keyboard avoidance, platform-specific styling.',
+        ],
       },
       {
-        id: 'gp-m3',
-        title: 'MILESTONE 3: Admin Dashboard',
+        id: 'nm-9',
+        title: 'Phase 4: Payments & Financial',
+        description:
+          'Payment processing, dues tracking, receipts, payment history. Uses your chosen provider (Stripe, HyperPay, etc.).',
+        commands: [
+          '/qualia:discuss-phase 4',
+          '/clear',
+          '/qualia:plan-phase 4',
+          '/clear',
+          '/qualia:execute-phase 4',
+          '/clear',
+          '/qualia:verify-work 4',
+        ],
+        tips: [
+          'Payments go through the NestJS backend, never directly from the mobile app.',
+          'Claude sets up a financial ledger pattern — every money movement is double-entry recorded.',
+          'Test with sandbox/test credentials before going live.',
+        ],
+        warning:
+          'Never store card numbers in your database. Use tokenized payments through your provider.',
+      },
+      {
+        id: 'nm-10',
+        title: 'Phase 5: Notifications',
+        description:
+          'Push notifications via Firebase Cloud Messaging, in-app notification center, device token management.',
+        commands: [
+          '/qualia:discuss-phase 5',
+          '/clear',
+          '/qualia:plan-phase 5',
+          '/clear',
+          '/qualia:execute-phase 5',
+          '/clear',
+          '/qualia:verify-work 5',
+        ],
+        tips: [
+          'During discuss: list every notification type (payment due, maintenance update, new announcement, etc.).',
+          'Claude configures Firebase for both iOS and Android.',
+          'Notification preferences (per-type opt-in/out) are handled in the app settings screen.',
+        ],
+      },
+      {
+        id: 'nm-11',
+        title: 'Phase 6: App Store Prep & Deploy',
+        description:
+          'App icons, splash screens, app store screenshots, EAS Build configuration, production API deployment, store submission.',
+        commands: [
+          '/qualia:discuss-phase 6',
+          '/clear',
+          '/qualia:plan-phase 6',
+          '/clear',
+          '/qualia:execute-phase 6',
+          '/clear',
+          '/qualia:verify-work 6',
+        ],
+        tips: [
+          'Expo EAS Build handles the native builds — no Xcode/Android Studio needed for CI.',
+          'Claude generates app.json with proper bundle identifiers, version numbers, and permissions.',
+          'Store submission is manual — Claude prepares all the assets and metadata you need.',
+        ],
+      },
+      {
+        id: 'nm-12',
+        title: 'Complete the Milestone',
+        description:
+          'Full deploy: NestJS API to production, Expo build via EAS, Supabase migrations pushed, git tagged.',
+        commands: ['/qualia:complete-milestone'],
         isMilestone: true,
-        commands: ['/gsd:new-milestone', '/admin-panel'],
-        tips: [
-          '"Build an admin dashboard showing: all organizations, all users, all agents, conversation logs, and basic usage stats."',
-        ],
-      },
-      {
-        id: 'gp-m4',
-        title: 'MILESTONE 4: Billing & Polish',
-        isMilestone: true,
-        commands: ['/gsd:new-milestone', '/gsd:quick'],
-        tips: [
-          '"Add Stripe subscription billing. Create 3 plans: Free (100 messages/month), Pro ($29/month, 5000 messages), Enterprise ($99/month, unlimited). Track usage and show warnings when approaching limits."',
-        ],
-      },
-      {
-        id: 'gp-m4-audit',
-        title: 'Final Production Check',
-        commands: ['/pr'],
-      },
-      {
-        id: 'gp-final',
-        title: 'Final Deploy',
-        commands: ['/full-deploy', '/gsd:complete-milestone'],
       },
     ],
     checklist: {
-      title: 'Platform Checklist',
+      title: 'Mobile App Production Checklist',
       items: [
-        "Users can't see other orgs' data",
-        'RLS on ALL tables',
-        'Billing tracks usage correctly',
-        'Admin can see everything',
-        'Rate limiting works',
-        'Error tracking (Sentry) set up',
+        'All phases verified with /qualia:verify-work',
+        'TypeScript compiles with zero errors',
+        'App runs on both iOS and Android (test via Expo Go or dev build)',
+        'RTL layout works correctly for Arabic',
+        'Push notifications work on real devices',
+        'Payments tested in sandbox mode end-to-end',
+        'Offline graceful degradation (no crashes without network)',
+        'Deep links work correctly',
+        'App icons and splash screen configured',
+        'EAS Build succeeds for both platforms',
+        'API rate limiting and auth guards active',
+        'Supabase RLS policies enabled on all tables',
+        'App store metadata and screenshots prepared',
+        'Privacy policy and terms of service URLs set',
       ],
     },
   },
 
-  // ==================== BROWNFIELD ====================
+  // ==================== BROWNFIELD: ADD FEATURE TO PRODUCTION ====================
   {
-    slug: 'brownfield-website',
-    title: 'Work on Existing Website',
-    subtitle: 'Add features or fix bugs',
+    slug: 'brownfield-add-feature',
+    title: 'Add a Feature to a Live Project',
+    subtitle: 'Safely add features to production without breaking what works',
     category: 'brownfield',
-    projectType: 'website',
-    steps: [
-      {
-        id: 'bw-1',
-        title: 'Go to the Project Folder',
-        commands: ['cd ~/Desktop/Projects/websites/existing-project-name'],
-      },
-      {
-        id: 'bw-2',
-        title: 'Check Git Status',
-        description: "Make sure you're on the right branch and have no uncommitted changes.",
-        commands: ['git status && git branch'],
-      },
-      {
-        id: 'bw-3',
-        title: 'Start Claude Code',
-        commands: ['claude'],
-      },
-      {
-        id: 'bw-4',
-        title: 'Explore the Codebase First',
-        description: 'ALWAYS do this before making changes!',
-        commands: ['/brownfield-explore'],
-        tips: [
-          '"I need to add a new pricing page. Show me how pages are structured in this project and where the pricing data might come from."',
-        ],
-      },
-      {
-        id: 'bw-5',
-        title: 'Create a Feature Branch',
-        commands: ['git checkout -b feature/pricing-page'],
-      },
-      {
-        id: 'bw-6a',
-        title: 'For Small Changes - Use Quick Mode',
-        commands: ['/gsd:quick'],
-        tips: [
-          '"Add a new pricing page at /pricing with 3 tiers: Basic ($9/mo), Pro ($29/mo), Enterprise (Contact us). Match the existing page style and component patterns."',
-        ],
-      },
-      {
-        id: 'bw-6b',
-        title: 'For Bigger Features - Use Full GSD',
-        commands: ['/gsd:new-milestone'],
-        tips: ['Then work through phases:'],
-      },
-      {
-        id: 'bw-6b-phases',
-        title: 'Work Through Phases',
-        commands: ['/gsd:discuss-phase 1', '/gsd:plan-phase 1', '/gsd:execute-phase 1'],
-      },
-      {
-        id: 'bw-7',
-        title: 'If You Need UI Design Help',
-        commands: ['/fd'],
-        tips: [
-          '"Design a pricing cards section that matches the existing site style. 3 cards with features lists and CTA buttons."',
-        ],
-      },
-      {
-        id: 'bw-8',
-        title: 'If Something Breaks',
-        commands: ['/sf'],
-        tips: [
-          '"The pricing page throws an error when I click the Pro plan button. Here\'s the error: [paste error]"',
-        ],
-      },
-      {
-        id: 'bw-9',
-        title: 'Test Your Changes',
-        description: 'Run the app locally and check:',
-        tips: ['Your new feature works', 'Old features still work', 'Mobile looks good'],
-      },
-      {
-        id: 'bw-10',
-        title: 'Save & Create PR',
-        commands: ['/git-flow'],
-        tips: ['"Commit my changes and create a pull request"'],
-      },
-      {
-        id: 'bw-11',
-        title: 'Deploy',
-        commands: ['/quick-deploy'],
-      },
-    ],
-    checklist: {
-      title: 'Before You Deploy - Check These',
-      items: [
-        'Explored codebase first',
-        'Followed existing patterns',
-        'New feature works',
-        'Old features still work',
-        'Mobile responsive',
-        'No console errors',
-      ],
-    },
-  },
-  {
-    slug: 'brownfield-ai-agent',
-    title: 'Modify Existing AI Agent',
-    subtitle: 'Add features or improve behavior',
-    category: 'brownfield',
-    projectType: 'ai-agent',
-    steps: [
-      {
-        id: 'ba-1',
-        title: 'Go to the Project Folder',
-        commands: ['cd ~/Desktop/Projects/aiagents/existing-agent'],
-      },
-      {
-        id: 'ba-2',
-        title: 'Check Git Status',
-        commands: ['git status && git branch'],
-      },
-      {
-        id: 'ba-3',
-        title: 'Start Claude Code',
-        commands: ['claude'],
-      },
-      {
-        id: 'ba-4',
-        title: 'Explore the Agent Code',
-        commands: ['/brownfield-explore'],
-        tips: [
-          '"Show me how this agent works. Where is the system prompt? What tools/functions does it have? How does it save conversations?"',
-        ],
-      },
-      {
-        id: 'ba-5',
-        title: 'Create Feature Branch',
-        commands: ['git checkout -b feature/add-calendar-tool'],
-      },
-      {
-        id: 'ba-6a',
-        title: 'To Change Agent Behavior',
-        commands: ['/gsd:quick'],
-        tips: [
-          '"Update the system prompt so the agent is more concise and always asks clarifying questions before giving long answers."',
-        ],
-      },
-      {
-        id: 'ba-6b',
-        title: 'To Add a New Tool',
-        commands: ['/gsd:quick'],
-        tips: [
-          "\"Add a new tool called 'check_calendar' that lets the agent look up available meeting slots. It should query the Supabase 'calendar_slots' table.\"",
-        ],
-      },
-      {
-        id: 'ba-6c',
-        title: 'To Add a New Integration',
-        commands: ['/channel-integration'],
-        tips: ['"Add Slack integration so this agent can respond to messages in Slack channels."'],
-      },
-      {
-        id: 'ba-7',
-        title: 'Test the Agent',
-        description: 'Have test conversations:',
-        tips: [
-          'Test the new feature works',
-          'Test old features still work',
-          'Test edge cases (weird inputs)',
-          'Test same scenario multiple times',
-        ],
-      },
-      {
-        id: 'ba-8',
-        title: 'If Agent Misbehaves',
-        commands: ['/sf'],
-        tips: [
-          "\"The agent isn't using the new calendar tool. It just says 'I can't check calendars' even though I added the tool.\"",
-        ],
-      },
-      {
-        id: 'ba-9',
-        title: 'Save & Deploy',
-        commands: ['/git-flow', '/quick-deploy'],
-      },
-    ],
-    checklist: {
-      title: 'Before You Deploy - Check These',
-      items: [
-        'Explored code first',
-        'New feature works',
-        'Old features work',
-        'Tested multiple times',
-        'No API keys exposed',
-        'Error handling works',
-      ],
-    },
-  },
-  {
-    slug: 'brownfield-voice-agent',
-    title: 'Modify Existing Voice Agent',
-    subtitle: 'Change VAPI agent behavior or add features',
-    category: 'brownfield',
-    projectType: 'voice-agent',
-    steps: [
-      {
-        id: 'bv-1',
-        title: 'Go to the Project Folder',
-        commands: ['cd ~/Desktop/Projects/voice/existing-voice-agent'],
-      },
-      {
-        id: 'bv-2',
-        title: 'Check Git Status',
-        commands: ['git status && git branch'],
-      },
-      {
-        id: 'bv-3',
-        title: 'Start Claude Code',
-        commands: ['claude'],
-      },
-      {
-        id: 'bv-4',
-        title: 'Explore the Webhook Code',
-        commands: ['/brownfield-explore'],
-        tips: [
-          '"Show me how this voice agent works. What VAPI webhooks does it handle? What functions does the agent have?"',
-        ],
-      },
-      {
-        id: 'bv-5',
-        title: 'Check VAPI Dashboard',
-        description: 'Go to VAPI dashboard and note:',
-        tips: [
-          'Assistant name and ID',
-          'Current system prompt',
-          'Functions defined',
-          'Voice settings',
-        ],
-      },
-      {
-        id: 'bv-6',
-        title: 'Create Feature Branch',
-        commands: ['git checkout -b feature/add-transfer'],
-      },
-      {
-        id: 'bv-7a',
-        title: 'To Change What the Agent Says',
-        description: 'Edit the system prompt in VAPI Dashboard → Assistant → Edit',
-      },
-      {
-        id: 'bv-7b',
-        title: 'To Add a New Function',
-        commands: ['/gsd:quick'],
-        tips: [
-          '"Add a transfer_to_human function to the VAPI agent. When called, it should transfer the call to +1234567890. Add the handler in the webhook."',
-        ],
-      },
-      {
-        id: 'bv-7c',
-        title: 'To Change the Voice',
-        description: 'VAPI Dashboard → Assistant → Voice → Choose new voice',
-      },
-      {
-        id: 'bv-7d',
-        title: 'To Add a New Webhook Handler',
-        commands: ['/supabase-edge'],
-        tips: [
-          '"Add a handler for the \'transcript\' event that saves each message in realtime to Supabase."',
-        ],
-      },
-      {
-        id: 'bv-8',
-        title: 'Test in VAPI Dashboard First',
-        description: 'VAPI Dashboard → Your Assistant → Test tab → Make a web call',
-      },
-      {
-        id: 'bv-9',
-        title: 'Test with Real Phone Call',
-        description: 'Call your number and test:',
-        tips: [
-          'New feature works',
-          'Old features still work',
-          'No awkward pauses',
-          'Functions respond quickly',
-        ],
-      },
-      {
-        id: 'bv-10',
-        title: "If Something Doesn't Work",
-        commands: ['/sf'],
-        tips: [
-          '"The transfer_to_human function isn\'t working. The agent says it will transfer but nothing happens. Here\'s what I see in the logs: [paste logs]"',
-        ],
-      },
-      {
-        id: 'bv-11',
-        title: 'Deploy Webhook Changes',
-        description: 'Note: VAPI dashboard changes are instant. Only webhook code needs deploying.',
-        commands: ['/git-flow', '/quick-deploy'],
-      },
-    ],
-    checklist: {
-      title: 'Before You Go Live - Check These',
-      items: [
-        'Web call test passed',
-        'Real phone call test passed',
-        'All functions work',
-        'No awkward silences',
-        'Webhook URL is correct',
-        'Calls save to database',
-      ],
-    },
-  },
-  {
-    slug: 'brownfield-ai-platform',
-    title: 'Modify Existing AI Platform',
-    subtitle: 'Add features to multi-user platform (be careful!)',
-    category: 'brownfield',
-    projectType: 'ai-platform',
-    steps: [
-      {
-        id: 'bp-warn',
-        title: 'WARNING: Platform Changes Affect Everyone',
-        warning:
-          'Platforms have multiple users. A bug affects ALL of them. Always test thoroughly and deploy during low-traffic times.',
-      },
-      {
-        id: 'bp-1',
-        title: 'Go to the Project Folder',
-        commands: ['cd ~/Desktop/Projects/platforms/existing-platform'],
-      },
-      {
-        id: 'bp-2',
-        title: 'Check Git Status',
-        commands: ['git status && git branch'],
-      },
-      {
-        id: 'bp-3',
-        title: 'Start Claude Code',
-        commands: ['claude'],
-      },
-      {
-        id: 'bp-4',
-        title: 'Explore the Codebase Thoroughly',
-        commands: ['/brownfield-explore'],
-        tips: [
-          '"I need to add a usage analytics dashboard. Show me how the platform is structured, how data is isolated per organization, and where analytics might fit."',
-        ],
-      },
-      {
-        id: 'bp-4b',
-        title: 'For Deeper Understanding',
-        commands: ['/gsd:analyze-codebase'],
-      },
-      {
-        id: 'bp-5',
-        title: 'Create Feature Branch',
-        commands: ['git checkout -b feature/usage-analytics'],
-      },
-      {
-        id: 'bp-6a',
-        title: 'For Small Changes (UI tweaks, admin features)',
-        commands: ['/gsd:quick'],
-        tips: [
-          '"Add a usage chart to the admin dashboard showing messages per day for the last 30 days. Only super admins should see this."',
-        ],
-      },
-      {
-        id: 'bp-6b',
-        title: 'For Medium Changes (new features)',
-        commands: ['/gsd:new-milestone'],
-        tips: [
-          '"Add usage analytics feature. Each organization should see their own usage stats. Include: messages sent, API calls made, and cost estimate."',
-        ],
-      },
-      {
-        id: 'bp-6b-phases',
-        title: 'Work Through Phases',
-        commands: ['/gsd:discuss-phase 1', '/gsd:plan-phase 1', '/gsd:execute-phase 1'],
-      },
-      {
-        id: 'bp-6c',
-        title: 'For Big Changes (database, auth, billing)',
-        isMilestone: true,
-        description: 'Do extra planning and run production audit first:',
-        commands: ['/pr'],
-        tips: ['Then use full GSD with careful testing.'],
-      },
-      {
-        id: 'bp-7',
-        title: 'If You Need Database Changes',
-        commands: ['/sb'],
-        tips: [
-          '"Add a usage_logs table to track API calls per organization. Include: org_id, endpoint, tokens_used, cost, created_at. Add RLS so each org only sees their own data."',
-        ],
-      },
-      {
-        id: 'bp-8',
-        title: 'Test As Different Users',
-        description: 'Test your changes as:',
-        tips: [
-          'Super admin',
-          'Organization admin',
-          'Regular user',
-          'User from DIFFERENT organization (check isolation!)',
-        ],
-      },
-      {
-        id: 'bp-9',
-        title: 'Verify Data Isolation',
-        description: 'Ask Claude to check:',
-        tips: [
-          '"Check if User A from Organization 1 can see any data from Organization 2. Test the new usage_logs table specifically."',
-        ],
-      },
-      {
-        id: 'bp-10',
-        title: 'Deploy to Staging First',
-        commands: ['/git-flow'],
-        tips: ['Deploy to staging and test there before production.'],
-      },
-      {
-        id: 'bp-11',
-        title: 'Deploy to Production (Off-Peak Hours)',
-        commands: ['/full-deploy'],
-        tips: ['Monitor for 24 hours. Be ready to rollback.'],
-      },
-    ],
-    checklist: {
-      title: 'Platform Change Checklist',
-      items: [
-        'Explored codebase first',
-        'Understood multi-tenant structure',
-        'RLS policies correct',
-        'Tested as all user types',
-        'Data isolation verified',
-        'Deployed to staging first',
-        'Production deploy off-peak',
-        'Monitoring active',
-      ],
-    },
-  },
-
-  // ==================== WORKFLOWS ====================
-  {
-    slug: 'vercel-basics',
-    title: 'Vercel — How We Deploy',
-    subtitle: 'Deployments, env vars, domains, rollbacks',
-    category: 'workflow',
     projectType: 'workflow',
     steps: [
       {
-        id: 'vb-1',
-        title: 'What is Vercel?',
-        description:
-          'Vercel hosts our websites and apps. When you push code to GitHub, Vercel automatically builds and deploys it. Every project gets a URL like yourproject.vercel.app.',
+        id: 'bf-1',
+        title: 'Open Your Existing Project',
+        description: "Navigate to your existing project that's already in production.",
+        commands: ['cd ~/Projects/my-existing-app'],
       },
       {
-        id: 'vb-2',
-        title: 'Deploying Your Project',
-        description: 'The normal way: push to GitHub and Vercel auto-deploys from the main branch.',
-        commands: ['git push origin main'],
+        id: 'bf-2',
+        title: 'Start Claude Code',
+        commands: ['claude'],
+      },
+      {
+        id: 'bf-3',
+        title: 'Resume Your Project',
+        description:
+          'If this project was built with Qualia, use resume-work to restore full context. Claude reads STATE.md, finds where you left off, and shows you the project status.',
+        commands: ['/qualia:resume-work'],
         tips: [
-          'For manual deploy: vercel --prod',
-          'Preview deploys happen on every branch push — use them to test before merging',
+          'Claude shows: project name, current phase/milestone, progress bar, any incomplete work.',
+          "If the project wasn't built with Qualia, Claude offers to map the existing codebase first.",
         ],
       },
       {
-        id: 'vb-3',
-        title: 'Adding Environment Variables',
+        id: 'bf-4',
+        title: 'Map the Codebase (If Needed)',
         description:
-          'Go to Vercel → Your Project → Settings → Environment Variables. Add each variable your app needs (Supabase URL, API keys, etc.).',
+          'If this is the first time using Qualia on an existing project, map the codebase so Claude understands the architecture.',
+        commands: ['/qualia:map-codebase'],
         tips: [
-          'Select which environments need it: Production, Preview, Development',
-          'After adding vars, you must redeploy for them to take effect',
-          'Never put secrets in your code — always use env vars',
+          'This creates a CODEBASE.md that documents: file structure, key patterns, database schema, routing, auth approach.',
+          'Claude reads this before planning any changes — prevents it from introducing patterns that conflict with existing code.',
         ],
       },
       {
-        id: 'vb-4',
-        title: 'Pulling Env Vars Locally',
-        description: 'Instead of copying vars one by one, pull them all at once:',
-        commands: ['npx vercel env pull .env.local'],
-        tips: ['.env.local is gitignored — it never gets committed'],
-      },
-      {
-        id: 'vb-5',
-        title: 'Custom Domains',
+        id: 'bf-5',
+        title: 'Create a New Milestone for the Feature',
         description:
-          'Vercel → Project → Settings → Domains → Add your domain. Then update DNS at the registrar:',
+          'Start a new milestone (project phase) for the feature you want to add. Describe what the feature is.',
+        commands: ['/qualia:new-project'],
         tips: [
-          'A record → 76.76.21.21',
-          'CNAME (www) → cname.vercel-dns.com',
-          'SSL is automatic — just wait a few minutes after DNS propagates',
-        ],
-      },
-      {
-        id: 'vb-6',
-        title: 'Checking Deployment Status',
-        commands: ['vercel ls', 'vercel inspect [deployment-url]'],
-        tips: [
-          'Green = deployed successfully',
-          'Red = build failed — check the build logs',
-          'Every push creates a unique deployment URL you can share for testing',
-        ],
-      },
-      {
-        id: 'vb-7',
-        title: 'Rolling Back if Something Breaks',
-        description:
-          "If a deploy breaks the site, don't panic. Promote the previous working deployment:",
-        commands: ['vercel ls', 'vercel promote [previous-deployment-url] --yes'],
-        tips: ['This instantly restores the old version while you figure out the fix'],
-      },
-    ],
-    checklist: {
-      title: 'Vercel Quick Reference',
-      items: [
-        'All env vars set in Vercel dashboard',
-        'Production branch is correct (usually main/master)',
-        'Custom domain DNS configured',
-        'Build passes before pushing',
-        'Know how to rollback if needed',
-      ],
-    },
-  },
-  {
-    slug: 'supabase-basics',
-    title: 'Supabase — Our Database',
-    subtitle: 'Dashboard, API keys, auth setup, storage',
-    category: 'workflow',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'sb-1',
-        title: 'What is Supabase?',
-        description:
-          'Supabase is our database + auth + file storage. Every project gets its own Supabase project with a PostgreSQL database, user authentication, and file storage.',
-      },
-      {
-        id: 'sb-2',
-        title: 'Finding Your API Keys',
-        description: 'Supabase Dashboard → Settings → API. You need two keys for every project:',
-        tips: [
-          'Project URL: https://[ref].supabase.co — goes in NEXT_PUBLIC_SUPABASE_URL',
-          'anon/public key: goes in NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — safe for frontend',
-          'service_role key: NEVER in frontend code — only for server-side or admin scripts',
-        ],
-        warning: 'The service_role key bypasses all security. Never expose it in client-side code.',
-      },
-      {
-        id: 'sb-3',
-        title: 'Setting Up Auth Redirect URLs',
-        description:
-          'This is the #1 thing trainees forget. Go to: Authentication → URL Configuration',
-        tips: [
-          'Site URL: set to your production URL (https://yourproject.vercel.app)',
-          'Redirect URLs: add https://yourproject.vercel.app/** AND http://localhost:3000/**',
-          'Without these, login/signup will fail or redirect to the wrong place',
-        ],
-      },
-      {
-        id: 'sb-4',
-        title: 'Checking Your Tables',
-        description:
-          'Table Editor shows all your data. Use it to verify data is being saved correctly, check if tables exist, and debug "no data showing" issues.',
-      },
-      {
-        id: 'sb-5',
-        title: 'Storage (File Uploads)',
-        description:
-          'Supabase Storage handles file uploads (logos, documents, images). Go to Storage in the dashboard to see buckets and files.',
-        tips: [
-          'Files are organized in buckets (like folders)',
-          'Each bucket has its own access policies',
-          'Public buckets = anyone can view. Private = need auth token',
-        ],
-      },
-      {
-        id: 'sb-6',
-        title: 'Paused Projects',
-        description:
-          'Free-tier projects pause after 7 days of inactivity. If a site suddenly stops loading data, check if the Supabase project is paused.',
-        tips: [
-          'Go to the Supabase Dashboard → the project will show a "Restore" button',
-          'Paid projects never pause',
-        ],
-      },
-      {
-        id: 'sb-7',
-        title: 'Logs (When Things Go Wrong)',
-        description:
-          'Database → Logs shows all queries, errors, and auth events. Check here when data queries fail or auth stops working.',
-      },
-    ],
-    checklist: {
-      title: 'Supabase Quick Reference',
-      items: [
-        'Know where to find API keys (Settings → API)',
-        'Auth redirect URLs configured for both local and production',
-        'Understand anon key vs service_role key',
-        'Know how to check if project is paused',
-        'Know where to find logs',
-      ],
-    },
-  },
-  {
-    slug: 'env-vars-guide',
-    title: 'Environment Variables',
-    subtitle: 'Where keys come from, how to set them everywhere',
-    category: 'workflow',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'ev-1',
-        title: 'What Are Env Vars?',
-        description:
-          'Environment variables are secrets (API keys, database URLs) that your app needs but should never be in your code. They live in .env files locally and in Vercel for production.',
-      },
-      {
-        id: 'ev-2',
-        title: 'Local Setup (.env.local)',
-        description:
-          'Create a .env.local file in your project root. This file is gitignored — it stays on your machine only.',
-        commands: ['cp .env.example .env.local'],
-        tips: [
-          'Or pull from Vercel: npx vercel env pull .env.local',
-          'After changing .env.local, restart your dev server (npm run dev)',
-        ],
-      },
-      {
-        id: 'ev-3',
-        title: 'The NEXT_PUBLIC_ Rule',
-        description:
-          'Variables that start with NEXT_PUBLIC_ are visible in the browser. Everything else is server-only.',
-        tips: [
-          "NEXT_PUBLIC_SUPABASE_URL — OK in browser (it's just a URL)",
-          'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY — OK in browser (read-only key)',
-          'SUPABASE_SERVICE_ROLE_KEY — NEVER public (full database access)',
-          'OPENAI_API_KEY — NEVER public (costs money if leaked)',
+          'Example: "Add a notification system to the existing dashboard. Users should get real-time notifications for new orders, low inventory alerts, and team mentions. Include a notification bell in the header, a dropdown panel, and a full notification history page."',
+          'Claude will detect the existing .planning/ folder and create a new milestone (not overwrite).',
+          'For small features, this might be a single-phase milestone. For large features, it could be 3-4 phases.',
         ],
         warning:
-          'If a secret key starts with NEXT_PUBLIC_, anyone can see it. Double-check before adding.',
+          'Always work on a git branch for production changes. Claude creates one for you during execution.',
       },
       {
-        id: 'ev-4',
-        title: 'Where Each Key Comes From',
-        description: 'Quick reference for finding API keys:',
-        tips: [
-          'Supabase URL + anon key → Supabase Dashboard → Settings → API',
-          'Supabase service_role → same place, keep it secret',
-          'OpenAI/Google AI keys → Their developer dashboards',
-          'VAPI keys → VAPI Dashboard → Settings',
-          'Resend (email) → Resend Dashboard → API Keys',
-        ],
-      },
-      {
-        id: 'ev-5',
-        title: 'Adding to Vercel',
+        id: 'bf-6',
+        title: 'Discuss the Feature',
         description:
-          'Vercel → Project → Settings → Environment Variables. Add each one and select which environments need it.',
+          'Claude identifies gray areas specific to adding this feature to your existing codebase — integration points, data model changes, UI placement, migration strategy.',
+        commands: ['/qualia:discuss-phase 1'],
         tips: [
-          'You MUST redeploy after adding/changing env vars',
-          'Use "vercel env ls" to see what\'s currently set',
+          'Brownfield discuss is more focused than greenfield — Claude asks about how the new feature fits with what exists.',
+          'Key questions will be about: where in the UI it lives, what existing tables it relates to, how it affects existing API routes.',
+          'Mention any constraints: "Don\'t change the existing header component, add a slot for the notification bell instead"',
         ],
       },
       {
-        id: 'ev-6',
-        title: 'Common Problems',
-        description: "If your app can't connect to the database or an API:",
-        tips: [
-          "Check if the var exists in Vercel (maybe it's only local)",
-          'Check for typos in the variable name',
-          'Check if you redeployed after adding the var',
-          'Check if the key is expired or revoked',
-          'Check .env.example to see what vars are needed',
-        ],
-      },
-    ],
-    checklist: {
-      title: 'Env Vars Checklist',
-      items: [
-        '.env.local exists and has all needed vars',
-        'Same vars are in Vercel for production',
-        'No secrets start with NEXT_PUBLIC_',
-        '.env.local is in .gitignore',
-        'Redeployed after changing Vercel vars',
-      ],
-    },
-  },
-  {
-    slug: 'git-workflow',
-    title: 'Git & GitHub Workflow',
-    subtitle: 'Branches, commits, PRs — the Qualia way',
-    category: 'workflow',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'gw-1',
-        title: 'The Golden Rule',
-        description: 'Never commit directly to main/master. Always use a feature branch.',
-        warning:
-          'Pushing broken code to main breaks the live site (Vercel auto-deploys from main).',
-      },
-      {
-        id: 'gw-2',
-        title: 'Starting New Work',
-        description: 'Always start from the latest main branch:',
-        commands: [
-          'git checkout main',
-          'git pull origin main',
-          'git checkout -b feature/what-youre-building',
-        ],
-        tips: [
-          'Branch names: feature/xyz for new stuff, fix/xyz for bug fixes',
-          'Keep branch names short and descriptive',
-        ],
-      },
-      {
-        id: 'gw-3',
-        title: 'Saving Your Work (Commits)',
-        description: 'Commit often with clear messages:',
-        commands: ['git add [specific files]', 'git commit -m "feat: add contact form"'],
-        tips: [
-          'feat: = new feature',
-          'fix: = bug fix',
-          'style: = CSS/visual changes',
-          'docs: = documentation',
-          'refactor: = restructuring code (no behavior change)',
-        ],
-      },
-      {
-        id: 'gw-4',
-        title: 'Pushing to GitHub',
-        commands: ['git push -u origin feature/your-branch-name'],
-        tips: [
-          'The -u flag links your local branch to the remote one',
-          'After the first push, just "git push" works',
-          'Pushing creates a preview deployment on Vercel automatically',
-        ],
-      },
-      {
-        id: 'gw-5',
-        title: 'Creating a Pull Request',
-        description: 'After pushing, create a PR to merge your work into main:',
-        commands: [
-          'gh pr create --title "feat: add contact form" --body "Added contact form with validation"',
-        ],
-        tips: [
-          'Or go to GitHub → your repo → "Compare & pull request" button',
-          'Write a short description of what you changed and why',
-        ],
-      },
-      {
-        id: 'gw-6',
-        title: 'After PR is Approved',
-        commands: ['gh pr merge', 'git checkout main', 'git pull origin main'],
-        tips: ['Vercel auto-deploys when main is updated'],
-      },
-      {
-        id: 'gw-7',
-        title: 'Common Situations',
-        description: 'Things that happen and how to handle them:',
-        tips: [
-          'Wrong branch? git stash → git checkout right-branch → git stash pop',
-          'Behind main? git checkout main → git pull → git checkout your-branch → git merge main',
-          'Need to undo last commit? git reset --soft HEAD~1',
-          'Messed everything up? Ask Fawzi before doing anything destructive',
-        ],
-      },
-    ],
-    checklist: {
-      title: 'Git Quick Reference',
-      items: [
-        'Working on a feature branch (not main)',
-        'Commits have clear prefix messages',
-        'Pushed to GitHub before EOD',
-        'PR created for review',
-        'No .env files in the commit',
-      ],
-    },
-  },
-  {
-    slug: 'qualia-commands',
-    title: 'Claude Code Commands',
-    subtitle: 'Slash commands and daily workflows',
-    category: 'workflow',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'qc-1',
-        title: 'Starting Claude Code',
+        id: 'bf-7',
+        title: 'Clear → Plan',
         description:
-          'Open your terminal, navigate to the project folder, and type "claude". Claude reads the project\'s CLAUDE.md file to understand the codebase.',
-        commands: ['cd ~/Desktop/Projects/[category]/[project]', 'claude'],
-      },
-      {
-        id: 'qc-2',
-        title: 'Building Features (GSD Commands)',
-        description: 'These commands manage the full build cycle:',
-        commands: [
-          '/qualia:new-project — Start a brand new project',
-          '/qualia:plan-phase 1 — Plan what to build',
-          '/qualia:execute-phase 1 — Build it',
-          '/qualia:verify-work — Check everything works',
-          '/qualia:quick — Quick task (skip full planning)',
-        ],
-      },
-      {
-        id: 'qc-3',
-        title: 'Specialist Commands',
-        description: 'Call in specialists for specific work:',
-        commands: [
-          '/frontend-master — Build UI components and design',
-          '/supabase — Database operations (tables, RLS, migrations)',
-          '/voice-agent — Build/modify VAPI voice agents',
-          '/debug — Fix bugs systematically',
-          '/responsive — Fix mobile/tablet layout issues',
-        ],
-      },
-      {
-        id: 'qc-4',
-        title: 'Deployment Commands',
-        description: 'Get your code live:',
-        commands: [
-          '/ship — Full deploy pipeline (lint, test, build, deploy, verify)',
-          '/deploy — Deploy to Vercel',
-          '/deploy-verify — Run post-deploy checks',
-        ],
-      },
-      {
-        id: 'qc-5',
-        title: 'Quality Commands',
-        description: 'Check code quality:',
-        commands: [
-          '/review — Code review and security audit',
-          '/audit — Quick project health check',
-          '/test-runner — Run tests and generate coverage',
-        ],
-      },
-      {
-        id: 'qc-6',
-        title: 'Daily Workflow',
-        description: 'A typical workday using Claude Code:',
+          'Claude plans the implementation, taking care to work with existing patterns rather than introducing new ones.',
+        commands: ['/clear', '/qualia:plan-phase 1'],
         tips: [
-          '1. Open terminal → cd to project → "claude"',
-          '2. Check what needs doing: /qualia:progress',
-          '3. Build: /qualia:execute-phase or /qualia:quick for small tasks',
-          '4. Test: /qualia:verify-work',
-          '5. Deploy: /ship or /deploy',
-          '6. Before closing: /handoff to save context',
+          'The planner reads CODEBASE.md to understand existing patterns.',
+          'Plans will reference existing files to modify rather than creating parallel structures.',
+          "Database migrations are additive — Claude won't modify existing tables, only add new ones or add columns.",
         ],
       },
       {
-        id: 'qc-7',
-        title: 'Talking to Claude',
-        description: 'You can just talk to Claude in plain English:',
-        tips: [
-          '"Add a contact form to the homepage" — Claude builds it',
-          '"This button doesn\'t work" — Claude debugs it',
-          '"Make this look better on mobile" — Claude fixes responsive',
-          '"Deploy this to production" — Claude runs the deploy pipeline',
-          'Be specific about what you want. More detail = better results.',
-        ],
-      },
-    ],
-    checklist: {
-      title: 'Commands Quick Reference',
-      items: [
-        'Know the build cycle: plan → execute → verify',
-        'Know specialist commands for UI, DB, voice',
-        'Know how to deploy: /ship or /deploy',
-        'Know how to check progress: /qualia:progress',
-        'Save context before closing: /handoff',
-      ],
-    },
-  },
-  {
-    slug: 'troubleshooting',
-    title: 'When Things Break',
-    subtitle: 'Systematic checklist for common problems',
-    category: 'workflow',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'ts-1',
-        title: 'White Screen / "Application Error"',
-        description: 'Usually a build error or missing env var.',
-        tips: [
-          'Run "npm run build" locally — does it pass?',
-          'Check Vercel → Deployments → build logs for errors',
-          'Check Vercel → Settings → Environment Variables — all vars present?',
-          'Common: a file was deleted but still imported somewhere',
-        ],
-      },
-      {
-        id: 'ts-2',
-        title: "Login Doesn't Work",
-        description: 'Almost always a Supabase auth URL issue.',
-        tips: [
-          'Supabase → Authentication → URL Configuration',
-          'Site URL must be your production URL (not localhost)',
-          'Redirect URLs must include both production/** and localhost:3000/**',
-          'After changing these, test in an incognito window',
-        ],
-      },
-      {
-        id: 'ts-3',
-        title: "Data Doesn't Load",
-        description: 'Could be Supabase connection, RLS, or paused project.',
-        tips: [
-          'Is the Supabase project paused? (free tier pauses after 7 days)',
-          'Are the env vars correct? (check project ref matches)',
-          'Is the table actually empty? Check Table Editor',
-          'Is RLS blocking? Ask your lead to check policies',
-        ],
-      },
-      {
-        id: 'ts-4',
-        title: '500 Server Error',
-        description: 'A server action or API route is crashing.',
-        tips: [
-          'Check Vercel function logs: "vercel logs"',
-          'Run locally: "npm run dev" and reproduce the error',
-          'Look at the terminal — the error message tells you the cause',
-          'Common: missing env var, changed DB column, expired API key',
-        ],
-      },
-      {
-        id: 'ts-5',
-        title: 'Site Looks Broken (CSS Issues)',
-        description: 'CSS not loading or layout messed up.',
-        tips: [
-          'Hard refresh: Ctrl+Shift+R (Cmd+Shift+R on Mac)',
-          "Check if it's only the custom domain (open vercel URL directly)",
-          'Redeploy: "vercel --prod"',
-          'For mobile issues use: /responsive',
-        ],
-      },
-      {
-        id: 'ts-6',
-        title: 'Site is Completely Down',
-        description: 'Could be Vercel or Supabase outage.',
-        tips: [
-          'Check vercel-status.com and status.supabase.com',
-          'Check if someone deployed recently: "vercel ls"',
-          'Check if an env var was deleted: "vercel env ls"',
-          'Nuclear option: rollback to previous deployment',
-        ],
-      },
-      {
-        id: 'ts-7',
-        title: 'Emergency Rollback',
-        description: "If the site is down for a client and you can't find the fix:",
-        commands: ['vercel ls', 'vercel promote [previous-working-url] --yes'],
-        tips: [
-          'This restores the old version instantly',
-          'Then investigate the root cause calmly',
-          'Always tell Fawzi when you do an emergency rollback',
-        ],
-      },
-      {
-        id: 'ts-8',
-        title: 'When to Escalate',
-        description: "Don't spend more than 30 minutes stuck. Reach out to Fawzi with:",
-        tips: [
-          "What's broken (specific error message or behavior)",
-          'What you tried (list what you checked)',
-          'Screenshots (error, logs, browser console)',
-          'A clear bug report saves everyone time',
-        ],
-      },
-    ],
-    checklist: {
-      title: 'Troubleshooting Quick Reference',
-      items: [
-        'Identify the symptom first (white screen? no data? 500 error?)',
-        'Check the obvious things (env vars, build, Supabase status)',
-        'Read error messages carefully — they usually tell you the cause',
-        "Don't guess — investigate systematically",
-        'Escalate after 30 minutes if stuck',
-        'Know how to rollback in emergencies',
-      ],
-    },
-  },
-  {
-    slug: 'daily-research',
-    title: 'Daily AI Research',
-    subtitle: 'Use Gemini Deep Research + NotebookLM to research daily',
-    category: 'workflow',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'dr-1',
-        title: "Check Your Inbox for Today's Research Task",
+        id: 'bf-8',
+        title: 'Clear → Execute',
         description:
-          "Open the Qualia dashboard. You'll see a daily research task in your inbox with today's topic.",
-      },
-      {
-        id: 'dr-2',
-        title: 'Open Gemini',
-        description: 'Go to gemini.google.com in your browser.',
-        commands: ['https://gemini.google.com'],
-      },
-      {
-        id: 'dr-3',
-        title: 'Use Deep Research',
-        description:
-          'Click "Deep Research" and paste today\'s topic. Gemini will search the web and compile a comprehensive report.',
+          'Claude builds the feature, committing to git as it goes. Each plan execution is a separate commit.',
+        commands: ['/clear', '/qualia:execute-phase 1'],
         tips: [
-          'Be specific with your topic for better results',
-          'Wait for the full report to generate',
+          "Claude creates a feature branch automatically if you're on main.",
+          'Watch for: import changes to existing files, new migration files, new API routes.',
+          'If TypeScript errors appear in existing code, Claude flags them rather than silently changing behavior.',
         ],
-      },
-      {
-        id: 'dr-4',
-        title: 'Copy the Research Output',
-        description: 'Select all the research output from Gemini and copy it to your clipboard.',
-      },
-      {
-        id: 'dr-5',
-        title: 'Open NotebookLM',
-        description: 'Go to notebooklm.google.com in your browser.',
-        commands: ['https://notebooklm.google.com'],
-      },
-      {
-        id: 'dr-6',
-        title: 'Create a Notebook & Paste Research',
-        description: 'Create a new notebook, then paste the Gemini research as a source document.',
-        tips: ["Name the notebook with today's date and topic"],
-      },
-      {
-        id: 'dr-7',
-        title: 'Ask NotebookLM to Summarize',
-        description: 'Ask NotebookLM to summarize the key findings and extract action items.',
-        tips: [
-          '"Summarize the top 5 key findings from this research"',
-          '"What are the actionable next steps for an AI agency?"',
-        ],
-      },
-      {
-        id: 'dr-8',
-        title: 'Go to Research Page in Qualia',
-        description: 'Navigate to /research in the Qualia app.',
-        commands: ['/research'],
-      },
-      {
-        id: 'dr-9',
-        title: 'Log Your Research',
-        description:
-          'Click "Log Research" and fill in the form with your findings, key takeaways, action items, and source links.',
-        tips: ['Use the category that matches your topic', 'Add source links for reference'],
-      },
-      {
-        id: 'dr-10',
-        title: 'Mark Task Done',
-        description: 'Go back to your inbox and mark the research task as Done.',
         isMilestone: true,
       },
+      {
+        id: 'bf-9',
+        title: 'Clear → Verify',
+        description:
+          'Test that the new feature works AND that existing functionality is not broken.',
+        commands: ['/clear', '/qualia:verify-work 1'],
+        tips: [
+          'Claude runs existing tests first — if they fail, something broke.',
+          'Then walks you through manual UAT of the new feature.',
+          'Test the integration points specifically: does the new feature play nicely with existing pages?',
+        ],
+        warning:
+          'If existing tests break, fix them before deploying. This is the whole point of brownfield safety.',
+      },
+      {
+        id: 'bf-10',
+        title: 'Preview Deploy',
+        description:
+          'Deploy to a preview URL first. Test the feature in a production-like environment before going live.',
+        tips: [
+          'Claude runs: vercel (without --prod) to get a preview URL.',
+          'If Supabase migrations exist, Claude tests them on a branch database first.',
+          'Share the preview URL with your team for review.',
+        ],
+      },
+      {
+        id: 'bf-11',
+        title: 'Ship to Production',
+        description: 'Complete the milestone, which includes the full production deploy pipeline.',
+        commands: ['/qualia:complete-milestone'],
+        tips: [
+          'Full pipeline: TypeScript → ESLint → Build → Preview → Production deploy → Post-deploy checks.',
+          'Claude verifies the live site responds correctly after deploy.',
+          'Git tag is created marking this version.',
+        ],
+        isMilestone: true,
+      },
+      {
+        id: 'bf-12',
+        title: 'Rollback Plan',
+        description: "If something goes wrong in production, here's how to revert instantly.",
+        tips: [
+          'Vercel: vercel rollback — instantly reverts to the previous deployment.',
+          'Supabase: create a reverse migration with supabase migration new rollback_feature_name.',
+          'Emergency: Vercel dashboard → Deployments → click "..." on previous working deploy → "Promote to Production".',
+          'Git: the previous tag marks the last known-good state.',
+        ],
+      },
     ],
     checklist: {
-      title: 'Daily Research Checklist',
+      title: 'Brownfield Safety Checklist',
       items: [
-        "Checked inbox for today's topic",
-        'Used Gemini Deep Research',
-        'Pasted into NotebookLM',
-        'Extracted key findings',
-        'Logged in /research page',
-        'Added source links',
-        'Marked task as Done',
+        'Existing tests still pass after changes',
+        'New feature verified with /qualia:verify-work',
+        'Database migrations are additive (no destructive changes)',
+        'Existing API endpoints not broken (test with curl)',
+        'Preview deploy tested before production',
+        'TypeScript compiles with zero errors',
+        'No new ESLint warnings introduced',
+        'Feature branch merged (not force-pushed to main)',
+        'Rollback tested or documented',
+        'Post-deploy verification passed (HTTP 200, no console errors)',
       ],
     },
   },
 ];
 
+// Helper functions
+export function getGuidesByCategory(category: GuideCategory): Guide[] {
+  return guides.filter((g) => g.category === category);
+}
+
 export function getGuideBySlug(slug: string): Guide | undefined {
   return guides.find((g) => g.slug === slug);
 }
 
-export function getGuidesByCategory(category: GuideCategory): Guide[] {
-  return guides.filter((g) => g.category === category);
+export function searchGuides(query: string): Guide[] {
+  const lower = query.toLowerCase();
+  return guides.filter(
+    (g) =>
+      g.title.toLowerCase().includes(lower) ||
+      g.subtitle.toLowerCase().includes(lower) ||
+      g.steps.some(
+        (s) =>
+          s.title.toLowerCase().includes(lower) ||
+          s.description?.toLowerCase().includes(lower) ||
+          s.commands?.some((c) => c.toLowerCase().includes(lower))
+      )
+  );
 }
