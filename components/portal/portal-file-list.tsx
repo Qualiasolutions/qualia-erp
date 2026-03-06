@@ -110,7 +110,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
         <Card
           key={file.id}
           style={index < 6 ? getStaggerDelay(index) : undefined}
-          className={`transition-all hover:shadow-md ${index < 6 ? 'animate-fade-in-up fill-mode-both' : ''}`}
+          className={`shadow-elevation-1 hover:shadow-elevation-2 transition-shadow duration-200 ease-premium ${index < 6 ? 'animate-fade-in-up fill-mode-both' : ''}`}
         >
           <CardHeader className="pb-3">
             <div className="flex items-start gap-3">
