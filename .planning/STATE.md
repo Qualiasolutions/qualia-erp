@@ -65,6 +65,12 @@ Recent decisions affecting v1.3 work:
 - Activity log with is_client_visible flag (13-02) — enables unified ERP/portal timeline
 - Hybrid server-client pattern for portal pages (13-03) — auth on server, data fetching on client for real-time sync
 - Subtle validating indicators over full overlays (13-03) — better UX during background refresh
+- Default all notification types enabled with 'both' delivery (14-01) — ensures users don't miss critical notifications
+- shouldSendEmail fails safe (14-01) — returns true on error, better to send extra email than miss notification
+- Email notifications to assigned employees only (14-02) — leverages Phase 12 assignments, reduces noise
+- Silent failure pattern for emails (14-02) — delivery failures don't block user actions
+- Client role detection before notifying (14-02) — prevents notifications for employee actions
+- Qualia teal gradient branding in emails (14-02) — #00A4AC to #008B92 for brand consistency
 
 ### Pending Todos
 
