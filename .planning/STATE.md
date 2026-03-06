@@ -10,17 +10,17 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 13 of 16 (ERP-Portal Integration)
-Plan: 2 of 2 in current phase
+Plan: 3 of 3 in current phase
 Status: Phase complete
-Last activity: 2026-03-06 — Completed 13-02-PLAN.md (bidirectional sync with SWR and notifications)
+Last activity: 2026-03-06 — Completed 13-03-PLAN.md (portal auto-refresh with SWR hooks)
 
-Progress: [████████████████░░░░] 76% (29 plans complete across 13 phases, 3 phases remaining)
+Progress: [████████████████░░░░] 77% (30 plans complete across 13 phases, 3 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 29 (24 from v1.0-v1.2, 5 from v1.3)
+- Total plans completed: 30 (24 from v1.0-v1.2, 6 from v1.3)
 - Average duration: ~5 minutes per plan (recent trend: 2-6 min)
 - Total execution time: 3 days (2026-03-01 to 2026-03-04) + v1.3 in progress
 
@@ -38,7 +38,7 @@ Progress: [████████████████░░░░] 76% (29
 - Last 3 milestones: 1 day, 1 day, 1 day (sprint execution pattern)
 - Trend: Stable (consistent daily milestone delivery)
 
-_Updated: 2026-03-06 after Phase 13 completion (Plan 02 execution)_
+_Updated: 2026-03-06 after Phase 13 completion (Plan 03 execution - gap closure)_
 
 ## Accumulated Context
 
@@ -62,6 +62,8 @@ Recent decisions affecting v1.3 work:
 - Path revalidation on all mutations (13-02) — simpler than SWR cache invalidation
 - Notification routing via project_assignments (13-02) — leverages Phase 12 foundation
 - Activity log with is_client_visible flag (13-02) — enables unified ERP/portal timeline
+- Hybrid server-client pattern for portal pages (13-03) — auth on server, data fetching on client for real-time sync
+- Subtle validating indicators over full overlays (13-03) — better UX during background refresh
 
 ### Pending Todos
 
@@ -81,7 +83,7 @@ None. Phase 13 complete. Ready for Phase 14, 15, or 16.
 ## Session Continuity
 
 Last session: 2026-03-06 (phase execution)
-Stopped at: Completed Phase 13 Plan 02 (bidirectional sync complete)
+Stopped at: Completed Phase 13 Plan 03 (portal auto-refresh complete - gap closure)
 Resume file: Phase 14, 15, or 16 plans (when created)
 
-**Next action:** Create plans for Phase 14 (Unified Notification System), Phase 15 (Portal Design System), or Phase 16 (Complete Portal Pages)
+**Next action:** Phase 13 is now 100% complete (all 3 plans + gap closure done). Create plans for Phase 14 (Unified Notification System), Phase 15 (Portal Design System), or Phase 16 (Complete Portal Pages)
