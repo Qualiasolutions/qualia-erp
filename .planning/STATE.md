@@ -10,19 +10,19 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 12 of 16 (Employee-Project Assignment System)
-Plan: 0 of 0 in current phase (awaiting plan creation)
-Status: Ready to plan
-Last activity: 2026-03-06 — Milestone v1.3 roadmap created
+Plan: 1 of 2 in current phase
+Status: In progress
+Last activity: 2026-03-06 — Completed 12-01-PLAN.md (database foundation)
 
-Progress: [████████████░░░░░░░░] 65% (24 plans complete across 11 phases, 5 phases remaining)
+Progress: [█████████████░░░░░░░] 68% (25 plans complete across 12 phases, 4 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 24 (across v1.0, v1.1, v1.2)
-- Average duration: Not tracked per-plan (milestones completed in sprint format)
-- Total execution time: 3 days (2026-03-01 to 2026-03-04)
+- Total plans completed: 25 (24 from v1.0-v1.2, 1 from v1.3)
+- Average duration: ~3.6 minutes per plan (218s for 12-01)
+- Total execution time: 3 days (2026-03-01 to 2026-03-04) + v1.3 in progress
 
 **By Milestone:**
 
@@ -51,6 +51,9 @@ Recent decisions affecting v1.3 work:
 - Schedule utilities consolidated (3 files → 2) for maintainability
 - Cursor-based pagination over offset-based (prevents duplicate/missing items)
 - Apple-level design overhaul philosophy (premium look builds client trust)
+- Soft delete pattern for project assignments (12-01) — preserves complete audit trail
+- Partial unique index for active assignments only (12-01) — prevents duplicates while allowing history
+- Admin-only assignment mutations (12-01) — centralized control over employee assignments
 
 ### Pending Todos
 
@@ -69,8 +72,8 @@ None yet for v1.3. Phase 12 is ready for planning.
 
 ## Session Continuity
 
-Last session: 2026-03-06 (roadmap creation)
-Stopped at: v1.3 roadmap created, all 27 requirements mapped to 5 phases
-Resume file: None
+Last session: 2026-03-06 (plan execution)
+Stopped at: Completed 12-01-PLAN.md (database foundation and server actions)
+Resume file: .planning/phases/12-employee-project-assignment-system/12-02-PLAN.md
 
-**Next action:** Run `/qualia:plan-phase 12` to begin Employee-Project Assignment System planning
+**Next action:** Execute plan 12-02 (assignment management UI components)
