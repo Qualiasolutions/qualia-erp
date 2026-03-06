@@ -1235,7 +1235,7 @@ export function invalidatePortalProjectWithPhases(projectId: string, immediate =
 
 /**
  * Hook for portal dashboard data with auto-refresh
- * Fetches stats (project count, pending requests, unpaid invoices) and recent activity
+ * Fetches stats (project count, pending requests, unpaid invoices) and projects with phases
  * Used by portal dashboard to show real-time updates
  */
 export function usePortalDashboard(clientId: string | null) {
@@ -1250,74 +1250,29 @@ export function usePortalDashboard(clientId: string | null) {
     async () => {
       if (!clientId) return null;
 
-      const supabase = (await import('@/lib/supabase/client')).createClient();
+      const { getClientDashboardData, getClientDashboardProjects } =
+        await import('@/app/actions/client-portal');
 
-      // Verify user is authenticated
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      // Get projects count
-      const { count: projectCount } = await supabase
-        .from('client_projects')
-        .select('id', { count: 'exact', head: true })
-        .eq('client_id', clientId);
-
-      // Get pending requests count
-      const { count: pendingRequests } = await supabase
-        .from('client_feature_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('client_id', clientId)
-        .in('status', ['pending', 'in_review']);
-
-      // Get unpaid invoices count + total
-      const { data: unpaidInvoices } = await supabase
-        .from('client_invoices')
-        .select('amount')
-        .eq('client_id', clientId)
-        .in('status', ['pending', 'overdue']);
-
-      const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.amount), 0);
-
-      // Get recent activity
-      const { data: recentActivity } = await supabase
-        .from('activity_log')
-        .select('id, action_type, action_data, created_at, project:projects(id, name)')
-        .eq('is_client_visible', true)
-        .in(
-          'project_id',
-          (
-            await supabase.from('client_projects').select('project_id').eq('client_id', clientId)
-          ).data?.map((cp) => cp.project_id) || []
-        )
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      const normalizedActivity = (recentActivity || []).map((a) => ({
-        ...a,
-        project: Array.isArray(a.project) ? a.project[0] || null : a.project,
-      }));
+      const [dashResult, projectsResult] = await Promise.all([
+        getClientDashboardData(clientId),
+        getClientDashboardProjects(clientId),
+      ]);
 
       return {
-        projectCount: projectCount || 0,
-        pendingRequests: pendingRequests || 0,
-        unpaidInvoiceCount: (unpaidInvoices || []).length,
-        unpaidTotal,
-        recentActivity: normalizedActivity,
+        stats: dashResult.success ? dashResult.data : null,
+        projects: projectsResult.success ? projectsResult.data : [],
       };
     },
-    autoRefreshConfig
+    {
+      ...autoRefreshConfig,
+      revalidateOnMount: true,
+    }
   );
 
   return {
-    dashboard: data || {
-      projectCount: 0,
-      pendingRequests: 0,
-      unpaidInvoiceCount: 0,
-      unpaidTotal: 0,
-      recentActivity: [],
-    },
+    data: data || { stats: null, projects: [] },
+    stats: data?.stats || null,
+    projects: data?.projects || [],
     isLoading,
     isValidating,
     isError: !!error,
