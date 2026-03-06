@@ -88,43 +88,51 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| EMPL-01     | TBD   | Pending |
-| EMPL-02     | TBD   | Pending |
-| EMPL-03     | TBD   | Pending |
-| EMPL-04     | TBD   | Pending |
-| NOTIF-01    | TBD   | Pending |
-| NOTIF-02    | TBD   | Pending |
-| NOTIF-03    | TBD   | Pending |
-| NOTIF-04    | TBD   | Pending |
-| NOTIF-05    | TBD   | Pending |
-| NOTIF-06    | TBD   | Pending |
-| PORTAL-01   | TBD   | Pending |
-| PORTAL-02   | TBD   | Pending |
-| PORTAL-03   | TBD   | Pending |
-| PORTAL-04   | TBD   | Pending |
-| PORTAL-05   | TBD   | Pending |
-| PORTAL-06   | TBD   | Pending |
-| DESIGN-01   | TBD   | Pending |
-| DESIGN-02   | TBD   | Pending |
-| DESIGN-03   | TBD   | Pending |
-| DESIGN-04   | TBD   | Pending |
-| DESIGN-05   | TBD   | Pending |
-| INTEG-01    | TBD   | Pending |
-| INTEG-02    | TBD   | Pending |
-| INTEG-03    | TBD   | Pending |
-| INTEG-04    | TBD   | Pending |
-| INTEG-05    | TBD   | Pending |
-| INTEG-06    | TBD   | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| EMPL-01     | Phase 12 | Pending |
+| EMPL-02     | Phase 12 | Pending |
+| EMPL-03     | Phase 12 | Pending |
+| EMPL-04     | Phase 12 | Pending |
+| NOTIF-01    | Phase 14 | Pending |
+| NOTIF-02    | Phase 14 | Pending |
+| NOTIF-03    | Phase 14 | Pending |
+| NOTIF-04    | Phase 14 | Pending |
+| NOTIF-05    | Phase 14 | Pending |
+| NOTIF-06    | Phase 14 | Pending |
+| PORTAL-01   | Phase 16 | Pending |
+| PORTAL-02   | Phase 16 | Pending |
+| PORTAL-03   | Phase 16 | Pending |
+| PORTAL-04   | Phase 16 | Pending |
+| PORTAL-05   | Phase 16 | Pending |
+| PORTAL-06   | Phase 16 | Pending |
+| DESIGN-01   | Phase 15 | Pending |
+| DESIGN-02   | Phase 15 | Pending |
+| DESIGN-03   | Phase 15 | Pending |
+| DESIGN-04   | Phase 15 | Pending |
+| DESIGN-05   | Phase 15 | Pending |
+| INTEG-01    | Phase 13 | Pending |
+| INTEG-02    | Phase 13 | Pending |
+| INTEG-03    | Phase 13 | Pending |
+| INTEG-04    | Phase 13 | Pending |
+| INTEG-05    | Phase 13 | Pending |
+| INTEG-06    | Phase 13 | Pending |
 
 **Coverage:**
 
 - v1.3 requirements: 27 total
-- Mapped to phases: 0 (roadmap creation pending)
-- Unmapped: 27 ⚠️
+- Mapped to phases: 27 (100% coverage ✓)
+- Unmapped: 0
+
+**Phase Distribution:**
+
+- Phase 12 (Employee-Project Assignment System): 4 requirements
+- Phase 13 (ERP-Portal Integration): 6 requirements
+- Phase 14 (Unified Notification System): 6 requirements
+- Phase 15 (Portal Design System): 5 requirements
+- Phase 16 (Complete Portal Pages): 6 requirements
 
 ---
 
 _Requirements defined: 2026-03-06_
-_Last updated: 2026-03-06 after initial definition_
+_Last updated: 2026-03-06 after v1.3 roadmap creation (100% coverage achieved)_
