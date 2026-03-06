@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-03-06)
 ## Current Position
 
 Phase: 14 of 16 (Unified Notification System)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-03-06 — Completed 14-02-PLAN.md (employee email notifications for client actions)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-03-06 — Completed 14-03-PLAN.md (client notifications + settings UI)
 
-Progress: [█████████████████░░░] 82% (33 plans complete, Phase 14 in progress, 2 phases remaining)
+Progress: [██████████████████░░] 84% (34 plans complete, Phase 14 complete, 2 phases remaining)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 33 (24 from v1.0-v1.2, 9 from v1.3)
-- Average duration: ~8 minutes per plan (recent trend: 6-18 min due to git recovery)
+- Total plans completed: 34 (24 from v1.0-v1.2, 10 from v1.3)
+- Average duration: ~9 minutes per plan (recent trend: 6-18 min depending on complexity)
 - Total execution time: 3 days (2026-03-01 to 2026-03-04) + v1.3 in progress
 
 **By Milestone:**
@@ -39,7 +39,7 @@ Progress: [█████████████████░░░] 82% (33
 - Trend: Stable (consistent daily milestone delivery)
 - Note: Phase 14-02 execution included git repository recovery (empty object file corruption)
 
-_Updated: 2026-03-06 after Phase 14 Plan 02 completion (employee email notifications for client actions)_
+_Updated: 2026-03-06 after Phase 14 Plan 03 completion (client notifications + settings UI)_
 
 ## Accumulated Context
 
@@ -71,6 +71,9 @@ Recent decisions affecting v1.3 work:
 - Silent failure pattern for emails (14-02) — delivery failures don't block user actions
 - Client role detection before notifying (14-02) — prevents notifications for employee actions
 - Qualia teal gradient branding in emails (14-02) — #00A4AC to #008B92 for brand consistency
+- Server-client hybrid for settings pages (14-03) — auth on server, interactivity on client for best UX
+- Role-based toggle visibility (14-03) — clients see 2 notification types, employees see 5, cleaner than disabled state
+- Green gradient for client status emails (14-03) — conveys progress/success, distinct from internal purple
 
 ### Pending Todos
 
@@ -78,19 +81,19 @@ None yet for v1.3.
 
 ### Blockers/Concerns
 
-None. Phase 13 complete. Ready for Phase 14, 15, or 16.
+None. Phase 13 and 14 complete. Ready for Phase 15 or 16.
 
 **Phase Dependencies:**
 
-- Phase 13 requires Phase 12 (employee assignments needed for notification routing)
-- Phase 14 requires Phase 13 (integration foundation needed for notification system)
-- Phase 15 can partially parallel Phase 13/14 (design work independent of backend)
+- Phase 13 requires Phase 12 (employee assignments needed for notification routing) ✅ Complete
+- Phase 14 requires Phase 13 (integration foundation needed for notification system) ✅ Complete
+- Phase 15 can partially parallel Phase 13/14 (design work independent of backend) — In progress
 - Phase 16 requires Phase 13 + Phase 15 (needs data sync and design system)
 
 ## Session Continuity
 
 Last session: 2026-03-06 (phase execution)
-Stopped at: Completed Phase 14 Plan 02 (employee email notifications for client actions)
-Resume file: .planning/phases/14-unified-notification-system/14-03-PLAN.md
+Stopped at: Completed Phase 14 Plan 03 (client notifications + settings UI)
+Resume file: .planning/phases/15-portal-design-system/15-02-PLAN.md or .planning/phases/16-portal-file-management/16-01-PLAN.md
 
-**Next action:** Continue Phase 14 with Plan 03 (client portal notifications for ERP actions) to complete unified notification system.
+**Next action:** Continue Phase 15 with Plan 02 (portal animation polish) or start Phase 16 (file management). Phase 14 is complete.
