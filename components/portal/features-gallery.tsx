@@ -84,7 +84,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
         {typedFeatures.map((feature, index) => (
           <div
             key={feature.id}
-            className="group relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-border/40 bg-muted/20 transition-all hover:border-qualia-500/50 hover:shadow-lg"
+            className="group relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-border/40 bg-muted/20 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-qualia-500/50 hover:shadow-elevation-2"
             onClick={() => handleImageClick(index)}
           >
             {feature.url ? (
@@ -187,7 +187,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="absolute left-4 top-1/2 -translate-y-1/2 shadow-lg"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 shadow-elevation-2"
                     onClick={handlePrevious}
                   >
                     <ChevronLeft className="h-5 w-5" />
@@ -195,7 +195,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
                   <Button
                     variant="outline"
                     size="icon"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 shadow-lg"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 shadow-elevation-2"
                     onClick={handleNext}
                   >
                     <ChevronRight className="h-5 w-5" />

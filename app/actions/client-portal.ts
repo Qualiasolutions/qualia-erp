@@ -979,6 +979,7 @@ export async function getProjectFeatures(projectId: string): Promise<ActionResul
         file_size,
         mime_type,
         storage_path,
+        phase_name,
         created_at,
         uploaded_by,
         uploader:profiles!project_files_uploaded_by_fkey(id, full_name, avatar_url)

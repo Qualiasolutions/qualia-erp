@@ -12,7 +12,7 @@ export function PortalProjectCardSkeleton() {
     <Card
       className={cn(
         'h-full transition-all duration-200',
-        'hover:-translate-y-1 hover:shadow-lg hover:shadow-qualia-600/10'
+        'shadow-elevation-1 hover:-translate-y-1 hover:shadow-elevation-2'
       )}
     >
       <CardHeader className="pb-3">
@@ -143,7 +143,7 @@ export function PortalActivitySkeleton() {
                 </div>
 
                 {/* Content card */}
-                <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+                <div className="rounded-lg border border-border bg-card p-4 shadow-elevation-1">
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
                     <div className="flex items-center gap-2">
