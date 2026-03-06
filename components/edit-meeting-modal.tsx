@@ -25,12 +25,11 @@ import {
 } from '@/lib/swr';
 import { TEAM_MEMBERS } from '@/lib/team-constants';
 
-// Hardcoded team — the 4 of us
+// Hardcoded team
 const TEAM = [
   { id: TEAM_MEMBERS.FAWZI_ID, name: 'Fawzi', initial: 'F', color: 'qualia' },
   { id: TEAM_MEMBERS.MOAYAD_ID, name: 'Moayad', initial: 'M', color: 'indigo' },
   { id: TEAM_MEMBERS.HASAN_ID, name: 'Hasan', initial: 'H', color: 'amber' },
-  { id: TEAM_MEMBERS.SALLY_ID, name: 'Sally', initial: 'S', color: 'rose' },
 ] as const;
 
 const COLOR_MAP = {

@@ -20,6 +20,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
 import { useAdminContext } from '@/components/admin-provider';
+
+const employeeAllowedHrefs = ['/', '/schedule', '/knowledge'];
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -144,7 +146,8 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
 
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const { isManagerOrAbove } = useAdminContext();
+  const { isManagerOrAbove, userRole } = useAdminContext();
+  const isEmployee = userRole === 'employee';
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -180,46 +183,54 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         <div className="space-y-1">
           <SectionLabel>Workspace</SectionLabel>
           <div className="space-y-0.5">
-            {workspaceNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-                onClick={onLinkClick}
-              />
-            ))}
+            {workspaceNav
+              .filter((item) => !isEmployee || employeeAllowedHrefs.includes(item.href))
+              .map((item) => (
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item.href)}
+                  onClick={onLinkClick}
+                />
+              ))}
           </div>
         </div>
 
         {/* Resources section */}
-        <div className="space-y-1">
-          <SectionLabel>Resources</SectionLabel>
-          <div className="space-y-0.5">
-            {resourcesNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-                onClick={onLinkClick}
-              />
-            ))}
+        {(!isEmployee || resourcesNav.some((item) => employeeAllowedHrefs.includes(item.href))) && (
+          <div className="space-y-1">
+            <SectionLabel>Resources</SectionLabel>
+            <div className="space-y-0.5">
+              {resourcesNav
+                .filter((item) => !isEmployee || employeeAllowedHrefs.includes(item.href))
+                .map((item) => (
+                  <NavLink
+                    key={item.name}
+                    item={item}
+                    isActive={isActive(item.href)}
+                    onClick={onLinkClick}
+                  />
+                ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Portal section */}
-        <div className="space-y-1">
-          <SectionLabel>External</SectionLabel>
-          <div className="space-y-0.5">
-            {portalNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-                onClick={onLinkClick}
-              />
-            ))}
+        {!isEmployee && (
+          <div className="space-y-1">
+            <SectionLabel>External</SectionLabel>
+            <div className="space-y-0.5">
+              {portalNav.map((item) => (
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item.href)}
+                  onClick={onLinkClick}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Admin section — managers and admins only */}
         {isManagerOrAbove && (

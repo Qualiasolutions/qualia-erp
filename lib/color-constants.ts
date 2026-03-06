@@ -595,13 +595,6 @@ export const USER_COLORS = {
     dot: 'bg-amber-500',
     ring: 'ring-amber-200 dark:ring-amber-500/30',
   },
-  sally: {
-    bg: 'bg-rose-50 dark:bg-rose-500/10',
-    border: 'border-rose-200 dark:border-rose-500/30',
-    text: 'text-rose-600 dark:text-rose-500',
-    dot: 'bg-rose-500',
-    ring: 'ring-rose-200 dark:ring-rose-500/30',
-  },
 } as const;
 
 export type ScheduleBlockType = keyof typeof SCHEDULE_BLOCK_COLORS;

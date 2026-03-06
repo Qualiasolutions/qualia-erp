@@ -98,9 +98,26 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Employee/manager users: redirect to dashboard if trying to access portal
+    // Employee route restrictions: only dashboard, schedule, knowledge
+    if (userRole === 'employee') {
+      const employeeAllowed = ['/', '/schedule', '/knowledge'];
+      const isAllowed =
+        employeeAllowed.some((route) =>
+          route === '/' ? pathname === '/' : pathname.startsWith(route)
+        ) ||
+        pathname.startsWith('/auth') ||
+        pathname.startsWith('/api');
+
+      if (!isAllowed) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        return NextResponse.redirect(url);
+      }
+    }
+
+    // Manager users: redirect to dashboard if trying to access portal
     // Only admins are allowed to access portal for preview/oversight
-    if ((userRole === 'employee' || userRole === 'manager') && pathname.startsWith('/portal')) {
+    if (userRole === 'manager' && pathname.startsWith('/portal')) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
