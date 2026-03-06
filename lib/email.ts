@@ -753,3 +753,386 @@ export async function sendDailyDigest(
   console.log('[sendDailyDigest] Stub implementation - email not sent');
   return { success: true };
 }
+
+// ============================================================================
+// Employee Notification Functions (Phase 14-02)
+// ============================================================================
+
+import { shouldSendEmail } from '@/app/actions/notification-preferences';
+import { getProjectAssignedEmployees } from '@/lib/notifications';
+
+/**
+ * Notify assigned employees when a client comments on a project
+ */
+export async function notifyEmployeesOfClientComment(
+  projectId: string,
+  clientName: string,
+  commentText: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyEmployeesOfClientComment] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project details
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name, workspace_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get assigned employees
+    const employeeIds = await getProjectAssignedEmployees(projectId);
+
+    if (employeeIds.length === 0) {
+      return { success: true }; // No employees to notify
+    }
+
+    // Get employee profiles
+    const { data: employees } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', employeeIds);
+
+    if (!employees || employees.length === 0) {
+      return { success: true };
+    }
+
+    const viewUrl = `${APP_URL}/projects/${projectId}`;
+
+    // Truncate comment if too long
+    const commentPreview =
+      commentText.length > 300 ? commentText.substring(0, 297) + '...' : commentText;
+
+    const emailPromises = employees
+      .filter((emp) => emp.email)
+      .map(async (employee) => {
+        // Check if employee wants email notifications for client comments
+        const shouldSend = await shouldSendEmail(
+          employee.id,
+          project.workspace_id,
+          'client_activity'
+        );
+
+        if (!shouldSend) {
+          console.log(
+            `[notifyEmployeesOfClientComment] Skipping email to ${employee.email} (preferences)`
+          );
+          return;
+        }
+
+        const subject = `${clientName} commented on ${project.name}`;
+        const recipientName = employee.full_name || 'there';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: employee.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C94 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">New Comment from Client</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${clientName}</strong> left a comment on <strong>${project.name}</strong>:
+    </p>
+    <blockquote style="background: #f9fafb; border-left: 4px solid #00A4AC; padding: 16px; margin: 24px 0; white-space: pre-wrap;">
+      ${commentPreview}
+    </blockquote>
+    <a href="${viewUrl}" style="display: inline-block; background: #00A4AC; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Comment
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this because you're assigned to this project. Manage notification preferences in Settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\n${clientName} left a comment on ${project.name}:\n\n${commentPreview}\n\nView comment: ${viewUrl}\n\n---\nManage preferences in Settings.`,
+          });
+
+          if (error) {
+            console.error(
+              `[notifyEmployeesOfClientComment] Failed to send to ${employee.email}:`,
+              error
+            );
+          }
+        } catch (err) {
+          console.error(
+            `[notifyEmployeesOfClientComment] Exception sending to ${employee.email}:`,
+            err
+          );
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyEmployeesOfClientComment] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Notify assigned employees when a client uploads a file to a project
+ */
+export async function notifyEmployeesOfClientFileUpload(
+  projectId: string,
+  clientName: string,
+  fileName: string,
+  fileDescription?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyEmployeesOfClientFileUpload] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project details
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name, workspace_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get assigned employees
+    const employeeIds = await getProjectAssignedEmployees(projectId);
+
+    if (employeeIds.length === 0) {
+      return { success: true }; // No employees to notify
+    }
+
+    // Get employee profiles
+    const { data: employees } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', employeeIds);
+
+    if (!employees || employees.length === 0) {
+      return { success: true };
+    }
+
+    const viewUrl = `${APP_URL}/projects/${projectId}/files`;
+
+    const emailPromises = employees
+      .filter((emp) => emp.email)
+      .map(async (employee) => {
+        // Check if employee wants email notifications for client file uploads
+        const shouldSend = await shouldSendEmail(
+          employee.id,
+          project.workspace_id,
+          'client_activity'
+        );
+
+        if (!shouldSend) {
+          console.log(
+            `[notifyEmployeesOfClientFileUpload] Skipping email to ${employee.email} (preferences)`
+          );
+          return;
+        }
+
+        const subject = `${clientName} uploaded a file to ${project.name}`;
+        const recipientName = employee.full_name || 'there';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: employee.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">New File from Client</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${clientName}</strong> uploaded a file to <strong>${project.name}</strong>:
+    </p>
+    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0;"><strong>File:</strong> ${fileName}</p>
+      ${fileDescription ? `<p style="margin: 8px 0 0;"><strong>Description:</strong> ${fileDescription}</p>` : ''}
+    </div>
+    <a href="${viewUrl}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View File
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this because you're assigned to this project. Manage notification preferences in Settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\n${clientName} uploaded a file to ${project.name}:\n\nFile: ${fileName}${fileDescription ? `\nDescription: ${fileDescription}` : ''}\n\nView file: ${viewUrl}\n\n---\nManage preferences in Settings.`,
+          });
+
+          if (error) {
+            console.error(
+              `[notifyEmployeesOfClientFileUpload] Failed to send to ${employee.email}:`,
+              error
+            );
+          }
+        } catch (err) {
+          console.error(
+            `[notifyEmployeesOfClientFileUpload] Exception sending to ${employee.email}:`,
+            err
+          );
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyEmployeesOfClientFileUpload] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Notify assigned employees of generic client activity
+ */
+export async function notifyEmployeesOfClientActivity(
+  projectId: string,
+  clientName: string,
+  activityType: string,
+  activityDetails: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyEmployeesOfClientActivity] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project details
+    const { data: project } = await supabase
+      .from('projects')
+      .select('name, workspace_id')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Get assigned employees
+    const employeeIds = await getProjectAssignedEmployees(projectId);
+
+    if (employeeIds.length === 0) {
+      return { success: true }; // No employees to notify
+    }
+
+    // Get employee profiles
+    const { data: employees } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', employeeIds);
+
+    if (!employees || employees.length === 0) {
+      return { success: true };
+    }
+
+    const viewUrl = `${APP_URL}/projects/${projectId}`;
+
+    const emailPromises = employees
+      .filter((emp) => emp.email)
+      .map(async (employee) => {
+        // Check if employee wants email notifications for client activity
+        const shouldSend = await shouldSendEmail(
+          employee.id,
+          project.workspace_id,
+          'client_activity'
+        );
+
+        if (!shouldSend) {
+          console.log(
+            `[notifyEmployeesOfClientActivity] Skipping email to ${employee.email} (preferences)`
+          );
+          return;
+        }
+
+        const subject = `${clientName} ${activityType} on ${project.name}`;
+        const recipientName = employee.full_name || 'there';
+
+        try {
+          const { error } = await resendClient.emails.send({
+            from: FROM_EMAIL,
+            to: employee.email!,
+            subject,
+            html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Client Activity</h1>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      <strong>${clientName}</strong> ${activityType} on <strong>${project.name}</strong>:
+    </p>
+    <div style="background: #f9fafb; border-left: 4px solid #6b7280; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; white-space: pre-wrap;">${activityDetails}</p>
+    </div>
+    <a href="${viewUrl}" style="display: inline-block; background: #6b7280; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this because you're assigned to this project. Manage notification preferences in Settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+            text: `Hi ${recipientName},\n\n${clientName} ${activityType} on ${project.name}:\n\n${activityDetails}\n\nView project: ${viewUrl}\n\n---\nManage preferences in Settings.`,
+          });
+
+          if (error) {
+            console.error(
+              `[notifyEmployeesOfClientActivity] Failed to send to ${employee.email}:`,
+              error
+            );
+          }
+        } catch (err) {
+          console.error(
+            `[notifyEmployeesOfClientActivity] Exception sending to ${employee.email}:`,
+            err
+          );
+        }
+      });
+
+    await Promise.all(emailPromises);
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyEmployeesOfClientActivity] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
