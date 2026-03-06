@@ -48,6 +48,8 @@ interface PortalRoadmapProps {
   phases: Phase[];
   userRole: 'client' | 'admin' | 'employee';
   currentUserId: string;
+  isLoading?: boolean;
+  isValidating?: boolean;
 }
 
 function getStatusColor(status: string) {
@@ -297,13 +299,65 @@ function PhaseWithComments({
   );
 }
 
-export function PortalRoadmap({ project, phases, userRole, currentUserId }: PortalRoadmapProps) {
+export function PortalRoadmap({
+  project,
+  phases,
+  userRole,
+  currentUserId,
+  isLoading = false,
+  isValidating = false,
+}: PortalRoadmapProps) {
   const hasPhases = phases && phases.length > 0;
+
+  // Show loading skeleton during initial load
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        {/* Project Header skeleton */}
+        <div className="animate-pulse rounded-lg border border-border bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-7 w-48 rounded bg-muted" />
+            <div className="h-6 w-20 rounded bg-muted" />
+          </div>
+          <div className="mt-3 h-4 w-full rounded bg-muted" />
+          <div className="mt-2 h-4 w-3/4 rounded bg-muted" />
+        </div>
+
+        {/* Roadmap skeleton */}
+        <div className="rounded-lg border border-border bg-card p-6">
+          <div className="mb-6 h-7 w-40 animate-pulse rounded bg-muted" />
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-6">
+                <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-muted" />
+                <div className="flex-1">
+                  <div className="rounded-lg border border-border bg-muted/50 p-4">
+                    <div className="h-5 w-48 animate-pulse rounded bg-muted" />
+                    <div className="mt-2 h-4 w-full animate-pulse rounded bg-muted" />
+                    <div className="mt-2 h-4 w-3/4 animate-pulse rounded bg-muted" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Project Header */}
-      <div className="rounded-lg border border-border bg-card p-6">
+      <div className="relative rounded-lg border border-border bg-card p-6">
+        {/* Subtle validating indicator */}
+        {isValidating && (
+          <div className="absolute right-3 top-3">
+            <div className="flex h-2 w-2 items-center justify-center">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-qualia-500/75 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-qualia-600" />
+            </div>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-semibold text-foreground">Project Overview</h2>
           <Badge className={cn('shrink-0', getProjectStatusColor(project.project_status))}>
