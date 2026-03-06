@@ -1430,6 +1430,63 @@ export type Database = {
           },
         ];
       };
+      notification_preferences: {
+        Row: {
+          client_activity: boolean;
+          created_at: string;
+          delivery_method: Database['public']['Enums']['notification_delivery_method'];
+          id: string;
+          meeting_reminder: boolean;
+          project_update: boolean;
+          task_assigned: boolean;
+          task_due_soon: boolean;
+          updated_at: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          client_activity?: boolean;
+          created_at?: string;
+          delivery_method?: Database['public']['Enums']['notification_delivery_method'];
+          id?: string;
+          meeting_reminder?: boolean;
+          project_update?: boolean;
+          task_assigned?: boolean;
+          task_due_soon?: boolean;
+          updated_at?: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          client_activity?: boolean;
+          created_at?: string;
+          delivery_method?: Database['public']['Enums']['notification_delivery_method'];
+          id?: string;
+          meeting_reminder?: boolean;
+          project_update?: boolean;
+          task_assigned?: boolean;
+          task_due_soon?: boolean;
+          updated_at?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_preferences_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notification_preferences_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payments: {
         Row: {
           amount: number;
