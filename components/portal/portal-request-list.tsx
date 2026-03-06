@@ -137,16 +137,16 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
 
   if (requests.length === 0) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center">
-        <div className="max-w-md text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-qualia-500/10">
-            <Lightbulb className="h-10 w-10 text-qualia-600/60" />
-          </div>
-          <h3 className="text-xl font-semibold tracking-tight text-foreground">No requests yet</h3>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
-            Click &ldquo;New Request&rdquo; to submit your first feature request or change.
-          </p>
+      <div className="flex min-h-[400px] flex-col items-center justify-center px-4">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-qualia-500/20">
+          <Lightbulb className="h-10 w-10 text-qualia-600 dark:text-qualia-400" />
         </div>
+        <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">
+          No requests yet
+        </h3>
+        <p className="max-w-sm text-center text-sm leading-relaxed text-muted-foreground/80">
+          Click &ldquo;New Request&rdquo; to submit your first feature request or change.
+        </p>
       </div>
     );
   }
