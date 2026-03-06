@@ -433,6 +433,41 @@ export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type CreateWorkspaceInput = z.infer<typeof createWorkspaceSchema>;
 
 // =====================
+// Time Entry Schemas
+// =====================
+export const createTimeEntrySchema = z.object({
+  user_id: z.string().uuid('Invalid user ID').optional(),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  task_id: z.string().uuid('Invalid task ID').optional().nullable(),
+  description: z
+    .string()
+    .max(500, 'Description must be less than 500 characters')
+    .optional()
+    .nullable(),
+  start_time: z.string(), // ISO 8601 timestamp
+  end_time: z.string().optional().nullable(), // ISO 8601 timestamp
+  duration_seconds: z.number().int().min(0).optional().nullable(),
+  entry_date: z.string(), // YYYY-MM-DD format
+});
+
+export const updateTimeEntrySchema = z.object({
+  id: z.string().uuid('Invalid time entry ID'),
+  description: z
+    .string()
+    .max(500, 'Description must be less than 500 characters')
+    .optional()
+    .nullable(),
+  project_id: z.string().uuid('Invalid project ID').optional().nullable(),
+  task_id: z.string().uuid('Invalid task ID').optional().nullable(),
+  duration_seconds: z.number().int().min(0).optional().nullable(),
+  start_time: z.string().optional(), // ISO 8601 timestamp
+  end_time: z.string().optional().nullable(), // ISO 8601 timestamp
+});
+
+export type CreateTimeEntryInput = z.infer<typeof createTimeEntrySchema>;
+export type UpdateTimeEntryInput = z.infer<typeof updateTimeEntrySchema>;
+
+// =====================
 // Client Portal Schemas
 // =====================
 export const clientProfileSchema = z.object({

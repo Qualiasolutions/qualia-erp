@@ -3925,6 +3925,23 @@ export type TeachingNote = Tables<'teaching_notes'>;
 export type TaskReflection = Tables<'task_reflections'>;
 export type ExtendedProfile = Profile & { user_skills?: UserSkill[] };
 
+// Time Entry type (time_entries table exists but not auto-generated yet)
+export type TimeEntry = {
+  id: string;
+  user_id: string;
+  workspace_id: string | null;
+  project_id: string | null;
+  task_id: string | null;
+  description: string | null;
+  start_time: string;
+  end_time: string | null;
+  duration_seconds: number | null;
+  entry_date: string;
+  is_running: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 // Enum type aliases
 export type ProjectType = Enums<'project_type'>;
 export type ProjectStatus = Enums<'project_status'>;
