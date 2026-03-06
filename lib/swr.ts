@@ -60,6 +60,7 @@ export const cacheKeys = {
   projectAssignments: (projectId: string) => `/api/assignments/project/${projectId}`,
   employeeAssignments: (employeeId: string) => `/api/assignments/employee/${employeeId}`,
   allAssignments: '/api/assignments/all',
+  portalProject: (projectId: string) => `portal-project-${projectId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1094,5 +1095,60 @@ export function invalidateAllAssignments(immediate = false) {
     mutate(cacheKeys.allAssignments, undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.allAssignments);
+  }
+}
+
+/**
+ * Hook for portal project data with auto-refresh
+ * Used by client portal pages to show current project status
+ */
+export function usePortalProject(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.portalProject(projectId) : null,
+    async () => {
+      if (!projectId) return null;
+      const { getClientDashboardProjects } = await import('@/app/actions/client-portal');
+      // Get current user's projects and find the matching one
+      // This hook is called from portal pages where user is authenticated
+      const supabase = (await import('@/lib/supabase/client')).createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return null;
+      const result = await getClientDashboardProjects(user.id);
+      if (!result.success || !result.data) return null;
+      return (
+        (result.data as Array<{ id: string; [key: string]: unknown }>).find(
+          (p) => p.id === projectId
+        ) || null
+      );
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    project: data || null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate portal project cache
+ */
+export function invalidatePortalProject(projectId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.portalProject(projectId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.portalProject(projectId));
   }
 }
