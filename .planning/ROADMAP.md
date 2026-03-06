@@ -167,7 +167,7 @@ Plans:
 
 - [x] 13-01-PLAN.md — Data linkage between ERP and portal (client_id FK, integration helpers)
 - [x] 13-02-PLAN.md — Real-time sync with SWR and integration status badges
-- [ ] 13-03-PLAN.md — Gap closure: Enable portal auto-refresh with SWR hooks
+- [x] 13-03-PLAN.md — Gap closure: Enable portal auto-refresh with SWR hooks
 
 #### Phase 14: Unified Notification System
 
