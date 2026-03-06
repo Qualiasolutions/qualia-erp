@@ -61,6 +61,7 @@ export const cacheKeys = {
   employeeAssignments: (employeeId: string) => `/api/assignments/employee/${employeeId}`,
   allAssignments: '/api/assignments/all',
   portalProject: (projectId: string) => `portal-project-${projectId}`,
+  portalProjectWithPhases: (projectId: string) => `portal-project-with-phases-${projectId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1150,5 +1151,81 @@ export function invalidatePortalProject(projectId: string, immediate = true) {
     mutate(cacheKeys.portalProject(projectId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.portalProject(projectId));
+  }
+}
+
+/**
+ * Hook for portal project with phases data and auto-refresh
+ * Used by portal project pages to show current project + roadmap with real-time updates
+ * Fetches both project details and phases in a single combined hook
+ */
+export function usePortalProjectWithPhases(projectId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    projectId ? cacheKeys.portalProjectWithPhases(projectId) : null,
+    async () => {
+      if (!projectId) return null;
+
+      const supabase = (await import('@/lib/supabase/client')).createClient();
+
+      // Verify user is authenticated
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      // Fetch project details
+      const { data: project, error: projectError } = await supabase
+        .from('projects')
+        .select('id, name, project_status, description')
+        .eq('id', projectId)
+        .single();
+
+      if (projectError || !project) return null;
+
+      // Fetch phases for the project
+      const { data: phases, error: phasesError } = await supabase
+        .from('project_phases')
+        .select('id, name, status, start_date, target_date, description, order_index')
+        .eq('project_id', projectId)
+        .order('order_index', { ascending: true });
+
+      if (phasesError) {
+        // If phases fail but project succeeded, return project with empty phases
+        return { project, phases: [] };
+      }
+
+      return {
+        project,
+        phases: phases || [],
+      };
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    project: data?.project || null,
+    phases: data?.phases || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate portal project with phases cache
+ */
+export function invalidatePortalProjectWithPhases(projectId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.portalProjectWithPhases(projectId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.portalProjectWithPhases(projectId));
   }
 }
