@@ -288,3 +288,16 @@ export {
   retryProvisioning,
   checkIntegrationsConfigured,
 } from './integrations';
+
+// ============ TIME TRACKING ============
+export type { TimeEntry } from '@/types/database';
+export {
+  startTimer,
+  stopTimer,
+  createTimeEntry,
+  updateTimeEntry,
+  deleteTimeEntry,
+  getDailyTimeEntries,
+  getWeeklySummary,
+  getRunningTimer,
+} from './time-tracking';

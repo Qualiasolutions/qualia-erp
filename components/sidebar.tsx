@@ -16,6 +16,7 @@ import {
   FlaskConical,
   ExternalLink,
   Shield,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -45,7 +46,10 @@ const resourcesNav = [
 ];
 
 const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
-const adminNav = [{ name: 'Admin', href: '/admin', icon: Shield }];
+const adminNav = [
+  { name: 'Admin', href: '/admin', icon: Shield },
+  { name: 'Time Tracking', href: '/time-tracking', icon: Clock },
+];
 
 type NavItem = (typeof workspaceNav)[0];
 

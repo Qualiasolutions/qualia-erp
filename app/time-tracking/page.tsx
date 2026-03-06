@@ -29,6 +29,29 @@ import {
 } from '@/app/actions/time-tracking';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
 
+// Types for time tracking data
+interface TimeEntry {
+  id: string;
+  user_id: string;
+  project_id: string | null;
+  task_id: string | null;
+  description: string | null;
+  start_time: string;
+  end_time: string | null;
+  duration_seconds: number | null;
+  is_running: boolean;
+  entry_date: string;
+  project?: { id: string; name: string } | null;
+  task?: { id: string; title: string } | null;
+}
+
+interface WeeklySummary {
+  totalSeconds: number;
+  byProject: Record<string, { name: string; seconds: number }>;
+  byDate: Record<string, number>;
+  entries: TimeEntry[];
+}
+
 export default function TimeTrackingPage() {
   const router = useRouter();
   const { isManagerOrAbove, loading: authLoading, userId } = useAdminContext();
@@ -40,10 +63,10 @@ export default function TimeTrackingPage() {
     format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
   );
   const [showManualEntry, setShowManualEntry] = useState(false);
-  const [runningTimer, setRunningTimer] = useState<Record<string, unknown> | null>(null);
+  const [runningTimer, setRunningTimer] = useState<TimeEntry | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [dailyEntries, setDailyEntries] = useState<Record<string, unknown>[]>([]);
-  const [weeklySummary, setWeeklySummary] = useState<Record<string, unknown> | null>(null);
+  const [dailyEntries, setDailyEntries] = useState<TimeEntry[]>([]);
+  const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Manual entry form
@@ -73,7 +96,7 @@ export default function TimeTrackingPage() {
     const fetchRunningTimer = async () => {
       const result = await getRunningTimer(userId);
       if (result.success && result.data) {
-        setRunningTimer(result.data);
+        setRunningTimer(result.data as TimeEntry);
       }
     };
     fetchRunningTimer();
@@ -105,7 +128,7 @@ export default function TimeTrackingPage() {
     const fetchDailyEntries = async () => {
       const result = await getDailyTimeEntries(selectedDate);
       if (result.success) {
-        setDailyEntries((result.data as Record<string, unknown>[]) || []);
+        setDailyEntries((result.data as TimeEntry[]) || []);
       }
     };
     fetchDailyEntries();
@@ -121,7 +144,7 @@ export default function TimeTrackingPage() {
         format(weekEnd, 'yyyy-MM-dd')
       );
       if (result.success) {
-        setWeeklySummary(result.data);
+        setWeeklySummary(result.data as WeeklySummary);
       }
     };
     fetchWeeklySummary();
@@ -151,7 +174,7 @@ export default function TimeTrackingPage() {
         timerForm.description || undefined
       );
       if (result.success) {
-        setRunningTimer(result.data as Record<string, unknown> | null);
+        setRunningTimer(result.data as TimeEntry);
         setTimerForm({ projectId: '', description: '' });
       } else {
         alert(result.error || 'Failed to start timer');
@@ -176,7 +199,7 @@ export default function TimeTrackingPage() {
         // Refresh daily entries
         const entriesResult = await getDailyTimeEntries(selectedDate);
         if (entriesResult.success) {
-          setDailyEntries((entriesResult.data as Record<string, unknown>[]) || []);
+          setDailyEntries((entriesResult.data as TimeEntry[]) || []);
         }
       } else {
         alert(result.error || 'Failed to stop timer');
@@ -218,7 +241,7 @@ export default function TimeTrackingPage() {
         // Refresh daily entries
         const entriesResult = await getDailyTimeEntries(selectedDate);
         if (entriesResult.success) {
-          setDailyEntries((entriesResult.data as Record<string, unknown>[]) || []);
+          setDailyEntries((entriesResult.data as TimeEntry[]) || []);
         }
       } else {
         alert(result.error || 'Failed to create entry');
@@ -241,7 +264,7 @@ export default function TimeTrackingPage() {
         // Refresh daily entries
         const entriesResult = await getDailyTimeEntries(selectedDate);
         if (entriesResult.success) {
-          setDailyEntries((entriesResult.data as Record<string, unknown>[]) || []);
+          setDailyEntries((entriesResult.data as TimeEntry[]) || []);
         }
       } else {
         alert(result.error || 'Failed to delete entry');
@@ -560,16 +583,11 @@ export default function TimeTrackingPage() {
               {weeklySummary && (
                 <div className="space-y-4">
                   {/* By Project */}
-                  {Object.keys(weeklySummary.byProject as Record<string, unknown>).length > 0 && (
+                  {Object.keys(weeklySummary.byProject).length > 0 && (
                     <div>
                       <h4 className="mb-2 text-sm font-medium">Hours by Project</h4>
                       <div className="space-y-2">
-                        {Object.entries(
-                          weeklySummary.byProject as Record<
-                            string,
-                            { name: string; seconds: number }
-                          >
-                        ).map(([projectId, data]) => (
+                        {Object.entries(weeklySummary.byProject).map(([projectId, data]) => (
                           <div
                             key={projectId}
                             className="flex items-center justify-between rounded-lg border p-3"
@@ -585,25 +603,21 @@ export default function TimeTrackingPage() {
                   )}
 
                   {/* By Date */}
-                  {Object.keys(weeklySummary.byDate as Record<string, unknown>).length > 0 && (
+                  {Object.keys(weeklySummary.byDate).length > 0 && (
                     <div>
                       <h4 className="mb-2 text-sm font-medium">Hours by Day</h4>
                       <div className="space-y-2">
-                        {Object.entries(weeklySummary.byDate as Record<string, number>).map(
-                          ([date, seconds]) => (
-                            <div
-                              key={date}
-                              className="flex items-center justify-between rounded-lg border p-3"
-                            >
-                              <span className="text-sm">
-                                {format(new Date(date), 'EEE, MMM d')}
-                              </span>
-                              <span className="font-medium tabular-nums">
-                                {formatHours(seconds)}h
-                              </span>
-                            </div>
-                          )
-                        )}
+                        {Object.entries(weeklySummary.byDate).map(([date, seconds]) => (
+                          <div
+                            key={date}
+                            className="flex items-center justify-between rounded-lg border p-3"
+                          >
+                            <span className="text-sm">{format(new Date(date), 'EEE, MMM d')}</span>
+                            <span className="font-medium tabular-nums">
+                              {formatHours(seconds)}h
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
