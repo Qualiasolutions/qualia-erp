@@ -181,12 +181,13 @@ Plans:
 3. Employee can configure notification types and delivery preferences in settings
 4. Client receives email when assigned employee updates project status or milestone
 5. Notification preferences persist and apply correctly to all future notifications
-   **Plans**: TBD
+   **Plans**: 3 plans in 2 waves
 
 Plans:
 
-- [ ] 14-01: TBD
-- [ ] 14-02: TBD
+- [x] 14-01-PLAN.md — Notification preferences infrastructure (DB, RLS, CRUD actions)
+- [x] 14-02-PLAN.md — Employee email notifications for client actions
+- [x] 14-03-PLAN.md — Client notifications and settings UI
 
 #### Phase 15: Portal Design System
 
@@ -251,6 +252,6 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete    | 2026-03-04 |
 | 12. Employee-Project Assignment System    | v1.3      | 2/2            | Complete    | 2026-03-06 |
 | 13. ERP-Portal Integration                | v1.3      | 3/3            | Complete    | 2026-03-06 |
-| 14. Unified Notification System           | v1.3      | 0/0            | Not started | -          |
+| 14. Unified Notification System           | v1.3      | 3/3            | Complete    | 2026-03-06 |
 | 15. Portal Design System                  | v1.3      | 2/2            | Not started | -          |
 | 16. Complete Portal Pages                 | v1.3      | 0/0            | Not started | -          |
