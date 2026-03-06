@@ -31,7 +31,6 @@ import {
   Globe,
   TrendingUp,
   Megaphone,
-  Sparkles,
 } from 'lucide-react';
 import { getProjectById, updateProject, deleteProject, updateProjectStatus } from '@/app/actions';
 import { invalidateProjectStats } from '@/lib/swr';

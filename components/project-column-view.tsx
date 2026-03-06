@@ -11,7 +11,6 @@ import {
   Folder,
   Inbox,
   User,
-  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
