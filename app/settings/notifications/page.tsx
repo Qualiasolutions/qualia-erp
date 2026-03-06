@@ -5,6 +5,7 @@ import {
   getNotificationPreferences,
   createDefaultPreferences,
 } from '@/app/actions/notification-preferences';
+import { type NotificationPreferencesInput } from '@/lib/validation';
 
 export default async function NotificationSettingsPage() {
   const supabase = await createClient();
@@ -28,7 +29,7 @@ export default async function NotificationSettingsPage() {
 
   // Get notification preferences
   const result = await getNotificationPreferences();
-  let preferences = result.data;
+  let preferences = result.data as NotificationPreferencesInput | undefined;
 
   // Create default preferences if none exist
   if (!preferences) {
@@ -36,7 +37,7 @@ export default async function NotificationSettingsPage() {
     if (defaultResult.success) {
       // Fetch again after creating defaults
       const refreshResult = await getNotificationPreferences();
-      preferences = refreshResult.data;
+      preferences = refreshResult.data as NotificationPreferencesInput | undefined;
     }
   }
 
@@ -50,7 +51,10 @@ export default async function NotificationSettingsPage() {
       </div>
 
       {preferences && (
-        <NotificationPreferencesForm initialPreferences={preferences} userRole={profile.role} />
+        <NotificationPreferencesForm
+          initialPreferences={preferences}
+          userRole={profile.role as 'admin' | 'employee' | 'client'}
+        />
       )}
     </div>
   );
