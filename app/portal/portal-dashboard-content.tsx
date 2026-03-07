@@ -100,7 +100,7 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
             </CardContent>
           </Card>
         </Link>
-        <a href="mailto:support@qualiasolutions.io">
+        <a href="mailto:support@qualiasolutions.net">
           <Card className="card-interactive">
             <CardContent className="flex items-center gap-3 p-4">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-qualia-600/10">
@@ -108,7 +108,7 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">Contact Support</p>
-                <p className="text-xs text-muted-foreground">support@qualiasolutions.io</p>
+                <p className="text-xs text-muted-foreground">support@qualiasolutions.net</p>
               </div>
             </CardContent>
           </Card>
