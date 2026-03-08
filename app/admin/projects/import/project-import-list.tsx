@@ -16,11 +16,21 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, Eye, Settings, X, InfoIcon, Mail } from 'lucide-react';
+import {
+  CheckCircle2,
+  Eye,
+  Settings,
+  X,
+  InfoIcon,
+  Mail,
+  RefreshCw,
+  CheckCircle,
+} from 'lucide-react';
 import type { ProjectForImport } from '@/app/actions/portal-import';
 import { RoadmapPreviewModal } from '@/components/portal/roadmap-preview-modal';
 import { PortalSettingsModal } from '@/components/admin/portal-settings-modal';
 import { SendInvitationModal } from '@/components/admin/send-invitation-modal';
+import { InvitationHistoryModal } from '@/components/admin/invitation-history-modal';
 
 type FilterStatus = 'all' | 'enabled' | 'not-enabled';
 
@@ -32,6 +42,9 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [sendInvitationOpen, setSendInvitationOpen] = useState(false);
   const [selectedProjectForInvitation, setSelectedProjectForInvitation] =
+    useState<ProjectForImport | null>(null);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [selectedProjectForHistory, setSelectedProjectForHistory] =
     useState<ProjectForImport | null>(null);
 
   // Filter projects based on selected tab
@@ -114,6 +127,61 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
     router.refresh(); // Reload page data
     setSelectedProjectIds(new Set()); // Clear selection
     setSelectedProjectForInvitation(null);
+  };
+
+  // Open invitation history modal for a project
+  const openInvitationHistory = (project: ProjectForImport) => {
+    setSelectedProjectForHistory(project);
+    setHistoryModalOpen(true);
+  };
+
+  // Handle successful history modal actions (resend)
+  const handleHistorySuccess = () => {
+    router.refresh(); // Reload page data
+  };
+
+  // Get invitation badge configuration
+  const getInvitationBadge = (
+    status: 'sent' | 'resent' | 'opened' | 'accepted'
+  ): {
+    label: string;
+    color: string;
+    bgColor: string;
+    textColor: string;
+    icon: typeof Mail;
+  } => {
+    const configs = {
+      sent: {
+        label: 'Invited',
+        color: 'blue',
+        bgColor: 'bg-blue-500/10',
+        textColor: 'text-blue-600',
+        icon: Mail,
+      },
+      resent: {
+        label: 'Reminder Sent',
+        color: 'purple',
+        bgColor: 'bg-purple-500/10',
+        textColor: 'text-purple-600',
+        icon: RefreshCw,
+      },
+      opened: {
+        label: 'Link Opened',
+        color: 'amber',
+        bgColor: 'bg-amber-500/10',
+        textColor: 'text-amber-600',
+        icon: Eye,
+      },
+      accepted: {
+        label: 'Account Created',
+        color: 'green',
+        bgColor: 'bg-green-500/10',
+        textColor: 'text-green-600',
+        icon: CheckCircle,
+      },
+    };
+
+    return configs[status];
   };
 
   const allSelected =
@@ -276,21 +344,45 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
                     )}
                   </TableCell>
                   <TableCell>
-                    {project.hasPortalAccess ? (
-                      <Badge className="gap-1.5 bg-green-500/10 text-green-600 hover:bg-green-500/20">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Portal Active ({project.portalAccessCount})
-                      </Badge>
-                    ) : project.hasPortalSettings ? (
-                      <Badge className="gap-1.5 bg-[#00A4AC]/10 text-[#00A4AC] hover:bg-[#00A4AC]/20">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Portal Ready
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="gap-1.5">
-                        Not Configured
-                      </Badge>
-                    )}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {/* Portal status badge */}
+                      {project.hasPortalAccess ? (
+                        <Badge className="gap-1.5 bg-green-500/10 text-green-600 hover:bg-green-500/20">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Portal Active ({project.portalAccessCount})
+                        </Badge>
+                      ) : project.hasPortalSettings ? (
+                        <Badge className="gap-1.5 bg-[#00A4AC]/10 text-[#00A4AC] hover:bg-[#00A4AC]/20">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Portal Ready
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1.5">
+                          Not Configured
+                        </Badge>
+                      )}
+
+                      {/* Invitation status badge (if invitation exists) */}
+                      {project.invitationStatus && (
+                        <Badge
+                          className={`cursor-pointer gap-1.5 transition-colors ${
+                            getInvitationBadge(project.invitationStatus).bgColor
+                          } ${
+                            getInvitationBadge(project.invitationStatus).textColor
+                          } hover:opacity-80`}
+                          onClick={() => openInvitationHistory(project)}
+                          title={`Invited: ${project.invitedEmail} on ${new Date(project.invitedAt!).toLocaleDateString()}`}
+                        >
+                          {(() => {
+                            const IconComponent = getInvitationBadge(
+                              project.invitationStatus!
+                            ).icon;
+                            return <IconComponent className="h-3 w-3" />;
+                          })()}
+                          {getInvitationBadge(project.invitationStatus).label}
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
@@ -331,6 +423,14 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
         open={sendInvitationOpen}
         onOpenChange={setSendInvitationOpen}
         onSuccess={handleInvitationSuccess}
+      />
+
+      {/* Invitation history modal */}
+      <InvitationHistoryModal
+        project={selectedProjectForHistory}
+        open={historyModalOpen}
+        onOpenChange={setHistoryModalOpen}
+        onSuccess={handleHistorySuccess}
       />
     </div>
   );

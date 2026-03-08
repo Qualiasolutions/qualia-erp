@@ -15,6 +15,13 @@ export type ProjectForImport = {
   portalAccessCount: number;
   hasPortalAccess: boolean;
   hasPortalSettings: boolean;
+  // Invitation fields (from client_invitations join)
+  invitationId?: string;
+  invitedEmail?: string;
+  invitationStatus?: 'sent' | 'resent' | 'opened' | 'accepted';
+  invitedAt?: string;
+  resentCount?: number;
+  metadata?: { portal_settings?: { welcome_message?: string } };
 };
 
 /**
@@ -39,7 +46,7 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
       return { success: false, error: 'Admin or manager access required' };
     }
 
-    // Query projects with metadata to check portal_settings
+    // Query projects with metadata to check portal_settings and latest invitation status
     const { data: projects, error } = await supabase
       .from('projects')
       .select(
@@ -65,15 +72,25 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
       return { success: true, data: [] };
     }
 
-    // For each project, get portal access count from client_projects
+    // For each project, get portal access count and latest invitation from client_projects and client_invitations
     const projectsWithStatus: ProjectForImport[] = await Promise.all(
       projects.map(async (project) => {
+        // Get portal access count
         const { count } = await supabase
           .from('client_projects')
           .select('id', { count: 'exact', head: true })
           .eq('project_id', project.id);
 
         const portalAccessCount = count ?? 0;
+
+        // Get latest invitation for this project
+        const { data: latestInvitation } = await supabase
+          .from('client_invitations')
+          .select('id, email, status, invited_at, resent_count')
+          .eq('project_id', project.id)
+          .order('invited_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
         // Check if portal settings are configured in metadata
         const metadata = project.metadata as { portal_settings?: unknown } | null;
@@ -109,6 +126,18 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
           portalAccessCount,
           hasPortalAccess: portalAccessCount > 0,
           hasPortalSettings,
+          metadata: project.metadata as { portal_settings?: { welcome_message?: string } },
+          // Invitation fields
+          invitationId: latestInvitation?.id,
+          invitedEmail: latestInvitation?.email,
+          invitationStatus: latestInvitation?.status as
+            | 'sent'
+            | 'resent'
+            | 'opened'
+            | 'accepted'
+            | undefined,
+          invitedAt: latestInvitation?.invited_at,
+          resentCount: latestInvitation?.resent_count,
         };
       })
     );
