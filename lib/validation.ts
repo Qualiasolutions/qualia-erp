@@ -490,3 +490,24 @@ export const notificationPreferencesSchema = z.object({
 
 export type ClientProfileInput = z.infer<typeof clientProfileSchema>;
 export type NotificationPreferencesInput = z.infer<typeof notificationPreferencesSchema>;
+
+// =====================
+// Portal Import Schemas
+// =====================
+export const portalSettingsSchema = z.object({
+  projectIds: z.array(z.string().uuid()).min(1, 'At least one project required'),
+  welcomeMessage: z.string().max(500, 'Welcome message too long').optional().nullable(),
+  visibilitySettings: z
+    .object({
+      showRoadmap: z.boolean().default(true),
+      showFiles: z.boolean().default(true),
+      showComments: z.boolean().default(true),
+    })
+    .default({
+      showRoadmap: true,
+      showFiles: true,
+      showComments: true,
+    }),
+});
+
+export type PortalSettingsInput = z.infer<typeof portalSettingsSchema>;
