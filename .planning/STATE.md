@@ -11,27 +11,27 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: Phase 17 (Project Import Flow)
-Plan: 2 of 3 complete
-Status: In progress
-Last activity: 2026-03-08 — Completed 17-02-PLAN.md (Project selection and roadmap preview)
+Plan: 3 of 3 complete
+Status: Phase complete ✓
+Last activity: 2026-03-08 — Completed 17-03-PLAN.md (Portal settings configuration)
 
-Progress: [██████░░░░] 2/3 plans (67%)
+Progress: [██████████] 3/3 plans (100%)
 
 **Phase 17 Progress:**
 
 - ✓ Plan 01: Admin UI with project list and portal status filtering
 - ✓ Plan 02: Project selection and client roadmap preview modal
-- ⏳ Plan 03: Portal settings configuration and persistence
+- ✓ Plan 03: Portal settings configuration and persistence
 
 **Phase Sequence:**
 
 ```
-→ Phase 17: Project Import Flow (In Progress - 2/3 plans complete)
-  Phase 18: Invitation System (Pending)
+✓ Phase 17: Project Import Flow (Complete - 3/3 plans)
+→ Phase 18: Invitation System (Ready to start)
   Phase 19: Client Onboarding Flow (Pending)
 ```
 
-**Next action:** Execute Plan 17-03 (Portal settings configuration)
+**Next action:** Execute Phase 18 Plan 01 (Invitation system foundation)
 
 ## Performance Metrics
 
@@ -47,16 +47,16 @@ Progress: [██████░░░░] 2/3 plans (67%)
 
 **v1.4 Milestone:**
 
-- Phases: 3 planned, 0 complete (Phase 17 in progress: 2/3 plans)
-- Plans: 2 executed (17-01, 17-02)
+- Phases: 3 planned, 1 complete (Phase 17 ✓, Phase 18-19 pending)
+- Plans: 3 executed (17-01, 17-02, 17-03)
 - Requirements: 16 total (IMPORT-01 through ONBOARD-06)
 - Coverage: 100% (all requirements mapped)
 
 **Overall Project:**
 
 - Milestones shipped: 4 (v1.0-v1.3)
-- Total phases completed: 16 (Phases 1-16)
-- Total plans executed: 39
+- Total phases completed: 17 (Phases 1-17)
+- Total plans executed: 42
 - Codebase: 112,693 LOC TypeScript
 
 ## Accumulated Context
@@ -72,16 +72,21 @@ See PROJECT.md Key Decisions table for full history.
 - Quick depth setting applied (3-5 phases target met with 3 phases)
 - Start phase numbering from 17 (continues from v1.3's Phase 16)
 
+**Phase 17 Technical Decisions:**
+
+- **Portal settings storage**: Use project.metadata JSONB for flexibility vs dedicated table
+- **Badge hierarchy**: Three tiers (Active/Ready/Not Configured) for clear visual status
+- **Visibility defaults**: All toggles (roadmap/files/comments) default ON for client-friendly UX
+
 ### Pending Todos
 
-**Phase 17 (Project Import Flow):**
+**Phase 17 (Project Import Flow):** ✓ Complete
 
-- Create admin UI for viewing ERP projects (portal-enabled vs not enabled)
-- Implement bulk selection interface for multiple project import
-- Build preview modal showing client-facing roadmap view
-- Add project-specific settings configuration (visibility, welcome message)
-- Implement one-click enable portal access action
-- Add visual confirmation and status badge updates
+- ✓ Create admin UI for viewing ERP projects (portal-enabled vs not enabled)
+- ✓ Implement bulk selection interface for multiple project import
+- ✓ Build preview modal showing client-facing roadmap view
+- ✓ Add project-specific settings configuration (visibility, welcome message)
+- ✓ Visual confirmation and status badge updates (Active/Ready/Not Configured)
 
 **Phase 18 (Invitation System):**
 
@@ -140,31 +145,35 @@ None currently identified.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed Plan 17-02 (Project selection and roadmap preview)
-**Next action:** Execute Plan 17-03 (Portal settings configuration)
+Stopped at: Completed Plan 17-03 (Portal settings configuration) — Phase 17 complete ✓
+**Next action:** Execute Phase 18 Plan 01 (Invitation system foundation)
 
 **Context to preserve:**
 
 - All v1.4 requirements in REQUIREMENTS.md with REQ-IDs
 - Phase success criteria in ROADMAP.md (5 criteria per phase)
-- Plan 17-01 established patterns: server/client component split, count-based portal status, filter tabs with badges
-- Plan 17-02 established patterns: fixed bottom toolbar with z-modal, preview modal with Dialog, server action for preview data
-- getProjectsForPortalImport() and getProjectPhasesForPreview() actions available
-- RoadmapPreviewModal component reusable for other admin previews
+- Phase 17 infrastructure ready for Phase 18:
+  - project.metadata.portal_settings JSONB storage
+  - hasPortalSettings detection in getProjectsForPortalImport()
+  - Three-tier badge system (Active/Ready/Not Configured)
+  - PortalSettingsModal reusable for editing settings
+  - Activity logging for portal_settings_configured
 
 **Recent completions:**
 
+- Plan 17-03: Portal settings configuration (3m 45s)
+  - PortalSettingsModal: 229 lines, welcome message + visibility toggles
+  - savePortalSettings() server action: metadata JSONB merge, activity logging
+  - Badge updates: Portal Active (green), Portal Ready (teal), Not Configured (gray)
+  - Info banner explaining Phase 18 next step
+  - Self-check: All files and commits verified
 - Plan 17-02: Project selection and roadmap preview (3m 25s)
   - Bulk actions toolbar: Preview Roadmap (single-select), Clear Selection
   - RoadmapPreviewModal: 225 lines, vertical timeline, phase status badges
   - Server action: getProjectPhasesForPreview() with auth + phase fetching
-  - Row-level Eye icons for quick preview access
-  - Self-check: All files and commits verified
-- Plan 17-01: Admin UI with project filtering by portal status (3m 20s)
+- Plan 17-01: Admin UI with project filtering (3m 20s)
   - Server action: getProjectsForPortalImport() with manager/admin auth
-  - Client component: ProjectImportList with filter tabs (All, Not Enabled, Enabled)
-  - Sidebar navigation: Portal Import link in adminNav
-  - Self-check: All files and commits verified
+  - Client component: ProjectImportList with filter tabs
 
 ---
 
