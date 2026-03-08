@@ -153,8 +153,7 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[50px]">
                   <Checkbox
-                    checked={allSelected}
-                    indeterminate={someSelected}
+                    checked={someSelected ? 'indeterminate' : allSelected}
                     onCheckedChange={toggleAll}
                   />
                 </TableHead>
