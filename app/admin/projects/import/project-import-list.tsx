@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
@@ -13,14 +14,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Settings } from 'lucide-react';
+import { CheckCircle2, Eye, Settings, X } from 'lucide-react';
 import type { ProjectForImport } from '@/app/actions/portal-import';
+import { RoadmapPreviewModal } from '@/components/portal/roadmap-preview-modal';
 
 type FilterStatus = 'all' | 'enabled' | 'not-enabled';
 
 export function ProjectImportList({ projects }: { projects: ProjectForImport[] }) {
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [previewProjectId, setPreviewProjectId] = useState<string | null>(null);
 
   // Filter projects based on selected tab
   const filteredProjects = projects.filter((project) => {
@@ -54,8 +57,23 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
     }
   };
 
+  // Clear all selections
+  const clearSelection = () => {
+    setSelectedProjectIds(new Set());
+  };
+
+  // Open preview for selected project (only enabled when exactly 1 selected)
+  const openPreview = () => {
+    if (selectedProjectIds.size === 1) {
+      const projectId = Array.from(selectedProjectIds)[0];
+      setPreviewProjectId(projectId);
+    }
+  };
+
   const allSelected =
     selectedProjectIds.size === filteredProjects.length && filteredProjects.length > 0;
+  const someSelected =
+    selectedProjectIds.size > 0 && selectedProjectIds.size < filteredProjects.length;
 
   return (
     <div className="space-y-6">
@@ -91,13 +109,29 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
         </TabsList>
       </Tabs>
 
-      {/* Bulk actions toolbar */}
+      {/* Bulk actions toolbar - fixed at bottom */}
       {selectedProjectIds.size > 0 && (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+        <Card className="fixed bottom-6 left-1/2 z-modal flex -translate-x-1/2 items-center gap-4 border-primary/20 bg-primary/5 px-6 py-3 shadow-elevation-4 backdrop-blur-sm">
           <span className="text-sm font-medium">
             {selectedProjectIds.size} project{selectedProjectIds.size !== 1 ? 's' : ''} selected
           </span>
-        </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-1.5"
+              disabled={selectedProjectIds.size !== 1}
+              onClick={openPreview}
+            >
+              <Eye className="h-3.5 w-3.5" />
+              Preview Roadmap
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={clearSelection}>
+              <X className="h-3.5 w-3.5" />
+              Clear Selection
+            </Button>
+          </div>
+        </Card>
       )}
 
       {/* Project table */}
@@ -118,7 +152,11 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[50px]">
-                  <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+                  <Checkbox
+                    checked={allSelected}
+                    indeterminate={someSelected}
+                    onCheckedChange={toggleAll}
+                  />
                 </TableHead>
                 <TableHead>Project Name</TableHead>
                 <TableHead className="w-[140px]">Type</TableHead>
@@ -130,12 +168,8 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
             </TableHeader>
             <TableBody>
               {filteredProjects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  className="card-interactive cursor-pointer"
-                  onClick={() => toggleProject(project.id)}
-                >
-                  <TableCell onClick={(e) => e.stopPropagation()}>
+                <TableRow key={project.id} className="card-interactive">
+                  <TableCell>
                     <Checkbox
                       checked={selectedProjectIds.has(project.id)}
                       onCheckedChange={() => toggleProject(project.id)}
@@ -176,17 +210,28 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1.5"
-                      disabled
-                      title="Available in next plan"
-                    >
-                      <Settings className="h-3.5 w-3.5" />
-                      Configure
-                    </Button>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => setPreviewProjectId(project.id)}
+                        title="Preview roadmap"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled
+                        title="Available in next plan"
+                      >
+                        <Settings className="h-3.5 w-3.5" />
+                        Configure
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -194,6 +239,13 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
           </Table>
         </div>
       )}
+
+      {/* Roadmap preview modal */}
+      <RoadmapPreviewModal
+        open={!!previewProjectId}
+        onOpenChange={(open) => !open && setPreviewProjectId(null)}
+        projectId={previewProjectId}
+      />
     </div>
   );
 }
