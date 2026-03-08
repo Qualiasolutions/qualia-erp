@@ -13,7 +13,7 @@ Requirements for v1.4 Admin Portal Onboarding milestone. Each maps to roadmap ph
 - [ ] **IMPORT-02**: Admin can select multiple ERP projects for bulk import to portal
 - [ ] **IMPORT-03**: Admin can preview what client will see before enabling portal access
 - [ ] **IMPORT-04**: Admin can configure project-specific portal settings during import
-- [ ] **IMPORT-05**: Admin can enable portal access with one-click confirmation
+- [ ] **IMPORT-05**: Admin can save portal configuration and mark projects ready for client invitation (actual portal access created in Phase 18)
 
 ### Client Invitation
 
@@ -105,4 +105,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 _Requirements defined: 2026-03-08_
-_Last updated: 2026-03-08 after roadmap creation (100% coverage achieved)_
+_Last updated: 2026-03-08 (revision: clarified IMPORT-05 phase boundary)_

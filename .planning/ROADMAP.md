@@ -236,7 +236,7 @@ Plans:
 
 ### Phase 17: Project Import Flow
 
-**Goal:** Admin can convert ERP projects to portal-accessible projects
+**Goal:** Admin can configure ERP projects for portal access and prepare them for client invitation
 
 **Dependencies:** None (builds on existing ERP and portal infrastructure)
 
@@ -244,11 +244,11 @@ Plans:
 
 **Success Criteria** (what must be TRUE):
 
-1. Admin can see list of ERP projects with clear indication of which are portal-enabled vs not enabled
+1. Admin can see list of ERP projects with clear indication of portal configuration status (not configured, ready for invitation, portal active)
 2. Admin can select one or multiple projects and see accurate preview of client-facing roadmap view
-3. Admin can configure project settings (visibility options, welcome message) before enabling portal access
-4. Admin can click one button to enable portal access and project immediately appears in portal projects list
-5. Admin can verify import success through visual confirmation and status badge changes
+3. Admin can configure project settings (visibility options, welcome message) before marking ready for portal
+4. Admin can save portal configuration and projects are marked "Portal Ready" for Phase 18 invitation system
+5. Admin can verify configuration success through visual confirmation and status badge changes
 
 **Plans:** 3 plans in 3 waves
 
@@ -256,7 +256,7 @@ Plans:
 
 - [ ] 17-01-PLAN.md — Admin import page with project list and portal status filtering
 - [ ] 17-02-PLAN.md — Project selection and client roadmap preview modal
-- [ ] 17-03-PLAN.md — Portal settings configuration and enable action with visual confirmation
+- [ ] 17-03-PLAN.md — Portal settings configuration and persistence with visual confirmation
 
 ---
 
@@ -343,4 +343,4 @@ Linear dependency chain: Must complete project import before invitations can be 
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-08 with v1.4 milestone_
+_Last updated: 2026-03-08 (revision: clarified Phase 17 scope boundary)_
