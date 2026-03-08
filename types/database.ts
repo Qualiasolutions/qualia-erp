@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       achievements: {
@@ -592,6 +617,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: 'client_feature_requests_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      client_invitations: {
+        Row: {
+          account_created_at: string | null;
+          email: string;
+          id: string;
+          invitation_token: string;
+          invited_at: string | null;
+          invited_by: string;
+          metadata: Json | null;
+          opened_at: string | null;
+          project_id: string;
+          resent_at: string | null;
+          resent_count: number | null;
+          status: Database['public']['Enums']['invitation_status'];
+        };
+        Insert: {
+          account_created_at?: string | null;
+          email: string;
+          id?: string;
+          invitation_token: string;
+          invited_at?: string | null;
+          invited_by: string;
+          metadata?: Json | null;
+          opened_at?: string | null;
+          project_id: string;
+          resent_at?: string | null;
+          resent_count?: number | null;
+          status?: Database['public']['Enums']['invitation_status'];
+        };
+        Update: {
+          account_created_at?: string | null;
+          email?: string;
+          id?: string;
+          invitation_token?: string;
+          invited_at?: string | null;
+          invited_by?: string;
+          metadata?: Json | null;
+          opened_at?: string | null;
+          project_id?: string;
+          resent_at?: string | null;
+          resent_count?: number | null;
+          status?: Database['public']['Enums']['invitation_status'];
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_invitations_project_id_fkey';
             columns: ['project_id'];
             isOneToOne: false;
             referencedRelation: 'projects';
@@ -1373,63 +1451,6 @@ export type Database = {
           },
         ];
       };
-      notifications: {
-        Row: {
-          created_at: string | null;
-          id: string;
-          is_read: boolean | null;
-          link: string | null;
-          message: string | null;
-          metadata: Json | null;
-          read_at: string | null;
-          title: string;
-          type: string;
-          user_id: string;
-          workspace_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: string;
-          is_read?: boolean | null;
-          link?: string | null;
-          message?: string | null;
-          metadata?: Json | null;
-          read_at?: string | null;
-          title: string;
-          type: string;
-          user_id: string;
-          workspace_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string;
-          is_read?: boolean | null;
-          link?: string | null;
-          message?: string | null;
-          metadata?: Json | null;
-          read_at?: string | null;
-          title?: string;
-          type?: string;
-          user_id?: string;
-          workspace_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'notifications_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'notifications_workspace_id_fkey';
-            columns: ['workspace_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       notification_preferences: {
         Row: {
           client_activity: boolean;
@@ -1480,6 +1501,63 @@ export type Database = {
           },
           {
             foreignKeyName: 'notification_preferences_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      notifications: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          is_read: boolean | null;
+          link: string | null;
+          message: string | null;
+          metadata: Json | null;
+          read_at: string | null;
+          title: string;
+          type: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          is_read?: boolean | null;
+          link?: string | null;
+          message?: string | null;
+          metadata?: Json | null;
+          read_at?: string | null;
+          title: string;
+          type: string;
+          user_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          is_read?: boolean | null;
+          link?: string | null;
+          message?: string | null;
+          metadata?: Json | null;
+          read_at?: string | null;
+          title?: string;
+          type?: string;
+          user_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notifications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'notifications_workspace_id_fkey';
             columns: ['workspace_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -3165,6 +3243,76 @@ export type Database = {
           },
         ];
       };
+      time_entries: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          duration_seconds: number | null;
+          end_time: string | null;
+          entry_date: string;
+          id: string;
+          is_running: boolean | null;
+          project_id: string | null;
+          start_time: string;
+          task_id: string | null;
+          updated_at: string | null;
+          user_id: string;
+          workspace_id: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          duration_seconds?: number | null;
+          end_time?: string | null;
+          entry_date: string;
+          id?: string;
+          is_running?: boolean | null;
+          project_id?: string | null;
+          start_time: string;
+          task_id?: string | null;
+          updated_at?: string | null;
+          user_id: string;
+          workspace_id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          duration_seconds?: number | null;
+          end_time?: string | null;
+          entry_date?: string;
+          id?: string;
+          is_running?: boolean | null;
+          project_id?: string | null;
+          start_time?: string;
+          task_id?: string | null;
+          updated_at?: string | null;
+          user_id?: string;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'time_entries_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_entries_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'time_entries_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       trainee_daily_logs: {
         Row: {
           blockers: string | null;
@@ -3551,7 +3699,43 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      portal_project_mappings: {
+        Row: {
+          erp_client_id: string | null;
+          erp_client_name: string | null;
+          erp_company_name: string | null;
+          mapping_id: string | null;
+          portal_client_email: string | null;
+          portal_client_id: string | null;
+          portal_client_name: string | null;
+          project_id: string | null;
+          project_name: string | null;
+          project_status: Database['public']['Enums']['project_status'] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_projects_client_id_fkey';
+            columns: ['portal_client_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_projects_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'projects_client_id_fkey';
+            columns: ['erp_client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Functions: {
       calculate_phase_progress: {
@@ -3702,6 +3886,7 @@ export type Database = {
         | 'linkedin'
         | 'none';
       integration_provider: 'github' | 'vercel' | 'vapi';
+      invitation_status: 'sent' | 'resent' | 'opened' | 'accepted' | 'expired';
       issue_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       issue_status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
       lead_status: 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';
@@ -3715,7 +3900,7 @@ export type Database = {
         | 'demos'
         | 'other';
       project_status: 'Demos' | 'Active' | 'Launched' | 'Delayed' | 'Archived' | 'Canceled';
-      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads' | 'voice_agent' | 'ai_platform';
+      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads' | 'voice_agent';
       provisioning_status:
         | 'not_started'
         | 'pending'
@@ -3850,6 +4035,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       activity_type: [
@@ -3876,6 +4064,7 @@ export const Constants = {
         'none',
       ],
       integration_provider: ['github', 'vercel', 'vapi'],
+      invitation_status: ['sent', 'resent', 'opened', 'accepted', 'expired'],
       issue_priority: ['No Priority', 'Urgent', 'High', 'Medium', 'Low'],
       issue_status: ['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'],
       lead_status: ['dropped', 'cold', 'hot', 'active_client', 'inactive_client', 'dead_lead'],
@@ -3890,7 +4079,7 @@ export const Constants = {
         'other',
       ],
       project_status: ['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'],
-      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent', 'ai_platform'],
+      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent'],
       provisioning_status: [
         'not_started',
         'pending',
@@ -3906,73 +4095,3 @@ export const Constants = {
     },
   },
 } as const;
-
-// Convenience type aliases for common tables
-export type Profile = Tables<'profiles'>;
-export type Client = Tables<'clients'>;
-export type Project = Tables<'projects'>;
-export type Task = Tables<'tasks'>;
-export type Issue = Tables<'issues'>;
-export type Meeting = Tables<'meetings'>;
-export type Activity = Tables<'activities'>;
-export type Notification = Tables<'notifications'>;
-export type ProjectFile = {
-  id: string;
-  project_id: string;
-  workspace_id: string | null;
-  name: string;
-  original_name: string;
-  storage_path: string;
-  file_size: number;
-  mime_type: string;
-  uploaded_by: string;
-  created_at: string;
-  updated_at: string;
-  description: string | null;
-  phase_id: string | null;
-  is_client_visible: boolean;
-  uploader?: { id: string; full_name: string; email: string; avatar_url: string | null } | null;
-  phase?: { id: string; phase_name: string } | null;
-};
-export type Skill = Tables<'skills'>;
-export type UserSkill = Tables<'user_skills'>;
-export type Achievement = Tables<'achievements'>;
-export type UserAchievement = Tables<'user_achievements'>;
-export type TeachingNote = Tables<'teaching_notes'>;
-export type TaskReflection = Tables<'task_reflections'>;
-export type ExtendedProfile = Profile & { user_skills?: UserSkill[] };
-export type ProjectIntegration = Tables<'project_integrations'>;
-
-// Time Entry type (time_entries table exists but not auto-generated yet)
-export type TimeEntry = {
-  id: string;
-  user_id: string;
-  workspace_id: string | null;
-  project_id: string | null;
-  task_id: string | null;
-  description: string | null;
-  start_time: string;
-  end_time: string | null;
-  duration_seconds: number | null;
-  entry_date: string;
-  is_running: boolean;
-  created_at: string;
-  updated_at: string;
-};
-
-// Enum type aliases
-export type ProjectType = Enums<'project_type'>;
-export type ProjectStatus = Enums<'project_status'>;
-export type TaskStatus = Enums<'task_status'>;
-export type TaskPriority = Enums<'task_priority'>;
-export type IssueStatus = Enums<'issue_status'>;
-export type IssuePriority = Enums<'issue_priority'>;
-export type LeadStatus = Enums<'lead_status'>;
-export type UserRole = Enums<'user_role'>;
-export type DeploymentPlatform = Enums<'deployment_platform'>;
-export type IntegrationProvider = Enums<'integration_provider'>;
-export type TeachingNoteType = 'hint' | 'explanation' | 'resource' | 'warning' | 'encouragement';
-export type SkillCategory = string;
-export type ProjectGroup = Enums<'project_group'>;
-export type TaskDifficulty = 'starter' | 'easy' | 'medium' | 'hard' | 'expert';
-export type ReviewStatus = 'pending' | 'approved' | 'needs_revision';
