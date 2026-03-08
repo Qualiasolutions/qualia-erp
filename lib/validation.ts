@@ -511,3 +511,13 @@ export const portalSettingsSchema = z.object({
 });
 
 export type PortalSettingsInput = z.infer<typeof portalSettingsSchema>;
+
+// =====================
+// Client Invitation Schemas
+// =====================
+export const invitationSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  email: z.string().email('Invalid email address').trim().toLowerCase(),
+});
+
+export type InvitationInput = z.infer<typeof invitationSchema>;
