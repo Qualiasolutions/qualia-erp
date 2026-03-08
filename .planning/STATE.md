@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 ## Current Position
 
-Phase: Phase 17 (Project Import Flow)
-Plan: 3 of 3 complete
-Status: Phase complete ✓
-Last activity: 2026-03-08 — Completed 17-03-PLAN.md (Portal settings configuration)
+Phase: Phase 18 (Invitation System)
+Plan: 1 of 3 complete
+Status: In progress
+Last activity: 2026-03-08 — Completed 18-01-PLAN.md (Invitation system foundation)
 
-Progress: [██████████] 3/3 plans (100%)
+Progress: [███░░░░░░░] 1/3 plans (33%)
 
-**Phase 17 Progress:**
+**Phase 18 Progress:**
 
-- ✓ Plan 01: Admin UI with project list and portal status filtering
-- ✓ Plan 02: Project selection and client roadmap preview modal
-- ✓ Plan 03: Portal settings configuration and persistence
+- ✓ Plan 01: Invitation system foundation (database schema and server actions)
+- ⧗ Plan 02: Admin invitation UI
+- ⧗ Plan 03: Email template and delivery
 
 **Phase Sequence:**
 
 ```
 ✓ Phase 17: Project Import Flow (Complete - 3/3 plans)
-→ Phase 18: Invitation System (Ready to start)
+→ Phase 18: Invitation System (In progress - 1/3 plans)
   Phase 19: Client Onboarding Flow (Pending)
 ```
 
-**Next action:** Execute Phase 18 Plan 01 (Invitation system foundation)
+**Next action:** Execute Phase 18 Plan 02 (Admin invitation UI)
 
 ## Performance Metrics
 
@@ -47,16 +47,16 @@ Progress: [██████████] 3/3 plans (100%)
 
 **v1.4 Milestone:**
 
-- Phases: 3 planned, 1 complete (Phase 17 ✓, Phase 18-19 pending)
-- Plans: 3 executed (17-01, 17-02, 17-03)
+- Phases: 3 planned, 1 complete (Phase 17 ✓), 1 in progress (Phase 18)
+- Plans: 4 executed (17-01, 17-02, 17-03, 18-01)
 - Requirements: 16 total (IMPORT-01 through ONBOARD-06)
 - Coverage: 100% (all requirements mapped)
 
 **Overall Project:**
 
 - Milestones shipped: 4 (v1.0-v1.3)
-- Total phases completed: 17 (Phases 1-17)
-- Total plans executed: 42
+- Total phases completed: 17 (Phases 1-17), Phase 18 in progress
+- Total plans executed: 43 (1 more since last update)
 - Codebase: 112,693 LOC TypeScript
 
 ## Accumulated Context
@@ -78,6 +78,13 @@ See PROJECT.md Key Decisions table for full history.
 - **Badge hierarchy**: Three tiers (Active/Ready/Not Configured) for clear visual status
 - **Visibility defaults**: All toggles (roadmap/files/comments) default ON for client-friendly UX
 
+**Phase 18 Technical Decisions:**
+
+- **Secure token generation**: Use crypto.randomUUID() (built-in Node.js, cryptographically secure)
+- **Idempotent invitation creation**: Return existing invitation if already sent/resent (prevents duplicates)
+- **Phase boundary**: Phase 18 creates opened_at/account_created_at columns, Phase 19 populates them
+- **Database constraints**: UNIQUE(project_id, email) prevents duplicate invitations per project
+
 ### Pending Todos
 
 **Phase 17 (Project Import Flow):** ✓ Complete
@@ -88,14 +95,15 @@ See PROJECT.md Key Decisions table for full history.
 - ✓ Add project-specific settings configuration (visibility, welcome message)
 - ✓ Visual confirmation and status badge updates (Active/Ready/Not Configured)
 
-**Phase 18 (Invitation System):**
+**Phase 18 (Invitation System):** 1/3 plans complete
 
-- Create database schema for invitations tracking (table + status enum)
-- Build admin UI for entering client email and sending invitations
-- Design and implement invitation email template via Resend
-- Add invitation status display (sent, delivered, opened, account created)
-- Implement resend invitation functionality
-- Create invitation history timeline view
+- ✓ Create database schema for invitations tracking (table + status enum) - Plan 01
+- ✓ Implement server actions for invitation CRUD operations - Plan 01
+- Build admin UI for entering client email and sending invitations - Plan 02
+- Design and implement invitation email template via Resend - Plan 03
+- Add invitation status display (sent, delivered, opened, account created) - Plan 02
+- Implement resend invitation functionality - Plan 02
+- Create invitation history timeline view - Plan 02
 
 **Phase 19 (Client Onboarding Flow):**
 
@@ -145,37 +153,38 @@ None currently identified.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed Plan 17-03 (Portal settings configuration) — Phase 17 complete ✓
-**Next action:** Execute Phase 18 Plan 01 (Invitation system foundation)
+Stopped at: Completed Plan 18-01 (Invitation system foundation) — Phase 18 in progress (1/3 plans)
+**Next action:** Execute Phase 18 Plan 02 (Admin invitation UI)
 
 **Context to preserve:**
 
 - All v1.4 requirements in REQUIREMENTS.md with REQ-IDs
 - Phase success criteria in ROADMAP.md (5 criteria per phase)
-- Phase 17 infrastructure ready for Phase 18:
-  - project.metadata.portal_settings JSONB storage
-  - hasPortalSettings detection in getProjectsForPortalImport()
-  - Three-tier badge system (Active/Ready/Not Configured)
-  - PortalSettingsModal reusable for editing settings
-  - Activity logging for portal_settings_configured
+- Phase 18 infrastructure ready for Plan 02:
+  - client_invitations table with invitation_status enum (sent/resent/opened/accepted/expired)
+  - Server actions: createInvitation, resendInvitation, getInvitationHistory, getProjectInvitationStatus
+  - invitationSchema validation with email normalization
+  - Secure token generation using crypto.randomUUID()
+  - RLS policies: admin full access, managers view invitations for their projects
+  - Idempotent invitation creation (returns existing if already sent/resent)
 
 **Recent completions:**
 
+- Plan 18-01: Invitation system foundation (3m 50s)
+  - Migration: client_invitations table, invitation_status enum, indexes, RLS policies
+  - Server actions: createInvitation (idempotent), resendInvitation, getInvitationHistory, getProjectInvitationStatus
+  - Validation: invitationSchema with email normalization
+  - Security: crypto.randomUUID() for tokens, UNIQUE(project_id, email) constraint
+  - Self-check: All files and commits verified
 - Plan 17-03: Portal settings configuration (3m 45s)
   - PortalSettingsModal: 229 lines, welcome message + visibility toggles
   - savePortalSettings() server action: metadata JSONB merge, activity logging
   - Badge updates: Portal Active (green), Portal Ready (teal), Not Configured (gray)
-  - Info banner explaining Phase 18 next step
-  - Self-check: All files and commits verified
 - Plan 17-02: Project selection and roadmap preview (3m 25s)
   - Bulk actions toolbar: Preview Roadmap (single-select), Clear Selection
   - RoadmapPreviewModal: 225 lines, vertical timeline, phase status badges
-  - Server action: getProjectPhasesForPreview() with auth + phase fetching
-- Plan 17-01: Admin UI with project filtering (3m 20s)
-  - Server action: getProjectsForPortalImport() with manager/admin auth
-  - Client component: ProjectImportList with filter tabs
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-08 after Phase 17 verification passed_
+_Last updated: 2026-03-08 after Plan 18-01 execution (Invitation system foundation)_
