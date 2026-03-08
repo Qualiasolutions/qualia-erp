@@ -73,11 +73,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase    | Status  |
 | ----------- | -------- | ------- |
-| IMPORT-01   | Phase 17 | Pending |
-| IMPORT-02   | Phase 17 | Pending |
-| IMPORT-03   | Phase 17 | Pending |
-| IMPORT-04   | Phase 17 | Pending |
-| IMPORT-05   | Phase 17 | Pending |
+| IMPORT-01   | Phase 17 | Done    |
+| IMPORT-02   | Phase 17 | Done    |
+| IMPORT-03   | Phase 17 | Done    |
+| IMPORT-04   | Phase 17 | Done    |
+| IMPORT-05   | Phase 17 | Done    |
 | INVITE-01   | Phase 18 | Pending |
 | INVITE-02   | Phase 18 | Pending |
 | INVITE-03   | Phase 18 | Pending |

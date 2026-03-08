@@ -6,7 +6,7 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 **Core value:** Moayad can independently execute project phases with clear guidance while Fawzi reviews at phase boundaries — and clients see real-time project progress without internal complexity.
 **Current milestone:** v1.4 Admin Portal Onboarding
-**Current focus:** Ready to execute Phase 17 (Project Import Flow)
+**Current focus:** Phase 17 complete, ready to plan Phase 18 (Invitation System)
 
 ## Current Position
 
@@ -43,7 +43,7 @@ Progress: [██████████] 3/3 plans (100%)
 | v1.1 Production Polish           | 5      | 9     | 2026-03-04 |
 | v1.2 Premium Animations          | 2      | 7     | 2026-03-04 |
 | v1.3 Full ERP-Portal Integration | 5      | 13    | 2026-03-06 |
-| v1.4 Admin Portal Onboarding     | 3      | 0     | —          |
+| v1.4 Admin Portal Onboarding     | 3      | 3     | —          |
 
 **v1.4 Milestone:**
 
@@ -178,4 +178,4 @@ Stopped at: Completed Plan 17-03 (Portal settings configuration) — Phase 17 co
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-08 after completing Plan 17-01_
+_Last updated: 2026-03-08 after Phase 17 verification passed_

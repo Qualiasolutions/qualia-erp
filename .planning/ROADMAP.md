@@ -254,9 +254,9 @@ Plans:
 
 Plans:
 
-- [ ] 17-01-PLAN.md — Admin import page with project list and portal status filtering
-- [ ] 17-02-PLAN.md — Project selection and client roadmap preview modal
-- [ ] 17-03-PLAN.md — Portal settings configuration and persistence with visual confirmation
+- [x] 17-01-PLAN.md — Admin import page with project list and portal status filtering
+- [x] 17-02-PLAN.md — Project selection and client roadmap preview modal
+- [x] 17-03-PLAN.md — Portal settings configuration and persistence with visual confirmation
 
 ---
 
@@ -322,11 +322,11 @@ Phases execute in numeric order: 17 → 18 → 19
 | 14. Unified Notification System           | v1.3      | 3/3            | Complete | 2026-03-06 |
 | 15. Portal Design System                  | v1.3      | 2/2            | Complete | 2026-03-06 |
 | 16. Complete Portal Pages                 | v1.3      | 3/3            | Complete | 2026-03-06 |
-| 17. Project Import Flow                   | v1.4      | 0/0            | Pending  | —          |
+| 17. Project Import Flow                   | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 18. Invitation System                     | v1.4      | 0/0            | Pending  | —          |
 | 19. Client Onboarding Flow                | v1.4      | 0/0            | Pending  | —          |
 
-**Milestone v1.4 Progress:** 0/3 phases complete (0%)
+**Milestone v1.4 Progress:** 1/3 phases complete (33%)
 
 ## Dependencies Flow (v1.4)
 
