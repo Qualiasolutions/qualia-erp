@@ -313,7 +313,7 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
       {/* Roadmap preview modal */}
       <RoadmapPreviewModal
         open={!!previewProjectId}
-        onOpenChange={(open) => !open && setPreviewProjectId(null)}
+        onOpenChange={(open: boolean) => !open && setPreviewProjectId(null)}
         projectId={previewProjectId}
       />
 

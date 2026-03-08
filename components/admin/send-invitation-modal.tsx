@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useServerAction } from '@/lib/hooks/use-server-action';
 import { createInvitation } from '@/app/actions/client-invitations';
 import { sendClientInvitation } from '@/lib/email';
 import { Button } from '@/components/ui/button';
@@ -48,37 +47,7 @@ export function SendInvitationModal({
 }: SendInvitationModalProps) {
   // Form state
   const [email, setEmail] = useState<string>('');
-
-  // Server action
-  const { execute, isPending } = useServerAction(createInvitation, {
-    onSuccess: async (result) => {
-      const r = result as { data?: { token?: string; email?: string; isExisting?: boolean } };
-      const data = r?.data;
-
-      if (data?.token && data?.email && project) {
-        // Send invitation email
-        await sendClientInvitation({
-          projectId: project.id,
-          projectName: project.name,
-          email: data.email,
-          invitationToken: data.token,
-          welcomeMessage: project.portal_settings?.welcomeMessage,
-        });
-
-        toast.success(`Invitation sent to ${data.email}`);
-
-        // Reset form
-        setEmail('');
-
-        // Notify parent and close modal
-        onSuccess();
-        onOpenChange(false);
-      }
-    },
-    onError: (error) => {
-      toast.error(error || 'Failed to send invitation');
-    },
-  });
+  const [isPending, setIsPending] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,10 +64,39 @@ export function SendInvitationModal({
       return;
     }
 
-    await execute({
-      projectId: project.id,
-      email: email.trim().toLowerCase(),
-    });
+    setIsPending(true);
+    try {
+      const result = await createInvitation({
+        projectId: project.id,
+        email: email.trim().toLowerCase(),
+      });
+
+      if (!result.success) {
+        toast.error(result.error || 'Failed to send invitation');
+        return;
+      }
+
+      const data = result.data as { token?: string; email?: string } | undefined;
+
+      if (data?.token && data?.email) {
+        await sendClientInvitation({
+          projectId: project.id,
+          projectName: project.name,
+          email: data.email,
+          invitationToken: data.token,
+          welcomeMessage: project.portal_settings?.welcomeMessage,
+        });
+
+        toast.success(`Invitation sent to ${data.email}`);
+        setEmail('');
+        onSuccess();
+        onOpenChange(false);
+      }
+    } catch {
+      toast.error('Failed to send invitation');
+    } finally {
+      setIsPending(false);
+    }
   };
 
   // Reset form when modal closes
