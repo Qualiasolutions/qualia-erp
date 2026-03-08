@@ -280,9 +280,9 @@ Plans:
 
 Plans:
 
-- [ ] 18-01-PLAN.md — Database schema and server actions for invitation tracking
-- [ ] 18-02-PLAN.md — Invitation email template and admin UI for sending invitations
-- [ ] 18-03-PLAN.md — Invitation status badges and history modal with resend capability
+- [x] 18-01-PLAN.md — Database schema and server actions for invitation tracking
+- [x] 18-02-PLAN.md — Invitation email template and admin UI for sending invitations
+- [x] 18-03-PLAN.md — Invitation status badges and history modal with resend capability
 
 ---
 
@@ -329,10 +329,10 @@ Phases execute in numeric order: 17 → 18 → 19
 | 15. Portal Design System                  | v1.3      | 2/2            | Complete | 2026-03-06 |
 | 16. Complete Portal Pages                 | v1.3      | 3/3            | Complete | 2026-03-06 |
 | 17. Project Import Flow                   | v1.4      | 3/3            | Complete | 2026-03-08 |
-| 18. Invitation System                     | v1.4      | 0/3            | Pending  | —          |
+| 18. Invitation System                     | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 19. Client Onboarding Flow                | v1.4      | 0/0            | Pending  | —          |
 
-**Milestone v1.4 Progress:** 1/3 phases complete (33%)
+**Milestone v1.4 Progress:** 2/3 phases complete (67%)
 
 ## Dependencies Flow (v1.4)
 

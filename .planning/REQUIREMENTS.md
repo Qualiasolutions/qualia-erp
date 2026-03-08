@@ -17,11 +17,11 @@ Requirements for v1.4 Admin Portal Onboarding milestone. Each maps to roadmap ph
 
 ### Client Invitation
 
-- [ ] **INVITE-01**: Admin can enter client email address for a portal-enabled project
-- [ ] **INVITE-02**: Admin can send invitation email with project details to client
-- [ ] **INVITE-03**: Admin can resend invitation if client hasn't responded
-- [ ] **INVITE-04**: Admin can view invitation status (sent, delivered, opened, account created)
-- [ ] **INVITE-05**: System tracks invitation history and status changes
+- [x] **INVITE-01**: Admin can enter client email address for a portal-enabled project
+- [x] **INVITE-02**: Admin can send invitation email with project details to client
+- [x] **INVITE-03**: Admin can resend invitation if client hasn't responded
+- [x] **INVITE-04**: Admin can view invitation status (sent, delivered, opened, account created)
+- [x] **INVITE-05**: System tracks invitation history and status changes
 
 ### Client Onboarding
 
@@ -78,11 +78,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | IMPORT-03   | Phase 17 | Done    |
 | IMPORT-04   | Phase 17 | Done    |
 | IMPORT-05   | Phase 17 | Done    |
-| INVITE-01   | Phase 18 | Pending |
-| INVITE-02   | Phase 18 | Pending |
-| INVITE-03   | Phase 18 | Pending |
-| INVITE-04   | Phase 18 | Pending |
-| INVITE-05   | Phase 18 | Pending |
+| INVITE-01   | Phase 18 | Done    |
+| INVITE-02   | Phase 18 | Done    |
+| INVITE-03   | Phase 18 | Done    |
+| INVITE-04   | Phase 18 | Done    |
+| INVITE-05   | Phase 18 | Done    |
 | ONBOARD-01  | Phase 19 | Pending |
 | ONBOARD-02  | Phase 19 | Pending |
 | ONBOARD-03  | Phase 19 | Pending |
