@@ -250,7 +250,13 @@ Plans:
 4. Admin can click one button to enable portal access and project immediately appears in portal projects list
 5. Admin can verify import success through visual confirmation and status badge changes
 
-**Plans:** Pending
+**Plans:** 3 plans in 3 waves
+
+Plans:
+
+- [ ] 17-01-PLAN.md — Admin import page with project list and portal status filtering
+- [ ] 17-02-PLAN.md — Project selection and client roadmap preview modal
+- [ ] 17-03-PLAN.md — Portal settings configuration and enable action with visual confirmation
 
 ---
 
