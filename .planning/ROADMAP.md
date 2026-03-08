@@ -302,7 +302,12 @@ Plans:
 4. Client is automatically logged in and redirected to their project portal page without manual login
 5. Client can immediately view project roadmap, download shared files, and leave comments on phases
 
-**Plans:** Pending
+**Plans:** 2 plans in 2 waves
+
+Plans:
+
+- [ ] 19-01-PLAN.md — Signup page with invitation validation and account creation
+- [ ] 19-02-PLAN.md — Auto-login verification and full portal access testing
 
 </details>
 
