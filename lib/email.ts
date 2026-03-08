@@ -353,6 +353,188 @@ export async function notifyIssueCreated(
 }
 
 // ============================================================================
+// Client Invitation Emails
+// ============================================================================
+
+/**
+ * Send client invitation email with secure signup link.
+ * Includes project-specific welcome message and Qualia branding.
+ */
+export async function sendClientInvitation(params: {
+  projectId: string;
+  projectName: string;
+  email: string;
+  invitationToken: string;
+  welcomeMessage?: string;
+}): Promise<void> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[sendClientInvitation] Resend not configured, skipping email');
+      return;
+    }
+
+    const { projectName, email, invitationToken, welcomeMessage } = params;
+    const signupUrl = `${APP_URL}/auth/signup?token=${invitationToken}`;
+
+    const subject = `You're invited to view ${projectName} on Qualia`;
+
+    const html = generateInvitationHtml({
+      projectName,
+      signupUrl,
+      welcomeMessage,
+    });
+
+    const text = generateInvitationText({
+      projectName,
+      signupUrl,
+      welcomeMessage,
+    });
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      console.error('[sendClientInvitation] Failed to send email:', error);
+      return;
+    }
+
+    console.log(`[sendClientInvitation] Invitation sent to ${email} for project ${projectName}`);
+  } catch (error) {
+    console.error('[sendClientInvitation] Unexpected error:', error);
+    // Silent failure - don't throw
+  }
+}
+
+/**
+ * Generate HTML email template for client invitation.
+ * Matches Phase 14 notification pattern with Qualia teal branding.
+ */
+function generateInvitationHtml(params: {
+  projectName: string;
+  signupUrl: string;
+  welcomeMessage?: string;
+}): string {
+  const { projectName, signupUrl, welcomeMessage } = params;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're Invited to Qualia</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background-color: #f5f5f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f5f5f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <!-- Main container -->
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+          <!-- Header with gradient -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #00A4AC 0%, #008B92 100%); padding: 40px 24px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">
+                You're Invited
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Body content -->
+          <tr>
+            <td style="padding: 40px 32px;">
+              <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">
+                Hi there,
+              </p>
+
+              <p style="margin: 0 0 24px 0; color: #333333; font-size: 16px; line-height: 1.6;">
+                You've been invited to access the Qualia client portal for <strong>${projectName}</strong>.
+              </p>
+
+              ${
+                welcomeMessage
+                  ? `
+              <div style="background-color: #e6f7f8; border-left: 4px solid #00A4AC; padding: 16px; margin: 0 0 24px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #00A4AC; font-size: 15px; line-height: 1.6; font-style: italic;">
+                  ${welcomeMessage}
+                </p>
+              </div>
+              `
+                  : ''
+              }
+
+              <p style="margin: 0 0 32px 0; color: #333333; font-size: 16px; line-height: 1.6;">
+                Click the button below to create your account and access your project dashboard, roadmap, files, and updates.
+              </p>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="${signupUrl}" style="display: inline-block; background-color: #00A4AC; color: #ffffff; text-decoration: none; padding: 16px 32px; border-radius: 6px; font-size: 16px; font-weight: 600; letter-spacing: 0.5px;">
+                      Create Account &amp; View Project
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f9f9f9; padding: 24px 32px; border-top: 1px solid #e5e5e5;">
+              <p style="margin: 0 0 12px 0; color: #666666; font-size: 14px; line-height: 1.5;">
+                If you have any questions, reply to this email or contact us at <a href="mailto:info@qualiasolutions.net" style="color: #00A4AC; text-decoration: none;">info@qualiasolutions.net</a>.
+              </p>
+              <p style="margin: 0; color: #999999; font-size: 13px; line-height: 1.5;">
+                This invitation link is secure and can only be used once.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+}
+
+/**
+ * Generate plain text version of invitation email.
+ */
+function generateInvitationText(params: {
+  projectName: string;
+  signupUrl: string;
+  welcomeMessage?: string;
+}): string {
+  const { projectName, signupUrl, welcomeMessage } = params;
+
+  let text = `YOU'RE INVITED TO QUALIA\n\n`;
+  text += `Hi there,\n\n`;
+  text += `You've been invited to access the Qualia client portal for ${projectName}.\n\n`;
+
+  if (welcomeMessage) {
+    text += `${welcomeMessage}\n\n`;
+  }
+
+  text += `Create your account and access your project dashboard, roadmap, files, and updates:\n\n`;
+  text += `${signupUrl}\n\n`;
+  text += `---\n\n`;
+  text += `If you have any questions, reply to this email or contact us at info@qualiasolutions.net.\n\n`;
+  text += `This invitation link is secure and can only be used once.`;
+
+  return text;
+}
+
+// ============================================================================
 // Phase Change Notifications (for client portal)
 // ============================================================================
 
