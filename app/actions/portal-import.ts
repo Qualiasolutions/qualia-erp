@@ -121,3 +121,69 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
     };
   }
 }
+
+/**
+ * Get project roadmap preview data for admin preview modal.
+ * Returns project details and phases (no phase items or tasks - client-facing view only).
+ * Used by roadmap preview modal before enabling portal access.
+ */
+export async function getProjectPhasesForPreview(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Authorization: require manager or admin
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin or manager access required' };
+    }
+
+    // Fetch project details
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('id, name, description, project_type, project_status')
+      .eq('id', projectId)
+      .single();
+
+    if (projectError) {
+      console.error('[getProjectPhasesForPreview] Project query error:', projectError);
+      return { success: false, error: projectError.message };
+    }
+
+    if (!project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Fetch project phases (sorted by sort_order)
+    const { data: phases, error: phasesError } = await supabase
+      .from('project_phases')
+      .select('id, name, description, status, start_date, end_date, sort_order')
+      .eq('project_id', projectId)
+      .order('sort_order', { ascending: true });
+
+    if (phasesError) {
+      console.error('[getProjectPhasesForPreview] Phases query error:', phasesError);
+      return { success: false, error: phasesError.message };
+    }
+
+    return {
+      success: true,
+      data: {
+        project,
+        phases: phases || [],
+      },
+    };
+  } catch (error) {
+    console.error('[getProjectPhasesForPreview] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch project roadmap',
+    };
+  }
+}
