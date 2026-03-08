@@ -6,6 +6,7 @@
 - ✅ **v1.1 Production Polish** - Phases 4-8 (shipped 2026-03-04)
 - ✅ **v1.2 Premium Animations** - Phases 10-11 (shipped 2026-03-04)
 - ✅ **v1.3 Full ERP-Portal Integration** - Phases 12-16 (shipped 2026-03-06)
+- 🎯 **v1.4 Admin Portal Onboarding** - Phases 17-19 (in planning)
 
 ## Phases
 
@@ -226,10 +227,77 @@ Plans:
 
 </details>
 
+<details open>
+<summary>🎯 v1.4 Admin Portal Onboarding (Phases 17-19) - IN PLANNING</summary>
+
+**Milestone Goal:** Streamlined admin workflow to convert ERP projects to portal-accessible projects with automated client invitation and onboarding flow.
+
+**Overview:** Admin can import ERP projects, send client invitations, and clients can create accounts with immediate project access.
+
+### Phase 17: Project Import Flow
+
+**Goal:** Admin can convert ERP projects to portal-accessible projects
+
+**Dependencies:** None (builds on existing ERP and portal infrastructure)
+
+**Requirements:** IMPORT-01, IMPORT-02, IMPORT-03, IMPORT-04, IMPORT-05
+
+**Success Criteria** (what must be TRUE):
+
+1. Admin can see list of ERP projects with clear indication of which are portal-enabled vs not enabled
+2. Admin can select one or multiple projects and see accurate preview of client-facing roadmap view
+3. Admin can configure project settings (visibility options, welcome message) before enabling portal access
+4. Admin can click one button to enable portal access and project immediately appears in portal projects list
+5. Admin can verify import success through visual confirmation and status badge changes
+
+**Plans:** Pending
+
+---
+
+### Phase 18: Invitation System
+
+**Goal:** Admin can invite clients and track invitation lifecycle
+
+**Dependencies:** Phase 17 (requires portal-enabled projects to invite clients to)
+
+**Requirements:** INVITE-01, INVITE-02, INVITE-03, INVITE-04, INVITE-05
+
+**Success Criteria** (what must be TRUE):
+
+1. Admin can enter client email address for any portal-enabled project and send invitation with one click
+2. Admin can view invitation status (sent, delivered, opened, account created) for each project
+3. Admin can resend invitation if client hasn't responded within visible time period
+4. Admin can see complete invitation history showing all sends, resends, and status changes with timestamps
+5. System automatically updates invitation status when client opens email or creates account
+
+**Plans:** Pending
+
+---
+
+### Phase 19: Client Onboarding Flow
+
+**Goal:** Client can create account and access project immediately after invitation
+
+**Dependencies:** Phase 18 (requires invitation system to send invitations)
+
+**Requirements:** ONBOARD-01, ONBOARD-02, ONBOARD-03, ONBOARD-04, ONBOARD-05, ONBOARD-06
+
+**Success Criteria** (what must be TRUE):
+
+1. Client receives well-designed invitation email with clear call-to-action and project details
+2. Client can click invitation link and land on branded account creation page with pre-filled email
+3. Client can complete account creation form and submit successfully without errors
+4. Client is automatically logged in and redirected to their project portal page without manual login
+5. Client can immediately view project roadmap, download shared files, and leave comments on phases
+
+**Plans:** Pending
+
+</details>
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
+Phases execute in numeric order: 17 → 18 → 19
 
 | Phase                                     | Milestone | Plans Complete | Status   | Completed  |
 | ----------------------------------------- | --------- | -------------- | -------- | ---------- |
@@ -248,3 +316,25 @@ Phases execute in numeric order: 12 → 13 → 14 → 15 → 16
 | 14. Unified Notification System           | v1.3      | 3/3            | Complete | 2026-03-06 |
 | 15. Portal Design System                  | v1.3      | 2/2            | Complete | 2026-03-06 |
 | 16. Complete Portal Pages                 | v1.3      | 3/3            | Complete | 2026-03-06 |
+| 17. Project Import Flow                   | v1.4      | 0/0            | Pending  | —          |
+| 18. Invitation System                     | v1.4      | 0/0            | Pending  | —          |
+| 19. Client Onboarding Flow                | v1.4      | 0/0            | Pending  | —          |
+
+**Milestone v1.4 Progress:** 0/3 phases complete (0%)
+
+## Dependencies Flow (v1.4)
+
+```
+Phase 17 (Project Import)
+    ↓
+Phase 18 (Invitation System)
+    ↓
+Phase 19 (Client Onboarding)
+```
+
+Linear dependency chain: Must complete project import before invitations can be sent, must have invitations before onboarding flow is needed.
+
+---
+
+_Roadmap created: 2026-03-01_
+_Last updated: 2026-03-08 with v1.4 milestone_

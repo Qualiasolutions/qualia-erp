@@ -71,32 +71,38 @@ Explicitly excluded. Documented to prevent scope creep.
 
 Which phases cover which requirements. Updated during roadmap creation.
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| IMPORT-01   | TBD   | Pending |
-| IMPORT-02   | TBD   | Pending |
-| IMPORT-03   | TBD   | Pending |
-| IMPORT-04   | TBD   | Pending |
-| IMPORT-05   | TBD   | Pending |
-| INVITE-01   | TBD   | Pending |
-| INVITE-02   | TBD   | Pending |
-| INVITE-03   | TBD   | Pending |
-| INVITE-04   | TBD   | Pending |
-| INVITE-05   | TBD   | Pending |
-| ONBOARD-01  | TBD   | Pending |
-| ONBOARD-02  | TBD   | Pending |
-| ONBOARD-03  | TBD   | Pending |
-| ONBOARD-04  | TBD   | Pending |
-| ONBOARD-05  | TBD   | Pending |
-| ONBOARD-06  | TBD   | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| IMPORT-01   | Phase 17 | Pending |
+| IMPORT-02   | Phase 17 | Pending |
+| IMPORT-03   | Phase 17 | Pending |
+| IMPORT-04   | Phase 17 | Pending |
+| IMPORT-05   | Phase 17 | Pending |
+| INVITE-01   | Phase 18 | Pending |
+| INVITE-02   | Phase 18 | Pending |
+| INVITE-03   | Phase 18 | Pending |
+| INVITE-04   | Phase 18 | Pending |
+| INVITE-05   | Phase 18 | Pending |
+| ONBOARD-01  | Phase 19 | Pending |
+| ONBOARD-02  | Phase 19 | Pending |
+| ONBOARD-03  | Phase 19 | Pending |
+| ONBOARD-04  | Phase 19 | Pending |
+| ONBOARD-05  | Phase 19 | Pending |
+| ONBOARD-06  | Phase 19 | Pending |
 
 **Coverage:**
 
 - v1 requirements: 16 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16 ✓
+- Unmapped: 0 ✓
+
+**Phase Distribution:**
+
+- Phase 17 (Project Import Flow): 5 requirements
+- Phase 18 (Invitation System): 5 requirements
+- Phase 19 (Client Onboarding Flow): 6 requirements
 
 ---
 
 _Requirements defined: 2026-03-08_
-_Last updated: 2026-03-08 after initial definition_
+_Last updated: 2026-03-08 after roadmap creation (100% coverage achieved)_
