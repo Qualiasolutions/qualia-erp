@@ -10,28 +10,27 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 
 ## Current Position
 
-Phase: Phase 18 (Invitation System)
-Plan: 3 of 3 complete
-Status: Complete
-Last activity: 2026-03-08 — Completed 18-03-PLAN.md (Invitation status tracking and history)
+Phase: Phase 19 (Client Onboarding Flow)
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-03-08 — Completed 19-01-PLAN.md (Client signup flow)
 
-Progress: [██████████] 3/3 plans (100%)
+Progress: [█████░░░░░] 1/2 plans (50%)
 
-**Phase 18 Progress:**
+**Phase 19 Progress:**
 
-- ✓ Plan 01: Invitation system foundation (database schema and server actions)
-- ✓ Plan 02: Admin invitation UI (email template and send invitation modal)
-- ✓ Plan 03: Invitation status tracking and history
+- ✓ Plan 01: Client signup flow (branded signup page with invitation validation)
+- ⏳ Plan 02: Auto-login and immediate project access
 
 **Phase Sequence:**
 
 ```
 ✓ Phase 17: Project Import Flow (Complete - 3/3 plans)
 ✓ Phase 18: Invitation System (Complete - 3/3 plans)
-  Phase 19: Client Onboarding Flow (Ready to plan)
+▶ Phase 19: Client Onboarding Flow (In progress - 1/2 plans)
 ```
 
-**Next action:** Plan Phase 19 (Client Onboarding Flow)
+**Next action:** Execute Plan 19-02 (Auto-login and immediate project access)
 
 ## Performance Metrics
 
@@ -47,8 +46,8 @@ Progress: [██████████] 3/3 plans (100%)
 
 **v1.4 Milestone:**
 
-- Phases: 3 planned, 2 complete (Phase 17 ✓, Phase 18 ✓), 1 pending (Phase 19)
-- Plans: 9 executed (17-01, 17-02, 17-03, 18-01, 18-02, 18-03, plus 3 from Phase 19)
+- Phases: 3 planned, 2 complete (Phase 17 ✓, Phase 18 ✓), 1 in progress (Phase 19)
+- Plans: 10 executed (17-01, 17-02, 17-03, 18-01, 18-02, 18-03, 19-01, plus 2 remaining)
 - Requirements: 16 total (IMPORT-01 through ONBOARD-06)
 - Coverage: 100% (all requirements mapped)
 
@@ -56,8 +55,8 @@ Progress: [██████████] 3/3 plans (100%)
 
 - Milestones shipped: 4 (v1.0-v1.3)
 - Total phases completed: 18 (Phases 1-18)
-- Total plans executed: 48 (6 completed in Phase 18)
-- Codebase: 112,693+ LOC TypeScript
+- Total plans executed: 49 (7 completed in Phases 17-19)
+- Codebase: 113,379+ LOC TypeScript (+686 in Plan 19-01)
 
 ## Accumulated Context
 
@@ -110,13 +109,13 @@ See PROJECT.md Key Decisions table for full history.
 
 **Phase 19 (Client Onboarding Flow):**
 
-- Design invitation email with Qualia branding and clear CTA
-- Create invitation link with secure token generation
-- Build branded account creation page with pre-filled email
-- Implement account creation form with Supabase auth
-- Add auto-login after successful signup
-- Implement immediate project access redirect
-- Verify client can access roadmap, files, comments immediately
+- ✓ Build branded account creation page with pre-filled email - Plan 01
+- ✓ Implement account creation form with Supabase auth - Plan 01
+- ✓ Server-side invitation token validation - Plan 01
+- ✓ Atomic user/profile/client_projects creation - Plan 01
+- Add auto-login after successful signup - Plan 02
+- Implement immediate project access redirect - Plan 02
+- Verify client can access roadmap, files, comments immediately - Plan 02
 
 ### Blockers/Concerns
 
@@ -156,40 +155,42 @@ None currently identified.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed Plan 18-03 (Invitation status tracking and history) — Phase 18 complete (3/3 plans)
-**Next action:** Plan Phase 19 (Client Onboarding Flow)
+Stopped at: Completed Plan 19-01 (Client signup flow) — Phase 19 in progress (1/2 plans)
+**Next action:** Execute Plan 19-02 (Auto-login and immediate project access)
 
 **Context to preserve:**
 
 - All v1.4 requirements in REQUIREMENTS.md with REQ-IDs
 - Phase success criteria in ROADMAP.md (5 criteria per phase)
-- Phase 18 complete invitation system infrastructure:
-  - client_invitations table with invitation_status enum (sent/resent/opened/accepted/expired)
-  - Server actions: createInvitation, resendInvitation, getInvitationHistory, getProjectInvitationStatus
-  - Admin UI: SendInvitationModal, InvitationHistoryModal, status badges on project rows
-  - Email template: sendClientInvitation() with Qualia teal branding, HTML + plain text
-  - Status badge color coding: blue (invited) → purple (reminder) → amber (opened) → green (accepted)
-  - Resend functionality with automatic email sending and counter tracking
+- Phase 19 Plan 01 complete signup flow infrastructure:
+  - Server actions: getInvitationByToken, markInvitationOpened, markInvitationAccepted, signupWithInvitationAction
+  - Branded signup page: /auth/signup?token={TOKEN} with two-panel layout matching login page
+  - SignupForm component: pre-filled email, password validation, project badge, welcome message
+  - Admin client pattern for profile/client_projects creation (RLS bypass during signup)
+  - Atomic account creation: auth user → profile (role='client') → client_projects link
+  - Auto-redirect to /portal/[projectId] after successful signup
 
 **Recent completions:**
 
+- Plan 19-01: Client signup flow (3m 41s)
+  - Created app/auth/signup/page.tsx (197 lines): server-side token validation, two-panel branded layout
+  - Created components/auth/signup-form.tsx (231 lines): pre-filled email, password validation, project badge
+  - Added getInvitationByToken, markInvitationOpened, markInvitationAccepted to client-invitations.ts
+  - Added signupWithInvitationAction to auth.ts: atomic user/profile/client_projects creation
+  - Commits: ce2cd72, 5020a4e, 27d64e2
+  - Self-check: All files and commits verified
 - Plan 18-03: Invitation status tracking and history (~12m)
   - InvitationHistoryModal: 376 lines, timeline view, current status card, resend button
   - Status badges on project rows with 4-state color coding (clickable to open history)
   - Enhanced getProjectsForPortalImport to join client_invitations and return latest status
-  - Resend functionality extracting project details from ProjectForImport type
-  - Added invitation_token to getInvitationHistory for resend capability
-  - **Note:** Checkpoint verification skipped - production deployment should verify flow
   - Self-check: All files and commits verified
 - Plan 18-02: Admin invitation UI (3m 8s)
   - sendClientInvitation() email template with Qualia teal branding
   - SendInvitationModal: 218 lines, email input, welcome message preview, visibility preview
-  - Send Invitation button in ProjectImportList bulk toolbar (enabled for Portal Ready projects)
   - Self-check: All files and commits verified
 - Plan 18-01: Invitation system foundation (3m 50s)
   - Migration: client_invitations table, invitation_status enum, indexes, RLS policies
   - Server actions: createInvitation (idempotent), resendInvitation, getInvitationHistory, getProjectInvitationStatus
-  - Security: crypto.randomUUID() for tokens, UNIQUE(project_id, email) constraint
   - Self-check: All files and commits verified
 
 ---
