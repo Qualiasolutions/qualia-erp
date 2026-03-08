@@ -1,6 +1,7 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { getInvitationByToken, markInvitationAccepted } from './client-invitations';
 
 // ============ AUTHENTICATION ACTIONS ============
 
@@ -103,4 +104,117 @@ export async function getProfiles(workspaceId?: string) {
     .select('id, full_name, email, avatar_url, role')
     .order('full_name');
   return profiles || [];
+}
+
+/**
+ * Client signup with invitation action
+ * Creates auth user, profile, and client_projects link in single atomic flow
+ */
+export async function signupWithInvitationAction(
+  _prevState: { success: boolean; error: string | null; projectId?: string },
+  formData: FormData
+): Promise<{ success: boolean; error: string | null; projectId?: string }> {
+  try {
+    // Extract form fields
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const fullName = formData.get('fullName') as string;
+    const invitationToken = formData.get('invitationToken') as string;
+
+    // Validate required fields
+    if (!email || !password || !fullName || !invitationToken) {
+      return { success: false, error: 'All fields are required' };
+    }
+
+    // Validate invitation token and get details
+    const invitationResult = await getInvitationByToken(invitationToken);
+    if (invitationResult.error || !invitationResult.invitation) {
+      return { success: false, error: invitationResult.error || 'Invalid invitation' };
+    }
+
+    const invitation = invitationResult.invitation;
+
+    // Verify email matches invitation
+    if (email.trim().toLowerCase() !== invitation.email.toLowerCase()) {
+      return { success: false, error: 'Email does not match invitation' };
+    }
+
+    // Create Supabase auth user
+    const supabase = await createClient();
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+        },
+      },
+    });
+
+    if (signUpError || !signUpData.user) {
+      console.error('[signupWithInvitation] SignUp error:', signUpError);
+      return {
+        success: false,
+        error: signUpError?.message || 'Failed to create account',
+      };
+    }
+
+    const userId = signUpData.user.id;
+
+    // Use admin client to create profile and client_projects
+    // (RLS won't allow new user to write to these tables yet)
+    const adminClient = createAdminClient();
+
+    // Create profile with role='client'
+    const { error: profileError } = await adminClient.from('profiles').insert({
+      id: userId,
+      email: email.trim(),
+      full_name: fullName,
+      role: 'client',
+    });
+
+    if (profileError) {
+      console.error('[signupWithInvitation] Profile creation error:', profileError);
+      return {
+        success: false,
+        error: 'Failed to create user profile',
+      };
+    }
+
+    // Create client_projects link
+    const { error: clientProjectError } = await adminClient.from('client_projects').insert({
+      client_id: userId,
+      project_id: invitation.project_id,
+      workspace_id: invitation.workspace_id,
+      access_level: 'comment',
+      invited_by: invitation.invited_by,
+    });
+
+    if (clientProjectError) {
+      console.error('[signupWithInvitation] Client project link error:', clientProjectError);
+      return {
+        success: false,
+        error: 'Failed to link project to account',
+      };
+    }
+
+    // Mark invitation as accepted
+    const acceptResult = await markInvitationAccepted(invitation.id);
+    if (!acceptResult.success) {
+      console.error('[signupWithInvitation] Mark accepted error:', acceptResult.error);
+      // Non-fatal - account was created successfully
+    }
+
+    return {
+      success: true,
+      error: null,
+      projectId: invitation.project_id,
+    };
+  } catch (error) {
+    console.error('[signupWithInvitation] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred',
+    };
+  }
 }
