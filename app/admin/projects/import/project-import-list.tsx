@@ -16,10 +16,11 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle2, Eye, Settings, X, InfoIcon } from 'lucide-react';
+import { CheckCircle2, Eye, Settings, X, InfoIcon, Mail } from 'lucide-react';
 import type { ProjectForImport } from '@/app/actions/portal-import';
 import { RoadmapPreviewModal } from '@/components/portal/roadmap-preview-modal';
 import { PortalSettingsModal } from '@/components/admin/portal-settings-modal';
+import { SendInvitationModal } from '@/components/admin/send-invitation-modal';
 
 type FilterStatus = 'all' | 'enabled' | 'not-enabled';
 
@@ -29,6 +30,9 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [previewProjectId, setPreviewProjectId] = useState<string | null>(null);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [sendInvitationOpen, setSendInvitationOpen] = useState(false);
+  const [selectedProjectForInvitation, setSelectedProjectForInvitation] =
+    useState<ProjectForImport | null>(null);
 
   // Filter projects based on selected tab
   const filteredProjects = projects.filter((project) => {
@@ -82,6 +86,18 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
     }
   };
 
+  // Open send invitation modal for selected project
+  const openSendInvitationModal = () => {
+    if (selectedProjectIds.size === 1) {
+      const projectId = Array.from(selectedProjectIds)[0];
+      const project = projects.find((p) => p.id === projectId);
+      if (project) {
+        setSelectedProjectForInvitation(project);
+        setSendInvitationOpen(true);
+      }
+    }
+  };
+
   // Get selected projects data for modal
   const selectedProjectsData = projects
     .filter((p) => selectedProjectIds.has(p.id))
@@ -91,6 +107,13 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
   const handleSaveSuccess = () => {
     router.refresh(); // Reload page data to show updated badges
     setSelectedProjectIds(new Set()); // Clear selection
+  };
+
+  // Handle successful invitation send
+  const handleInvitationSuccess = () => {
+    router.refresh(); // Reload page data
+    setSelectedProjectIds(new Set()); // Clear selection
+    setSelectedProjectForInvitation(null);
   };
 
   const allSelected =
@@ -157,6 +180,19 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
             >
               <Settings className="h-3.5 w-3.5" />
               Configure Portal Settings
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-1.5 bg-green-600 hover:bg-green-700"
+              disabled={
+                selectedProjectIds.size !== 1 ||
+                !projects.find((p) => selectedProjectIds.has(p.id))?.hasPortalSettings
+              }
+              onClick={openSendInvitationModal}
+            >
+              <Mail className="h-3.5 w-3.5" />
+              Send Invitation
             </Button>
             <Button
               variant="outline"
@@ -287,6 +323,14 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
         onOpenChange={setSettingsModalOpen}
         selectedProjects={selectedProjectsData}
         onSuccess={handleSaveSuccess}
+      />
+
+      {/* Send invitation modal */}
+      <SendInvitationModal
+        project={selectedProjectForInvitation}
+        open={sendInvitationOpen}
+        onOpenChange={setSendInvitationOpen}
+        onSuccess={handleInvitationSuccess}
       />
     </div>
   );
