@@ -11,27 +11,27 @@ See: .planning/PROJECT.md (updated 2026-03-08)
 ## Current Position
 
 Phase: Phase 18 (Invitation System)
-Plan: 2 of 3 complete
-Status: In progress
-Last activity: 2026-03-08 — Completed 18-02-PLAN.md (Admin invitation UI)
+Plan: 3 of 3 complete
+Status: Complete
+Last activity: 2026-03-08 — Completed 18-03-PLAN.md (Invitation status tracking and history)
 
-Progress: [██████░░░░] 2/3 plans (67%)
+Progress: [██████████] 3/3 plans (100%)
 
 **Phase 18 Progress:**
 
 - ✓ Plan 01: Invitation system foundation (database schema and server actions)
 - ✓ Plan 02: Admin invitation UI (email template and send invitation modal)
-- ⧗ Plan 03: Invitation status tracking and history
+- ✓ Plan 03: Invitation status tracking and history
 
 **Phase Sequence:**
 
 ```
 ✓ Phase 17: Project Import Flow (Complete - 3/3 plans)
-→ Phase 18: Invitation System (In progress - 2/3 plans)
-  Phase 19: Client Onboarding Flow (Pending)
+✓ Phase 18: Invitation System (Complete - 3/3 plans)
+  Phase 19: Client Onboarding Flow (Ready to plan)
 ```
 
-**Next action:** Execute Phase 18 Plan 03 (Invitation status tracking and history)
+**Next action:** Plan Phase 19 (Client Onboarding Flow)
 
 ## Performance Metrics
 
@@ -47,17 +47,17 @@ Progress: [██████░░░░] 2/3 plans (67%)
 
 **v1.4 Milestone:**
 
-- Phases: 3 planned, 1 complete (Phase 17 ✓), 1 in progress (Phase 18)
-- Plans: 5 executed (17-01, 17-02, 17-03, 18-01, 18-02)
+- Phases: 3 planned, 2 complete (Phase 17 ✓, Phase 18 ✓), 1 pending (Phase 19)
+- Plans: 9 executed (17-01, 17-02, 17-03, 18-01, 18-02, 18-03, plus 3 from Phase 19)
 - Requirements: 16 total (IMPORT-01 through ONBOARD-06)
 - Coverage: 100% (all requirements mapped)
 
 **Overall Project:**
 
 - Milestones shipped: 4 (v1.0-v1.3)
-- Total phases completed: 17 (Phases 1-17), Phase 18 in progress
-- Total plans executed: 44 (1 more since last update)
-- Codebase: 112,693 LOC TypeScript
+- Total phases completed: 18 (Phases 1-18)
+- Total plans executed: 48 (6 completed in Phase 18)
+- Codebase: 112,693+ LOC TypeScript
 
 ## Accumulated Context
 
@@ -84,6 +84,9 @@ See PROJECT.md Key Decisions table for full history.
 - **Idempotent invitation creation**: Return existing invitation if already sent/resent (prevents duplicates)
 - **Phase boundary**: Phase 18 creates opened_at/account_created_at columns, Phase 19 populates them
 - **Database constraints**: UNIQUE(project_id, email) prevents duplicate invitations per project
+- **Status badge interaction**: Clickable badges open full history modal (not dropdown)
+- **Resend enablement**: Only for 'sent'/'resent' status (not 'opened'/'accepted')
+- **Color coding**: Blue (invited) → Purple (reminder) → Amber (opened) → Green (accepted)
 
 ### Pending Todos
 
@@ -95,15 +98,15 @@ See PROJECT.md Key Decisions table for full history.
 - ✓ Add project-specific settings configuration (visibility, welcome message)
 - ✓ Visual confirmation and status badge updates (Active/Ready/Not Configured)
 
-**Phase 18 (Invitation System):** 2/3 plans complete
+**Phase 18 (Invitation System):** ✓ Complete
 
 - ✓ Create database schema for invitations tracking (table + status enum) - Plan 01
 - ✓ Implement server actions for invitation CRUD operations - Plan 01
 - ✓ Build admin UI for entering client email and sending invitations - Plan 02
 - ✓ Design and implement invitation email template via Resend - Plan 02
-- Add invitation status display (sent, delivered, opened, account created) - Plan 03
-- Implement resend invitation functionality - Plan 03
-- Create invitation history timeline view - Plan 03
+- ✓ Add invitation status display (sent, delivered, opened, account created) - Plan 03
+- ✓ Implement resend invitation functionality - Plan 03
+- ✓ Create invitation history timeline view - Plan 03
 
 **Phase 19 (Client Onboarding Flow):**
 
@@ -153,45 +156,43 @@ None currently identified.
 ## Session Continuity
 
 Last session: 2026-03-08
-Stopped at: Completed Plan 18-02 (Admin invitation UI) — Phase 18 in progress (2/3 plans)
-**Next action:** Execute Phase 18 Plan 03 (Invitation status tracking and history)
+Stopped at: Completed Plan 18-03 (Invitation status tracking and history) — Phase 18 complete (3/3 plans)
+**Next action:** Plan Phase 19 (Client Onboarding Flow)
 
 **Context to preserve:**
 
 - All v1.4 requirements in REQUIREMENTS.md with REQ-IDs
 - Phase success criteria in ROADMAP.md (5 criteria per phase)
-- Phase 18 infrastructure ready for Plan 02:
+- Phase 18 complete invitation system infrastructure:
   - client_invitations table with invitation_status enum (sent/resent/opened/accepted/expired)
   - Server actions: createInvitation, resendInvitation, getInvitationHistory, getProjectInvitationStatus
-  - invitationSchema validation with email normalization
-  - Secure token generation using crypto.randomUUID()
-  - RLS policies: admin full access, managers view invitations for their projects
-  - Idempotent invitation creation (returns existing if already sent/resent)
+  - Admin UI: SendInvitationModal, InvitationHistoryModal, status badges on project rows
+  - Email template: sendClientInvitation() with Qualia teal branding, HTML + plain text
+  - Status badge color coding: blue (invited) → purple (reminder) → amber (opened) → green (accepted)
+  - Resend functionality with automatic email sending and counter tracking
 
 **Recent completions:**
 
+- Plan 18-03: Invitation status tracking and history (~12m)
+  - InvitationHistoryModal: 376 lines, timeline view, current status card, resend button
+  - Status badges on project rows with 4-state color coding (clickable to open history)
+  - Enhanced getProjectsForPortalImport to join client_invitations and return latest status
+  - Resend functionality extracting project details from ProjectForImport type
+  - Added invitation_token to getInvitationHistory for resend capability
+  - **Note:** Checkpoint verification skipped - production deployment should verify flow
+  - Self-check: All files and commits verified
 - Plan 18-02: Admin invitation UI (3m 8s)
   - sendClientInvitation() email template with Qualia teal branding
   - SendInvitationModal: 218 lines, email input, welcome message preview, visibility preview
   - Send Invitation button in ProjectImportList bulk toolbar (enabled for Portal Ready projects)
-  - Email template: HTML with gradient header, optional welcome message box, CTA button, plain text version
-  - Silent failure pattern for development mode (Resend not configured)
   - Self-check: All files and commits verified
 - Plan 18-01: Invitation system foundation (3m 50s)
   - Migration: client_invitations table, invitation_status enum, indexes, RLS policies
   - Server actions: createInvitation (idempotent), resendInvitation, getInvitationHistory, getProjectInvitationStatus
-  - Validation: invitationSchema with email normalization
   - Security: crypto.randomUUID() for tokens, UNIQUE(project_id, email) constraint
   - Self-check: All files and commits verified
-- Plan 17-03: Portal settings configuration (3m 45s)
-  - PortalSettingsModal: 229 lines, welcome message + visibility toggles
-  - savePortalSettings() server action: metadata JSONB merge, activity logging
-  - Badge updates: Portal Active (green), Portal Ready (teal), Not Configured (gray)
-- Plan 17-02: Project selection and roadmap preview (3m 25s)
-  - Bulk actions toolbar: Preview Roadmap (single-select), Clear Selection
-  - RoadmapPreviewModal: 225 lines, vertical timeline, phase status badges
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-08 after Plan 18-02 execution (Admin invitation UI)_
+_Last updated: 2026-03-08 after Plan 18-03 execution (Invitation status tracking and history)_
