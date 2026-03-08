@@ -224,7 +224,7 @@ export async function savePortalSettings(input: PortalSettingsInput): Promise<Ac
     if (!validation.success) {
       return {
         success: false,
-        error: validation.error.errors[0]?.message || 'Invalid portal settings',
+        error: validation.error.issues[0]?.message || 'Invalid portal settings',
       };
     }
 

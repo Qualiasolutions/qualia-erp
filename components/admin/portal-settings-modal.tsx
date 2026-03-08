@@ -42,7 +42,8 @@ export function PortalSettingsModal({
   // Server action
   const { execute, isPending } = useServerAction(savePortalSettings, {
     onSuccess: (result) => {
-      const count = result.data?.savedCount || selectedProjects.length;
+      const r = result as { data?: { savedCount?: number } } | undefined;
+      const count = r?.data?.savedCount || selectedProjects.length;
       toast.success(`Portal settings saved for ${count} project${count !== 1 ? 's' : ''}`);
 
       // Reset form
