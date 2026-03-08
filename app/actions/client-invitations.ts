@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { invitationSchema, type InvitationInput } from '@/lib/validation';
 import { randomUUID } from 'crypto';
@@ -291,5 +291,150 @@ export async function getProjectInvitationStatus(
   } catch (error) {
     console.error('[getProjectInvitationStatus] Error:', error);
     return { hasInvitation: false, status: null, email: null };
+  }
+}
+
+/**
+ * Get invitation details by token for signup flow.
+ * Validates token and returns invitation with project details.
+ * Public read operation (RLS allows read by token).
+ */
+export async function getInvitationByToken(token: string): Promise<{
+  invitation?: {
+    id: string;
+    email: string;
+    project_id: string;
+    project_name: string;
+    welcome_message?: string;
+    workspace_id: string;
+    invited_by: string;
+  };
+  error?: string;
+}> {
+  try {
+    const supabase = await createClient();
+
+    // Query invitation with project details
+    const { data: invitation, error } = await supabase
+      .from('client_invitations')
+      .select(
+        `
+        id,
+        email,
+        project_id,
+        status,
+        invited_by,
+        project:projects(
+          id,
+          name,
+          workspace_id,
+          metadata
+        )
+      `
+      )
+      .eq('invitation_token', token)
+      .single();
+
+    if (error || !invitation) {
+      console.error('[getInvitationByToken] Query error:', error);
+      return { error: 'Invalid or expired invitation link' };
+    }
+
+    // Check if invitation is already accepted
+    if (invitation.status === 'accepted') {
+      return { error: 'This invitation has already been used' };
+    }
+
+    // Normalize FK response for project
+    const project = Array.isArray(invitation.project) ? invitation.project[0] : invitation.project;
+
+    if (!project) {
+      return { error: 'Project not found' };
+    }
+
+    // Extract welcome message from project.metadata JSONB
+    const metadata = project.metadata as { portal_settings?: { welcomeMessage?: string } } | null;
+    const welcomeMessage = metadata?.portal_settings?.welcomeMessage;
+
+    return {
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        project_id: invitation.project_id,
+        project_name: project.name,
+        welcome_message: welcomeMessage,
+        workspace_id: project.workspace_id,
+        invited_by: invitation.invited_by,
+      },
+    };
+  } catch (error) {
+    console.error('[getInvitationByToken] Unexpected error:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Failed to validate invitation',
+    };
+  }
+}
+
+/**
+ * Mark invitation as opened when client visits signup page.
+ * Uses admin client since called before user auth exists.
+ */
+export async function markInvitationOpened(invitationId: string): Promise<ActionResult> {
+  try {
+    const adminClient = createAdminClient();
+
+    // Only update if status is 'sent' or 'resent' (don't overwrite 'accepted')
+    const { error } = await adminClient
+      .from('client_invitations')
+      .update({
+        status: 'opened',
+        opened_at: new Date().toISOString(),
+      })
+      .eq('id', invitationId)
+      .in('status', ['sent', 'resent']);
+
+    if (error) {
+      console.error('[markInvitationOpened] Update error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[markInvitationOpened] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to mark invitation opened',
+    };
+  }
+}
+
+/**
+ * Mark invitation as accepted when client creates account.
+ * Uses admin client since called during signup before session established.
+ */
+export async function markInvitationAccepted(invitationId: string): Promise<ActionResult> {
+  try {
+    const adminClient = createAdminClient();
+
+    const { error } = await adminClient
+      .from('client_invitations')
+      .update({
+        status: 'accepted',
+        account_created_at: new Date().toISOString(),
+      })
+      .eq('id', invitationId);
+
+    if (error) {
+      console.error('[markInvitationAccepted] Update error:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[markInvitationAccepted] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to mark invitation accepted',
+    };
   }
 }
