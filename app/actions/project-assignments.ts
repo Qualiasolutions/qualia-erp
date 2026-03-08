@@ -3,7 +3,12 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { parseFormData, assignEmployeeSchema, reassignEmployeeSchema } from '@/lib/validation';
-import { createActivity, isUserAdmin, type ActionResult, type ActivityType } from './shared';
+import {
+  createActivity,
+  isUserManagerOrAbove,
+  type ActionResult,
+  type ActivityType,
+} from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 
 // ============ PROJECT ASSIGNMENT ACTIONS ============
@@ -22,9 +27,9 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
   }
 
   // Authorization: admin only
-  const isAdmin = await isUserAdmin(user.id);
+  const isAdmin = await isUserManagerOrAbove(user.id);
   if (!isAdmin) {
-    return { success: false, error: 'Only admins can assign employees to projects' };
+    return { success: false, error: 'Only admins and managers can assign employees to projects' };
   }
 
   // Validate input
@@ -129,9 +134,9 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   }
 
   // Authorization: admin only
-  const isAdmin = await isUserAdmin(user.id);
+  const isAdmin = await isUserManagerOrAbove(user.id);
   if (!isAdmin) {
-    return { success: false, error: 'Only admins can reassign employees' };
+    return { success: false, error: 'Only admins and managers can reassign employees' };
   }
 
   // Validate input
@@ -269,9 +274,9 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
   }
 
   // Authorization: admin only
-  const isAdmin = await isUserAdmin(user.id);
+  const isAdmin = await isUserManagerOrAbove(user.id);
   if (!isAdmin) {
-    return { success: false, error: 'Only admins can remove assignments' };
+    return { success: false, error: 'Only admins and managers can remove assignments' };
   }
 
   // Get assignment to verify it exists and get project_id for activity log
@@ -442,9 +447,9 @@ export async function getAssignmentHistory(
   }
 
   // Authorization: admin only for full history
-  const isAdmin = await isUserAdmin(user.id);
+  const isAdmin = await isUserManagerOrAbove(user.id);
   if (!isAdmin) {
-    return { success: false, error: 'Only admins can view assignment history' };
+    return { success: false, error: 'Only admins and managers can view assignment history' };
   }
 
   // Build query with optional filters

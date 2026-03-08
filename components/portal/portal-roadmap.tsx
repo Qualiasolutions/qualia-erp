@@ -46,7 +46,7 @@ interface CommentWithProfile {
 interface PortalRoadmapProps {
   project: Project;
   phases: Phase[];
-  userRole: 'client' | 'admin' | 'employee';
+  userRole: 'client' | 'admin' | 'manager' | 'employee';
   currentUserId: string;
   isLoading?: boolean;
   isValidating?: boolean;
@@ -99,7 +99,7 @@ function PhaseWithComments({
   index: number;
   isLast: boolean;
   project: Project;
-  userRole: 'client' | 'admin' | 'employee';
+  userRole: 'client' | 'admin' | 'manager' | 'employee';
   currentUserId: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -110,7 +110,7 @@ function PhaseWithComments({
   const isInView = useInView(phaseRef, { once: true, margin: '-100px' });
   const statusConfig = getStatusColor(phase.status);
 
-  const canSeeInternal = userRole === 'admin' || userRole === 'employee';
+  const canSeeInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
 
   // Load comments when expanded
   useEffect(() => {
@@ -174,7 +174,7 @@ function PhaseWithComments({
       <div className={cn('flex-1 pb-8', isLast && 'pb-0')}>
         <div
           className={cn(
-            'rounded-lg border border-border/40 bg-card p-3 shadow-elevation-1 hover:shadow-elevation-2 transition-shadow duration-200 ease-premium sm:p-4',
+            'rounded-lg border border-border/40 bg-card p-3 shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2 sm:p-4',
             statusConfig.border,
             statusConfig.bg
           )}

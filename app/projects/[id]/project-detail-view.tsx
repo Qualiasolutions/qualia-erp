@@ -19,8 +19,10 @@ import {
   Link as LinkIcon,
   MessageSquare,
   Users,
+  UserPlus,
+  X,
 } from 'lucide-react';
-import { useProjectAssignments } from '@/lib/swr';
+import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDate } from '@/lib/utils';
 import { ProjectWorkflow } from '@/components/project-workflow';
@@ -45,6 +47,8 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
+import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ProjectNotes } from '@/components/project-notes';
 import { ProjectResources } from '@/components/project-resources';
@@ -78,6 +82,7 @@ interface Profile {
   full_name: string | null;
   email: string | null;
   avatar_url: string | null;
+  role?: string | null;
 }
 
 interface Issue {
@@ -123,7 +128,7 @@ interface Project {
 interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
-  userRole?: 'admin' | 'employee';
+  userRole?: 'admin' | 'manager' | 'employee';
   integrationStatus?: IntegrationStatus;
 }
 
@@ -383,7 +388,11 @@ export function ProjectDetailView({
                   Assigned Team
                 </p>
               </div>
-              <AssignedEmployeesList projectId={project.id} />
+              <AssignedEmployeesList
+                projectId={project.id}
+                userRole={userRole}
+                profiles={profiles}
+              />
             </div>
 
             {/* Resources */}
@@ -578,29 +587,67 @@ export function ProjectDetailView({
 }
 
 // Inline client component for assigned employees list
-function AssignedEmployeesList({ projectId }: { projectId: string }) {
+function AssignedEmployeesList({
+  projectId,
+  userRole = 'employee',
+  profiles = [],
+}: {
+  projectId: string;
+  userRole?: 'admin' | 'manager' | 'employee';
+  profiles?: Profile[];
+}) {
   const { data: assignments, isLoading } = useProjectAssignments(projectId);
+  const [showAssignSelect, setShowAssignSelect] = useState(false);
+  const [assigning, setAssigning] = useState(false);
+
+  const canManage = userRole === 'admin' || userRole === 'manager';
 
   const activeAssignments = Array.isArray(assignments)
     ? assignments.filter((a) => !a.removed_at)
     : [];
 
+  const assignedIds = new Set(activeAssignments.map((a) => a.employee?.id).filter(Boolean));
+  const availableEmployees = profiles.filter(
+    (p) => p.id && !assignedIds.has(p.id) && p.role !== 'client'
+  );
+
+  async function handleAssign(employeeId: string) {
+    setAssigning(true);
+    const formData = new FormData();
+    formData.set('project_id', projectId);
+    formData.set('employee_id', employeeId);
+    const result = await assignEmployeeToProject(formData);
+    if (result.success) {
+      toast.success('Employee assigned');
+      invalidateProjectAssignments(projectId, true);
+    } else {
+      toast.error(result.error || 'Failed to assign');
+    }
+    setAssigning(false);
+    setShowAssignSelect(false);
+  }
+
+  async function handleRemove(assignmentId: string) {
+    const result = await removeAssignment(assignmentId);
+    if (result.success) {
+      toast.success('Employee removed');
+      invalidateProjectAssignments(projectId, true);
+    } else {
+      toast.error(result.error || 'Failed to remove');
+    }
+  }
+
   if (isLoading) {
     return <p className="text-xs text-muted-foreground">Loading...</p>;
   }
 
-  if (activeAssignments.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground">
-        No employees assigned yet. Contact an admin to assign employees.
-      </p>
-    );
-  }
-
   return (
     <div className="space-y-2">
+      {activeAssignments.length === 0 && !canManage && (
+        <p className="text-xs text-muted-foreground">No employees assigned yet.</p>
+      )}
       {activeAssignments.map((assignment) => (
-        <div key={assignment.id} className="flex items-center gap-2">
+        <div key={assignment.id} className="group flex items-center gap-2">
           <Avatar className="h-6 w-6">
             <AvatarImage src={assignment.employee?.avatar_url || ''} />
             <AvatarFallback className="text-[10px]">
@@ -615,8 +662,57 @@ function AssignedEmployeesList({ projectId }: { projectId: string }) {
               Since {formatDate(assignment.assigned_at, 'MMM d')}
             </p>
           </div>
+          {canManage && (
+            <button
+              onClick={() => handleRemove(assignment.id)}
+              className="hidden rounded p-0.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive group-hover:block"
+              title="Remove"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
       ))}
+      {canManage && (
+        <>
+          {showAssignSelect ? (
+            <div className="space-y-1.5">
+              <Select onValueChange={handleAssign} disabled={assigning}>
+                <SelectTrigger className="h-7 text-xs">
+                  <SelectValue placeholder={assigning ? 'Assigning...' : 'Select employee'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEmployees.length === 0 ? (
+                    <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                      No available employees
+                    </p>
+                  ) : (
+                    availableEmployees.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name || p.email}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <button
+                onClick={() => setShowAssignSelect(false)}
+                className="text-[10px] text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowAssignSelect(true)}
+              className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <UserPlus className="h-3 w-3" />
+              Assign employee
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 }

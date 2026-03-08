@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { type ActionResult, isUserAdmin } from './shared';
+import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
 
 /**
@@ -94,7 +94,7 @@ export async function getClientFeatureRequests(): Promise<ActionResult> {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const isAdmin = await isUserAdmin(user.id);
+    const isAdmin = await isUserManagerOrAbove(user.id);
 
     let query = supabase
       .from('client_feature_requests')

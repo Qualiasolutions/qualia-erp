@@ -87,7 +87,7 @@ export async function getProfiles(workspaceId?: string) {
     const { data: members } = await supabase
       .from('workspace_members')
       .select(
-        'profile:profiles!workspace_members_profile_id_fkey (id, full_name, email, avatar_url)'
+        'profile:profiles!workspace_members_profile_id_fkey (id, full_name, email, avatar_url, role)'
       )
       .eq('workspace_id', workspaceId);
 
@@ -100,7 +100,7 @@ export async function getProfiles(workspaceId?: string) {
   // Fallback: return all profiles (legacy behavior)
   const { data: profiles } = await supabase
     .from('profiles')
-    .select('id, full_name, email, avatar_url')
+    .select('id, full_name, email, avatar_url, role')
     .order('full_name');
   return profiles || [];
 }

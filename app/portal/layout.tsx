@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole } from '@/lib/portal-utils';
+import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebar } from '@/components/portal/portal-sidebar';
 import { PortalHeader } from '@/components/portal/portal-header';
 import { PageTransition } from '@/components/page-transition';
@@ -15,9 +15,9 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow clients and admins (admins get preview/oversight access)
+  // Allow clients, admins, and managers (admins/managers get preview/oversight access)
   const userRole = await getUserRole(user.id);
-  if (!userRole || (userRole !== 'client' && userRole !== 'admin')) {
+  if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
     redirect('/');
   }
 
@@ -28,7 +28,7 @@ export default async function PortalLayout({ children }: { children: React.React
     .eq('id', user.id)
     .single();
 
-  const isAdminViewing = userRole === 'admin';
+  const isAdminViewing = isPortalAdminRole(userRole);
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 

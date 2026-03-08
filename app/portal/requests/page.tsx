@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
 import { getClientProjects } from '@/app/actions/client-portal';
-import { getUserRole } from '@/lib/portal-utils';
+import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { fadeInClasses } from '@/lib/transitions';
@@ -18,7 +18,7 @@ export default async function PortalRequestsPage() {
   }
 
   const userRole = await getUserRole(user.id);
-  const isAdmin = userRole === 'admin';
+  const isAdmin = isPortalAdminRole(userRole);
 
   // Get feature requests
   const requestsResult = await getClientFeatureRequests();

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { type ActionResult, isUserAdmin } from './shared';
+import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { getCurrentWorkspaceId } from './workspace';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
@@ -29,9 +29,9 @@ export async function inviteClientByEmail(
       return { success: false, error: 'Not authenticated' };
     }
 
-    // Verify user is admin
-    if (!(await isUserAdmin(user.id))) {
-      return { success: false, error: 'Only admins can invite clients' };
+    // Verify user is admin or manager
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Only admins and managers can invite clients' };
     }
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -45,7 +45,11 @@ export async function inviteClientByEmail(
 
     if (existingProfile) {
       // Profile exists — check role
-      if (existingProfile.role === 'admin' || existingProfile.role === 'employee') {
+      if (
+        existingProfile.role === 'admin' ||
+        existingProfile.role === 'manager' ||
+        existingProfile.role === 'employee'
+      ) {
         return {
           success: false,
           error: 'This email belongs to a team member, not a client',
@@ -162,7 +166,7 @@ export async function inviteClientToProject(
     }
 
     // Verify user is admin
-    if (!(await isUserAdmin(user.id))) {
+    if (!(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Only admins can invite clients to projects' };
     }
 
@@ -226,7 +230,7 @@ export async function removeClientFromProject(
     }
 
     // Verify user is admin
-    if (!(await isUserAdmin(user.id))) {
+    if (!(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Only admins can remove client access' };
     }
 
@@ -270,7 +274,7 @@ export async function getClientProjects(clientId: string): Promise<ActionResult>
     }
 
     // Authorization: user can only query their own projects unless admin
-    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Not authorized to view these projects' };
     }
 
@@ -332,7 +336,7 @@ export async function getPortalAdminData(): Promise<ActionResult> {
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserAdmin(user.id))) {
+    if (!(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -405,7 +409,7 @@ export async function sendClientPasswordReset(email: string): Promise<ActionResu
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserAdmin(user.id))) {
+    if (!(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -446,7 +450,7 @@ export async function createProjectFromPortal(input: {
       return { success: false, error: 'Not authenticated' };
     }
 
-    if (!(await isUserAdmin(user.id))) {
+    if (!(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Admin access required' };
     }
 
@@ -515,7 +519,7 @@ export async function getClientInvoices(): Promise<ActionResult> {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const isAdmin = await isUserAdmin(user.id);
+    const isAdmin = await isUserManagerOrAbove(user.id);
 
     let query = supabase
       .from('client_invoices')
@@ -572,7 +576,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Not authorized' };
     }
 
@@ -647,7 +651,7 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Not authorized' };
     }
 
@@ -741,7 +745,7 @@ export async function getClientActivityFeed(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    if (user.id !== clientId && !(await isUserAdmin(user.id))) {
+    if (user.id !== clientId && !(await isUserManagerOrAbove(user.id))) {
       return { success: false, error: 'Not authorized' };
     }
 
@@ -953,7 +957,7 @@ export async function getProjectFeatures(projectId: string): Promise<ActionResul
     if (!user) return { success: false, error: 'Not authenticated' };
 
     // Authorization: user must have access to this project
-    if (!(await isUserAdmin(user.id))) {
+    if (!(await isUserManagerOrAbove(user.id))) {
       // Check client access
       const { data: clientProject } = await supabase
         .from('client_projects')

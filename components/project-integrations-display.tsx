@@ -24,7 +24,7 @@ import type { ProjectIntegration } from '@/types/database';
 
 interface ProjectIntegrationsDisplayProps {
   projectId: string;
-  userRole?: 'admin' | 'employee';
+  userRole?: 'admin' | 'manager' | 'employee';
 }
 
 export function ProjectIntegrationsDisplay({
@@ -188,7 +188,7 @@ export function ProjectIntegrationsDisplay({
       )}
 
       {/* Edit Button (Admin only) */}
-      {userRole === 'admin' && (
+      {(userRole === 'admin' || userRole === 'manager') && (
         <Button
           variant="ghost"
           size="sm"
