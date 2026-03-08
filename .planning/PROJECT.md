@@ -63,7 +63,14 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ### Active
 
-See next milestone planning.
+- [ ] Admin can import ERP projects to make them portal-accessible
+- [ ] Admin can enter client email and send portal invitation
+- [ ] Admin can resend invitations for projects
+- [ ] Admin can view invitation status (sent, opened, account created)
+- [ ] Client receives invitation email with account creation link
+- [ ] Client can create account via invitation link
+- [ ] Client gains immediate access to invited project after signup
+- [ ] Invitation status tracking system
 
 ### Out of Scope
 
@@ -74,11 +81,18 @@ See next milestone planning.
 - Offline mode — web-first approach
 - Test coverage increase — important but separate effort
 
-## Current Milestone: TBD
+## Current Milestone: v1.4 Admin Portal Onboarding
 
-**Goal:** Next milestone planning in progress.
+**Goal:** Streamlined admin workflow to convert ERP projects to portal-accessible projects with automated client invitation and onboarding flow.
 
-**Target features:** TBD after milestone planning session.
+**Target features:**
+
+- Admin can import ERP projects to portal with one-click action
+- Admin enters client email and sends automated invitation
+- Client receives invitation email with account creation link
+- Client creates account and gains immediate access to their project
+- Admin can resend invitations and track invitation status
+- Invitation status tracking (sent, opened, account created)
 
 ## Context
 
@@ -127,4 +141,4 @@ Ready for next milestone planning.
 
 ---
 
-_Last updated: 2026-03-06 after milestone v1.3 completion_
+_Last updated: 2026-03-08 after milestone v1.4 initialization_
