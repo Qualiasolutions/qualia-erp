@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,16 +15,20 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, Eye, Settings, X } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle2, Eye, Settings, X, InfoIcon } from 'lucide-react';
 import type { ProjectForImport } from '@/app/actions/portal-import';
 import { RoadmapPreviewModal } from '@/components/portal/roadmap-preview-modal';
+import { PortalSettingsModal } from '@/components/admin/portal-settings-modal';
 
 type FilterStatus = 'all' | 'enabled' | 'not-enabled';
 
 export function ProjectImportList({ projects }: { projects: ProjectForImport[] }) {
+  const router = useRouter();
   const [selectedProjectIds, setSelectedProjectIds] = useState<Set<string>>(new Set());
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [previewProjectId, setPreviewProjectId] = useState<string | null>(null);
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
 
   // Filter projects based on selected tab
   const filteredProjects = projects.filter((project) => {
@@ -70,6 +75,24 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
     }
   };
 
+  // Open settings modal for selected projects
+  const openSettingsModal = () => {
+    if (selectedProjectIds.size > 0) {
+      setSettingsModalOpen(true);
+    }
+  };
+
+  // Get selected projects data for modal
+  const selectedProjectsData = projects
+    .filter((p) => selectedProjectIds.has(p.id))
+    .map((p) => ({ id: p.id, name: p.name }));
+
+  // Handle successful settings save
+  const handleSaveSuccess = () => {
+    router.refresh(); // Reload page data to show updated badges
+    setSelectedProjectIds(new Set()); // Clear selection
+  };
+
   const allSelected =
     selectedProjectIds.size === filteredProjects.length && filteredProjects.length > 0;
   const someSelected =
@@ -84,6 +107,16 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
           Select ERP projects to enable for client portal access
         </p>
       </div>
+
+      {/* Info banner about Phase 18 */}
+      <Alert className="border-[#00A4AC]/20 bg-[#00A4AC]/5">
+        <InfoIcon className="h-4 w-4 text-[#00A4AC]" />
+        <AlertDescription className="text-sm text-foreground">
+          Projects marked <strong>&quot;Portal Ready&quot;</strong> are configured and ready for
+          client invitations in Phase 18. Projects with <strong>&quot;Portal Active&quot;</strong>{' '}
+          already have client access.
+        </AlertDescription>
+      </Alert>
 
       {/* Filter tabs */}
       <Tabs value={filterStatus} onValueChange={(v) => setFilterStatus(v as FilterStatus)}>
@@ -118,6 +151,15 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
           <div className="flex items-center gap-2">
             <Button
               variant="default"
+              size="sm"
+              className="gap-1.5 bg-[#00A4AC] hover:bg-[#00A4AC]/90"
+              onClick={openSettingsModal}
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Configure Portal Settings
+            </Button>
+            <Button
+              variant="outline"
               size="sm"
               className="gap-1.5"
               disabled={selectedProjectIds.size !== 1}
@@ -201,36 +243,29 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
                     {project.hasPortalAccess ? (
                       <Badge className="gap-1.5 bg-green-500/10 text-green-600 hover:bg-green-500/20">
                         <CheckCircle2 className="h-3 w-3" />
-                        Enabled ({project.portalAccessCount})
+                        Portal Active ({project.portalAccessCount})
+                      </Badge>
+                    ) : project.hasPortalSettings ? (
+                      <Badge className="gap-1.5 bg-[#00A4AC]/10 text-[#00A4AC] hover:bg-[#00A4AC]/20">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Portal Ready
                       </Badge>
                     ) : (
                       <Badge variant="secondary" className="gap-1.5">
-                        Not Enabled
+                        Not Configured
                       </Badge>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => setPreviewProjectId(project.id)}
-                        title="Preview roadmap"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5"
-                        disabled
-                        title="Available in next plan"
-                      >
-                        <Settings className="h-3.5 w-3.5" />
-                        Configure
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => setPreviewProjectId(project.id)}
+                      title="Preview roadmap"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -244,6 +279,14 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
         open={!!previewProjectId}
         onOpenChange={(open) => !open && setPreviewProjectId(null)}
         projectId={previewProjectId}
+      />
+
+      {/* Portal settings modal */}
+      <PortalSettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        selectedProjects={selectedProjectsData}
+        onSuccess={handleSaveSuccess}
       />
     </div>
   );
