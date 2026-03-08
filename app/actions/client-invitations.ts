@@ -226,6 +226,7 @@ export async function getInvitationHistory(projectId: string): Promise<ActionRes
         id,
         email,
         status,
+        invitation_token,
         invited_at,
         resent_at,
         resent_count,
