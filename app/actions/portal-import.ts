@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
+import { portalSettingsSchema, type PortalSettingsInput } from '@/lib/validation';
+import { revalidatePath } from 'next/cache';
 
 export type ProjectForImport = {
   id: string;
@@ -12,6 +14,7 @@ export type ProjectForImport = {
   erpClient: { name: string | null; company_name: string | null } | null;
   portalAccessCount: number;
   hasPortalAccess: boolean;
+  hasPortalSettings: boolean;
 };
 
 /**
@@ -36,7 +39,7 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
       return { success: false, error: 'Admin or manager access required' };
     }
 
-    // Query projects with client_projects join to get portal access count
+    // Query projects with metadata to check portal_settings
     const { data: projects, error } = await supabase
       .from('projects')
       .select(
@@ -46,6 +49,7 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
         project_type,
         project_status,
         client_id,
+        metadata,
         client:clients(name, company_name)
       `
       )
@@ -70,6 +74,10 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
           .eq('project_id', project.id);
 
         const portalAccessCount = count ?? 0;
+
+        // Check if portal settings are configured in metadata
+        const metadata = project.metadata as { portal_settings?: unknown } | null;
+        const hasPortalSettings = !!metadata?.portal_settings;
 
         // Normalize FK response for erpClient
         let erpClient: { name: string | null; company_name: string | null } | null = null;
@@ -100,6 +108,7 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
           erpClient,
           portalAccessCount,
           hasPortalAccess: portalAccessCount > 0,
+          hasPortalSettings,
         };
       })
     );
@@ -184,6 +193,125 @@ export async function getProjectPhasesForPreview(projectId: string): Promise<Act
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch project roadmap',
+    };
+  }
+}
+
+/**
+ * Save portal settings for selected projects.
+ * Updates project.metadata JSONB column with portal_settings object.
+ * Used by admin portal settings modal before Phase 18 invitation system.
+ */
+export async function savePortalSettings(input: PortalSettingsInput): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Authorization: require manager or admin
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin or manager access required' };
+    }
+
+    // Validate input
+    const validation = portalSettingsSchema.safeParse(input);
+    if (!validation.success) {
+      return {
+        success: false,
+        error: validation.error.errors[0]?.message || 'Invalid portal settings',
+      };
+    }
+
+    const { projectIds, welcomeMessage, visibilitySettings } = validation.data;
+
+    // Portal settings object to store in metadata
+    const portalSettings = {
+      welcomeMessage,
+      visibilitySettings,
+      configuredAt: new Date().toISOString(),
+      configuredBy: user.id,
+    };
+
+    // Update each project's metadata
+    const updatePromises = projectIds.map(async (projectId) => {
+      // Verify project exists and get current metadata
+      const { data: project, error: fetchError } = await supabase
+        .from('projects')
+        .select('id, metadata, workspace_id')
+        .eq('id', projectId)
+        .single();
+
+      if (fetchError || !project) {
+        console.error(`[savePortalSettings] Project ${projectId} not found:`, fetchError);
+        return { success: false, projectId };
+      }
+
+      // Merge portal_settings into existing metadata
+      const updatedMetadata = {
+        ...(project.metadata || {}),
+        portal_settings: portalSettings,
+      };
+
+      // Update project metadata
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update({ metadata: updatedMetadata })
+        .eq('id', projectId);
+
+      if (updateError) {
+        console.error(`[savePortalSettings] Failed to update project ${projectId}:`, updateError);
+        return { success: false, projectId };
+      }
+
+      // Log activity
+      await supabase.from('activities').insert({
+        action_type: 'project_updated',
+        actor_id: user.id,
+        project_id: projectId,
+        workspace_id: project.workspace_id,
+        details: {
+          action: 'portal_settings_configured',
+          visibility: visibilitySettings,
+          hasWelcomeMessage: !!welcomeMessage,
+        },
+      });
+
+      return { success: true, projectId };
+    });
+
+    const results = await Promise.all(updatePromises);
+    const successfulUpdates = results.filter((r) => r.success);
+    const failedUpdates = results.filter((r) => !r.success);
+
+    if (failedUpdates.length > 0) {
+      console.error('[savePortalSettings] Some updates failed:', failedUpdates);
+    }
+
+    if (successfulUpdates.length === 0) {
+      return { success: false, error: 'Failed to save portal settings for any project' };
+    }
+
+    // Revalidate import page to show updated status
+    revalidatePath('/admin/projects/import');
+
+    return {
+      success: true,
+      data: {
+        savedCount: successfulUpdates.length,
+        projectIds: successfulUpdates.map((r) => r.projectId),
+      },
+    };
+  } catch (error) {
+    console.error('[savePortalSettings] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to save portal settings',
     };
   }
 }
