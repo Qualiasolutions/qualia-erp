@@ -26,7 +26,9 @@ import {
   removeTeamMember,
   type AdminProfile,
 } from '@/app/actions/admin';
-import type { UserRole } from '@/types/database';
+import type { Database } from '@/types/database';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: typeof Shield }> = {
   admin: {

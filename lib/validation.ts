@@ -120,7 +120,7 @@ export const createProjectWizardSchema = z
     name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
     description: z.string().max(5000, 'Description too long').optional().nullable(),
     project_type: z.enum(
-      ['web_design', 'ai_agent', 'voice_agent', 'ai_platform', 'seo', 'ads'] as const,
+      ['web_design', 'ai_agent', 'voice_agent', 'seo', 'ads', 'ai_platform'] as const,
       {
         message: 'Project type is required',
       }

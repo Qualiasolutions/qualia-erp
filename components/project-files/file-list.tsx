@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { deleteProjectFile, getFileDownloadUrl } from '@/app/actions/project-files';
+import {
+  deleteProjectFile,
+  getFileDownloadUrl,
+  type ProjectFileWithUploader,
+} from '@/app/actions/project-files';
 import type { ProjectFile } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +44,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
 interface FileListProps {
-  files: ProjectFile[];
+  files: ProjectFileWithUploader[];
   onFileDeleted?: () => void;
 }
 
@@ -217,7 +221,9 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
 
                 {/* Upload Date */}
                 <TableCell className="hidden text-sm text-neutral-600 lg:table-cell">
-                  {formatDistanceToNow(new Date(file.created_at), { addSuffix: true })}
+                  {file.created_at
+                    ? formatDistanceToNow(new Date(file.created_at), { addSuffix: true })
+                    : 'Unknown'}
                 </TableCell>
 
                 {/* Uploaded By */}

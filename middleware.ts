@@ -123,8 +123,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // If user is authenticated and trying to access /auth/login, redirect based on role
-    if (pathname === '/auth/login') {
+    // If user is authenticated and trying to access /auth/login or /auth/signup, redirect based on role
+    if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();
       url.pathname = userRole === 'client' ? '/portal' : '/';
       return NextResponse.redirect(url);

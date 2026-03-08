@@ -2,7 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
-import type { UserRole } from '@/types/database';
+import type { Database } from '@/types/database';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export type AdminProfile = {
   id: string;

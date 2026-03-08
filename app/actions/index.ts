@@ -290,7 +290,8 @@ export {
 } from './integrations';
 
 // ============ TIME TRACKING ============
-export type { TimeEntry } from '@/types/database';
+import type { Tables } from '@/types/database';
+export type TimeEntry = Tables<'time_entries'>;
 export {
   startTimer,
   stopTimer,

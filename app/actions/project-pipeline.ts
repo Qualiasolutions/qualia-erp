@@ -3,7 +3,10 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
-import type { ProjectType, ProjectStatus } from '@/types/database';
+import type { Database } from '@/types/database';
+
+type ProjectType = Database['public']['Enums']['project_type'];
+type ProjectStatus = Database['public']['Enums']['project_status'];
 
 // ============================================================================
 // TYPES

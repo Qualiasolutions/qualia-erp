@@ -2,7 +2,18 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import type { ProjectFile } from '@/types/database';
+import type { Tables } from '@/types/database';
+
+type ProjectFile = Tables<'project_files'>;
+export type ProjectFileWithUploader = ProjectFile & {
+  uploader?: {
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    avatar_url: string | null;
+  } | null;
+  phase?: { id: string; phase_name: string | null } | null;
+};
 import { canAccessProject, canDeleteProjectFile } from './shared';
 import { canAccessProject as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
@@ -51,7 +62,7 @@ const ALLOWED_MIME_TYPES = [
 export async function getProjectFiles(
   projectId: string,
   clientVisibleOnly = false
-): Promise<ProjectFile[]> {
+): Promise<ProjectFileWithUploader[]> {
   const supabase = await createClient();
 
   const {

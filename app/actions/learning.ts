@@ -2,17 +2,19 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import type {
-  TeachingNoteType,
-  SkillCategory,
-  Skill,
-  UserSkill,
-  Achievement,
-  UserAchievement,
-  TeachingNote,
-  TaskReflection,
-  ExtendedProfile,
-} from '@/types/database';
+import type { Tables } from '@/types/database';
+
+// Type aliases for learning domain
+// Note: teaching_note_type enum doesn't exist in DB types yet, using string
+type TeachingNoteType = string;
+type SkillCategory = Tables<'skill_categories'>;
+type Skill = Tables<'skills'>;
+type UserSkill = Tables<'user_skills'>;
+type Achievement = Tables<'achievements'>;
+type UserAchievement = Tables<'user_achievements'>;
+type TeachingNote = Tables<'teaching_notes'>;
+type TaskReflection = Tables<'task_reflections'>;
+type ExtendedProfile = Tables<'profiles'>;
 
 export type ActionResult<T = unknown> = {
   success: boolean;
