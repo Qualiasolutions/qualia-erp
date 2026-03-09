@@ -60,17 +60,14 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - ✓ All portal pages functional: roadmap, features, UI, invoices, requests, settings — v1.3
 - ✓ Two-way project synchronization (portal ↔ ERP + client mapping) — v1.3
 - ✓ Real-time status sync between ERP and portal systems — v1.3
+- ✓ Admin can import ERP projects and configure portal settings — v1.4
+- ✓ Admin can send branded invitation emails with lifecycle tracking — v1.4
+- ✓ Client can create account via invitation link with auto-login — v1.4
+- ✓ Client gains immediate access to project portal after signup — v1.4
 
 ### Active
 
-- [ ] Admin can import ERP projects to make them portal-accessible
-- [ ] Admin can enter client email and send portal invitation
-- [ ] Admin can resend invitations for projects
-- [ ] Admin can view invitation status (sent, opened, account created)
-- [ ] Client receives invitation email with account creation link
-- [ ] Client can create account via invitation link
-- [ ] Client gains immediate access to invited project after signup
-- [ ] Invitation status tracking system
+(None — plan next milestone)
 
 ### Out of Scope
 
@@ -81,26 +78,13 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - Offline mode — web-first approach
 - Test coverage increase — important but separate effort
 
-## Current Milestone: v1.4 Admin Portal Onboarding
-
-**Goal:** Streamlined admin workflow to convert ERP projects to portal-accessible projects with automated client invitation and onboarding flow.
-
-**Target features:**
-
-- Admin can import ERP projects to portal with one-click action
-- Admin enters client email and sends automated invitation
-- Client receives invitation email with account creation link
-- Client creates account and gains immediate access to their project
-- Admin can resend invitations and track invitation status
-- Invitation status tracking (sent, opened, account created)
-
 ## Context
 
-Shipped v1.3 with 112,326 LOC TypeScript. 4 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations, v1.3 Full ERP-Portal Integration).
+Shipped v1.4 with 115,654 LOC TypeScript. 5 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations, v1.3 Full ERP-Portal Integration, v1.4 Admin Portal Onboarding).
 Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul, Resend.
-16 phases completed across 4 milestones, 38 plans executed.
-Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, and Apple-like design system.
-Employee-project assignments, notification preferences, and complete portal pages shipped.
+19 phases completed across 5 milestones, 46 plans executed.
+Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, Apple-like design system, and end-to-end client onboarding flow.
+Admin can import projects, invite clients, and clients self-onboard with immediate portal access.
 Ready for next milestone planning.
 
 ## Constraints
@@ -138,7 +122,13 @@ Ready for next milestone planning.
 | Default all notification types enabled                       | Ensures users don't miss critical notifications                     | ✓ Good  |
 | Silent failure pattern for email notifications               | Delivery failures don't block user actions                          | ✓ Good  |
 | Hybrid server-client pattern for portal pages                | Auth on server, SWR on client for real-time sync                    | ✓ Good  |
+| Portal settings in project.metadata JSONB                    | Flexible schema, no new table needed                                | ✓ Good  |
+| Secure token with crypto.randomUUID()                        | Built-in Node.js, cryptographically secure                          | ✓ Good  |
+| Idempotent invitation creation                               | Returns existing if already sent, prevents duplicates               | ✓ Good  |
+| Admin client for profile creation during signup              | New users have no RLS permissions, must use service role            | ✓ Good  |
+| window.location.href for post-signup redirect                | Hard navigation ensures session cookies transfer                    | ✓ Good  |
+| Role-based routing reads from database (not JWT)             | Real-time role enforcement, no stale claims                         | ✓ Good  |
 
 ---
 
-_Last updated: 2026-03-08 after milestone v1.4 initialization_
+_Last updated: 2026-03-09 after v1.4 milestone completion_

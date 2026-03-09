@@ -1,5 +1,33 @@
 # Milestones: Qualia Portal & Trainee System
 
+## v1.4 Admin Portal Onboarding (Shipped: 2026-03-09)
+
+**Delivered:** End-to-end admin-to-client onboarding flow — import ERP projects, configure portal settings, send branded invitation emails, and clients create accounts with immediate project access.
+
+**Phases completed:** 17-19 (8 plans total)
+
+**Key accomplishments:**
+
+- Admin portal import page with bulk project selection, roadmap preview, and configurable settings
+- Invitation system with secure token generation, branded Resend email templates, and send/resend UI
+- 4-state invitation lifecycle tracking (sent/resent/opened/accepted) with timeline history modal
+- Branded client signup page with server-side token validation, pre-filled email, and atomic account creation
+- Seamless auto-login after signup with middleware role-based routing directly to project portal
+- End-to-end admin-to-client onboarding flow verified across 8 cross-phase integration points
+
+**Stats:**
+
+- 38 commits, 44 files modified
+- +8,681 / -209 lines (115,654 LOC total TypeScript)
+- 3 phases, 8 plans
+- 2 days (2026-03-08 -> 2026-03-09)
+
+**Git range:** `feat(17-01)` -> `docs(phase-19)`
+
+**What's next:** TBD — next milestone planning needed
+
+---
+
 ## v1.3 Full ERP-Portal Integration (Shipped: 2026-03-06)
 
 **Delivered:** Complete bridge between ERP and client portal with employee assignments, real-time sync, unified notifications, design system alignment, and full portal pages.

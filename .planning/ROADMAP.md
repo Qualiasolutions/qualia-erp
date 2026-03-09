@@ -6,7 +6,7 @@
 - ✅ **v1.1 Production Polish** - Phases 4-8 (shipped 2026-03-04)
 - ✅ **v1.2 Premium Animations** - Phases 10-11 (shipped 2026-03-04)
 - ✅ **v1.3 Full ERP-Portal Integration** - Phases 12-16 (shipped 2026-03-06)
-- 🎯 **v1.4 Admin Portal Onboarding** - Phases 17-19 (in planning)
+- ✅ **v1.4 Admin Portal Onboarding** - Phases 17-19 (shipped 2026-03-09)
 
 ## Phases
 
@@ -227,87 +227,12 @@ Plans:
 
 </details>
 
-<details open>
-<summary>🎯 v1.4 Admin Portal Onboarding (Phases 17-19) - IN PLANNING</summary>
+<details>
+<summary>✅ v1.4 Admin Portal Onboarding (Phases 17-19) — SHIPPED 2026-03-09</summary>
 
-**Milestone Goal:** Streamlined admin workflow to convert ERP projects to portal-accessible projects with automated client invitation and onboarding flow.
-
-**Overview:** Admin can import ERP projects, send client invitations, and clients can create accounts with immediate project access.
-
-### Phase 17: Project Import Flow
-
-**Goal:** Admin can configure ERP projects for portal access and prepare them for client invitation
-
-**Dependencies:** None (builds on existing ERP and portal infrastructure)
-
-**Requirements:** IMPORT-01, IMPORT-02, IMPORT-03, IMPORT-04, IMPORT-05
-
-**Success Criteria** (what must be TRUE):
-
-1. Admin can see list of ERP projects with clear indication of portal configuration status (not configured, ready for invitation, portal active)
-2. Admin can select one or multiple projects and see accurate preview of client-facing roadmap view
-3. Admin can configure project settings (visibility options, welcome message) before marking ready for portal
-4. Admin can save portal configuration and projects are marked "Portal Ready" for Phase 18 invitation system
-5. Admin can verify configuration success through visual confirmation and status badge changes
-
-**Plans:** 3 plans in 3 waves
-
-Plans:
-
-- [x] 17-01-PLAN.md — Admin import page with project list and portal status filtering
-- [x] 17-02-PLAN.md — Project selection and client roadmap preview modal
-- [x] 17-03-PLAN.md — Portal settings configuration and persistence with visual confirmation
-
----
-
-### Phase 18: Invitation System
-
-**Goal:** Admin can invite clients and track invitation lifecycle
-
-**Dependencies:** Phase 17 (requires portal-enabled projects to invite clients to)
-
-**Requirements:** INVITE-01, INVITE-02, INVITE-03, INVITE-04, INVITE-05
-
-**Success Criteria** (what must be TRUE):
-
-1. Admin can enter client email address for any portal-enabled project and send invitation with one click
-2. Admin can view invitation status (sent, delivered, opened, account created) for each project
-3. Admin can resend invitation if client hasn't responded within visible time period
-4. Admin can see complete invitation history showing all sends, resends, and status changes with timestamps
-5. System automatically updates invitation status when client opens email or creates account
-
-**Plans:** 3 plans in 3 waves
-
-Plans:
-
-- [x] 18-01-PLAN.md — Database schema and server actions for invitation tracking
-- [x] 18-02-PLAN.md — Invitation email template and admin UI for sending invitations
-- [x] 18-03-PLAN.md — Invitation status badges and history modal with resend capability
-
----
-
-### Phase 19: Client Onboarding Flow
-
-**Goal:** Client can create account and access project immediately after invitation
-
-**Dependencies:** Phase 18 (requires invitation system to send invitations)
-
-**Requirements:** ONBOARD-01, ONBOARD-02, ONBOARD-03, ONBOARD-04, ONBOARD-05, ONBOARD-06
-
-**Success Criteria** (what must be TRUE):
-
-1. Client receives well-designed invitation email with clear call-to-action and project details
-2. Client can click invitation link and land on branded account creation page with pre-filled email
-3. Client can complete account creation form and submit successfully without errors
-4. Client is automatically logged in and redirected to their project portal page without manual login
-5. Client can immediately view project roadmap, download shared files, and leave comments on phases
-
-**Plans:** 2 plans in 2 waves
-
-Plans:
-
-- [ ] 19-01-PLAN.md — Signup page with invitation validation and account creation
-- [ ] 19-02-PLAN.md — Auto-login verification and full portal access testing
+- [x] Phase 17: Project Import Flow (3/3 plans) — completed 2026-03-08
+- [x] Phase 18: Invitation System (3/3 plans) — completed 2026-03-08
+- [x] Phase 19: Client Onboarding Flow (2/2 plans) — completed 2026-03-09
 
 </details>
 
@@ -335,23 +260,9 @@ Phases execute in numeric order: 17 → 18 → 19
 | 16. Complete Portal Pages                 | v1.3      | 3/3            | Complete | 2026-03-06 |
 | 17. Project Import Flow                   | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 18. Invitation System                     | v1.4      | 3/3            | Complete | 2026-03-08 |
-| 19. Client Onboarding Flow                | v1.4      | 0/0            | Pending  | —          |
-
-**Milestone v1.4 Progress:** 2/3 phases complete (67%)
-
-## Dependencies Flow (v1.4)
-
-```
-Phase 17 (Project Import)
-    ↓
-Phase 18 (Invitation System)
-    ↓
-Phase 19 (Client Onboarding)
-```
-
-Linear dependency chain: Must complete project import before invitations can be sent, must have invitations before onboarding flow is needed.
+| 19. Client Onboarding Flow                | v1.4      | 2/2            | Complete | 2026-03-09 |
 
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-08 (revision: clarified Phase 17 scope boundary)_
+_Last updated: 2026-03-09 (v1.4 milestone complete)_
