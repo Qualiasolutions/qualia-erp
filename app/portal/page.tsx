@@ -84,16 +84,10 @@ export default async function PortalDashboard() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Client Portal</h1>
+          <h1 className="text-2xl font-bold text-foreground">Client Portal Management</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Select a project to view the client portal experience, or manage client access below.
+            Add clients to existing projects and manage their access.
           </p>
-        </div>
-
-        {/* Project picker */}
-        <div>
-          <h2 className="mb-4 text-lg font-semibold text-foreground">Select a Project</h2>
-          <PortalProjectsList projects={formatted} progressMap={progressMap} />
         </div>
 
         {/* Admin panel for managing clients */}
@@ -109,6 +103,14 @@ export default async function PortalDashboard() {
             assignments={adminData.assignments}
           />
         )}
+
+        {/* Project preview — browse as client would see it */}
+        <div>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
+            Preview Projects (as client sees them)
+          </h2>
+          <PortalProjectsList projects={formatted} progressMap={progressMap} />
+        </div>
       </div>
     );
   }
