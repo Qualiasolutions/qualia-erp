@@ -491,8 +491,18 @@ export async function createProjectFromPortal(input: {
       .single();
 
     if (error) {
-      console.error('[createProjectFromPortal] Error:', error);
-      return { success: false, error: error.message };
+      console.error(
+        '[createProjectFromPortal] Insert error:',
+        error.message,
+        error.details,
+        error.hint
+      );
+      return { success: false, error: `DB error: ${error.message}` };
+    }
+
+    if (!data) {
+      console.error('[createProjectFromPortal] No data returned after insert');
+      return { success: false, error: 'Project created but no data returned' };
     }
 
     revalidatePath('/projects');

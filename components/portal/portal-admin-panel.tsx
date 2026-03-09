@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -89,6 +90,7 @@ export function PortalAdminPanel({
   clients: initialClients,
   assignments: initialAssignments,
 }: PortalAdminPanelProps) {
+  const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
   const [clients, setClients] = useState(initialClients);
   const [assignments, setAssignments] = useState(initialAssignments);
@@ -147,6 +149,9 @@ export function PortalAdminPanel({
       setNewProjectType('');
       setNewProjectDescription('');
       setCreateProjectOpen(false);
+
+      // Refresh server-rendered project picker grid
+      router.refresh();
     });
   };
 
@@ -223,6 +228,7 @@ export function PortalAdminPanel({
       setInviteName('');
       setInviteProjectId('');
       setInviteOpen(false);
+      router.refresh();
     });
   };
 
