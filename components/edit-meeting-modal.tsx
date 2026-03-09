@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from 'react';
 import { CalendarIcon, Clock, Video, Link2, Trash2, Check, FileText } from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, parseISO, differenceInMinutes } from 'date-fns';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -248,7 +248,7 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
       <DialogContent className="gap-0 overflow-hidden border-border bg-card p-0 text-foreground sm:max-w-[440px] sm:rounded-2xl">
         {/* Header */}
         <div className="border-b border-border px-5 py-4">
-          <h2 className="text-base font-semibold tracking-tight">Edit Meeting</h2>
+          <DialogTitle className="text-base font-semibold tracking-tight">Edit Meeting</DialogTitle>
           {meeting?.project && (
             <p className="mt-0.5 text-xs text-muted-foreground">{meeting.project.name}</p>
           )}

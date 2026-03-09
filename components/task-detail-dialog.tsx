@@ -3,7 +3,7 @@
 import { format, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { CheckCircle2, Circle, Clock, CalendarDays, FolderOpen, User, Pencil } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/lib/schedule-utils';
@@ -52,6 +52,7 @@ export function TaskDetailDialog({
         className="gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-[440px]"
         showCloseButton={false}
       >
+        <DialogTitle className="sr-only">{task.title}</DialogTitle>
         {/* Header */}
         <div className="px-6 pb-4 pt-6">
           <div className="flex items-start gap-3">

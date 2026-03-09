@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { X, Download, Calendar, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 
 interface Feature {
@@ -131,6 +131,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
       {/* Lightbox Dialog */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent className="max-w-5xl p-0" onInteractOutside={(e) => e.preventDefault()}>
+          <DialogTitle className="sr-only">Feature Preview</DialogTitle>
           <div className="relative flex h-[85vh] flex-col bg-background">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-border/40 p-4">

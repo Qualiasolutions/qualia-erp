@@ -3,7 +3,7 @@
 import { format, parseISO, differenceInMinutes } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Video, Clock, CalendarDays, FolderOpen, Pencil, ExternalLink, Users } from 'lucide-react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTimezone } from '@/lib/schedule-utils';
 import type { MeetingWithRelations } from '@/lib/swr';
@@ -43,6 +43,7 @@ export function MeetingDetailDialog({
         className="gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-[440px]"
         showCloseButton={false}
       >
+        <DialogTitle className="sr-only">{meeting.title}</DialogTitle>
         {/* Header */}
         <div className="px-6 pb-4 pt-6">
           <div className="flex items-start gap-3">
