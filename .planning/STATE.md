@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 Phase: 20 of 24 (Portal Foundation Fixes)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-03-09 — Completed quick task 012: Simplified portal admin panel
+Last activity: 2026-03-10 — Completed quick task 013: Auth guards for phases, deployments, pipeline, logos
 
 Progress: [##########] 19/24 phases complete (v1.0-v1.4)
 
@@ -46,10 +46,11 @@ Progress: [##########] 19/24 phases complete (v1.0-v1.4)
 
 ### Quick Tasks Completed
 
-| #   | Description                                           | Date       | Commit  | Directory                                                                                             |
-| --- | ----------------------------------------------------- | ---------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| 011 | Fix all production audit blockers and quick wins      | 2026-03-10 | 533e41e | [011-fix-all-production-audit-blockers-and-qu](./quick/011-fix-all-production-audit-blockers-and-qu/) |
-| 012 | Simplified portal admin panel — single project picker | 2026-03-09 | 150f4eb | [12-simplified-portal-admin-panel-single-pro](./quick/12-simplified-portal-admin-panel-single-pro/)   |
+| #   | Description                                                     | Date       | Commit  | Directory                                                                                             |
+| --- | --------------------------------------------------------------- | ---------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| 011 | Fix all production audit blockers and quick wins                | 2026-03-10 | 533e41e | [011-fix-all-production-audit-blockers-and-qu](./quick/011-fix-all-production-audit-blockers-and-qu/) |
+| 012 | Simplified portal admin panel — single project picker           | 2026-03-09 | 150f4eb | [12-simplified-portal-admin-panel-single-pro](./quick/12-simplified-portal-admin-panel-single-pro/)   |
+| 013 | Add missing auth guards to phases, deployments, pipeline, logos | 2026-03-10 | bc20282 | [013-add-missing-auth-guards-to-phases-deploy](./quick/013-add-missing-auth-guards-to-phases-deploy/) |
 
 ## Session Continuity
 
@@ -60,4 +61,4 @@ Stopped at: v1.5 milestone phases created, ready to begin phase 20
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Completed quick task 011: Production audit fixes_
+_Last updated: 2026-03-10 — Completed quick task 013: Auth guards_
