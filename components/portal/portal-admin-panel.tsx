@@ -21,11 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, UserPlus, Copy, Check, Loader2, Trash2, KeyRound } from 'lucide-react';
+import { Users, UserPlus, Copy, Check, Loader2, Trash2, KeyRound, FolderPlus } from 'lucide-react';
 import {
   inviteClientByEmail,
   removeClientFromProject,
   sendClientPasswordReset,
+  createProjectFromPortal,
 } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -71,6 +72,12 @@ export function PortalAdminPanel({
   const [assignments, setAssignments] = useState(initialAssignments);
   const [isPending, startTransition] = useTransition();
 
+  // Project creation form
+  const [projectName, setProjectName] = useState('');
+  const [projectType, setProjectType] = useState('web_design');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
+
   // Invite form — always visible, no dialog needed
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
@@ -84,6 +91,31 @@ export function PortalAdminPanel({
   const [credsCopied, setCredsCopied] = useState(false);
 
   const portalUrl = 'https://qualia-erp.vercel.app/portal';
+
+  const handleCreateProject = async () => {
+    if (!projectName.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    setIsCreatingProject(true);
+    setProjectError(null);
+    try {
+      const result = await createProjectFromPortal({
+        name: projectName.trim(),
+        project_type: projectType,
+      });
+      if (!result.success) {
+        setProjectError(result.error || 'Failed to create project');
+        toast.error(result.error || 'Failed to create project');
+        return;
+      }
+      toast.success('Project created');
+      setProjectName('');
+      router.refresh();
+    } finally {
+      setIsCreatingProject(false);
+    }
+  };
 
   const handleInvite = () => {
     if (!inviteEmail.trim()) {
@@ -168,6 +200,10 @@ export function PortalAdminPanel({
 
   const handleRemoveAccess = (assignmentId: string, projectId: string, clientId: string) => {
     const removed = assignments.find((a) => a.id === assignmentId);
+    const confirmed = window.confirm(
+      `Remove ${removed?.client?.full_name || 'this client'}'s access to ${removed?.project?.name || 'this project'}? This cannot be undone.`
+    );
+    if (!confirmed) return;
     setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
 
     startTransition(async () => {
@@ -213,6 +249,51 @@ export function PortalAdminPanel({
 
   return (
     <div className="space-y-6">
+      {/* Create new project */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <FolderPlus className="h-4 w-4 text-qualia-600" />
+            Create New Project
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Input
+              type="text"
+              placeholder="Project name *"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+            />
+            <Select value={projectType} onValueChange={setProjectType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Project type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="web_design">Web Design</SelectItem>
+                <SelectItem value="ai_agent">AI Agent</SelectItem>
+                <SelectItem value="voice_agent">Voice Agent</SelectItem>
+                <SelectItem value="seo">SEO</SelectItem>
+                <SelectItem value="ads">Ads</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleCreateProject}
+              disabled={isCreatingProject || !projectName.trim()}
+              className="gap-2"
+            >
+              {isCreatingProject ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FolderPlus className="h-4 w-4" />
+              )}
+              Create Project
+            </Button>
+          </div>
+          {projectError && <p className="mt-2 text-sm text-red-600">{projectError}</p>}
+        </CardContent>
+      </Card>
+
       {/* Invite client — simple inline form */}
       <Card>
         <CardHeader className="pb-3">
