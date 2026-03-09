@@ -7,6 +7,7 @@
 - ✅ **v1.2 Premium Animations** - Phases 10-11 (shipped 2026-03-04)
 - ✅ **v1.3 Full ERP-Portal Integration** - Phases 12-16 (shipped 2026-03-06)
 - ✅ **v1.4 Admin Portal Onboarding** - Phases 17-19 (shipped 2026-03-09)
+- 🚧 **v1.5 Production-Ready Client Portal** - Phases 20-24
 
 ## Phases
 
@@ -236,33 +237,96 @@ Plans:
 
 </details>
 
+<details>
+<summary>🚧 v1.5 Production-Ready Client Portal (Phases 20-24) — IN PROGRESS</summary>
+
+**Milestone Goal:** Transform client portal from functional to production-ready based on industry best practices research. Address critical UX gaps, streamline admin operations, and create professional branded experience for Moayad to confidently onboard live clients.
+
+### Phase 20: Portal Foundation Fixes
+
+**Goal:** Fix critical portal bugs and verify end-to-end client onboarding flow works flawlessly
+**Priority:** P0 - Must work before Moayad uses it
+**Plans:** 3 plans in 2 waves
+
+Plans:
+
+- [ ] 20-01-PLAN.md — Add project creation form, fix action logging and router.refresh()
+- [ ] 20-02-PLAN.md — Audit invite action DB schema, verify end-to-end flow with human checkpoint
+- [ ] 20-03-PLAN.md — Confirmation guard on remove-access, independent loading states, specific error toasts
+
+### Phase 21: Enhanced Client Experience
+
+**Goal:** Implement the top 3 UX features clients actually want based on industry research
+**Priority:** P1 - Critical for client adoption
+**Plans:** 3 plans in 1 wave
+
+- [ ] 21-01: "What's Next" Dashboard Widget
+- [ ] 21-02: Client Action Items System
+- [ ] 21-03: Visual Progress Indicators
+
+### Phase 22: Admin Operations & Bulk Management
+
+**Goal:** Streamline admin operations for bulk client onboarding and project management
+**Priority:** P1 - Important for Moayad's efficiency
+**Plans:** 3 plans in 1 wave
+
+- [ ] 22-01: Bulk Client Operations
+- [ ] 22-02: Client Management Dashboard
+- [ ] 22-03: Credential Management & Export
+
+### Phase 23: Proactive Communication & Notifications
+
+**Goal:** Implement automatic client communication for project updates and milestone progress
+**Priority:** P2 - Important for client retention and trust
+**Plans:** 3 plans in 1 wave
+
+- [ ] 23-01: Automated Phase Notifications
+- [ ] 23-02: Action Item Notifications
+- [ ] 23-03: Weekly Progress Digest
+
+### Phase 24: Polish & White-Label Branding
+
+**Goal:** Professional branded experience that reflects Qualia Solutions brand identity
+**Priority:** P3 - Nice to have, enhances perceived value
+**Plans:** 2 plans in 1 wave
+
+- [ ] 24-01: Portal Branding & Identity
+- [ ] 24-02: Personalization & Premium Touches
+
+</details>
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 17 → 18 → 19
+Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24
 
-| Phase                                     | Milestone | Plans Complete | Status   | Completed  |
-| ----------------------------------------- | --------- | -------------- | -------- | ---------- |
-| 1. Database & Core Infrastructure         | v1.0      | 2/2            | Complete | 2026-03-01 |
-| 2. Trainee Execution System               | v1.0      | 3/3            | Complete | 2026-03-01 |
-| 3. Client Portal Foundation               | v1.0      | 3/3            | Complete | 2026-03-01 |
-| 4. Loading States & Skeleton UI           | v1.1      | 2/2            | Complete | 2026-03-04 |
-| 5. Page & Modal Transitions               | v1.1      | 1/1            | Complete | 2026-03-04 |
-| 6. Micro-Interactions                     | v1.1      | 1/1            | Complete | 2026-03-04 |
-| 7. Email Notifications                    | v1.1      | 2/2            | Complete | 2026-03-04 |
-| 8. Schedule Consolidation & Mobile Polish | v1.1      | 2/2            | Complete | 2026-03-04 |
-| 10. Differentiator Animations             | v1.2      | 4/4            | Complete | 2026-03-04 |
-| 11. Final Polish & DX Improvements        | v1.2      | 3/3            | Complete | 2026-03-04 |
-| 12. Employee-Project Assignment System    | v1.3      | 2/2            | Complete | 2026-03-06 |
-| 13. ERP-Portal Integration                | v1.3      | 3/3            | Complete | 2026-03-06 |
-| 14. Unified Notification System           | v1.3      | 3/3            | Complete | 2026-03-06 |
-| 15. Portal Design System                  | v1.3      | 2/2            | Complete | 2026-03-06 |
-| 16. Complete Portal Pages                 | v1.3      | 3/3            | Complete | 2026-03-06 |
-| 17. Project Import Flow                   | v1.4      | 3/3            | Complete | 2026-03-08 |
-| 18. Invitation System                     | v1.4      | 3/3            | Complete | 2026-03-08 |
-| 19. Client Onboarding Flow                | v1.4      | 2/2            | Complete | 2026-03-09 |
+| Phase                                       | Milestone | Plans Complete | Status   | Completed  |
+| ------------------------------------------- | --------- | -------------- | -------- | ---------- |
+| 1. Database & Core Infrastructure           | v1.0      | 2/2            | Complete | 2026-03-01 |
+| 2. Trainee Execution System                 | v1.0      | 3/3            | Complete | 2026-03-01 |
+| 3. Client Portal Foundation                 | v1.0      | 3/3            | Complete | 2026-03-01 |
+| 4. Loading States & Skeleton UI             | v1.1      | 2/2            | Complete | 2026-03-04 |
+| 5. Page & Modal Transitions                 | v1.1      | 1/1            | Complete | 2026-03-04 |
+| 6. Micro-Interactions                       | v1.1      | 1/1            | Complete | 2026-03-04 |
+| 7. Email Notifications                      | v1.1      | 2/2            | Complete | 2026-03-04 |
+| 8. Schedule Consolidation & Mobile Polish   | v1.1      | 2/2            | Complete | 2026-03-04 |
+| 10. Differentiator Animations               | v1.2      | 4/4            | Complete | 2026-03-04 |
+| 11. Final Polish & DX Improvements          | v1.2      | 3/3            | Complete | 2026-03-04 |
+| 12. Employee-Project Assignment System      | v1.3      | 2/2            | Complete | 2026-03-06 |
+| 13. ERP-Portal Integration                  | v1.3      | 3/3            | Complete | 2026-03-06 |
+| 14. Unified Notification System             | v1.3      | 3/3            | Complete | 2026-03-06 |
+| 15. Portal Design System                    | v1.3      | 2/2            | Complete | 2026-03-06 |
+| 16. Complete Portal Pages                   | v1.3      | 3/3            | Complete | 2026-03-06 |
+| 17. Project Import Flow                     | v1.4      | 3/3            | Complete | 2026-03-08 |
+| 18. Invitation System                       | v1.4      | 3/3            | Complete | 2026-03-08 |
+| 19. Client Onboarding Flow                  | v1.4      | 2/2            | Complete | 2026-03-09 |
+| 20. Portal Foundation Fixes                 | v1.5      | 0/3            | Ready    | TBD        |
+| 21. Enhanced Client Experience              | v1.5      | 0/3            | Planned  | TBD        |
+| 22. Admin Operations & Bulk Management      | v1.5      | 0/3            | Planned  | TBD        |
+| 23. Proactive Communication & Notifications | v1.5      | 0/3            | Planned  | TBD        |
+| 24. Polish & White-Label Branding           | v1.5      | 0/2            | Planned  | TBD        |
 
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-09 (v1.4 milestone complete)_
+_Last updated: 2026-03-09 (Phase 20 executable plans created)_
