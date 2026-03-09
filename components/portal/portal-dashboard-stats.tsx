@@ -1,10 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Folder, Lightbulb, Receipt } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface DashboardStats {
   projectCount: number;
@@ -19,28 +16,22 @@ interface PortalDashboardStatsProps {
 }
 
 export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsProps) {
-  const statCards = [
+  const metrics = [
     {
-      label: 'Active Projects',
+      label: 'Active projects',
       value: stats?.projectCount || 0,
-      icon: Folder,
       href: '/portal/projects',
-      iconColor: 'text-qualia-600',
     },
     {
-      label: 'Pending Requests',
+      label: 'Pending requests',
       value: stats?.pendingRequests || 0,
-      icon: Lightbulb,
       href: '/portal/requests',
-      iconColor: 'text-amber-500',
     },
     {
-      label: 'Unpaid Invoices',
+      label: 'Unpaid invoices',
       value: stats?.unpaidInvoiceCount || 0,
-      icon: Receipt,
       href: '/portal/billing',
-      iconColor: 'text-red-500',
-      subtitle: stats?.unpaidTotal
+      suffix: stats?.unpaidTotal
         ? stats.unpaidTotal.toLocaleString('en', { style: 'currency', currency: 'EUR' })
         : undefined,
     },
@@ -48,47 +39,34 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border/40 bg-border/40">
         {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardContent className="p-5">
-              <Skeleton className="h-12 w-12 rounded-xl" />
-              <Skeleton className="mt-4 h-7 w-16" />
-              <Skeleton className="mt-1.5 h-4 w-28" />
-            </CardContent>
-          </Card>
+          <div key={i} className="bg-card px-5 py-4">
+            <Skeleton className="h-8 w-10 rounded" />
+            <Skeleton className="mt-1.5 h-3.5 w-20 rounded" />
+          </div>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      {statCards.map((stat) => (
-        <Link key={stat.label} href={stat.href}>
-          <Card className="card-interactive group relative h-full overflow-hidden border-b-2 border-transparent transition-colors duration-300 hover:border-qualia-500/30">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
-              <div
-                className={cn(
-                  'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
-                  'bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10',
-                  stat.iconColor
-                )}
-              >
-                <stat.icon className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
-                  {stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                {stat.subtitle && (
-                  <p className="mt-0.5 text-xs font-medium text-red-600">{stat.subtitle}</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border/40 bg-border/40">
+      {metrics.map((metric) => (
+        <Link
+          key={metric.label}
+          href={metric.href}
+          className="group bg-card px-5 py-4 transition-colors duration-150 hover:bg-muted/30"
+        >
+          <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+            {metric.value}
+          </p>
+          <p className="mt-0.5 text-[12px] text-muted-foreground/60 transition-colors group-hover:text-muted-foreground">
+            {metric.label}
+          </p>
+          {metric.suffix && (
+            <p className="mt-0.5 text-[11px] font-medium text-red-500/80">{metric.suffix}</p>
+          )}
         </Link>
       ))}
     </div>

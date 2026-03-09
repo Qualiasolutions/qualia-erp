@@ -3,8 +3,7 @@
 import { usePortalDashboard } from '@/lib/swr';
 import { PortalDashboardStats } from '@/components/portal/portal-dashboard-stats';
 import { PortalRecentActivity } from '@/components/portal/portal-recent-activity';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Mail, Plus, Receipt } from 'lucide-react';
+import { ArrowRight, Lightbulb, Receipt, Headphones } from 'lucide-react';
 import Link from 'next/link';
 
 interface PortalDashboardContentProps {
@@ -39,6 +38,28 @@ interface ProjectWithPhases {
   nextPhase: { name: string } | null;
 }
 
+const quickActions = [
+  {
+    label: 'Submit a request',
+    description: 'Feature idea or change',
+    href: '/portal/requests',
+    icon: Lightbulb,
+  },
+  {
+    label: 'View billing',
+    description: 'Invoices & payments',
+    href: '/portal/billing',
+    icon: Receipt,
+  },
+  {
+    label: 'Contact support',
+    description: 'Get help from our team',
+    href: 'mailto:support@qualiasolutions.net',
+    icon: Headphones,
+    external: true,
+  },
+];
+
 export function PortalDashboardContent({ clientId, displayName }: PortalDashboardContentProps) {
   const { data, isLoading, isValidating } = usePortalDashboard(clientId);
 
@@ -49,84 +70,51 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
   const greeting =
     now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
 
+  const firstName = displayName.split(' ')[0];
+
   return (
-    <div className="space-y-8">
-      {/* Welcome section */}
+    <div className="space-y-10">
+      {/* Welcome — minimal, typographic */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">
-          {greeting}, <span className="text-qualia-600">{displayName}</span>
-        </h1>
-        <p className="mt-1 text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
+        <p className="text-[13px] font-medium text-muted-foreground/60">
           {now.toLocaleDateString('en-US', {
             weekday: 'long',
-            year: 'numeric',
             month: 'long',
             day: 'numeric',
           })}
         </p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
+          {greeting}, {firstName}
+        </h1>
       </div>
 
-      {/* Stats row */}
+      {/* Stats */}
       <PortalDashboardStats stats={stats} isLoading={isLoading} />
 
-      {/* Project Roadmaps */}
+      {/* Projects */}
       <PortalRecentActivity projects={projects} isLoading={isLoading} isValidating={isValidating} />
 
-      {/* Quick Actions */}
-      <div>
-        <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
-          Quick Actions
-        </p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Link href="/portal/requests" className="group">
-            <Card className="card-interactive">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10">
-                  <Plus className="h-4 w-4 text-qualia-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-qualia-700">
-                    Submit Request
-                  </p>
-                  <p className="text-xs text-muted-foreground">New feature or change</p>
-                </div>
-                <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-qualia-600" />
-              </CardContent>
-            </Card>
-          </Link>
-          <Link href="/portal/billing" className="group">
-            <Card className="card-interactive">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10">
-                  <Receipt className="h-4 w-4 text-qualia-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-qualia-700">
-                    View Billing
-                  </p>
-                  <p className="text-xs text-muted-foreground">Invoices and payments</p>
-                </div>
-                <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-qualia-600" />
-              </CardContent>
-            </Card>
-          </Link>
-          <a href="mailto:support@qualiasolutions.net" className="group">
-            <Card className="card-interactive">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10">
-                  <Mail className="h-4 w-4 text-qualia-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-qualia-700">
-                    Contact Support
-                  </p>
-                  <p className="text-xs text-muted-foreground">support@qualiasolutions.net</p>
-                </div>
-                <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-qualia-600" />
-              </CardContent>
-            </Card>
-          </a>
-        </div>
+      {/* Quick links — horizontal, minimal */}
+      <div className="grid gap-px overflow-hidden rounded-lg border border-border/40 bg-border/40 sm:grid-cols-3">
+        {quickActions.map((action) => {
+          const Wrapper = action.external ? 'a' : Link;
+          const wrapperProps = action.external ? { href: action.href } : { href: action.href };
+
+          return (
+            <Wrapper
+              key={action.label}
+              {...wrapperProps}
+              className="group flex items-center gap-3 bg-card px-4 py-3.5 transition-colors duration-150 hover:bg-muted/30"
+            >
+              <action.icon className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-qualia-600" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-foreground">{action.label}</p>
+                <p className="text-[11px] text-muted-foreground/60">{action.description}</p>
+              </div>
+              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
+            </Wrapper>
+          );
+        })}
       </div>
     </div>
   );

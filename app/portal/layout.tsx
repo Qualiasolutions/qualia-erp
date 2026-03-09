@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebar } from '@/components/portal/portal-sidebar';
-import { PortalHeader } from '@/components/portal/portal-header';
 import { PageTransition } from '@/components/page-transition';
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -40,9 +40,28 @@ export default async function PortalLayout({ children }: { children: React.React
         isAdminViewing={isAdminViewing}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <PortalHeader user={user} profile={profile} isAdminViewing={isAdminViewing} />
-        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8">
-          <div className="mx-auto max-w-5xl">
+        {/* Admin banner — floating, not a full header */}
+        {isAdminViewing && (
+          <div className="shrink-0 border-b border-qualia-500/10 bg-qualia-950/5 px-6 py-1.5 dark:bg-qualia-500/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5 text-xs">
+                <span className="inline-flex items-center rounded-full border border-qualia-500/20 bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-qualia-700 dark:text-qualia-400">
+                  Admin
+                </span>
+                <span className="text-muted-foreground">Viewing as client</span>
+              </div>
+              <Link
+                href="/"
+                className="text-xs font-medium text-qualia-600 transition-colors hover:text-qualia-800 dark:hover:text-qualia-300"
+              >
+                Exit preview
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-6xl px-4 py-8 md:px-8 lg:px-12">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

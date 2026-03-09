@@ -16,7 +16,7 @@ export default async function PortalProjectsPage() {
     redirect('/auth/login');
   }
 
-  // Get role directly from the same supabase client to avoid separate connection issues
+  // Get role directly from the same supabase client
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
@@ -54,10 +54,8 @@ export default async function PortalProjectsPage() {
     return (
       <div className={`space-y-6 ${fadeInClasses}`}>
         <div>
-          <h1 className="text-2xl font-bold text-foreground">All Projects</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Overview of all active projects (admin view)
-          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Projects</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground/60">All active projects</p>
         </div>
         <PortalProjectsList projects={formatted} progressMap={progressMap} />
       </div>
@@ -70,8 +68,8 @@ export default async function PortalProjectsPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-semibold text-foreground">Error Loading Projects</h2>
-          <p className="mt-2 text-sm text-muted-foreground">{result.error}</p>
+          <h2 className="text-sm font-medium text-foreground">Error loading projects</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground/60">{result.error}</p>
         </div>
       </div>
     );
@@ -117,9 +115,9 @@ export default async function PortalProjectsPage() {
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Your Projects</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          View the status and progress of your active projects
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Your Projects</h1>
+        <p className="mt-1 text-[13px] text-muted-foreground/60">
+          Track the progress of your active projects
         </p>
       </div>
       <PortalProjectsList projects={projects} progressMap={progressMap} />

@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowRight, Folder } from 'lucide-react';
@@ -35,18 +34,15 @@ export function PortalRecentActivity({
   if (isLoading) {
     return (
       <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Project Roadmaps</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground">Projects</h2>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <Skeleton className="h-5 w-3/4" />
-                <Skeleton className="mt-4 h-2 w-full rounded-full" />
-                <Skeleton className="mt-3 h-4 w-1/2" />
-              </CardContent>
-            </Card>
+        <div className="divide-y divide-border/30 overflow-hidden rounded-lg border border-border/40">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center gap-4 bg-card px-4 py-3.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="ml-auto h-3 w-20" />
+            </div>
           ))}
         </div>
       </div>
@@ -55,90 +51,77 @@ export function PortalRecentActivity({
 
   if (projects.length === 0) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-qualia-600/10">
-            <Folder className="h-8 w-8 text-qualia-600/60" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground">Welcome to your portal</h3>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Your projects and activity will appear here once your team gets started. In the
-            meantime, feel free to submit requests or reach out to us.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-lg border border-dashed border-border/50 px-6 py-12 text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
+          <Folder className="h-5 w-5 text-muted-foreground/40" />
+        </div>
+        <p className="text-sm font-medium text-foreground">No projects yet</p>
+        <p className="mt-1 text-[13px] text-muted-foreground/60">
+          Your projects will appear here once your team gets started.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="relative">
-      {/* Subtle validating indicator */}
       {isValidating && (
-        <div className="absolute -top-1 right-0 h-1 w-16 animate-pulse rounded-full bg-qualia-500/50" />
+        <div className="absolute -top-1 right-0 h-0.5 w-12 animate-pulse rounded-full bg-qualia-500/40" />
       )}
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Project Roadmaps</h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-medium text-foreground">Projects</h2>
         <Link
           href="/portal/projects"
-          className="flex items-center gap-1 text-xs font-medium text-qualia-600 hover:text-qualia-700"
+          className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
         >
           View all <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="divide-y divide-border/30 overflow-hidden rounded-lg border border-border/40">
         {projects.map((project) => (
-          <Link key={project.id} href={`/portal/projects/${project.id}`}>
-            <Card className="card-interactive h-full">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-medium text-foreground">{project.name}</h3>
-                  <Badge
-                    className={cn('shrink-0 text-[10px]', getProjectStatusColor(project.status))}
-                  >
-                    {project.status}
-                  </Badge>
+          <Link
+            key={project.id}
+            href={`/portal/${project.id}`}
+            className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors duration-150 hover:bg-muted/30"
+          >
+            {/* Name + current phase */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <p className="truncate text-[13px] font-medium text-foreground">{project.name}</p>
+                <Badge
+                  className={cn(
+                    'shrink-0 px-1.5 py-0 text-[10px] leading-4',
+                    getProjectStatusColor(project.status)
+                  )}
+                >
+                  {project.status}
+                </Badge>
+              </div>
+              {project.currentPhase && (
+                <p className="mt-0.5 truncate text-[12px] text-muted-foreground/60">
+                  {project.currentPhase.name}
+                </p>
+              )}
+            </div>
+
+            {/* Progress */}
+            {project.totalPhases > 0 && (
+              <div className="hidden w-32 shrink-0 items-center gap-2 sm:flex">
+                <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/50">
+                  <div
+                    className="h-full rounded-full bg-qualia-600 transition-all duration-500"
+                    style={{ width: `${project.progress}%` }}
+                  />
                 </div>
+                <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground/50">
+                  {project.progress}%
+                </span>
+              </div>
+            )}
 
-                {/* Progress bar */}
-                {project.totalPhases > 0 && (
-                  <div className="mt-4">
-                    <div className="mb-1.5 flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {project.completedPhases}/{project.totalPhases} phases
-                      </span>
-                      <span className="font-medium text-foreground">{project.progress}%</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-qualia-600 transition-all duration-500"
-                        style={{ width: `${project.progress}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Current phase */}
-                {project.currentPhase && (
-                  <div className="mt-3 flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">Current:</span>
-                    <span className="font-medium text-foreground">{project.currentPhase.name}</span>
-                  </div>
-                )}
-                {project.nextPhase && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">Next:</span>
-                    <span className="text-muted-foreground">{project.nextPhase.name}</span>
-                  </div>
-                )}
-
-                {/* No phases */}
-                {project.totalPhases === 0 && (
-                  <p className="mt-3 text-xs text-muted-foreground">Roadmap not yet available</p>
-                )}
-              </CardContent>
-            </Card>
+            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
           </Link>
         ))}
       </div>
