@@ -34,6 +34,10 @@ export interface Environment {
  */
 export async function getProjectDeployments(projectId: string, limit = 10): Promise<Deployment[]> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from('project_deployments')
@@ -55,6 +59,10 @@ export async function getProjectDeployments(projectId: string, limit = 10): Prom
  */
 export async function getProjectEnvironments(projectId: string): Promise<Environment[]> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
 
   const { data, error } = await supabase
     .from('project_environments')
@@ -86,6 +94,10 @@ export async function getProjectEnvironments(projectId: string): Promise<Environ
  */
 export async function getDeploymentStats(projectId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { total: 0, successful: 0, failed: 0, byEnvironment: {} };
 
   // Get counts by status from last 30 days
   const thirtyDaysAgo = new Date();
@@ -121,6 +133,10 @@ export async function getDeploymentStats(projectId: string) {
  */
 export async function checkEnvironmentHealth(environmentId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   // Get the environment
   const { data: env, error: fetchError } = await supabase
@@ -177,6 +193,10 @@ export async function checkEnvironmentHealth(environmentId: string) {
  */
 export async function linkVercelProject(projectId: string, vercelProjectId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   const { error } = await supabase
     .from('projects')

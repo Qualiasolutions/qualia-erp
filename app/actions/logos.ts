@@ -53,15 +53,26 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
     return { success: false, error: 'Only JPEG, PNG, WebP, and GIF images are allowed' };
   }
 
-  // Verify project exists
+  // Verify project exists and user has access via workspace membership
   const { data: project, error: projectError } = await supabase
     .from('projects')
-    .select('id')
+    .select('id, workspace_id')
     .eq('id', projectId)
     .single();
 
   if (projectError || !project) {
     return { success: false, error: 'Project not found' };
+  }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('workspace_id', project.workspace_id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!membership) {
+    return { success: false, error: 'Not authorized for this project' };
   }
 
   // Generate storage path with extension from mime type
@@ -193,15 +204,26 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
     return { success: false, error: 'Only JPEG, PNG, WebP, and GIF images are allowed' };
   }
 
-  // Verify client exists
+  // Verify client exists and user has access via workspace membership
   const { data: client, error: clientError } = await supabase
     .from('clients')
-    .select('id')
+    .select('id, workspace_id')
     .eq('id', clientId)
     .single();
 
   if (clientError || !client) {
     return { success: false, error: 'Client not found' };
+  }
+
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('workspace_id', client.workspace_id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!membership) {
+    return { success: false, error: 'Not authorized for this client' };
   }
 
   // Generate storage path with extension from mime type

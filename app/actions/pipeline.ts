@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
+import { isUserAdmin } from './shared';
 import {
   getTemplateForType,
   WEB_DESIGN_TEMPLATE,
@@ -170,6 +171,10 @@ export async function updatePhaseResource(
 
 export async function deletePhaseResource(resourceId: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   const { error } = await supabase.from('phase_resources').delete().eq('id', resourceId);
 
@@ -452,6 +457,10 @@ export async function updatePhaseStatus(
   projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   // Get old status to check if it actually changed
   const { data: oldPhase } = await supabase
@@ -469,13 +478,9 @@ export async function updatePhaseStatus(
 
   // Notify clients for significant status changes (preference-aware)
   if (oldPhase && oldPhase.status !== status && (status === 'completed' || status === 'skipped')) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const empName = user
-      ? (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
-          ?.full_name || 'Team member'
-      : 'Team member';
+    const empName =
+      (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
+        ?.full_name || 'Team member';
     const milestoneType = status === 'completed' ? ('completed' as const) : ('started' as const);
     import('@/lib/email').then(({ notifyClientOfPhaseMilestone }) => {
       notifyClientOfPhaseMilestone(projectId, empName, oldPhase.name, milestoneType).catch((err) =>
@@ -494,6 +499,10 @@ export async function updatePhaseName(
   projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);
 
@@ -511,6 +520,10 @@ export async function updatePhaseName(
 
 export async function deletePhase(phaseId: string, projectId: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   // Delete all tasks linked to this phase first
   const { error: tasksError } = await supabase.from('tasks').delete().eq('phase_id', phaseId);
@@ -664,6 +677,11 @@ export async function getProjectPhasesWithDetails(projectId: string): Promise<Ph
 
 export async function resetAllPhaseTasks(): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  if (!(await isUserAdmin(user.id))) return { success: false, error: 'Admin access required' };
 
   // Get all phases
   const { data: phases, error: phasesError } = await supabase
@@ -755,6 +773,11 @@ export async function resetAllPhaseTasks(): Promise<ActionResult> {
 
 export async function linkTasksToPhases(): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  if (!(await isUserAdmin(user.id))) return { success: false, error: 'Admin access required' };
 
   // Get tasks that have phase_name but no phase_id
   const { data: unlinkedTasks, error: tasksError } = await supabase
@@ -820,6 +843,11 @@ export async function linkTasksToPhases(): Promise<ActionResult> {
 
 export async function initializePipelinesForAllProjects(): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  if (!(await isUserAdmin(user.id))) return { success: false, error: 'Admin access required' };
 
   // Get all projects
   const { data: projects, error: projectsError } = await supabase
@@ -924,6 +952,11 @@ export async function initializePipelinesForAllProjects(): Promise<ActionResult>
 
 export async function populateDefaultTasksForAllProjects(): Promise<ActionResult> {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  if (!(await isUserAdmin(user.id))) return { success: false, error: 'Admin access required' };
 
   // Get all phases that have no tasks
   const { data: phasesWithoutTasks, error: phasesError } = await supabase.from('project_phases')

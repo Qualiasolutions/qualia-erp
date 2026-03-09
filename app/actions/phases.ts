@@ -20,6 +20,10 @@ export async function getProjectPhases(projectId: string) {
 
 export async function createProjectPhase(projectId: string, name: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   // Get current max sort_order
   const { data: existingPhases } = await supabase
@@ -54,6 +58,10 @@ export async function createProjectPhase(projectId: string, name: string) {
 
 export async function deleteProjectPhase(phaseId: string, projectId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   const { error } = await supabase.from('project_phases').delete().eq('id', phaseId);
 
@@ -69,6 +77,10 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
 
 export async function updateProjectPhase(phaseId: string, name: string, projectId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   const { error } = await supabase.from('project_phases').update({ name }).eq('id', phaseId);
 
@@ -87,6 +99,10 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
  */
 export async function completePhase(phaseId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   // Get the phase and its project
   const { data: phase, error: fetchError } = await supabase
@@ -123,13 +139,9 @@ export async function completePhase(phaseId: string) {
 
   // Notify clients of phase completion (fire-and-forget, preference-aware)
   if (phaseDetail?.name) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const employeeName = user
-      ? (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
-          ?.full_name || 'Team member'
-      : 'Team member';
+    const employeeName =
+      (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
+        ?.full_name || 'Team member';
     import('@/lib/email').then(({ notifyClientOfPhaseMilestone }) => {
       notifyClientOfPhaseMilestone(
         phase.project_id,
@@ -215,6 +227,10 @@ export async function checkPhaseProgress(phaseId: string) {
  */
 export async function unlockPhase(phaseId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
 
   const { data: phase, error: fetchError } = await supabase
     .from('project_phases')
