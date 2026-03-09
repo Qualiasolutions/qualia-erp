@@ -34,6 +34,7 @@ interface PortalRequestDialogProps {
 
 const requestCategories = [
   { value: 'feature_request', label: 'Feature Request' },
+  { value: 'full_stack_feature', label: 'Full Stack Feature' },
   { value: 'change_request', label: 'Change Request' },
   { value: 'bug_report', label: 'Bug Report' },
   { value: 'question', label: 'Question' },

@@ -4,7 +4,6 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
   Select,
@@ -21,12 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, UserPlus, Copy, Check, Loader2, Trash2, KeyRound, FolderPlus } from 'lucide-react';
+import { Users, Copy, Check, Loader2, Trash2, KeyRound, UserPlus } from 'lucide-react';
 import {
-  inviteClientByEmail,
+  setupClientForProject,
   removeClientFromProject,
   sendClientPasswordReset,
-  createProjectFromPortal,
 } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -72,130 +70,100 @@ export function PortalAdminPanel({
   const [assignments, setAssignments] = useState(initialAssignments);
   const [isPending, startTransition] = useTransition();
 
-  // Project creation form
-  const [projectName, setProjectName] = useState('');
-  const [projectType, setProjectType] = useState('web_design');
-  const [isCreatingProject, setIsCreatingProject] = useState(false);
-  const [projectError, setProjectError] = useState<string | null>(null);
+  // Setup form
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [isSettingUp, setIsSettingUp] = useState(false);
 
-  // Invite form — always visible, no dialog needed
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteName, setInviteName] = useState('');
-  const [inviteProjectId, setInviteProjectId] = useState('');
-
-  // Credentials after invite
+  // Credentials after setup
   const [credentials, setCredentials] = useState<{
     email: string;
-    password: string;
+    password?: string;
+    name: string;
+    alreadyExisted: boolean;
   } | null>(null);
   const [credsCopied, setCredsCopied] = useState(false);
 
   const portalUrl = 'https://qualia-erp.vercel.app/portal';
 
-  const handleCreateProject = async () => {
-    if (!projectName.trim()) {
-      toast.error('Project name is required');
-      return;
-    }
-    setIsCreatingProject(true);
-    setProjectError(null);
-    try {
-      const result = await createProjectFromPortal({
-        name: projectName.trim(),
-        project_type: projectType,
-      });
-      if (!result.success) {
-        setProjectError(result.error || 'Failed to create project');
-        toast.error(result.error || 'Failed to create project');
-        return;
-      }
-      toast.success('Project created');
-      setProjectName('');
-      router.refresh();
-    } finally {
-      setIsCreatingProject(false);
-    }
-  };
+  // Filter out projects that already have a client linked
+  const linkedProjectIds = new Set(assignments.map((a) => a.project_id));
+  const availableProjects = projects.filter((p) => !linkedProjectIds.has(p.id));
 
-  const handleInvite = () => {
-    if (!inviteEmail.trim()) {
-      toast.error('Email is required');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail.trim())) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-    if (!inviteProjectId) {
+  const handleSetup = async () => {
+    if (!selectedProjectId) {
       toast.error('Select a project');
       return;
     }
 
-    startTransition(async () => {
-      const result = await inviteClientByEmail(
-        inviteProjectId,
-        inviteEmail.trim(),
-        inviteName || undefined
-      );
+    setIsSettingUp(true);
+    setCredentials(null);
+
+    try {
+      const result = await setupClientForProject(selectedProjectId);
       if (!result.success) {
-        toast.error(result.error || 'Failed to create client');
+        toast.error(result.error || 'Failed to setup client');
         return;
       }
 
-      const data = result.data as
-        | {
-            userId?: string;
-            tempPassword?: string;
-          }
-        | undefined;
+      const data = result.data as {
+        userId: string;
+        email: string;
+        name: string;
+        tempPassword?: string;
+        alreadyExisted: boolean;
+      };
 
-      if (data?.tempPassword) {
-        setCredentials({ email: inviteEmail.trim(), password: data.tempPassword });
-        toast.success('Client account created!');
+      setCredentials({
+        email: data.email,
+        password: data.tempPassword,
+        name: data.name,
+        alreadyExisted: data.alreadyExisted,
+      });
+
+      if (data.alreadyExisted) {
+        toast.success('Existing client linked to project');
       } else {
-        toast.success('Client linked to project');
+        toast.success('Client account created!');
       }
 
       // Update local state
-      if (data?.userId) {
-        const newClient: ClientProfile = {
-          id: data.userId,
-          full_name: inviteName || null,
-          email: inviteEmail.trim(),
-          role: 'client',
-          created_at: new Date().toISOString(),
-        };
-        if (!clients.find((c) => c.id === data.userId)) {
-          setClients((prev) => [newClient, ...prev]);
-        }
-        const project = projects.find((p) => p.id === inviteProjectId);
-        setAssignments((prev) => [
-          {
-            id: crypto.randomUUID(),
-            client_id: data.userId!,
-            project_id: inviteProjectId,
-            access_level: null,
-            invited_at: new Date().toISOString(),
-            client: { id: data.userId!, full_name: inviteName || null, email: inviteEmail.trim() },
-            project: project
-              ? {
-                  id: project.id,
-                  name: project.name,
-                  status: project.status,
-                  project_type: project.project_type,
-                }
-              : null,
-          },
-          ...prev,
-        ]);
+      const newClient: ClientProfile = {
+        id: data.userId,
+        full_name: data.name,
+        email: data.email,
+        role: 'client',
+        created_at: new Date().toISOString(),
+      };
+      if (!clients.find((c) => c.id === data.userId)) {
+        setClients((prev) => [newClient, ...prev]);
       }
 
-      setInviteEmail('');
-      setInviteName('');
-      setInviteProjectId('');
+      const project = projects.find((p) => p.id === selectedProjectId);
+      setAssignments((prev) => [
+        {
+          id: crypto.randomUUID(),
+          client_id: data.userId,
+          project_id: selectedProjectId,
+          access_level: null,
+          invited_at: new Date().toISOString(),
+          client: { id: data.userId, full_name: data.name, email: data.email },
+          project: project
+            ? {
+                id: project.id,
+                name: project.name,
+                status: project.status,
+                project_type: project.project_type,
+              }
+            : null,
+        },
+        ...prev,
+      ]);
+
+      setSelectedProjectId('');
       router.refresh();
-    });
+    } finally {
+      setIsSettingUp(false);
+    }
   };
 
   const handleRemoveAccess = (assignmentId: string, projectId: string, clientId: string) => {
@@ -229,7 +197,7 @@ export function PortalAdminPanel({
   };
 
   const handleCopyCredentials = () => {
-    if (!credentials) return;
+    if (!credentials || !credentials.password) return;
     navigator.clipboard.writeText(
       `Email: ${credentials.email}\nPassword: ${credentials.password}\nPortal: ${portalUrl}`
     );
@@ -249,131 +217,92 @@ export function PortalAdminPanel({
 
   return (
     <div className="space-y-6">
-      {/* Create new project */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FolderPlus className="h-4 w-4 text-qualia-600" />
-            Create New Project
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Input
-              type="text"
-              placeholder="Project name *"
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-            />
-            <Select value={projectType} onValueChange={setProjectType}>
-              <SelectTrigger>
-                <SelectValue placeholder="Project type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="web_design">Web Design</SelectItem>
-                <SelectItem value="ai_agent">AI Agent</SelectItem>
-                <SelectItem value="voice_agent">Voice Agent</SelectItem>
-                <SelectItem value="seo">SEO</SelectItem>
-                <SelectItem value="ads">Ads</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={handleCreateProject}
-              disabled={isCreatingProject || !projectName.trim()}
-              className="gap-2"
-            >
-              {isCreatingProject ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FolderPlus className="h-4 w-4" />
-              )}
-              Create Project
-            </Button>
-          </div>
-          {projectError && <p className="mt-2 text-sm text-red-600">{projectError}</p>}
-        </CardContent>
-      </Card>
-
-      {/* Invite client — simple inline form */}
+      {/* Setup client access — single action */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <UserPlus className="h-4 w-4 text-qualia-600" />
-            Add Client to Project
+            Setup Client Access
           </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Pick a project — credentials are generated automatically.
+          </p>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Input
-              type="email"
-              placeholder="Client email *"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-            />
-            <Input
-              type="text"
-              placeholder="Client name"
-              value={inviteName}
-              onChange={(e) => setInviteName(e.target.value)}
-            />
-            <Select value={inviteProjectId} onValueChange={setInviteProjectId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select project *" />
+          <div className="flex gap-3">
+            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="Choose a project..." />
               </SelectTrigger>
               <SelectContent>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
+                {availableProjects.length === 0 ? (
+                  <SelectItem value="_none" disabled>
+                    All projects have clients
                   </SelectItem>
-                ))}
+                ) : (
+                  availableProjects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
             <Button
-              onClick={handleInvite}
-              disabled={isPending || !inviteEmail.trim() || !inviteProjectId}
-              className="gap-2"
+              onClick={handleSetup}
+              disabled={isSettingUp || !selectedProjectId}
+              className="shrink-0 gap-2"
             >
-              {isPending ? (
+              {isSettingUp ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <UserPlus className="h-4 w-4" />
               )}
-              Create & Link
+              Create Client
             </Button>
           </div>
 
-          {/* Credentials result — shows right after invite */}
+          {/* Credentials result */}
           {credentials && (
             <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/5 p-4">
-              <p className="mb-2 text-sm font-medium text-green-700 dark:text-green-400">
-                Client credentials — share these with the client:
-              </p>
-              <div className="flex items-center justify-between rounded-md bg-background p-3 font-mono text-sm">
-                <div className="space-y-0.5">
-                  <p>
-                    <span className="text-muted-foreground">Email:</span> {credentials.email}
+              {credentials.password ? (
+                <>
+                  <p className="mb-2 text-sm font-medium text-green-700 dark:text-green-400">
+                    Client credentials for {credentials.name} — share with the client:
                   </p>
-                  <p>
-                    <span className="text-muted-foreground">Password:</span> {credentials.password}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Login at:</span> {portalUrl}
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-4 shrink-0 gap-2"
-                  onClick={handleCopyCredentials}
-                >
-                  {credsCopied ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                  {credsCopied ? 'Copied!' : 'Copy'}
-                </Button>
-              </div>
+                  <div className="flex items-center justify-between rounded-md bg-background p-3 font-mono text-sm">
+                    <div className="space-y-0.5">
+                      <p>
+                        <span className="text-muted-foreground">Email:</span> {credentials.email}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Password:</span>{' '}
+                        {credentials.password}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Login at:</span> {portalUrl}
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="ml-4 shrink-0 gap-2"
+                      onClick={handleCopyCredentials}
+                    >
+                      {credsCopied ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      {credsCopied ? 'Copied!' : 'Copy'}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-green-700 dark:text-green-400">
+                  Existing client ({credentials.email}) linked to {credentials.name}.
+                </p>
+              )}
             </div>
           )}
         </CardContent>

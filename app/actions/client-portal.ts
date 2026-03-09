@@ -431,6 +431,176 @@ export async function sendClientPasswordReset(email: string): Promise<ActionResu
 }
 
 /**
+ * Setup client access for an existing project.
+ * Auto-generates email (slug@clients.qualiasolutions.net) and credentials.
+ * If a client already exists for this project, returns their info instead.
+ */
+export async function setupClientForProject(projectId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Get project details
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('id, name, status, client_id')
+      .eq('id', projectId)
+      .single();
+
+    if (projectError || !project) {
+      return { success: false, error: 'Project not found' };
+    }
+
+    // Check if client already linked to this project
+    const { data: existingLink } = await supabase
+      .from('client_projects')
+      .select('id, client_id, client:profiles!client_id(id, full_name, email)')
+      .eq('project_id', projectId)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingLink) {
+      const client = Array.isArray(existingLink.client)
+        ? existingLink.client[0]
+        : existingLink.client;
+      return {
+        success: false,
+        error: `This project already has a client: ${client?.full_name || client?.email || 'Unknown'}`,
+      };
+    }
+
+    // Generate slug from project name
+    const slug = project.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '')
+      .slice(0, 30);
+
+    if (!slug) {
+      return { success: false, error: 'Could not generate email from project name' };
+    }
+
+    const clientEmail = `${slug}@clients.qualiasolutions.net`;
+    const clientName = project.name;
+
+    // Check if this email already exists
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('email', clientEmail)
+      .single();
+
+    if (existingProfile) {
+      // Profile exists — just link to project
+      const linkResult = await inviteClientToProject(projectId, existingProfile.id);
+      if (!linkResult.success) return linkResult;
+      return {
+        success: true,
+        data: {
+          userId: existingProfile.id,
+          email: clientEmail,
+          name: clientName,
+          alreadyExisted: true,
+        },
+      };
+    }
+
+    // Create auth account via admin API
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return {
+        success: false,
+        error: 'Service role key not configured. Cannot create client accounts.',
+      };
+    }
+
+    const tempPassword = `Qualia-${Math.random().toString(36).slice(2, 10)}!`;
+    const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
+      email: clientEmail,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        role: 'client',
+        full_name: clientName,
+      },
+    });
+
+    if (createError) {
+      console.error('[setupClientForProject] Create user error:', createError);
+      return {
+        success: false,
+        error: `Failed to create client account: ${createError.message}`,
+      };
+    }
+
+    if (!newUserData?.user?.id) {
+      return { success: false, error: 'Account created but no user ID returned' };
+    }
+
+    const newUserId = newUserData.user.id;
+
+    // Ensure profile exists with client role
+    await adminClient.from('profiles').upsert(
+      {
+        id: newUserId,
+        email: clientEmail,
+        full_name: clientName,
+        role: 'client',
+      },
+      { onConflict: 'id' }
+    );
+
+    // Link client to project
+    const { error: linkError } = await adminClient.from('client_projects').insert({
+      client_id: newUserId,
+      project_id: projectId,
+      invited_by: user.id,
+      invited_at: new Date().toISOString(),
+    });
+
+    if (linkError) {
+      console.error('[setupClientForProject] Link error:', linkError);
+      return {
+        success: false,
+        error: 'Account created but failed to link project. Try adding manually.',
+      };
+    }
+
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+    revalidatePath('/portal');
+
+    return {
+      success: true,
+      data: {
+        userId: newUserId,
+        email: clientEmail,
+        name: clientName,
+        tempPassword,
+        alreadyExisted: false,
+      },
+    };
+  } catch (error) {
+    console.error('[setupClientForProject] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to setup client',
+    };
+  }
+}
+
+/**
  * Create a project from the portal admin panel.
  * Simplified version — auto-assigns workspace and first available team.
  */
