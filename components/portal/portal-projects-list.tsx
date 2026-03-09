@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { getProjectStatusColor } from '@/lib/portal-styles';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, ArrowRight } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -77,9 +77,10 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                 index < 6 && 'animate-fade-in-up fill-mode-both'
               )}
             >
+              <div className="h-0.5 w-full rounded-t-[inherit] bg-gradient-to-r from-qualia-500/40 via-qualia-600/60 to-qualia-500/20" />
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-semibold text-foreground group-hover:text-qualia-700">
+                  <h3 className="text-base font-semibold tracking-tight text-foreground transition-colors duration-200 group-hover:text-qualia-700">
                     {project.name}
                   </h3>
                   <Badge className={cn('shrink-0', getProjectStatusColor(project.project_status))}>
@@ -96,11 +97,16 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                 <div>
                   <div className="mb-1 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground/80">Overall Progress</span>
-                    <span className="font-medium text-muted-foreground">{progress}%</span>
+                    <span className="text-xs font-semibold tabular-nums text-qualia-600">
+                      {progress}%
+                    </span>
                   </div>
-                  <Progress value={progress} className="h-2 bg-qualia-100">
+                  <Progress
+                    value={progress}
+                    className="h-1.5 overflow-hidden rounded-full bg-muted/50"
+                  >
                     <div
-                      className="h-full bg-qualia-600 transition-all"
+                      className="h-full rounded-full bg-gradient-to-r from-qualia-500 to-qualia-600 transition-all duration-500 ease-out"
                       style={{ width: `${progress}%` }}
                     />
                   </Progress>
@@ -109,8 +115,9 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                   <span className="capitalize">
                     {project.project_type?.replace(/_/g, ' ') || 'Project'}
                   </span>
-                  <span className="font-medium text-qualia-600 group-hover:text-qualia-700">
-                    View Details →
+                  <span className="flex items-center gap-1 text-xs font-medium text-qualia-600/70 transition-colors duration-200 group-hover:text-qualia-700">
+                    View Details{' '}
+                    <ArrowRight className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </span>
                 </div>
               </CardContent>

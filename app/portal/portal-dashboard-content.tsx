@@ -4,7 +4,7 @@ import { usePortalDashboard } from '@/lib/swr';
 import { PortalDashboardStats } from '@/components/portal/portal-dashboard-stats';
 import { PortalRecentActivity } from '@/components/portal/portal-recent-activity';
 import { Card, CardContent } from '@/components/ui/card';
-import { Mail, Plus, Receipt } from 'lucide-react';
+import { ArrowRight, Mail, Plus, Receipt } from 'lucide-react';
 import Link from 'next/link';
 
 interface PortalDashboardContentProps {
@@ -54,9 +54,9 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
       {/* Welcome section */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          {greeting}, {displayName}
+          {greeting}, <span className="text-qualia-600">{displayName}</span>
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-xs font-medium uppercase tracking-widest text-muted-foreground/60">
           {now.toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -73,46 +73,60 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
       <PortalRecentActivity projects={projects} isLoading={isLoading} isValidating={isValidating} />
 
       {/* Quick Actions */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Link href="/portal/requests">
-          <Card className="card-interactive">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-qualia-600/10">
-                <Plus className="h-4 w-4 text-qualia-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Submit Request</p>
-                <p className="text-xs text-muted-foreground">New feature or change</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/portal/billing">
-          <Card className="card-interactive">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-qualia-600/10">
-                <Receipt className="h-4 w-4 text-qualia-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">View Billing</p>
-                <p className="text-xs text-muted-foreground">Invoices and payments</p>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <a href="mailto:support@qualiasolutions.net">
-          <Card className="card-interactive">
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-qualia-600/10">
-                <Mail className="h-4 w-4 text-qualia-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Contact Support</p>
-                <p className="text-xs text-muted-foreground">support@qualiasolutions.net</p>
-              </div>
-            </CardContent>
-          </Card>
-        </a>
+      <div>
+        <p className="mb-3 text-xs font-medium uppercase tracking-widest text-muted-foreground/50">
+          Quick Actions
+        </p>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <Link href="/portal/requests" className="group">
+            <Card className="card-interactive">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10">
+                  <Plus className="h-4 w-4 text-qualia-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-qualia-700">
+                    Submit Request
+                  </p>
+                  <p className="text-xs text-muted-foreground">New feature or change</p>
+                </div>
+                <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-qualia-600" />
+              </CardContent>
+            </Card>
+          </Link>
+          <Link href="/portal/billing" className="group">
+            <Card className="card-interactive">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10">
+                  <Receipt className="h-4 w-4 text-qualia-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-qualia-700">
+                    View Billing
+                  </p>
+                  <p className="text-xs text-muted-foreground">Invoices and payments</p>
+                </div>
+                <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-qualia-600" />
+              </CardContent>
+            </Card>
+          </Link>
+          <a href="mailto:support@qualiasolutions.net" className="group">
+            <Card className="card-interactive">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10">
+                  <Mail className="h-4 w-4 text-qualia-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground transition-colors duration-200 group-hover:text-qualia-700">
+                    Contact Support
+                  </p>
+                  <p className="text-xs text-muted-foreground">support@qualiasolutions.net</p>
+                </div>
+                <ArrowRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/30 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-qualia-600" />
+              </CardContent>
+            </Card>
+          </a>
+        </div>
       </div>
     </div>
   );

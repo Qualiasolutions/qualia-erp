@@ -57,7 +57,7 @@ function NavLink({
       className={cn(
         'group relative flex h-10 items-center gap-2.5 rounded-lg px-3 text-sm font-medium tracking-tight transition-all duration-200 ease-premium',
         isActive
-          ? 'bg-qualia-600/10 text-foreground'
+          ? 'from-qualia-500/12 bg-gradient-to-r to-transparent text-foreground'
           : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
       )}
     >
@@ -71,7 +71,7 @@ function NavLink({
       />
       <span>{item.name}</span>
       {isActive && (
-        <span className="absolute right-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-qualia-600" />
+        <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-qualia-600" />
       )}
     </Link>
   );
@@ -107,7 +107,7 @@ function UserMenu({
             'focus:outline-none focus-visible:ring-1 focus-visible:ring-qualia-600/30'
           )}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-qualia-600/10">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-qualia-500/20 to-qualia-600/10 ring-1 ring-qualia-500/20">
             <span className="text-xs font-semibold text-qualia-600">
               {displayName.charAt(0).toUpperCase()}
             </span>
@@ -165,11 +165,11 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-card to-card/95">
+    <div className="to-background/98 flex h-full flex-col bg-gradient-to-b from-background">
       {/* Logo */}
       <div className="relative flex h-16 items-center border-b border-border/40 px-4">
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-qualia-600">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500 to-qualia-700">
             <span className="text-sm font-bold text-white">Q</span>
           </div>
           <div className="flex flex-col">

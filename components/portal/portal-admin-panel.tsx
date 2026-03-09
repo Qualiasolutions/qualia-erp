@@ -85,9 +85,8 @@ export function PortalAdminPanel({
 
   const portalUrl = 'https://qualia-erp.vercel.app/portal';
 
-  // Filter out projects that already have a client linked
-  const linkedProjectIds = new Set(assignments.map((a) => a.project_id));
-  const availableProjects = projects.filter((p) => !linkedProjectIds.has(p.id));
+  // Show all projects (some may already have clients linked)
+  const availableProjects = projects;
 
   const handleSetup = async () => {
     if (!selectedProjectId) {
@@ -221,7 +220,9 @@ export function PortalAdminPanel({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <UserPlus className="h-4 w-4 text-qualia-600" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10">
+              <UserPlus className="h-4 w-4 text-qualia-600" />
+            </div>
             Setup Client Access
           </CardTitle>
           <p className="text-sm text-muted-foreground">
@@ -251,7 +252,7 @@ export function PortalAdminPanel({
             <Button
               onClick={handleSetup}
               disabled={isSettingUp || !selectedProjectId}
-              className="shrink-0 gap-2"
+              className="shrink-0 gap-2 bg-qualia-600 text-white hover:bg-qualia-700"
             >
               {isSettingUp ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -264,13 +265,21 @@ export function PortalAdminPanel({
 
           {/* Credentials result */}
           {credentials && (
-            <div className="mt-4 rounded-lg border border-green-500/30 bg-green-500/5 p-4">
+            <div className="mt-4 rounded-xl border border-qualia-500/20 bg-gradient-to-br from-qualia-500/5 to-transparent p-4 ring-1 ring-qualia-500/10">
               {credentials.password ? (
                 <>
-                  <p className="mb-2 text-sm font-medium text-green-700 dark:text-green-400">
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-qualia-500/15">
+                      <Check className="h-3.5 w-3.5 text-qualia-600" />
+                    </div>
+                    <span className="text-sm font-semibold text-foreground">
+                      Client access created
+                    </span>
+                  </div>
+                  <p className="mb-2 text-sm font-medium text-muted-foreground">
                     Client credentials for {credentials.name} — share with the client:
                   </p>
-                  <div className="flex items-center justify-between rounded-md bg-background p-3 font-mono text-sm">
+                  <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/50 p-3 font-mono text-xs">
                     <div className="space-y-0.5">
                       <p>
                         <span className="text-muted-foreground">Email:</span> {credentials.email}
@@ -299,7 +308,7 @@ export function PortalAdminPanel({
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-green-700 dark:text-green-400">
+                <p className="text-sm text-muted-foreground">
                   Existing client ({credentials.email}) linked to {credentials.name}.
                 </p>
               )}
@@ -313,7 +322,9 @@ export function PortalAdminPanel({
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Users className="h-4 w-4 text-qualia-600" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
+                <Users className="h-3.5 w-3.5 text-qualia-600" />
+              </div>
               Client Accounts
               <Badge variant="secondary" className="ml-1">
                 {clients.length}
@@ -325,10 +336,10 @@ export function PortalAdminPanel({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Projects</TableHead>
-                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Client</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Projects</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Joined</TableHead>
                     <TableHead className="w-[60px]"></TableHead>
                   </TableRow>
                 </TableHeader>

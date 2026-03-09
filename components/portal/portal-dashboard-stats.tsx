@@ -25,21 +25,21 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
       value: stats?.projectCount || 0,
       icon: Folder,
       href: '/portal/projects',
-      color: 'text-blue-600 bg-blue-500/10',
+      iconColor: 'text-qualia-600',
     },
     {
       label: 'Pending Requests',
       value: stats?.pendingRequests || 0,
       icon: Lightbulb,
       href: '/portal/requests',
-      color: 'text-amber-600 bg-amber-500/10',
+      iconColor: 'text-amber-500',
     },
     {
       label: 'Unpaid Invoices',
       value: stats?.unpaidInvoiceCount || 0,
       icon: Receipt,
       href: '/portal/billing',
-      color: 'text-red-600 bg-red-500/10',
+      iconColor: 'text-red-500',
       subtitle: stats?.unpaidTotal
         ? stats.unpaidTotal.toLocaleString('en', { style: 'currency', currency: 'EUR' })
         : undefined,
@@ -66,18 +66,22 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
     <div className="grid gap-4 sm:grid-cols-3">
       {statCards.map((stat) => (
         <Link key={stat.label} href={stat.href}>
-          <Card className="card-interactive h-full">
+          <Card className="card-interactive group relative h-full overflow-hidden border-b-2 border-transparent transition-colors duration-300 hover:border-qualia-500/30">
             <CardContent className="flex items-center gap-4 p-5">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent" />
               <div
                 className={cn(
                   'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
-                  stat.color
+                  'bg-gradient-to-br from-qualia-500/15 to-qualia-600/5 ring-1 ring-qualia-500/10',
+                  stat.iconColor
                 )}
               >
                 <stat.icon className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-3xl font-bold tabular-nums tracking-tight text-foreground">
+                  {stat.value}
+                </p>
                 <p className="text-xs text-muted-foreground">{stat.label}</p>
                 {stat.subtitle && (
                   <p className="mt-0.5 text-xs font-medium text-red-600">{stat.subtitle}</p>

@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientProjects } from '@/app/actions/client-portal';
 import { calculateProjectsProgress } from '@/app/actions/phases';
-import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
+import { isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalProjectsList } from '@/components/portal/portal-projects-list';
 import { fadeInClasses } from '@/lib/transitions';
 
@@ -16,8 +16,13 @@ export default async function PortalProjectsPage() {
     redirect('/auth/login');
   }
 
-  const userRole = await getUserRole(user.id);
-  const isAdmin = isPortalAdminRole(userRole);
+  // Get role directly from the same supabase client to avoid separate connection issues
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  const isAdmin = isPortalAdminRole(profile?.role || null);
 
   // Admin: show all projects
   if (isAdmin) {
