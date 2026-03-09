@@ -23,7 +23,7 @@ export async function getProjectIntegrationStatus(projectId: string): Promise<In
 
   const { data: project } = await supabase
     .from('projects')
-    .select('client_id, client:clients(id, name, company_name)')
+    .select('client_id, client:clients(id, name, display_name)')
     .eq('id', projectId)
     .single();
 
@@ -39,7 +39,7 @@ export async function getProjectIntegrationStatus(projectId: string): Promise<In
     hasERPClient: !!erpClient,
     portalClientCount: portalCount ?? 0,
     erpClientName: erpClient?.name ?? null,
-    erpClientCompany: erpClient?.company_name ?? null,
+    erpClientCompany: erpClient?.display_name ?? null,
   };
 }
 

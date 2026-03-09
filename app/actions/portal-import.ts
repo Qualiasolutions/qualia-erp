@@ -11,7 +11,7 @@ export type ProjectForImport = {
   project_type: string | null;
   project_status: string | null;
   client_id: string | null;
-  erpClient: { name: string | null; company_name: string | null } | null;
+  erpClient: { name: string | null; display_name: string | null } | null;
   portalAccessCount: number;
   hasPortalAccess: boolean;
   hasPortalSettings: boolean;
@@ -57,7 +57,7 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
         project_status,
         client_id,
         metadata,
-        client:clients(name, company_name)
+        client:clients(name, display_name)
       `
       )
       .in('project_status', ['Active', 'Demos', 'Delayed'])
@@ -97,21 +97,21 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
         const hasPortalSettings = !!metadata?.portal_settings;
 
         // Normalize FK response for erpClient
-        let erpClient: { name: string | null; company_name: string | null } | null = null;
+        let erpClient: { name: string | null; display_name: string | null } | null = null;
         if (project.client) {
           if (Array.isArray(project.client) && project.client.length > 0) {
             erpClient = {
               name: project.client[0]?.name ?? null,
-              company_name: project.client[0]?.company_name ?? null,
+              display_name: project.client[0]?.display_name ?? null,
             };
           } else if (!Array.isArray(project.client)) {
             const clientData = project.client as {
               name?: string | null;
-              company_name?: string | null;
+              display_name?: string | null;
             };
             erpClient = {
               name: clientData.name ?? null,
-              company_name: clientData.company_name ?? null,
+              display_name: clientData.display_name ?? null,
             };
           }
         }

@@ -333,9 +333,9 @@ export function ProjectImportList({ projects }: { projects: ProjectForImport[] }
                     {project.erpClient ? (
                       <div className="flex flex-col">
                         <span className="font-medium">{project.erpClient.name}</span>
-                        {project.erpClient.company_name && (
+                        {project.erpClient.display_name && (
                           <span className="text-xs text-muted-foreground">
-                            {project.erpClient.company_name}
+                            {project.erpClient.display_name}
                           </span>
                         )}
                       </div>
