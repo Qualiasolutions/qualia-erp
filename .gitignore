@@ -35,6 +35,8 @@ yarn-error.log*
 .env
 .env.production
 .env.temp
+.env.vercel
+.env.vercel-pull
 
 # MCP configuration (contains secrets)
 .mcp.json

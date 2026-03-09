@@ -24,8 +24,8 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    if (process.env.NODE_ENV === 'production' && cronSecret) {
-      if (authHeader !== `Bearer ${cronSecret}`) {
+    if (process.env.NODE_ENV === 'production') {
+      if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
         console.error('[cron/blog-tasks] Unauthorized request');
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -114,7 +114,7 @@ export async function GET(request: Request) {
     const nextProject = sortedProjects[0];
 
     // 5. Check if ANY blog task already exists for today (one task per day)
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Nicosia' });
     const { data: existingTask } = await supabase
       .from('tasks')
       .select('id, title, project_id')

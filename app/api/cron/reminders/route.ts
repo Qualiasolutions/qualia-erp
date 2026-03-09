@@ -18,9 +18,9 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    // In production, require the secret
-    if (process.env.NODE_ENV === 'production' && cronSecret) {
-      if (authHeader !== `Bearer ${cronSecret}`) {
+    // Always require the secret in production
+    if (process.env.NODE_ENV === 'production') {
+      if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
         console.error('[cron/reminders] Unauthorized request');
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
