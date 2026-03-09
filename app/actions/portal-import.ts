@@ -54,13 +54,13 @@ export async function getProjectsForPortalImport(): Promise<ActionResult> {
         id,
         name,
         project_type,
-        project_status,
+        project_status:status,
         client_id,
         metadata,
         client:clients(name, display_name)
       `
       )
-      .in('project_status', ['Active', 'Demos', 'Delayed'])
+      .in('status', ['Active', 'Demos', 'Delayed'])
       .order('name', { ascending: true });
 
     if (error) {
@@ -185,7 +185,7 @@ export async function getProjectPhasesForPreview(projectId: string): Promise<Act
     // Fetch project details
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('id, name, description, project_type, project_status')
+      .select('id, name, description, project_type, project_status:status')
       .eq('id', projectId)
       .single();
 

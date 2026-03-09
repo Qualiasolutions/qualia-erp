@@ -1185,7 +1185,7 @@ export function usePortalProjectWithPhases(projectId: string | null) {
       // Fetch project details
       const { data: project, error: projectError } = await supabase
         .from('projects')
-        .select('id, name, project_status, description')
+        .select('id, name, project_status:status, description')
         .eq('id', projectId)
         .single();
 

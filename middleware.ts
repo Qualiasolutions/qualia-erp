@@ -115,14 +115,6 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Manager users: redirect to dashboard if trying to access portal
-    // Only admins are allowed to access portal for preview/oversight
-    if (userRole === 'manager' && pathname.startsWith('/portal')) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      return NextResponse.redirect(url);
-    }
-
     // If user is authenticated and trying to access /auth/login or /auth/signup, redirect based on role
     if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();

@@ -294,7 +294,7 @@ export async function getClientProjects(clientId: string): Promise<ActionResult>
           name,
           description,
           project_type,
-          project_status,
+          project_status:status,
           start_date,
           end_date,
           lead_id,
