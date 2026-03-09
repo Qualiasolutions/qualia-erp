@@ -109,6 +109,11 @@ export function PortalAdminPanel({
   const [inviteName, setInviteName] = useState('');
   const [inviteProjectId, setInviteProjectId] = useState('');
 
+  // Credentials display state
+  const [credentialsOpen, setCredentialsOpen] = useState(false);
+  const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
+  const [credsCopied, setCredsCopied] = useState(false);
+
   // Link project form state
   const [linkOpen, setLinkOpen] = useState(false);
   const [linkClientId, setLinkClientId] = useState('');
@@ -182,12 +187,22 @@ export function PortalAdminPanel({
         return;
       }
 
-      const data = result.data as { userId?: string; emailSent?: boolean } | undefined;
-      toast.success(
-        data?.emailSent
-          ? 'Invite sent! Client will receive an email to set their password.'
-          : 'Client linked to project'
-      );
+      const data = result.data as
+        | {
+            userId?: string;
+            emailSent?: boolean;
+            tempPassword?: string;
+          }
+        | undefined;
+
+      if (data?.tempPassword) {
+        // Show credentials dialog so admin can copy them
+        setCredentials({ email: inviteEmail.trim(), password: data.tempPassword });
+        setCredentialsOpen(true);
+        toast.success('Client account created!');
+      } else {
+        toast.success('Client linked to project');
+      }
 
       // Add to local state
       if (data?.userId) {
@@ -417,8 +432,7 @@ export function PortalAdminPanel({
             <DialogHeader>
               <DialogTitle>Invite New Client</DialogTitle>
               <DialogDescription>
-                Send an email invite. The client will receive a link to set their password and
-                access the portal.
+                Create a client account and get login credentials to share with them.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 pt-2">
@@ -683,6 +697,62 @@ export function PortalAdminPanel({
           </CardContent>
         </Card>
       )}
+      {/* Credentials dialog */}
+      <Dialog open={credentialsOpen} onOpenChange={setCredentialsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Client Account Created</DialogTitle>
+            <DialogDescription>
+              Share these login credentials with the client. They can log in at the portal URL.
+            </DialogDescription>
+          </DialogHeader>
+          {credentials && (
+            <div className="space-y-4 pt-2">
+              <div className="rounded-lg border bg-muted/50 p-4 font-mono text-sm">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p>
+                      <span className="text-muted-foreground">Email:</span> {credentials.email}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Password:</span>{' '}
+                      {credentials.password}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Portal:</span> {portalUrl}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `Email: ${credentials.email}\nPassword: ${credentials.password}\nPortal: ${portalUrl}`
+                    );
+                    setCredsCopied(true);
+                    toast.success('Credentials copied!');
+                    setTimeout(() => setCredsCopied(false), 2000);
+                  }}
+                >
+                  {credsCopied ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  {credsCopied ? 'Copied!' : 'Copy All'}
+                </Button>
+                <Button size="sm" onClick={() => setCredentialsOpen(false)}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

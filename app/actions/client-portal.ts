@@ -71,33 +71,33 @@ export async function inviteClientByEmail(
       };
     }
 
-    const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-      normalizedEmail,
-      {
-        redirectTo: `${APP_URL}/portal`,
-        data: {
-          role: 'client',
-          full_name: clientName || null,
-        },
-      }
-    );
+    // Create user directly with a temporary password (no email required)
+    const tempPassword = `Qualia-${Math.random().toString(36).slice(2, 10)}!`;
+    const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
+      email: normalizedEmail,
+      password: tempPassword,
+      email_confirm: true,
+      user_metadata: {
+        role: 'client',
+        full_name: clientName || null,
+      },
+    });
 
-    if (inviteError) {
-      console.error('[inviteClientByEmail] Invite error:', inviteError);
+    if (createError) {
+      console.error('[inviteClientByEmail] Create user error:', createError);
       return {
         success: false,
-        error: `Failed to send invite: ${inviteError.message}`,
+        error: `Failed to create client account: ${createError.message}`,
       };
     }
 
-    if (!inviteData?.user?.id) {
-      return { success: false, error: 'Invite sent but no user ID returned' };
+    if (!newUserData?.user?.id) {
+      return { success: false, error: 'Account created but no user ID returned' };
     }
 
-    const newUserId = inviteData.user.id;
+    const newUserId = newUserData.user.id;
 
-    // Ensure profile exists with client role (Supabase trigger may create it,
-    // but we upsert to be safe)
+    // Ensure profile exists with client role
     const { error: profileError } = await adminClient.from('profiles').upsert(
       {
         id: newUserId,
@@ -110,7 +110,6 @@ export async function inviteClientByEmail(
 
     if (profileError) {
       console.error('[inviteClientByEmail] Profile creation error:', profileError);
-      // Don't fail — the invite was sent, profile will be created on signup
     }
 
     // Link client to project
@@ -125,7 +124,7 @@ export async function inviteClientByEmail(
       console.error('[inviteClientByEmail] Link error:', linkError);
       return {
         success: false,
-        error: 'Invite sent but failed to link project. Try adding manually.',
+        error: 'Account created but failed to link project. Try adding manually.',
       };
     }
 
@@ -135,7 +134,7 @@ export async function inviteClientByEmail(
 
     return {
       success: true,
-      data: { userId: newUserId, emailSent: true },
+      data: { userId: newUserId, tempPassword, emailSent: false },
     };
   } catch (error) {
     console.error('[inviteClientByEmail] Unexpected error:', error);
