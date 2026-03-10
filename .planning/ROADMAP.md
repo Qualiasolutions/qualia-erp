@@ -265,9 +265,9 @@ Plans:
 
 Plans:
 
-- [ ] 21-01-PLAN.md — "What's Next" widget: current + next phase hero section on dashboard
-- [ ] 21-02-PLAN.md — Client Action Items: DB table, CRUD actions, dashboard widget with urgency colors
-- [ ] 21-03-PLAN.md — Visual progress bars on projects list and project detail header
+- [x] 21-01-PLAN.md — "What's Next" widget: current + next phase hero section on dashboard
+- [x] 21-02-PLAN.md — Client Action Items: DB table, CRUD actions, dashboard widget with urgency colors
+- [x] 21-03-PLAN.md — Visual progress bars on projects list and project detail header
 
 ### Phase 22: Admin Operations & Bulk Management
 
@@ -345,7 +345,7 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 | 18. Invitation System                       | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 19. Client Onboarding Flow                  | v1.4      | 2/2            | Complete | 2026-03-09 |
 | 20. Portal Foundation Fixes                 | v1.5      | 5/5            | Complete | 2026-03-10 |
-| 21. Enhanced Client Experience              | v1.5      | 0/3            | Planned  | TBD        |
+| 21. Enhanced Client Experience              | v1.5      | 3/3            | Complete | 2026-03-10 |
 | 22. Admin Operations & Bulk Management      | v1.5      | 0/3            | Planned  | TBD        |
 | 23. Proactive Communication & Notifications | v1.5      | 0/3            | Planned  | TBD        |
 | 24. Polish & White-Label Branding           | v1.5      | 0/2            | Planned  | TBD        |
