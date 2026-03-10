@@ -295,8 +295,10 @@ Plans:
 **Priority:** P3 - Nice to have, enhances perceived value
 **Plans:** 2 plans in 1 wave
 
-- [ ] 24-01: Portal Branding & Identity
-- [ ] 24-02: Personalization & Premium Touches
+Plans:
+
+- [ ] 24-01-PLAN.md — Rebrand portal sidebar, add portal metadata, update login card copy
+- [ ] 24-02-PLAN.md — Company name personalization in sidebar and dashboard welcome
 
 </details>
 
@@ -352,4 +354,4 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-10 (Phase 21 planned: 3 plans, wave 1)_
+_Last updated: 2026-03-10 (Phase 24 planned: 2 plans, wave 1)_
