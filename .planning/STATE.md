@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 24 of 25 (Polish & Branding) — In progress
-Plan: 24-01 complete (1 of ? plans in phase 24)
-Status: Phase 23 complete, Phase 24 in progress
-Last activity: 2026-03-10 — Completed Phase 23: Proactive Communication & Notifications
+Phase: 25 of 25 (Portal Security Hardening) — In progress
+Plan: 25-01 complete (1 of 3 plans in phase 25)
+Status: Phase 24 complete, Phase 25 in progress
+Last activity: 2026-03-10 — Completed 25-01: IDOR fixes in client-requests, phase-comments, client-portal
 
-Progress: [############░] 21/24 phases complete (v1.0-v1.4 + phases 20-23) | Phase 24: 1 plan complete
+Progress: [#############] 24 phases tracked | Phase 25: 1 of 3 plans complete
 
 ## Performance Metrics
 
@@ -50,6 +50,9 @@ Progress: [############░] 21/24 phases complete (v1.0-v1.4 + phases 20-23) | P
 | 8   | Portal metadata export in app/portal/layout.tsx (not root layout)      | Scopes browser tab titles only to /portal subtree; ERP stays "Qualia Internal Suite" | 2026-03-10 |
 | 9   | resetClientPassword returns tempPassword (no email) for manual sharing | Consistent with setupPortalForClient new-account pattern; Moayad shares manually     | 2026-03-10 |
 | 10  | Export block is plain text not CSV/PDF                                 | No external library needed; human-readable, clipboard-friendly                       | 2026-03-10 |
+| 11  | canAccessProject from portal-utils extended to allow employee role     | Employees write phase comments; blocking them would break existing team workflow     | 2026-03-10 |
+| 12  | createFeatureRequest ownership check only runs when project_id is set  | project_id is optional; null submissions are valid and need no ownership gate        | 2026-03-10 |
+| 13  | inviteClientToProject rejects non-client profiles explicitly           | Prevents accidentally linking employee/admin accounts to client portal access        | 2026-03-10 |
 
 ### Blockers/Concerns
 
@@ -68,10 +71,10 @@ Progress: [############░] 21/24 phases complete (v1.0-v1.4 + phases 20-23) | P
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 24 Plan 01 complete. Portal branding refresh shipped (sidebar "Qualia Solutions", portal metadata, login card).
-**Next action:** Continue Phase 24 — next plan
+Stopped at: Phase 25 Plan 01 complete. IDOR fixes in portal actions — client-requests, phase-comments, client-portal, portal-utils.
+**Next action:** Continue Phase 25 — execute 25-02-PLAN.md (token-based invitation security)
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Phase 24 Plan 01 complete: Portal Branding Refresh_
+_Last updated: 2026-03-10 — Phase 25 Plan 01 complete: Portal IDOR Security Hardening_
