@@ -3,7 +3,8 @@ import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalDashboardContent } from './portal-dashboard-content';
 import { PortalAdminPanel } from '@/components/portal/portal-admin-panel';
-import { getPortalAdminData } from '@/app/actions/client-portal';
+import { getPortalAdminData, getPortalClientManagement } from '@/app/actions/client-portal';
+import type { MergedPortalClient } from '@/app/actions/client-portal';
 
 export default async function PortalDashboard() {
   const supabase = await createClient();
@@ -37,7 +38,10 @@ export default async function PortalDashboard() {
       .select('id, name, contacts')
       .order('name');
 
-    const adminResult = await getPortalAdminData();
+    const [adminResult, clientManagementResult] = await Promise.all([
+      getPortalAdminData(),
+      getPortalClientManagement(),
+    ]);
     const adminData = adminResult.success
       ? (adminResult.data as {
           clients: Array<{
@@ -61,6 +65,14 @@ export default async function PortalDashboard() {
               project_type: string | null;
             } | null;
           }>;
+        })
+      : null;
+
+    const clientManagement = clientManagementResult.success
+      ? (clientManagementResult.data as {
+          clients: MergedPortalClient[];
+          totalActive: number;
+          totalInactive: number;
         })
       : null;
 
@@ -88,6 +100,7 @@ export default async function PortalDashboard() {
               name: c.name,
               contacts: c.contacts as Array<{ email?: string }> | null,
             }))}
+            clientManagement={clientManagement}
           />
         )}
       </div>
