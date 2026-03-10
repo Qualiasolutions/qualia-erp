@@ -58,7 +58,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
 
         if (!project) return null;
 
-        const progress = progressMap[project.id] ?? 0;
+        const progress = progressMap[clientProject.project_id] ?? progressMap[project.id] ?? 0;
 
         return (
           <Link
@@ -88,6 +88,19 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                   {project.description}
                 </p>
               )}
+              {progress > 0 && (
+                <div className="mt-2 flex items-center gap-2 md:hidden">
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
+                    <div
+                      className="h-full rounded-full bg-qualia-600 transition-all duration-500"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/50">
+                    {progress}%
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Type */}
@@ -95,16 +108,18 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
               {project.project_type?.replace(/_/g, ' ')}
             </span>
 
-            {/* Progress bar */}
+            {/* Progress bar — desktop column */}
             <div className="hidden w-28 items-center gap-2 md:flex">
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/50">
-                <div
-                  className="h-full rounded-full bg-qualia-600 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
+                {progress > 0 ? (
+                  <div
+                    className="h-full rounded-full bg-qualia-600 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                ) : null}
               </div>
               <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground/40">
-                {progress}%
+                {progress > 0 ? `${progress}%` : '—'}
               </span>
             </div>
 
