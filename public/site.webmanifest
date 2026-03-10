@@ -1,6 +1,7 @@
 {
-  "name": "Qualia Solutions",
+  "name": "Qualia Internal Suite",
   "short_name": "Qualia",
+  "description": "Project Planning & Management platform by Qualia Solutions",
   "start_url": "/",
   "scope": "/",
   "icons": [
@@ -13,9 +14,15 @@
       "src": "/android-chrome-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
-  "theme_color": "#0f172a",
-  "background_color": "#ffffff",
+  "theme_color": "#050505",
+  "background_color": "#050505",
   "display": "standalone"
 }
