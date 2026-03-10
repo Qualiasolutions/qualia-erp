@@ -39,19 +39,15 @@ interface ScheduleBlockProps {
   readOnly?: boolean;
 }
 
-const TIME_SLOTS = [
-  '8 AM',
-  '9 AM',
-  '10 AM',
-  '11 AM',
-  '12 PM',
-  '1 PM',
-  '2 PM',
-  '3 PM',
-  '4 PM',
-  '5 PM',
-];
-const SLOT_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const DEFAULT_SLOT_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const HASAN_SLOT_HOURS = [18, 19, 20, 21, 22, 23];
+const SLOT_HEIGHT = 72; // must match min-h-[72px] on grid cells
+
+function getTimeLabel(hour: number): string {
+  if (hour === 0) return '12 AM';
+  if (hour === 12) return '12 PM';
+  return hour > 12 ? `${hour - 12} PM` : `${hour} AM`;
+}
 
 function getTagColor(tag?: string | null) {
   if (!tag) return '';
@@ -124,6 +120,12 @@ export function ScheduleBlock({
       }));
   }, [profiles]);
 
+  // Determine slot hours per member (Hasan gets evening hours)
+  const getMemberSlotHours = useCallback((member: TeamMember): number[] => {
+    if (member.name.toLowerCase() === 'hasan') return HASAN_SLOT_HOURS;
+    return DEFAULT_SLOT_HOURS;
+  }, []);
+
   // Meetings lookup for editing (meeting pseudo-task id → original meeting)
   const meetingsMap = useMemo(() => {
     const map = new Map<string, MeetingWithRelations>();
@@ -136,24 +138,38 @@ export function ScheduleBlock({
   // Get current date in timezone
   const currentDate = useMemo(() => toZonedTime(new Date(), timezone), [timezone]);
 
-  // Group scheduled tasks by member and time slot
-  const memberSchedule = useMemo(() => {
-    const schedule = new Map<
-      string,
-      Map<number, (Task & { isMeeting?: boolean; meetingLink?: string | null })[]>
-    >();
+  // Extended task type with span info
+  type SpannableTask = Task & {
+    isMeeting?: boolean;
+    meetingLink?: string | null;
+    spanHours?: number; // how many hour slots this item spans
+  };
 
-    // Initialize for each member
+  // Group scheduled tasks by member — items placed at their start hour with span info
+  const memberSchedule = useMemo(() => {
+    const schedule = new Map<string, Map<number, SpannableTask[]>>();
+
+    // Initialize for each member with their specific hours
     for (const member of teamMembers) {
-      const memberSlots = new Map<
-        number,
-        (Task & { isMeeting?: boolean; meetingLink?: string | null })[]
-      >();
-      for (const hour of SLOT_HOURS) {
+      const memberSlots = new Map<number, SpannableTask[]>();
+      const hours = getMemberSlotHours(member);
+      for (const hour of hours) {
         memberSlots.set(hour, []);
       }
       schedule.set(member.profileId || member.id, memberSlots);
     }
+
+    // Helper: calculate span hours for an item within a member's slot range
+    const calcSpanHours = (
+      startHour: number,
+      endHour: number,
+      endMinute: number,
+      memberHours: number[]
+    ): number => {
+      const lastSlot = memberHours[memberHours.length - 1];
+      const effectiveEnd = Math.min(endMinute > 0 ? endHour + 1 : endHour, lastSlot + 1);
+      return Math.max(1, effectiveEnd - startHour);
+    };
 
     // Place tasks into slots
     for (const task of scheduledTasks) {
@@ -162,22 +178,32 @@ export function ScheduleBlock({
       const startTime = toZonedTime(parseISO(task.scheduled_start_time), timezone);
       if (!isSameDay(startTime, startOfDay(currentDate))) continue;
 
-      const hour = startTime.getHours();
+      const startHour = startTime.getHours();
       const assigneeId = task.assignee?.id;
+
+      // Calculate span
+      let spanHours = 1;
+      if (task.scheduled_end_time) {
+        const endTime = toZonedTime(parseISO(task.scheduled_end_time), timezone);
+        const member = teamMembers.find((m) => (m.profileId || m.id) === assigneeId);
+        const memberHours = member ? getMemberSlotHours(member) : DEFAULT_SLOT_HOURS;
+        spanHours = calcSpanHours(startHour, endTime.getHours(), endTime.getMinutes(), memberHours);
+      }
+
+      const spannableTask: SpannableTask = { ...task, spanHours };
 
       if (assigneeId && schedule.has(assigneeId)) {
         const memberSlots = schedule.get(assigneeId)!;
-        const slotTasks = memberSlots.get(hour) || [];
-        slotTasks.push(task);
-        memberSlots.set(hour, slotTasks);
+        const slotTasks = memberSlots.get(startHour) || [];
+        slotTasks.push(spannableTask);
+        memberSlots.set(startHour, slotTasks);
       } else {
-        // Unassigned - add to first member
         const firstMemberId = teamMembers[0]?.profileId || teamMembers[0]?.id;
         if (firstMemberId && schedule.has(firstMemberId)) {
           const memberSlots = schedule.get(firstMemberId)!;
-          const slotTasks = memberSlots.get(hour) || [];
-          slotTasks.push(task);
-          memberSlots.set(hour, slotTasks);
+          const slotTasks = memberSlots.get(startHour) || [];
+          slotTasks.push(spannableTask);
+          memberSlots.set(startHour, slotTasks);
         }
       }
     }
@@ -189,11 +215,11 @@ export function ScheduleBlock({
       const startTime = toZonedTime(parseISO(meeting.start_time), timezone);
       if (!isSameDay(startTime, startOfDay(currentDate))) continue;
 
-      const hour = startTime.getHours();
+      const startHour = startTime.getHours();
       const endTime = meeting.end_time ? toZonedTime(parseISO(meeting.end_time), timezone) : null;
 
       // Create a pseudo-task for the meeting
-      const meetingTask: Task & { isMeeting?: boolean; meetingLink?: string | null } = {
+      const meetingTask: SpannableTask = {
         id: `meeting-${meeting.id}`,
         workspace_id: '',
         creator_id: null,
@@ -218,6 +244,7 @@ export function ScheduleBlock({
         project: meeting.project
           ? { id: meeting.project.id, name: meeting.project.name, project_type: null }
           : null,
+        spanHours: 1,
       };
 
       // Add meeting to attendees or creator
@@ -232,47 +259,42 @@ export function ScheduleBlock({
 
       const targetIds = attendeeIds.length > 0 ? attendeeIds : creatorId ? [creatorId] : [];
 
+      // Calculate span for each target member
+      const addToMember = (memberId: string) => {
+        if (!schedule.has(memberId)) return;
+        const memberSlots = schedule.get(memberId)!;
+        const member = teamMembers.find((m) => (m.profileId || m.id) === memberId);
+        const memberHours = member ? getMemberSlotHours(member) : DEFAULT_SLOT_HOURS;
+        const span = endTime
+          ? calcSpanHours(startHour, endTime.getHours(), endTime.getMinutes(), memberHours)
+          : 1;
+        const slotTasks = memberSlots.get(startHour) || [];
+        slotTasks.push({ ...meetingTask, spanHours: span });
+        memberSlots.set(startHour, slotTasks);
+      };
+
       if (targetIds.length === 0 && teamMembers.length > 0) {
-        // No attendees - add to all members
-        for (const member of teamMembers) {
-          const memberId = member.profileId || member.id;
-          if (schedule.has(memberId)) {
-            const memberSlots = schedule.get(memberId)!;
-            const slotTasks = memberSlots.get(hour) || [];
-            slotTasks.push({
-              ...meetingTask,
-              scheduled_end_time: endTime ? meeting.end_time : null,
-            });
-            memberSlots.set(hour, slotTasks);
-            break; // Only add to first member if no assignees
-          }
-        }
+        // No attendees - add to first member only
+        const memberId = teamMembers[0]?.profileId || teamMembers[0]?.id;
+        if (memberId) addToMember(memberId);
       } else {
         for (const targetId of targetIds) {
-          if (targetId && schedule.has(targetId)) {
-            const memberSlots = schedule.get(targetId)!;
-            const slotTasks = memberSlots.get(hour) || [];
-            slotTasks.push(meetingTask);
-            memberSlots.set(hour, slotTasks);
-          }
+          if (targetId) addToMember(targetId);
         }
       }
     }
 
     return schedule;
-  }, [scheduledTasks, meetings, teamMembers, currentDate, timezone]);
+  }, [scheduledTasks, meetings, teamMembers, currentDate, timezone, getMemberSlotHours]);
 
   // Build unified schedule when unified=true
   const unifiedSchedule = useMemo(() => {
     if (!unified) return null;
 
-    const schedule = new Map<
-      number,
-      (Task & { isMeeting?: boolean; meetingLink?: string | null })[]
-    >();
+    const schedule = new Map<number, SpannableTask[]>();
 
-    // Initialize all time slots
-    for (const hour of SLOT_HOURS) {
+    // Initialize all time slots (use default hours for unified)
+    for (const hour of DEFAULT_SLOT_HOURS) {
       schedule.set(hour, []);
     }
 
@@ -283,10 +305,21 @@ export function ScheduleBlock({
       const startTime = toZonedTime(parseISO(task.scheduled_start_time), timezone);
       if (!isSameDay(startTime, startOfDay(currentDate))) continue;
 
-      const hour = startTime.getHours();
-      const slotTasks = schedule.get(hour) || [];
-      slotTasks.push(task);
-      schedule.set(hour, slotTasks);
+      const startHour = startTime.getHours();
+      let spanHours = 1;
+      if (task.scheduled_end_time) {
+        const endTime = toZonedTime(parseISO(task.scheduled_end_time), timezone);
+        const lastSlot = DEFAULT_SLOT_HOURS[DEFAULT_SLOT_HOURS.length - 1];
+        const effectiveEnd = Math.min(
+          endTime.getMinutes() > 0 ? endTime.getHours() + 1 : endTime.getHours(),
+          lastSlot + 1
+        );
+        spanHours = Math.max(1, effectiveEnd - startHour);
+      }
+
+      const slotTasks = schedule.get(startHour) || [];
+      slotTasks.push({ ...task, spanHours });
+      schedule.set(startHour, slotTasks);
     }
 
     // Add all meetings
@@ -296,10 +329,20 @@ export function ScheduleBlock({
       const startTime = toZonedTime(parseISO(meeting.start_time), timezone);
       if (!isSameDay(startTime, startOfDay(currentDate))) continue;
 
-      const hour = startTime.getHours();
+      const startHour = startTime.getHours();
+      const endTime = meeting.end_time ? toZonedTime(parseISO(meeting.end_time), timezone) : null;
 
-      // Create pseudo-task for meeting
-      const meetingTask: Task & { isMeeting?: boolean; meetingLink?: string | null } = {
+      let spanHours = 1;
+      if (endTime) {
+        const lastSlot = DEFAULT_SLOT_HOURS[DEFAULT_SLOT_HOURS.length - 1];
+        const effectiveEnd = Math.min(
+          endTime.getMinutes() > 0 ? endTime.getHours() + 1 : endTime.getHours(),
+          lastSlot + 1
+        );
+        spanHours = Math.max(1, effectiveEnd - startHour);
+      }
+
+      const meetingTask: SpannableTask = {
         id: `meeting-${meeting.id}`,
         workspace_id: '',
         creator_id: null,
@@ -324,11 +367,12 @@ export function ScheduleBlock({
         project: meeting.project
           ? { id: meeting.project.id, name: meeting.project.name, project_type: null }
           : null,
+        spanHours,
       };
 
-      const slotTasks = schedule.get(hour) || [];
+      const slotTasks = schedule.get(startHour) || [];
       slotTasks.push(meetingTask);
-      schedule.set(hour, slotTasks);
+      schedule.set(startHour, slotTasks);
     }
 
     return schedule;
@@ -435,6 +479,27 @@ export function ScheduleBlock({
     return teamMembers.filter((m) => m.profileId === activeFilter);
   }, [unified, activeFilter, teamMembers]);
 
+  // Compute union of all hour slots across visible members
+  const visibleSlotHours = useMemo(() => {
+    if (unified) return DEFAULT_SLOT_HOURS;
+    const hourSet = new Set<number>();
+    for (const member of filteredMembers) {
+      const hours = getMemberSlotHours(member);
+      for (const h of hours) hourSet.add(h);
+    }
+    return Array.from(hourSet).sort((a, b) => a - b);
+  }, [unified, filteredMembers, getMemberSlotHours]);
+
+  // Which hours each member is active (for dimming out-of-range cells)
+  const memberActiveHours = useMemo(() => {
+    const map = new Map<string, Set<number>>();
+    for (const member of filteredMembers) {
+      const hours = getMemberSlotHours(member);
+      map.set(member.profileId || member.id, new Set(hours));
+    }
+    return map;
+  }, [filteredMembers, getMemberSlotHours]);
+
   // Build filter options from team members — All first, then member names
   const filterOptions = useMemo(() => {
     const options: { key: string; label: string }[] = [{ key: 'all', label: 'All' }];
@@ -451,8 +516,8 @@ export function ScheduleBlock({
 
   // Determine first/last active time slot
   const activeTimeRange = useMemo(() => {
-    let earliest = 17;
-    let latest = 8;
+    let earliest = visibleSlotHours[visibleSlotHours.length - 1] || 17;
+    let latest = visibleSlotHours[0] || 8;
 
     for (const [, memberSlots] of memberSchedule) {
       for (const [hour, tasks] of memberSlots) {
@@ -464,7 +529,7 @@ export function ScheduleBlock({
     }
 
     return { start: earliest, end: latest };
-  }, [memberSchedule]);
+  }, [memberSchedule, visibleSlotHours]);
 
   return (
     <>
@@ -658,15 +723,35 @@ export function ScheduleBlock({
 
           {/* Time Grid */}
           <ScrollArea className="h-[560px]">
-            {TIME_SLOTS.map((time, timeIdx) => {
-              const hour = SLOT_HOURS[timeIdx];
+            {(() => {
+              // Pre-compute which cells are "covered" by a spanning item from a previous row
+              // Key: `${memberId}-${hour}` → true if covered
+              const coveredCells = new Set<string>();
 
-              return (
+              for (const member of filteredMembers) {
+                const memberId = member.profileId || member.id;
+                const slots = unified ? unifiedSchedule : memberSchedule.get(memberId);
+                if (!slots) continue;
+
+                for (const [startHour, items] of slots) {
+                  for (const item of items) {
+                    const span = (item as SpannableTask).spanHours || 1;
+                    if (span > 1) {
+                      // Mark hours after the start as covered
+                      for (let h = 1; h < span; h++) {
+                        coveredCells.add(`${memberId}-${startHour + h}`);
+                      }
+                    }
+                  }
+                }
+              }
+
+              return visibleSlotHours.map((hour, timeIdx) => (
                 <div
-                  key={time}
+                  key={hour}
                   className={cn(
                     'grid',
-                    timeIdx < TIME_SLOTS.length - 1 && 'border-b border-border/50'
+                    timeIdx < visibleSlotHours.length - 1 && 'border-b border-border/50'
                   )}
                   style={{
                     gridTemplateColumns: `56px repeat(${filteredMembers.length}, 1fr)`,
@@ -675,43 +760,64 @@ export function ScheduleBlock({
                   {/* Time Label */}
                   <div className="flex items-start justify-end border-r border-border px-2.5 pt-3">
                     <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {time}
+                      {getTimeLabel(hour)}
                     </span>
                   </div>
 
                   {/* Task Cells */}
                   {filteredMembers.map((member, memberIdx) => {
-                    // Use unified schedule if unified mode, otherwise use member schedule
-                    let slotItems: (Task & { isMeeting?: boolean; meetingLink?: string | null })[] =
-                      [];
+                    const memberId = member.profileId || member.id;
+                    const activeHours = memberActiveHours.get(memberId);
+                    const isOutOfRange = activeHours && !activeHours.has(hour);
+
+                    // Check if this cell is covered by a spanning item from an earlier row
+                    if (coveredCells.has(`${memberId}-${hour}`)) {
+                      // Render empty cell (the spanning item above covers this space)
+                      return (
+                        <div
+                          key={`${member.id}-${hour}`}
+                          className={cn(
+                            'min-h-[72px]',
+                            memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
+                            isOutOfRange && 'bg-muted/10'
+                          )}
+                        />
+                      );
+                    }
+
+                    // Get items for this slot
+                    let slotItems: SpannableTask[] = [];
                     if (unified) {
                       slotItems = unifiedSchedule?.get(hour) || [];
                     } else {
-                      const memberId = member.profileId || member.id;
                       const memberSlots = memberSchedule.get(memberId);
-                      slotItems = memberSlots?.get(hour) || [];
+                      slotItems = (memberSlots?.get(hour) || []) as SpannableTask[];
                     }
 
-                    // For unified mode, show all items; for member mode, show first item only
                     const displayItems = unified ? slotItems : slotItems.slice(0, 1);
-                    const task = displayItems[0] as
-                      | (Task & { isMeeting?: boolean; meetingLink?: string | null })
-                      | undefined;
+                    const task = displayItems[0];
                     const isDone = task ? (task.isMeeting ? false : isTaskDone(task)) : false;
                     const isInProgress = task?.status === 'In Progress' && !isDone;
                     const isMeetingItem = task?.isMeeting;
 
+                    // Calculate height for spanning items
+                    const maxSpan = Math.max(1, ...displayItems.map((t) => t.spanHours || 1));
+                    const cellHeight = maxSpan > 1 ? `${maxSpan * SLOT_HEIGHT}px` : undefined;
+
                     return (
                       <div
-                        key={`${member.id}-${time}`}
+                        key={`${member.id}-${hour}`}
                         className={cn(
-                          'group relative min-h-[72px] px-4 py-3 transition-all',
+                          'group relative px-4 py-3 transition-all',
+                          !cellHeight && 'min-h-[72px]',
                           memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
                           isInProgress && 'border-l-2 border-l-qualia-500 bg-qualia-500/[0.03]',
                           isMeetingItem &&
                             !isInProgress &&
-                            'border-l-2 border-l-violet-500 bg-violet-500/[0.03]'
+                            'border-l-2 border-l-violet-500 bg-violet-500/[0.03]',
+                          isOutOfRange && !displayItems.length && 'bg-muted/10'
                         )}
+                        style={cellHeight ? { height: cellHeight } : undefined}
                       >
                         {displayItems.length > 0 ? (
                           <div className="space-y-3">
@@ -833,13 +939,16 @@ export function ScheduleBlock({
                                       )}
                                     </div>
                                     {itemIsMeeting &&
-                                      (item as Task & { meetingLink?: string | null })
+                                      (item as SpannableTask & { meetingLink?: string | null })
                                         .meetingLink &&
                                       !itemIsDone && (
                                         <a
                                           href={
-                                            (item as Task & { meetingLink?: string | null })
-                                              .meetingLink!
+                                            (
+                                              item as SpannableTask & {
+                                                meetingLink?: string | null;
+                                              }
+                                            ).meetingLink!
                                           }
                                           target="_blank"
                                           rel="noopener noreferrer"
@@ -878,8 +987,8 @@ export function ScheduleBlock({
                     );
                   })}
                 </div>
-              );
-            })}
+              ));
+            })()}
           </ScrollArea>
 
           {/* Bottom summary strip */}
