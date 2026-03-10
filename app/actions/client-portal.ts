@@ -1651,6 +1651,15 @@ export async function createClientActionItem(data: {
 
     if (error) throw error;
 
+    // Notify client of new action item (fire-and-forget)
+    import('@/lib/email').then(({ notifyClientOfActionItem }) => {
+      notifyClientOfActionItem(clientId, projectId, {
+        title,
+        actionType,
+        dueDate: dueDate || null,
+      }).catch((err) => console.error('[createClientActionItem] Notification error:', err));
+    });
+
     revalidatePath('/portal');
     return { success: true, data: inserted };
   } catch (error) {
@@ -1680,6 +1689,13 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
       return { success: false, error: 'Only admins and managers can complete action items' };
     }
 
+    // Get item details before updating (for notification)
+    const { data: existing } = await supabase
+      .from('client_action_items')
+      .select('title, client_id, project_id')
+      .eq('id', itemId)
+      .single();
+
     const { data: updated, error } = await supabase
       .from('client_action_items')
       .update({
@@ -1692,6 +1708,17 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
       .single();
 
     if (error) throw error;
+
+    // Notify client of completion (fire-and-forget)
+    if (existing) {
+      import('@/lib/email').then(({ notifyClientOfActionItemCompleted }) => {
+        notifyClientOfActionItemCompleted(
+          existing.client_id,
+          existing.project_id,
+          existing.title
+        ).catch((err) => console.error('[completeClientActionItem] Notification error:', err));
+      });
+    }
 
     revalidatePath('/portal');
     return { success: true, data: updated };
@@ -1800,6 +1827,83 @@ export async function bulkSetupPortalForClients(
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to bulk setup portal clients',
+    };
+  }
+}
+
+/**
+ * Reset a client's portal password.
+ * Generates a cryptographically secure temp password and updates the auth account via admin API.
+ * Does NOT send an email — returns the new password for Moayad to share manually.
+ */
+export async function resetClientPassword(email: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    // Admin/manager only
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Only admins and managers can reset client passwords' };
+    }
+
+    // Validate email
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return { success: false, error: 'Invalid email address' };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Generate cryptographically secure temp password
+    const tempPassword = 'Qualia-' + randomBytes(6).toString('hex') + '!';
+
+    // Look up user in auth by email
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return {
+        success: false,
+        error: 'Service role key not configured. Cannot reset password.',
+      };
+    }
+
+    const { data: listData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+    const authUser = listData?.users?.find((u) => u.email?.toLowerCase() === normalizedEmail);
+
+    if (!authUser) {
+      return { success: false, error: 'No portal account found for this email' };
+    }
+
+    // Update password via admin API
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(authUser.id, {
+      password: tempPassword,
+    });
+
+    if (updateError) {
+      console.error('[resetClientPassword] Update error:', updateError);
+      return { success: false, error: updateError.message };
+    }
+
+    return {
+      success: true,
+      data: {
+        email: normalizedEmail,
+        tempPassword,
+        name: (authUser.user_metadata?.full_name as string | null | undefined) ?? null,
+      },
+    };
+  } catch (error) {
+    console.error('[resetClientPassword] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to reset client password',
     };
   }
 }
