@@ -48,6 +48,8 @@ Progress: [############░] 21/24 phases complete (v1.0-v1.4 + phases 20-23) | P
 | 6   | bulkSetupPortalForClients runs sequentially (not Promise.all)          | Supabase auth admin API rate limits; sequential is safe for 3-5 clients              | 2026-03-10 |
 | 7   | Bulk success:true if at least one client succeeded                     | Partial batches should not surface as total failures; per-client errors surfaced     | 2026-03-10 |
 | 8   | Portal metadata export in app/portal/layout.tsx (not root layout)      | Scopes browser tab titles only to /portal subtree; ERP stays "Qualia Internal Suite" | 2026-03-10 |
+| 9   | resetClientPassword returns tempPassword (no email) for manual sharing | Consistent with setupPortalForClient new-account pattern; Moayad shares manually     | 2026-03-10 |
+| 10  | Export block is plain text not CSV/PDF                                 | No external library needed; human-readable, clipboard-friendly                       | 2026-03-10 |
 
 ### Blockers/Concerns
 
