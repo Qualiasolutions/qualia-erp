@@ -33,6 +33,8 @@ import {
   FolderPlus,
   X,
   Layers,
+  RotateCcw,
+  Download,
 } from 'lucide-react';
 import {
   setupPortalForClient,
@@ -40,6 +42,7 @@ import {
   sendClientPasswordReset,
   createProjectFromPortal,
   bulkSetupPortalForClients,
+  resetClientPassword,
 } from '@/app/actions/client-portal';
 import type { MergedPortalClient } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
@@ -434,6 +437,27 @@ export function PortalAdminPanel({
   const [projectFilter, setProjectFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
+  // Export Credentials state
+  const [showExportSection, setShowExportSection] = useState(false);
+  const [exportProjectId, setExportProjectId] = useState('');
+  const [exportCopied, setExportCopied] = useState(false);
+
+  // Per-row reset state
+  const [resetResults, setResetResults] = useState<
+    Record<string, { tempPassword: string; name: string | null }>
+  >({});
+  const [pendingReset, setPendingReset] = useState<string | null>(null);
+
+  // Bulk reset state
+  const [bulkResetResults, setBulkResetResults] = useState<Array<{
+    email: string;
+    name: string | null;
+    tempPassword?: string;
+    error?: string;
+  }> | null>(null);
+  const [isBulkResetPending, setIsBulkResetPending] = useState(false);
+  const [bulkResetCopied, setBulkResetCopied] = useState(false);
+
   // Derive unique projects from clientManagement for the project filter dropdown
   const allManagedProjects = clientManagement
     ? Array.from(
@@ -450,6 +474,115 @@ export function PortalAdminPanel({
         return true;
       })
     : [];
+
+  // Export credentials handler
+  const handleCopyExport = () => {
+    if (!exportProjectId || !clientManagement) return;
+    const project = allManagedProjects.find((p) => p.id === exportProjectId);
+    if (!project) return;
+    const projectClients = clientManagement.clients.filter((c) =>
+      c.projects.some((p) => p.id === exportProjectId)
+    );
+    const date = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+    const clientLines = projectClients
+      .map(
+        (c) =>
+          `---\n${c.full_name || 'Client'}\nEmail: ${c.email || 'N/A'}\nPassword: [reset via admin panel]\nPortal: ${portalUrl}`
+      )
+      .join('\n\n');
+    const exportBlock = `Portal Access — ${project.name}\nGenerated: ${date}\nLogin URL: ${portalUrl}\n\n${clientLines}`;
+    navigator.clipboard.writeText(exportBlock);
+    setExportCopied(true);
+    setTimeout(() => setExportCopied(false), 2000);
+  };
+
+  // Per-row reset handler
+  const handleResetPassword = (clientId: string, email: string) => {
+    setPendingReset(clientId);
+    startTransition(async () => {
+      const result = await resetClientPassword(email);
+      setPendingReset(null);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to reset password');
+        return;
+      }
+      const data = result.data as { email: string; tempPassword: string; name: string | null };
+      setResetResults((prev) => ({
+        ...prev,
+        [clientId]: { tempPassword: data.tempPassword, name: data.name },
+      }));
+      // Auto-dismiss after 30 seconds
+      setTimeout(() => {
+        setResetResults((prev) => {
+          const next = { ...prev };
+          delete next[clientId];
+          return next;
+        });
+      }, 30000);
+    });
+  };
+
+  // Bulk reset handler
+  const handleBulkReset = async () => {
+    if (!projectFilter || !clientManagement) return;
+    const projectClients = clientManagement.clients.filter((c) =>
+      c.projects.some((p) => p.id === projectFilter)
+    );
+    if (projectClients.length === 0) {
+      toast.error('No clients in this project');
+      return;
+    }
+    setIsBulkResetPending(true);
+    setBulkResetResults(null);
+    const results: Array<{
+      email: string;
+      name: string | null;
+      tempPassword?: string;
+      error?: string;
+    }> = [];
+    for (const client of projectClients) {
+      if (!client.email) {
+        results.push({ email: 'N/A', name: client.full_name, error: 'No email on file' });
+        continue;
+      }
+      const result = await resetClientPassword(client.email);
+      if (result.success) {
+        const data = result.data as { email: string; tempPassword: string; name: string | null };
+        results.push({
+          email: client.email,
+          name: client.full_name,
+          tempPassword: data.tempPassword,
+        });
+      } else {
+        results.push({ email: client.email, name: client.full_name, error: result.error });
+      }
+    }
+    setBulkResetResults(results);
+    setIsBulkResetPending(false);
+    const succeeded = results.filter((r) => r.tempPassword).length;
+    if (succeeded > 0) {
+      toast.success(`Passwords reset for ${succeeded} client(s)`);
+    } else {
+      toast.error('All password resets failed');
+    }
+  };
+
+  const handleCopyBulkResetCredentials = () => {
+    if (!bulkResetResults) return;
+    const lines = bulkResetResults
+      .filter((r) => r.tempPassword)
+      .map((r) => `${r.name || 'Client'} | ${r.email} | ${r.tempPassword}`)
+      .join('\n');
+    if (!lines) return;
+    navigator.clipboard.writeText(lines);
+    setBulkResetCopied(true);
+    toast.success('Credentials copied!');
+    setTimeout(() => setBulkResetCopied(false), 2000);
+  };
 
   return (
     <div className="space-y-6">
@@ -945,13 +1078,82 @@ export function PortalAdminPanel({
                     <Badge variant="outline" className="text-[11px] text-muted-foreground">
                       {clientManagement.totalInactive} Inactive
                     </Badge>
+                    <Button
+                      variant={showExportSection ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setShowExportSection((v) => !v)}
+                      className={cn(
+                        'h-7 gap-1.5 px-2.5 text-xs',
+                        showExportSection && 'bg-qualia-600 text-white hover:bg-qualia-700'
+                      )}
+                    >
+                      <Download className="h-3 w-3" />
+                      Export Credentials
+                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Export Credentials (collapsible) */}
+                {showExportSection && (
+                  <div className="space-y-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Export Credentials
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Select value={exportProjectId} onValueChange={setExportProjectId}>
+                        <SelectTrigger className="h-8 flex-1 text-xs">
+                          <SelectValue placeholder="Select a project to export credentials" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {allManagedProjects.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {exportProjectId ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCopyExport}
+                          className="h-8 shrink-0 gap-1.5 text-xs"
+                        >
+                          {exportCopied ? (
+                            <Check className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          {exportCopied
+                            ? 'Copied!'
+                            : `Copy for ${allManagedProjects.find((p) => p.id === exportProjectId)?.name || 'Project'}`}
+                        </Button>
+                      ) : (
+                        <p className="shrink-0 text-xs text-muted-foreground/60">
+                          Select a project to export
+                        </p>
+                      )}
+                    </div>
+                    {exportProjectId && (
+                      <p className="text-[11px] text-muted-foreground/70">
+                        Copies a plain-text block with name, email, and portal URL for each client
+                        in this project. Passwords show as &quot;reset via admin panel&quot; — use
+                        Reset Password below to generate new ones.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Filters */}
-                <div className="flex gap-2">
-                  <Select value={projectFilter} onValueChange={setProjectFilter}>
+                <div className="flex flex-wrap gap-2">
+                  <Select
+                    value={projectFilter}
+                    onValueChange={(v) => {
+                      setProjectFilter(v);
+                      setBulkResetResults(null);
+                    }}
+                  >
                     <SelectTrigger className="h-8 w-[180px] text-xs">
                       <SelectValue placeholder="All Projects" />
                     </SelectTrigger>
@@ -977,7 +1179,84 @@ export function PortalAdminPanel({
                       <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
+                  {projectFilter && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkReset}
+                      disabled={isBulkResetPending}
+                      className="h-8 gap-1.5 text-xs"
+                    >
+                      {isBulkResetPending ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <RotateCcw className="h-3 w-3" />
+                      )}
+                      Reset All for{' '}
+                      {allManagedProjects.find((p) => p.id === projectFilter)?.name || 'Project'}
+                    </Button>
+                  )}
                 </div>
+
+                {/* Bulk reset results */}
+                {bulkResetResults && (
+                  <div className="space-y-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-foreground">Bulk Reset Results</p>
+                      {bulkResetResults.some((r) => r.tempPassword) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCopyBulkResetCredentials}
+                          className="h-6 gap-1 px-2 text-[11px]"
+                        >
+                          {bulkResetCopied ? (
+                            <Check className="h-3 w-3" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                          {bulkResetCopied ? 'Copied!' : 'Copy All'}
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      {bulkResetResults.map((r, i) => (
+                        <div
+                          key={i}
+                          className={cn(
+                            'flex items-start gap-2 rounded px-2 py-1.5 text-xs',
+                            r.tempPassword
+                              ? 'bg-green-500/5 text-foreground'
+                              : 'bg-red-500/5 text-muted-foreground'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full',
+                              r.tempPassword ? 'bg-green-500/20' : 'bg-red-500/20'
+                            )}
+                          >
+                            {r.tempPassword ? (
+                              <Check className="h-2 w-2 text-green-600" />
+                            ) : (
+                              <X className="h-2 w-2 text-red-600" />
+                            )}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="font-medium">{r.name || r.email}</span>
+                            {r.tempPassword ? (
+                              <span className="ml-1 font-mono text-muted-foreground">
+                                — {r.tempPassword}
+                              </span>
+                            ) : (
+                              <span className="ml-1 text-red-600"> — {r.error}</span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="overflow-x-auto">
                   <Table>
@@ -1007,73 +1286,147 @@ export function PortalAdminPanel({
                         filteredManagedClients.map((client) => {
                           const visibleProjects = client.projects.slice(0, 3);
                           const overflowCount = client.projects.length - 3;
+                          const resetResult = resetResults[client.id];
+                          const isResetting = pendingReset === client.id;
                           return (
-                            <TableRow key={client.id}>
-                              <TableCell className="font-medium">
-                                {client.full_name || 'No name'}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {client.email}
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                  {client.projects.length === 0 ? (
-                                    <span className="text-sm text-muted-foreground/60">None</span>
+                            <>
+                              <TableRow key={client.id}>
+                                <TableCell className="font-medium">
+                                  {client.full_name || 'No name'}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                  {client.email}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex flex-wrap gap-1">
+                                    {client.projects.length === 0 ? (
+                                      <span className="text-sm text-muted-foreground/60">None</span>
+                                    ) : (
+                                      <>
+                                        {visibleProjects.map((p) => (
+                                          <Badge key={p.id} variant="outline" className="text-xs">
+                                            {p.name}
+                                          </Badge>
+                                        ))}
+                                        {overflowCount > 0 && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            +{overflowCount} more
+                                          </Badge>
+                                        )}
+                                      </>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-sm text-muted-foreground/80">
+                                  {client.lastSignIn
+                                    ? formatDistanceToNow(new Date(client.lastSignIn), {
+                                        addSuffix: true,
+                                      })
+                                    : 'Never'}
+                                </TableCell>
+                                <TableCell>
+                                  {client.isActive ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="border-green-500/30 bg-green-500/10 text-[11px] text-green-700"
+                                    >
+                                      Active
+                                    </Badge>
                                   ) : (
-                                    <>
-                                      {visibleProjects.map((p) => (
-                                        <Badge key={p.id} variant="outline" className="text-xs">
-                                          {p.name}
-                                        </Badge>
-                                      ))}
-                                      {overflowCount > 0 && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          +{overflowCount} more
-                                        </Badge>
-                                      )}
-                                    </>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[11px] text-muted-foreground"
+                                    >
+                                      Inactive
+                                    </Badge>
                                   )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground/80">
-                                {client.lastSignIn
-                                  ? formatDistanceToNow(new Date(client.lastSignIn), {
-                                      addSuffix: true,
-                                    })
-                                  : 'Never'}
-                              </TableCell>
-                              <TableCell>
-                                {client.isActive ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="border-green-500/30 bg-green-500/10 text-[11px] text-green-700"
-                                  >
-                                    Active
-                                  </Badge>
-                                ) : (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-[11px] text-muted-foreground"
-                                  >
-                                    Inactive
-                                  </Badge>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    client.email && handleSendPasswordReset(client.email)
-                                  }
-                                  disabled={isPending || !client.email}
-                                  title="Send password reset"
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <KeyRound className="h-3.5 w-3.5" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        client.email && handleSendPasswordReset(client.email)
+                                      }
+                                      disabled={isPending || !client.email}
+                                      title="Send password reset email"
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <KeyRound className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() =>
+                                        client.email && handleResetPassword(client.id, client.email)
+                                      }
+                                      disabled={isResetting || !client.email}
+                                      title="Reset password — generates new temp password"
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      {isResetting ? (
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                      ) : (
+                                        <RotateCcw className="h-3.5 w-3.5" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              {resetResult && (
+                                <TableRow key={`${client.id}-reset`}>
+                                  <TableCell colSpan={6} className="pb-2 pt-0">
+                                    <div className="flex items-center justify-between rounded-lg border border-qualia-500/20 bg-qualia-500/5 px-3 py-2 font-mono text-xs">
+                                      <span className="text-muted-foreground">
+                                        New password for{' '}
+                                        <span className="font-semibold text-foreground">
+                                          {resetResult.name || client.full_name || client.email}
+                                        </span>
+                                        :{' '}
+                                        <span className="text-foreground">
+                                          {resetResult.tempPassword}
+                                        </span>
+                                        {'  '}
+                                        <span className="font-sans text-muted-foreground/60">
+                                          — Share with the client.
+                                        </span>
+                                      </span>
+                                      <div className="ml-3 flex shrink-0 items-center gap-1.5">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-6 gap-1 px-2 text-[11px]"
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(
+                                              `Email: ${client.email}\nPassword: ${resetResult.tempPassword}\nPortal: ${portalUrl}`
+                                            );
+                                            toast.success('Copied!');
+                                          }}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                          Copy
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-muted-foreground/40 hover:text-foreground"
+                                          onClick={() =>
+                                            setResetResults((prev) => {
+                                              const next = { ...prev };
+                                              delete next[client.id];
+                                              return next;
+                                            })
+                                          }
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              )}
+                            </>
                           );
                         })
                       )}
