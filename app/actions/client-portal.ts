@@ -1573,3 +1573,103 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
     };
   }
 }
+
+/**
+ * Bulk setup portal access for multiple CRM clients at once.
+ * Runs setupPortalForClient sequentially for each crmClientId (not in parallel to avoid rate limits).
+ * Returns per-client results. success:true if at least one client succeeded.
+ */
+export async function bulkSetupPortalForClients(
+  crmClientIds: string[],
+  projectIds: string[]
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Validate inputs
+    if (!crmClientIds || crmClientIds.length === 0) {
+      return { success: false, error: 'At least one CRM client must be selected' };
+    }
+
+    if (!projectIds || projectIds.length === 0) {
+      return { success: false, error: 'At least one project must be selected' };
+    }
+
+    type BulkResult = {
+      crmClientId: string;
+      success: boolean;
+      email?: string;
+      name?: string;
+      tempPassword?: string;
+      alreadyExisted?: boolean;
+      projectsLinked?: number;
+      error?: string;
+    };
+
+    const results: BulkResult[] = [];
+
+    // Run sequentially to avoid rate limits with auth admin API
+    for (const crmClientId of crmClientIds) {
+      const result = await setupPortalForClient(crmClientId, projectIds);
+
+      if (result.success && result.data) {
+        const data = result.data as {
+          userId: string;
+          email: string;
+          name: string;
+          tempPassword?: string;
+          alreadyExisted: boolean;
+          projectsLinked: number;
+        };
+
+        results.push({
+          crmClientId,
+          success: true,
+          email: data.email,
+          name: data.name,
+          tempPassword: data.tempPassword,
+          alreadyExisted: data.alreadyExisted,
+          projectsLinked: data.projectsLinked,
+        });
+      } else {
+        results.push({
+          crmClientId,
+          success: false,
+          error: result.error || 'Unknown error',
+        });
+      }
+    }
+
+    const totalSuccess = results.filter((r) => r.success).length;
+    const totalFailed = results.filter((r) => !r.success).length;
+
+    // Return success:true if at least one client succeeded; false only if ALL failed
+    return {
+      success: totalSuccess > 0,
+      data: {
+        results,
+        totalSuccess,
+        totalFailed,
+      },
+      ...(totalSuccess === 0 && { error: 'All client setups failed' }),
+    };
+  } catch (error) {
+    console.error('[bulkSetupPortalForClients] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to bulk setup portal clients',
+    };
+  }
+}
