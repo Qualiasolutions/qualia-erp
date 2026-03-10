@@ -11,6 +11,7 @@ import Link from 'next/link';
 interface PortalDashboardContentProps {
   clientId: string;
   displayName: string;
+  companyName?: string | null;
 }
 
 interface DashboardStats {
@@ -62,7 +63,11 @@ const quickActions = [
   },
 ];
 
-export function PortalDashboardContent({ clientId, displayName }: PortalDashboardContentProps) {
+export function PortalDashboardContent({
+  clientId,
+  displayName,
+  companyName,
+}: PortalDashboardContentProps) {
   const { data, isLoading, isValidating } = usePortalDashboard(clientId);
 
   const stats = (data.stats as DashboardStats | null) || null;
@@ -73,6 +78,7 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
     now.getHours() < 12 ? 'Good morning' : now.getHours() < 18 ? 'Good afternoon' : 'Good evening';
 
   const firstName = displayName.split(' ')[0];
+  const welcomeName = companyName || firstName;
 
   return (
     <div className="space-y-10">
@@ -86,7 +92,7 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
           })}
         </p>
         <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
-          {greeting}, {firstName}
+          {greeting}, {welcomeName}
         </h1>
       </div>
 

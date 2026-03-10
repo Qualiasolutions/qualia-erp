@@ -107,6 +107,23 @@ export default async function PortalDashboard() {
     );
   }
 
+  // Client: fetch company name for personalization
+  let companyName: string | null = null;
+  const { data: companyMapping } = await supabase
+    .from('portal_project_mappings')
+    .select('erp_company_name')
+    .eq('portal_client_id', user.id)
+    .not('erp_company_name', 'is', null)
+    .limit(1)
+    .maybeSingle();
+  companyName = companyMapping?.erp_company_name || null;
+
   // Client: show their dashboard
-  return <PortalDashboardContent clientId={user.id} displayName={displayName} />;
+  return (
+    <PortalDashboardContent
+      clientId={user.id}
+      displayName={displayName}
+      companyName={companyName}
+    />
+  );
 }
