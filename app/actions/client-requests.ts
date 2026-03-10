@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
+import { FeatureRequestCreateSchema } from '@/lib/validation';
 
 /**
  * Create a feature request from a client
@@ -21,17 +22,19 @@ export async function createFeatureRequest(input: {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    if (!input.title.trim()) {
-      return { success: false, error: 'Title is required' };
+    const parsed = FeatureRequestCreateSchema.safeParse(input);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message || 'Invalid input' };
     }
+    const safeInput = parsed.data;
 
     // Verify project_id belongs to this client if provided
-    if (input.project_id) {
+    if (safeInput.project_id) {
       const { data: ownership } = await supabase
         .from('client_projects')
         .select('project_id')
         .eq('client_id', user.id)
-        .eq('project_id', input.project_id)
+        .eq('project_id', safeInput.project_id)
         .single();
 
       if (!ownership) {
@@ -43,10 +46,10 @@ export async function createFeatureRequest(input: {
       .from('client_feature_requests')
       .insert({
         client_id: user.id,
-        project_id: input.project_id || null,
-        title: input.title.trim(),
-        description: input.description?.trim() || null,
-        priority: input.priority || 'medium',
+        project_id: safeInput.project_id || null,
+        title: safeInput.title.trim(),
+        description: safeInput.description?.trim() || null,
+        priority: safeInput.priority || 'medium',
       })
       .select()
       .single();
@@ -68,13 +71,13 @@ export async function createFeatureRequest(input: {
           project_id: clientProject.project_id,
           action_type: 'feature_request',
           actor_id: user.id,
-          action_data: { request_title: input.title, request_id: data.id },
+          action_data: { request_title: safeInput.title, request_id: data.id },
           is_client_visible: true,
         });
 
         await notifyAssignedEmployees(
           clientProject.project_id,
-          `Client submitted feature request: ${input.title}`,
+          `Client submitted feature request: ${safeInput.title}`,
           {
             request_id: data.id,
             action_type: 'feature_request',

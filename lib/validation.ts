@@ -521,3 +521,21 @@ export const invitationSchema = z.object({
 });
 
 export type InvitationInput = z.infer<typeof invitationSchema>;
+
+// =====================
+// Client Portal Input Schemas
+// =====================
+export const ClientProfileUpdateSchema = z.object({
+  full_name: z.string().min(1).max(100).optional(),
+  company: z.string().max(200).nullable().optional(),
+});
+
+export const FeatureRequestCreateSchema = z.object({
+  project_id: z.string().uuid().optional(),
+  title: z.string().min(1, 'Title is required').max(200),
+  description: z.string().max(5000).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+});
+
+export type ClientProfileUpdateInput = z.infer<typeof ClientProfileUpdateSchema>;
+export type FeatureRequestCreateInput = z.infer<typeof FeatureRequestCreateSchema>;
