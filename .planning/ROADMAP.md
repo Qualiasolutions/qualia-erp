@@ -263,9 +263,11 @@ Plans:
 **Priority:** P1 - Critical for client adoption
 **Plans:** 3 plans in 1 wave
 
-- [ ] 21-01: "What's Next" Dashboard Widget
-- [ ] 21-02: Client Action Items System
-- [ ] 21-03: Visual Progress Indicators
+Plans:
+
+- [ ] 21-01-PLAN.md — "What's Next" widget: current + next phase hero section on dashboard
+- [ ] 21-02-PLAN.md — Client Action Items: DB table, CRUD actions, dashboard widget with urgency colors
+- [ ] 21-03-PLAN.md — Visual progress bars on projects list and project detail header
 
 ### Phase 22: Admin Operations & Bulk Management
 
@@ -350,4 +352,4 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-10 (Phase 20 complete 5/5; Phase 25 security hardening added)_
+_Last updated: 2026-03-10 (Phase 21 planned: 3 plans, wave 1)_
