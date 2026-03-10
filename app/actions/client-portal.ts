@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { getCurrentWorkspaceId } from './workspace';
 import { randomBytes } from 'node:crypto';
+import { ClientProfileUpdateSchema } from '@/lib/validation';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
 
@@ -428,7 +429,24 @@ export async function sendClientPasswordReset(email: string): Promise<ActionResu
       return { success: false, error: 'Admin access required' };
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Verify target is a client-role profile before sending reset
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (!targetProfile) {
+      return { success: false, error: 'No portal account found for this email' };
+    }
+
+    if (targetProfile.role !== 'client') {
+      return { success: false, error: 'Password reset is only available for client accounts' };
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
       redirectTo: `${APP_URL}/auth/reset-password/confirm`,
     });
 
@@ -1026,9 +1044,15 @@ export async function updateClientProfile(updates: {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
+    const parsed = ClientProfileUpdateSchema.safeParse(updates);
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.errors[0]?.message || 'Invalid input' };
+    }
+    const safeUpdates = parsed.data;
+
     const updateData: Record<string, unknown> = {};
-    if (updates.full_name !== undefined) updateData.full_name = updates.full_name.trim();
-    if (updates.company !== undefined) updateData.company = updates.company?.trim() || null;
+    if (safeUpdates.full_name !== undefined) updateData.full_name = safeUpdates.full_name.trim();
+    if (safeUpdates.company !== undefined) updateData.company = safeUpdates.company?.trim() || null;
 
     const { error } = await supabase.from('profiles').update(updateData).eq('id', user.id);
 

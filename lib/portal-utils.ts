@@ -68,7 +68,7 @@ export async function canAccessProject(userId: string, projectId: string): Promi
       .eq('id', userId)
       .single();
 
-    if (profile?.role === 'admin' || profile?.role === 'manager') {
+    if (profile?.role === 'admin' || profile?.role === 'manager' || profile?.role === 'employee') {
       return true;
     }
 

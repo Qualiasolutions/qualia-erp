@@ -7,6 +7,7 @@ import { isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { createActivityLogEntry } from './activity-feed';
 import { notifyEmployeesOfClientComment } from '@/lib/email';
+import { canAccessProject } from '@/lib/portal-utils';
 
 interface CreatePhaseCommentInput {
   projectId: string;
@@ -27,6 +28,10 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
   if (!user) return { success: false, error: 'Not authenticated' };
 
   const { projectId, phaseName, commentText, isInternal } = data;
+
+  if (!(await canAccessProject(user.id, projectId))) {
+    return { success: false, error: 'Project not found or access denied' };
+  }
 
   // Validation
   if (!commentText || commentText.trim().length === 0) {
@@ -118,6 +123,10 @@ export async function getPhaseComments(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await canAccessProject(user.id, projectId))) {
+    return { success: false, error: 'Project not found or access denied' };
+  }
 
   // Build query
   let query = supabase
@@ -225,6 +234,10 @@ export async function getPhaseCommentCount(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
+  if (!(await canAccessProject(user.id, projectId))) {
+    return { success: false, error: 'Project not found or access denied' };
+  }
+
   let query = supabase
     .from('phase_comments')
     .select('id', { count: 'exact', head: true })
@@ -258,6 +271,10 @@ export async function getProjectCommentsCount(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await canAccessProject(user.id, projectId))) {
+    return { success: false, error: 'Project not found or access denied' };
+  }
 
   // Build query
   let query = supabase
