@@ -1,9 +1,18 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebar } from '@/components/portal/portal-sidebar';
 import { PageTransition } from '@/components/page-transition';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'Client Portal | Qualia Solutions',
+    template: '%s | Client Portal',
+  },
+  description: 'Your project portal, powered by Qualia Solutions.',
+};
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();

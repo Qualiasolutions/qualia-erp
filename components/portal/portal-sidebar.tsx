@@ -174,7 +174,9 @@ function SidebarContent({
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-600">
             <span className="text-xs font-bold text-white">Q</span>
           </div>
-          <span className="text-[13px] font-semibold tracking-tight text-foreground">Qualia</span>
+          <span className="text-[13px] font-semibold tracking-tight text-foreground">
+            Qualia Solutions
+          </span>
         </Link>
       </div>
 
