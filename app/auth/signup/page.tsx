@@ -54,8 +54,8 @@ export default async function Page({ searchParams }: PageProps) {
 
   const invitation = invitationResult.invitation;
 
-  // Mark invitation as opened (non-blocking)
-  await markInvitationOpened(invitation.id);
+  // Mark invitation as opened (non-blocking) — pass token, not UUID PK
+  await markInvitationOpened(token);
 
   return (
     <div className="flex min-h-screen w-full">

@@ -270,6 +270,16 @@ export async function getProjectInvitationStatus(
   try {
     const supabase = await createClient();
 
+    // Auth check — require authenticated manager or admin
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { hasInvitation: false, status: null, email: null };
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { hasInvitation: false, status: null, email: null };
+    }
+
     // Query most recent invitation for this project
     const { data: invitation } = await supabase
       .from('client_invitations')
@@ -378,9 +388,14 @@ export async function getInvitationByToken(token: string): Promise<{
 /**
  * Mark invitation as opened when client visits signup page.
  * Uses admin client since called before user auth exists.
+ * Accepts invitation TOKEN (not UUID PK) to prevent enumeration.
  */
-export async function markInvitationOpened(invitationId: string): Promise<ActionResult> {
+export async function markInvitationOpened(token: string): Promise<ActionResult> {
   try {
+    if (!token || token.length < 10) {
+      return { success: false, error: 'Invalid token' };
+    }
+
     const adminClient = createAdminClient();
 
     // Only update if status is 'sent' or 'resent' (don't overwrite 'accepted')
@@ -390,7 +405,7 @@ export async function markInvitationOpened(invitationId: string): Promise<Action
         status: 'opened',
         opened_at: new Date().toISOString(),
       })
-      .eq('id', invitationId)
+      .eq('invitation_token', token)
       .in('status', ['sent', 'resent']);
 
     if (error) {
@@ -411,9 +426,15 @@ export async function markInvitationOpened(invitationId: string): Promise<Action
 /**
  * Mark invitation as accepted when client creates account.
  * Uses admin client since called during signup before session established.
+ * Accepts invitation TOKEN (not UUID PK) to prevent enumeration.
+ * @internal — called only from signup flow, not exposed as a public API
  */
-export async function markInvitationAccepted(invitationId: string): Promise<ActionResult> {
+export async function markInvitationAccepted(token: string): Promise<ActionResult> {
   try {
+    if (!token || token.length < 10) {
+      return { success: false, error: 'Invalid token' };
+    }
+
     const adminClient = createAdminClient();
 
     const { error } = await adminClient
@@ -422,7 +443,8 @@ export async function markInvitationAccepted(invitationId: string): Promise<Acti
         status: 'accepted',
         account_created_at: new Date().toISOString(),
       })
-      .eq('id', invitationId);
+      .eq('invitation_token', token)
+      .in('status', ['opened', 'sent', 'resent']);
 
     if (error) {
       console.error('[markInvitationAccepted] Update error:', error);

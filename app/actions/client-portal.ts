@@ -73,7 +73,7 @@ export async function inviteClientByEmail(
     }
 
     // Create user directly with a temporary password (no email required)
-    const tempPassword = `Qualia-${Math.random().toString(36).slice(2, 10)}!`;
+    const tempPassword = `Qualia-${randomBytes(12).toString('base64url')}!`;
     const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
       email: normalizedEmail,
       password: tempPassword,
@@ -180,6 +180,21 @@ export async function inviteClientToProject(
 
     if (existingLink) {
       return { success: false, error: 'Client is already invited to this project' };
+    }
+
+    // Verify the target is a client profile (not a team member)
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', clientId)
+      .single();
+
+    if (!targetProfile) {
+      return { success: false, error: 'User not found' };
+    }
+
+    if (targetProfile.role !== 'client') {
+      return { success: false, error: 'Cannot grant portal access to a team member account' };
     }
 
     // Create the client-project link
@@ -526,7 +541,7 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
       };
     }
 
-    const tempPassword = `Qualia-${Math.random().toString(36).slice(2, 10)}!`;
+    const tempPassword = `Qualia-${randomBytes(12).toString('base64url')}!`;
     const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
       email: clientEmail,
       password: tempPassword,

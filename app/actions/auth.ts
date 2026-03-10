@@ -198,8 +198,8 @@ export async function signupWithInvitationAction(
       };
     }
 
-    // Mark invitation as accepted
-    const acceptResult = await markInvitationAccepted(invitation.id);
+    // Mark invitation as accepted — pass token, not UUID PK
+    const acceptResult = await markInvitationAccepted(invitationToken);
     if (!acceptResult.success) {
       console.error('[signupWithInvitation] Mark accepted error:', acceptResult.error);
       // Non-fatal - account was created successfully
