@@ -1411,6 +1411,136 @@ export async function getProjectFeatures(projectId: string): Promise<ActionResul
 }
 
 // ============================================================================
+// PORTAL CLIENT MANAGEMENT (admin overview with last login)
+// ============================================================================
+
+/**
+ * Type for a merged client record with auth login data and project assignments.
+ */
+export interface MergedPortalClient {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+  lastSignIn: string | null;
+  isActive: boolean;
+  projects: Array<{ id: string; name: string }>;
+}
+
+/**
+ * Get all portal clients with their last sign-in date and project assignments.
+ * Uses auth.admin.listUsers to fetch real last_sign_in_at from Supabase Auth.
+ *
+ * Note: listUsers is called with perPage=1000. For agencies with <1000 portal
+ * clients this is fine. If you exceed 1000, add pagination here.
+ */
+export async function getPortalClientManagement(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    let adminClient: ReturnType<typeof createAdminClient>;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return {
+        success: false,
+        error: 'Service role key not configured. Cannot fetch last login data.',
+      };
+    }
+
+    // Fetch all data in parallel
+    const [clientsResult, assignmentsResult, authUsersResult] = await Promise.all([
+      // All client profiles
+      supabase
+        .from('profiles')
+        .select('id, full_name, email, created_at')
+        .eq('role', 'client')
+        .order('created_at', { ascending: false }),
+
+      // All client-project assignments with project names
+      supabase
+        .from('client_projects')
+        .select('client_id, project_id, project:projects!project_id(id, name)'),
+
+      // All auth users (for last_sign_in_at) — limited to 1000 per call
+      adminClient.auth.admin.listUsers({ perPage: 1000 }),
+    ]);
+
+    if (clientsResult.error) {
+      return { success: false, error: clientsResult.error.message };
+    }
+
+    // Build email -> last_sign_in_at map from auth users
+    const signInMap = new Map<string, string | null>();
+    for (const authUser of authUsersResult.data?.users ?? []) {
+      const email = authUser.email?.toLowerCase();
+      if (email) {
+        signInMap.set(email, authUser.last_sign_in_at ?? null);
+      }
+    }
+
+    // Build client_id -> projects map from assignments
+    const projectsMap = new Map<string, Array<{ id: string; name: string }>>();
+    for (const assignment of assignmentsResult.data ?? []) {
+      const projectRaw = assignment.project;
+      const project = Array.isArray(projectRaw) ? projectRaw[0] : projectRaw;
+      if (!project) continue;
+
+      const existing = projectsMap.get(assignment.client_id) ?? [];
+      existing.push({ id: project.id, name: project.name });
+      projectsMap.set(assignment.client_id, existing);
+    }
+
+    // 30-day activity threshold
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Merge all data
+    const clients: MergedPortalClient[] = (clientsResult.data ?? []).map((profile) => {
+      const email = profile.email?.toLowerCase() ?? null;
+      const lastSignIn = email ? (signInMap.get(email) ?? null) : null;
+      const isActive = lastSignIn ? new Date(lastSignIn) >= thirtyDaysAgo : false;
+      const projects = projectsMap.get(profile.id) ?? [];
+
+      return {
+        id: profile.id,
+        full_name: profile.full_name,
+        email: profile.email,
+        created_at: profile.created_at,
+        lastSignIn,
+        isActive,
+        projects,
+      };
+    });
+
+    const totalActive = clients.filter((c) => c.isActive).length;
+    const totalInactive = clients.length - totalActive;
+
+    return {
+      success: true,
+      data: { clients, totalActive, totalInactive },
+    };
+  } catch (error) {
+    console.error('[getPortalClientManagement] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load client management data',
+    };
+  }
+}
+
+// ============================================================================
 // CLIENT ACTION ITEMS
 // ============================================================================
 
