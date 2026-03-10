@@ -124,9 +124,16 @@ export async function inviteClientByEmail(
 
     if (linkError) {
       console.error('[inviteClientByEmail] Link error:', linkError);
+      // Rollback the created auth user to avoid orphan
+      try {
+        await adminClient.auth.admin.deleteUser(newUserId);
+      } catch (rollbackErr) {
+        console.error('[inviteClientByEmail] Rollback failed:', rollbackErr);
+      }
       return {
         success: false,
-        error: 'Account created but failed to link project. Try adding manually.',
+        error:
+          'Account created but failed to link project. Account has been cleaned up — please try again.',
       };
     }
 
@@ -605,9 +612,16 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
 
     if (linkError) {
       console.error('[setupClientForProject] Link error:', linkError);
+      // Rollback the created auth user to avoid orphan
+      try {
+        await adminClient.auth.admin.deleteUser(newUserId);
+      } catch (rollbackErr) {
+        console.error('[setupClientForProject] Rollback failed:', rollbackErr);
+      }
       return {
         success: false,
-        error: 'Account created but failed to link project. Try adding manually.',
+        error:
+          'Account created but failed to link project. Account has been cleaned up — please try again.',
       };
     }
 
@@ -695,12 +709,12 @@ export async function createProjectFromPortal(input: {
 
     if (error) {
       console.error(
-        '[createProjectFromPortal] Insert error:',
+        '[createProjectFromPortal] DB error:',
         error.message,
         error.details,
         error.hint
       );
-      return { success: false, error: `DB error: ${error.message}` };
+      return { success: false, error: 'Failed to create project. Please try again.' };
     }
 
     if (!data) {
