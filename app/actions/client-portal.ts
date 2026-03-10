@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { getCurrentWorkspaceId } from './workspace';
+import { randomBytes } from 'node:crypto';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
 
@@ -1119,6 +1120,197 @@ export async function updateNotificationPreferences(preferences: {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update notification preferences',
+    };
+  }
+}
+
+/**
+ * Setup portal access for a CRM client by looking up their email from contacts JSONB.
+ * Creates a portal user account if one doesn't exist, then links to specified projects.
+ */
+export async function setupPortalForClient(
+  clientId: string,
+  projectIds: string[]
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Look up the CRM client
+    const { data: crmClient, error: clientError } = await supabase
+      .from('clients')
+      .select('id, name, contacts')
+      .eq('id', clientId)
+      .single();
+
+    if (clientError || !crmClient) {
+      return { success: false, error: 'CRM client not found' };
+    }
+
+    // Extract first contact email from JSONB contacts array
+    const contacts = crmClient.contacts as Array<{ email?: string }> | null;
+    const firstEmail = contacts?.[0]?.email?.trim().toLowerCase();
+
+    if (!firstEmail) {
+      return { success: false, error: 'CRM client has no email on file' };
+    }
+
+    const normalizedEmail = firstEmail;
+
+    // Check for existing portal profile with that email
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('email', normalizedEmail)
+      .single();
+
+    let userId: string;
+    let tempPassword: string | undefined;
+    let alreadyExisted = false;
+    let adminClient: ReturnType<typeof createAdminClient>;
+
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return {
+        success: false,
+        error: 'Service role key not configured. Cannot manage client accounts.',
+      };
+    }
+
+    if (existingProfile) {
+      // Profile exists — check role
+      if (
+        existingProfile.role === 'admin' ||
+        existingProfile.role === 'manager' ||
+        existingProfile.role === 'employee'
+      ) {
+        return { success: false, error: 'This email belongs to a team member' };
+      }
+
+      // Already a client portal account
+      userId = existingProfile.id;
+      alreadyExisted = true;
+    } else {
+      // Create new auth user
+      const generatedPassword = `Qualia-${randomBytes(12).toString('base64url')}`;
+      tempPassword = generatedPassword;
+
+      const { data: newUserData, error: createError } = await adminClient.auth.admin.createUser({
+        email: normalizedEmail,
+        password: generatedPassword,
+        email_confirm: true,
+        user_metadata: {
+          role: 'client',
+          full_name: crmClient.name,
+        },
+      });
+
+      if (createError) {
+        console.error('[setupPortalForClient] Create user error:', createError);
+        return {
+          success: false,
+          error: `Failed to create client account: ${createError.message}`,
+        };
+      }
+
+      if (!newUserData?.user?.id) {
+        return { success: false, error: 'Account created but no user ID returned' };
+      }
+
+      userId = newUserData.user.id;
+
+      // Upsert profile
+      const { error: profileError } = await adminClient.from('profiles').upsert(
+        {
+          id: userId,
+          email: normalizedEmail,
+          full_name: crmClient.name,
+          role: 'client',
+        },
+        { onConflict: 'id' }
+      );
+
+      if (profileError) {
+        console.error('[setupPortalForClient] Profile upsert error:', profileError);
+      }
+    }
+
+    // Link to each project
+    let projectsLinked = 0;
+    const linkErrors: string[] = [];
+
+    for (const projectId of projectIds) {
+      // Check if link already exists
+      const { data: existingLink } = await supabase
+        .from('client_projects')
+        .select('id')
+        .eq('client_id', userId)
+        .eq('project_id', projectId)
+        .maybeSingle();
+
+      if (existingLink) {
+        // Already linked — skip
+        projectsLinked++;
+        continue;
+      }
+
+      const { error: linkError } = await adminClient.from('client_projects').insert({
+        client_id: userId,
+        project_id: projectId,
+        invited_by: user.id,
+        invited_at: new Date().toISOString(),
+      });
+
+      if (linkError) {
+        console.error('[setupPortalForClient] Link error for project', projectId, linkError);
+        linkErrors.push(projectId);
+      } else {
+        projectsLinked++;
+      }
+    }
+
+    // If newly created but ALL project links failed, roll back orphaned auth user
+    if (!alreadyExisted && projectIds.length > 0 && linkErrors.length === projectIds.length) {
+      try {
+        await adminClient.auth.admin.deleteUser(userId);
+      } catch (deleteErr) {
+        console.error('[setupPortalForClient] Failed to roll back orphaned user:', deleteErr);
+      }
+      return { success: false, error: 'Account created but failed to link any projects' };
+    }
+
+    revalidatePath('/portal');
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+
+    return {
+      success: true,
+      data: {
+        userId,
+        email: normalizedEmail,
+        name: crmClient.name,
+        tempPassword,
+        alreadyExisted,
+        projectsLinked,
+      },
+    };
+  } catch (error) {
+    console.error('[setupPortalForClient] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to setup portal for client',
     };
   }
 }
