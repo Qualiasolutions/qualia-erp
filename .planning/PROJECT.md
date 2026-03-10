@@ -80,11 +80,11 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ## Context
 
-Shipped v1.4 with 115,654 LOC TypeScript. 5 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations, v1.3 Full ERP-Portal Integration, v1.4 Admin Portal Onboarding).
+Shipped v1.5.1 with 158,543 LOC TypeScript. 6 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations, v1.3 Full ERP-Portal Integration, v1.4 Admin Portal Onboarding, v1.5.1 Security Hardening).
 Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul, Resend.
-19 phases completed across 5 milestones, 46 plans executed.
-Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, Apple-like design system, and end-to-end client onboarding flow.
-Admin can import projects, invite clients, and clients self-onboard with immediate portal access.
+25 phases completed across 6 milestones, 49 plans executed.
+Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, Apple-like design system, end-to-end client onboarding flow, and production-ready security hardening.
+All IDOR vulnerabilities patched, token-based invitations, Zod input validation, and production observability in place.
 Ready for next milestone planning.
 
 ## Constraints
@@ -128,7 +128,12 @@ Ready for next milestone planning.
 | Admin client for profile creation during signup              | New users have no RLS permissions, must use service role            | ✓ Good  |
 | window.location.href for post-signup redirect                | Hard navigation ensures session cookies transfer                    | ✓ Good  |
 | Role-based routing reads from database (not JWT)             | Real-time role enforcement, no stale claims                         | ✓ Good  |
+| canAccessProject from lib/portal-utils for auth gates        | Single source of truth, avoids duplicate auth logic                 | ✓ Good  |
+| Token-based invitation lookups vs UUID PKs                   | Prevents enumeration attacks with opaque tokens                     | ✓ Good  |
+| removeConsole.exclude preserves error/warn in production     | Maintains observability while reducing log noise                    | ✓ Good  |
+| Health endpoint returns 503 for degraded states              | Enables reliable monitoring and alerting                            | ✓ Good  |
+| Best-effort orphan rollback pattern                          | Cleanup failures logged but don't mask original errors              | ✓ Good  |
 
 ---
 
-_Last updated: 2026-03-09 after v1.4 milestone completion_
+_Last updated: 2026-03-10 after v1.5.1 milestone completion_

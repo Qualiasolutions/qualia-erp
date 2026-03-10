@@ -1,5 +1,32 @@
 # Milestones: Qualia Portal & Trainee System
 
+## v1.5.1 Security Hardening (Shipped: 2026-03-10)
+
+**Delivered:** Critical security hardening — IDOR vulnerability fixes, token-based invitations, input validation, and production observability for client portal.
+
+**Phases completed:** 25 (3 plans total)
+
+**Key accomplishments:**
+
+- IDOR vulnerability fixes: feature request ownership scope, project creation guard, phase comment access checks, client-only invite enforcement
+- Secure authentication: token-based invitation lookups preventing enumeration attacks, cryptographically secure temporary passwords
+- Input validation: comprehensive Zod schema validation for all portal user inputs (profiles, feature requests)
+- Production observability: preserved error/warn console output in production builds with 503 health check responses for degraded states
+- Error handling: sanitized database errors returned to clients and orphan user rollback on failed operations
+
+**Stats:**
+
+- 4 files modified, 1 file created
+- 158,543 lines of TypeScript (total project)
+- 1 phase, 3 plans
+- 1 day (2026-03-10)
+
+**Git range:** `fix(25-01)` → `docs(phase-25)`
+
+**What's next:** Next milestone planning needed
+
+---
+
 ## v1.4 Admin Portal Onboarding (Shipped: 2026-03-09)
 
 **Delivered:** End-to-end admin-to-client onboarding flow — import ERP projects, configure portal settings, send branded invitation emails, and clients create accounts with immediate project access.
