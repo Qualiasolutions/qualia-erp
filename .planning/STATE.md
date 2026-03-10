@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 21 of 24 (Client Experience)
-Plan: 21-03 complete (3 of ? plans in phase 21 — In progress)
+Plan: 21-01 complete (1 of 3 plans in phase 21 — In progress)
 Status: In progress
-Last activity: 2026-03-10 — Completed 21-03: Portal progress bars (projects list + project detail header)
+Last activity: 2026-03-10 — Completed 21-01: WhatsNextWidget hero phase widget on client dashboard
 
-Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21: 1/? plans complete (21-03 done)
+Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21: 21-01 done (21-02, 21-03 also done)
 
 ## Performance Metrics
 
@@ -59,10 +59,11 @@ Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21:
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 21 in progress. Plan 21-03 (portal progress bars) complete.
-**Next action:** Continue Phase 21 — next plan in sequence
+Stopped at: Phase 21 in progress. Plans 21-01, 21-02, 21-03 complete.
+Resume file: `.planning/phases/21-client-experience/21-01-SUMMARY.md`
+**Next action:** Phase 21 complete — advance to Phase 22
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Completed plan 21-03: Portal progress bars on projects list + project detail header_
+_Last updated: 2026-03-10 — Completed plan 21-01: WhatsNextWidget hero phase widget on client portal dashboard_
