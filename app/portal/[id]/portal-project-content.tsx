@@ -75,9 +75,19 @@ export function PortalProjectContent({
     );
   }
 
+  const totalPhases = phases?.length ?? 0;
+  const completedPhases = (phases ?? []).filter(
+    (p) => p.status === 'completed' || p.status === 'done'
+  ).length;
+
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
-      <PortalPageHeader title={project.name} description={project.description} />
+      <PortalPageHeader
+        title={project.name}
+        description={project.description}
+        completedPhases={completedPhases}
+        totalPhases={totalPhases}
+      />
 
       <PortalTabs projectId={projectId} />
 
