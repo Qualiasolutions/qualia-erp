@@ -303,7 +303,7 @@ Plans:
 </details>
 
 <details>
-<summary>🔒 v1.5.1 Security Hardening (Phase 25) — PLANNED</summary>
+<summary>✅ v1.5.1 Security Hardening (Phase 25) — SHIPPED 2026-03-10</summary>
 
 ### Phase 25: Portal Security Hardening
 
@@ -313,9 +313,9 @@ Plans:
 
 Plans:
 
-- [ ] 25-01-PLAN.md — Fix all IDOR vulnerabilities (client-requests, phase-comments, client-portal)
-- [ ] 25-02-PLAN.md — Fix auth and invitation security + Zod validation on untrusted inputs
-- [ ] 25-03-PLAN.md — Observability and hardening (removeConsole, health 503, .env.example, DB error sanitization, orphan rollback)
+- [x] 25-01-PLAN.md — Fix all IDOR vulnerabilities (client-requests, phase-comments, client-portal)
+- [x] 25-02-PLAN.md — Fix auth and invitation security + Zod validation on untrusted inputs
+- [x] 25-03-PLAN.md — Observability and hardening (removeConsole, health 503, .env.example, DB error sanitization, orphan rollback)
 
 </details>
 
@@ -349,9 +349,9 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 | 22. Admin Operations & Bulk Management      | v1.5      | 0/3            | Planned  | TBD        |
 | 23. Proactive Communication & Notifications | v1.5      | 3/3            | Complete | 2026-03-10 |
 | 24. Polish & White-Label Branding           | v1.5      | 0/2            | Planned  | TBD        |
-| 25. Portal Security Hardening               | v1.5.1    | 0/3            | Planned  | TBD        |
+| 25. Portal Security Hardening               | v1.5.1    | 3/3            | Complete | 2026-03-10 |
 
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-10 (Phase 23 complete: proactive communication & notifications)_
+_Last updated: 2026-03-10 (Phase 25 complete: portal security hardening — 3/3 plans, verified)_
