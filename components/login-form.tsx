@@ -75,8 +75,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-sm font-semibold text-foreground">Client Portal</span>
-            <p className="mt-0.5 text-xs text-muted-foreground">View your projects &amp; updates</p>
+            <span className="text-sm font-semibold text-foreground">
+              Qualia Solutions Client Portal
+            </span>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Your project hub, powered by Qualia Solutions
+            </p>
           </div>
           <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
         </button>
