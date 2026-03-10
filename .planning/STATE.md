@@ -53,6 +53,8 @@ Progress: [#############] 24 phases tracked | Phase 25: 1 of 3 plans complete
 | 11  | canAccessProject from portal-utils extended to allow employee role     | Employees write phase comments; blocking them would break existing team workflow     | 2026-03-10 |
 | 12  | createFeatureRequest ownership check only runs when project_id is set  | project_id is optional; null submissions are valid and need no ownership gate        | 2026-03-10 |
 | 13  | inviteClientToProject rejects non-client profiles explicitly           | Prevents accidentally linking employee/admin accounts to client portal access        | 2026-03-10 |
+| 14  | Company name fetched at layout and page level independently            | App Router layout cannot pass props to children pages; duplication is acceptable     | 2026-03-10 |
+| 15  | Dashboard greeting uses companyName over firstName when available      | Company name makes portal feel dedicated; personal name is fallback for unlinked     | 2026-03-10 |
 
 ### Blockers/Concerns
 
