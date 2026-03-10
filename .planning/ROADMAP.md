@@ -255,7 +255,7 @@ Plans:
 - [x] 20-02-PLAN.md — Audit invite action DB schema, verify end-to-end flow with human checkpoint
 - [x] 20-03-PLAN.md — Confirmation guard on remove-access, independent loading states, specific error toasts
 - [x] 20-04-PLAN.md — Client-centric admin panel rework: CRM client picker + setupPortalForClient action
-- [ ] 20-05-PLAN.md — Portal error boundaries + parallel dashboard queries + workspace bug fix
+- [x] 20-05-PLAN.md — Portal error boundaries + parallel dashboard queries + workspace bug fix
 
 ### Phase 21: Enhanced Client Experience
 
@@ -340,7 +340,7 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 | 17. Project Import Flow                     | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 18. Invitation System                       | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 19. Client Onboarding Flow                  | v1.4      | 2/2            | Complete | 2026-03-09 |
-| 20. Portal Foundation Fixes                 | v1.5      | 0/5            | Ready    | TBD        |
+| 20. Portal Foundation Fixes                 | v1.5      | 5/5            | Complete | 2026-03-10 |
 | 21. Enhanced Client Experience              | v1.5      | 0/3            | Planned  | TBD        |
 | 22. Admin Operations & Bulk Management      | v1.5      | 0/3            | Planned  | TBD        |
 | 23. Proactive Communication & Notifications | v1.5      | 0/3            | Planned  | TBD        |
@@ -350,4 +350,4 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-10 (Phase 20 expanded to 5 plans; Phase 25 security hardening added)_
+_Last updated: 2026-03-10 (Phase 20 complete 5/5; Phase 25 security hardening added)_
