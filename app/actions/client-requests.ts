@@ -25,6 +25,20 @@ export async function createFeatureRequest(input: {
       return { success: false, error: 'Title is required' };
     }
 
+    // Verify project_id belongs to this client if provided
+    if (input.project_id) {
+      const { data: ownership } = await supabase
+        .from('client_projects')
+        .select('project_id')
+        .eq('client_id', user.id)
+        .eq('project_id', input.project_id)
+        .single();
+
+      if (!ownership) {
+        return { success: false, error: 'Project not found or access denied' };
+      }
+    }
+
     const { data, error } = await supabase
       .from('client_feature_requests')
       .insert({
@@ -158,22 +172,38 @@ export async function updateFeatureRequest(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
+    const isAdmin = await isUserManagerOrAbove(user.id);
+
     const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
-    if (updates.status) updateData.status = updates.status;
-    if (updates.admin_response !== undefined) updateData.admin_response = updates.admin_response;
-    if (updates.title) updateData.title = updates.title.trim();
-    if (updates.description !== undefined)
-      updateData.description = updates.description?.trim() || null;
+    if (isAdmin) {
+      // Admins can update all fields
+      if (updates.status) updateData.status = updates.status;
+      if (updates.admin_response !== undefined) updateData.admin_response = updates.admin_response;
+      if (updates.title) updateData.title = updates.title.trim();
+      if (updates.description !== undefined)
+        updateData.description = updates.description?.trim() || null;
+    } else {
+      // Clients can only update title and description
+      if (updates.title !== undefined) updateData.title = updates.title.trim();
+      if (updates.description !== undefined)
+        updateData.description = updates.description?.trim() || null;
+    }
 
-    const { data, error } = await supabase
-      .from('client_feature_requests')
-      .update(updateData)
-      .eq('id', requestId)
-      .select()
-      .single();
+    let query = supabase.from('client_feature_requests').update(updateData).eq('id', requestId);
+
+    // Non-admin clients can only update their own requests (IDOR fix)
+    if (!isAdmin) {
+      query = query.eq('client_id', user.id);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) throw error;
+
+    if (!data) {
+      return { success: false, error: 'Request not found or access denied' };
+    }
 
     revalidatePath('/portal/requests');
     revalidatePath('/portal');
