@@ -63,6 +63,7 @@ export const cacheKeys = {
   portalProject: (projectId: string) => `portal-project-${projectId}`,
   portalProjectWithPhases: (projectId: string) => `portal-project-with-phases-${projectId}`,
   portalDashboard: (clientId: string) => `portal-dashboard-${clientId}`,
+  clientActionItems: (clientId: string) => ['client-action-items', clientId] as const,
   timeEntries: (date: string) => `time-entries-${date}`,
   runningTimer: (userId: string) => `running-timer-${userId}`,
 } as const;
@@ -1380,5 +1381,62 @@ export function invalidateRunningTimer(userId: string, immediate = true) {
     mutate(cacheKeys.runningTimer(userId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.runningTimer(userId));
+  }
+}
+
+// ============================================================================
+// CLIENT ACTION ITEMS HOOKS
+// ============================================================================
+
+interface ActionItem {
+  id: string;
+  title: string;
+  description: string | null;
+  action_type: string;
+  due_date: string | null;
+  completed_at: string | null;
+  project: { id: string; name: string } | null;
+}
+
+/**
+ * Hook to fetch pending action items for a client.
+ * Auto-refreshes every 45s when tab is visible.
+ */
+export function useClientActionItems(clientId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    clientId ? cacheKeys.clientActionItems(clientId) : null,
+    async () => {
+      if (!clientId) return [];
+      const { getClientActionItems } = await import('@/app/actions/client-portal');
+      const result = await getClientActionItems(clientId);
+      return result.success ? (result.data as ActionItem[]) : [];
+    },
+    { ...autoRefreshConfig, revalidateOnMount: true }
+  );
+
+  return {
+    items: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate client action items cache
+ */
+export function invalidateClientActionItems(clientId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.clientActionItems(clientId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.clientActionItems(clientId));
   }
 }

@@ -4,6 +4,7 @@ import { usePortalDashboard } from '@/lib/swr';
 import { PortalDashboardStats } from '@/components/portal/portal-dashboard-stats';
 import { PortalRecentActivity } from '@/components/portal/portal-recent-activity';
 import { WhatsNextWidget } from '@/components/portal/portal-whats-next-widget';
+import { PortalActionItems } from '@/components/portal/portal-action-items';
 import { ArrowRight, Lightbulb, Receipt, Headphones } from 'lucide-react';
 import Link from 'next/link';
 
@@ -96,6 +97,11 @@ export function PortalDashboardContent({ clientId, displayName }: PortalDashboar
       <div className="space-y-3">
         <h2 className="text-sm font-medium text-foreground">What&apos;s next</h2>
         <WhatsNextWidget projects={projects} isLoading={isLoading} />
+      </div>
+
+      {/* Action items */}
+      <div className="space-y-3">
+        <PortalActionItems clientId={clientId} />
       </div>
 
       {/* Projects */}
