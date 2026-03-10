@@ -273,9 +273,9 @@ Plans:
 **Priority:** P1 - Important for Moayad's efficiency
 **Plans:** 3 plans in 1 wave
 
-- [ ] 22-01: Bulk Client Operations
-- [ ] 22-02: Client Management Dashboard
-- [ ] 22-03: Credential Management & Export
+- [ ] 22-01-PLAN.md — Bulk client operations: bulkSetupPortalForClients action + bulk mode in admin panel
+- [ ] 22-02-PLAN.md — Client management dashboard: last login, status badges, project/status filters
+- [ ] 22-03-PLAN.md — Credential management: resetClientPassword action + export block + inline password reset UI
 
 ### Phase 23: Proactive Communication & Notifications
 
