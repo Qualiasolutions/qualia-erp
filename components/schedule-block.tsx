@@ -797,7 +797,6 @@ export function ScheduleBlock({
                   for (const item of items) {
                     const span = (item as SpannableTask).spanHours || 1;
                     if (span > 1) {
-                      // Mark hours after the start as covered
                       for (let h = 1; h < span; h++) {
                         coveredCells.add(`${memberId}-${startHour + h}`);
                       }
@@ -806,254 +805,275 @@ export function ScheduleBlock({
                 }
               }
 
-              return visibleSlotHours.map((hour, timeIdx) => (
+              return (
                 <div
-                  key={hour}
-                  className={cn(
-                    'grid',
-                    timeIdx < visibleSlotHours.length - 1 && 'border-b border-border/50'
-                  )}
+                  className="grid"
                   style={{
                     gridTemplateColumns: `56px repeat(${filteredMembers.length}, 1fr)`,
+                    gridTemplateRows: `repeat(${visibleSlotHours.length}, minmax(${SLOT_HEIGHT}px, auto))`,
                   }}
                 >
-                  {/* Time Label */}
-                  <div className="flex items-start justify-end border-r border-border px-2.5 pt-3">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {getTimeLabel(hour)}
-                    </span>
-                  </div>
+                  {visibleSlotHours.flatMap((hour, timeIdx) => {
+                    const rowStart = timeIdx + 1;
+                    const isLastRow = timeIdx === visibleSlotHours.length - 1;
 
-                  {/* Task Cells */}
-                  {filteredMembers.map((member, memberIdx) => {
-                    const memberId = member.profileId || member.id;
-                    const activeHours = memberActiveHours.get(memberId);
-                    const isOutOfRange = activeHours && !activeHours.has(hour);
+                    const cells = [
+                      /* Time Label */
+                      <div
+                        key={`time-${hour}`}
+                        className={cn(
+                          'flex items-start justify-end border-r border-border px-2.5 pt-3',
+                          !isLastRow && 'border-b border-border/50'
+                        )}
+                        style={{ gridRow: rowStart, gridColumn: 1 }}
+                      >
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          {getTimeLabel(hour)}
+                        </span>
+                      </div>,
+                    ];
 
-                    // Check if this cell is covered by a spanning item from an earlier row
-                    if (coveredCells.has(`${memberId}-${hour}`)) {
-                      // Render empty cell (the spanning item above covers this space)
-                      return (
+                    /* Task Cells */
+                    filteredMembers.forEach((member, memberIdx) => {
+                      const memberId = member.profileId || member.id;
+                      const activeHours = memberActiveHours.get(memberId);
+                      const isOutOfRange = activeHours && !activeHours.has(hour);
+                      const colIdx = memberIdx + 2;
+
+                      // Covered by a spanning item — skip (the spanning cell above covers it)
+                      if (coveredCells.has(`${memberId}-${hour}`)) return;
+
+                      // Get items for this slot
+                      let slotItems: SpannableTask[] = [];
+                      if (unified) {
+                        slotItems = unifiedSchedule?.get(hour) || [];
+                      } else {
+                        const memberSlots = memberSchedule.get(memberId);
+                        slotItems = (memberSlots?.get(hour) || []) as SpannableTask[];
+                      }
+
+                      const displayItems = unified ? slotItems : slotItems.slice(0, 1);
+                      const task = displayItems[0];
+                      const isDone = task ? (task.isMeeting ? false : isTaskDone(task)) : false;
+                      const isInProgress = task?.status === 'In Progress' && !isDone;
+                      const isMeetingItem = task?.isMeeting;
+                      const spanRows = task?.spanHours || 1;
+
+                      // Get precise pixel values from the first item
+                      const itemTopOffset = task?.topOffsetPx || 0;
+                      const itemHeight = task?.heightPx || SLOT_HEIGHT;
+
+                      cells.push(
                         <div
                           key={`${member.id}-${hour}`}
                           className={cn(
-                            'min-h-[72px]',
+                            'group relative min-h-[72px] transition-all',
                             memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
-                            isOutOfRange && 'bg-muted/10'
+                            // Only add bottom border if this cell doesn't span to the last row
+                            !isLastRow &&
+                              timeIdx + spanRows - 1 < visibleSlotHours.length - 1 &&
+                              'border-b border-border/50',
+                            isOutOfRange && !displayItems.length && 'bg-muted/10'
                           )}
-                        />
-                      );
-                    }
+                          style={{
+                            gridRow: spanRows > 1 ? `${rowStart} / span ${spanRows}` : rowStart,
+                            gridColumn: colIdx,
+                          }}
+                        >
+                          {displayItems.length > 0 ? (
+                            <div
+                              className={cn(
+                                'absolute left-0 right-0 z-10 overflow-hidden px-4 py-3',
+                                isInProgress &&
+                                  'border-l-2 border-l-qualia-500 bg-qualia-500/[0.03]',
+                                isMeetingItem &&
+                                  !isInProgress &&
+                                  'border-l-2 border-l-violet-500 bg-violet-500/[0.03]'
+                              )}
+                              style={{
+                                top: `${itemTopOffset}px`,
+                                height: `${itemHeight}px`,
+                              }}
+                            >
+                              {displayItems.map((item, itemIdx) => {
+                                const itemIsDone = item.isMeeting ? false : isTaskDone(item);
+                                const itemIsInProgress =
+                                  item.status === 'In Progress' && !itemIsDone;
+                                const itemIsMeeting = item.isMeeting;
 
-                    // Get items for this slot
-                    let slotItems: SpannableTask[] = [];
-                    if (unified) {
-                      slotItems = unifiedSchedule?.get(hour) || [];
-                    } else {
-                      const memberSlots = memberSchedule.get(memberId);
-                      slotItems = (memberSlots?.get(hour) || []) as SpannableTask[];
-                    }
-
-                    const displayItems = unified ? slotItems : slotItems.slice(0, 1);
-                    const task = displayItems[0];
-                    const isDone = task ? (task.isMeeting ? false : isTaskDone(task)) : false;
-                    const isInProgress = task?.status === 'In Progress' && !isDone;
-                    const isMeetingItem = task?.isMeeting;
-
-                    // Get precise pixel values from the first item
-                    const itemTopOffset = task?.topOffsetPx || 0;
-                    const itemHeight = task?.heightPx || SLOT_HEIGHT;
-
-                    return (
-                      <div
-                        key={`${member.id}-${hour}`}
-                        className={cn(
-                          'group relative min-h-[72px] transition-all',
-                          memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
-                          isOutOfRange && !displayItems.length && 'bg-muted/10'
-                        )}
-                      >
-                        {displayItems.length > 0 ? (
-                          <div
-                            className={cn(
-                              'absolute left-0 right-0 z-10 overflow-hidden px-4 py-3',
-                              isInProgress && 'border-l-2 border-l-qualia-500 bg-qualia-500/[0.03]',
-                              isMeetingItem &&
-                                !isInProgress &&
-                                'border-l-2 border-l-violet-500 bg-violet-500/[0.03]'
-                            )}
-                            style={{
-                              top: `${itemTopOffset}px`,
-                              height: `${itemHeight}px`,
-                            }}
-                          >
-                            {displayItems.map((item, itemIdx) => {
-                              const itemIsDone = item.isMeeting ? false : isTaskDone(item);
-                              const itemIsInProgress = item.status === 'In Progress' && !itemIsDone;
-                              const itemIsMeeting = item.isMeeting;
-
-                              return (
-                                <div
-                                  key={item.id}
-                                  className={cn(
-                                    'flex items-start gap-3 transition-opacity duration-300',
-                                    itemIsDone && 'opacity-35',
-                                    itemIdx > 0 && 'border-t border-border/30 pt-3'
-                                  )}
-                                >
-                                  {!itemIsMeeting ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => toggleComplete(item)}
-                                      disabled={isPending}
-                                      className="group/check -ml-1 flex size-7 shrink-0 items-center justify-center rounded-full transition-all hover:bg-muted/60 active:scale-90"
-                                      aria-label={itemIsDone ? 'Mark incomplete' : 'Mark complete'}
-                                    >
-                                      {itemIsDone ? (
-                                        <CheckCircle2
-                                          className="size-4 text-qualia-500 transition-colors group-hover/check:text-qualia-400"
-                                          strokeWidth={2}
-                                        />
-                                      ) : (
-                                        <Circle
-                                          className={cn(
-                                            'size-4 transition-colors group-hover/check:text-qualia-400',
-                                            itemIsInProgress ? 'text-qualia-500' : 'text-border'
-                                          )}
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={cn(
+                                      'flex items-start gap-3 transition-opacity duration-300',
+                                      itemIsDone && 'opacity-35',
+                                      itemIdx > 0 && 'border-t border-border/30 pt-3'
+                                    )}
+                                  >
+                                    {!itemIsMeeting ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleComplete(item)}
+                                        disabled={isPending}
+                                        className="group/check -ml-1 flex size-7 shrink-0 items-center justify-center rounded-full transition-all hover:bg-muted/60 active:scale-90"
+                                        aria-label={
+                                          itemIsDone ? 'Mark incomplete' : 'Mark complete'
+                                        }
+                                      >
+                                        {itemIsDone ? (
+                                          <CheckCircle2
+                                            className="size-4 text-qualia-500 transition-colors group-hover/check:text-qualia-400"
+                                            strokeWidth={2}
+                                          />
+                                        ) : (
+                                          <Circle
+                                            className={cn(
+                                              'size-4 transition-colors group-hover/check:text-qualia-400',
+                                              itemIsInProgress ? 'text-qualia-500' : 'text-border'
+                                            )}
+                                            strokeWidth={1.5}
+                                          />
+                                        )}
+                                      </button>
+                                    ) : (
+                                      <div className="flex size-7 shrink-0 items-center justify-center">
+                                        <Video
+                                          className="size-4 text-violet-500"
                                           strokeWidth={1.5}
                                         />
-                                      )}
-                                    </button>
-                                  ) : (
-                                    <div className="flex size-7 shrink-0 items-center justify-center">
-                                      <Video className="size-4 text-violet-500" strokeWidth={1.5} />
-                                    </div>
-                                  )}
-                                  <div
-                                    className="min-w-0 flex-1 cursor-pointer"
-                                    onClick={() => {
-                                      if (itemIsMeeting) {
-                                        const original = meetingsMap.get(item.id);
-                                        if (original) setViewingMeeting(original);
-                                      } else {
-                                        setViewingTask(item);
-                                      }
-                                    }}
-                                  >
-                                    <p
-                                      className={cn(
-                                        'text-[13px] leading-[1.45] transition-colors',
-                                        itemIsDone
-                                          ? 'text-muted-foreground line-through decoration-muted-foreground/30'
-                                          : itemIsInProgress
-                                            ? 'font-medium text-foreground hover:text-qualia-600 dark:hover:text-qualia-400'
-                                            : itemIsMeeting
-                                              ? 'font-medium text-foreground hover:text-violet-600 dark:hover:text-violet-400'
-                                              : 'text-foreground/90 hover:text-foreground'
-                                      )}
+                                      </div>
+                                    )}
+                                    <div
+                                      className="min-w-0 flex-1 cursor-pointer"
+                                      onClick={() => {
+                                        if (itemIsMeeting) {
+                                          const original = meetingsMap.get(item.id);
+                                          if (original) setViewingMeeting(original);
+                                        } else {
+                                          setViewingTask(item);
+                                        }
+                                      }}
                                     >
-                                      {item.title}
-                                    </p>
-                                    <div className="mt-1 flex items-center gap-2">
-                                      {item.scheduled_start_time && item.scheduled_end_time && (
-                                        <span className="text-[10px] tracking-wide text-muted-foreground/70">
-                                          {format(
-                                            toZonedTime(
-                                              parseISO(item.scheduled_start_time),
-                                              timezone
-                                            ),
-                                            'h:mm'
-                                          )}
-                                          {' \u2013 '}
-                                          {format(
-                                            toZonedTime(
-                                              parseISO(item.scheduled_end_time),
-                                              timezone
-                                            ),
-                                            'h:mm a'
-                                          )}
-                                        </span>
-                                      )}
-                                      {!itemIsDone && (
-                                        <>
-                                          {itemIsMeeting && (
-                                            <span
-                                              className={cn(
-                                                'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
-                                                getTagColor('Meeting')
-                                              )}
-                                            >
-                                              Meeting
-                                            </span>
-                                          )}
-                                          {!itemIsMeeting && getPhaseTag(item) && (
-                                            <span
-                                              className={cn(
-                                                'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
-                                                getTagColor(getPhaseTag(item))
-                                              )}
-                                            >
-                                              {getPhaseTag(item)}
-                                            </span>
-                                          )}
-                                          {item.project && (
-                                            <span className="truncate text-[10px] text-muted-foreground/60">
-                                              {item.project.name}
-                                            </span>
-                                          )}
-                                        </>
-                                      )}
+                                      <p
+                                        className={cn(
+                                          'text-[13px] leading-[1.45] transition-colors',
+                                          itemIsDone
+                                            ? 'text-muted-foreground line-through decoration-muted-foreground/30'
+                                            : itemIsInProgress
+                                              ? 'font-medium text-foreground hover:text-qualia-600 dark:hover:text-qualia-400'
+                                              : itemIsMeeting
+                                                ? 'font-medium text-foreground hover:text-violet-600 dark:hover:text-violet-400'
+                                                : 'text-foreground/90 hover:text-foreground'
+                                        )}
+                                      >
+                                        {item.title}
+                                      </p>
+                                      <div className="mt-1 flex items-center gap-2">
+                                        {item.scheduled_start_time && item.scheduled_end_time && (
+                                          <span className="text-[10px] tracking-wide text-muted-foreground/70">
+                                            {format(
+                                              toZonedTime(
+                                                parseISO(item.scheduled_start_time),
+                                                timezone
+                                              ),
+                                              'h:mm'
+                                            )}
+                                            {' \u2013 '}
+                                            {format(
+                                              toZonedTime(
+                                                parseISO(item.scheduled_end_time),
+                                                timezone
+                                              ),
+                                              'h:mm a'
+                                            )}
+                                          </span>
+                                        )}
+                                        {!itemIsDone && (
+                                          <>
+                                            {itemIsMeeting && (
+                                              <span
+                                                className={cn(
+                                                  'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
+                                                  getTagColor('Meeting')
+                                                )}
+                                              >
+                                                Meeting
+                                              </span>
+                                            )}
+                                            {!itemIsMeeting && getPhaseTag(item) && (
+                                              <span
+                                                className={cn(
+                                                  'rounded px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider',
+                                                  getTagColor(getPhaseTag(item))
+                                                )}
+                                              >
+                                                {getPhaseTag(item)}
+                                              </span>
+                                            )}
+                                            {item.project && (
+                                              <span className="truncate text-[10px] text-muted-foreground/60">
+                                                {item.project.name}
+                                              </span>
+                                            )}
+                                          </>
+                                        )}
+                                      </div>
+                                      {itemIsMeeting &&
+                                        (item as SpannableTask & { meetingLink?: string | null })
+                                          .meetingLink &&
+                                        !itemIsDone && (
+                                          <a
+                                            href={
+                                              (
+                                                item as SpannableTask & {
+                                                  meetingLink?: string | null;
+                                                }
+                                              ).meetingLink!
+                                            }
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <Video className="h-2.5 w-2.5" />
+                                            Join
+                                          </a>
+                                        )}
                                     </div>
-                                    {itemIsMeeting &&
-                                      (item as SpannableTask & { meetingLink?: string | null })
-                                        .meetingLink &&
+                                    {!itemIsMeeting &&
+                                      getPriorityFromTask(item.priority) === 'high' &&
                                       !itemIsDone && (
-                                        <a
-                                          href={
-                                            (
-                                              item as SpannableTask & {
-                                                meetingLink?: string | null;
-                                              }
-                                            ).meetingLink!
-                                          }
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Video className="h-2.5 w-2.5" />
-                                          Join
-                                        </a>
+                                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-qualia-500" />
                                       )}
                                   </div>
-                                  {!itemIsMeeting &&
-                                    getPriorityFromTask(item.priority) === 'high' &&
-                                    !itemIsDone && (
-                                      <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-qualia-500" />
-                                    )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : !readOnly ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNewTaskTime(`${hour}:00`);
-                              setNewTaskAssigneeId(unified ? null : member.profileId || null);
-                              setIsTaskModalOpen(true);
-                            }}
-                            className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
-                            aria-label="Add task"
-                          >
-                            <Plus className="h-4 w-4 text-muted-foreground/40" strokeWidth={1.5} />
-                          </button>
-                        ) : null}
-                      </div>
-                    );
+                                );
+                              })}
+                            </div>
+                          ) : !readOnly ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewTaskTime(`${hour}:00`);
+                                setNewTaskAssigneeId(unified ? null : member.profileId || null);
+                                setIsTaskModalOpen(true);
+                              }}
+                              className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100"
+                              aria-label="Add task"
+                            >
+                              <Plus
+                                className="h-4 w-4 text-muted-foreground/40"
+                                strokeWidth={1.5}
+                              />
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    });
+
+                    return cells;
                   })}
                 </div>
-              ));
+              );
             })()}
           </ScrollArea>
 
