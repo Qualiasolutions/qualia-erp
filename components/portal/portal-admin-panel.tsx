@@ -434,7 +434,7 @@ export function PortalAdminPanel({
   }));
 
   // Client management table filter state
-  const [projectFilter, setProjectFilter] = useState('');
+  const [projectFilter, setProjectFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Export Credentials state
@@ -468,7 +468,8 @@ export function PortalAdminPanel({
   // Filtered clients for the enhanced table
   const filteredManagedClients = clientManagement
     ? clientManagement.clients.filter((c) => {
-        if (projectFilter && !c.projects.some((p) => p.id === projectFilter)) return false;
+        if (projectFilter !== 'all' && !c.projects.some((p) => p.id === projectFilter))
+          return false;
         if (statusFilter === 'active' && !c.isActive) return false;
         if (statusFilter === 'inactive' && c.isActive) return false;
         return true;
@@ -528,7 +529,7 @@ export function PortalAdminPanel({
 
   // Bulk reset handler
   const handleBulkReset = async () => {
-    if (!projectFilter || !clientManagement) return;
+    if (projectFilter === 'all' || !clientManagement) return;
     const projectClients = clientManagement.clients.filter((c) =>
       c.projects.some((p) => p.id === projectFilter)
     );
@@ -1158,7 +1159,7 @@ export function PortalAdminPanel({
                       <SelectValue placeholder="All Projects" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Projects</SelectItem>
+                      <SelectItem value="all">All Projects</SelectItem>
                       {allManagedProjects.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
                           {p.name}
@@ -1179,7 +1180,7 @@ export function PortalAdminPanel({
                       <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
-                  {projectFilter && (
+                  {projectFilter !== 'all' && (
                     <Button
                       variant="outline"
                       size="sm"

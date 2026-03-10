@@ -31,7 +31,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
-  const [selectedPhase, setSelectedPhase] = useState<string>('');
+  const [selectedPhase, setSelectedPhase] = useState<string>('none');
   const [isClientVisible, setIsClientVisible] = useState(false);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
 
@@ -73,7 +73,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
       formData.append('file', selectedFile);
       formData.append('project_id', projectId);
       if (description) formData.append('description', description);
-      if (selectedPhase) formData.append('phase_id', selectedPhase);
+      if (selectedPhase && selectedPhase !== 'none') formData.append('phase_id', selectedPhase);
       formData.append('is_client_visible', String(isClientVisible));
 
       const result = await uploadProjectFile(formData);
@@ -122,9 +122,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
     <Card>
       <CardHeader>
         <CardTitle>Upload File</CardTitle>
-        <CardDescription>
-          Upload files, documents, or deliverables for this project
-        </CardDescription>
+        <CardDescription>Upload files, documents, or deliverables for this project</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -167,7 +165,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
                 <SelectValue placeholder="No phase" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No phase</SelectItem>
+                <SelectItem value="none">No phase</SelectItem>
                 {phases.map((phase) => (
                   <SelectItem key={phase.id} value={phase.id}>
                     {phase.phase_name}
@@ -183,9 +181,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
               <Label htmlFor="client-visible" className="text-base">
                 Share with client
               </Label>
-              <p className="text-sm text-neutral-600">
-                Client will see this file in their portal
-              </p>
+              <p className="text-sm text-neutral-600">Client will see this file in their portal</p>
             </div>
             <Switch
               id="client-visible"
@@ -196,7 +192,11 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
           </div>
 
           {/* Submit Button */}
-          <Button type="submit" disabled={isUploading || !selectedFile || !!fileSizeError} className="w-full sm:w-auto">
+          <Button
+            type="submit"
+            disabled={isUploading || !selectedFile || !!fileSizeError}
+            className="w-full sm:w-auto"
+          >
             {isUploading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
