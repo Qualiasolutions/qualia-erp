@@ -66,6 +66,28 @@ function getTagColor(tag?: string | null) {
   return map[tag] || 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400';
 }
 
+// Calculate span info for an item within a member's slot range
+function calcSpanInfo(
+  startHour: number,
+  startMinute: number,
+  endHour: number,
+  endMinute: number,
+  memberHours: number[]
+): { spanHours: number; topOffsetPx: number; heightPx: number } {
+  const lastSlot = memberHours[memberHours.length - 1];
+  // How many whole grid rows this item covers (for hiding cells underneath)
+  const effectiveEnd = Math.min(endMinute > 0 ? endHour + 1 : endHour, lastSlot + 1);
+  const spanHours = Math.max(1, effectiveEnd - startHour);
+  // Pixel offset from top of starting cell (e.g., :30 start = half-cell down)
+  const topOffsetPx = (startMinute / 60) * SLOT_HEIGHT;
+  // Actual pixel height based on exact duration
+  const totalStartMin = startHour * 60 + startMinute;
+  const totalEndMin = endHour * 60 + endMinute;
+  const durationMin = totalEndMin - totalStartMin;
+  const heightPx = Math.max(SLOT_HEIGHT * 0.5, (durationMin / 60) * SLOT_HEIGHT);
+  return { spanHours, topOffsetPx, heightPx };
+}
+
 function getPriorityFromTask(priority: string): 'high' | 'normal' {
   return priority === 'Urgent' || priority === 'High' ? 'high' : 'normal';
 }
@@ -142,7 +164,9 @@ export function ScheduleBlock({
   type SpannableTask = Task & {
     isMeeting?: boolean;
     meetingLink?: string | null;
-    spanHours?: number; // how many hour slots this item spans
+    spanHours?: number; // how many whole hour slots this item covers (for grid cell hiding)
+    topOffsetPx?: number; // pixel offset from top of starting cell
+    heightPx?: number; // actual pixel height based on duration
   };
 
   // Group scheduled tasks by member — items placed at their start hour with span info
@@ -159,18 +183,6 @@ export function ScheduleBlock({
       schedule.set(member.profileId || member.id, memberSlots);
     }
 
-    // Helper: calculate span hours for an item within a member's slot range
-    const calcSpanHours = (
-      startHour: number,
-      endHour: number,
-      endMinute: number,
-      memberHours: number[]
-    ): number => {
-      const lastSlot = memberHours[memberHours.length - 1];
-      const effectiveEnd = Math.min(endMinute > 0 ? endHour + 1 : endHour, lastSlot + 1);
-      return Math.max(1, effectiveEnd - startHour);
-    };
-
     // Place tasks into slots
     for (const task of scheduledTasks) {
       if (!task.scheduled_start_time) continue;
@@ -183,14 +195,25 @@ export function ScheduleBlock({
 
       // Calculate span
       let spanHours = 1;
+      let topOffsetPx = (startTime.getMinutes() / 60) * SLOT_HEIGHT;
+      let heightPx = SLOT_HEIGHT;
       if (task.scheduled_end_time) {
         const endTime = toZonedTime(parseISO(task.scheduled_end_time), timezone);
         const member = teamMembers.find((m) => (m.profileId || m.id) === assigneeId);
         const memberHours = member ? getMemberSlotHours(member) : DEFAULT_SLOT_HOURS;
-        spanHours = calcSpanHours(startHour, endTime.getHours(), endTime.getMinutes(), memberHours);
+        const info = calcSpanInfo(
+          startHour,
+          startTime.getMinutes(),
+          endTime.getHours(),
+          endTime.getMinutes(),
+          memberHours
+        );
+        spanHours = info.spanHours;
+        topOffsetPx = info.topOffsetPx;
+        heightPx = info.heightPx;
       }
 
-      const spannableTask: SpannableTask = { ...task, spanHours };
+      const spannableTask: SpannableTask = { ...task, spanHours, topOffsetPx, heightPx };
 
       if (assigneeId && schedule.has(assigneeId)) {
         const memberSlots = schedule.get(assigneeId)!;
@@ -265,12 +288,33 @@ export function ScheduleBlock({
         const memberSlots = schedule.get(memberId)!;
         const member = teamMembers.find((m) => (m.profileId || m.id) === memberId);
         const memberHours = member ? getMemberSlotHours(member) : DEFAULT_SLOT_HOURS;
-        const span = endTime
-          ? calcSpanHours(startHour, endTime.getHours(), endTime.getMinutes(), memberHours)
-          : 1;
-        const slotTasks = memberSlots.get(startHour) || [];
-        slotTasks.push({ ...meetingTask, spanHours: span });
-        memberSlots.set(startHour, slotTasks);
+        const startMinute = startTime.getMinutes();
+        if (endTime) {
+          const info = calcSpanInfo(
+            startHour,
+            startMinute,
+            endTime.getHours(),
+            endTime.getMinutes(),
+            memberHours
+          );
+          const slotTasks = memberSlots.get(startHour) || [];
+          slotTasks.push({
+            ...meetingTask,
+            spanHours: info.spanHours,
+            topOffsetPx: info.topOffsetPx,
+            heightPx: info.heightPx,
+          });
+          memberSlots.set(startHour, slotTasks);
+        } else {
+          const slotTasks = memberSlots.get(startHour) || [];
+          slotTasks.push({
+            ...meetingTask,
+            spanHours: 1,
+            topOffsetPx: (startMinute / 60) * SLOT_HEIGHT,
+            heightPx: SLOT_HEIGHT,
+          });
+          memberSlots.set(startHour, slotTasks);
+        }
       };
 
       if (targetIds.length === 0 && teamMembers.length > 0) {
@@ -306,19 +350,26 @@ export function ScheduleBlock({
       if (!isSameDay(startTime, startOfDay(currentDate))) continue;
 
       const startHour = startTime.getHours();
+      const startMinute = startTime.getMinutes();
       let spanHours = 1;
+      let topOffsetPx = (startMinute / 60) * SLOT_HEIGHT;
+      let heightPx = SLOT_HEIGHT;
       if (task.scheduled_end_time) {
         const endTime = toZonedTime(parseISO(task.scheduled_end_time), timezone);
-        const lastSlot = DEFAULT_SLOT_HOURS[DEFAULT_SLOT_HOURS.length - 1];
-        const effectiveEnd = Math.min(
-          endTime.getMinutes() > 0 ? endTime.getHours() + 1 : endTime.getHours(),
-          lastSlot + 1
+        const info = calcSpanInfo(
+          startHour,
+          startMinute,
+          endTime.getHours(),
+          endTime.getMinutes(),
+          DEFAULT_SLOT_HOURS
         );
-        spanHours = Math.max(1, effectiveEnd - startHour);
+        spanHours = info.spanHours;
+        topOffsetPx = info.topOffsetPx;
+        heightPx = info.heightPx;
       }
 
       const slotTasks = schedule.get(startHour) || [];
-      slotTasks.push({ ...task, spanHours });
+      slotTasks.push({ ...task, spanHours, topOffsetPx, heightPx });
       schedule.set(startHour, slotTasks);
     }
 
@@ -330,16 +381,23 @@ export function ScheduleBlock({
       if (!isSameDay(startTime, startOfDay(currentDate))) continue;
 
       const startHour = startTime.getHours();
+      const startMinute = startTime.getMinutes();
       const endTime = meeting.end_time ? toZonedTime(parseISO(meeting.end_time), timezone) : null;
 
       let spanHours = 1;
+      let topOffsetPx = (startMinute / 60) * SLOT_HEIGHT;
+      let heightPx = SLOT_HEIGHT;
       if (endTime) {
-        const lastSlot = DEFAULT_SLOT_HOURS[DEFAULT_SLOT_HOURS.length - 1];
-        const effectiveEnd = Math.min(
-          endTime.getMinutes() > 0 ? endTime.getHours() + 1 : endTime.getHours(),
-          lastSlot + 1
+        const info = calcSpanInfo(
+          startHour,
+          startMinute,
+          endTime.getHours(),
+          endTime.getMinutes(),
+          DEFAULT_SLOT_HOURS
         );
-        spanHours = Math.max(1, effectiveEnd - startHour);
+        spanHours = info.spanHours;
+        topOffsetPx = info.topOffsetPx;
+        heightPx = info.heightPx;
       }
 
       const meetingTask: SpannableTask = {
@@ -368,6 +426,8 @@ export function ScheduleBlock({
           ? { id: meeting.project.id, name: meeting.project.name, project_type: null }
           : null,
         spanHours,
+        topOffsetPx,
+        heightPx,
       };
 
       const slotTasks = schedule.get(startHour) || [];
@@ -800,27 +860,39 @@ export function ScheduleBlock({
                     const isInProgress = task?.status === 'In Progress' && !isDone;
                     const isMeetingItem = task?.isMeeting;
 
-                    // Calculate height for spanning items
+                    // Use pixel-precise positioning: items are absolutely positioned within the cell
                     const maxSpan = Math.max(1, ...displayItems.map((t) => t.spanHours || 1));
                     const cellHeight = maxSpan > 1 ? `${maxSpan * SLOT_HEIGHT}px` : undefined;
+
+                    // Get precise pixel values from the first item
+                    const itemTopOffset = task?.topOffsetPx || 0;
+                    const itemHeight = task?.heightPx || SLOT_HEIGHT;
 
                     return (
                       <div
                         key={`${member.id}-${hour}`}
                         className={cn(
-                          'group relative px-4 py-3 transition-all',
+                          'group relative transition-all',
                           !cellHeight && 'min-h-[72px]',
                           memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
-                          isInProgress && 'border-l-2 border-l-qualia-500 bg-qualia-500/[0.03]',
-                          isMeetingItem &&
-                            !isInProgress &&
-                            'border-l-2 border-l-violet-500 bg-violet-500/[0.03]',
                           isOutOfRange && !displayItems.length && 'bg-muted/10'
                         )}
                         style={cellHeight ? { height: cellHeight } : undefined}
                       >
                         {displayItems.length > 0 ? (
-                          <div className="space-y-3">
+                          <div
+                            className={cn(
+                              'absolute left-0 right-0 z-10 overflow-hidden px-4 py-3',
+                              isInProgress && 'border-l-2 border-l-qualia-500 bg-qualia-500/[0.03]',
+                              isMeetingItem &&
+                                !isInProgress &&
+                                'border-l-2 border-l-violet-500 bg-violet-500/[0.03]'
+                            )}
+                            style={{
+                              top: `${itemTopOffset}px`,
+                              height: `${itemHeight}px`,
+                            }}
+                          >
                             {displayItems.map((item, itemIdx) => {
                               const itemIsDone = item.isMeeting ? false : isTaskDone(item);
                               const itemIsInProgress = item.status === 'In Progress' && !itemIsDone;
