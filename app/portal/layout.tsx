@@ -41,12 +41,25 @@ export default async function PortalLayout({ children }: { children: React.React
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 
+  let companyName: string | null = null;
+  if (!isAdminViewing) {
+    const { data: mapping } = await supabase
+      .from('portal_project_mappings')
+      .select('erp_company_name')
+      .eq('portal_client_id', user.id)
+      .not('erp_company_name', 'is', null)
+      .limit(1)
+      .maybeSingle();
+    companyName = mapping?.erp_company_name || null;
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <PortalSidebar
         displayName={displayName}
         displayEmail={displayEmail}
         isAdminViewing={isAdminViewing}
+        companyName={companyName}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner — floating, not a full header */}

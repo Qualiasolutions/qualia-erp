@@ -43,6 +43,7 @@ interface PortalSidebarProps {
   displayName: string;
   displayEmail: string;
   isAdminViewing?: boolean;
+  companyName?: string | null;
 }
 
 function NavLink({
@@ -157,6 +158,7 @@ function SidebarContent({
   displayName,
   displayEmail,
   isAdminViewing,
+  companyName,
   onLinkClick,
 }: PortalSidebarProps & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -179,6 +181,11 @@ function SidebarContent({
           </span>
         </Link>
       </div>
+      {companyName && (
+        <div className="-mt-2 px-4 pb-2">
+          <p className="truncate text-[10px] text-muted-foreground/40">{companyName}</p>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex-1 space-y-6 px-3 pt-2">
