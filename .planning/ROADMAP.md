@@ -251,10 +251,10 @@ Plans:
 
 Plans:
 
-- [ ] 20-01-PLAN.md — Add project creation form, fix action logging and router.refresh()
-- [ ] 20-02-PLAN.md — Audit invite action DB schema, verify end-to-end flow with human checkpoint
-- [ ] 20-03-PLAN.md — Confirmation guard on remove-access, independent loading states, specific error toasts
-- [ ] 20-04-PLAN.md — Client-centric admin panel rework: CRM client picker + setupPortalForClient action
+- [x] 20-01-PLAN.md — Add project creation form, fix action logging and router.refresh()
+- [x] 20-02-PLAN.md — Audit invite action DB schema, verify end-to-end flow with human checkpoint
+- [x] 20-03-PLAN.md — Confirmation guard on remove-access, independent loading states, specific error toasts
+- [x] 20-04-PLAN.md — Client-centric admin panel rework: CRM client picker + setupPortalForClient action
 - [ ] 20-05-PLAN.md — Portal error boundaries + parallel dashboard queries + workspace bug fix
 
 ### Phase 21: Enhanced Client Experience

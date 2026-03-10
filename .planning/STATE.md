@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 20 of 24 (Portal Foundation Fixes)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-03-10 — Completed quick task 015: Fix loading icon, logo uploads, schedule merging
+Plan: 20-04 complete (4 of 5 plans in phase 20)
+Status: In progress
+Last activity: 2026-03-10 — Completed 20-04: Client-Centric Admin Panel Rework
 
-Progress: [##########] 19/24 phases complete (v1.0-v1.4)
+Progress: [##########] 19/24 phases complete (v1.0-v1.4) | Phase 20: 4/5 plans complete
 
 ## Performance Metrics
 
@@ -36,9 +36,11 @@ Progress: [##########] 19/24 phases complete (v1.0-v1.4)
 
 ### Key Decisions
 
-| #   | Decision | Rationale | Date |
-| --- | -------- | --------- | ---- |
-|     |          |           |      |
+| #   | Decision                                                               | Rationale                                                                         | Date       |
+| --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------- |
+| 1   | CRM email is source of truth for portal onboarding (contacts[0].email) | No free-text email entry; ties portal accounts to CRM contacts                    | 2026-03-10 |
+| 2   | Orphan rollback only on total failure (not partial)                    | Partial project linking is acceptable; full rollback only when nothing was linked | 2026-03-10 |
+| 3   | node:crypto randomBytes for temp passwords                             | Cryptographically secure vs Math.random()                                         | 2026-03-10 |
 
 ### Blockers/Concerns
 
@@ -56,11 +58,11 @@ Progress: [##########] 19/24 phases complete (v1.0-v1.4)
 
 ## Session Continuity
 
-Last session: 2026-03-09
-Stopped at: v1.5 milestone phases created, ready to begin phase 20
-**Next action:** `/qualia:plan-phase 20` to plan Portal Foundation Fixes
+Last session: 2026-03-10
+Stopped at: Plan 20-04 complete. Phase 20 has 1 plan remaining (20-05).
+**Next action:** Execute plan 20-05 to complete Phase 20
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Completed quick task 015: Fix loading icon, logo uploads, schedule merging_
+_Last updated: 2026-03-10 — Completed plan 20-04: Client-Centric Admin Panel Rework_
