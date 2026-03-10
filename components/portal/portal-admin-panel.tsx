@@ -31,15 +31,20 @@ import {
   ChevronRight,
   ChevronLeft,
   FolderPlus,
+  X,
+  Layers,
 } from 'lucide-react';
 import {
   setupPortalForClient,
   removeClientFromProject,
   sendClientPasswordReset,
   createProjectFromPortal,
+  bulkSetupPortalForClients,
 } from '@/app/actions/client-portal';
+import type { MergedPortalClient } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Project {
   id: string;
@@ -77,6 +82,11 @@ interface PortalAdminPanelProps {
   clients: ClientProfile[];
   assignments: Assignment[];
   crmClients: CrmClient[];
+  clientManagement: {
+    clients: MergedPortalClient[];
+    totalActive: number;
+    totalInactive: number;
+  } | null;
 }
 
 export function PortalAdminPanel({
@@ -84,6 +94,7 @@ export function PortalAdminPanel({
   clients: initialClients,
   assignments: initialAssignments,
   crmClients,
+  clientManagement,
 }: PortalAdminPanelProps) {
   const router = useRouter();
   const [clients, setClients] = useState(initialClients);
@@ -110,6 +121,22 @@ export function PortalAdminPanel({
     projectsLinked: number;
   } | null>(null);
   const [credsCopied, setCredsCopied] = useState(false);
+
+  // Bulk mode state
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedCrmClientIds, setSelectedCrmClientIds] = useState<string[]>([]);
+  const [bulkResults, setBulkResults] = useState<Array<{
+    crmClientId: string;
+    success: boolean;
+    email?: string;
+    name?: string;
+    tempPassword?: string;
+    alreadyExisted?: boolean;
+    projectsLinked?: number;
+    error?: string;
+  }> | null>(null);
+  const [isBulkPending, setIsBulkPending] = useState(false);
+  const [allCredsCopied, setAllCredsCopied] = useState(false);
 
   const portalUrl = 'https://qualia-erp.vercel.app/portal';
 
@@ -294,7 +321,107 @@ export function PortalAdminPanel({
     setTimeout(() => setCredsCopied(false), 2000);
   };
 
-  // Group assignments by client
+  // Bulk mode handlers
+  const toggleBulkMode = () => {
+    setIsBulkMode((prev) => !prev);
+    // Reset all state when switching modes
+    setSelectedCrmClientIds([]);
+    setSelectedProjectIds([]);
+    setStep(1);
+    setSelectedCrmClientId('');
+    setCredentials(null);
+    setBulkResults(null);
+  };
+
+  const toggleBulkClient = (clientId: string) => {
+    setSelectedCrmClientIds((prev) =>
+      prev.includes(clientId) ? prev.filter((id) => id !== clientId) : [...prev, clientId]
+    );
+  };
+
+  const handleBulkNextStep = () => {
+    if (selectedCrmClientIds.length === 0) {
+      toast.error('Select at least one client');
+      return;
+    }
+    setStep(2);
+  };
+
+  const handleBulkBack = () => {
+    setStep(1);
+    setSelectedProjectIds([]);
+  };
+
+  const handleBulkSetup = async () => {
+    if (selectedCrmClientIds.length === 0) {
+      toast.error('No clients selected');
+      return;
+    }
+    if (selectedProjectIds.length === 0) {
+      toast.error('Select at least one project');
+      return;
+    }
+
+    setIsBulkPending(true);
+    setBulkResults(null);
+
+    try {
+      const result = await bulkSetupPortalForClients(selectedCrmClientIds, selectedProjectIds);
+
+      if (!result.success && !result.data) {
+        toast.error(result.error || 'Bulk setup failed');
+        return;
+      }
+
+      const data = result.data as {
+        results: Array<{
+          crmClientId: string;
+          success: boolean;
+          email?: string;
+          name?: string;
+          tempPassword?: string;
+          alreadyExisted?: boolean;
+          projectsLinked?: number;
+          error?: string;
+        }>;
+        totalSuccess: number;
+        totalFailed: number;
+      };
+
+      setBulkResults(data.results);
+
+      if (data.totalFailed === 0) {
+        toast.success(`${data.totalSuccess} client(s) set up successfully`);
+      } else if (data.totalSuccess > 0) {
+        toast.warning(`${data.totalSuccess} succeeded, ${data.totalFailed} failed`);
+      } else {
+        toast.error('All client setups failed');
+      }
+
+      // Reset form but keep results visible
+      setSelectedCrmClientIds([]);
+      setSelectedProjectIds([]);
+      setStep(1);
+      router.refresh();
+    } finally {
+      setIsBulkPending(false);
+    }
+  };
+
+  const handleCopyAllCredentials = () => {
+    if (!bulkResults) return;
+    const lines = bulkResults
+      .filter((r) => r.success && r.tempPassword)
+      .map((r) => `${r.name} | ${r.email} | ${r.tempPassword} | Portal: ${portalUrl}`)
+      .join('\n');
+    if (!lines) return;
+    navigator.clipboard.writeText(lines);
+    setAllCredsCopied(true);
+    toast.success('All credentials copied!');
+    setTimeout(() => setAllCredsCopied(false), 2000);
+  };
+
+  // Group assignments by client (for fallback table)
   const clientAssignments = clients.map((client) => ({
     ...client,
     projects: assignments
@@ -302,6 +429,27 @@ export function PortalAdminPanel({
       .map((a) => a.project)
       .filter(Boolean),
   }));
+
+  // Client management table filter state
+  const [projectFilter, setProjectFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+
+  // Derive unique projects from clientManagement for the project filter dropdown
+  const allManagedProjects = clientManagement
+    ? Array.from(
+        new Map(clientManagement.clients.flatMap((c) => c.projects).map((p) => [p.id, p])).values()
+      ).sort((a, b) => a.name.localeCompare(b.name))
+    : [];
+
+  // Filtered clients for the enhanced table
+  const filteredManagedClients = clientManagement
+    ? clientManagement.clients.filter((c) => {
+        if (projectFilter && !c.projects.some((p) => p.id === projectFilter)) return false;
+        if (statusFilter === 'active' && !c.isActive) return false;
+        if (statusFilter === 'inactive' && c.isActive) return false;
+        return true;
+      })
+    : [];
 
   return (
     <div className="space-y-6">
@@ -363,18 +511,39 @@ export function PortalAdminPanel({
               <UserPlus className="h-4 w-4 text-qualia-600" />
             </div>
             Setup Client Access
-            <span className="ml-auto text-xs font-normal text-muted-foreground/60">
-              Step {step} of 2
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant={isBulkMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleBulkMode}
+                className={cn(
+                  'h-7 gap-1.5 px-2.5 text-xs',
+                  isBulkMode && 'bg-qualia-600 text-white hover:bg-qualia-700'
+                )}
+              >
+                <Layers className="h-3 w-3" />
+                Bulk
+              </Button>
+              {!isBulkMode && (
+                <span className="text-xs font-normal text-muted-foreground/60">
+                  Step {step} of 2
+                </span>
+              )}
+            </div>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            {step === 1
-              ? 'Pick a CRM client — their email is used for portal credentials.'
-              : `Assign projects for ${selectedCrmClient?.name || 'client'}.`}
+            {isBulkMode
+              ? step === 1
+                ? 'Select multiple CRM clients to onboard at once.'
+                : `Assign projects to all ${selectedCrmClientIds.length} selected client(s).`
+              : step === 1
+                ? 'Pick a CRM client — their email is used for portal credentials.'
+                : `Assign projects for ${selectedCrmClient?.name || 'client'}.`}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          {step === 1 && (
+          {/* ── SINGLE MODE ── */}
+          {!isBulkMode && step === 1 && (
             <div className="flex gap-3">
               <Select value={selectedCrmClientId} onValueChange={setSelectedCrmClientId}>
                 <SelectTrigger className="flex-1">
@@ -409,7 +578,7 @@ export function PortalAdminPanel({
             </div>
           )}
 
-          {step === 2 && selectedCrmClient && (
+          {!isBulkMode && step === 2 && selectedCrmClient && (
             <div className="space-y-4">
               {/* Client info summary */}
               <div className="rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
@@ -487,8 +656,8 @@ export function PortalAdminPanel({
             </div>
           )}
 
-          {/* Credentials result */}
-          {credentials && (
+          {/* Credentials result (single mode) */}
+          {!isBulkMode && credentials && (
             <div className="rounded-xl border border-qualia-500/20 bg-gradient-to-br from-qualia-500/5 to-transparent p-4 ring-1 ring-qualia-500/10">
               {credentials.password ? (
                 <>
@@ -544,98 +713,469 @@ export function PortalAdminPanel({
               )}
             </div>
           )}
+
+          {/* ── BULK MODE ── */}
+          {isBulkMode && step === 1 && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                Select CRM clients to onboard ({selectedCrmClientIds.length} selected)
+              </p>
+              {crmClients.length === 0 ? (
+                <p className="text-sm text-muted-foreground/60">No CRM clients found</p>
+              ) : (
+                <div className="grid gap-1.5 sm:grid-cols-2">
+                  {crmClients.map((c) => {
+                    const email = c.contacts?.[0]?.email;
+                    const checked = selectedCrmClientIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleBulkClient(c.id)}
+                        className={cn(
+                          'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                          checked
+                            ? 'border-qualia-500/50 bg-qualia-500/10 text-foreground'
+                            : 'border-border/50 bg-background text-muted-foreground hover:border-border hover:text-foreground'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                            checked
+                              ? 'border-qualia-600 bg-qualia-600'
+                              : 'border-border bg-background'
+                          )}
+                        >
+                          {checked && <Check className="h-2.5 w-2.5 text-white" />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-medium">{c.name}</span>
+                          {email && (
+                            <span className="block truncate text-[10px] text-muted-foreground/70">
+                              {email}
+                            </span>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <Button
+                onClick={handleBulkNextStep}
+                disabled={selectedCrmClientIds.length === 0}
+                className="gap-2 bg-qualia-600 text-white hover:bg-qualia-700"
+              >
+                Next — {selectedCrmClientIds.length} client
+                {selectedCrmClientIds.length !== 1 ? 's' : ''}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
+          {isBulkMode && step === 2 && (
+            <div className="space-y-4">
+              {/* Selected clients summary pill */}
+              <div className="flex flex-wrap gap-1.5">
+                {selectedCrmClientIds.map((id) => {
+                  const c = crmClients.find((cl) => cl.id === id);
+                  return c ? (
+                    <Badge key={id} variant="secondary" className="gap-1 text-xs">
+                      {c.name}
+                    </Badge>
+                  ) : null;
+                })}
+              </div>
+
+              {/* Project multi-select */}
+              <div className="space-y-1.5">
+                <p className="text-sm font-medium text-foreground">
+                  Assign projects to all clients
+                </p>
+                {projects.length === 0 ? (
+                  <p className="text-sm text-muted-foreground/60">No active projects</p>
+                ) : (
+                  <div className="grid gap-1.5 sm:grid-cols-2">
+                    {projects.map((p) => {
+                      const checked = selectedProjectIds.includes(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => toggleProject(p.id)}
+                          className={cn(
+                            'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
+                            checked
+                              ? 'border-qualia-500/50 bg-qualia-500/10 text-foreground'
+                              : 'border-border/50 bg-background text-muted-foreground hover:border-border hover:text-foreground'
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
+                              checked
+                                ? 'border-qualia-600 bg-qualia-600'
+                                : 'border-border bg-background'
+                            )}
+                          >
+                            {checked && <Check className="h-2.5 w-2.5 text-white" />}
+                          </span>
+                          <span className="truncate font-medium">{p.name}</span>
+                          {p.status && (
+                            <Badge variant="outline" className="ml-auto shrink-0 text-[10px]">
+                              {p.status}
+                            </Badge>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleBulkBack} className="gap-1.5">
+                  <ChevronLeft className="h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  onClick={handleBulkSetup}
+                  disabled={isBulkPending || selectedProjectIds.length === 0}
+                  className="gap-2 bg-qualia-600 text-white hover:bg-qualia-700"
+                >
+                  {isBulkPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Users className="h-4 w-4" />
+                  )}
+                  Create Portal Access for {selectedCrmClientIds.length} Client
+                  {selectedCrmClientIds.length !== 1 ? 's' : ''}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Bulk results */}
+          {isBulkMode && bulkResults && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground">Results</p>
+              <div className="space-y-1.5">
+                {bulkResults.map((r) => {
+                  const clientName =
+                    r.name || crmClients.find((c) => c.id === r.crmClientId)?.name || r.crmClientId;
+                  return (
+                    <div
+                      key={r.crmClientId}
+                      className={cn(
+                        'flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm',
+                        r.success
+                          ? 'border-green-500/20 bg-green-500/5'
+                          : 'border-red-500/20 bg-red-500/5'
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+                          r.success ? 'bg-green-500/20' : 'bg-red-500/20'
+                        )}
+                      >
+                        {r.success ? (
+                          <Check className="h-2.5 w-2.5 text-green-600" />
+                        ) : (
+                          <X className="h-2.5 w-2.5 text-red-600" />
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium text-foreground">{clientName}</span>
+                        {r.success ? (
+                          <span className="text-muted-foreground">
+                            {' '}
+                            —{' '}
+                            {r.alreadyExisted
+                              ? `linked to ${r.projectsLinked} project(s)`
+                              : `${r.email} / ${r.tempPassword} / ${r.projectsLinked} project(s)`}
+                          </span>
+                        ) : (
+                          <span className="text-red-600"> — {r.error}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {bulkResults.some((r) => r.success && r.tempPassword) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyAllCredentials}
+                  className="mt-1 gap-2"
+                >
+                  {allCredsCopied ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <Copy className="h-3.5 w-3.5" />
+                  )}
+                  {allCredsCopied ? 'Copied!' : 'Copy All Credentials'}
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Client accounts table */}
-      {clientAssignments.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
-                <Users className="h-3.5 w-3.5 text-qualia-600" />
-              </div>
-              Client Accounts
-              <Badge variant="secondary" className="ml-1">
-                {clients.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs uppercase tracking-wider">Client</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Projects</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Joined</TableHead>
-                    <TableHead className="w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clientAssignments.map((client) => (
-                    <TableRow key={client.id}>
-                      <TableCell className="font-medium">{client.full_name || 'No name'}</TableCell>
-                      <TableCell className="text-muted-foreground">{client.email}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {client.projects.length === 0 ? (
-                            <span className="text-sm text-muted-foreground/60">None</span>
-                          ) : (
-                            client.projects.map((p) =>
-                              p ? (
-                                <div key={p.id} className="flex items-center gap-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {p.name}
-                                  </Badge>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      const a = assignments.find(
-                                        (a) => a.client_id === client.id && a.project_id === p.id
-                                      );
-                                      if (a) handleRemoveAccess(a.id, a.project_id, a.client_id);
-                                    }}
-                                    disabled={isPending}
-                                    className={cn(
-                                      'h-5 w-5 p-0',
-                                      'text-muted-foreground/40 hover:bg-red-500/10 hover:text-red-600'
-                                    )}
-                                    title="Remove access"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
+      {/* Client Management table — enhanced with last login + status + filters */}
+      {clientManagement
+        ? clientManagement.clients.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
+                    <Users className="h-3.5 w-3.5 text-qualia-600" />
+                  </div>
+                  Client Management
+                  <div className="ml-auto flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="border-green-500/30 bg-green-500/10 text-[11px] text-green-700"
+                    >
+                      {clientManagement.totalActive} Active
+                    </Badge>
+                    <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                      {clientManagement.totalInactive} Inactive
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Filters */}
+                <div className="flex gap-2">
+                  <Select value={projectFilter} onValueChange={setProjectFilter}>
+                    <SelectTrigger className="h-8 w-[180px] text-xs">
+                      <SelectValue placeholder="All Projects" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Projects</SelectItem>
+                      {allManagedProjects.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as 'all' | 'active' | 'inactive')}
+                  >
+                    <SelectTrigger className="h-8 w-[140px] text-xs">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs uppercase tracking-wider">Client</TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">Projects</TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">
+                          Last Login
+                        </TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">Status</TableHead>
+                        <TableHead className="w-[52px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredManagedClients.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={6}
+                            className="py-6 text-center text-sm text-muted-foreground/60"
+                          >
+                            No clients match the selected filters
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredManagedClients.map((client) => {
+                          const visibleProjects = client.projects.slice(0, 3);
+                          const overflowCount = client.projects.length - 3;
+                          return (
+                            <TableRow key={client.id}>
+                              <TableCell className="font-medium">
+                                {client.full_name || 'No name'}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {client.email}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {client.projects.length === 0 ? (
+                                    <span className="text-sm text-muted-foreground/60">None</span>
+                                  ) : (
+                                    <>
+                                      {visibleProjects.map((p) => (
+                                        <Badge key={p.id} variant="outline" className="text-xs">
+                                          {p.name}
+                                        </Badge>
+                                      ))}
+                                      {overflowCount > 0 && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          +{overflowCount} more
+                                        </Badge>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
-                              ) : null
-                            )
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground/80">
-                        {new Date(client.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => client.email && handleSendPasswordReset(client.email)}
-                          disabled={isPending || !client.email}
-                          title="Send password reset"
-                          className="h-8 w-8 p-0"
-                        >
-                          <KeyRound className="h-3.5 w-3.5" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground/80">
+                                {client.lastSignIn
+                                  ? formatDistanceToNow(new Date(client.lastSignIn), {
+                                      addSuffix: true,
+                                    })
+                                  : 'Never'}
+                              </TableCell>
+                              <TableCell>
+                                {client.isActive ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="border-green-500/30 bg-green-500/10 text-[11px] text-green-700"
+                                  >
+                                    Active
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[11px] text-muted-foreground"
+                                  >
+                                    Inactive
+                                  </Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() =>
+                                    client.email && handleSendPasswordReset(client.email)
+                                  }
+                                  disabled={isPending || !client.email}
+                                  title="Send password reset"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <KeyRound className="h-3.5 w-3.5" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        : /* Fallback: clientManagement action failed — show simple table */
+          clientAssignments.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
+                    <Users className="h-3.5 w-3.5 text-qualia-600" />
+                  </div>
+                  Client Accounts
+                  <Badge variant="secondary" className="ml-1">
+                    {clients.length}
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs uppercase tracking-wider">Client</TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">Projects</TableHead>
+                        <TableHead className="text-xs uppercase tracking-wider">Joined</TableHead>
+                        <TableHead className="w-[60px]"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clientAssignments.map((client) => (
+                        <TableRow key={client.id}>
+                          <TableCell className="font-medium">
+                            {client.full_name || 'No name'}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">{client.email}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {client.projects.length === 0 ? (
+                                <span className="text-sm text-muted-foreground/60">None</span>
+                              ) : (
+                                client.projects.map((p) =>
+                                  p ? (
+                                    <div key={p.id} className="flex items-center gap-1">
+                                      <Badge variant="outline" className="text-xs">
+                                        {p.name}
+                                      </Badge>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          const a = assignments.find(
+                                            (a) =>
+                                              a.client_id === client.id && a.project_id === p.id
+                                          );
+                                          if (a)
+                                            handleRemoveAccess(a.id, a.project_id, a.client_id);
+                                        }}
+                                        disabled={isPending}
+                                        className={cn(
+                                          'h-5 w-5 p-0',
+                                          'text-muted-foreground/40 hover:bg-red-500/10 hover:text-red-600'
+                                        )}
+                                        title="Remove access"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  ) : null
+                                )
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground/80">
+                            {new Date(client.created_at).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => client.email && handleSendPasswordReset(client.email)}
+                              disabled={isPending || !client.email}
+                              title="Send password reset"
+                              className="h-8 w-8 p-0"
+                            >
+                              <KeyRound className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
     </div>
   );
 }
