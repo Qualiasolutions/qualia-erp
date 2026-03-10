@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 25 of 25 (Portal Security Hardening) — In progress
-Plan: 25-01 complete (1 of 3 plans in phase 25)
-Status: Phase 24 complete, Phase 25 in progress
-Last activity: 2026-03-10 — Completed 25-01: IDOR fixes in client-requests, phase-comments, client-portal
+Plan: 25-02 complete (2 of 3 plans in phase 25)
+Status: Phase 25 in progress
+Last activity: 2026-03-10 — Completed 25-02: Token-based invitations + crypto passwords + Zod validation
 
-Progress: [#############] 24 phases tracked | Phase 25: 1 of 3 plans complete
+Progress: [#############] 24 phases tracked | Phase 25: 2 of 3 plans complete
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [#############] 24 phases tracked | Phase 25: 1 of 3 plans complete
 | 13  | inviteClientToProject rejects non-client profiles explicitly           | Prevents accidentally linking employee/admin accounts to client portal access        | 2026-03-10 |
 | 14  | Company name fetched at layout and page level independently            | App Router layout cannot pass props to children pages; duplication is acceptable     | 2026-03-10 |
 | 15  | Dashboard greeting uses companyName over firstName when available      | Company name makes portal feel dedicated; personal name is fallback for unlinked     | 2026-03-10 |
+| 16  | markInvitation\* accept token not UUID PK                              | Opaque token prevents enumeration; UUID PKs are sequential and guessable             | 2026-03-10 |
 
 ### Blockers/Concerns
 
@@ -73,10 +74,10 @@ Progress: [#############] 24 phases tracked | Phase 25: 1 of 3 plans complete
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 25 Plan 01 complete. IDOR fixes in portal actions — client-requests, phase-comments, client-portal, portal-utils.
-**Next action:** Continue Phase 25 — execute 25-02-PLAN.md (token-based invitation security)
+Stopped at: Phase 25 Plan 02 complete. Token-based invitations, crypto passwords, Zod validation, client role check on password reset.
+**Next action:** Continue Phase 25 — execute 25-03-PLAN.md
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Phase 25 Plan 01 complete: Portal IDOR Security Hardening_
+_Last updated: 2026-03-10 — Phase 25 Plan 02 complete: Portal Auth Security Hardening_
