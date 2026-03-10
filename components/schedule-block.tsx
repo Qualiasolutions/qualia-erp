@@ -337,8 +337,11 @@ export function ScheduleBlock({
 
     const schedule = new Map<number, SpannableTask[]>();
 
-    // Initialize all time slots (use default hours for unified)
-    for (const hour of DEFAULT_SLOT_HOURS) {
+    // Use the actual member's hours (e.g. Hasan gets evening slots)
+    const member = teamMembers[0];
+    const slotHours = member ? getMemberSlotHours(member) : DEFAULT_SLOT_HOURS;
+
+    for (const hour of slotHours) {
       schedule.set(hour, []);
     }
 
@@ -361,7 +364,7 @@ export function ScheduleBlock({
           startMinute,
           endTime.getHours(),
           endTime.getMinutes(),
-          DEFAULT_SLOT_HOURS
+          slotHours
         );
         spanHours = info.spanHours;
         topOffsetPx = info.topOffsetPx;
@@ -393,7 +396,7 @@ export function ScheduleBlock({
           startMinute,
           endTime.getHours(),
           endTime.getMinutes(),
-          DEFAULT_SLOT_HOURS
+          slotHours
         );
         spanHours = info.spanHours;
         topOffsetPx = info.topOffsetPx;
@@ -436,7 +439,7 @@ export function ScheduleBlock({
     }
 
     return schedule;
-  }, [unified, scheduledTasks, meetings, currentDate, timezone]);
+  }, [unified, scheduledTasks, meetings, currentDate, timezone, teamMembers, getMemberSlotHours]);
 
   // Stats
   const totalTasks = scheduledTasks.filter((t) => {
@@ -532,8 +535,16 @@ export function ScheduleBlock({
   // Filter members by profileId for reliable matching
   const filteredMembers = useMemo(() => {
     if (unified) {
-      // Unified mode: single virtual column
-      return [{ id: 'unified', name: 'Schedule', initial: 'S' }];
+      // Unified mode: use the single team member's name (not generic "Schedule")
+      const member = teamMembers[0];
+      return [
+        {
+          id: 'unified',
+          name: member?.name || 'My Schedule',
+          initial: member?.initial || 'S',
+          profileId: member?.profileId,
+        },
+      ];
     }
     if (activeFilter === 'all') return teamMembers;
     return teamMembers.filter((m) => m.profileId === activeFilter);
@@ -541,7 +552,12 @@ export function ScheduleBlock({
 
   // Compute union of all hour slots across visible members
   const visibleSlotHours = useMemo(() => {
-    if (unified) return DEFAULT_SLOT_HOURS;
+    if (unified) {
+      // Use the actual member's hours (e.g. Hasan gets evening slots)
+      const member = teamMembers[0];
+      if (member) return getMemberSlotHours(member);
+      return DEFAULT_SLOT_HOURS;
+    }
     const hourSet = new Set<number>();
     for (const member of filteredMembers) {
       const hours = getMemberSlotHours(member);
