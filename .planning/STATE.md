@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 20 of 24 (Portal Foundation Fixes)
-Plan: 20-05 complete (5 of 5 plans in phase 20 — Phase complete)
-Status: Phase 20 complete, ready for Phase 21
-Last activity: 2026-03-10 — Completed 20-05: Portal error boundaries + dashboard query performance
+Phase: 21 of 24 (Client Experience)
+Plan: 21-03 complete (3 of ? plans in phase 21 — In progress)
+Status: In progress
+Last activity: 2026-03-10 — Completed 21-03: Portal progress bars (projects list + project detail header)
 
-Progress: [##########] 19/24 phases complete (v1.0-v1.4) | Phase 20: 5/5 plans complete
+Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21: 1/? plans complete (21-03 done)
 
 ## Performance Metrics
 
@@ -59,10 +59,10 @@ Progress: [##########] 19/24 phases complete (v1.0-v1.4) | Phase 20: 5/5 plans c
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 20 complete. All 5 plans executed.
-**Next action:** Begin Phase 21
+Stopped at: Phase 21 in progress. Plan 21-03 (portal progress bars) complete.
+**Next action:** Continue Phase 21 — next plan in sequence
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Completed plan 20-05: Portal error boundaries + dashboard query performance_
+_Last updated: 2026-03-10 — Completed plan 21-03: Portal progress bars on projects list + project detail header_
