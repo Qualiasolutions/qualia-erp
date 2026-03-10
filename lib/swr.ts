@@ -299,6 +299,7 @@ export interface ProjectStatsData {
   roadmap_progress: number;
   is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
+  sort_order: number;
 }
 
 /**

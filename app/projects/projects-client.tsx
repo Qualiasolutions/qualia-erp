@@ -1,20 +1,24 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import {
   Beaker,
   Hammer,
   Rocket,
   Archive,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Folder,
   ClipboardCheck,
 } from 'lucide-react';
 import { ProjectListView } from '@/components/project-list-view';
 import { DemoSheet } from '@/components/demo-sheet';
-import { useProjectStats, type ProjectStatsData } from '@/lib/swr';
+import { useProjectStats, invalidateProjectStats, type ProjectStatsData } from '@/lib/swr';
+import { reorderProject } from '@/app/actions';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { useAdminContext } from '@/components/admin-provider';
 import type { ProjectData } from './page';
 
 interface ProjectsClientProps {
@@ -64,13 +68,18 @@ function StageColumn({
   stage,
   projects,
   onDemoClick,
+  onReorder,
+  isReordering,
 }: {
   stage: keyof typeof STAGE_CONFIG;
   projects: ProjectStatsData[];
   onDemoClick?: (demo: ProjectStatsData) => void;
+  onReorder?: (projectId: string, direction: 'up' | 'down') => void;
+  isReordering?: boolean;
 }) {
   const config = STAGE_CONFIG[stage];
   const Icon = config.icon;
+  const { isSuperAdmin } = useAdminContext();
 
   return (
     <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
@@ -108,27 +117,56 @@ function StageColumn({
           </div>
         ) : (
           <div className="space-y-2">
-            {projects.map((project) => {
+            {projects.map((project, idx) => {
               const isDelayed = project.status === 'Delayed';
               return (
                 <div
                   key={project.id}
                   className={cn(
-                    'relative',
+                    'group/row relative flex items-center gap-1',
                     (stage === 'building' || stage === 'preProduction') &&
                       'card-interactive rounded-lg'
                   )}
                 >
-                  {isDelayed && (
-                    <span className="absolute -top-1 right-2 z-10 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
-                      Delayed
-                    </span>
+                  {/* Reorder arrows — admin only */}
+                  {isSuperAdmin && onReorder && (
+                    <div className="flex shrink-0 flex-col opacity-0 transition-opacity group-hover/row:opacity-100">
+                      <button
+                        type="button"
+                        disabled={idx === 0 || isReordering}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReorder(project.id, 'up');
+                        }}
+                        className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={idx === projects.length - 1 || isReordering}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onReorder(project.id, 'down');
+                        }}
+                        className="flex h-4 w-4 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </button>
+                    </div>
                   )}
-                  <ProjectListView
-                    projects={[project as ProjectData]}
-                    compact
-                    onProjectClick={stage === 'demo' ? () => onDemoClick?.(project) : undefined}
-                  />
+                  <div className="min-w-0 flex-1">
+                    {isDelayed && (
+                      <span className="absolute -top-1 right-2 z-10 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-500">
+                        Delayed
+                      </span>
+                    )}
+                    <ProjectListView
+                      projects={[project as ProjectData]}
+                      compact
+                      onProjectClick={stage === 'demo' ? () => onDemoClick?.(project) : undefined}
+                    />
+                  </div>
                 </div>
               );
             })}
@@ -157,10 +195,25 @@ export function ProjectsClient({
   const [selectedDemo, setSelectedDemo] = useState<ProjectData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const handleDemoClick = (demo: ProjectStatsData) => {
     setSelectedDemo(demo as ProjectData);
     setSheetOpen(true);
+  };
+
+  const handleReorder = (
+    projectId: string,
+    direction: 'up' | 'down',
+    stageProjects: ProjectStatsData[]
+  ) => {
+    startTransition(async () => {
+      const ids = stageProjects.map((p) => p.id);
+      const result = await reorderProject(projectId, direction, ids);
+      if (result.success) {
+        invalidateProjectStats(true);
+      }
+    });
   };
 
   // Compute stats
@@ -215,10 +268,31 @@ export function ProjectsClient({
 
       {/* Four-column pipeline */}
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-4">
-        <StageColumn stage="demo" projects={demos} onDemoClick={handleDemoClick} />
-        <StageColumn stage="building" projects={building} />
-        <StageColumn stage="preProduction" projects={preProduction} />
-        <StageColumn stage="live" projects={live} />
+        <StageColumn
+          stage="demo"
+          projects={demos}
+          onDemoClick={handleDemoClick}
+          onReorder={(id, dir) => handleReorder(id, dir, demos)}
+          isReordering={isPending}
+        />
+        <StageColumn
+          stage="building"
+          projects={building}
+          onReorder={(id, dir) => handleReorder(id, dir, building)}
+          isReordering={isPending}
+        />
+        <StageColumn
+          stage="preProduction"
+          projects={preProduction}
+          onReorder={(id, dir) => handleReorder(id, dir, preProduction)}
+          isReordering={isPending}
+        />
+        <StageColumn
+          stage="live"
+          projects={live}
+          onReorder={(id, dir) => handleReorder(id, dir, live)}
+          isReordering={isPending}
+        />
       </div>
 
       {/* Archived — collapsible */}

@@ -42,6 +42,7 @@ export interface ProjectStatsData {
   roadmap_progress: number;
   is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
+  sort_order: number;
 }
 
 // ============ PROJECT ACTIONS ============
@@ -182,6 +183,17 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     return { demos: [], building: [], preProduction: [], live: [], archived: [] };
   }
 
+  // Fetch sort_order separately (not in RPC)
+  const projectIds = (rawProjects || []).map((p: Record<string, unknown>) => p.id as string);
+  const { data: sortData } = await supabase
+    .from('projects')
+    .select('id, sort_order')
+    .in('id', projectIds);
+  const sortMap = new Map<string, number>();
+  for (const s of sortData || []) {
+    sortMap.set(s.id, s.sort_order ?? 0);
+  }
+
   const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
     name: p.name as string,
@@ -208,15 +220,20 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     roadmap_progress: (p.roadmap_progress as number) || 0,
     is_pre_production: (p.is_pre_production as boolean) || false,
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
+    sort_order: sortMap.get(p.id as string) ?? 0,
   }));
 
-  // Status-based filtering — pipeline stages
-  const demos = allProjects.filter((p) => p.status === 'Demos');
+  const sortByOrder = (a: ProjectStatsData, b: ProjectStatsData) => a.sort_order - b.sort_order;
+
+  // Status-based filtering — pipeline stages, sorted by sort_order
+  const demos = allProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
   const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
-  const building = activeDelayed.filter((p) => !p.is_pre_production);
-  const preProduction = activeDelayed.filter((p) => p.is_pre_production);
-  const live = allProjects.filter((p) => p.status === 'Launched');
-  const archived = allProjects.filter((p) => ['Archived', 'Canceled'].includes(p.status));
+  const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
+  const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
+  const live = allProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const archived = allProjects
+    .filter((p) => ['Archived', 'Canceled'].includes(p.status))
+    .sort(sortByOrder);
 
   return { demos, building, preProduction, live, archived };
 }
@@ -844,4 +861,60 @@ export async function createProjectWithRoadmap(
   revalidatePath('/');
   revalidatePath('/portal');
   return { success: true, data: project };
+}
+
+/**
+ * Reorder projects within a stage — swaps sort_order between two projects
+ */
+export async function reorderProject(
+  projectId: string,
+  direction: 'up' | 'down',
+  stageProjectIds: string[]
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const idx = stageProjectIds.indexOf(projectId);
+  if (idx === -1) return { success: false, error: 'Project not in stage' };
+
+  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= stageProjectIds.length) {
+    return { success: false, error: 'Cannot move further' };
+  }
+
+  const targetId = stageProjectIds[swapIdx];
+
+  // Fetch current sort_orders
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('id, sort_order')
+    .in('id', [projectId, targetId]);
+
+  if (!projects || projects.length !== 2) {
+    return { success: false, error: 'Projects not found' };
+  }
+
+  const current = projects.find((p) => p.id === projectId)!;
+  const target = projects.find((p) => p.id === targetId)!;
+
+  // Swap sort_orders
+  const { error: e1 } = await supabase
+    .from('projects')
+    .update({ sort_order: target.sort_order ?? 0 })
+    .eq('id', projectId);
+
+  const { error: e2 } = await supabase
+    .from('projects')
+    .update({ sort_order: current.sort_order ?? 0 })
+    .eq('id', targetId);
+
+  if (e1 || e2) {
+    return { success: false, error: 'Failed to reorder' };
+  }
+
+  revalidatePath('/projects');
+  return { success: true };
 }

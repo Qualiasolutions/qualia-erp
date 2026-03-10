@@ -132,6 +132,7 @@ export {
   bulkDeleteProjects,
   updateProjectStatus,
   toggleProjectPreProduction,
+  reorderProject,
   getBoardTasks,
   createProjectWithRoadmap,
 } from './projects';

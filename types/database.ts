@@ -2535,6 +2535,7 @@ export type Database = {
           project_category: string | null;
           project_group: Database['public']['Enums']['project_group'] | null;
           project_type: Database['public']['Enums']['project_type'] | null;
+          sort_order: number;
           start_date: string | null;
           status: Database['public']['Enums']['project_status'] | null;
           target_date: string | null;
@@ -2563,6 +2564,7 @@ export type Database = {
           project_category?: string | null;
           project_group?: Database['public']['Enums']['project_group'] | null;
           project_type?: Database['public']['Enums']['project_type'] | null;
+          sort_order?: number;
           start_date?: string | null;
           status?: Database['public']['Enums']['project_status'] | null;
           target_date?: string | null;
@@ -2591,6 +2593,7 @@ export type Database = {
           project_category?: string | null;
           project_group?: Database['public']['Enums']['project_group'] | null;
           project_type?: Database['public']['Enums']['project_type'] | null;
+          sort_order?: number;
           start_date?: string | null;
           status?: Database['public']['Enums']['project_status'] | null;
           target_date?: string | null;

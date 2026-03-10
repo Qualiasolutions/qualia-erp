@@ -121,6 +121,7 @@ export {
   bulkDeleteProjects,
   updateProjectStatus,
   toggleProjectPreProduction,
+  reorderProject,
   getBoardTasks,
   createProjectWithRoadmap,
 } from './actions/projects';

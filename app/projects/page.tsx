@@ -31,6 +31,7 @@ export interface ProjectData {
   roadmap_progress: number;
   is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
+  sort_order: number;
 }
 
 async function ProjectListLoader() {
@@ -74,15 +75,20 @@ async function ProjectListLoader() {
     roadmap_progress: (p.roadmap_progress as number) || 0,
     is_pre_production: (p.is_pre_production as boolean) || false,
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
+    sort_order: (p.sort_order as number) || 0,
   }));
 
-  // Pipeline stages
-  const demos = allProjects.filter((p) => p.status === 'Demos');
+  const sortByOrder = (a: ProjectData, b: ProjectData) => a.sort_order - b.sort_order;
+
+  // Pipeline stages (sorted by sort_order)
+  const demos = allProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
   const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
-  const building = activeDelayed.filter((p) => !p.is_pre_production);
-  const preProduction = activeDelayed.filter((p) => p.is_pre_production);
-  const live = allProjects.filter((p) => p.status === 'Launched');
-  const archived = allProjects.filter((p) => ['Archived', 'Canceled'].includes(p.status));
+  const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
+  const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
+  const live = allProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const archived = allProjects
+    .filter((p) => ['Archived', 'Canceled'].includes(p.status))
+    .sort(sortByOrder);
 
   return (
     <ProjectsClient
