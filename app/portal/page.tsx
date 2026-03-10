@@ -32,6 +32,11 @@ export default async function PortalDashboard() {
       .not('status', 'eq', 'Canceled')
       .order('name');
 
+    const { data: crmClients } = await supabase
+      .from('clients')
+      .select('id, name, contacts')
+      .order('name');
+
     const adminResult = await getPortalAdminData();
     const adminData = adminResult.success
       ? (adminResult.data as {
@@ -78,6 +83,11 @@ export default async function PortalDashboard() {
             }))}
             clients={adminData.clients}
             assignments={adminData.assignments}
+            crmClients={(crmClients || []).map((c) => ({
+              id: c.id,
+              name: c.name,
+              contacts: c.contacts as Array<{ email?: string }> | null,
+            }))}
           />
         )}
       </div>

@@ -760,41 +760,47 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
       return { success: false, error: 'Not authorized' };
     }
 
-    // Get projects count
-    const { count: projectCount } = await supabase
+    // Get client's project IDs first (needed for activity feed)
+    const { data: clientProjectLinks } = await supabase
       .from('client_projects')
-      .select('id', { count: 'exact', head: true })
+      .select('project_id')
       .eq('client_id', clientId);
 
-    // Get pending requests count
-    const { count: pendingRequests } = await supabase
-      .from('client_feature_requests')
-      .select('id', { count: 'exact', head: true })
-      .eq('client_id', clientId)
-      .in('status', ['pending', 'in_review']);
+    const clientProjectIds = (clientProjectLinks || []).map((cp) => cp.project_id);
 
-    // Get unpaid invoices count + total
-    const { data: unpaidInvoices } = await supabase
-      .from('client_invoices')
-      .select('amount')
-      .eq('client_id', clientId)
-      .in('status', ['pending', 'overdue']);
+    // Run all dashboard queries in parallel
+    const [
+      { count: projectCount },
+      { count: pendingRequests },
+      { data: unpaidInvoices },
+      { data: recentActivity },
+    ] = await Promise.all([
+      supabase
+        .from('client_projects')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clientId),
+      supabase
+        .from('client_feature_requests')
+        .select('id', { count: 'exact', head: true })
+        .eq('client_id', clientId)
+        .in('status', ['pending', 'in_review']),
+      supabase
+        .from('client_invoices')
+        .select('amount')
+        .eq('client_id', clientId)
+        .in('status', ['pending', 'overdue']),
+      clientProjectIds.length > 0
+        ? supabase
+            .from('activity_log')
+            .select('id, action_type, action_data, created_at, project:projects(id, name)')
+            .eq('is_client_visible', true)
+            .in('project_id', clientProjectIds)
+            .order('created_at', { ascending: false })
+            .limit(5)
+        : Promise.resolve({ data: [] }),
+    ]);
 
     const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.amount), 0);
-
-    // Get recent activity
-    const { data: recentActivity } = await supabase
-      .from('activity_log')
-      .select('id, action_type, action_data, created_at, project:projects(id, name)')
-      .eq('is_client_visible', true)
-      .in(
-        'project_id',
-        (
-          await supabase.from('client_projects').select('project_id').eq('client_id', clientId)
-        ).data?.map((cp) => cp.project_id) || []
-      )
-      .order('created_at', { ascending: false })
-      .limit(5);
 
     const normalizedActivity = (recentActivity || []).map((a) => ({
       ...a,
@@ -1037,7 +1043,19 @@ export async function getNotificationPreferences(): Promise<ActionResult> {
     if (!user) return { success: false, error: 'Not authenticated' };
 
     const workspaceId = await getCurrentWorkspaceId();
-    if (!workspaceId) return { success: false, error: 'No workspace found' };
+    if (!workspaceId) {
+      // Clients don't have workspaces — return default preferences instead of error
+      return {
+        success: true,
+        data: {
+          task_assigned: true,
+          task_due_soon: true,
+          project_update: true,
+          meeting_reminder: true,
+          client_activity: true,
+        },
+      };
+    }
 
     const { data, error } = await supabase
       .from('notification_preferences')
