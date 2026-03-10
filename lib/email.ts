@@ -610,6 +610,7 @@ export async function notifyClientsOfPhaseChange(
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); padding: 24px; border-radius: 12px 12px 0 0;">
     <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 14px;">${project.name}</p>
   </div>
   <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
@@ -621,12 +622,12 @@ export async function notifyClientsOfPhaseChange(
     </a>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
-      This notification was sent from Qualia. You're receiving this because you have access to this project.
+      You're receiving this as a project stakeholder. Manage notification preferences in your account settings.
     </p>
   </div>
 </body>
 </html>`.trim(),
-            text: `Hi ${recipientName},\n\nThe ${phaseName} phase for ${project.name} is now ${statusLabel}.\n\nView your project: ${portalUrl}\n\n---\nQualia`,
+            text: `Hi ${recipientName},\n\nThe ${phaseName} phase for ${project.name} is now ${statusLabel}.\n\nView your project: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
           });
 
           if (error) {
@@ -1450,7 +1451,8 @@ export async function notifyClientOfProjectStatusChange(
 }
 
 /**
- * Notify clients when a phase milestone is reached
+ * Notify clients when a phase milestone is reached.
+ * Includes progress context (phase X of Y) and what's next.
  */
 export async function notifyClientOfPhaseMilestone(
   projectId: string,
@@ -1478,6 +1480,24 @@ export async function notifyClientOfPhaseMilestone(
       return { success: false, error: 'Project not found' };
     }
 
+    // Get phase progress context (phase X of Y, next phase name)
+    const { data: allPhases } = await supabase
+      .from('project_phases')
+      .select('id, name, status, sort_order')
+      .eq('project_id', projectId)
+      .order('sort_order', { ascending: true });
+
+    const totalPhases = allPhases?.length || 0;
+    const currentPhaseIndex = allPhases?.findIndex((p) => p.name === phaseName) ?? -1;
+    const phaseNumber = currentPhaseIndex >= 0 ? currentPhaseIndex + 1 : 0;
+    const completedCount =
+      allPhases?.filter((p) => p.status === 'completed' || p.status === 'done').length || 0;
+    const progressPercent = totalPhases > 0 ? Math.round((completedCount / totalPhases) * 100) : 0;
+    const nextPhase =
+      currentPhaseIndex >= 0 && currentPhaseIndex + 1 < (allPhases?.length || 0)
+        ? allPhases![currentPhaseIndex + 1]
+        : null;
+
     // Get all clients with access to this project
     const { data: clientLinks } = await supabase
       .from('client_projects')
@@ -1503,6 +1523,22 @@ export async function notifyClientOfPhaseMilestone(
     const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
     const milestoneLabel = milestoneType === 'completed' ? 'Completed' : 'Started';
 
+    // Build progress bar HTML
+    const progressBarHtml =
+      totalPhases > 0
+        ? `
+    <div style="margin: 0 0 24px;">
+      <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Overall Progress: ${progressPercent}% (${completedCount}/${totalPhases} phases)</p>
+      <div style="background: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+        <div style="background: #00A4AC; height: 100%; width: ${progressPercent}%; border-radius: 4px;"></div>
+      </div>
+    </div>`
+        : '';
+
+    const nextPhaseHtml = nextPhase
+      ? `<p style="margin: 8px 0 0; color: #6b7280; font-size: 14px;">Up next: <strong>${nextPhase.name}</strong></p>`
+      : `<p style="margin: 8px 0 0; color: #059669; font-size: 14px; font-weight: 500;">This is the final phase!</p>`;
+
     const emailPromises = clients
       .filter((c) => c.email)
       .map(async (client) => {
@@ -1516,7 +1552,8 @@ export async function notifyClientOfPhaseMilestone(
           return;
         }
 
-        const subject = `${project.name}: ${phaseName} ${milestoneLabel}`;
+        const phaseLabel = phaseNumber > 0 ? `Phase ${phaseNumber} of ${totalPhases}` : phaseName;
+        const subject = `${project.name}: ${phaseLabel} ${milestoneLabel}`;
         const recipientName = client.full_name || 'there';
 
         try {
@@ -1529,20 +1566,23 @@ export async function notifyClientOfPhaseMilestone(
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 24px; border-radius: 12px 12px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Phase Milestone</h1>
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 14px;">${project.name}</p>
   </div>
   <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
     <p style="margin: 0 0 24px; font-size: 16px;">
-      <strong>${employeeName}</strong> marked the <strong>${phaseName}</strong> phase of <strong>${project.name}</strong> as <strong>${milestoneLabel}</strong>.
+      <strong>${employeeName}</strong> marked the <strong>${phaseName}</strong> phase${phaseNumber > 0 ? ` (${phaseNumber} of ${totalPhases})` : ''} as <strong>${milestoneLabel}</strong>.
     </p>
-    <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+    <div style="background: #f0fdfa; border-left: 4px solid #00A4AC; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
       <p style="margin: 0;"><strong>Phase:</strong> ${phaseName}</p>
       <p style="margin: 8px 0 0;"><strong>Status:</strong> ${milestoneLabel}</p>
+      ${nextPhaseHtml}
     </div>
-    <a href="${portalUrl}" style="display: inline-block; background: #3b82f6; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
-      View Roadmap
+    ${progressBarHtml}
+    <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
     </a>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
     <p style="margin: 0; color: #9ca3af; font-size: 12px;">
@@ -1551,7 +1591,7 @@ export async function notifyClientOfPhaseMilestone(
   </div>
 </body>
 </html>`.trim(),
-            text: `Hi ${recipientName},\n\n${employeeName} marked the ${phaseName} phase of ${project.name} as ${milestoneLabel}.\n\nView roadmap: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
+            text: `Hi ${recipientName},\n\n${employeeName} marked the ${phaseName} phase${phaseNumber > 0 ? ` (${phaseNumber} of ${totalPhases})` : ''} of ${project.name} as ${milestoneLabel}.\n\nOverall progress: ${progressPercent}% (${completedCount}/${totalPhases} phases)${nextPhase ? `\nUp next: ${nextPhase.name}` : '\nThis is the final phase!'}\n\nView project: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
           });
 
           if (error) {
@@ -1574,4 +1614,480 @@ export async function notifyClientOfPhaseMilestone(
     console.error('[notifyClientOfPhaseMilestone] Unexpected error:', error);
     return { success: false, error: String(error) };
   }
+}
+
+// ============================================================================
+// Action Item Notifications (Phase 23-02)
+// ============================================================================
+
+/**
+ * Notify a client when a new action item is created for them.
+ * Includes action type, due date, and portal link.
+ */
+export async function notifyClientOfActionItem(
+  clientId: string,
+  projectId: string,
+  actionItem: {
+    title: string;
+    actionType: string;
+    dueDate?: string | null;
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyClientOfActionItem] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    // Get project and client details
+    const [{ data: project }, { data: client }] = await Promise.all([
+      supabase.from('projects').select('name, workspace_id').eq('id', projectId).single(),
+      supabase.from('profiles').select('id, email, full_name').eq('id', clientId).single(),
+    ]);
+
+    if (!project || !client?.email) {
+      return { success: true }; // No one to notify
+    }
+
+    // Check preferences
+    const shouldSend = await shouldSendEmail(client.id, project.workspace_id, 'project_update');
+    if (!shouldSend) {
+      return { success: true };
+    }
+
+    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const recipientName = client.full_name || 'there';
+    const actionLabel =
+      actionItem.actionType.charAt(0).toUpperCase() + actionItem.actionType.slice(1);
+    const dueDateStr = actionItem.dueDate
+      ? new Date(actionItem.dueDate).toLocaleDateString('en-US', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null;
+
+    const subject = `Action Required: ${actionItem.title} — ${project.name}`;
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: client.email,
+      subject,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 14px;">Action Required</p>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <p style="margin: 0 0 24px; font-size: 16px;">
+      Your input is needed for <strong>${project.name}</strong>.
+    </p>
+    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-weight: 600;">${actionItem.title}</p>
+      <p style="margin: 8px 0 0; color: #6b7280; font-size: 14px;">Type: ${actionLabel}</p>
+      ${dueDateStr ? `<p style="margin: 4px 0 0; color: #dc2626; font-size: 14px;">Due: ${dueDateStr}</p>` : ''}
+    </div>
+    <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View in Portal
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      You're receiving this because your input is needed. Manage preferences in your account settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+      text: `Hi ${recipientName},\n\nYour input is needed for ${project.name}.\n\n${actionItem.title}\nType: ${actionLabel}${dueDateStr ? `\nDue: ${dueDateStr}` : ''}\n\nView in portal: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
+    });
+
+    if (error) {
+      console.error(`[notifyClientOfActionItem] Failed to send to ${client.email}:`, error);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyClientOfActionItem] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Notify a client when an action item is completed.
+ */
+export async function notifyClientOfActionItemCompleted(
+  clientId: string,
+  projectId: string,
+  itemTitle: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[notifyClientOfActionItemCompleted] Resend not configured');
+      return { success: true };
+    }
+
+    const supabase = await createClient();
+
+    const [{ data: project }, { data: client }] = await Promise.all([
+      supabase.from('projects').select('name, workspace_id').eq('id', projectId).single(),
+      supabase.from('profiles').select('id, email, full_name').eq('id', clientId).single(),
+    ]);
+
+    if (!project || !client?.email) {
+      return { success: true };
+    }
+
+    const shouldSend = await shouldSendEmail(client.id, project.workspace_id, 'project_update');
+    if (!shouldSend) return { success: true };
+
+    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const recipientName = client.full_name || 'there';
+    const subject = `Completed: ${itemTitle} — ${project.name}`;
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: client.email,
+      subject,
+      html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 14px;">${project.name}</p>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 16px; color: #6b7280;">Hi ${recipientName},</p>
+    <div style="background: #ecfdf5; border-left: 4px solid #059669; padding: 16px; margin: 0 0 24px; border-radius: 0 8px 8px 0;">
+      <p style="margin: 0; font-weight: 600; color: #059669;">Action Item Completed</p>
+      <p style="margin: 8px 0 0;">${itemTitle}</p>
+    </div>
+    <a href="${portalUrl}" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Project
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      Manage notification preferences in your account settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+      text: `Hi ${recipientName},\n\nAction item completed: ${itemTitle}\nProject: ${project.name}\n\nView project: ${portalUrl}\n\n---\nManage preferences in your account settings.`,
+    });
+
+    if (error) {
+      console.error(
+        `[notifyClientOfActionItemCompleted] Failed to send to ${client.email}:`,
+        error
+      );
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('[notifyClientOfActionItemCompleted] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Get all overdue action items for sending reminder emails.
+ * Used by the weekly digest cron to include overdue items.
+ */
+export async function getOverdueActionItems(): Promise<
+  Array<{
+    clientId: string;
+    clientEmail: string;
+    clientName: string;
+    projectId: string;
+    projectName: string;
+    title: string;
+    actionType: string;
+    dueDate: string;
+  }>
+> {
+  try {
+    const supabase = await createClient();
+    const now = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('client_action_items')
+      .select(
+        `id, title, action_type, due_date,
+         client:profiles!client_action_items_client_id_fkey(id, email, full_name),
+         project:projects!client_action_items_project_id_fkey(id, name)`
+      )
+      .is('completed_at', null)
+      .lt('due_date', now)
+      .order('due_date', { ascending: true });
+
+    if (error) {
+      console.error('[getOverdueActionItems] Error:', error);
+      return [];
+    }
+
+    return (data || [])
+      .map((item) => {
+        const client = Array.isArray(item.client) ? item.client[0] : item.client;
+        const project = Array.isArray(item.project) ? item.project[0] : item.project;
+        if (!client?.email || !project) return null;
+        return {
+          clientId: client.id,
+          clientEmail: client.email,
+          clientName: client.full_name || 'Client',
+          projectId: project.id,
+          projectName: project.name,
+          title: item.title,
+          actionType: item.action_type,
+          dueDate: item.due_date!,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  } catch (error) {
+    console.error('[getOverdueActionItems] Unexpected error:', error);
+    return [];
+  }
+}
+
+// ============================================================================
+// Weekly Progress Digest (Phase 23-03)
+// ============================================================================
+
+type ProjectDigest = {
+  projectName: string;
+  projectId: string;
+  totalPhases: number;
+  completedPhases: number;
+  progressPercent: number;
+  recentActivity: string[];
+  pendingActionItems: number;
+  currentPhase: string | null;
+};
+
+type ClientDigest = {
+  clientId: string;
+  clientEmail: string;
+  clientName: string;
+  workspaceId: string;
+  projects: ProjectDigest[];
+};
+
+/**
+ * Gather weekly digest data for all active client-project relationships.
+ * Groups project progress by client for batch sending.
+ */
+export async function getWeeklyDigestData(): Promise<ClientDigest[]> {
+  try {
+    const supabase = await createClient();
+
+    // Get all active client-project links
+    const { data: clientProjects, error: cpError } = await supabase
+      .from('client_projects')
+      .select(
+        `user_id, project_id,
+         project:projects!inner(id, name, status, workspace_id)`
+      )
+      .in('project:projects.status', ['Active', 'Demos']);
+
+    if (cpError || !clientProjects?.length) {
+      return [];
+    }
+
+    // Get client profiles
+    const clientIds = [...new Set(clientProjects.map((cp) => cp.user_id))];
+    const { data: clients } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .in('id', clientIds);
+
+    if (!clients?.length) return [];
+
+    const clientMap = new Map(clients.map((c) => [c.id, c]));
+
+    // Get phase data for all projects
+    const projectIds = [...new Set(clientProjects.map((cp) => cp.project_id))];
+    const { data: allPhases } = await supabase
+      .from('project_phases')
+      .select('id, name, status, project_id, sort_order')
+      .in('project_id', projectIds)
+      .order('sort_order', { ascending: true });
+
+    // Get pending action items per client
+    const { data: actionItems } = await supabase
+      .from('client_action_items')
+      .select('client_id, project_id')
+      .is('completed_at', null)
+      .in('project_id', projectIds);
+
+    // Get recent activities (last 7 days)
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const { data: activities } = await supabase
+      .from('activities')
+      .select('description, project_id')
+      .in('project_id', projectIds)
+      .gte('created_at', oneWeekAgo.toISOString())
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    // Group by client
+    const digestMap = new Map<string, ClientDigest>();
+
+    for (const cp of clientProjects) {
+      const client = clientMap.get(cp.user_id);
+      if (!client?.email) continue;
+
+      const project = Array.isArray(cp.project) ? cp.project[0] : cp.project;
+      if (!project) continue;
+
+      if (!digestMap.has(cp.user_id)) {
+        digestMap.set(cp.user_id, {
+          clientId: cp.user_id,
+          clientEmail: client.email,
+          clientName: client.full_name || 'Client',
+          workspaceId: (project as { workspace_id: string }).workspace_id,
+          projects: [],
+        });
+      }
+
+      const phases = (allPhases || []).filter((p) => p.project_id === cp.project_id);
+      const completed = phases.filter((p) => p.status === 'completed' || p.status === 'done');
+      const current = phases.find((p) => p.status !== 'completed' && p.status !== 'done');
+      const pendingItems = (actionItems || []).filter(
+        (ai) => ai.client_id === cp.user_id && ai.project_id === cp.project_id
+      ).length;
+      const recentActs = (activities || [])
+        .filter((a) => a.project_id === cp.project_id)
+        .slice(0, 5)
+        .map((a) => a.description);
+
+      digestMap.get(cp.user_id)!.projects.push({
+        projectName: (project as { name: string }).name,
+        projectId: cp.project_id,
+        totalPhases: phases.length,
+        completedPhases: completed.length,
+        progressPercent:
+          phases.length > 0 ? Math.round((completed.length / phases.length) * 100) : 0,
+        recentActivity: recentActs,
+        pendingActionItems: pendingItems,
+        currentPhase: current?.name || null,
+      });
+    }
+
+    return Array.from(digestMap.values());
+  } catch (error) {
+    console.error('[getWeeklyDigestData] Error:', error);
+    return [];
+  }
+}
+
+/**
+ * Send weekly progress digest emails to all active clients.
+ * Returns count of emails sent.
+ */
+export async function sendWeeklyDigests(): Promise<{ sent: number; errors: number }> {
+  const resendClient = getResendClient();
+  if (!resendClient) {
+    console.warn('[sendWeeklyDigests] Resend not configured');
+    return { sent: 0, errors: 0 };
+  }
+
+  const digests = await getWeeklyDigestData();
+  let sent = 0;
+  let errors = 0;
+
+  for (const digest of digests) {
+    // Check preferences
+    const shouldSend = await shouldSendEmail(digest.clientId, digest.workspaceId, 'project_update');
+    if (!shouldSend) continue;
+
+    const subject = `Weekly Progress Update — ${digest.projects.map((p) => p.projectName).join(', ')}`;
+    const recipientName = digest.clientName;
+
+    // Build project sections
+    const projectSectionsHtml = digest.projects
+      .map((p) => {
+        const activityHtml =
+          p.recentActivity.length > 0
+            ? `<ul style="margin: 8px 0; padding-left: 20px; color: #6b7280; font-size: 14px;">${p.recentActivity.map((a) => `<li>${a}</li>`).join('')}</ul>`
+            : '<p style="margin: 8px 0; color: #9ca3af; font-size: 14px;">No activity this week</p>';
+
+        return `
+      <div style="margin: 0 0 24px; padding: 16px; background: #f9fafb; border-radius: 8px;">
+        <h3 style="margin: 0 0 8px; font-size: 16px; color: #1f2937;">${p.projectName}</h3>
+        <div style="margin: 0 0 12px;">
+          <p style="margin: 0 0 4px; color: #6b7280; font-size: 14px;">Progress: ${p.progressPercent}% (${p.completedPhases}/${p.totalPhases} phases)</p>
+          <div style="background: #e5e7eb; border-radius: 4px; height: 6px; overflow: hidden;">
+            <div style="background: #00A4AC; height: 100%; width: ${p.progressPercent}%; border-radius: 4px;"></div>
+          </div>
+        </div>
+        ${p.currentPhase ? `<p style="margin: 0 0 8px; font-size: 14px;"><strong>Current phase:</strong> ${p.currentPhase}</p>` : ''}
+        ${p.pendingActionItems > 0 ? `<p style="margin: 0 0 8px; color: #dc2626; font-size: 14px; font-weight: 500;">${p.pendingActionItems} action item(s) awaiting your input</p>` : ''}
+        <p style="margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: #4b5563;">This week:</p>
+        ${activityHtml}
+      </div>`;
+      })
+      .join('');
+
+    const projectSectionsText = digest.projects
+      .map((p) => {
+        const acts =
+          p.recentActivity.length > 0
+            ? p.recentActivity.map((a) => `  - ${a}`).join('\n')
+            : '  No activity this week';
+        return `${p.projectName}\nProgress: ${p.progressPercent}% (${p.completedPhases}/${p.totalPhases} phases)${p.currentPhase ? `\nCurrent: ${p.currentPhase}` : ''}${p.pendingActionItems > 0 ? `\n${p.pendingActionItems} action item(s) need your input` : ''}\nThis week:\n${acts}`;
+      })
+      .join('\n\n');
+
+    try {
+      const { error } = await resendClient.emails.send({
+        from: FROM_EMAIL,
+        to: digest.clientEmail,
+        subject,
+        html: `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1f2937; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); padding: 24px; border-radius: 12px 12px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 600;">Qualia</h1>
+    <p style="color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 14px;">Weekly Progress Update</p>
+  </div>
+  <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+    <p style="margin: 0 0 24px; color: #6b7280;">Hi ${recipientName}, here's your weekly project update:</p>
+    ${projectSectionsHtml}
+    <a href="${APP_URL}/portal" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+      View Portal
+    </a>
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">
+    <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+      Sent every Friday. Manage notification preferences in your account settings.
+    </p>
+  </div>
+</body>
+</html>`.trim(),
+        text: `Hi ${recipientName},\n\nWeekly project update:\n\n${projectSectionsText}\n\nView portal: ${APP_URL}/portal\n\n---\nSent every Friday. Manage preferences in your account settings.`,
+      });
+
+      if (error) {
+        console.error(`[sendWeeklyDigests] Failed to send to ${digest.clientEmail}:`, error);
+        errors++;
+      } else {
+        sent++;
+      }
+    } catch (err) {
+      console.error(`[sendWeeklyDigests] Exception for ${digest.clientEmail}:`, err);
+      errors++;
+    }
+  }
+
+  return { sent, errors };
 }
