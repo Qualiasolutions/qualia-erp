@@ -860,10 +860,6 @@ export function ScheduleBlock({
                     const isInProgress = task?.status === 'In Progress' && !isDone;
                     const isMeetingItem = task?.isMeeting;
 
-                    // Use pixel-precise positioning: items are absolutely positioned within the cell
-                    const maxSpan = Math.max(1, ...displayItems.map((t) => t.spanHours || 1));
-                    const cellHeight = maxSpan > 1 ? `${maxSpan * SLOT_HEIGHT}px` : undefined;
-
                     // Get precise pixel values from the first item
                     const itemTopOffset = task?.topOffsetPx || 0;
                     const itemHeight = task?.heightPx || SLOT_HEIGHT;
@@ -872,12 +868,10 @@ export function ScheduleBlock({
                       <div
                         key={`${member.id}-${hour}`}
                         className={cn(
-                          'group relative transition-all',
-                          !cellHeight && 'min-h-[72px]',
+                          'group relative min-h-[72px] transition-all',
                           memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
                           isOutOfRange && !displayItems.length && 'bg-muted/10'
                         )}
-                        style={cellHeight ? { height: cellHeight } : undefined}
                       >
                         {displayItems.length > 0 ? (
                           <div
