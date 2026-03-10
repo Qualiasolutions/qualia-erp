@@ -767,7 +767,7 @@ export function QualiaVoice({ isOpen, onClose, user }: QualiaVoiceProps) {
             )}
           >
             <Image
-              src="/sphere.png"
+              src="/sphere.webp"
               alt="Qualia"
               width={80}
               height={80}

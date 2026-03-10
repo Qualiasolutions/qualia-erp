@@ -11,7 +11,7 @@ export default function Loading() {
           {/* Sphere image with floating animation */}
           <div className="relative h-full w-full animate-bounce-subtle">
             <Image
-              src="/sphere.png"
+              src="/sphere.webp"
               alt="Loading"
               fill
               className="object-contain drop-shadow-[0_0_15px_rgba(45,212,191,0.4)]"

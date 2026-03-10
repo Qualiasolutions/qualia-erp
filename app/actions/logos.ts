@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 
 export type ActionResult = {
@@ -79,8 +79,11 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
   const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1];
   const storagePath = `logos/projects/${projectId}/logo.${ext}`;
 
+  // Use admin client for storage (bypasses storage RLS — auth already verified above)
+  const adminClient = createAdminClient();
+
   // Upload to storage (upsert to replace existing)
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await adminClient.storage
     .from(STORAGE_BUCKET)
     .upload(storagePath, file, {
       cacheControl: '3600',
@@ -95,7 +98,7 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
   // Get public URL
   const {
     data: { publicUrl },
-  } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
+  } = adminClient.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
 
   // Add cache-busting timestamp
   const logoUrl = `${publicUrl}?t=${Date.now()}`;
@@ -109,7 +112,7 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
   if (updateError) {
     console.error('[uploadProjectLogo] DB error:', updateError);
     // Clean up uploaded file
-    await supabase.storage.from(STORAGE_BUCKET).remove([storagePath]);
+    await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
     return { success: false, error: 'Failed to update project' };
   }
 
@@ -145,10 +148,15 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
     return { success: false, error: 'Project not found' };
   }
 
+  // Use admin client for storage (bypasses storage RLS — auth already verified above)
+  const adminClient = createAdminClient();
+
   // Delete from storage (try common extensions)
   const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
   for (const ext of extensions) {
-    await supabase.storage.from(STORAGE_BUCKET).remove([`logos/projects/${projectId}/logo.${ext}`]);
+    await adminClient.storage
+      .from(STORAGE_BUCKET)
+      .remove([`logos/projects/${projectId}/logo.${ext}`]);
   }
 
   // Clear logo URL in database
@@ -230,8 +238,11 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
   const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1];
   const storagePath = `logos/clients/${clientId}/logo.${ext}`;
 
+  // Use admin client for storage (bypasses storage RLS — auth already verified above)
+  const adminClient = createAdminClient();
+
   // Upload to storage (upsert to replace existing)
-  const { error: uploadError } = await supabase.storage
+  const { error: uploadError } = await adminClient.storage
     .from(STORAGE_BUCKET)
     .upload(storagePath, file, {
       cacheControl: '3600',
@@ -246,7 +257,7 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
   // Get public URL
   const {
     data: { publicUrl },
-  } = supabase.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
+  } = adminClient.storage.from(STORAGE_BUCKET).getPublicUrl(storagePath);
 
   // Add cache-busting timestamp
   const logoUrl = `${publicUrl}?t=${Date.now()}`;
@@ -260,7 +271,7 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
   if (updateError) {
     console.error('[uploadClientLogo] DB error:', updateError);
     // Clean up uploaded file
-    await supabase.storage.from(STORAGE_BUCKET).remove([storagePath]);
+    await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
     return { success: false, error: 'Failed to update client' };
   }
 
@@ -295,10 +306,15 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
     return { success: false, error: 'Client not found' };
   }
 
+  // Use admin client for storage (bypasses storage RLS — auth already verified above)
+  const adminClient = createAdminClient();
+
   // Delete from storage (try common extensions)
   const extensions = ['jpg', 'png', 'webp', 'gif', 'avif'];
   for (const ext of extensions) {
-    await supabase.storage.from(STORAGE_BUCKET).remove([`logos/clients/${clientId}/logo.${ext}`]);
+    await adminClient.storage
+      .from(STORAGE_BUCKET)
+      .remove([`logos/clients/${clientId}/logo.${ext}`]);
   }
 
   // Clear logo URL in database

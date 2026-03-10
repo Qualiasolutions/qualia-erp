@@ -840,7 +840,7 @@ export function QualiaVoiceInline({
               )}
             />
             <Image
-              src="/sphere.png"
+              src="/sphere.webp"
               alt="Qualia"
               width={80}
               height={80}
