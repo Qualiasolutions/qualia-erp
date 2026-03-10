@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 22 of 24 (Admin Operations) — In progress
-Plan: 22-01 complete (1 of N plans in phase 22)
+Plan: 22-02 complete (2 of 3 plans in phase 22)
 Status: Phase 22 in progress
-Last activity: 2026-03-10 — Completed 22-01: Bulk Client Portal Onboarding
+Last activity: 2026-03-10 — Completed 22-02: Client management table with last login + status filters
 
-Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | Phase 22: 1/N plans complete
+Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | Phase 22: 2/3 plans complete
 
 ## Performance Metrics
 
@@ -43,6 +43,8 @@ Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | 
 | 3   | node:crypto randomBytes for temp passwords                             | Cryptographically secure vs Math.random()                                         | 2026-03-10 |
 | 4   | Client cannot self-complete action items (enforced in server action)   | RLS would conflict with client read policy; cleaner to gate in action function    | 2026-03-10 |
 | 5   | Urgency computed client-side from due_date, no DB column               | Simpler SWR caching, no DB column needed; date math is trivial                    | 2026-03-10 |
+| 6   | Match clients to auth users by email (normalized lowercase)            | Profiles store email; auth users expose email on User object — clean join key     | 2026-03-10 |
+| 7   | Fallback to simple table when clientManagement is null                 | Service role key may be missing in some envs; degrade gracefully not break panel  | 2026-03-10 |
 | 6   | bulkSetupPortalForClients runs sequentially (not Promise.all)          | Supabase auth admin API rate limits; sequential is safe for 3-5 clients           | 2026-03-10 |
 | 7   | Bulk success:true if at least one client succeeded                     | Partial batches should not surface as total failures; per-client errors surfaced  | 2026-03-10 |
 
@@ -63,10 +65,10 @@ Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 22 Plan 01 complete. Bulk client onboarding shipped.
-**Next action:** Continue Phase 22 — Plan 02
+Stopped at: Phase 22 Plan 02 complete. Enhanced client management table with last login + filters shipped.
+**Next action:** Continue Phase 22 — Plan 03
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Phase 22 Plan 01 complete: Bulk Client Portal Onboarding (bulkSetupPortalForClients + Bulk Setup mode UI)_
+_Last updated: 2026-03-10 — Phase 22 Plan 02 complete: Client Management Table with Last Login + Status Filters_
