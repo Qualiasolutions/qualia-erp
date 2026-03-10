@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 21 of 24 (Client Experience)
-Plan: 21-01 complete (1 of 3 plans in phase 21 — In progress)
+Plan: 21-02 complete (2 of 3 plans in phase 21 — In progress)
 Status: In progress
-Last activity: 2026-03-10 — Completed 21-01: WhatsNextWidget hero phase widget on client dashboard
+Last activity: 2026-03-10 — Completed 21-02: client_action_items table + PortalActionItems urgency widget
 
-Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21: 21-01 done (21-02, 21-03 also done)
+Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21: 21-01, 21-02 done (21-03 remaining)
 
 ## Performance Metrics
 
@@ -41,6 +41,8 @@ Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21:
 | 1   | CRM email is source of truth for portal onboarding (contacts[0].email) | No free-text email entry; ties portal accounts to CRM contacts                    | 2026-03-10 |
 | 2   | Orphan rollback only on total failure (not partial)                    | Partial project linking is acceptable; full rollback only when nothing was linked | 2026-03-10 |
 | 3   | node:crypto randomBytes for temp passwords                             | Cryptographically secure vs Math.random()                                         | 2026-03-10 |
+| 4   | Client cannot self-complete action items (enforced in server action)   | RLS would conflict with client read policy; cleaner to gate in action function    | 2026-03-10 |
+| 5   | Urgency computed client-side from due_date, no DB column               | Simpler SWR caching, no DB column needed; date math is trivial                    | 2026-03-10 |
 
 ### Blockers/Concerns
 
@@ -59,11 +61,11 @@ Progress: [##########░░░░] 19/24 phases complete (v1.0-v1.4) | Phase 21:
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 21 in progress. Plans 21-01, 21-02, 21-03 complete.
-Resume file: `.planning/phases/21-client-experience/21-01-SUMMARY.md`
-**Next action:** Phase 21 complete — advance to Phase 22
+Stopped at: Phase 21 in progress. Plans 21-01 and 21-02 complete. 21-03 remaining.
+Resume file: `.planning/phases/21-client-experience/21-02-SUMMARY.md`
+**Next action:** Execute plan 21-03
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Completed plan 21-01: WhatsNextWidget hero phase widget on client portal dashboard_
+_Last updated: 2026-03-10 — Completed plan 21-02: client_action_items table + PortalActionItems urgency widget on dashboard_
