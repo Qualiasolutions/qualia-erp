@@ -8,6 +8,7 @@
 - ✅ **v1.3 Full ERP-Portal Integration** - Phases 12-16 (shipped 2026-03-06)
 - ✅ **v1.4 Admin Portal Onboarding** - Phases 17-19 (shipped 2026-03-09)
 - 🚧 **v1.5 Production-Ready Client Portal** - Phases 20-24
+- 🔒 **v1.5.1 Security Hardening** - Phase 25
 
 ## Phases
 
@@ -244,15 +245,17 @@ Plans:
 
 ### Phase 20: Portal Foundation Fixes
 
-**Goal:** Fix critical portal bugs and verify end-to-end client onboarding flow works flawlessly
+**Goal:** Fix critical portal bugs, verify end-to-end client onboarding flow, and rework admin panel to be client-centric with proper error boundaries
 **Priority:** P0 - Must work before Moayad uses it
-**Plans:** 3 plans in 2 waves
+**Plans:** 5 plans in 3 waves
 
 Plans:
 
 - [ ] 20-01-PLAN.md — Add project creation form, fix action logging and router.refresh()
 - [ ] 20-02-PLAN.md — Audit invite action DB schema, verify end-to-end flow with human checkpoint
 - [ ] 20-03-PLAN.md — Confirmation guard on remove-access, independent loading states, specific error toasts
+- [ ] 20-04-PLAN.md — Client-centric admin panel rework: CRM client picker + setupPortalForClient action
+- [ ] 20-05-PLAN.md — Portal error boundaries + parallel dashboard queries + workspace bug fix
 
 ### Phase 21: Enhanced Client Experience
 
@@ -295,10 +298,27 @@ Plans:
 
 </details>
 
+<details>
+<summary>🔒 v1.5.1 Security Hardening (Phase 25) — PLANNED</summary>
+
+### Phase 25: Portal Security Hardening
+
+**Goal:** Patch all IDOR vulnerabilities, harden auth and input validation, fix production observability gaps discovered in security audit
+**Priority:** P0 — Must complete before public launch
+**Plans:** 3 plans in 2 waves
+
+Plans:
+
+- [ ] 25-01-PLAN.md — Fix all IDOR vulnerabilities (client-requests, phase-comments, client-portal)
+- [ ] 25-02-PLAN.md — Fix auth and invitation security + Zod validation on untrusted inputs
+- [ ] 25-03-PLAN.md — Observability and hardening (removeConsole, health 503, .env.example, DB error sanitization, orphan rollback)
+
+</details>
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24
+Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25
 
 | Phase                                       | Milestone | Plans Complete | Status   | Completed  |
 | ------------------------------------------- | --------- | -------------- | -------- | ---------- |
@@ -320,13 +340,14 @@ Phases execute in numeric order: 17 → 18 → 19 → 20 → 21 → 22 → 23 �
 | 17. Project Import Flow                     | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 18. Invitation System                       | v1.4      | 3/3            | Complete | 2026-03-08 |
 | 19. Client Onboarding Flow                  | v1.4      | 2/2            | Complete | 2026-03-09 |
-| 20. Portal Foundation Fixes                 | v1.5      | 0/3            | Ready    | TBD        |
+| 20. Portal Foundation Fixes                 | v1.5      | 0/5            | Ready    | TBD        |
 | 21. Enhanced Client Experience              | v1.5      | 0/3            | Planned  | TBD        |
 | 22. Admin Operations & Bulk Management      | v1.5      | 0/3            | Planned  | TBD        |
 | 23. Proactive Communication & Notifications | v1.5      | 0/3            | Planned  | TBD        |
 | 24. Polish & White-Label Branding           | v1.5      | 0/2            | Planned  | TBD        |
+| 25. Portal Security Hardening               | v1.5.1    | 0/3            | Planned  | TBD        |
 
 ---
 
 _Roadmap created: 2026-03-01_
-_Last updated: 2026-03-09 (Phase 20 executable plans created)_
+_Last updated: 2026-03-10 (Phase 20 expanded to 5 plans; Phase 25 security hardening added)_
