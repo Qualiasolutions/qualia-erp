@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 21 of 24 (Enhanced Client Experience) — COMPLETE
-Plan: 21-03 complete (3 of 3 plans in phase 21 — Phase complete)
-Status: Phase 21 complete, ready for Phase 22
-Last activity: 2026-03-10 — Completed Phase 21: WhatsNextWidget + Action Items + Visual Progress
+Phase: 22 of 24 (Admin Operations) — In progress
+Plan: 22-01 complete (1 of N plans in phase 22)
+Status: Phase 22 in progress
+Last activity: 2026-03-10 — Completed 22-01: Bulk Client Portal Onboarding
 
-Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | Phase 21: 3/3 plans complete
+Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | Phase 22: 1/N plans complete
 
 ## Performance Metrics
 
@@ -43,6 +43,8 @@ Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | 
 | 3   | node:crypto randomBytes for temp passwords                             | Cryptographically secure vs Math.random()                                         | 2026-03-10 |
 | 4   | Client cannot self-complete action items (enforced in server action)   | RLS would conflict with client read policy; cleaner to gate in action function    | 2026-03-10 |
 | 5   | Urgency computed client-side from due_date, no DB column               | Simpler SWR caching, no DB column needed; date math is trivial                    | 2026-03-10 |
+| 6   | bulkSetupPortalForClients runs sequentially (not Promise.all)          | Supabase auth admin API rate limits; sequential is safe for 3-5 clients           | 2026-03-10 |
+| 7   | Bulk success:true if at least one client succeeded                     | Partial batches should not surface as total failures; per-client errors surfaced  | 2026-03-10 |
 
 ### Blockers/Concerns
 
@@ -61,10 +63,10 @@ Progress: [###########░░] 20/24 phases complete (v1.0-v1.4 + phase 20-21) | 
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 21 complete. All 3 plans executed and verified.
-**Next action:** Begin Phase 22
+Stopped at: Phase 22 Plan 01 complete. Bulk client onboarding shipped.
+**Next action:** Continue Phase 22 — Plan 02
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Phase 21 complete: WhatsNextWidget + Client Action Items + Visual Progress Indicators_
+_Last updated: 2026-03-10 — Phase 22 Plan 01 complete: Bulk Client Portal Onboarding (bulkSetupPortalForClients + Bulk Setup mode UI)_
