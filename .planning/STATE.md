@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 
 ## Current Position
 
-Phase: 25 of 25 (Portal Security Hardening) — In progress
-Plan: 25-02 complete (2 of 3 plans in phase 25)
-Status: Phase 25 in progress
-Last activity: 2026-03-10 — Completed 25-02: Token-based invitations + crypto passwords + Zod validation
+Phase: 25 of 25 (Portal Security Hardening) — Complete
+Plan: 25-03 complete (3 of 3 plans in phase 25)
+Status: Phase 25 complete — v1.5 milestone done
+Last activity: 2026-03-10 — Completed 25-03: Production observability, health 503, DB error sanitization, orphan rollback
 
-Progress: [#############] 24 phases tracked | Phase 25: 2 of 3 plans complete
+Progress: [#############] 25 phases tracked | Phase 25: 3 of 3 plans complete
 
 ## Performance Metrics
 
@@ -56,6 +56,9 @@ Progress: [#############] 24 phases tracked | Phase 25: 2 of 3 plans complete
 | 14  | Company name fetched at layout and page level independently            | App Router layout cannot pass props to children pages; duplication is acceptable     | 2026-03-10 |
 | 15  | Dashboard greeting uses companyName over firstName when available      | Company name makes portal feel dedicated; personal name is fallback for unlinked     | 2026-03-10 |
 | 16  | markInvitation\* accept token not UUID PK                              | Opaque token prevents enumeration; UUID PKs are sequential and guessable             | 2026-03-10 |
+| 17  | degraded health state returns 503 not 200                              | Monitors and alerting need reliable signal; 200 on degraded masks failures           | 2026-03-10 |
+| 18  | removeConsole.exclude preserves error/warn in production builds        | Error observability required; stripping all console calls hides production failures  | 2026-03-10 |
+| 19  | Orphan rollback is best-effort (try/catch, no rethrow)                 | Rollback failure logged but should not mask original link error returned to caller   | 2026-03-10 |
 
 ### Blockers/Concerns
 
@@ -74,10 +77,10 @@ Progress: [#############] 24 phases tracked | Phase 25: 2 of 3 plans complete
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Phase 25 Plan 02 complete. Token-based invitations, crypto passwords, Zod validation, client role check on password reset.
-**Next action:** Continue Phase 25 — execute 25-03-PLAN.md
+Stopped at: Phase 25 Plan 03 complete. Production observability fixes, health 503, DB error sanitization, orphan rollback on link failure.
+**Next action:** Phase 25 complete — begin next milestone planning or ship v1.5
 
 ---
 
 _State initialized: 2026-03-01_
-_Last updated: 2026-03-10 — Phase 25 Plan 02 complete: Portal Auth Security Hardening_
+_Last updated: 2026-03-10 — Phase 25 Plan 03 complete: Production Observability and Hardening (phase 25 done)_
