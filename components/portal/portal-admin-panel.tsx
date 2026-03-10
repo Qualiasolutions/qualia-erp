@@ -30,11 +30,13 @@ import {
   UserPlus,
   ChevronRight,
   ChevronLeft,
+  FolderPlus,
 } from 'lucide-react';
 import {
   setupPortalForClient,
   removeClientFromProject,
   sendClientPasswordReset,
+  createProjectFromPortal,
 } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -94,6 +96,11 @@ export function PortalAdminPanel({
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isSettingUp, setIsSettingUp] = useState(false);
 
+  // Project creation
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectType, setNewProjectType] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+
   // Credentials after setup
   const [credentials, setCredentials] = useState<{
     email: string;
@@ -122,6 +129,30 @@ export function PortalAdminPanel({
   const handleBack = () => {
     setStep(1);
     setSelectedProjectIds([]);
+  };
+
+  const handleCreateProject = async () => {
+    if (!newProjectName.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    setIsCreatingProject(true);
+    try {
+      const result = await createProjectFromPortal({
+        name: newProjectName.trim(),
+        project_type: newProjectType || 'web_design',
+      });
+      if (!result.success) {
+        toast.error(result.error || 'Failed to create project');
+        return;
+      }
+      toast.success('Project created');
+      setNewProjectName('');
+      setNewProjectType('');
+      router.refresh();
+    } finally {
+      setIsCreatingProject(false);
+    }
   };
 
   const toggleProject = (projectId: string) => {
@@ -274,6 +305,56 @@ export function PortalAdminPanel({
 
   return (
     <div className="space-y-6">
+      {/* Create new project */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/10">
+              <FolderPlus className="h-4 w-4 text-qualia-600" />
+            </div>
+            Create New Project
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Add a project before setting up client access.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-3">
+            <input
+              type="text"
+              placeholder="Project name"
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              className="flex h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            />
+            <Select value={newProjectType} onValueChange={setNewProjectType}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="web_design">Web Design</SelectItem>
+                <SelectItem value="ai_agent">AI Agent</SelectItem>
+                <SelectItem value="voice_agent">Voice Agent</SelectItem>
+                <SelectItem value="seo">SEO</SelectItem>
+                <SelectItem value="ads">Ads</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleCreateProject}
+              disabled={isCreatingProject || !newProjectName.trim()}
+              className="shrink-0 gap-2 bg-qualia-600 text-white hover:bg-qualia-700"
+            >
+              {isCreatingProject ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FolderPlus className="h-4 w-4" />
+              )}
+              Create
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Setup client access — two-step flow */}
       <Card>
         <CardHeader className="pb-3">
