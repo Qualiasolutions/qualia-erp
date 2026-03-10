@@ -100,7 +100,7 @@ export async function middleware(request: NextRequest) {
 
     // Employee route restrictions: only dashboard, schedule, knowledge
     if (userRole === 'employee') {
-      const employeeAllowed = ['/', '/schedule', '/knowledge'];
+      const employeeAllowed = ['/', '/schedule', '/knowledge', '/projects'];
       const isAllowed =
         employeeAllowed.some((route) =>
           route === '/' ? pathname === '/' : pathname.startsWith(route)

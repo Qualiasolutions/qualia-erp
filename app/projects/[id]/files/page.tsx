@@ -33,6 +33,20 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
     redirect(`/projects/${projectId}`);
   }
 
+  // Employees can only access files for projects they're assigned to
+  if (profile.role === 'employee') {
+    const { data: assignment } = await supabase
+      .from('project_assignments')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('employee_id', user.id)
+      .is('removed_at', null)
+      .single();
+    if (!assignment) {
+      redirect('/projects');
+    }
+  }
+
   // Fetch project details
   const { data: project } = await supabase
     .from('projects')

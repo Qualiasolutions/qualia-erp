@@ -34,24 +34,24 @@ type AdminUser = {
 };
 
 /**
- * Get all admin users except the current user
+ * Get all team members (admins + employees) except the current user
  */
-export async function getOtherAdmins(excludeUserId: string): Promise<AdminUser[]> {
+export async function getOtherTeamMembers(excludeUserId: string): Promise<AdminUser[]> {
   const supabase = await createClient();
 
-  const { data: admins, error } = await supabase
+  const { data: members, error } = await supabase
     .from('profiles')
     .select('id, email, full_name')
-    .eq('role', 'admin')
+    .in('role', ['admin', 'employee'])
     .neq('id', excludeUserId);
 
   if (error) {
-    console.error('[getOtherAdmins] Error fetching admins:', error);
+    console.error('[getOtherTeamMembers] Error fetching team members:', error);
     return [];
   }
 
   // Filter out users without emails
-  return (admins || []).filter((admin): admin is AdminUser => !!admin.email);
+  return (members || []).filter((member): member is AdminUser => !!member.email);
 }
 
 /**
@@ -212,10 +212,10 @@ export async function notifyAdminsOfCreation(
       return { success: false, error: 'Creator profile not found' };
     }
 
-    // Get other admin users
-    const otherAdmins = await getOtherAdmins(creatorId);
-    if (otherAdmins.length === 0) {
-      console.log('[notifyAdminsOfCreation] No other admins to notify');
+    // Get other team members (admins + employees)
+    const otherMembers = await getOtherTeamMembers(creatorId);
+    if (otherMembers.length === 0) {
+      console.log('[notifyAdminsOfCreation] No other team members to notify');
       return { success: true }; // Not an error, just no one to notify
     }
 
@@ -237,39 +237,39 @@ export async function notifyAdminsOfCreation(
       return { success: true }; // Silent success when not configured
     }
 
-    // Send emails to all other admins
-    const emailPromises = otherAdmins.map(async (admin) => {
+    // Send emails to all other team members
+    const emailPromises = otherMembers.map(async (member: AdminUser) => {
       const subject = `New ${entityType} created: ${entityName}`;
 
       try {
         const { error } = await resendClient.emails.send({
           from: FROM_EMAIL,
-          to: admin.email,
+          to: member.email,
           subject,
-          html: generateEmailHtml(notificationData, admin.full_name || ''),
-          text: generateEmailText(notificationData, admin.full_name || ''),
+          html: generateEmailHtml(notificationData, member.full_name || ''),
+          text: generateEmailText(notificationData, member.full_name || ''),
         });
 
         if (error) {
-          console.error(`[notifyAdminsOfCreation] Failed to send email to ${admin.email}:`, error);
-          return { success: false, email: admin.email, error };
+          console.error(`[notifyAdminsOfCreation] Failed to send email to ${member.email}:`, error);
+          return { success: false, email: member.email, error };
         }
 
-        console.log(`[notifyAdminsOfCreation] Email sent to ${admin.email}`);
-        return { success: true, email: admin.email };
+        console.log(`[notifyAdminsOfCreation] Email sent to ${member.email}`);
+        return { success: true, email: member.email };
       } catch (err) {
-        console.error(`[notifyAdminsOfCreation] Exception sending email to ${admin.email}:`, err);
-        return { success: false, email: admin.email, error: err };
+        console.error(`[notifyAdminsOfCreation] Exception sending email to ${member.email}:`, err);
+        return { success: false, email: member.email, error: err };
       }
     });
 
     const results = await Promise.all(emailPromises);
-    const failures = results.filter((r) => !r.success);
+    const failures = results.filter((r: { success: boolean }) => !r.success);
 
     if (failures.length > 0) {
       console.warn(
         `[notifyAdminsOfCreation] Some emails failed:`,
-        failures.map((f) => f.email)
+        failures.map((f: { email: string }) => f.email)
       );
     }
 

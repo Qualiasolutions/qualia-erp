@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getCurrentWorkspaceId } from '@/app/actions';
+import { getCurrentWorkspaceId, getCurrentUserProfile } from '@/app/actions';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { Folder } from 'lucide-react';
 import { ProjectsClient } from './projects-client';
@@ -37,7 +37,10 @@ export interface ProjectData {
 async function ProjectListLoader() {
   await connection();
   const supabase = await createClient();
-  const workspaceId = await getCurrentWorkspaceId();
+  const [workspaceId, userProfile] = await Promise.all([
+    getCurrentWorkspaceId(),
+    getCurrentUserProfile(),
+  ]);
 
   const { data: rawProjects, error } = await supabase.rpc('get_project_stats', {
     p_workspace_id: workspaceId,
@@ -46,6 +49,17 @@ async function ProjectListLoader() {
   if (error) {
     console.error('Error fetching projects:', error);
     return <ProjectsClient demos={[]} building={[]} preProduction={[]} live={[]} archived={[]} />;
+  }
+
+  // For employees, fetch their assigned project IDs
+  let assignedProjectIds: Set<string> | null = null;
+  if (userProfile?.role === 'employee') {
+    const { data: assignments } = await supabase
+      .from('project_assignments')
+      .select('project_id')
+      .eq('employee_id', userProfile.id)
+      .is('removed_at', null);
+    assignedProjectIds = new Set((assignments || []).map((a) => a.project_id));
   }
 
   // Map RPC result to Project interface
@@ -78,15 +92,20 @@ async function ProjectListLoader() {
     sort_order: (p.sort_order as number) || 0,
   }));
 
+  // Filter for employees: only assigned projects
+  const visibleProjects = assignedProjectIds
+    ? allProjects.filter((p) => assignedProjectIds.has(p.id))
+    : allProjects;
+
   const sortByOrder = (a: ProjectData, b: ProjectData) => a.sort_order - b.sort_order;
 
   // Pipeline stages (sorted by sort_order)
-  const demos = allProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
-  const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const demos = visibleProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
+  const activeDelayed = visibleProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
-  const live = allProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
-  const archived = allProjects
+  const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
 

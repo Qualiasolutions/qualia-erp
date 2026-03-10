@@ -194,6 +194,27 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     sortMap.set(s.id, s.sort_order ?? 0);
   }
 
+  // Check if current user is an employee (filter to assigned projects only)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let assignedProjectIds: Set<string> | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (profile?.role === 'employee') {
+      const { data: assignments } = await supabase
+        .from('project_assignments')
+        .select('project_id')
+        .eq('employee_id', user.id)
+        .is('removed_at', null);
+      assignedProjectIds = new Set((assignments || []).map((a) => a.project_id));
+    }
+  }
+
   const allProjects: ProjectStatsData[] = (rawProjects || []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
     name: p.name as string,
@@ -223,15 +244,20 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     sort_order: sortMap.get(p.id as string) ?? 0,
   }));
 
+  // Filter for employees: only show assigned projects
+  const visibleProjects = assignedProjectIds
+    ? allProjects.filter((p) => assignedProjectIds!.has(p.id))
+    : allProjects;
+
   const sortByOrder = (a: ProjectStatsData, b: ProjectStatsData) => a.sort_order - b.sort_order;
 
   // Status-based filtering — pipeline stages, sorted by sort_order
-  const demos = allProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
-  const activeDelayed = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  const demos = visibleProjects.filter((p) => p.status === 'Demos').sort(sortByOrder);
+  const activeDelayed = visibleProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
-  const live = allProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
-  const archived = allProjects
+  const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
 

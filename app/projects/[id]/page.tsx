@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getProjectById, getProfiles, getCurrentUserProfile } from '@/app/actions';
 import { getProjectIntegrationStatus } from '@/lib/integration-utils';
+import { createClient } from '@/lib/supabase/server';
 import { ProjectDetailView } from './project-detail-view';
 
 function ProjectDetailSkeleton() {
@@ -38,6 +39,21 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
 
   if (!project) {
     notFound();
+  }
+
+  // Employees can only view projects they're assigned to
+  if (userProfile?.role === 'employee') {
+    const supabase = await createClient();
+    const { data: assignment } = await supabase
+      .from('project_assignments')
+      .select('id')
+      .eq('project_id', id)
+      .eq('employee_id', userProfile.id)
+      .is('removed_at', null)
+      .single();
+    if (!assignment) {
+      notFound();
+    }
   }
 
   // Demos don't have a detail page - redirect back to projects list

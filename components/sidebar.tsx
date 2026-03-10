@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
 import { useAdminContext } from '@/components/admin-provider';
 
-const employeeAllowedHrefs = ['/', '/schedule', '/knowledge'];
+const employeeAllowedHrefs = ['/', '/schedule', '/knowledge', '/projects'];
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   DropdownMenu,
