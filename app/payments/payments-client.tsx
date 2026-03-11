@@ -28,12 +28,17 @@ import {
   TrendingUp,
   TrendingDown,
   CalendarDays,
+  Repeat2,
+  Layers,
+  ChevronDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   createPayment,
   updatePayment,
   deletePayment,
+  generateRetainerPayments,
+  generateInstallmentPayments,
   type Payment,
   type RecurringPayment,
   type ClientBalance,
@@ -52,6 +57,11 @@ export type Client = {
   display_name: string | null;
 };
 
+export type Project = {
+  id: string;
+  name: string;
+};
+
 interface PaymentsClientProps {
   payments: Payment[];
   summary: {
@@ -68,6 +78,7 @@ interface PaymentsClientProps {
   };
   clients: Client[];
   clientBalances: ClientBalance[];
+  projects: Project[];
 }
 
 function formatCurrency(amount: number) {
@@ -261,6 +272,511 @@ function EditPaymentModal({
               className="rounded-lg bg-qualia-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-qualia-700 disabled:opacity-50"
             >
               {isPending ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ RETAINER GENERATOR MODAL ============
+
+function RetainerGeneratorModal({
+  clients,
+  open,
+  onClose,
+}: {
+  clients: Client[];
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [frequency, setFrequency] = useState<'monthly' | 'annual'>('monthly');
+  const [clientId, setClientId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [startDate, setStartDate] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+
+  const previewEntries = useMemo(() => {
+    if (!amount || !startDate) return [];
+    const entries: { date: string; label: string }[] = [];
+    const start = new Date(startDate + 'T00:00:00');
+    if (frequency === 'monthly') {
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+        entries.push({
+          date: d.toISOString().split('T')[0],
+          label: format(d, 'MMMM yyyy'),
+        });
+      }
+    } else {
+      entries.push({
+        date: start.toISOString().split('T')[0],
+        label: format(start, 'MMMM d, yyyy'),
+      });
+    }
+    return entries;
+  }, [frequency, startDate, amount]);
+
+  const selectedClient = clients.find((c) => c.id === clientId);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!clientId) {
+      setError('Please select a client.');
+      return;
+    }
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Please enter a valid amount.');
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await generateRetainerPayments({
+        client_id: clientId,
+        amount: parseFloat(amount),
+        frequency,
+        start_date: startDate,
+        description:
+          description || `Retainer — ${selectedClient?.display_name || selectedClient?.name || ''}`,
+      });
+
+      if (result.success) {
+        onClose();
+        setClientId('');
+        setAmount('');
+        setDescription('');
+        setShowPreview(false);
+      } else {
+        setError(result.error || 'Failed to generate payments.');
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
+              <Repeat2 className="h-4 w-4 text-qualia-600" />
+            </div>
+            Retainer Fee Generator
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Frequency Toggle */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Frequency</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setFrequency('monthly')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
+                  frequency === 'monthly'
+                    ? 'bg-qualia-600 text-white'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Monthly
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                    frequency === 'monthly'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  12×
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFrequency('annual')}
+                className={cn(
+                  'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
+                  frequency === 'annual'
+                    ? 'bg-qualia-600 text-white'
+                    : 'bg-secondary text-muted-foreground hover:text-foreground'
+                )}
+              >
+                Annual
+                <span
+                  className={cn(
+                    'rounded-full px-1.5 py-0.5 text-[10px] font-semibold',
+                    frequency === 'annual'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-muted text-muted-foreground'
+                  )}
+                >
+                  1×
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Client */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
+            <select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              required
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            >
+              <option value="">Select client</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.display_name || c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Amount + Start Date */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                Amount (EUR)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="1"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                placeholder="e.g. 500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-foreground">
+                {frequency === 'monthly' ? 'Start Month' : 'Payment Date'}
+              </label>
+              <input
+                type="month"
+                value={startDate.substring(0, 7)}
+                onChange={(e) => setStartDate(e.target.value + '-01')}
+                required
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Description
+              <span className="ml-1 text-xs text-muted-foreground">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={`Retainer — ${selectedClient?.display_name || selectedClient?.name || 'client name'}`}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+          </div>
+
+          {/* Preview toggle */}
+          {amount && parseFloat(amount) > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowPreview((v) => !v)}
+                className="flex w-full items-center justify-between rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <span className="font-medium">
+                  Preview —{' '}
+                  {frequency === 'monthly'
+                    ? `12 × ${formatCurrency(parseFloat(amount) || 0)} = ${formatCurrency((parseFloat(amount) || 0) * 12)}`
+                    : `1 × ${formatCurrency(parseFloat(amount) || 0)}`}
+                </span>
+                <ChevronDown
+                  className={cn('h-4 w-4 transition-transform', showPreview && 'rotate-180')}
+                />
+              </button>
+              {showPreview && (
+                <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-border bg-background">
+                  {previewEntries.map((entry, i) => (
+                    <div
+                      key={entry.date}
+                      className="flex items-center justify-between border-b border-border/40 px-3 py-2 last:border-0"
+                    >
+                      <span className="text-xs text-muted-foreground">
+                        #{i + 1} — {entry.label}
+                      </span>
+                      <span className="text-xs font-semibold tabular-nums text-emerald-600">
+                        +{formatCurrency(parseFloat(amount) || 0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-lg bg-qualia-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-qualia-700 disabled:opacity-50"
+            >
+              {isPending
+                ? 'Generating...'
+                : `Generate ${frequency === 'monthly' ? '12' : '1'} Payment${frequency === 'monthly' ? 's' : ''}`}
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============ INSTALLMENT GENERATOR MODAL ============
+
+type InstallmentRow = { amount: string; date: string };
+
+function InstallmentGeneratorModal({
+  clients,
+  projects,
+  open,
+  onClose,
+}: {
+  clients: Client[];
+  projects: Project[];
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [clientId, setClientId] = useState('');
+  const [description, setDescription] = useState('');
+  const [count, setCount] = useState(3);
+  const [rows, setRows] = useState<InstallmentRow[]>(() =>
+    Array.from({ length: 3 }, () => ({ amount: '', date: '' }))
+  );
+  const [error, setError] = useState('');
+
+  const handleCountChange = (n: number) => {
+    setCount(n);
+    setRows((prev) => {
+      if (n > prev.length) {
+        return [
+          ...prev,
+          ...Array.from({ length: n - prev.length }, () => ({ amount: '', date: '' })),
+        ];
+      }
+      return prev.slice(0, n);
+    });
+  };
+
+  const updateRow = (i: number, field: 'amount' | 'date', value: string) => {
+    setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+  };
+
+  const total = rows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!clientId) {
+      setError('Please select a client.');
+      return;
+    }
+    if (!description.trim()) {
+      setError('Please enter a project / description.');
+      return;
+    }
+
+    const installments = rows.map((r) => ({
+      amount: parseFloat(r.amount),
+      date: r.date,
+    }));
+
+    if (installments.some((inst) => !inst.amount || inst.amount <= 0 || !inst.date)) {
+      setError('Please fill in all installment amounts and dates.');
+      return;
+    }
+
+    startTransition(async () => {
+      const result = await generateInstallmentPayments({
+        client_id: clientId,
+        description: description.trim(),
+        installments,
+      });
+
+      if (result.success) {
+        onClose();
+        setClientId('');
+        setDescription('');
+        setCount(3);
+        setRows(Array.from({ length: 3 }, () => ({ amount: '', date: '' })));
+      } else {
+        setError(result.error || 'Failed to generate installments.');
+      }
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
+              <Layers className="h-4 w-4 text-emerald-600" />
+            </div>
+            Project Installments
+          </DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Client */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Client</label>
+            <select
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              required
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            >
+              <option value="">Select client</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.display_name || c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Description / Project */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Project / Description
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              required
+              placeholder="e.g. Website Redesign"
+              list="projects-list"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+            {projects.length > 0 && (
+              <datalist id="projects-list">
+                {projects.map((p) => (
+                  <option key={p.id} value={p.name} />
+                ))}
+              </datalist>
+            )}
+          </div>
+
+          {/* Number of installments */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Number of Installments
+            </label>
+            <div className="flex gap-2">
+              {[2, 3, 4, 5, 6].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => handleCountChange(n)}
+                  className={cn(
+                    'flex flex-1 items-center justify-center rounded-lg py-2 text-sm font-semibold transition-all',
+                    count === n
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-secondary text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Installment rows */}
+          <div className="space-y-2">
+            <div className="grid grid-cols-[auto_1fr_1fr] gap-2 text-xs font-medium text-muted-foreground">
+              <span className="w-6 text-center">#</span>
+              <span>Amount (EUR)</span>
+              <span>Date</span>
+            </div>
+            {rows.map((row, i) => (
+              <div key={i} className="grid grid-cols-[auto_1fr_1fr] items-center gap-2">
+                <span className="w-6 text-center text-xs font-semibold text-muted-foreground">
+                  {i + 1}
+                </span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="1"
+                  value={row.amount}
+                  onChange={(e) => updateRow(i, 'amount', e.target.value)}
+                  required
+                  placeholder="Amount"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                />
+                <input
+                  type="date"
+                  value={row.date}
+                  onChange={(e) => updateRow(i, 'date', e.target.value)}
+                  required
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Total */}
+          {total > 0 && (
+            <div className="flex items-center justify-between rounded-lg bg-emerald-500/5 px-3 py-2">
+              <span className="text-sm text-muted-foreground">Total project value</span>
+              <span className="text-sm font-bold tabular-nums text-emerald-600">
+                {formatCurrency(total)}
+              </span>
+            </div>
+          )}
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
+          {/* Actions */}
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-lg bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {isPending ? 'Creating...' : `Create ${count} Installments`}
             </button>
           </div>
         </form>
@@ -602,8 +1118,11 @@ export function PaymentsClient({
   summary,
   clients,
   clientBalances,
+  projects,
 }: PaymentsClientProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showRetainerModal, setShowRetainerModal] = useState(false);
+  const [showInstallmentModal, setShowInstallmentModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [view, setView] = useState<'month' | 'all'>('month');
 
@@ -945,15 +1464,48 @@ export function PaymentsClient({
           {showForm ? (
             <AddPaymentForm clients={clients} onComplete={() => setShowForm(false)} />
           ) : (
-            <button
-              type="button"
-              onClick={() => setShowForm(true)}
-              className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
-            >
-              <Plus className="h-4 w-4" />
-              Add Payment
-            </button>
+            <div className="mb-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
+              >
+                <Plus className="h-4 w-4" />
+                Add Payment
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowRetainerModal(true)}
+                title="Generate Retainer Fees"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-card/50 px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
+              >
+                <Repeat2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Retainer</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInstallmentModal(true)}
+                title="Generate Project Installments"
+                className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-card/50 px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-emerald-500 hover:bg-emerald-500/5 hover:text-emerald-600"
+              >
+                <Layers className="h-4 w-4" />
+                <span className="hidden sm:inline">Installments</span>
+              </button>
+            </div>
           )}
+
+          {/* Generator Modals */}
+          <RetainerGeneratorModal
+            clients={clients}
+            open={showRetainerModal}
+            onClose={() => setShowRetainerModal(false)}
+          />
+          <InstallmentGeneratorModal
+            clients={clients}
+            projects={projects}
+            open={showInstallmentModal}
+            onClose={() => setShowInstallmentModal(false)}
+          />
 
           {/* Payments list */}
           <div className="rounded-xl border border-border bg-card">

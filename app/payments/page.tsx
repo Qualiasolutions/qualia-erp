@@ -30,12 +30,15 @@ async function PaymentsLoader() {
 
   const workspaceId = await getCurrentWorkspaceId();
 
-  // Fetch clients for the dropdown
-  const { data: clients } = await supabase
-    .from('clients')
-    .select('id, name, display_name')
-    .eq('workspace_id', workspaceId)
-    .order('name');
+  // Fetch clients and projects for dropdowns
+  const [{ data: clients }, { data: projects }] = await Promise.all([
+    supabase
+      .from('clients')
+      .select('id, name, display_name')
+      .eq('workspace_id', workspaceId)
+      .order('name'),
+    supabase.from('projects').select('id, name').eq('workspace_id', workspaceId).order('name'),
+  ]);
 
   const [payments, summary, recurringPayments, recurringSummary, clientBalances] =
     await Promise.all([
@@ -54,6 +57,7 @@ async function PaymentsLoader() {
       recurringSummary={recurringSummary}
       clients={clients || []}
       clientBalances={clientBalances}
+      projects={projects || []}
     />
   );
 }
