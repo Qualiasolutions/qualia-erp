@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 Phase: 26 of 26+ (Not started)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-03-11 - Completed quick task 19: Automated retainer fees (monthly/annual) and project installment payments
+Last activity: 2026-03-12 - Completed quick task 20: Client Portal workspace creation + per-client project management
 
 Progress: [#############] 25 phases complete | v1.5.1 shipped
 
@@ -36,6 +36,7 @@ Progress: [#############] 25 phases complete | v1.5.1 shipped
 | 17  | Simplify and enhance Client Portal admin page UI/UX                            | 2026-03-11 | 52bb1cf | [17-simplify-and-enhance-client-portal-admin](./quick/17-simplify-and-enhance-client-portal-admin/) |
 | 18  | Schedule page: meeting attendee selection + client revalidation fix            | 2026-03-11 | ee44486 | [18-schedule-page-overhaul-unified-team-sche](./quick/18-schedule-page-overhaul-unified-team-sche/) |
 | 19  | Automated retainer fees (monthly/annual) and project installment payments      | 2026-03-11 | 7410e4a | [19-automated-retainer-fees-monthly-annual-a](./quick/19-automated-retainer-fees-monthly-annual-a/) |
+| 20  | Client Portal workspace creation + per-client project management (admin)       | 2026-03-12 | 39f7c3c | [20-client-portal-workspace-management-admin](./quick/20-client-portal-workspace-management-admin/) |
 
 ## Session Continuity
 
