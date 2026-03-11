@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 Phase: 26 of 26+ (Not started)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-03-11 - Completed quick task 17: Simplify and enhance Client Portal admin page UI/UX
+Last activity: 2026-03-11 - Completed quick task 18: Schedule page: meeting attendee selection + client revalidation fix
 
 Progress: [#############] 25 phases complete | v1.5.1 shipped
 
@@ -34,6 +34,7 @@ Progress: [#############] 25 phases complete | v1.5.1 shipped
 | --- | ------------------------------------------------------------------------------ | ---------- | ------- | --------------------------------------------------------------------------------------------------- |
 | 16  | Payments page UX redesign — monthly tracking, income/expenses, per-client view | 2026-03-11 | c6533e1 | [16-payments-page-ux-redesign-monthly-tracki](./quick/16-payments-page-ux-redesign-monthly-tracki/) |
 | 17  | Simplify and enhance Client Portal admin page UI/UX                            | 2026-03-11 | 52bb1cf | [17-simplify-and-enhance-client-portal-admin](./quick/17-simplify-and-enhance-client-portal-admin/) |
+| 18  | Schedule page: meeting attendee selection + client revalidation fix            | 2026-03-11 | ee44486 | [18-schedule-page-overhaul-unified-team-sche](./quick/18-schedule-page-overhaul-unified-team-sche/) |
 
 ## Session Continuity
 
