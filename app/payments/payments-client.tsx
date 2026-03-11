@@ -1,17 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo } from 'react';
-import {
-  format,
-  parseISO,
-  startOfMonth,
-  endOfMonth,
-  addMonths,
-  subMonths,
-  isSameMonth,
-  isAfter,
-  isBefore,
-} from 'date-fns';
+import { format, parseISO, addMonths, subMonths, isSameMonth } from 'date-fns';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -1128,18 +1118,14 @@ export function PaymentsClient({
 
   const isCurrentMonth = isSameMonth(selectedMonth, new Date());
 
-  // Filter payments for selected month
-  const monthStart = startOfMonth(selectedMonth);
-  const monthEnd = endOfMonth(selectedMonth);
-
   const monthPayments = useMemo(() => {
     return payments
       .filter((p) => {
         const date = parseISO(p.payment_date);
-        return !isBefore(date, monthStart) && !isAfter(date, monthEnd);
+        return isSameMonth(date, selectedMonth);
       })
       .sort((a, b) => parseISO(b.payment_date).getTime() - parseISO(a.payment_date).getTime());
-  }, [payments, monthStart, monthEnd]);
+  }, [payments, selectedMonth]);
 
   // Monthly summary
   const monthlySummary = useMemo(() => {
