@@ -518,6 +518,7 @@ export async function generateRetainerPayments(data: {
     amount: number;
     currency: string;
     description: string;
+    category: string;
     client_id: string;
     payment_date: string;
     status: string;
@@ -536,6 +537,7 @@ export async function generateRetainerPayments(data: {
         amount: data.amount,
         currency: data.currency || 'EUR',
         description: data.description,
+        category: 'retainer',
         client_id: data.client_id,
         payment_date: d.toISOString().split('T')[0],
         status: 'pending',
@@ -550,6 +552,7 @@ export async function generateRetainerPayments(data: {
       amount: data.amount,
       currency: data.currency || 'EUR',
       description: data.description,
+      category: 'retainer',
       client_id: data.client_id,
       payment_date: startDate.toISOString().split('T')[0],
       status: 'pending',
@@ -594,6 +597,7 @@ export async function generateInstallmentPayments(data: {
     amount: inst.amount,
     currency: data.currency || 'EUR',
     description: `${data.description} — Installment ${i + 1}/${data.installments.length}`,
+    category: 'installment',
     client_id: data.client_id,
     payment_date: inst.date,
     status: 'pending',

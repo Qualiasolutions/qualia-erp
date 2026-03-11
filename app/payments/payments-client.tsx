@@ -1146,7 +1146,9 @@ export function PaymentsClient({
   const [showInstallmentModal, setShowInstallmentModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [view, setView] = useState<'month' | 'all'>('month');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'retainer'>(
+    'all'
+  );
 
   const isCurrentMonth = isSameMonth(selectedMonth, new Date());
 
@@ -1216,7 +1218,13 @@ export function PaymentsClient({
   const net = monthlySummary.income - monthlySummary.expenses;
   const basePayments = view === 'month' ? monthPayments : payments;
   const displayPayments =
-    statusFilter === 'all' ? basePayments : basePayments.filter((p) => p.status === statusFilter);
+    statusFilter === 'all'
+      ? basePayments
+      : statusFilter === 'retainer'
+        ? basePayments.filter(
+            (p) => p.category === 'retainer' || (p.description && /retainer/i.test(p.description))
+          )
+        : basePayments.filter((p) => p.status === statusFilter);
 
   return (
     <div className="space-y-5">
@@ -1537,7 +1545,7 @@ export function PaymentsClient({
                 </span>
               </h2>
               <div className="flex items-center gap-1 rounded-lg bg-muted/40 p-0.5">
-                {(['all', 'pending', 'completed'] as const).map((s) => (
+                {(['all', 'pending', 'completed', 'retainer'] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
