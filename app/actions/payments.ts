@@ -506,7 +506,7 @@ export async function generateRetainerPayments(data: {
   }
 
   const supabase = await createClient();
-  const workspaceId = await getCurrentWorkspaceId();
+  const workspaceId = (await getCurrentWorkspaceId()) as string;
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -583,7 +583,7 @@ export async function generateInstallmentPayments(data: {
   }
 
   const supabase = await createClient();
-  const workspaceId = await getCurrentWorkspaceId();
+  const workspaceId = (await getCurrentWorkspaceId()) as string;
   const {
     data: { user },
   } = await supabase.auth.getUser();
