@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 Phase: 26 of 26+ (Not started)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-03-10 — v1.5.1 milestone complete, STATE.md reset
+Last activity: 2026-03-11 - Completed quick task 16: Payments page UX redesign
 
 Progress: [#############] 25 phases complete | v1.5.1 shipped
 
@@ -30,8 +30,9 @@ Progress: [#############] 25 phases complete | v1.5.1 shipped
 
 ### Quick Tasks Completed
 
-| #   | Description | Date | Commit | Directory |
-| --- | ----------- | ---- | ------ | --------- |
+| #   | Description                                                                    | Date       | Commit  | Directory                                                                                           |
+| --- | ------------------------------------------------------------------------------ | ---------- | ------- | --------------------------------------------------------------------------------------------------- |
+| 16  | Payments page UX redesign — monthly tracking, income/expenses, per-client view | 2026-03-11 | c6533e1 | [16-payments-page-ux-redesign-monthly-tracki](./quick/16-payments-page-ux-redesign-monthly-tracki/) |
 
 ## Session Continuity
 
