@@ -780,6 +780,7 @@ function InstallmentGeneratorModal({
 function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] }) {
   const [isPending, startTransition] = useTransition();
   const [editOpen, setEditOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const isIncoming = payment.type === 'incoming';
 
   const handleStatusChange = (newStatus: 'pending' | 'completed' | 'cancelled') => {
@@ -795,12 +796,16 @@ function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] 
     });
   };
 
+  const hasDetails = payment.notes || payment.description || payment.project;
+
   return (
     <>
       <div
+        onClick={() => hasDetails && setExpanded(!expanded)}
         className={cn(
           'group flex items-center gap-3 border-b border-border/50 px-1 py-3 last:border-0',
-          isPending && 'opacity-50'
+          isPending && 'opacity-50',
+          hasDetails && 'cursor-pointer'
         )}
       >
         {/* Icon */}
@@ -900,6 +905,32 @@ function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] 
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Expandable details */}
+      {expanded && hasDetails && (
+        <div className="border-b border-border/30 bg-muted/20 px-4 py-2.5">
+          <div className="grid gap-1.5 text-xs">
+            {payment.description && isIncoming && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground/50">Description:</span>
+                <span className="text-muted-foreground">{payment.description}</span>
+              </div>
+            )}
+            {payment.project && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground/50">Project:</span>
+                <span className="text-muted-foreground">{payment.project.name}</span>
+              </div>
+            )}
+            {payment.notes && (
+              <div className="flex gap-2">
+                <span className="text-muted-foreground/50">Notes:</span>
+                <span className="text-muted-foreground">{payment.notes}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <EditPaymentModal
         payment={payment}
@@ -1115,6 +1146,7 @@ export function PaymentsClient({
   const [showInstallmentModal, setShowInstallmentModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [view, setView] = useState<'month' | 'all'>('month');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
 
   const isCurrentMonth = isSameMonth(selectedMonth, new Date());
 
@@ -1182,7 +1214,9 @@ export function PaymentsClient({
   }, [monthPayments]);
 
   const net = monthlySummary.income - monthlySummary.expenses;
-  const displayPayments = view === 'month' ? monthPayments : payments;
+  const basePayments = view === 'month' ? monthPayments : payments;
+  const displayPayments =
+    statusFilter === 'all' ? basePayments : basePayments.filter((p) => p.status === statusFilter);
 
   return (
     <div className="space-y-5">
@@ -1502,6 +1536,23 @@ export function PaymentsClient({
                   ({displayPayments.length})
                 </span>
               </h2>
+              <div className="flex items-center gap-1 rounded-lg bg-muted/40 p-0.5">
+                {(['all', 'pending', 'completed'] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setStatusFilter(s)}
+                    className={cn(
+                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all',
+                      statusFilter === s
+                        ? 'bg-card text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="max-h-[500px] overflow-y-auto px-2">
