@@ -2095,3 +2095,127 @@ export async function getPortalHubData(): Promise<ActionResult> {
     };
   }
 }
+
+// ============================================================================
+// CREATE CLIENT WORKSPACE (admin — no pre-existing CRM entry required)
+// ============================================================================
+
+/**
+ * Create a new client workspace from scratch:
+ * 1. Optionally creates a CRM client row if none exists with this email
+ * 2. Calls setupPortalForClient to create auth account + link projects
+ *
+ * Returns credential data (email, tempPassword) so the admin can copy it.
+ */
+export async function createClientWorkspace(
+  name: string,
+  email: string,
+  projectIds: string[]
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Input validation
+    const trimmedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!trimmedName) {
+      return { success: false, error: 'Client name is required' };
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return { success: false, error: 'Please enter a valid email address' };
+    }
+
+    if (!projectIds || projectIds.length === 0) {
+      return { success: false, error: 'Select at least one project' };
+    }
+
+    // Get workspace ID
+    const workspaceId = await getCurrentWorkspaceId();
+    if (!workspaceId) {
+      return { success: false, error: 'No workspace found' };
+    }
+
+    // Check if a CRM client with this email already exists
+    const { data: allClients } = await supabase
+      .from('clients')
+      .select('id, name, contacts')
+      .order('created_at', { ascending: true });
+
+    let clientId: string | null = null;
+    let isNewCrmClient = false;
+
+    if (allClients) {
+      const existingClient = allClients.find((c) => {
+        const contacts = c.contacts as Array<{ email?: string }> | null;
+        return contacts?.[0]?.email?.trim().toLowerCase() === normalizedEmail;
+      });
+      if (existingClient) {
+        clientId = existingClient.id;
+      }
+    }
+
+    // If not found, create a new CRM client row
+    if (!clientId) {
+      const { data: newClient, error: insertError } = await supabase
+        .from('clients')
+        .insert({
+          name: trimmedName,
+          workspace_id: workspaceId,
+          contacts: [{ name: trimmedName, email: normalizedEmail }],
+          lead_status: 'active_client',
+        })
+        .select('id')
+        .single();
+
+      if (insertError || !newClient) {
+        console.error('[createClientWorkspace] CRM insert error:', insertError);
+        return { success: false, error: 'Failed to create CRM client entry' };
+      }
+
+      clientId = newClient.id;
+      isNewCrmClient = true;
+    }
+
+    // Delegate to setupPortalForClient to handle auth account + project linking
+    if (!clientId) {
+      return { success: false, error: 'Failed to resolve client ID' };
+    }
+    const setupResult = await setupPortalForClient(clientId, projectIds);
+    if (!setupResult.success) {
+      return setupResult;
+    }
+
+    revalidatePath('/portal');
+    revalidatePath('/clients');
+
+    return {
+      success: true,
+      data: {
+        ...(setupResult.data as object),
+        clientId,
+        isNewCrmClient,
+      },
+    };
+  } catch (error) {
+    console.error('[createClientWorkspace] Unexpected error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create client workspace',
+    };
+  }
+}
