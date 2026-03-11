@@ -24,9 +24,12 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow clients, admins, and managers (admins/managers get preview/oversight access)
+  // Allow clients, admins, managers, and employees
   const userRole = await getUserRole(user.id);
-  if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
+  if (
+    !userRole ||
+    (userRole !== 'client' && userRole !== 'employee' && !isPortalAdminRole(userRole))
+  ) {
     redirect('/');
   }
 
@@ -37,7 +40,7 @@ export default async function PortalLayout({ children }: { children: React.React
     .eq('id', user.id)
     .single();
 
-  const isAdminViewing = isPortalAdminRole(userRole);
+  const isAdminViewing = isPortalAdminRole(userRole) || userRole === 'employee';
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 

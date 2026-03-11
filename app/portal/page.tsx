@@ -2,9 +2,9 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalDashboardContent } from './portal-dashboard-content';
-import { PortalAdminPanel } from '@/components/portal/portal-admin-panel';
-import { getPortalAdminData, getPortalClientManagement } from '@/app/actions/client-portal';
-import type { MergedPortalClient } from '@/app/actions/client-portal';
+import { PortalHub } from '@/components/portal/portal-hub';
+import { getPortalHubData } from '@/app/actions/client-portal';
+import type { PortalHubClient } from '@/app/actions/client-portal';
 
 export default async function PortalDashboard() {
   const supabase = await createClient();
@@ -25,86 +25,29 @@ export default async function PortalDashboard() {
   const userRole = profile?.role || null;
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'there';
 
-  // Admin/Manager: show simplified client management
-  if (isPortalAdminRole(userRole)) {
-    const { data: allProjects } = await supabase
-      .from('projects')
-      .select('id, name, status, project_type')
-      .not('status', 'eq', 'Canceled')
-      .order('name');
-
-    const { data: crmClients } = await supabase
-      .from('clients')
-      .select('id, name, contacts')
-      .order('name');
-
-    const [adminResult, clientManagementResult] = await Promise.all([
-      getPortalAdminData(),
-      getPortalClientManagement(),
+  // Admin/Employee: show portal hub with all CRM clients
+  if (isPortalAdminRole(userRole) || userRole === 'employee') {
+    const [hubResult, projectsResult] = await Promise.all([
+      getPortalHubData(),
+      supabase
+        .from('projects')
+        .select('id, name, status, project_type')
+        .not('status', 'eq', 'Canceled')
+        .order('name'),
     ]);
-    const adminData = adminResult.success
-      ? (adminResult.data as {
-          clients: Array<{
-            id: string;
-            full_name: string | null;
-            email: string | null;
-            role: string;
-            created_at: string;
-          }>;
-          assignments: Array<{
-            id: string;
-            client_id: string;
-            project_id: string;
-            access_level: string | null;
-            invited_at: string | null;
-            client: { id: string; full_name: string | null; email: string | null } | null;
-            project: {
-              id: string;
-              name: string;
-              status: string | null;
-              project_type: string | null;
-            } | null;
-          }>;
-        })
-      : null;
 
-    const clientManagement = clientManagementResult.success
-      ? (clientManagementResult.data as {
-          clients: MergedPortalClient[];
-          totalActive: number;
-          totalInactive: number;
-        })
-      : null;
+    const hubClients = hubResult.success
+      ? (hubResult.data as { clients: PortalHubClient[] }).clients
+      : [];
 
-    return (
-      <div className="space-y-10">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Client Portal</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground/60">
-            Manage client access to your projects
-          </p>
-        </div>
+    const allProjects = (projectsResult.data || []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      status: p.status,
+      project_type: p.project_type,
+    }));
 
-        {adminData && (
-          <PortalAdminPanel
-            projects={(allProjects || []).map((p) => ({
-              id: p.id,
-              name: p.name,
-              status: p.status,
-              project_type: p.project_type,
-            }))}
-            clients={adminData.clients}
-            assignments={adminData.assignments}
-            crmClients={(crmClients || []).map((c) => ({
-              id: c.id,
-              name: c.name,
-              contacts: c.contacts as Array<{ email?: string }> | null,
-            }))}
-            clientManagement={clientManagement}
-          />
-        )}
-      </div>
-    );
+    return <PortalHub clients={hubClients} allProjects={allProjects} />;
   }
 
   // Client: fetch company name for personalization

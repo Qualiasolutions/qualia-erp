@@ -1960,3 +1960,138 @@ export async function resetClientPassword(email: string): Promise<ActionResult> 
     };
   }
 }
+
+// ============================================================================
+// PORTAL HUB — ALL CRM CLIENTS WITH PORTAL STATUS
+// ============================================================================
+
+export interface PortalHubClient {
+  id: string;
+  name: string;
+  email: string | null;
+  leadStatus: string | null;
+  projects: Array<{ id: string; name: string; status: string | null; project_type: string | null }>;
+  hasPortalAccess: boolean;
+  portalUserId: string | null;
+  lastSignIn: string | null;
+}
+
+/**
+ * Get all CRM clients with their projects and portal access status.
+ * Used by the admin portal hub page.
+ */
+export async function getPortalHubData(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Fetch CRM clients, projects, portal profiles, and assignments in parallel
+    const [clientsResult, projectsResult, portalProfilesResult, assignmentsResult] =
+      await Promise.all([
+        supabase.from('clients').select('id, name, contacts, lead_status').order('name'),
+        supabase
+          .from('projects')
+          .select('id, name, status, project_type, client_id')
+          .not('status', 'eq', 'Canceled')
+          .order('name'),
+        supabase.from('profiles').select('id, email, full_name').eq('role', 'client'),
+        supabase.from('client_projects').select('client_id, project_id'),
+      ]);
+
+    if (clientsResult.error) {
+      return { success: false, error: clientsResult.error.message };
+    }
+
+    // Build email -> portal profile map
+    const emailToPortalProfile = new Map<string, { id: string; email: string | null }>();
+    for (const profile of portalProfilesResult.data ?? []) {
+      if (profile.email) {
+        emailToPortalProfile.set(profile.email.toLowerCase(), {
+          id: profile.id,
+          email: profile.email,
+        });
+      }
+    }
+
+    // Build portal user ID -> assigned project IDs
+    const portalAssignments = new Map<string, Set<string>>();
+    for (const a of assignmentsResult.data ?? []) {
+      const existing = portalAssignments.get(a.client_id) ?? new Set();
+      existing.add(a.project_id);
+      portalAssignments.set(a.client_id, existing);
+    }
+
+    // Build client_id -> projects map
+    const clientProjectsMap = new Map<
+      string,
+      Array<{ id: string; name: string; status: string | null; project_type: string | null }>
+    >();
+    for (const project of projectsResult.data ?? []) {
+      if (!project.client_id) continue;
+      const existing = clientProjectsMap.get(project.client_id) ?? [];
+      existing.push({
+        id: project.id,
+        name: project.name,
+        status: project.status,
+        project_type: project.project_type,
+      });
+      clientProjectsMap.set(project.client_id, existing);
+    }
+
+    // Try to get last sign-in data (optional — fails gracefully without service_role key)
+    const signInMap = new Map<string, string | null>();
+    try {
+      const adminClient = createAdminClient();
+      const { data: authUsersResult } = await adminClient.auth.admin.listUsers({
+        perPage: 1000,
+      });
+      for (const authUser of authUsersResult?.users ?? []) {
+        const email = authUser.email?.toLowerCase();
+        if (email) {
+          signInMap.set(email, authUser.last_sign_in_at ?? null);
+        }
+      }
+    } catch {
+      // No service role key — skip last sign-in data
+    }
+
+    // Build the hub data
+    const clients: PortalHubClient[] = (clientsResult.data ?? []).map((client) => {
+      const contacts = client.contacts as Array<{ email?: string }> | null;
+      const firstEmail = contacts?.[0]?.email?.trim().toLowerCase() || null;
+      const portalProfile = firstEmail ? emailToPortalProfile.get(firstEmail) : null;
+
+      return {
+        id: client.id,
+        name: client.name,
+        email: firstEmail,
+        leadStatus: client.lead_status,
+        projects: clientProjectsMap.get(client.id) ?? [],
+        hasPortalAccess: !!portalProfile,
+        portalUserId: portalProfile?.id ?? null,
+        lastSignIn: firstEmail ? (signInMap.get(firstEmail) ?? null) : null,
+      };
+    });
+
+    return {
+      success: true,
+      data: { clients },
+    };
+  } catch (error) {
+    console.error('[getPortalHubData] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to load portal hub data',
+    };
+  }
+}
