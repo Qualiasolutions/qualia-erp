@@ -491,6 +491,126 @@ export async function getClientBalances(): Promise<ClientBalance[]> {
   });
 }
 
+// ============ BULK PAYMENT GENERATORS ============
+
+export async function generateRetainerPayments(data: {
+  client_id: string;
+  amount: number;
+  frequency: 'monthly' | 'annual';
+  start_date: string; // YYYY-MM-DD (first day of start month)
+  description: string;
+  currency?: string;
+}): Promise<{ success: boolean; error?: string; count?: number }> {
+  if (!(await isAdminUser())) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Build payment entries
+  const entries: Array<{
+    workspace_id: string;
+    type: string;
+    amount: number;
+    currency: string;
+    description: string;
+    client_id: string;
+    payment_date: string;
+    status: string;
+    created_by: string | undefined;
+  }> = [];
+
+  const startDate = new Date(data.start_date + 'T00:00:00');
+
+  if (data.frequency === 'monthly') {
+    // Generate 12 monthly entries
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+      entries.push({
+        workspace_id: workspaceId,
+        type: 'incoming',
+        amount: data.amount,
+        currency: data.currency || 'EUR',
+        description: data.description,
+        client_id: data.client_id,
+        payment_date: d.toISOString().split('T')[0],
+        status: 'pending',
+        created_by: user?.id,
+      });
+    }
+  } else {
+    // annual: 1 entry per year, on start_date
+    entries.push({
+      workspace_id: workspaceId,
+      type: 'incoming',
+      amount: data.amount,
+      currency: data.currency || 'EUR',
+      description: data.description,
+      client_id: data.client_id,
+      payment_date: startDate.toISOString().split('T')[0],
+      status: 'pending',
+      created_by: user?.id,
+    });
+  }
+
+  const { error } = await supabase.from('payments').insert(entries);
+
+  if (error) {
+    console.error('Error generating retainer payments:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/payments');
+  return { success: true, count: entries.length };
+}
+
+export async function generateInstallmentPayments(data: {
+  client_id: string;
+  description: string;
+  installments: Array<{ amount: number; date: string }>;
+  currency?: string;
+}): Promise<{ success: boolean; error?: string; count?: number }> {
+  if (!(await isAdminUser())) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  if (!data.installments || data.installments.length === 0) {
+    return { success: false, error: 'No installments provided' };
+  }
+
+  const supabase = await createClient();
+  const workspaceId = await getCurrentWorkspaceId();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const entries = data.installments.map((inst, i) => ({
+    workspace_id: workspaceId,
+    type: 'incoming',
+    amount: inst.amount,
+    currency: data.currency || 'EUR',
+    description: `${data.description} — Installment ${i + 1}/${data.installments.length}`,
+    client_id: data.client_id,
+    payment_date: inst.date,
+    status: 'pending',
+    created_by: user?.id,
+  }));
+
+  const { error } = await supabase.from('payments').insert(entries);
+
+  if (error) {
+    console.error('Error generating installment payments:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/payments');
+  return { success: true, count: entries.length };
+}
+
 export async function updateClientOwed(
   clientId: string,
   amount: number,
