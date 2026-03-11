@@ -123,6 +123,19 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
+  // Batch-insert attendees if any were selected
+  const attendeeIds = formData.getAll('attendee_ids') as string[];
+  if (attendeeIds.length > 0) {
+    const attendeeRows = attendeeIds.map((profileId) => ({
+      meeting_id: data.id,
+      profile_id: profileId,
+    }));
+    const { error: attendeeError } = await supabase.from('meeting_attendees').insert(attendeeRows);
+    if (attendeeError) {
+      console.error('Error adding attendees:', attendeeError);
+    }
+  }
+
   // Log client activity if meeting is with a client
   if (finalClientId) {
     await logClientActivity(finalClientId, 'meeting', `Meeting scheduled: ${title}`, {
@@ -181,6 +194,9 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/schedule');
   revalidatePath('/'); // Also revalidate dashboard to show new activity
+  if (custom_client_name && finalClientId) {
+    revalidatePath('/clients'); // New client was created — refresh clients page
+  }
   return { success: true, data };
 }
 

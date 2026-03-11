@@ -13,6 +13,7 @@ import {
   Check,
   X,
   Sparkles,
+  UserPlus,
 } from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, addDays } from 'date-fns';
 import {
@@ -36,7 +37,7 @@ import { SelectWithOther } from '@/components/ui/select-with-other';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { createMeeting, getClients } from '@/app/actions';
+import { createMeeting, getClients, getProfiles } from '@/app/actions';
 import { invalidateMeetings } from '@/lib/swr';
 
 // Get the next available time slot (rounds up to next 30 min)
@@ -118,6 +119,10 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
+  const [profiles, setProfiles] = useState<
+    Array<{ id: string; full_name: string | null; email: string | null }>
+  >([]);
+  const [selectedAttendeeIds, setSelectedAttendeeIds] = useState<string[]>([]);
   const [meetingType, setMeetingType] = useState<'internal' | 'client'>('internal');
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [customClientName, setCustomClientName] = useState<string>('');
@@ -130,6 +135,9 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   useEffect(() => {
     if (open) {
       getClients().then((data) => setClients(data as Client[]));
+      getProfiles().then((data) =>
+        setProfiles(data as Array<{ id: string; full_name: string | null; email: string | null }>)
+      );
       const nextSlot = getNextTimeSlot();
       setSelectedDate(nextSlot.date);
       setSelectedTime(nextSlot.time);
@@ -139,6 +147,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
       setCustomClientName('');
       setTitle('');
       setMeetingLink('');
+      setSelectedAttendeeIds([]);
       setError(null);
       setSuccess(false);
     }
@@ -196,6 +205,8 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
     if (meetingLink.trim()) {
       formData.set('meeting_link', meetingLink.trim());
     }
+
+    selectedAttendeeIds.forEach((id) => formData.append('attendee_ids', id));
 
     const result = await createMeeting(formData);
 
@@ -449,6 +460,54 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                 </div>
               </div>
 
+              {/* Team Members */}
+              {profiles.length > 0 && (
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                    <UserPlus className="h-3.5 w-3.5" />
+                    Team members
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {profiles
+                      .filter((p) => p.full_name)
+                      .map((profile) => {
+                        const isSelected = selectedAttendeeIds.includes(profile.id);
+                        return (
+                          <button
+                            key={profile.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedAttendeeIds((prev) =>
+                                isSelected
+                                  ? prev.filter((id) => id !== profile.id)
+                                  : [...prev, profile.id]
+                              );
+                            }}
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
+                              isSelected
+                                ? 'border-primary/30 bg-primary/10 text-primary'
+                                : 'border-border/50 bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold',
+                                isSelected
+                                  ? 'bg-primary/20 text-primary'
+                                  : 'bg-muted text-muted-foreground'
+                              )}
+                            >
+                              {profile.full_name![0].toUpperCase()}
+                            </span>
+                            {profile.full_name!.split(' ')[0]}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+
               {/* Meeting Link */}
               <div className="relative">
                 <div className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -494,6 +553,15 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                       {DURATION_OPTIONS.find((d) => d.value === duration)?.full}
                     </span>
                   </div>
+                  {selectedAttendeeIds.length > 0 && (
+                    <div className="mt-2 flex items-center gap-1.5 text-sm text-primary">
+                      <Users className="h-3.5 w-3.5" />
+                      <span className="font-medium">
+                        {selectedAttendeeIds.length} attendee
+                        {selectedAttendeeIds.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  )}
                   {meetingLink && (
                     <div className="mt-2 flex items-center gap-1.5 text-sm text-emerald-500">
                       <Video className="h-3.5 w-3.5" />
