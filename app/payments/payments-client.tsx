@@ -1,7 +1,17 @@
 'use client';
 
 import { useState, useTransition, useMemo } from 'react';
-import { format, parseISO } from 'date-fns';
+import {
+  format,
+  parseISO,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  subMonths,
+  isSameMonth,
+  isAfter,
+  isBefore,
+} from 'date-fns';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -12,8 +22,12 @@ import {
   MoreHorizontal,
   Trash2,
   Pencil,
-  Users,
   Building2,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  CalendarDays,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -307,7 +321,7 @@ function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] 
           <p className="text-xs text-muted-foreground">
             {format(parseISO(payment.payment_date), 'MMM d')}
             {payment.category && (
-              <span className="ml-1.5 text-muted-foreground/60">• {payment.category}</span>
+              <span className="ml-1.5 text-muted-foreground/60">· {payment.category}</span>
             )}
           </p>
         </div>
@@ -543,56 +557,38 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
   );
 }
 
-// ============ CLIENT BALANCE ROW ============
+// ============ CLIENT MONTH ROW ============
 
-function ClientBalanceRow({ balance }: { balance: ClientBalance }) {
-  const hasActivity = balance.total_paid > 0 || balance.total_pending > 0;
-  const totalOwed = balance.total_owed || balance.total_paid + balance.total_pending;
-  const paidPct =
-    totalOwed > 0 ? Math.min(100, Math.round((balance.total_paid / totalOwed) * 100)) : 0;
+function ClientMonthRow({
+  clientName,
+  displayName,
+  paid,
+  pending,
+}: {
+  clientName: string;
+  displayName: string | null;
+  paid: number;
+  pending: number;
+}) {
+  const total = paid + pending;
+  if (total === 0) return null;
 
   return (
-    <div className="flex items-center gap-3 border-b border-border/50 px-2 py-3 last:border-0">
-      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-qualia-500/10">
-        <Building2 className="h-4 w-4 text-qualia-600" />
+    <div className="flex items-center gap-3 border-b border-border/50 px-2 py-2.5 last:border-0">
+      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-qualia-500/10">
+        <Building2 className="h-3.5 w-3.5 text-qualia-600" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">
-          {balance.display_name || balance.client_name}
-        </p>
-        {hasActivity && (
-          <div className="mt-1.5 flex items-center gap-2">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all"
-                style={{ width: `${paidPct}%` }}
-              />
-            </div>
-            <span className="shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">
-              {paidPct}%
-            </span>
-          </div>
-        )}
-        {balance.last_payment_date && (
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Last: {format(parseISO(balance.last_payment_date), 'MMM d')}
-          </p>
-        )}
+        <p className="truncate text-sm font-medium text-foreground">{displayName || clientName}</p>
       </div>
       <div className="text-right">
-        {hasActivity ? (
-          <>
-            <p className="text-sm font-semibold tabular-nums text-emerald-600">
-              {formatCurrency(balance.total_paid)}
-            </p>
-            {balance.total_pending > 0 && (
-              <p className="text-xs tabular-nums text-amber-600">
-                +{formatCurrency(balance.total_pending)} pending
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">No payments</p>
+        <p className="text-sm font-semibold tabular-nums text-emerald-600">
+          {formatCurrency(paid)}
+        </p>
+        {pending > 0 && (
+          <p className="text-[11px] tabular-nums text-amber-600">
+            +{formatCurrency(pending)} pending
+          </p>
         )}
       </div>
     </div>
@@ -608,122 +604,337 @@ export function PaymentsClient({
   clientBalances,
 }: PaymentsClientProps) {
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [view, setView] = useState<'month' | 'all'>('month');
 
-  const balance = summary.totalIncoming - summary.totalOutgoing;
+  const isCurrentMonth = isSameMonth(selectedMonth, new Date());
 
-  const filteredPayments = useMemo(() => {
-    const filtered = filter === 'all' ? payments : payments.filter((p) => p.status === filter);
-    return filtered.sort(
-      (a, b) => parseISO(b.payment_date).getTime() - parseISO(a.payment_date).getTime()
+  // Filter payments for selected month
+  const monthStart = startOfMonth(selectedMonth);
+  const monthEnd = endOfMonth(selectedMonth);
+
+  const monthPayments = useMemo(() => {
+    return payments
+      .filter((p) => {
+        const date = parseISO(p.payment_date);
+        return !isBefore(date, monthStart) && !isAfter(date, monthEnd);
+      })
+      .sort((a, b) => parseISO(b.payment_date).getTime() - parseISO(a.payment_date).getTime());
+  }, [payments, monthStart, monthEnd]);
+
+  // Monthly summary
+  const monthlySummary = useMemo(() => {
+    return monthPayments.reduce(
+      (acc, p) => {
+        const amount = Number(p.amount);
+        if (p.type === 'incoming') {
+          acc.income += amount;
+          if (p.status === 'completed') acc.collected += amount;
+          if (p.status === 'pending') acc.pendingIn += amount;
+        } else {
+          acc.expenses += amount;
+          if (p.status === 'pending') acc.pendingOut += amount;
+        }
+        return acc;
+      },
+      { income: 0, expenses: 0, collected: 0, pendingIn: 0, pendingOut: 0 }
     );
-  }, [payments, filter]);
+  }, [monthPayments]);
 
-  // Sort client balances by total owed descending
-  const sortedBalances = useMemo(() => {
-    return [...clientBalances].sort((a, b) => b.total_owed - a.total_owed);
-  }, [clientBalances]);
+  // Upcoming (pending) payments for the month
+  const upcomingPayments = useMemo(() => {
+    return monthPayments
+      .filter((p) => p.status === 'pending')
+      .sort((a, b) => parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime());
+  }, [monthPayments]);
 
-  const totalClientPaid = clientBalances.reduce((sum, b) => sum + b.total_paid, 0);
-  const totalClientPending = clientBalances.reduce((sum, b) => sum + b.total_pending, 0);
+  // Per-client breakdown for the month
+  const clientMonthBreakdown = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; displayName: string | null; paid: number; pending: number }
+    >();
+
+    monthPayments
+      .filter((p) => p.type === 'incoming' && p.client_id)
+      .forEach((p) => {
+        const clientId = p.client_id!;
+        const existing = map.get(clientId) || {
+          name: p.client?.name || 'Unknown',
+          displayName: p.client?.display_name || null,
+          paid: 0,
+          pending: 0,
+        };
+        const amount = Number(p.amount);
+        if (p.status === 'completed') existing.paid += amount;
+        if (p.status === 'pending') existing.pending += amount;
+        map.set(clientId, existing);
+      });
+
+    return Array.from(map.entries()).sort(
+      ([, a], [, b]) => b.paid + b.pending - (a.paid + a.pending)
+    );
+  }, [monthPayments]);
+
+  const net = monthlySummary.income - monthlySummary.expenses;
+  const displayPayments = view === 'month' ? monthPayments : payments;
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="space-y-5">
+      {/* Month Navigator */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedMonth(subMonths(selectedMonth, 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedMonth(new Date())}
+            className={cn(
+              'rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors',
+              isCurrentMonth
+                ? 'bg-qualia-500/10 text-qualia-600'
+                : 'bg-card text-foreground hover:bg-secondary'
+            )}
+          >
+            {format(selectedMonth, 'MMMM yyyy')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex gap-1 rounded-lg bg-secondary/50 p-0.5">
+          {(['month', 'all'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setView(v)}
+              className={cn(
+                'rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors',
+                view === v
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {v === 'month' ? 'This Month' : 'All Time'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Monthly Summary Cards */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-xl border border-l-[3px] border-border border-l-emerald-500 bg-card p-4">
-          <p className="text-xs text-muted-foreground">Total Income</p>
-          <p className="mt-1 text-xl font-bold tabular-nums text-emerald-600">
-            {formatCurrency(summary.totalIncoming)}
+          <div className="flex items-center gap-1.5">
+            <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+            <p className="text-xs text-muted-foreground">
+              {view === 'month' ? 'Income' : 'Total Income'}
+            </p>
+          </div>
+          <p className="mt-1.5 text-xl font-bold tabular-nums text-emerald-600">
+            {formatCurrency(view === 'month' ? monthlySummary.income : summary.totalIncoming)}
           </p>
-          {summary.pendingIncoming > 0 && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {formatCurrency(summary.pendingIncoming)} pending
+          {(view === 'month' ? monthlySummary.pendingIn : summary.pendingIncoming) > 0 && (
+            <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+              {formatCurrency(
+                view === 'month' ? monthlySummary.pendingIn : summary.pendingIncoming
+              )}{' '}
+              pending
             </p>
           )}
         </div>
         <div className="rounded-xl border border-l-[3px] border-border border-l-red-500 bg-card p-4">
-          <p className="text-xs text-muted-foreground">Total Expenses</p>
-          <p className="mt-1 text-xl font-bold tabular-nums text-red-500">
-            {formatCurrency(summary.totalOutgoing)}
+          <div className="flex items-center gap-1.5">
+            <TrendingDown className="h-3.5 w-3.5 text-red-500" />
+            <p className="text-xs text-muted-foreground">
+              {view === 'month' ? 'Expenses' : 'Total Expenses'}
+            </p>
+          </div>
+          <p className="mt-1.5 text-xl font-bold tabular-nums text-red-500">
+            {formatCurrency(view === 'month' ? monthlySummary.expenses : summary.totalOutgoing)}
           </p>
-          {summary.pendingOutgoing > 0 && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {formatCurrency(summary.pendingOutgoing)} pending
+          {(view === 'month' ? monthlySummary.pendingOut : summary.pendingOutgoing) > 0 && (
+            <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+              {formatCurrency(
+                view === 'month' ? monthlySummary.pendingOut : summary.pendingOutgoing
+              )}{' '}
+              pending
             </p>
           )}
         </div>
         <div
           className={cn(
             'rounded-xl border border-l-[3px] border-border bg-card p-4',
-            balance >= 0 ? 'border-l-qualia-500' : 'border-l-red-500'
+            (view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing) >= 0
+              ? 'border-l-qualia-500'
+              : 'border-l-red-500'
           )}
         >
-          <p className="text-xs text-muted-foreground">Net Balance</p>
+          <p className="text-xs text-muted-foreground">Net</p>
           <p
             className={cn(
-              'mt-1 text-xl font-bold tabular-nums',
-              balance >= 0 ? 'text-emerald-600' : 'text-red-500'
+              'mt-1.5 text-xl font-bold tabular-nums',
+              (view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing) >= 0
+                ? 'text-emerald-600'
+                : 'text-red-500'
             )}
           >
-            {formatCurrency(balance)}
+            {formatCurrency(view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing)}
           </p>
-          {summary.totalIncoming > 0 && (
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {((balance / summary.totalIncoming) * 100).toFixed(0)}% margin
+          {(view === 'month' ? monthlySummary.income : summary.totalIncoming) > 0 && (
+            <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+              {(
+                ((view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing) /
+                  (view === 'month' ? monthlySummary.income : summary.totalIncoming)) *
+                100
+              ).toFixed(0)}
+              % margin
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-l-[3px] border-border border-l-qualia-500 bg-card p-4">
-          <p className="text-xs text-muted-foreground">Client Revenue</p>
-          <p className="mt-1 text-xl font-bold tabular-nums text-qualia-600">
-            {formatCurrency(totalClientPaid + totalClientPending)}
+        <div className="rounded-xl border border-l-[3px] border-border border-l-amber-500 bg-card p-4">
+          <div className="flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-amber-500" />
+            <p className="text-xs text-muted-foreground">Upcoming</p>
+          </div>
+          <p className="mt-1.5 text-xl font-bold tabular-nums text-amber-600">
+            {upcomingPayments.length}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {clientBalances.filter((b) => b.total_owed > 0).length} active clients
+          <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
+            {formatCurrency(upcomingPayments.reduce((s, p) => s + Number(p.amount), 0))} total
+            pending
           </p>
         </div>
       </div>
 
+      {/* Upcoming Payments (only in month view, only if there are pending) */}
+      {view === 'month' && upcomingPayments.length > 0 && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Clock className="h-4 w-4 text-amber-500" />
+            Upcoming This Month
+            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600">
+              {upcomingPayments.length}
+            </span>
+          </h3>
+          <div className="space-y-0">
+            {upcomingPayments.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center gap-3 border-b border-amber-500/10 py-2 last:border-0"
+              >
+                <div
+                  className={cn(
+                    'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full',
+                    p.type === 'incoming' ? 'bg-emerald-500/10' : 'bg-red-500/10'
+                  )}
+                >
+                  {p.type === 'incoming' ? (
+                    <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-500" />
+                  ) : (
+                    <ArrowUpRight className="h-3.5 w-3.5 text-red-500" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {p.type === 'incoming' && p.client
+                      ? p.client.display_name || p.client.name
+                      : p.description}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Due {format(parseISO(p.payment_date), 'MMM d')}
+                  </p>
+                </div>
+                <p
+                  className={cn(
+                    'text-sm font-semibold tabular-nums',
+                    p.type === 'incoming' ? 'text-emerald-600' : 'text-red-500'
+                  )}
+                >
+                  {p.type === 'incoming' ? '+' : '-'}
+                  {formatCurrency(Number(p.amount))}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Two Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-5">
-        {/* Left: Client Balances */}
+      <div className="grid gap-5 lg:grid-cols-5">
+        {/* Left: Client Breakdown */}
         <div className="lg:col-span-2">
           <div className="rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <h2 className="font-semibold text-foreground">Client Balances</h2>
-              </div>
-              <span className="text-xs text-muted-foreground">{clientBalances.length} clients</span>
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                {view === 'month' ? 'Client Revenue' : 'All-Time Client Balances'}
+              </h2>
+              <span className="text-xs tabular-nums text-muted-foreground">
+                {view === 'month'
+                  ? `${clientMonthBreakdown.length} clients`
+                  : `${clientBalances.filter((b) => b.total_owed > 0).length} active`}
+              </span>
             </div>
-            <div className="max-h-[500px] overflow-y-auto px-2">
-              {sortedBalances.length === 0 ? (
+            <div className="max-h-[400px] overflow-y-auto px-2">
+              {view === 'month' ? (
+                clientMonthBreakdown.length === 0 ? (
+                  <div className="py-8 text-center">
+                    <p className="text-sm text-muted-foreground">No client payments this month</p>
+                  </div>
+                ) : (
+                  clientMonthBreakdown.map(([clientId, data]) => (
+                    <ClientMonthRow
+                      key={clientId}
+                      clientName={data.name}
+                      displayName={data.displayName}
+                      paid={data.paid}
+                      pending={data.pending}
+                    />
+                  ))
+                )
+              ) : clientBalances.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="text-sm text-muted-foreground">No clients yet</p>
                 </div>
               ) : (
-                sortedBalances.map((balance) => (
-                  <ClientBalanceRow key={balance.client_id} balance={balance} />
-                ))
+                [...clientBalances]
+                  .sort((a, b) => b.total_owed - a.total_owed)
+                  .filter((b) => b.total_owed > 0)
+                  .map((balance) => (
+                    <ClientMonthRow
+                      key={balance.client_id}
+                      clientName={balance.client_name}
+                      displayName={balance.display_name}
+                      paid={balance.total_paid}
+                      pending={balance.total_pending}
+                    />
+                  ))
               )}
             </div>
             {/* Summary footer */}
-            <div className="border-t border-border px-4 py-3">
+            <div className="border-t border-border px-4 py-2.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Total Collected</span>
+                <span className="text-muted-foreground">
+                  {view === 'month' ? 'Month Total' : 'All-Time'}
+                </span>
                 <span className="font-semibold tabular-nums text-emerald-600">
-                  {formatCurrency(totalClientPaid)}
+                  {formatCurrency(
+                    view === 'month'
+                      ? clientMonthBreakdown.reduce((s, [, d]) => s + d.paid + d.pending, 0)
+                      : clientBalances.reduce((s, b) => s + b.total_owed, 0)
+                  )}
                 </span>
               </div>
-              {totalClientPending > 0 && (
-                <div className="mt-1 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Pending</span>
-                  <span className="font-semibold tabular-nums text-amber-600">
-                    {formatCurrency(totalClientPending)}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -747,37 +958,31 @@ export function PaymentsClient({
           {/* Payments list */}
           <div className="rounded-xl border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <h2 className="font-semibold text-foreground">Transactions</h2>
-              <div className="flex gap-1 rounded-lg bg-secondary/50 p-0.5">
-                {(['all', 'pending', 'completed'] as const).map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setFilter(status)}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-colors',
-                      filter === status
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
+              <h2 className="text-sm font-semibold text-foreground">
+                Transactions
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  ({displayPayments.length})
+                </span>
+              </h2>
             </div>
 
             <div className="max-h-[500px] overflow-y-auto px-2">
-              {filteredPayments.length === 0 ? (
+              {displayPayments.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    {payments.length === 0 ? 'No payments yet' : `No ${filter} payments`}
+                    {view === 'month'
+                      ? `No payments in ${format(selectedMonth, 'MMMM yyyy')}`
+                      : 'No payments yet'}
                   </p>
                 </div>
-              ) : (
+              ) : view === 'all' ? (
                 (() => {
                   let lastMonth = '';
-                  return filteredPayments.map((payment) => {
+                  const sorted = [...displayPayments].sort(
+                    (a, b) =>
+                      parseISO(b.payment_date).getTime() - parseISO(a.payment_date).getTime()
+                  );
+                  return sorted.map((payment) => {
                     const monthKey = format(parseISO(payment.payment_date), 'MMMM yyyy');
                     const showHeader = monthKey !== lastMonth;
                     lastMonth = monthKey;
@@ -795,6 +1000,10 @@ export function PaymentsClient({
                     );
                   });
                 })()
+              ) : (
+                displayPayments.map((payment) => (
+                  <PaymentRow key={payment.id} payment={payment} clients={clients} />
+                ))
               )}
             </div>
           </div>

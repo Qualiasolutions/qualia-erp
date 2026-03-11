@@ -18,6 +18,7 @@ import {
   Shield,
   Clock,
   Upload,
+  Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -49,6 +50,7 @@ const resourcesNav = [
 const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
+  { name: 'Payments', href: '/payments', icon: Wallet },
   { name: 'Portal Import', href: '/admin/projects/import', icon: Upload },
   { name: 'Time Tracking', href: '/time-tracking', icon: Clock },
 ];
