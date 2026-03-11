@@ -66,7 +66,7 @@ export async function getPayments(): Promise<Payment[]> {
     `
     )
     .eq('workspace_id', workspaceId)
-    .order('payment_date', { ascending: false });
+    .order('payment_date', { ascending: true });
 
   if (error) {
     console.error('Error fetching payments:', error);

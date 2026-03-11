@@ -1124,7 +1124,7 @@ export function PaymentsClient({
         const date = parseISO(p.payment_date);
         return isSameMonth(date, selectedMonth);
       })
-      .sort((a, b) => parseISO(b.payment_date).getTime() - parseISO(a.payment_date).getTime());
+      .sort((a, b) => parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime());
   }, [payments, selectedMonth]);
 
   // Monthly summary
@@ -1518,7 +1518,7 @@ export function PaymentsClient({
                   let lastMonth = '';
                   const sorted = [...displayPayments].sort(
                     (a, b) =>
-                      parseISO(b.payment_date).getTime() - parseISO(a.payment_date).getTime()
+                      parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime()
                   );
                   return sorted.map((payment) => {
                     const monthKey = format(parseISO(payment.payment_date), 'MMMM yyyy');
