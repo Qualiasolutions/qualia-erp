@@ -16,8 +16,14 @@ import {
   ShieldOff,
   Folder,
   RotateCcw,
+  Plus,
+  UserPlus,
 } from 'lucide-react';
-import { setupPortalForClient, resetClientPassword } from '@/app/actions/client-portal';
+import {
+  setupPortalForClient,
+  resetClientPassword,
+  createClientWorkspace,
+} from '@/app/actions/client-portal';
 import type { PortalHubClient } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -77,6 +83,29 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
     tempPassword: string;
   } | null>(null);
   const [resetCopied, setResetCopied] = useState(false);
+
+  // Create workspace dialog state
+  const [createWorkspaceOpen, setCreateWorkspaceOpen] = useState(false);
+  const [newClientName, setNewClientName] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+  const [newProjectIds, setNewProjectIds] = useState<string[]>([]);
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [workspaceCredentials, setWorkspaceCredentials] = useState<{
+    email: string;
+    password?: string;
+    name: string;
+    alreadyExisted: boolean;
+  } | null>(null);
+  const [workspaceCopied, setWorkspaceCopied] = useState(false);
+
+  // Manage projects dialog state
+  const [manageProjectsDialog, setManageProjectsDialog] = useState<{
+    clientId: string;
+    clientName: string;
+    currentProjectIds: string[];
+  } | null>(null);
+  const [managedProjectIds, setManagedProjectIds] = useState<string[]>([]);
+  const [isSavingProjects, setIsSavingProjects] = useState(false);
 
   const filtered = useMemo(() => {
     let result = clients;
@@ -204,14 +233,147 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
     );
   };
 
+  const toggleNewProject = (projectId: string) => {
+    setNewProjectIds((prev) =>
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
+    );
+  };
+
+  const toggleManagedProject = (projectId: string) => {
+    setManagedProjectIds((prev) =>
+      prev.includes(projectId) ? prev.filter((id) => id !== projectId) : [...prev, projectId]
+    );
+  };
+
+  const handleCreateWorkspace = async () => {
+    if (!newClientName.trim()) {
+      toast.error('Client name is required');
+      return;
+    }
+    if (!newClientEmail.trim()) {
+      toast.error('Email is required');
+      return;
+    }
+    if (newProjectIds.length === 0) {
+      toast.error('Select at least one project');
+      return;
+    }
+
+    setIsCreatingWorkspace(true);
+    try {
+      const result = await createClientWorkspace(
+        newClientName.trim(),
+        newClientEmail.trim(),
+        newProjectIds
+      );
+      if (!result.success) {
+        toast.error(result.error || 'Failed to create workspace');
+        return;
+      }
+
+      const data = result.data as {
+        userId: string;
+        email: string;
+        name: string;
+        tempPassword?: string;
+        alreadyExisted: boolean;
+        projectsLinked: number;
+        clientId: string;
+        isNewCrmClient: boolean;
+      };
+
+      setWorkspaceCredentials({
+        email: data.email,
+        password: data.tempPassword,
+        name: data.name,
+        alreadyExisted: data.alreadyExisted,
+      });
+
+      // Add the new client to local state so it appears in the grid immediately
+      const linkedProjects = allProjects.filter((p) => newProjectIds.includes(p.id));
+      setClients((prev) => [
+        ...prev,
+        {
+          id: data.clientId,
+          name: newClientName.trim(),
+          email: data.email,
+          leadStatus: 'active_client',
+          projects: linkedProjects,
+          hasPortalAccess: true,
+          portalUserId: data.userId,
+          lastSignIn: null,
+        },
+      ]);
+
+      toast.success(
+        data.alreadyExisted
+          ? `${data.name} linked to ${data.projectsLinked} project(s)`
+          : 'Workspace created!'
+      );
+    } catch {
+      toast.error('Something went wrong');
+    } finally {
+      setIsCreatingWorkspace(false);
+    }
+  };
+
+  const copyWorkspaceCredentials = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setWorkspaceCopied(true);
+    setTimeout(() => setWorkspaceCopied(false), 2000);
+  };
+
+  const handleSaveProjects = async () => {
+    if (!manageProjectsDialog) return;
+
+    setIsSavingProjects(true);
+    try {
+      const result = await setupPortalForClient(manageProjectsDialog.clientId, managedProjectIds);
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update projects');
+        return;
+      }
+
+      // Update local state
+      const updatedProjects = allProjects.filter((p) => managedProjectIds.includes(p.id));
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === manageProjectsDialog.clientId ? { ...c, projects: updatedProjects } : c
+        )
+      );
+
+      toast.success('Projects updated');
+      setManageProjectsDialog(null);
+    } catch {
+      toast.error('Something went wrong');
+    } finally {
+      setIsSavingProjects(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Client Portal</h1>
-        <p className="mt-1.5 text-sm text-muted-foreground/60">
-          Manage portal access and view client projects
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Client Portal</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground/60">
+            Manage portal access and view client projects
+          </p>
+        </div>
+        <Button
+          size="sm"
+          className="gap-1.5 bg-qualia-600 text-white hover:bg-qualia-700"
+          onClick={() => {
+            setCreateWorkspaceOpen(true);
+            setWorkspaceCredentials(null);
+            setNewClientName('');
+            setNewClientEmail('');
+            setNewProjectIds([]);
+          }}
+        >
+          <Plus className="h-3.5 w-3.5" /> New Workspace
+        </Button>
       </div>
 
       {/* Stats strip */}
@@ -391,6 +553,22 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
                       <RotateCcw className="h-3 w-3" />
                       Reset Password
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        setManageProjectsDialog({
+                          clientId: client.id,
+                          clientName: client.name,
+                          currentProjectIds: client.projects.map((p) => p.id),
+                        });
+                        setManagedProjectIds(client.projects.map((p) => p.id));
+                      }}
+                    >
+                      <Folder className="h-3 w-3" />
+                      Manage Projects
+                    </Button>
                   </>
                 ) : (
                   <Button
@@ -566,6 +744,295 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Workspace Dialog */}
+      <Dialog
+        open={createWorkspaceOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setCreateWorkspaceOpen(false);
+            setWorkspaceCredentials(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {workspaceCredentials ? (
+                <span className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-emerald-600" />
+                  Workspace Created
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4" />
+                  New Client Workspace
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+
+          {workspaceCredentials ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4">
+                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                  {workspaceCredentials.alreadyExisted
+                    ? `${workspaceCredentials.name} already had an account — projects linked.`
+                    : 'Portal workspace created successfully!'}
+                </p>
+              </div>
+
+              {workspaceCredentials.password && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground/60">Email</p>
+                      <p className="text-sm font-medium">{workspaceCredentials.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
+                    <div>
+                      <p className="text-xs text-muted-foreground/60">Password</p>
+                      <p className="font-mono text-sm font-medium">
+                        {workspaceCredentials.password}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={() =>
+                      copyWorkspaceCredentials(
+                        `Portal: https://qualia-erp.vercel.app/portal\nEmail: ${workspaceCredentials.email}\nPassword: ${workspaceCredentials.password}`
+                      )
+                    }
+                  >
+                    {workspaceCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" /> Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" /> Copy All
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setCreateWorkspaceOpen(false);
+                  setWorkspaceCredentials(null);
+                }}
+              >
+                Done
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground/70">
+                    Client Name
+                  </label>
+                  <Input
+                    type="text"
+                    value={newClientName}
+                    onChange={(e) => setNewClientName(e.target.value)}
+                    placeholder="e.g. Acme Corp"
+                    className="h-9 border-border/40 bg-card text-sm placeholder:text-muted-foreground/40"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground/70">
+                    Contact Email
+                  </label>
+                  <Input
+                    type="email"
+                    value={newClientEmail}
+                    onChange={(e) => setNewClientEmail(e.target.value)}
+                    placeholder="client@example.com"
+                    className="h-9 border-border/40 bg-card text-sm placeholder:text-muted-foreground/40"
+                  />
+                </div>
+                <div>
+                  <p className="mb-1.5 text-xs font-medium text-muted-foreground/70">
+                    Projects to grant access to:
+                  </p>
+                  <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-border/30 p-2">
+                    {allProjects.map((project) => {
+                      const isSelected = newProjectIds.includes(project.id);
+                      return (
+                        <button
+                          key={project.id}
+                          onClick={() => toggleNewProject(project.id)}
+                          className={cn(
+                            'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-all',
+                            isSelected
+                              ? 'bg-qualia-500/10 text-foreground'
+                              : 'text-muted-foreground hover:bg-muted/30'
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all',
+                              isSelected
+                                ? 'border-qualia-500 bg-qualia-500 text-white'
+                                : 'border-border/50'
+                            )}
+                          >
+                            {isSelected && <Check className="h-3 w-3" />}
+                          </div>
+                          <span className="flex-1 truncate">{project.name}</span>
+                          {project.status && (
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                'text-[10px]',
+                                STATUS_COLORS[project.status] || 'border-border/30'
+                              )}
+                            >
+                              {project.status}
+                            </Badge>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setCreateWorkspaceOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700"
+                  onClick={handleCreateWorkspace}
+                  disabled={isCreatingWorkspace || newProjectIds.length === 0}
+                >
+                  {isCreatingWorkspace ? (
+                    <>
+                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-3.5 w-3.5" />
+                      Create Workspace
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Projects Dialog */}
+      <Dialog
+        open={!!manageProjectsDialog}
+        onOpenChange={(open) => {
+          if (!open) {
+            setManageProjectsDialog(null);
+            setManagedProjectIds([]);
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              Manage Projects — {manageProjectsDialog?.clientName}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground/70">
+                Select projects this client can access:
+              </p>
+              <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border/30 p-2">
+                {allProjects.map((project) => {
+                  const isSelected = managedProjectIds.includes(project.id);
+                  return (
+                    <button
+                      key={project.id}
+                      onClick={() => toggleManagedProject(project.id)}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-all',
+                        isSelected
+                          ? 'bg-qualia-500/10 text-foreground'
+                          : 'text-muted-foreground hover:bg-muted/30'
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all',
+                          isSelected
+                            ? 'border-qualia-500 bg-qualia-500 text-white'
+                            : 'border-border/50'
+                        )}
+                      >
+                        {isSelected && <Check className="h-3 w-3" />}
+                      </div>
+                      <span className="flex-1 truncate">{project.name}</span>
+                      {project.status && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-[10px]',
+                            STATUS_COLORS[project.status] || 'border-border/30'
+                          )}
+                        >
+                          {project.status}
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1"
+                onClick={() => {
+                  setManageProjectsDialog(null);
+                  setManagedProjectIds([]);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700"
+                onClick={handleSaveProjects}
+                disabled={isSavingProjects}
+              >
+                {isSavingProjects ? (
+                  <>
+                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Projects'
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
