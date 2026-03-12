@@ -1221,7 +1221,7 @@ export async function setupPortalForClient(
     // Look up the CRM client
     const { data: crmClient, error: clientError } = await supabase
       .from('clients')
-      .select('id, name, contacts')
+      .select('id, name')
       .eq('id', clientId)
       .single();
 
@@ -1229,15 +1229,32 @@ export async function setupPortalForClient(
       return { success: false, error: 'CRM client not found' };
     }
 
-    // Extract first contact email from JSONB contacts array
-    const contacts = crmClient.contacts as Array<{ email?: string }> | null;
-    const firstEmail = contacts?.[0]?.email?.trim().toLowerCase();
+    // Get primary contact email from client_contacts table
+    const { data: primaryContact } = await supabase
+      .from('client_contacts')
+      .select('email')
+      .eq('client_id', clientId)
+      .eq('is_primary', true)
+      .maybeSingle();
 
-    if (!firstEmail) {
+    // Fallback: get any contact email
+    const contactEmail =
+      primaryContact?.email ||
+      (
+        await supabase
+          .from('client_contacts')
+          .select('email')
+          .eq('client_id', clientId)
+          .not('email', 'is', null)
+          .limit(1)
+          .maybeSingle()
+      ).data?.email;
+
+    const normalizedEmail = contactEmail?.trim().toLowerCase();
+
+    if (!normalizedEmail) {
       return { success: false, error: 'CRM client has no email on file' };
     }
-
-    const normalizedEmail = firstEmail;
 
     // Check for existing portal profile with that email
     const { data: existingProfile } = await supabase
@@ -1995,10 +2012,11 @@ export async function getPortalHubData(): Promise<ActionResult> {
       return { success: false, error: 'Admin access required' };
     }
 
-    // Fetch CRM clients, projects, portal profiles, and assignments in parallel
-    const [clientsResult, projectsResult, portalProfilesResult, assignmentsResult] =
+    // Fetch CRM clients, contacts, projects, portal profiles, and assignments in parallel
+    const [clientsResult, contactsResult, projectsResult, portalProfilesResult, assignmentsResult] =
       await Promise.all([
-        supabase.from('clients').select('id, name, contacts, lead_status').order('name'),
+        supabase.from('clients').select('id, name, lead_status').order('name'),
+        supabase.from('client_contacts').select('client_id, email, is_primary'),
         supabase
           .from('projects')
           .select('id, name, status, project_type, client_id')
@@ -2065,10 +2083,20 @@ export async function getPortalHubData(): Promise<ActionResult> {
       // No service role key — skip last sign-in data
     }
 
+    // Build client_id -> primary email map from client_contacts
+    const clientEmailMap = new Map<string, string>();
+    for (const contact of contactsResult.data ?? []) {
+      if (!contact.email) continue;
+      const email = contact.email.trim().toLowerCase();
+      // Prefer primary contact, otherwise first one found
+      if (contact.is_primary || !clientEmailMap.has(contact.client_id)) {
+        clientEmailMap.set(contact.client_id, email);
+      }
+    }
+
     // Build the hub data
     const clients: PortalHubClient[] = (clientsResult.data ?? []).map((client) => {
-      const contacts = client.contacts as Array<{ email?: string }> | null;
-      const firstEmail = contacts?.[0]?.email?.trim().toLowerCase() || null;
+      const firstEmail = clientEmailMap.get(client.id) ?? null;
       const portalProfile = firstEmail ? emailToPortalProfile.get(firstEmail) : null;
 
       return {
@@ -2177,33 +2205,24 @@ export async function createClientWorkspace(
       return { success: false, error: 'Service role key not configured' };
     }
 
-    // Check if a CRM client with this email already exists
-    const { data: allClients } = await adminClient
-      .from('clients')
-      .select('id, name, contacts')
-      .order('created_at', { ascending: true });
+    // Check if a CRM client with this email already exists (via client_contacts table)
+    const { data: existingContact } = await adminClient
+      .from('client_contacts')
+      .select('client_id')
+      .ilike('email', normalizedEmail)
+      .limit(1)
+      .maybeSingle();
 
-    let clientId: string | null = null;
+    let clientId: string | null = existingContact?.client_id ?? null;
     let isNewCrmClient = false;
 
-    if (allClients) {
-      const existingClient = allClients.find((c) => {
-        const contacts = c.contacts as Array<{ email?: string }> | null;
-        return contacts?.[0]?.email?.trim().toLowerCase() === normalizedEmail;
-      });
-      if (existingClient) {
-        clientId = existingClient.id;
-      }
-    }
-
-    // If not found, create a new CRM client row
+    // If not found, create a new CRM client row + contact
     if (!clientId) {
       const { data: newClient, error: insertError } = await adminClient
         .from('clients')
         .insert({
           name: trimmedName,
           workspace_id: workspaceId,
-          contacts: [{ name: trimmedName, email: normalizedEmail }],
           lead_status: 'active_client',
         })
         .select('id')
@@ -2219,6 +2238,18 @@ export async function createClientWorkspace(
 
       clientId = newClient.id;
       isNewCrmClient = true;
+
+      // Create contact record
+      const { error: contactError } = await adminClient.from('client_contacts').insert({
+        client_id: clientId,
+        name: trimmedName,
+        email: normalizedEmail,
+        is_primary: true,
+      });
+
+      if (contactError) {
+        console.error('[createClientWorkspace] Contact insert error:', contactError);
+      }
     }
 
     // Delegate to setupPortalForClient to handle auth account + project linking
