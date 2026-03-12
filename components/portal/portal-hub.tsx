@@ -25,6 +25,7 @@ import {
   resetClientPassword,
   createClientWorkspace,
   revokePortalAccess,
+  updateClientPortalProjects,
 } from '@/app/actions/client-portal';
 import type { PortalHubClient } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ interface PortalHubProps {
     status: string | null;
     project_type: string | null;
   }>;
+  assignedProjectIds?: string[];
 }
 
 type FilterMode = 'all' | 'with-access' | 'no-access';
@@ -52,11 +54,16 @@ const STATUS_COLORS: Record<string, string> = {
   Archived: 'bg-zinc-500/10 text-zinc-500 border-zinc-500/20',
 };
 
-export function PortalHub({ clients: initialClients, allProjects }: PortalHubProps) {
+export function PortalHub({
+  clients: initialClients,
+  allProjects,
+  assignedProjectIds: initialAssigned = [],
+}: PortalHubProps) {
   const router = useRouter();
   const [clients, setClients] = useState(initialClients);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<FilterMode>('all');
+  const [filter, setFilter] = useState<FilterMode>('with-access');
+  const [assignedProjectIds, setAssignedProjectIds] = useState<string[]>(initialAssigned);
 
   // Credential creation dialog
   const [credentialDialog, setCredentialDialog] = useState<{
@@ -330,19 +337,28 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
 
     setIsSavingProjects(true);
     try {
-      const result = await setupPortalForClient(manageProjectsDialog.clientId, managedProjectIds);
+      const result = await updateClientPortalProjects(
+        manageProjectsDialog.clientId,
+        managedProjectIds
+      );
       if (!result.success) {
         toast.error(result.error || 'Failed to update projects');
         return;
       }
 
-      // Update local state
+      // Update local state — projects for this client
       const updatedProjects = allProjects.filter((p) => managedProjectIds.includes(p.id));
       setClients((prev) =>
         prev.map((c) =>
           c.id === manageProjectsDialog.clientId ? { ...c, projects: updatedProjects } : c
         )
       );
+
+      // Update assigned project IDs tracking
+      const otherClientProjectIds = clients
+        .filter((c) => c.id !== manageProjectsDialog.clientId)
+        .flatMap((c) => c.projects.map((p) => p.id));
+      setAssignedProjectIds([...otherClientProjectIds, ...managedProjectIds]);
 
       toast.success('Projects updated');
       setManageProjectsDialog(null);
@@ -380,20 +396,6 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
 
       {/* Stats strip */}
       <div className="flex items-center gap-6">
-        <button
-          onClick={() => setFilter('all')}
-          className={cn(
-            'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
-            filter === 'all'
-              ? 'bg-foreground/[0.06] text-foreground'
-              : 'text-muted-foreground/60 hover:text-foreground'
-          )}
-        >
-          All Clients
-          <span className="ml-1 rounded-full bg-foreground/[0.08] px-2 py-0.5 text-xs">
-            {stats.total}
-          </span>
-        </button>
         <button
           onClick={() => setFilter('with-access')}
           className={cn(
@@ -998,6 +1000,12 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
               <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border/30 p-2">
                 {allProjects.map((project) => {
                   const isSelected = managedProjectIds.includes(project.id);
+                  // Hide projects assigned to OTHER clients (but show ones assigned to this client)
+                  const assignedToOther =
+                    !isSelected &&
+                    assignedProjectIds.includes(project.id) &&
+                    !manageProjectsDialog?.currentProjectIds.includes(project.id);
+                  if (assignedToOther) return null;
                   return (
                     <button
                       key={project.id}

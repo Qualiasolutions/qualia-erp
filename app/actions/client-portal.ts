@@ -1464,6 +1464,118 @@ export async function setupPortalForClient(
 }
 
 /**
+ * Update a portal client's project assignments (add new, remove deselected).
+ * Uses the portal user ID (from profiles) to manage client_projects rows.
+ */
+export async function updateClientPortalProjects(
+  crmClientId: string,
+  projectIds: string[]
+): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Find the portal user ID via CRM client email
+    const { data: primaryContact } = await supabase
+      .from('client_contacts')
+      .select('email')
+      .eq('client_id', crmClientId)
+      .eq('is_primary', true)
+      .maybeSingle();
+
+    const contactEmail =
+      primaryContact?.email ||
+      (
+        await supabase
+          .from('client_contacts')
+          .select('email')
+          .eq('client_id', crmClientId)
+          .not('email', 'is', null)
+          .limit(1)
+          .maybeSingle()
+      ).data?.email;
+
+    if (!contactEmail) {
+      return { success: false, error: 'Client has no email on file' };
+    }
+
+    const { data: portalProfile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', contactEmail.trim().toLowerCase())
+      .eq('role', 'client')
+      .single();
+
+    if (!portalProfile) {
+      return { success: false, error: 'Client has no portal account' };
+    }
+
+    const portalUserId = portalProfile.id;
+
+    let adminClient: ReturnType<typeof createAdminClient>;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return { success: false, error: 'Service role key not configured' };
+    }
+
+    // Get current assignments
+    const { data: currentLinks } = await adminClient
+      .from('client_projects')
+      .select('id, project_id')
+      .eq('client_id', portalUserId);
+
+    const currentProjectIds = new Set((currentLinks ?? []).map((l) => l.project_id));
+    const desiredProjectIds = new Set(projectIds);
+
+    // Remove deselected
+    const toRemove = (currentLinks ?? []).filter((l) => !desiredProjectIds.has(l.project_id));
+    if (toRemove.length > 0) {
+      const { error: delError } = await adminClient
+        .from('client_projects')
+        .delete()
+        .in(
+          'id',
+          toRemove.map((l) => l.id)
+        );
+      if (delError) {
+        console.error('[updateClientPortalProjects] Delete error:', delError);
+      }
+    }
+
+    // Add new
+    const toAdd = projectIds.filter((pid) => !currentProjectIds.has(pid));
+    for (const projectId of toAdd) {
+      const { error: insertError } = await adminClient.from('client_projects').insert({
+        client_id: portalUserId,
+        project_id: projectId,
+        invited_by: user.id,
+        invited_at: new Date().toISOString(),
+      });
+      if (insertError) {
+        console.error('[updateClientPortalProjects] Insert error:', insertError);
+      }
+    }
+
+    revalidatePath('/portal');
+    return { success: true };
+  } catch (error) {
+    console.error('[updateClientPortalProjects] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to update projects',
+    };
+  }
+}
+
+/**
  * Get project features (screenshots, mockups, design images)
  * Returns image files marked as client-visible for the features gallery
  */
@@ -2154,26 +2266,68 @@ export async function getPortalHubData(): Promise<ActionResult> {
       }
     }
 
-    // Build the hub data
+    // Build project ID -> project detail map for portal assignment lookups
+    const projectById = new Map<
+      string,
+      { id: string; name: string; status: string | null; project_type: string | null }
+    >();
+    for (const project of projectsResult.data ?? []) {
+      projectById.set(project.id, {
+        id: project.id,
+        name: project.name,
+        status: project.status,
+        project_type: project.project_type,
+      });
+    }
+
+    // Build the hub data — merge CRM projects + portal assignments
     const clients: PortalHubClient[] = (clientsResult.data ?? []).map((client) => {
       const firstEmail = clientEmailMap.get(client.id) ?? null;
       const portalProfile = firstEmail ? emailToPortalProfile.get(firstEmail) : null;
+
+      // Start with CRM-linked projects
+      const crmProjects = clientProjectsMap.get(client.id) ?? [];
+      const projectIdSet = new Set(crmProjects.map((p) => p.id));
+
+      // Merge in portal-assigned projects (from client_projects table)
+      if (portalProfile) {
+        const assignedIds = portalAssignments.get(portalProfile.id);
+        if (assignedIds) {
+          for (const pid of assignedIds) {
+            if (!projectIdSet.has(pid)) {
+              const proj = projectById.get(pid);
+              if (proj) {
+                crmProjects.push(proj);
+                projectIdSet.add(pid);
+              }
+            }
+          }
+        }
+      }
 
       return {
         id: client.id,
         name: client.name,
         email: firstEmail,
         leadStatus: client.lead_status,
-        projects: clientProjectsMap.get(client.id) ?? [],
+        projects: crmProjects,
         hasPortalAccess: !!portalProfile,
         portalUserId: portalProfile?.id ?? null,
         lastSignIn: firstEmail ? (signInMap.get(firstEmail) ?? null) : null,
       };
     });
 
+    // Collect all project IDs that are assigned to any portal user (for deduplication in UI)
+    const allAssignedProjectIds: string[] = [];
+    for (const ids of portalAssignments.values()) {
+      for (const pid of ids) {
+        allAssignedProjectIds.push(pid);
+      }
+    }
+
     return {
       success: true,
-      data: { clients },
+      data: { clients, assignedProjectIds: allAssignedProjectIds },
     };
   } catch (error) {
     console.error('[getPortalHubData] Error:', error);
