@@ -2144,14 +2144,41 @@ export async function createClientWorkspace(
       return { success: false, error: 'Select at least one project' };
     }
 
+    // Early check: reject team member emails before creating CRM entry
+    const { data: existingProfile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('email', normalizedEmail)
+      .single();
+
+    if (
+      existingProfile &&
+      (existingProfile.role === 'admin' ||
+        existingProfile.role === 'manager' ||
+        existingProfile.role === 'employee')
+    ) {
+      return {
+        success: false,
+        error: `This email belongs to a team member (${existingProfile.role}). Use a client email instead.`,
+      };
+    }
+
     // Get workspace ID
     const workspaceId = await getCurrentWorkspaceId();
     if (!workspaceId) {
       return { success: false, error: 'No workspace found' };
     }
 
+    // Use admin client for CRM operations (bypasses RLS — we already verified permissions above)
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return { success: false, error: 'Service role key not configured' };
+    }
+
     // Check if a CRM client with this email already exists
-    const { data: allClients } = await supabase
+    const { data: allClients } = await adminClient
       .from('clients')
       .select('id, name, contacts')
       .order('created_at', { ascending: true });
@@ -2171,7 +2198,7 @@ export async function createClientWorkspace(
 
     // If not found, create a new CRM client row
     if (!clientId) {
-      const { data: newClient, error: insertError } = await supabase
+      const { data: newClient, error: insertError } = await adminClient
         .from('clients')
         .insert({
           name: trimmedName,
@@ -2184,7 +2211,10 @@ export async function createClientWorkspace(
 
       if (insertError || !newClient) {
         console.error('[createClientWorkspace] CRM insert error:', insertError);
-        return { success: false, error: 'Failed to create CRM client entry' };
+        return {
+          success: false,
+          error: `Failed to create CRM client entry: ${insertError?.message || 'Unknown error'}`,
+        };
       }
 
       clientId = newClient.id;
