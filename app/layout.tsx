@@ -15,6 +15,7 @@ import { LearnModeProvider } from '@/components/providers/learn-mode-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
+import { Toaster } from 'sonner';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
 
@@ -166,6 +167,7 @@ export default function RootLayout({
             </AccessibilityAnnouncer>
           </SWRProvider>
         </ThemeProvider>
+        <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
   );
