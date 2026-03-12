@@ -71,7 +71,7 @@ export default async function PortalLayout({ children }: { children: React.React
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-xs">
                 <span className="inline-flex items-center rounded-full border border-qualia-500/20 bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-qualia-700 dark:text-qualia-400">
-                  Admin
+                  {userRole === 'admin' ? 'Admin' : userRole === 'manager' ? 'Manager' : 'Team'}
                 </span>
                 <span className="text-muted-foreground">Viewing as client</span>
               </div>
