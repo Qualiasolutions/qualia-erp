@@ -920,7 +920,7 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700"
+                  className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700 disabled:cursor-not-allowed disabled:opacity-40"
                   onClick={handleCreateWorkspace}
                   disabled={isCreatingWorkspace || newProjectIds.length === 0}
                 >
