@@ -154,7 +154,7 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
 
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const { isManagerOrAbove, userRole } = useAdminContext();
+  const { isAdmin, userRole } = useAdminContext();
   const isEmployee = userRole === 'employee';
 
   const isActive = (href: string) =>
@@ -240,8 +240,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           </div>
         )}
 
-        {/* Admin section — managers and admins only */}
-        {isManagerOrAbove && (
+        {/* Admin section — admins only */}
+        {isAdmin && (
           <div className="space-y-1">
             <SectionLabel>Admin</SectionLabel>
             <div className="space-y-0.5">

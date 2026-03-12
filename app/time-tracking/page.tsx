@@ -54,7 +54,7 @@ interface WeeklySummary {
 
 export default function TimeTrackingPage() {
   const router = useRouter();
-  const { isManagerOrAbove, loading: authLoading, userId } = useAdminContext();
+  const { isAdmin, loading: authLoading, userId } = useAdminContext();
   const { projects } = useProjects();
 
   // States
@@ -85,10 +85,10 @@ export default function TimeTrackingPage() {
 
   // Redirect if not admin/manager
   useEffect(() => {
-    if (!authLoading && !isManagerOrAbove) {
+    if (!authLoading && !isAdmin) {
       router.push('/');
     }
-  }, [authLoading, isManagerOrAbove, router]);
+  }, [authLoading, isAdmin, router]);
 
   // Fetch running timer
   useEffect(() => {
@@ -293,7 +293,7 @@ export default function TimeTrackingPage() {
     );
   }
 
-  if (!isManagerOrAbove) {
+  if (!isAdmin) {
     return null;
   }
 
