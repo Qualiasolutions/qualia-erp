@@ -37,9 +37,9 @@ export function PortalRecentActivity({
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium text-foreground">Projects</h2>
         </div>
-        <div className="divide-y divide-border/30 overflow-hidden rounded-lg border border-border/40">
+        <div className="divide-y divide-border/20 overflow-hidden rounded-xl border border-border/40">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-4 bg-card px-4 py-3.5">
+            <div key={i} className="flex items-center gap-4 bg-card px-5 py-4">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="ml-auto h-3 w-20" />
             </div>
@@ -51,7 +51,7 @@ export function PortalRecentActivity({
 
   if (projects.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/50 px-6 py-12 text-center">
+      <div className="rounded-xl border border-dashed border-border/30 px-6 py-12 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
           <Folder className="h-5 w-5 text-muted-foreground/40" />
         </div>
@@ -79,12 +79,12 @@ export function PortalRecentActivity({
         </Link>
       </div>
 
-      <div className="divide-y divide-border/30 overflow-hidden rounded-lg border border-border/40">
+      <div className="divide-y divide-border/20 overflow-hidden rounded-xl border border-border/40">
         {projects.map((project) => (
           <Link
             key={project.id}
             href={`/portal/${project.id}`}
-            className="group flex items-center gap-4 bg-card px-4 py-3.5 transition-colors duration-150 hover:bg-muted/30"
+            className="group flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20"
           >
             {/* Name + current phase */}
             <div className="min-w-0 flex-1">

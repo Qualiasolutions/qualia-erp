@@ -57,7 +57,7 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="flex h-full overflow-hidden bg-background">
+    <div className="flex h-full overflow-hidden bg-background transition-colors duration-200">
       <PortalSidebar
         displayName={displayName}
         displayEmail={displayEmail}
@@ -85,8 +85,8 @@ export default async function PortalLayout({ children }: { children: React.React
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto">
-          <div className="px-6 py-8 md:px-10 lg:px-12">
+        <main className="flex-1 overflow-y-auto scroll-smooth">
+          <div className="px-6 py-8 md:px-10 lg:px-14">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

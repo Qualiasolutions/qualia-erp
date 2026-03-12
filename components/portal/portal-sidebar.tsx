@@ -62,23 +62,23 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-all duration-150',
+        'group relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-all duration-200',
         isActive
-          ? 'bg-foreground/[0.06] text-foreground'
+          ? 'bg-qualia-500/[0.08] text-foreground shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:bg-qualia-500/[0.12]'
           : 'text-muted-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground'
       )}
     >
       <item.icon
         className={cn(
-          'h-4 w-4 flex-shrink-0 transition-colors duration-150',
+          'h-4 w-4 flex-shrink-0 transition-colors duration-200',
           isActive
-            ? 'text-qualia-600'
+            ? 'text-qualia-600 dark:text-qualia-400'
             : 'text-muted-foreground/50 group-hover:text-muted-foreground'
         )}
       />
       <span>{item.name}</span>
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-4 w-[2px] -translate-y-1/2 rounded-r-full bg-qualia-600" />
+        <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-r-full bg-qualia-500 shadow-[0_0_6px_rgba(0,164,172,0.3)]" />
       )}
     </Link>
   );
@@ -114,7 +114,7 @@ function UserMenu({
             'focus:outline-none focus-visible:ring-1 focus-visible:ring-qualia-600/30'
           )}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-qualia-600 text-[11px] font-semibold text-white">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-500 to-qualia-700 text-[11px] font-semibold text-white shadow-sm">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -174,8 +174,8 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-14 items-center gap-2.5 px-4">
-        <Link href="/portal" className="flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg">
+        <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
+          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 group-hover:scale-105">
             <Image
               src="/logo.webp"
               alt="Qualia"
@@ -189,8 +189,10 @@ function SidebarContent({
         </Link>
       </div>
       {companyName && (
-        <div className="-mt-2 px-4 pb-2">
-          <p className="truncate text-[10px] text-muted-foreground/40">{companyName}</p>
+        <div className="-mt-2 px-4 pb-3">
+          <p className="truncate text-[10px] font-medium tracking-wide text-muted-foreground/40">
+            {companyName}
+          </p>
         </div>
       )}
 
@@ -220,8 +222,8 @@ function SidebarContent({
       </div>
 
       {/* Theme + User */}
-      <div className="border-t border-border/30 px-3 py-2">
-        <div className="mb-1 flex items-center justify-between px-2.5">
+      <div className="border-t border-border/20 px-3 py-2.5">
+        <div className="mb-1.5 flex items-center justify-between px-2.5">
           <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
             Theme
           </span>

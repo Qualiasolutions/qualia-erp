@@ -135,16 +135,16 @@ export function PortalMessages({
             </div>
 
             {/* Timeline */}
-            <div className="relative space-y-4 pl-6">
-              <div className="absolute left-2 top-2 h-[calc(100%-1rem)] w-px bg-muted" />
+            <div className="relative space-y-4 pl-7">
+              <div className="absolute left-[9px] top-2 h-[calc(100%-1rem)] w-px bg-border/40 dark:bg-border/30" />
 
               {dateActivities.map((activity) => (
                 <div key={activity.id} className="relative">
-                  <div className="absolute -left-6 flex h-4 w-4 items-center justify-center rounded-full bg-card">
+                  <div className="absolute -left-7 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-border/30 bg-card shadow-sm dark:border-border/20">
                     {getActivityIcon(activity.action_type)}
                   </div>
 
-                  <div className="rounded-lg border border-border bg-card p-4 shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2">
+                  <div className="rounded-xl border border-border/40 bg-card p-4 transition-all duration-200 ease-premium hover:border-border/60 hover:shadow-elevation-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">

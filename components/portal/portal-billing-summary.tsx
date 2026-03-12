@@ -1,6 +1,5 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
 import { DollarSign, Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getStaggerDelay } from '@/lib/transitions';
@@ -45,41 +44,49 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
       label: 'Outstanding',
       value: formatCurrency(outstanding, currency),
       icon: DollarSign,
-      color: outstanding > 0 ? 'text-red-600 bg-red-500/10' : 'text-green-600 bg-green-500/10',
+      iconColor: outstanding > 0 ? 'text-rose-500' : 'text-green-500',
+      iconBg:
+        outstanding > 0
+          ? 'bg-rose-500/8 dark:bg-rose-500/15'
+          : 'bg-green-500/8 dark:bg-green-500/15',
     },
     {
       label: 'Total Paid',
       value: formatCurrency(paid, currency),
       icon: CheckCircle2,
-      color: 'text-green-600 bg-green-500/10',
+      iconColor: 'text-green-500',
+      iconBg: 'bg-green-500/8 dark:bg-green-500/15',
     },
     {
       label: 'Next Due',
       value: nextDue ? new Date(nextDue).toLocaleDateString() : 'None',
       icon: Clock,
-      color: 'text-blue-600 bg-blue-500/10',
+      iconColor: 'text-blue-500',
+      iconBg: 'bg-blue-500/8 dark:bg-blue-500/15',
     },
   ];
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
       {cards.map((card, index) => (
-        <Card key={card.label} className="shadow-elevation-1" style={getStaggerDelay(index)}>
-          <CardContent className="flex items-center gap-4 p-5">
-            <div
-              className={cn(
-                'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
-                card.color
-              )}
-            >
-              <card.icon className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-lg font-bold text-foreground">{card.value}</p>
-              <p className="text-xs text-muted-foreground">{card.label}</p>
-            </div>
-          </CardContent>
-        </Card>
+        <div
+          key={card.label}
+          className="flex animate-fade-in-up items-center gap-4 rounded-xl border border-border/40 bg-card px-5 py-5 transition-all duration-200 fill-mode-both hover:border-border/60 hover:shadow-elevation-1"
+          style={getStaggerDelay(index)}
+        >
+          <div
+            className={cn(
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
+              card.iconBg
+            )}
+          >
+            <card.icon className={cn('h-5 w-5', card.iconColor)} />
+          </div>
+          <div>
+            <p className="text-lg font-semibold tabular-nums text-foreground">{card.value}</p>
+            <p className="text-[12px] text-muted-foreground/60">{card.label}</p>
+          </div>
+        </div>
       ))}
     </div>
   );

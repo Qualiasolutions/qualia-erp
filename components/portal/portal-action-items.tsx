@@ -73,27 +73,32 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
   const overdueCount = items.filter((item) => getUrgency(item.due_date) === 'overdue').length;
 
   return (
-    <div className="rounded-lg border border-border/40 bg-card">
+    <div className="rounded-xl border border-border/40 bg-card">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-border/40 px-4 py-3">
+      <div className="flex items-center gap-2 border-b border-border/30 px-5 py-3.5">
         <span className="text-[13px] font-medium text-foreground">Action items</span>
         {!isLoading && items.length > 0 && (
-          <span className="flex items-center gap-1">
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="rounded-full bg-muted/80 px-2 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground">
               {items.length}
             </span>
             {overdueCount > 0 && (
-              <span className="h-2 w-2 rounded-full bg-red-500" title={`${overdueCount} overdue`} />
+              <span
+                className="flex h-4 items-center rounded-full bg-red-500/10 px-1.5 text-[10px] font-semibold text-red-500"
+                title={`${overdueCount} overdue`}
+              >
+                {overdueCount}
+              </span>
             )}
           </span>
         )}
       </div>
 
       {/* Content */}
-      <div className="divide-y divide-border/30">
+      <div className="divide-y divide-border/20">
         {isLoading ? (
           <>
-            <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex items-center gap-3 px-5 py-3.5">
               <Skeleton className="h-4 w-4 rounded" />
               <div className="flex-1 space-y-1.5">
                 <Skeleton className="h-3 w-48" />
@@ -101,7 +106,7 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
               </div>
               <Skeleton className="h-2.5 w-20" />
             </div>
-            <div className="flex items-center gap-3 px-4 py-3">
+            <div className="flex items-center gap-3 px-5 py-3.5">
               <Skeleton className="h-4 w-4 rounded" />
               <div className="flex-1 space-y-1.5">
                 <Skeleton className="h-3 w-36" />
@@ -111,8 +116,8 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
             </div>
           </>
         ) : items.length === 0 ? (
-          <div className="px-4 py-6 text-center">
-            <p className="text-[13px] text-muted-foreground/50">
+          <div className="px-5 py-8 text-center">
+            <p className="text-[13px] text-muted-foreground/40">
               Nothing pending — you&apos;re all caught up.
             </p>
           </div>
@@ -123,7 +128,10 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
             const Icon = ACTION_TYPE_ICONS[item.action_type] || Circle;
 
             return (
-              <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+              <div
+                key={item.id}
+                className="flex items-center gap-3 px-5 py-3.5 transition-colors duration-150 hover:bg-muted/20"
+              >
                 {/* Action type icon with urgency color */}
                 <Icon className={`h-4 w-4 shrink-0 ${styles.icon}`} />
 
@@ -131,7 +139,7 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-medium text-foreground">{item.title}</p>
                   {item.project && (
-                    <p className="truncate text-[11px] text-muted-foreground/60">
+                    <p className="truncate text-[11px] text-muted-foreground/50">
                       {item.project.name}
                     </p>
                   )}

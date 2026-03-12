@@ -49,7 +49,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
 
   return (
     <div
-      className={`divide-y divide-border/30 overflow-hidden rounded-lg border border-border/40 ${fadeInClasses}`}
+      className={`divide-y divide-border/20 overflow-hidden rounded-xl border border-border/40 ${fadeInClasses}`}
     >
       {projects.map((clientProject, index) => {
         const project = Array.isArray(clientProject.project)
@@ -66,7 +66,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             href={`/portal/${project.id}`}
             style={index < 8 ? getStaggerDelay(index) : undefined}
             className={cn(
-              'group flex items-center gap-4 bg-card px-5 py-4 transition-colors duration-150 hover:bg-muted/30',
+              'group flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20',
               index < 8 && 'animate-fade-in-up fill-mode-both'
             )}
           >

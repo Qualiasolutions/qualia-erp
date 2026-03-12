@@ -62,8 +62,8 @@ export default async function PortalRequestsPage() {
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Requests</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Requests</h1>
+          <p className="mt-1 text-[13px] text-muted-foreground/60">
             Submit and track your feature requests and changes
           </p>
         </div>

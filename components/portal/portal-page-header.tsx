@@ -16,31 +16,32 @@ export function PortalPageHeader({
 }: PortalPageHeaderProps) {
   const showProgress =
     typeof completedPhases === 'number' && typeof totalPhases === 'number' && totalPhases > 0;
+  const progressPct = showProgress ? Math.round((completedPhases! / totalPhases!) * 100) : 0;
 
   return (
     <div className="flex items-start gap-4 sm:items-center">
       <Link
         href="/portal"
-        className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/40 text-muted-foreground transition-all hover:border-border hover:bg-muted/40 hover:text-foreground sm:mt-0"
+        className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 text-muted-foreground/60 transition-all duration-200 hover:border-border/60 hover:bg-muted/30 hover:text-foreground sm:mt-0"
         aria-label="Back to projects"
       >
         <ChevronLeft className="h-4 w-4" />
       </Link>
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {description && <p className="mt-2 text-sm text-muted-foreground/70">{description}</p>}
+        {description && (
+          <p className="mt-1.5 text-[13px] text-muted-foreground/60">{description}</p>
+        )}
         {showProgress && (
           <div className="mt-3 flex items-center gap-3">
-            <div className="h-1 w-48 overflow-hidden rounded-full bg-border/40">
+            <div className="h-1.5 w-48 overflow-hidden rounded-full bg-border/30 dark:bg-border/20">
               <div
-                className="h-full rounded-full bg-qualia-600 transition-all duration-700"
-                style={{
-                  width: `${Math.round((completedPhases! / totalPhases!) * 100)}%`,
-                }}
+                className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-500 transition-all duration-700 ease-out"
+                style={{ width: `${progressPct}%` }}
               />
             </div>
-            <span className="text-[12px] text-muted-foreground/60">
-              {completedPhases} of {totalPhases} phases complete
+            <span className="text-[12px] tabular-nums text-muted-foreground/50">
+              {completedPhases} of {totalPhases} phases
             </span>
           </div>
         )}

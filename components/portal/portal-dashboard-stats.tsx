@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Folder, Lightbulb, Receipt } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DashboardStats {
   projectCount: number;
@@ -21,16 +23,25 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
       label: 'Active projects',
       value: stats?.projectCount || 0,
       href: '/portal/projects',
+      icon: Folder,
+      accent: 'text-qualia-600 dark:text-qualia-400',
+      iconBg: 'bg-qualia-500/8 dark:bg-qualia-500/15',
     },
     {
       label: 'Pending requests',
       value: stats?.pendingRequests || 0,
       href: '/portal/requests',
+      icon: Lightbulb,
+      accent: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-amber-500/8 dark:bg-amber-500/15',
     },
     {
       label: 'Unpaid invoices',
       value: stats?.unpaidInvoiceCount || 0,
       href: '/portal/billing',
+      icon: Receipt,
+      accent: 'text-rose-600 dark:text-rose-400',
+      iconBg: 'bg-rose-500/8 dark:bg-rose-500/15',
       suffix: stats?.unpaidTotal
         ? stats.unpaidTotal.toLocaleString('en', { style: 'currency', currency: 'EUR' })
         : undefined,
@@ -39,11 +50,12 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border/40 bg-border/40">
+      <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-card px-5 py-4">
-            <Skeleton className="h-8 w-10 rounded" />
-            <Skeleton className="mt-1.5 h-3.5 w-20 rounded" />
+          <div key={i} className="rounded-xl border border-border/40 bg-card px-5 py-5">
+            <Skeleton className="mb-3 h-8 w-8 rounded-lg" />
+            <Skeleton className="h-8 w-12 rounded" />
+            <Skeleton className="mt-1.5 h-3.5 w-24 rounded" />
           </div>
         ))}
       </div>
@@ -51,13 +63,24 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
   }
 
   return (
-    <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-border/40 bg-border/40">
+    <div className="grid gap-4 sm:grid-cols-3">
       {metrics.map((metric) => (
         <Link
           key={metric.label}
           href={metric.href}
-          className="group bg-card px-5 py-4 transition-colors duration-150 hover:bg-muted/30"
+          className={cn(
+            'group relative overflow-hidden rounded-xl border border-border/40 bg-card px-5 py-5',
+            'transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1'
+          )}
         >
+          <div
+            className={cn(
+              'mb-3 flex h-8 w-8 items-center justify-center rounded-lg',
+              metric.iconBg
+            )}
+          >
+            <metric.icon className={cn('h-4 w-4', metric.accent)} />
+          </div>
           <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
             {metric.value}
           </p>
@@ -65,7 +88,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
             {metric.label}
           </p>
           {metric.suffix && (
-            <p className="mt-0.5 text-[11px] font-medium text-red-500/80">{metric.suffix}</p>
+            <p className="mt-1 text-[11px] font-medium text-rose-500/80">{metric.suffix}</p>
           )}
         </Link>
       ))}

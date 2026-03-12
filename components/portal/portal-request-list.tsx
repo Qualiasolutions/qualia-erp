@@ -164,14 +164,16 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
                 className={cn(
-                  'rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                  'rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
                   statusFilter === tab.value
-                    ? 'bg-qualia-600/10 text-qualia-700'
-                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                    ? 'bg-qualia-500/10 text-qualia-700 shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:text-qualia-400'
+                    : 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground'
                 )}
               >
                 {tab.label}
-                {count > 0 && <span className="ml-1 text-[10px] opacity-60">{count}</span>}
+                {count > 0 && (
+                  <span className="ml-1 text-[10px] tabular-nums opacity-50">{count}</span>
+                )}
               </button>
             );
           })}
@@ -201,7 +203,10 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
           <Card
             key={request.id}
             style={index < 6 ? getStaggerDelay(index) : undefined}
-            className={cn(index < 6 && 'animate-fade-in-up fill-mode-both')}
+            className={cn(
+              'rounded-xl border-border/40 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1',
+              index < 6 && 'animate-fade-in-up fill-mode-both'
+            )}
           >
             <CardContent className="p-5">
               <div className="flex items-start justify-between gap-3">

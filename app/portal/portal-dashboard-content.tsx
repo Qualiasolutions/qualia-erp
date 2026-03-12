@@ -47,12 +47,14 @@ const quickActions = [
     description: 'Feature idea or change',
     href: '/portal/requests',
     icon: Lightbulb,
+    accent: 'group-hover:text-amber-500',
   },
   {
     label: 'View billing',
     description: 'Invoices & payments',
     href: '/portal/billing',
     icon: Receipt,
+    accent: 'group-hover:text-qualia-500',
   },
   {
     label: 'Contact support',
@@ -60,6 +62,7 @@ const quickActions = [
     href: 'mailto:support@qualiasolutions.net',
     icon: Headphones,
     external: true,
+    accent: 'group-hover:text-blue-500',
   },
 ];
 
@@ -82,9 +85,9 @@ export function PortalDashboardContent({
 
   return (
     <div className="space-y-10">
-      {/* Welcome — minimal, typographic */}
+      {/* Welcome */}
       <div>
-        <p className="text-[13px] font-medium text-muted-foreground/60">
+        <p className="text-[13px] font-medium tracking-wide text-muted-foreground/50">
           {now.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
@@ -113,8 +116,8 @@ export function PortalDashboardContent({
       {/* Projects */}
       <PortalRecentActivity projects={projects} isLoading={isLoading} isValidating={isValidating} />
 
-      {/* Quick links — horizontal, minimal */}
-      <div className="grid gap-px overflow-hidden rounded-lg border border-border/40 bg-border/40 sm:grid-cols-3">
+      {/* Quick links */}
+      <div className="grid gap-3 sm:grid-cols-3">
         {quickActions.map((action) => {
           const Wrapper = action.external ? 'a' : Link;
           const wrapperProps = action.external ? { href: action.href } : { href: action.href };
@@ -123,14 +126,16 @@ export function PortalDashboardContent({
             <Wrapper
               key={action.label}
               {...wrapperProps}
-              className="group flex items-center gap-3 bg-card px-4 py-3.5 transition-colors duration-150 hover:bg-muted/30"
+              className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card px-4 py-4 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1"
             >
-              <action.icon className="h-4 w-4 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-qualia-600" />
+              <action.icon
+                className={`h-4 w-4 shrink-0 text-muted-foreground/40 transition-colors duration-200 ${action.accent}`}
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-medium text-foreground">{action.label}</p>
-                <p className="text-[11px] text-muted-foreground/60">{action.description}</p>
+                <p className="text-[11px] text-muted-foreground/50">{action.description}</p>
               </div>
-              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
+              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
             </Wrapper>
           );
         })}

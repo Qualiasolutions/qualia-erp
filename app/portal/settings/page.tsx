@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
 import {
   updateClientProfile,
@@ -31,6 +29,34 @@ interface NotificationPreferences {
   client_activity: boolean;
   delivery_method: 'email' | 'in_app' | 'both';
 }
+
+const notificationItems = [
+  {
+    id: 'task_assigned',
+    label: 'Task Assignments',
+    description: 'Notify me when a task is assigned to me',
+  },
+  {
+    id: 'task_due_soon',
+    label: 'Task Due Soon',
+    description: 'Notify me when tasks are approaching their due date',
+  },
+  {
+    id: 'project_update',
+    label: 'Project Updates',
+    description: 'Notify me about important project milestones and updates',
+  },
+  {
+    id: 'meeting_reminder',
+    label: 'Meeting Reminders',
+    description: 'Notify me before scheduled meetings',
+  },
+  {
+    id: 'client_activity',
+    label: 'Activity Updates',
+    description: 'Notify me about team activity on my projects',
+  },
+] as const;
 
 export default function PortalSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -67,7 +93,6 @@ export default function PortalSettingsPage() {
           return;
         }
 
-        // Get profile data
         const { data: profile } = await supabase
           .from('profiles')
           .select('full_name, email, company')
@@ -82,7 +107,6 @@ export default function PortalSettingsPage() {
           });
         }
 
-        // Get notification preferences
         const prefsResult = await getNotificationPreferences();
         if (prefsResult.success && prefsResult.data) {
           setNotificationPrefs(prefsResult.data as NotificationPreferences);
@@ -113,10 +137,7 @@ export default function PortalSettingsPage() {
       });
 
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Profile updated successfully',
-        });
+        toast({ title: 'Success', description: 'Profile updated successfully' });
       } else {
         toast({
           title: 'Error',
@@ -144,10 +165,7 @@ export default function PortalSettingsPage() {
       const result = await updateNotificationPreferences(notificationPrefs);
 
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: 'Notification preferences updated',
-        });
+        toast({ title: 'Success', description: 'Notification preferences updated' });
       } else {
         toast({
           title: 'Error',
@@ -170,248 +188,203 @@ export default function PortalSettingsPage() {
   if (loading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="mx-auto max-w-2xl space-y-10">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Manage your account settings and notification preferences
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <p className="mt-1 text-[13px] text-muted-foreground/60">
+          Manage your account and notification preferences
         </p>
       </div>
 
-      <Separator />
-
       {/* Profile Settings */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <User className="h-5 w-5 text-qualia-600" />
-            <CardTitle>Profile Information</CardTitle>
+      <section className="space-y-5">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-qualia-500/8 flex h-8 w-8 items-center justify-center rounded-lg dark:bg-qualia-500/15">
+            <User className="h-4 w-4 text-qualia-600 dark:text-qualia-400" />
           </div>
-          <CardDescription>Update your personal information and company details</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleProfileSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="full_name">Display Name</Label>
-              <Input
-                id="full_name"
-                type="text"
-                value={profileData.full_name}
-                onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
-                placeholder="Your name"
-                required
-              />
-            </div>
+          <div>
+            <h2 className="text-sm font-medium text-foreground">Profile Information</h2>
+            <p className="text-[12px] text-muted-foreground/50">Update your personal details</p>
+          </div>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profileData.email}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">
-                Email cannot be changed. Contact support if you need to update it.
-              </p>
-            </div>
+        <form
+          onSubmit={handleProfileSubmit}
+          className="space-y-4 rounded-xl border border-border/40 bg-card p-5"
+        >
+          <div className="space-y-1.5">
+            <Label htmlFor="full_name" className="text-[13px]">
+              Display Name
+            </Label>
+            <Input
+              id="full_name"
+              type="text"
+              value={profileData.full_name}
+              onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+              placeholder="Your name"
+              required
+              className="h-9"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                type="text"
-                value={profileData.company}
-                onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
-                placeholder="Your company name (optional)"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="email" className="text-[13px]">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              value={profileData.email}
+              disabled
+              className="h-9 bg-muted/50"
+            />
+            <p className="text-[11px] text-muted-foreground/40">
+              Email cannot be changed. Contact support if you need to update it.
+            </p>
+          </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="company" className="text-[13px]">
+              Company
+            </Label>
+            <Input
+              id="company"
+              type="text"
+              value={profileData.company}
+              onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
+              placeholder="Your company name (optional)"
+              className="h-9"
+            />
+          </div>
+
+          <div className="pt-1">
             <Button
               type="submit"
               disabled={profileSaving}
-              className="bg-qualia-600 hover:bg-qualia-700"
+              size="sm"
+              className="bg-qualia-600 text-white hover:bg-qualia-700"
             >
               {profileSaving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-1.5 h-3.5 w-3.5" />
                   Save Profile
                 </>
               )}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </section>
 
       {/* Notification Preferences */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-qualia-600" />
-            <CardTitle>Notification Preferences</CardTitle>
+      <section className="space-y-5">
+        <div className="flex items-center gap-2.5">
+          <div className="bg-amber-500/8 flex h-8 w-8 items-center justify-center rounded-lg dark:bg-amber-500/15">
+            <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </div>
-          <CardDescription>Choose which notifications you want to receive</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleNotificationSubmit} className="space-y-6">
-            {/* Notification Toggles */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-medium text-foreground">Notification Preferences</h2>
+            <p className="text-[12px] text-muted-foreground/50">
+              Choose which notifications you receive
+            </p>
+          </div>
+        </div>
+
+        <form
+          onSubmit={handleNotificationSubmit}
+          className="rounded-xl border border-border/40 bg-card"
+        >
+          {/* Notification Toggles */}
+          <div className="divide-y divide-border/20">
+            {notificationItems.map((item) => (
+              <div key={item.id} className="flex items-center justify-between px-5 py-4">
                 <div className="space-y-0.5">
-                  <Label htmlFor="task_assigned">Task Assignments</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notify me when a task is assigned to me
-                  </p>
-                </div>
-                <Switch
-                  id="task_assigned"
-                  checked={notificationPrefs.task_assigned}
-                  onCheckedChange={(checked) =>
-                    setNotificationPrefs({ ...notificationPrefs, task_assigned: checked })
-                  }
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="task_due_soon">Task Due Soon</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notify me when tasks are approaching their due date
-                  </p>
-                </div>
-                <Switch
-                  id="task_due_soon"
-                  checked={notificationPrefs.task_due_soon}
-                  onCheckedChange={(checked) =>
-                    setNotificationPrefs({ ...notificationPrefs, task_due_soon: checked })
-                  }
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="project_update">Project Updates</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notify me about important project milestones and updates
-                  </p>
-                </div>
-                <Switch
-                  id="project_update"
-                  checked={notificationPrefs.project_update}
-                  onCheckedChange={(checked) =>
-                    setNotificationPrefs({ ...notificationPrefs, project_update: checked })
-                  }
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="meeting_reminder">Meeting Reminders</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notify me before scheduled meetings
-                  </p>
-                </div>
-                <Switch
-                  id="meeting_reminder"
-                  checked={notificationPrefs.meeting_reminder}
-                  onCheckedChange={(checked) =>
-                    setNotificationPrefs({ ...notificationPrefs, meeting_reminder: checked })
-                  }
-                />
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="client_activity">Activity Updates</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Notify me about team activity on my projects
-                  </p>
-                </div>
-                <Switch
-                  id="client_activity"
-                  checked={notificationPrefs.client_activity}
-                  onCheckedChange={(checked) =>
-                    setNotificationPrefs({ ...notificationPrefs, client_activity: checked })
-                  }
-                />
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Delivery Method */}
-            <div className="space-y-3">
-              <Label>Delivery Method</Label>
-              <RadioGroup
-                value={notificationPrefs.delivery_method}
-                onValueChange={(value: string) =>
-                  setNotificationPrefs({
-                    ...notificationPrefs,
-                    delivery_method: value as 'email' | 'in_app' | 'both',
-                  })
-                }
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="both" id="both" />
-                  <Label htmlFor="both" className="font-normal">
-                    Email and in-app notifications
+                  <Label htmlFor={item.id} className="text-[13px] font-medium">
+                    {item.label}
                   </Label>
+                  <p className="text-[12px] text-muted-foreground/50">{item.description}</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="email" id="email" />
-                  <Label htmlFor="email" className="font-normal">
-                    Email only
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="in_app" id="in_app" />
-                  <Label htmlFor="in_app" className="font-normal">
-                    In-app only
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
+                <Switch
+                  id={item.id}
+                  checked={notificationPrefs[item.id]}
+                  onCheckedChange={(checked) =>
+                    setNotificationPrefs({ ...notificationPrefs, [item.id]: checked })
+                  }
+                />
+              </div>
+            ))}
+          </div>
 
+          {/* Delivery Method */}
+          <div className="border-t border-border/20 px-5 py-5">
+            <Label className="mb-3 block text-[13px] font-medium">Delivery Method</Label>
+            <RadioGroup
+              value={notificationPrefs.delivery_method}
+              onValueChange={(value: string) =>
+                setNotificationPrefs({
+                  ...notificationPrefs,
+                  delivery_method: value as 'email' | 'in_app' | 'both',
+                })
+              }
+              className="space-y-2.5"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="both" id="both" />
+                <Label htmlFor="both" className="text-[13px] font-normal text-muted-foreground">
+                  Email and in-app notifications
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="email" id="email_method" />
+                <Label
+                  htmlFor="email_method"
+                  className="text-[13px] font-normal text-muted-foreground"
+                >
+                  Email only
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="in_app" id="in_app" />
+                <Label htmlFor="in_app" className="text-[13px] font-normal text-muted-foreground">
+                  In-app only
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+
+          {/* Save button */}
+          <div className="border-t border-border/20 px-5 py-4">
             <Button
               type="submit"
               disabled={notificationsSaving}
-              className="bg-qualia-600 hover:bg-qualia-700"
+              size="sm"
+              className="bg-qualia-600 text-white hover:bg-qualia-700"
             >
               {notificationsSaving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
+                  <Save className="mr-1.5 h-3.5 w-3.5" />
                   Save Preferences
                 </>
               )}
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        </form>
+      </section>
     </div>
   );
 }

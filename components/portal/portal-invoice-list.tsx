@@ -71,9 +71,12 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
         <Card
           key={invoice.id}
           style={index < 6 ? getStaggerDelay(index) : undefined}
-          className={cn(index < 6 && 'animate-fade-in-up fill-mode-both')}
+          className={cn(
+            'rounded-xl border-border/40 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1',
+            index < 6 && 'animate-fade-in-up fill-mode-both'
+          )}
         >
-          <CardContent className="p-4 sm:p-5">
+          <CardContent className="p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2 sm:justify-start">
