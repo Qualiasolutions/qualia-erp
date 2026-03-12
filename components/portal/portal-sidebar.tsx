@@ -14,6 +14,8 @@ import {
   Menu,
   Settings,
 } from 'lucide-react';
+import Image from 'next/image';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -173,12 +175,17 @@ function SidebarContent({
       {/* Logo */}
       <div className="flex h-14 items-center gap-2.5 px-4">
         <Link href="/portal" className="flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-600">
-            <span className="text-xs font-bold text-white">Q</span>
+          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg">
+            <Image
+              src="/logo.webp"
+              alt="Qualia"
+              width={28}
+              height={28}
+              className="h-7 w-7 object-contain"
+              priority
+            />
           </div>
-          <span className="text-[13px] font-semibold tracking-tight text-foreground">
-            Qualia Solutions
-          </span>
+          <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
         </Link>
       </div>
       {companyName && (
@@ -212,8 +219,14 @@ function SidebarContent({
         </div>
       </div>
 
-      {/* User */}
+      {/* Theme + User */}
       <div className="border-t border-border/30 px-3 py-2">
+        <div className="mb-1 flex items-center justify-between px-2.5">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
+            Theme
+          </span>
+          <ThemeSwitcher />
+        </div>
         <UserMenu
           displayName={displayName}
           displayEmail={displayEmail}

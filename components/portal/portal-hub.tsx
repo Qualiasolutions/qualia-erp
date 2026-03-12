@@ -18,11 +18,13 @@ import {
   RotateCcw,
   Plus,
   UserPlus,
+  Trash2,
 } from 'lucide-react';
 import {
   setupPortalForClient,
   resetClientPassword,
   createClientWorkspace,
+  revokePortalAccess,
 } from '@/app/actions/client-portal';
 import type { PortalHubClient } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
@@ -568,6 +570,36 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
                     >
                       <Folder className="h-3 w-3" />
                       Manage Projects
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1.5 text-xs text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
+                      onClick={async () => {
+                        if (
+                          !client.portalUserId ||
+                          !confirm(
+                            `Revoke portal access for ${client.name}? This deletes their account and all project links.`
+                          )
+                        )
+                          return;
+                        const result = await revokePortalAccess(client.portalUserId);
+                        if (result.success) {
+                          toast.success(`Portal access revoked for ${client.name}`);
+                          setClients((prev) =>
+                            prev.map((c) =>
+                              c.id === client.id
+                                ? { ...c, hasPortalAccess: false, portalUserId: null }
+                                : c
+                            )
+                          );
+                        } else {
+                          toast.error(result.error || 'Failed to revoke access');
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Revoke
                     </Button>
                   </>
                 ) : (

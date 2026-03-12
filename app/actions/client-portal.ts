@@ -281,6 +281,66 @@ export async function removeClientFromProject(
 }
 
 /**
+ * Revoke portal access for a client.
+ * Removes all project links and deletes the auth account.
+ */
+export async function revokePortalAccess(portalUserId: string): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!(await isUserManagerOrAbove(user.id))) {
+      return { success: false, error: 'Admin access required' };
+    }
+
+    // Don't allow revoking own access or team members
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', portalUserId)
+      .single();
+
+    if (!targetProfile || targetProfile.role !== 'client') {
+      return { success: false, error: 'Can only revoke client portal accounts' };
+    }
+
+    let adminClient;
+    try {
+      adminClient = createAdminClient();
+    } catch {
+      return { success: false, error: 'Service role key not configured' };
+    }
+
+    // Remove all project links
+    await adminClient.from('client_projects').delete().eq('client_id', portalUserId);
+
+    // Delete the auth user (cascades to profile via trigger)
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(portalUserId);
+    if (deleteError) {
+      console.error('[revokePortalAccess] Delete user error:', deleteError);
+      return { success: false, error: `Failed to delete account: ${deleteError.message}` };
+    }
+
+    revalidatePath('/portal');
+    revalidatePath('/clients');
+
+    return { success: true };
+  } catch (error) {
+    console.error('[revokePortalAccess] Error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to revoke portal access',
+    };
+  }
+}
+
+/**
  * Get all projects a client has access to
  * Returns projects with full details joined from projects table
  */
