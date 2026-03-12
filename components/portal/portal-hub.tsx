@@ -352,12 +352,12 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Client Portal</h1>
-          <p className="mt-1.5 text-sm text-muted-foreground/60">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Client Portal</h1>
+          <p className="mt-1 text-sm text-muted-foreground/60">
             Manage portal access and view client projects
           </p>
         </div>
@@ -486,14 +486,14 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
                       key={project.id}
                       onClick={() => router.push(`/portal/${project.id}`)}
                       className={cn(
-                        'inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-all',
+                        'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-all',
                         'hover:border-qualia-500/30 hover:bg-qualia-500/5',
                         STATUS_COLORS[project.status || ''] ||
                           'border-border/30 bg-muted/20 text-muted-foreground'
                       )}
                     >
-                      <Folder className="h-3 w-3" />
-                      {project.name}
+                      <Folder className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{project.name}</span>
                     </button>
                   ))}
                   {client.projects.length > 3 && (
@@ -514,7 +514,7 @@ export function PortalHub({ clients: initialClients, allProjects }: PortalHubPro
               )}
 
               {/* Actions */}
-              <div className="mt-auto flex items-center gap-2 pt-4">
+              <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-4">
                 {client.hasPortalAccess ? (
                   <>
                     <Button

@@ -57,7 +57,7 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-full overflow-hidden bg-background">
       <PortalSidebar
         displayName={displayName}
         displayEmail={displayEmail}

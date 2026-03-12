@@ -27,15 +27,27 @@ export default async function PortalDashboard() {
   // Admin/Employee: show portal hub with all CRM clients
   if (isPortalAdminRole(userRole) || userRole === 'employee') {
     // Fetch all data directly in server component (has proper RLS/session context)
-    const [crmClientsResult, projectsResult, portalProfilesResult] = await Promise.all([
-      supabase.from('clients').select('id, name, contacts, lead_status').order('name'),
-      supabase
-        .from('projects')
-        .select('id, name, status, project_type, client_id')
-        .not('status', 'eq', 'Canceled')
-        .order('name'),
-      supabase.from('profiles').select('id, email, full_name').eq('role', 'client'),
-    ]);
+    const [crmClientsResult, contactsResult, projectsResult, portalProfilesResult] =
+      await Promise.all([
+        supabase.from('clients').select('id, name, lead_status').order('name'),
+        supabase.from('client_contacts').select('client_id, email, is_primary'),
+        supabase
+          .from('projects')
+          .select('id, name, status, project_type, client_id')
+          .not('status', 'eq', 'Canceled')
+          .order('name'),
+        supabase.from('profiles').select('id, email, full_name').eq('role', 'client'),
+      ]);
+
+    // Build client_id -> primary email map
+    const clientEmailMap = new Map<string, string>();
+    for (const contact of contactsResult.data ?? []) {
+      if (!contact.email) continue;
+      const email = contact.email.trim().toLowerCase();
+      if (contact.is_primary || !clientEmailMap.has(contact.client_id)) {
+        clientEmailMap.set(contact.client_id, email);
+      }
+    }
 
     // Build email -> portal profile map
     const emailToPortal = new Map<string, string>();
@@ -62,8 +74,7 @@ export default async function PortalDashboard() {
 
     // Build hub clients
     const hubClients: PortalHubClient[] = (crmClientsResult.data ?? []).map((client) => {
-      const contacts = client.contacts as Array<{ email?: string }> | null;
-      const firstEmail = contacts?.[0]?.email?.trim().toLowerCase() || null;
+      const firstEmail = clientEmailMap.get(client.id) ?? null;
       const portalUserId = firstEmail ? (emailToPortal.get(firstEmail) ?? null) : null;
 
       return {
@@ -74,7 +85,7 @@ export default async function PortalDashboard() {
         projects: clientProjectsMap.get(client.id) ?? [],
         hasPortalAccess: !!portalUserId,
         portalUserId,
-        lastSignIn: null, // Skip last sign-in for now (needs admin client)
+        lastSignIn: null,
       };
     });
 
