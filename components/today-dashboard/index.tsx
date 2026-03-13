@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { RefreshCw, Settings, Menu, Plus } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
@@ -89,10 +90,10 @@ export function TodayDashboard({
           </Button>
 
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-semibold text-foreground">{greeting}</h1>
+            <h1 className="text-base font-semibold text-foreground">{greeting}</h1>
             <span className="hidden h-4 w-px bg-border/60 sm:inline-block" />
-            <span className="hidden text-[13px] font-medium tabular-nums text-muted-foreground sm:inline">
-              {format(now, 'EEEE, MMMM d, yyyy')}
+            <span className="hidden text-sm tabular-nums text-muted-foreground sm:inline">
+              {format(now, 'EEEE, MMMM d')}
             </span>
           </div>
         </div>
@@ -101,32 +102,47 @@ export function TodayDashboard({
         <div className="flex items-center gap-1">
           {!isNonAdmin && (
             <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
               onClick={() => setShowNewTaskModal(true)}
             >
               <Plus className="size-3.5" />
+              <span className="hidden sm:inline">New task</span>
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-8"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
-          </Button>
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
           {!isNonAdmin && (
-            <Button variant="ghost" size="icon" className="size-8" asChild>
-              <Link href="/settings">
-                <Settings className="size-3.5" />
-              </Link>
-            </Button>
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-8" asChild>
+                    <Link href="/settings">
+                      <Settings className="size-3.5" />
+                    </Link>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Settings</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           )}
         </div>
       </header>

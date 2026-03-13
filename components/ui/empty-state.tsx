@@ -3,7 +3,6 @@
 import { LucideIcon } from 'lucide-react';
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -31,20 +30,15 @@ export function EmptyState({
   minimal = false,
 }: EmptyStateProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+    <div
       className={cn(
-        'flex flex-col items-center justify-center gap-3 text-center',
+        'flex animate-fade-in flex-col items-center justify-center gap-3 text-center',
         !minimal && 'rounded-xl border border-dashed border-border/60 bg-card/50',
         compact ? 'p-8' : 'p-10',
         className
       )}
     >
-      <motion.div
-        animate={{ y: [0, -4, 0] }}
-        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+      <div
         className={cn(
           'flex items-center justify-center rounded-xl',
           compact ? 'h-11 w-11' : 'h-14 w-14',
@@ -52,30 +46,16 @@ export function EmptyState({
         )}
       >
         <Icon className={cn(compact ? 'h-5 w-5' : 'h-6 w-6', iconColor)} />
-      </motion.div>
-      <motion.div
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-        className="space-y-1"
-      >
+      </div>
+      <div className="space-y-1">
         <h3 className={cn('font-medium text-foreground', compact && 'text-sm')}>{title}</h3>
         {description && (
           <p className={cn('text-muted-foreground', compact ? 'text-xs' : 'text-sm')}>
             {description}
           </p>
         )}
-      </motion.div>
-      {action && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="mt-2"
-        >
-          {action}
-        </motion.div>
-      )}
-    </motion.div>
+      </div>
+      {action && <div className="mt-2">{action}</div>}
+    </div>
   );
 }

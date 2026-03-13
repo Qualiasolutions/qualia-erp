@@ -93,7 +93,7 @@ function NavLink({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">
+    <span className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">
       {children}
     </span>
   );

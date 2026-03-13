@@ -9,7 +9,6 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { WorkspaceProvider } from '@/components/workspace-provider';
 import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
-import { LogoSplash } from '@/components/logo-splash';
 import { AdminProvider } from '@/components/admin-provider';
 import { LearnModeProvider } from '@/components/providers/learn-mode-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
@@ -137,7 +136,6 @@ export default function RootLayout({
             <AccessibilityAnnouncer>
               <AdminProvider>
                 <LearnModeProvider>
-                  <LogoSplash />
                   <WorkspaceProvider>
                     <SidebarProvider>
                       <AIAssistantProvider>

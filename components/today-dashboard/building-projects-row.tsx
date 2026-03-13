@@ -64,23 +64,15 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
       </div>
 
       <div className="scrollbar-none flex gap-2 overflow-x-auto px-4 py-3">
-        {building.map((project, i) => (
-          <ProjectChip key={project.id} project={project} dotColor="bg-emerald-500" index={i} />
+        {building.map((project) => (
+          <ProjectChip key={project.id} project={project} dotColor="bg-emerald-500" />
         ))}
       </div>
     </div>
   );
 }
 
-function ProjectChip({
-  project,
-  dotColor,
-  index,
-}: {
-  project: PipelineProject;
-  dotColor: string;
-  index: number;
-}) {
+function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor: string }) {
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
   const TypeIcon = typeConfig?.icon || Folder;
   const isDelayed = project.status === 'Delayed';
@@ -93,12 +85,10 @@ function ProjectChip({
     <Link
       href={`/projects/${project.id}`}
       className={cn(
-        'group flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200 ease-premium',
+        'group flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 transition-colors duration-150',
         'border border-border/30 bg-muted/30',
-        'hover:-translate-y-0.5 hover:border-border/60 hover:bg-muted/60 hover:shadow-md',
-        'animate-stagger-in'
+        'hover:border-border/60 hover:bg-muted/60'
       )}
-      style={{ animationDelay: `${index * 40}ms` }}
     >
       <EntityAvatar
         src={project.logo_url}
