@@ -798,7 +798,7 @@ export function ScheduleBlock({
           </div>
 
           {/* Time Grid */}
-          <ScrollArea className="h-[560px]">
+          <ScrollArea className="h-[min(560px,calc(100vh-340px))]">
             {(() => {
               // Pre-compute which cells are "covered" by a spanning item from a previous row
               // Key: `${memberId}-${hour}` → true if covered

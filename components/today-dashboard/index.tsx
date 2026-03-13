@@ -12,6 +12,7 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
+import { MeetingsSidebar } from './meetings-sidebar';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
 import { type MeetingWithRelations, useMeetings, useScheduledTasks } from '@/lib/swr';
@@ -149,19 +150,32 @@ export function TodayDashboard({
 
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
-          <ScheduleBlock
-            scheduledTasks={scheduledTasks}
-            backlogTasks={backlogTasks}
-            meetings={meetings}
-            profiles={isNonAdmin ? profiles.filter((p) => p.id === currentUserId) : profiles}
-            unified={isNonAdmin}
-            readOnly={isNonAdmin}
-          />
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
+          {/* Schedule + Meetings Row */}
+          <div className="flex min-h-0 flex-1 gap-4">
+            {/* Schedule — takes remaining width */}
+            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+              <ScheduleBlock
+                scheduledTasks={scheduledTasks}
+                backlogTasks={backlogTasks}
+                meetings={meetings}
+                profiles={isNonAdmin ? profiles.filter((p) => p.id === currentUserId) : profiles}
+                unified={isNonAdmin}
+                readOnly={isNonAdmin}
+              />
+            </div>
+
+            {/* Meetings Sidebar — ~22% width on desktop */}
+            {!isNonAdmin && (
+              <div className="hidden w-[22%] min-w-[220px] max-w-[300px] shrink-0 lg:block">
+                <MeetingsSidebar meetings={meetings} />
+              </div>
+            )}
+          </div>
 
           {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
           {!isNonAdmin && (
-            <div className="mt-4 shrink-0">
+            <div className="mt-3 shrink-0">
               <BuildingProjectsRow building={building} />
             </div>
           )}
