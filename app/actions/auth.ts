@@ -83,14 +83,21 @@ export async function getAdminStatus(): Promise<{
 export async function getProfiles(workspaceId?: string) {
   const supabase = await createClient();
 
-  // If workspaceId provided, filter to workspace members only (much faster for multi-tenant)
-  if (workspaceId) {
+  // Auto-resolve workspace if not provided
+  let wsId = workspaceId;
+  if (!wsId) {
+    const { getCurrentWorkspaceId } = await import('./workspace');
+    wsId = (await getCurrentWorkspaceId()) || undefined;
+  }
+
+  // Filter to workspace members only (much faster for multi-tenant)
+  if (wsId) {
     const { data: members } = await supabase
       .from('workspace_members')
       .select(
         'profile:profiles!workspace_members_profile_id_fkey (id, full_name, email, avatar_url, role)'
       )
-      .eq('workspace_id', workspaceId);
+      .eq('workspace_id', wsId);
 
     return (members || [])
       .map((m) => (Array.isArray(m.profile) ? m.profile[0] : m.profile))

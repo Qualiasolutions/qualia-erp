@@ -13,34 +13,12 @@ import {
   setMinutes,
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Globe,
-  Trash2,
-  Pencil,
-  Video,
-  CheckCircle2,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Globe, Trash2, Pencil, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
-import { unscheduleTask } from '@/app/actions/inbox';
-import type { Task } from '@/app/actions/inbox';
-import {
-  invalidateMeetings,
-  invalidateTodaysSchedule,
-  invalidateInboxTasks,
-  invalidateDailyFlow,
-} from '@/lib/swr';
+import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
-import { EditTaskModal } from './edit-task-modal';
-import {
-  useTimezone,
-  TIMEZONE_CYPRUS,
-  type ScheduleTask,
-  tasksToScheduleItems,
-} from '@/lib/schedule-utils';
+import { useTimezone, TIMEZONE_CYPRUS } from '@/lib/schedule-utils';
 
 interface Meeting {
   id: string;
@@ -56,27 +34,22 @@ interface Meeting {
   } | null;
 }
 
-type WeeklyItem = (Meeting & { itemType: 'meeting' }) | (ScheduleTask & { itemType: 'task' });
+type WeeklyItem = Meeting & { itemType: 'meeting' };
 
 interface WeeklyViewProps {
   meetings: Meeting[];
-  tasks?: Task[];
 }
 
 const HOUR_HEIGHT = 60;
 const START_HOUR = 7;
 const END_HOUR = 21;
 
-export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
+export function WeeklyView({ meetings }: WeeklyViewProps) {
   const { timezone, setTimezone } = useTimezone();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
   const [isPending, startTransition] = useTransition();
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-
-  // Convert tasks to schedule items
-  const scheduleTasks = useMemo(() => tasksToScheduleItems(tasks), [tasks]);
 
   // Update current time every minute
   useEffect(() => {
@@ -91,7 +64,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
   const hours = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
-  // Group all items by date
+  // Group meetings by date (meetings only — no tasks in weekly view)
   const itemsByDate = useMemo(() => {
     const map = new Map<string, WeeklyItem[]>();
 
@@ -102,15 +75,8 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
       map.set(dateKey, [...existing, { ...meeting, itemType: 'meeting' as const }]);
     });
 
-    scheduleTasks.forEach((task) => {
-      const taskInTz = toZonedTime(parseISO(task.start_time), timezone);
-      const dateKey = format(taskInTz, 'yyyy-MM-dd');
-      const existing = map.get(dateKey) || [];
-      map.set(dateKey, [...existing, { ...task, itemType: 'task' as const }]);
-    });
-
     return map;
-  }, [meetings, scheduleTasks, timezone]);
+  }, [meetings, timezone]);
 
   const goToPreviousWeek = () => setCurrentDate(subWeeks(currentDate, 1));
   const goToNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
@@ -130,6 +96,53 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
     },
     [timezone]
   );
+
+  // Compute horizontal layout for overlapping items within each day
+  const itemLayoutMap = useMemo(() => {
+    const layoutMap = new Map<string, { col: number; totalCols: number }>();
+
+    for (const [, dayItems] of itemsByDate) {
+      // Sort by start time
+      const sorted = [...dayItems].sort(
+        (a, b) => parseISO(a.start_time).getTime() - parseISO(b.start_time).getTime()
+      );
+
+      // Assign columns using a greedy algorithm
+      const columns: { endMinutes: number; itemId: string }[][] = [];
+
+      for (const item of sorted) {
+        const start = toZonedTime(parseISO(item.start_time), timezone);
+        const end = toZonedTime(parseISO(item.end_time), timezone);
+        const startMin = start.getHours() * 60 + start.getMinutes();
+        const endMin = end.getHours() * 60 + end.getMinutes();
+
+        // Find first column where this item doesn't overlap
+        let placed = false;
+        for (let col = 0; col < columns.length; col++) {
+          const lastInCol = columns[col][columns[col].length - 1];
+          if (startMin >= lastInCol.endMinutes) {
+            columns[col].push({ endMinutes: endMin, itemId: item.id });
+            layoutMap.set(item.id, { col, totalCols: columns.length });
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          columns.push([{ endMinutes: endMin, itemId: item.id }]);
+          layoutMap.set(item.id, { col: columns.length - 1, totalCols: columns.length });
+        }
+      }
+
+      // Update totalCols for all items in this day
+      const totalCols = columns.length;
+      for (const item of sorted) {
+        const layout = layoutMap.get(item.id);
+        if (layout) layout.totalCols = totalCols;
+      }
+    }
+
+    return layoutMap;
+  }, [itemsByDate, timezone]);
 
   const formatWeekRange = () => {
     const startMonth = format(weekStart, 'MMM');
@@ -162,27 +175,9 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
     }
   }, []);
 
-  const handleDeleteTask = useCallback((id: string) => {
-    if (confirm('Remove this task from schedule?')) {
-      startTransition(async () => {
-        await unscheduleTask(id);
-        invalidateInboxTasks(true);
-        invalidateDailyFlow(true);
-      });
-    }
-  }, []);
-
   const handleEditMeeting = useCallback((meeting: Meeting) => {
     setEditingMeeting(meeting);
   }, []);
-
-  const handleEditTask = useCallback(
-    (taskItem: ScheduleTask) => {
-      const fullTask = tasks.find((t) => t.id === taskItem.id);
-      if (fullTask) setEditingTask(fullTask);
-    },
-    [tasks]
-  );
 
   return (
     <>
@@ -296,7 +291,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                   </div>
                 )}
 
-                {/* All items (meetings + tasks) */}
+                {/* Meeting items */}
                 {dayItems.map((item) => {
                   const { top, height } = getItemPosition(item);
                   const startTime = toZonedTime(parseISO(item.start_time), timezone);
@@ -306,41 +301,35 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                     return null;
                   }
 
-                  const isMeetingItem = item.itemType === 'meeting';
-                  const hasLink = isMeetingItem && !!(item as Meeting).meeting_link;
-
-                  // Color coding: violet for meetings, blue for tasks
-                  const borderColor = isMeetingItem ? 'border-violet-500/30' : 'border-blue-500/30';
-                  const bgColor = isMeetingItem
-                    ? 'bg-violet-500/10 hover:bg-violet-500/20'
-                    : 'bg-blue-500/10 hover:bg-blue-500/20';
+                  const hasLink = !!(item as Meeting).meeting_link;
+                  const layout = itemLayoutMap.get(item.id);
+                  const col = layout?.col ?? 0;
+                  const totalCols = layout?.totalCols ?? 1;
+                  const colWidth = 100 / totalCols;
+                  const leftPercent = col * colWidth;
 
                   return (
                     <div
                       key={item.id}
                       onClick={() =>
-                        isMeetingItem &&
-                        hasLink &&
-                        window.open((item as Meeting).meeting_link!, '_blank')
+                        hasLink && window.open((item as Meeting).meeting_link!, '_blank')
                       }
                       className={cn(
-                        'group absolute left-1 right-1 z-10 overflow-hidden rounded-md border p-1.5 transition-all duration-200 ease-premium hover:-translate-y-px',
-                        borderColor,
-                        bgColor,
+                        'group absolute z-10 overflow-hidden rounded-md border border-violet-500/30 bg-violet-500/10 p-1.5 transition-all duration-200 ease-premium hover:-translate-y-px hover:bg-violet-500/20',
                         hasLink ? 'cursor-pointer' : 'cursor-default'
                       )}
-                      style={{ top: `${top}px`, height: `${height}px` }}
+                      style={{
+                        top: `${top}px`,
+                        height: `${height}px`,
+                        left: `calc(${leftPercent}% + 2px)`,
+                        width: `calc(${colWidth}% - 4px)`,
+                      }}
                       title={`${item.title}\n${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}${hasLink ? '\nClick to join' : ''}`}
                     >
-                      {/* Indicators */}
+                      {/* Link indicator */}
                       {hasLink && (
                         <div className="absolute right-0.5 top-0.5 flex items-center gap-0.5 rounded bg-emerald-500/20 px-1 py-0.5 text-emerald-500 group-hover:opacity-0">
                           <Video className="h-2.5 w-2.5" />
-                        </div>
-                      )}
-                      {!isMeetingItem && (
-                        <div className="absolute right-0.5 top-0.5 group-hover:opacity-0">
-                          <CheckCircle2 className="h-3 w-3 text-blue-500" />
                         </div>
                       )}
 
@@ -350,18 +339,9 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (isMeetingItem) {
-                              handleEditMeeting(item as Meeting);
-                            } else {
-                              handleEditTask(item as ScheduleTask);
-                            }
+                            handleEditMeeting(item as Meeting);
                           }}
-                          className={cn(
-                            'rounded p-0.5 text-muted-foreground',
-                            isMeetingItem
-                              ? 'hover:bg-violet-500/20 hover:text-foreground'
-                              : 'hover:bg-blue-500/20 hover:text-foreground'
-                          )}
+                          className="rounded p-0.5 text-muted-foreground hover:bg-violet-500/20 hover:text-foreground"
                           title="Edit"
                         >
                           <Pencil className="h-3 w-3" />
@@ -370,11 +350,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            if (isMeetingItem) {
-                              handleDeleteMeeting(item.id);
-                            } else {
-                              handleDeleteTask(item.id);
-                            }
+                            handleDeleteMeeting(item.id);
                           }}
                           disabled={isPending}
                           className="rounded p-0.5 text-muted-foreground hover:bg-red-500/20 hover:text-red-500"
@@ -394,12 +370,7 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
                         </div>
                       )}
                       {height > 60 && item.project && (
-                        <div
-                          className={cn(
-                            'mt-1 truncate text-[11px]',
-                            isMeetingItem ? 'text-violet-400/80' : 'text-blue-400/80'
-                          )}
-                        >
+                        <div className="mt-1 truncate text-[11px] text-violet-400/80">
                           {item.project.name}
                         </div>
                       )}
@@ -418,15 +389,6 @@ export function WeeklyView({ meetings, tasks = [] }: WeeklyViewProps) {
         open={editingMeeting !== null}
         onOpenChange={(open) => !open && setEditingMeeting(null)}
       />
-
-      {/* Edit Task Modal */}
-      {editingTask && (
-        <EditTaskModal
-          task={editingTask}
-          open={!!editingTask}
-          onOpenChange={(open) => !open && setEditingTask(null)}
-        />
-      )}
     </>
   );
 }

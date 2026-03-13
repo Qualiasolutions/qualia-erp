@@ -150,11 +150,10 @@ export function TodayDashboard({
 
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
-          {/* Schedule + Meetings Row */}
-          <div className="flex min-h-0 flex-1 gap-4">
-            {/* Schedule — takes remaining width */}
-            <div className="min-h-0 min-w-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
+          {/* Schedule + Meetings Sidebar row */}
+          <div className="flex gap-4">
+            <div className="min-w-0 flex-1">
               <ScheduleBlock
                 scheduledTasks={scheduledTasks}
                 backlogTasks={backlogTasks}
@@ -162,20 +161,14 @@ export function TodayDashboard({
                 profiles={isNonAdmin ? profiles.filter((p) => p.id === currentUserId) : profiles}
                 unified={isNonAdmin}
                 readOnly={isNonAdmin}
+                meetingsSidebar={!isNonAdmin ? <MeetingsSidebar meetings={meetings} /> : undefined}
               />
             </div>
-
-            {/* Meetings Sidebar — ~22% width on desktop */}
-            {!isNonAdmin && (
-              <div className="hidden w-[22%] min-w-[220px] max-w-[300px] shrink-0 lg:block">
-                <MeetingsSidebar meetings={meetings} />
-              </div>
-            )}
           </div>
 
           {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
           {!isNonAdmin && (
-            <div className="mt-3 shrink-0">
+            <div className="mt-4 shrink-0">
               <BuildingProjectsRow building={building} />
             </div>
           )}

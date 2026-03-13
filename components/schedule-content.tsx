@@ -36,7 +36,7 @@ export function ScheduleContent({
     return (
       <div className="space-y-4">
         <MeetingStats meetings={meetings} />
-        <WeeklyView meetings={meetingsWithType} tasks={tasks} />
+        <WeeklyView meetings={meetingsWithType} />
       </div>
     );
   }
