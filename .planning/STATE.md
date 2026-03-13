@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 Phase: 26 of 26+ (Not started)
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-03-12 - Completed quick task 21: Client Portal GlluzTech workspace + roadmap population
+Last activity: 2026-03-13 - Completed quick task 22: Dashboard user-scoped schedule + portal design enhancement
 
 Progress: [#############] 25 phases complete | v1.5.1 shipped
 
@@ -38,6 +38,7 @@ Progress: [#############] 25 phases complete | v1.5.1 shipped
 | 19  | Automated retainer fees (monthly/annual) and project installment payments      | 2026-03-11 | 7410e4a | [19-automated-retainer-fees-monthly-annual-a](./quick/19-automated-retainer-fees-monthly-annual-a/) |
 | 20  | Client Portal workspace creation + per-client project management (admin)       | 2026-03-11 | ac4a513 | [20-client-portal-workspace-management-admin](./quick/20-client-portal-workspace-management-admin/) |
 | 21  | Client Portal GlluzTech workspace + roadmap population (9 projects, 41 phases) | 2026-03-12 | 3ce5ed0 | [21-client-portal-create-glluztech-workspace](./quick/21-client-portal-create-glluztech-workspace/) |
+| 22  | Dashboard user-scoped schedule + portal design enhancement                     | 2026-03-13 | debdc31 | [22-dashboard-user-scoped-schedule-admin-por](./quick/22-dashboard-user-scoped-schedule-admin-por/) |
 
 ## Session Continuity
 
