@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * POST /api/gsd/update-phase
  *
  * Called by Claude Code hooks to auto-update phase status when work is completed.
- * Requires Supabase auth token in Authorization header.
+ * Auth: X-API-Key header checked against GSD_WEBHOOK_SECRET env var.
+ * Uses service role client to bypass RLS (this is a trusted server-to-server call).
  *
  * Body:
  *   project_id: string (UUID)
  *   phase_name: string (e.g., "SETUP", "EXECUTE")
  *   status: "not_started" | "in_progress" | "completed" | "skipped"
  *
- * Example Claude Code hook (.claude/hooks/post-commit.sh):
- *   curl -X POST https://qualia-erp.vercel.app/api/gsd/update-phase \
- *     -H "Authorization: Bearer $SUPABASE_TOKEN" \
+ * Example Claude Code hook:
+ *   curl -s -X POST https://qualia-erp.vercel.app/api/gsd/update-phase \
+ *     -H "X-API-Key: $GSD_WEBHOOK_SECRET" \
  *     -H "Content-Type: application/json" \
  *     -d '{"project_id":"...","phase_name":"EXECUTE","status":"completed"}'
  */
@@ -24,16 +25,28 @@ type PhaseStatus = (typeof VALID_STATUSES)[number];
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    // Auth: check API key
+    const apiKey = request.headers.get('x-api-key');
+    const secret = process.env.GSD_WEBHOOK_SECRET;
 
-    // Verify auth
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    if (!secret) {
+      console.error('[/api/gsd/update-phase] GSD_WEBHOOK_SECRET not configured');
+      return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
+    }
 
-    if (!user) {
+    if (!apiKey || apiKey !== secret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Create service role client for DB operations
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await request.json();
     const { project_id, phase_name, status } = body as {
@@ -89,7 +102,6 @@ export async function POST(request: NextRequest) {
 
     // If completed, unlock next phase and mark tasks done
     if (status === 'completed') {
-      // Unlock next phase
       const { data: nextPhase } = await supabase
         .from('project_phases')
         .select('id, name')
