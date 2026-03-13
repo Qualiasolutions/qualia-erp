@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronRight, Plus, Trash2, Pencil, Loader2, FolderPlus } from 'lucide-react';
+import { Check, ChevronRight, Plus, Trash2, Pencil, Loader2, FolderPlus, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -12,6 +12,7 @@ import {
   createProjectPhase,
   updateProjectPhase,
   deleteProjectPhase,
+  loadQualiaFrameworkPipeline,
 } from '@/app/actions/phases';
 import { getProjectTasks, createTask, updateTask, deleteTask } from '@/app/actions/inbox';
 import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
@@ -242,6 +243,20 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     );
   }
 
+  const handleLoadFramework = async () => {
+    startTransition(async () => {
+      const result = await loadQualiaFrameworkPipeline(projectId);
+      if (result.success) {
+        toast.success(`Loaded ${result.phasesCreated} phases from Qualia Framework`);
+        await fetchData();
+        invalidateProjectPhases(projectId);
+        invalidateInboxTasks(true);
+      } else {
+        toast.error(result.error || 'Failed to load framework');
+      }
+    });
+  };
+
   if (phases.length === 0) {
     return (
       <div className={cn('space-y-8', className)}>
@@ -249,8 +264,32 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
           <FolderPlus className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
           <h3 className="mb-2 text-xl font-bold">No Phases Yet</h3>
           <p className="mb-6 text-muted-foreground">
-            Create your first phase to start organizing your project workflow.
+            Load the Qualia Framework pipeline or create phases manually.
           </p>
+
+          {/* Load Qualia Framework Pipeline */}
+          <Button
+            onClick={handleLoadFramework}
+            disabled={isPending}
+            className="mb-6 gap-2"
+            size="lg"
+          >
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+            Load Qualia Framework Pipeline
+          </Button>
+
+          {/* Or create manually */}
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/30" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-muted/20 px-3 text-xs uppercase tracking-wider text-muted-foreground">
+                or create manually
+              </span>
+            </div>
+          </div>
+
           <div className="mx-auto flex max-w-md gap-2">
             <Input
               value={newPhaseName}
@@ -259,7 +298,11 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
               onKeyDown={(e) => e.key === 'Enter' && handleAddPhase()}
               disabled={isPending}
             />
-            <Button onClick={handleAddPhase} disabled={isPending || !newPhaseName.trim()}>
+            <Button
+              variant="outline"
+              onClick={handleAddPhase}
+              disabled={isPending || !newPhaseName.trim()}
+            >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Phase'}
             </Button>
           </div>

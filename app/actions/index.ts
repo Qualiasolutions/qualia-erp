@@ -268,15 +268,6 @@ export {
   migrateAllProjectsToGSD,
 } from './pipeline';
 
-// ============ PROJECT PIPELINE ============
-export {
-  getProjectPipelineData,
-  getProjectsByPhase,
-  advanceProjectPhase,
-  regressProjectPhase,
-  setProjectPhase,
-} from './project-pipeline';
-
 // ============ INTEGRATIONS ============
 export {
   getIntegrations,

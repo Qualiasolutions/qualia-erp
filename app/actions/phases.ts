@@ -2,6 +2,10 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getTemplateForType, type GSDPhaseTemplate } from '@/lib/gsd-templates';
+import type { Database } from '@/types/database';
+
+type ProjectType = Database['public']['Enums']['project_type'];
 
 export async function getProjectPhases(projectId: string) {
   const supabase = await createClient();
@@ -361,4 +365,182 @@ export async function calculateProjectsProgress(
   }
 
   return progressMap;
+}
+
+/**
+ * Load Qualia Framework Pipeline — auto-populate GSD phases + tasks for a project.
+ * Creates 6 phases (SETUP→DISCUSS→PLAN→EXECUTE→VERIFY→SHIP) with type-specific tasks.
+ */
+export async function loadQualiaFrameworkPipeline(projectId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Get project to determine type
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('id, project_type, workspace_id')
+    .eq('id', projectId)
+    .single();
+
+  if (projectError || !project) {
+    return { success: false, error: 'Project not found' };
+  }
+
+  const projectType = (project.project_type || 'web_design') as ProjectType;
+  const template = getTemplateForType(projectType);
+
+  // Check if phases already exist
+  const { data: existingPhases } = await supabase
+    .from('project_phases')
+    .select('id')
+    .eq('project_id', projectId)
+    .limit(1);
+
+  if (existingPhases && existingPhases.length > 0) {
+    return { success: false, error: 'Project already has phases. Delete existing phases first.' };
+  }
+
+  // Create phases with tasks
+  const typePrefix =
+    projectType === 'web_design'
+      ? 'web'
+      : projectType === 'ai_agent' || projectType === 'ai_platform'
+        ? 'ai'
+        : projectType === 'voice_agent'
+          ? 'voice'
+          : projectType;
+
+  for (let i = 0; i < template.phases.length; i++) {
+    const phase: GSDPhaseTemplate = template.phases[i];
+    const templateKey = `${typePrefix}_${phase.name.toLowerCase()}`;
+
+    // Create phase
+    const { data: newPhase, error: phaseError } = await supabase
+      .from('project_phases')
+      .insert({
+        project_id: projectId,
+        workspace_id: project.workspace_id,
+        name: phase.name,
+        description: phase.description,
+        helper_text: phase.prompt,
+        template_key: templateKey,
+        sort_order: i,
+        status: i === 0 ? 'in_progress' : 'not_started',
+        is_locked: i > 0,
+        auto_progress: true,
+      })
+      .select('id')
+      .single();
+
+    if (phaseError || !newPhase) {
+      console.error(
+        `[loadQualiaFrameworkPipeline] Error creating phase ${phase.name}:`,
+        phaseError
+      );
+      continue;
+    }
+
+    // Create tasks for this phase
+    const taskInserts = phase.tasks.map((task, taskIndex) => ({
+      title: task.title,
+      description: task.helperText,
+      project_id: projectId,
+      workspace_id: project.workspace_id,
+      phase_name: phase.name,
+      status: 'Todo',
+      priority: 'No Priority',
+      sort_order: taskIndex,
+      show_in_inbox: true,
+      created_by: user.id,
+    }));
+
+    if (taskInserts.length > 0) {
+      const { error: taskError } = await supabase.from('tasks').insert(taskInserts);
+      if (taskError) {
+        console.error(
+          `[loadQualiaFrameworkPipeline] Error creating tasks for ${phase.name}:`,
+          taskError
+        );
+      }
+    }
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal');
+  return { success: true, phasesCreated: template.phases.length };
+}
+
+/**
+ * Update phase status by name — used by API webhook for Claude Code integration.
+ * Accepts project_id + phase_name to mark phases as completed/in_progress.
+ */
+export async function updatePhaseStatusByName(
+  projectId: string,
+  phaseName: string,
+  status: 'not_started' | 'in_progress' | 'completed' | 'skipped'
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const { data: phase, error: fetchError } = await supabase
+    .from('project_phases')
+    .select('id, sort_order, project_id')
+    .eq('project_id', projectId)
+    .ilike('name', phaseName)
+    .single();
+
+  if (fetchError || !phase) {
+    return { success: false, error: `Phase "${phaseName}" not found in project` };
+  }
+
+  // Update the phase
+  const updateData: Record<string, unknown> = { status };
+  if (status === 'completed') {
+    updateData.completed_at = new Date().toISOString();
+  }
+
+  const { error: updateError } = await supabase
+    .from('project_phases')
+    .update(updateData)
+    .eq('id', phase.id);
+
+  if (updateError) {
+    return { success: false, error: updateError.message };
+  }
+
+  // If completed, auto-unlock next phase and mark it in_progress
+  if (status === 'completed') {
+    const { data: nextPhase } = await supabase
+      .from('project_phases')
+      .select('id')
+      .eq('project_id', projectId)
+      .gt('sort_order', phase.sort_order)
+      .order('sort_order', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (nextPhase) {
+      await supabase
+        .from('project_phases')
+        .update({ is_locked: false, status: 'in_progress' })
+        .eq('id', nextPhase.id);
+    }
+
+    // Mark all tasks in this phase as Done
+    await supabase
+      .from('tasks')
+      .update({ status: 'Done' })
+      .eq('project_id', projectId)
+      .ilike('phase_name', phaseName);
+  }
+
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal');
+  return { success: true };
 }
