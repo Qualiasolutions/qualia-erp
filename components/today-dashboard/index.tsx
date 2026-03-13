@@ -48,7 +48,7 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const isEmployee = userRole === 'employee';
+  const isNonAdmin = userRole !== 'admin';
   const now = new Date();
 
   // SWR hooks for live data (auto-refresh after task creation)
@@ -99,7 +99,7 @@ export function TodayDashboard({
 
         {/* Right */}
         <div className="flex items-center gap-1">
-          {!isEmployee && (
+          {!isNonAdmin && (
             <Button
               variant="ghost"
               size="icon"
@@ -121,7 +121,7 @@ export function TodayDashboard({
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
-          {!isEmployee && (
+          {!isNonAdmin && (
             <Button variant="ghost" size="icon" className="size-8" asChild>
               <Link href="/settings">
                 <Settings className="size-3.5" />
@@ -138,13 +138,13 @@ export function TodayDashboard({
             scheduledTasks={scheduledTasks}
             backlogTasks={backlogTasks}
             meetings={meetings}
-            profiles={isEmployee ? profiles.filter((p) => p.id === currentUserId) : profiles}
-            unified={isEmployee}
-            readOnly={isEmployee}
+            profiles={isNonAdmin ? profiles.filter((p) => p.id === currentUserId) : profiles}
+            unified={isNonAdmin}
+            readOnly={isNonAdmin}
           />
 
           {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
-          {!isEmployee && (
+          {!isNonAdmin && (
             <div className="mt-4 shrink-0">
               <BuildingProjectsRow building={building} />
             </div>

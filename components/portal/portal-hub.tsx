@@ -455,8 +455,11 @@ export function PortalHub({
                 client.hasPortalAccess ? 'border-border/40' : 'border-dashed border-border/30'
               )}
             >
-              {/* Top: Name + Status */}
-              <div className="flex items-start justify-between gap-3">
+              {/* Top: Avatar + Name + Status */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-500 to-qualia-700 text-xs font-semibold text-white shadow-sm">
+                  {client.name.charAt(0).toUpperCase()}
+                </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-semibold text-foreground">{client.name}</h3>
                   {client.email && (
@@ -511,9 +514,11 @@ export function PortalHub({
               )}
 
               {/* Last sign-in */}
-              {client.hasPortalAccess && client.lastSignIn && (
+              {client.hasPortalAccess && (
                 <p className="mt-2 text-[10px] text-muted-foreground/40">
-                  Last login {formatDistanceToNow(new Date(client.lastSignIn), { addSuffix: true })}
+                  {client.lastSignIn
+                    ? `Last seen ${formatDistanceToNow(new Date(client.lastSignIn), { addSuffix: true })}`
+                    : 'Never signed in'}
                 </p>
               )}
 
