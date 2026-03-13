@@ -40,6 +40,7 @@ Progress: [#############] 25 phases complete | v1.5.1 shipped
 | 21  | Client Portal GlluzTech workspace + roadmap population (9 projects, 41 phases) | 2026-03-12 | 3ce5ed0 | [21-client-portal-create-glluztech-workspace](./quick/21-client-portal-create-glluztech-workspace/) |
 | 22  | Dashboard user-scoped schedule + portal design enhancement                     | 2026-03-13 | debdc31 | [22-dashboard-user-scoped-schedule-admin-por](./quick/22-dashboard-user-scoped-schedule-admin-por/) |
 | 23  | Pipeline flow view — visual node-based view for project phases                 | 2026-03-13 | 41f8eb8 | [23-pipeline-flow-view-visual-node-based-vie](./quick/23-pipeline-flow-view-visual-node-based-vie/) |
+| 24  | Qualia Framework Pipeline loader + GSD webhook + dead code cleanup             | 2026-03-13 | 57080ea | N/A                                                                                                 |
 
 ## Session Continuity
 
