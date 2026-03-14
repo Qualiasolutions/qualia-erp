@@ -75,6 +75,10 @@ const nextConfig: NextConfig = {
 
   // Experimental features for bundle optimization
   experimental: {
+    // Server action body size limit (default 1MB is too small for logo/file uploads)
+    serverActions: {
+      bodySizeLimit: '5mb',
+    },
     // Tree-shake unused exports from these packages for smaller bundles
     optimizePackageImports: [
       'lucide-react',
