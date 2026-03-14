@@ -388,7 +388,7 @@ export function DashboardClient({
                   title="Other"
                   icon={Briefcase}
                   projects={others}
-                  color="bg-gray-500"
+                  color="bg-muted-foreground"
                 />
 
                 {projects.length === 0 && (

@@ -422,9 +422,9 @@ function getInvoiceStatusColors(status: string) {
       };
     default: // draft
       return {
-        bg: 'bg-slate-500/10',
-        border: 'border-slate-500/30',
-        text: 'text-slate-600 dark:text-slate-400',
+        bg: 'bg-muted',
+        border: 'border-border/30',
+        text: 'text-muted-foreground',
       };
   }
 }
@@ -456,9 +456,9 @@ function getProjectStatusColors(status: string) {
       };
     default:
       return {
-        bg: 'bg-slate-500/10',
-        border: 'border-slate-500/30',
-        text: 'text-slate-600 dark:text-slate-400',
+        bg: 'bg-muted',
+        border: 'border-border/30',
+        text: 'text-muted-foreground',
       };
   }
 }

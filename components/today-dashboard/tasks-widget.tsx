@@ -365,7 +365,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/10">
               <Circle className="h-3 w-3 fill-amber-500 text-amber-500" />
             </div>
-            <h3 className="text-sm font-semibold text-foreground">Tasks</h3>
+            <h2 className="text-sm font-semibold text-foreground">Tasks</h2>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
             {pendingTasks} pending{completedTasks > 0 && ` · ${completedTasks} done`}
@@ -433,10 +433,12 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
               <Check className="h-6 w-6 text-amber-500" />
             </div>
             <p className="stagger-1 animate-stagger-in text-sm font-medium text-foreground">
-              All done!
+              {selectedUserId ? 'Nothing assigned to you' : 'All clear for today'}
             </p>
             <p className="stagger-2 mt-1 animate-stagger-in text-xs text-muted-foreground">
-              No pending tasks
+              {selectedUserId
+                ? 'Switch to All Tasks or add one above'
+                : 'Add a task above to get started'}
             </p>
           </div>
         ) : (
@@ -458,7 +460,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{
                       duration: 0.3,
-                      delay: virtualRow.index * 0.05,
+                      delay: Math.min(virtualRow.index * 0.03, 0.24),
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     style={{

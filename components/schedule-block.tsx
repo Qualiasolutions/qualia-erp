@@ -61,10 +61,10 @@ function getTagColor(tag?: string | null) {
     Research: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400',
     Analytics: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
     Design: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
-    Operations: 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400',
+    Operations: 'bg-muted text-muted-foreground',
     Meeting: 'bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-400',
   };
-  return map[tag] || 'bg-slate-100 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400';
+  return map[tag] || 'bg-muted text-muted-foreground';
 }
 
 // Calculate span info for an item within a member's slot range

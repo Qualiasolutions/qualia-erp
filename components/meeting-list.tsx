@@ -5,7 +5,7 @@ import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { Clock, Trash2, Globe, CalendarDays, Video, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
-import { useTransition, useMemo, useState, useEffect } from 'react';
+import React, { useTransition, useMemo, useState, useEffect } from 'react';
 
 // Cyprus timezone (for Fawzi) - UTC+2 (EET) / UTC+3 (EEST in summer)
 const TIMEZONE_CYPRUS = 'Europe/Nicosia';
@@ -386,7 +386,7 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
 }
 
 // Current meeting highlight card
-function CurrentMeetingCard({
+const CurrentMeetingCard = React.memo(function CurrentMeetingCard({
   meeting,
   timezone,
   now,
@@ -459,10 +459,10 @@ function CurrentMeetingCard({
       </div>
     </div>
   );
-}
+});
 
 // Next meeting card
-function NextMeetingCard({
+const NextMeetingCard = React.memo(function NextMeetingCard({
   meeting,
   timezone,
   now,
@@ -522,10 +522,10 @@ function NextMeetingCard({
       </div>
     </div>
   );
-}
+});
 
 // Timezone selector component
-function TimezoneSelector({
+const TimezoneSelector = React.memo(function TimezoneSelector({
   timezone,
   setTimezone,
   compact = false,
@@ -563,4 +563,4 @@ function TimezoneSelector({
       </select>
     </div>
   );
-}
+});

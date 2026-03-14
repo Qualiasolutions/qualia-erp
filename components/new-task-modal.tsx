@@ -242,6 +242,7 @@ export function NewTaskModal({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task name..."
               required
+              aria-label="Task name"
               className="w-full border-0 bg-transparent text-[17px] font-semibold text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
             />
 
@@ -253,6 +254,7 @@ export function NewTaskModal({
                 placeholder="Add a description..."
                 rows={2}
                 autoFocus
+                aria-label="Task description"
                 className="mt-2 w-full resize-none rounded-lg border border-border/30 bg-muted/30 px-3 py-2 text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:border-border/50 focus:outline-none dark:bg-muted/20"
               />
             ) : (

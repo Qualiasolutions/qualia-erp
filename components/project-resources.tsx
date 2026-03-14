@@ -32,7 +32,7 @@ import { updateProject, getProjectById } from '@/app/actions';
 
 // Resource types with icons
 const RESOURCE_TYPES = [
-  { value: 'github', label: 'GitHub', icon: Github, color: 'text-gray-400' },
+  { value: 'github', label: 'GitHub', icon: Github, color: 'text-muted-foreground' },
   { value: 'vercel', label: 'Vercel', icon: Cloud, color: 'text-white' },
   { value: 'supabase', label: 'Supabase', icon: Database, color: 'text-emerald-500' },
   { value: 'railway', label: 'Railway', icon: Cloud, color: 'text-violet-500' },

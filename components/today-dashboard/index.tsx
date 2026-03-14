@@ -86,7 +86,12 @@ export function TodayDashboard({
       <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl">
         {/* Left */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8 min-h-[44px] min-w-[44px] lg:hidden"
+            onClick={toggleMobile}
+          >
             <Menu className="size-4" />
           </Button>
 
@@ -118,7 +123,7 @@ export function TodayDashboard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-8"
+                  className="size-8 min-h-[44px] min-w-[44px]"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                 >
@@ -135,7 +140,12 @@ export function TodayDashboard({
             <TooltipProvider delayDuration={300}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="size-8" asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 min-h-[44px] min-w-[44px]"
+                    asChild
+                  >
                     <Link href="/settings">
                       <Settings className="size-3.5" />
                     </Link>

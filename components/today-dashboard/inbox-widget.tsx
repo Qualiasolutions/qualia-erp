@@ -442,11 +442,19 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
               {inputValue.trim()
                 ? 'No matching tasks'
                 : filterMode === 'done'
-                  ? 'No completed tasks'
-                  : 'All clear!'}
+                  ? 'Nothing completed yet'
+                  : filterMode === 'mine'
+                    ? 'Nothing assigned to you'
+                    : 'Inbox is empty'}
             </p>
             <p className="mt-1 text-xs text-foreground/50">
-              {inputValue.trim() ? 'Press Enter to create this task' : 'Type above to add a task'}
+              {inputValue.trim()
+                ? 'Press Enter to create this task'
+                : filterMode === 'done'
+                  ? 'Complete a task and it will show here'
+                  : filterMode === 'mine'
+                    ? 'Switch to All or add a task above'
+                    : 'Type above to capture anything on your mind'}
             </p>
           </div>
         ) : (
@@ -468,7 +476,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
                     exit={{ opacity: 0, x: -20 }}
                     transition={{
                       duration: 0.3,
-                      delay: virtualRow.index * 0.05,
+                      delay: Math.min(virtualRow.index * 0.03, 0.24),
                       ease: [0.16, 1, 0.3, 1],
                     }}
                     style={{

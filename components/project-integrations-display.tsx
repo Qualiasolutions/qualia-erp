@@ -164,10 +164,7 @@ export function ProjectIntegrationsDisplay({
           rel="noopener noreferrer"
           className="transition-opacity hover:opacity-70"
         >
-          <Badge
-            variant="outline"
-            className="gap-1.5 bg-slate-500/10 text-slate-800 dark:text-slate-200"
-          >
+          <Badge variant="outline" className="gap-1.5 bg-muted text-foreground">
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2L2 22h20L12 2z" />
             </svg>
@@ -176,10 +173,7 @@ export function ProjectIntegrationsDisplay({
           </Badge>
         </a>
       ) : (
-        <Badge
-          variant="outline"
-          className="gap-1.5 bg-slate-500/10 text-slate-500 dark:text-slate-400"
-        >
+        <Badge variant="outline" className="gap-1.5 bg-muted text-muted-foreground">
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L2 22h20L12 2z" />
           </svg>

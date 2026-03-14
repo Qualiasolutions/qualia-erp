@@ -43,7 +43,7 @@ const StatusIcon = ({ status }: { status: string }) => {
     case 'In Progress':
       return <Circle className="h-4 w-4 fill-yellow-500/20 text-yellow-500" />;
     default:
-      return <Circle className="h-4 w-4 text-gray-500" />;
+      return <Circle className="h-4 w-4 text-muted-foreground" />;
   }
 };
 

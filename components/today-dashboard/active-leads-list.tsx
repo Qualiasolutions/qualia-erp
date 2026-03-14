@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createClientRecord, deleteClientRecord, toggleClientStatus } from '@/app/actions';
+import { EmptyState } from '@/components/ui/empty-state';
 import type { LeadStatus } from '@/types/database';
 
 interface Lead {
@@ -87,8 +88,8 @@ const STATUS_CONFIG: Record<
   inactive_client: {
     label: 'Inactive',
     icon: Users,
-    className: 'bg-slate-500/10 text-slate-400 border-slate-500/30',
-    iconClass: 'text-slate-400',
+    className: 'bg-muted text-muted-foreground border-border/30',
+    iconClass: 'text-muted-foreground',
   },
   dropped: {
     label: 'Dropped',
@@ -99,8 +100,8 @@ const STATUS_CONFIG: Record<
   dead_lead: {
     label: 'Dead',
     icon: Users,
-    className: 'bg-slate-500/10 text-slate-500 border-slate-500/30',
-    iconClass: 'text-slate-500',
+    className: 'bg-muted text-muted-foreground/70 border-border/30',
+    iconClass: 'text-muted-foreground/70',
   },
 };
 
@@ -355,16 +356,22 @@ export function ActiveLeadsList({ leads, workspaceId }: ActiveLeadsListProps) {
       </div>
       <div className="widget-content min-h-0 overflow-y-auto p-2">
         {activeLeads.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center py-6 text-center">
-            <div className="mb-3 rounded-lg bg-muted p-3">
-              <Users className="h-5 w-5 text-muted-foreground" />
-            </div>
-            <p className="text-sm text-muted-foreground">No active leads</p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Pipeline is clear"
+            description="No hot or cold leads right now. Add one to start tracking."
+            compact
+          />
         ) : (
           <div className="space-y-1.5">
-            {activeLeads.map((lead) => (
-              <LeadRow key={lead.id} lead={lead} onRefresh={handleRefresh} />
+            {activeLeads.map((lead, i) => (
+              <div
+                key={lead.id}
+                className="animate-stagger-in"
+                style={{ animationDelay: `${Math.min(i * 30, 240)}ms` }}
+              >
+                <LeadRow lead={lead} onRefresh={handleRefresh} />
+              </div>
             ))}
           </div>
         )}

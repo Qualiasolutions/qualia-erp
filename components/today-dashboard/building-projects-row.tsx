@@ -49,7 +49,7 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15">
             <Hammer className="h-3.5 w-3.5 text-emerald-500" />
           </div>
-          <h3 className="text-[13px] font-semibold text-foreground">Currently Building</h3>
+          <h2 className="text-[13px] font-semibold text-foreground">Currently Building</h2>
           <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-emerald-500">
             {building.length}
           </span>

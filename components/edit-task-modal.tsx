@@ -291,12 +291,12 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Time Slot</Label>
+              <Label htmlFor="edit-time-slot">Time Slot</Label>
               <Select
                 value={scheduledTime || 'none'}
                 onValueChange={(v) => setScheduledTime(v === 'none' ? '' : v)}
               >
-                <SelectTrigger className="border-border bg-background">
+                <SelectTrigger id="edit-time-slot" className="border-border bg-background">
                   <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
                   <SelectValue placeholder="No time" />
                 </SelectTrigger>
@@ -318,9 +318,9 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Duration</Label>
+              <Label htmlFor="edit-duration">Duration</Label>
               <Select value={duration} onValueChange={setDuration} disabled={!scheduledTime}>
-                <SelectTrigger className="border-border bg-background">
+                <SelectTrigger id="edit-duration" className="border-border bg-background">
                   <SelectValue placeholder="Duration" />
                 </SelectTrigger>
                 <SelectContent className="border-border bg-card">

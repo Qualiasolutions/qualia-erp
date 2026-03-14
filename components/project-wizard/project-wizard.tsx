@@ -525,7 +525,7 @@ export function ProjectWizard({
                             className={cn(
                               'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
                               selectedIntegrations.github
-                                ? 'border-gray-500/50 bg-gray-500/10'
+                                ? 'border-border bg-muted'
                                 : 'border-border/50 bg-muted/30 hover:bg-muted/50'
                             )}
                           >

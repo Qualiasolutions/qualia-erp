@@ -701,7 +701,12 @@ const PhaseGroup = memo(function PhaseGroup({
     <div className={cn('rounded-xl border transition-all', statusColors[status])}>
       {/* Phase Header */}
       <div className="flex w-full items-center justify-between p-4 text-left">
-        <div className="flex flex-1 cursor-pointer items-center gap-3" onClick={onToggle}>
+        <button
+          type="button"
+          className="flex flex-1 cursor-pointer items-center gap-3 text-left"
+          onClick={onToggle}
+          aria-expanded={isExpanded}
+        >
           {isExpanded ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           ) : (
@@ -747,7 +752,7 @@ const PhaseGroup = memo(function PhaseGroup({
               <p className="mt-0.5 text-xs text-muted-foreground">{phase.description}</p>
             )}
           </div>
-        </div>
+        </button>
 
         {/* Header Actions */}
         <div className="flex items-center gap-3">

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { EmptyState } from '@/components/ui/empty-state';
 import { StickyNote, FolderOpen, Send, Users, Trash2, Edit2, X, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -300,12 +301,17 @@ export function NotesWidget({ notes, projects, teamMembers, workspaceId }: Notes
       {/* Notes List */}
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {visibleNotes.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center">
-            <div className="rounded-2xl bg-muted/50 p-4">
-              <StickyNote className="h-8 w-8 text-primary/50" />
-            </div>
-            <p className="mt-4 font-medium text-foreground">No notes yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">Add a note to a project below</p>
+          <div className="flex h-full items-center justify-center px-2 py-4">
+            <EmptyState
+              icon={StickyNote}
+              title={filterUserId ? 'No notes from this person' : 'No notes yet'}
+              description={
+                filterUserId
+                  ? 'Switch to All or select a project below to write one'
+                  : 'Pick a project below and capture what matters'
+              }
+              compact
+            />
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
