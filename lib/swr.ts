@@ -64,8 +64,6 @@ export const cacheKeys = {
   portalProjectWithPhases: (projectId: string) => `portal-project-with-phases-${projectId}`,
   portalDashboard: (clientId: string) => `portal-dashboard-${clientId}`,
   clientActionItems: (clientId: string) => ['client-action-items', clientId] as const,
-  timeEntries: (date: string) => `time-entries-${date}`,
-  runningTimer: (userId: string) => `running-timer-${userId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1291,96 +1289,6 @@ export function invalidatePortalDashboard(clientId: string, immediate = true) {
     mutate(cacheKeys.portalDashboard(clientId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.portalDashboard(clientId));
-  }
-}
-
-// ============================================================================
-// TIME TRACKING HOOKS
-// ============================================================================
-
-/**
- * Hook to fetch time entries for a specific date with auto-refresh
- * Used by time tracking page to show real-time updates
- */
-export function useTimeEntries(date: string, userId?: string) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    cacheKeys.timeEntries(date),
-    async () => {
-      const { getDailyTimeEntries } = await import('@/app/actions/time-tracking');
-      const result = await getDailyTimeEntries(date, userId);
-      return result.success ? result.data : [];
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    entries: (data as unknown[]) || [],
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Hook to fetch running timer with fast refresh (30s for live timer)
- */
-export function useRunningTimer(userId: string) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    cacheKeys.runningTimer(userId),
-    async () => {
-      const { getRunningTimer } = await import('@/app/actions/time-tracking');
-      const result = await getRunningTimer(userId);
-      return result.success ? result.data : null;
-    },
-    {
-      ...autoRefreshConfig,
-      refreshInterval: () => (isDocumentVisible() ? 30000 : 0), // 30s refresh for live timer
-    }
-  );
-
-  return {
-    timer: data || null,
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate time entries cache
- */
-export function invalidateTimeEntries(date: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.timeEntries(date), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.timeEntries(date));
-  }
-}
-
-/**
- * Invalidate running timer cache
- */
-export function invalidateRunningTimer(userId: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.runningTimer(userId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.runningTimer(userId));
   }
 }
 

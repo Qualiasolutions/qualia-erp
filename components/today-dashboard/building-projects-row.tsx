@@ -64,8 +64,14 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
       </div>
 
       <div className="scrollbar-none flex gap-2 overflow-x-auto px-4 py-3">
-        {building.map((project) => (
-          <ProjectChip key={project.id} project={project} dotColor="bg-emerald-500" />
+        {building.map((project, i) => (
+          <div
+            key={project.id}
+            className="animate-stagger-in"
+            style={{ animationDelay: `${i * 30}ms` }}
+          >
+            <ProjectChip project={project} dotColor="bg-emerald-500" />
+          </div>
         ))}
       </div>
     </div>

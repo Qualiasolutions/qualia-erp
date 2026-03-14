@@ -310,3 +310,28 @@ const {
 } = supabase.storage.from('project-files').getPublicUrl(storagePath);
 const logoUrl = `${publicUrl}?t=${Date.now()}`;
 ```
+
+## Design Context
+
+### Users
+
+Internal — Fawzi (founder) + trainees/employees. Auth-gated project management, CRM, payments, AI assistant, mentorship. Job: manage all Qualia operations in one place.
+
+### Brand Personality
+
+Clean, professional, premium utility. "Like Linear/Plane — no flashy effects." Design system v4.0: "Impeccable. Tinted. Fluid. Premium."
+
+### Aesthetic Direction (Impeccable v4.0)
+
+Warm teal (#00A4AC) as brand accent. All neutrals tinted toward brand hue (never pure gray/black/white). Light: teal-tinted off-white (#EDF0F0). Dark: teal-tinted deep (#121819). Geist Sans + Geist Mono (Vercel fonts). shadcn/ui + Radix primitives. Three surface layers for depth. Five-tier elevation system. Fluid type scale with `clamp()`. Fluid spacing with `clamp()`. Exponential deceleration easing only (ease-out-quart/expo) — no bounce/spring. Stagger animations in 30ms increments. Backdrop-blur glass headers.
+
+### Design Principles (Impeccable)
+
+1. **Teal is the brand** — qualia-500 (#00A4AC) for all primary actions, focus rings, active states
+2. **Tinted neutrals** — every gray picks up brand hue (HSL ~185-190). Never pure black/white
+3. **Full dual-mode** — light (warm teal-tinted) and dark (warm teal-tinted deep), both fully specified
+4. **Linear/Plane aesthetic** — data-dense, no decorative heroes, sidebar + content layout
+5. **Layered surfaces** — three surface tiers + five elevation tiers create depth without heavy shadows
+6. **Smooth deceleration** — ease-out-quart/expo only. No bounce, spring, or elastic easing
+7. **Fluid everything** — type scale and spacing use `clamp()` for natural breathing across viewports
+8. **No anti-patterns** — no cards wrapping cards, no gray-on-color text, no uniform spacing monotony

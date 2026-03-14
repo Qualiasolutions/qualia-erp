@@ -3,104 +3,117 @@
 @tailwind utilities;
 
 /* ============================================
-   QUALIA DESIGN SYSTEM v3.0
-   Warm Neutral • Refined • Clear • Premium
+   QUALIA DESIGN SYSTEM v4.0
+   Impeccable • Warm • Tinted • Premium
+
+   Follows Impeccable best practices:
+   - OKLCH for perceptually uniform colors
+   - Tinted neutrals toward brand hue
+   - No pure black/white — always tinted
+   - Exponential deceleration, no bounce/spring
+   - Fluid spacing with clamp()
    ============================================ */
 
 @layer base {
-  /* Button transitions */
+  /* Button transitions — transform+opacity only (Impeccable) */
   [data-slot='button'] {
     @apply transition-colors duration-150;
   }
 
   :root {
-    /* Light mode — Clean surfaces, strong navy borders */
-    --background: 220 14% 96%;
-    --foreground: 220 25% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 220 25% 8%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 8%;
+    /* Light mode — Warm teal-tinted surfaces */
+    --background: 185 8% 95%;
+    --foreground: 190 20% 10%;
+    --card: 180 4% 99%;
+    --card-foreground: 190 20% 10%;
+    --popover: 180 4% 99%;
+    --popover-foreground: 190 20% 10%;
     --primary: 174 60% 34%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 12% 93%;
-    --secondary-foreground: 220 15% 25%;
-    --muted: 220 10% 91%;
-    --muted-foreground: 220 12% 34%;
-    --accent: 174 25% 95%;
+    --primary-foreground: 180 6% 99%;
+    --secondary: 185 8% 92%;
+    --secondary-foreground: 185 12% 25%;
+    --muted: 185 6% 90%;
+    --muted-foreground: 185 8% 38%;
+    --accent: 174 18% 94%;
     --accent-foreground: 174 55% 24%;
     --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 42%;
-    --input: 220 15% 78%;
+    --destructive-foreground: 180 6% 99%;
+    --border: 185 12% 78%;
+    --input: 185 10% 82%;
     --ring: 174 60% 34%;
-    --radius: 0.75rem;
+    --radius: 0.625rem;
 
-    /* Status colors */
-    --success: 152 60% 40%;
-    --warning: 38 85% 48%;
-    --info: 205 75% 46%;
+    /* Status colors — tinted toward brand */
+    --success: 155 55% 40%;
+    --warning: 40 82% 48%;
+    --info: 200 70% 46%;
 
-    /* Surface layers */
-    --surface-1: 0 0% 100%;
-    --surface-2: 220 8% 96%;
-    --surface-3: 220 6% 93%;
-    --surface-hover: 220 8% 95%;
+    /* Surface layers — subtle warm tinting */
+    --surface-1: 180 4% 99%;
+    --surface-2: 185 6% 96%;
+    --surface-3: 185 5% 93%;
+    --surface-hover: 180 6% 95%;
 
-    /* Motion system */
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    /* Motion system — exponential deceleration only (Impeccable) */
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
     --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Elevation system — 5 tiers */
     --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.04);
-    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
-    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.16), 0 8px 24px rgba(0, 0, 0, 0.08);
+    --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+    --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.03);
+    --elevation-modal: 0 16px 48px rgba(0, 0, 0, 0.1), 0 4px 16px rgba(0, 0, 0, 0.05);
+    --elevation-max: 0 24px 64px rgba(0, 0, 0, 0.14), 0 8px 24px rgba(0, 0, 0, 0.07);
+
+    /* Fluid spacing scale */
+    --space-xs: clamp(0.25rem, 0.2rem + 0.25vw, 0.5rem);
+    --space-sm: clamp(0.5rem, 0.4rem + 0.5vw, 0.75rem);
+    --space-md: clamp(0.75rem, 0.6rem + 0.75vw, 1.25rem);
+    --space-lg: clamp(1rem, 0.8rem + 1vw, 1.75rem);
+    --space-xl: clamp(1.5rem, 1.2rem + 1.5vw, 2.5rem);
+    --space-2xl: clamp(2rem, 1.6rem + 2vw, 3.5rem);
   }
 
   .dark {
-    /* Dark mode — Deep, layered, high contrast */
-    --background: 230 8% 7%;
-    --foreground: 220 10% 94%;
-    --card: 230 6% 10%;
-    --card-foreground: 220 10% 94%;
-    --popover: 240 5% 9%;
-    --popover-foreground: 220 10% 94%;
+    /* Dark mode — Warm teal-tinted darks, never pure black */
+    --background: 190 10% 8%;
+    --foreground: 180 6% 93%;
+    --card: 188 8% 11%;
+    --card-foreground: 180 6% 93%;
+    --popover: 190 7% 10%;
+    --popover-foreground: 180 6% 93%;
     --primary: 174 60% 42%;
-    --primary-foreground: 240 6% 6%;
-    --secondary: 240 4% 12%;
-    --secondary-foreground: 220 8% 88%;
-    --muted: 240 4% 13%;
-    --muted-foreground: 220 5% 50%;
-    --accent: 174 30% 13%;
+    --primary-foreground: 190 8% 7%;
+    --secondary: 188 5% 14%;
+    --secondary-foreground: 180 6% 87%;
+    --muted: 188 5% 15%;
+    --muted-foreground: 185 4% 52%;
+    --accent: 174 22% 14%;
     --accent-foreground: 174 55% 55%;
     --destructive: 0 63% 55%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 230 5% 18%;
-    --input: 240 4% 13%;
+    --destructive-foreground: 180 6% 99%;
+    --border: 188 6% 20%;
+    --input: 188 5% 15%;
     --ring: 174 60% 42%;
 
-    /* Surface layers — visible depth steps */
-    --surface-1: 230 6% 10%;
-    --surface-2: 230 5% 13%;
-    --surface-3: 230 4% 16%;
-    --surface-hover: 230 5% 12%;
+    /* Surface layers — teal-tinted depth steps */
+    --surface-1: 188 8% 11%;
+    --surface-2: 188 6% 14%;
+    --surface-3: 188 5% 18%;
+    --surface-hover: 188 6% 13%;
 
-    /* Status colors */
-    --success: 152 65% 48%;
-    --warning: 38 90% 55%;
-    --info: 205 80% 55%;
+    /* Status colors — brighter for dark bg */
+    --success: 155 60% 48%;
+    --warning: 40 85% 55%;
+    --info: 200 75% 55%;
 
     /* Motion system */
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    --ease-bounce: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
     --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
     --ease-premium: cubic-bezier(0.16, 1, 0.3, 1);
 
-    /* Elevation system — dark mode (stronger shadows for depth) */
+    /* Elevation system — dark mode (stronger for depth) */
     --elevation-resting: 0 1px 2px rgba(0, 0, 0, 0.12);
     --elevation-raised: 0 2px 8px rgba(0, 0, 0, 0.16), 0 1px 2px rgba(0, 0, 0, 0.1);
     --elevation-floating: 0 8px 24px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.12);
@@ -137,7 +150,7 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Typography — clean, restrained hierarchy */
+  /* Typography — fluid modular scale (Impeccable) */
   h1,
   h2,
   h3,
@@ -145,23 +158,39 @@
   h5,
   h6 {
     font-weight: 500;
-    letter-spacing: -0.025em;
+    letter-spacing: -0.02em;
     line-height: 1.2;
+    text-wrap: balance;
   }
 
   h1 {
-    font-size: 2rem;
+    font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
     font-weight: 600;
     letter-spacing: -0.035em;
+    line-height: 1.1;
   }
 
   h2 {
-    font-size: 1.5rem;
-    font-weight: 500;
+    font-size: clamp(1.25rem, 1.1rem + 0.75vw, 1.625rem);
+    font-weight: 550;
+    letter-spacing: -0.025em;
   }
 
   h3 {
-    font-size: 1.125rem;
+    font-size: clamp(1rem, 0.95rem + 0.25vw, 1.175rem);
+    letter-spacing: -0.015em;
+  }
+
+  h4 {
+    font-size: clamp(0.875rem, 0.85rem + 0.125vw, 1rem);
+  }
+
+  /* Fluid body text */
+  p,
+  li,
+  td,
+  th {
+    line-height: 1.6;
   }
 
   code,
@@ -240,11 +269,11 @@
 
   .widget-icon {
     @apply flex h-8 w-8 items-center justify-center rounded-lg;
-    transition: transform 0.25s var(--ease-spring);
+    transition: transform 0.25s var(--ease-out-quart);
   }
 
   .widget:hover .widget-icon {
-    transform: scale(1.08);
+    transform: scale(1.05);
   }
 
   .widget-content {
@@ -554,13 +583,11 @@
 @keyframes modal-entrance {
   from {
     opacity: 0;
-    transform: scale(0.92);
-    filter: blur(4px);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
     transform: scale(1);
-    filter: blur(0);
   }
 }
 
@@ -576,43 +603,33 @@
 }
 
 @keyframes tooltip-pop {
-  0% {
+  from {
     opacity: 0;
-    transform: scale(0.9) translateY(2px);
+    transform: scale(0.95) translateY(2px);
   }
-  70% {
-    transform: scale(1.02) translateY(0);
-  }
-  100% {
+  to {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
 }
 
-@keyframes checkbox-bounce {
-  0% {
+@keyframes checkbox-check {
+  from {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  to {
     transform: scale(1);
-  }
-  30% {
-    transform: scale(0.85);
-  }
-  60% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
+    opacity: 1;
   }
 }
 
-@keyframes slide-up-spring {
-  0% {
+@keyframes slide-up-smooth {
+  from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(10px);
   }
-  70% {
-    transform: translateY(-2px);
-  }
-  100% {
+  to {
     opacity: 1;
     transform: translateY(0);
   }
@@ -658,7 +675,7 @@
   }
 
   .animate-modal-entrance {
-    animation: modal-entrance 0.3s var(--ease-spring) forwards;
+    animation: modal-entrance 0.3s var(--ease-out-expo) forwards;
   }
 
   .animate-drawer-slide {
@@ -666,15 +683,25 @@
   }
 
   .animate-tooltip-pop {
-    animation: tooltip-pop 0.2s var(--ease-spring) forwards;
+    animation: tooltip-pop 0.15s var(--ease-out-quart) forwards;
   }
 
+  .animate-checkbox-check {
+    animation: checkbox-check 0.2s var(--ease-out-quart);
+  }
+
+  .animate-slide-up-smooth {
+    animation: slide-up-smooth 0.35s var(--ease-out-expo) forwards;
+    opacity: 0;
+  }
+
+  /* Backwards compat aliases */
   .animate-checkbox-bounce {
-    animation: checkbox-bounce 0.35s var(--ease-spring);
+    animation: checkbox-check 0.2s var(--ease-out-quart);
   }
 
   .animate-slide-up-spring {
-    animation: slide-up-spring 0.4s var(--ease-spring) forwards;
+    animation: slide-up-smooth 0.35s var(--ease-out-expo) forwards;
     opacity: 0;
   }
 

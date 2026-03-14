@@ -16,8 +16,6 @@ import {
   FlaskConical,
   ExternalLink,
   Shield,
-  Clock,
-  Upload,
   Wallet,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,8 +49,6 @@ const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink 
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Payments', href: '/payments', icon: Wallet },
-  { name: 'Portal Import', href: '/admin/projects/import', icon: Upload },
-  { name: 'Time Tracking', href: '/time-tracking', icon: Clock },
 ];
 
 type NavItem = (typeof workspaceNav)[0];
@@ -161,15 +157,15 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
     pathname === href || (href !== '/' && pathname.startsWith(href));
 
   return (
-    <div className="flex h-full flex-col bg-gradient-to-b from-card to-card/95">
+    <div className="flex h-full flex-col bg-card">
       {/* Logo */}
       <div className="relative flex h-[60px] items-center border-b border-border/50 px-4">
         <Link
           href="/"
-          className="group flex items-center gap-2.5 transition-transform duration-200 ease-spring hover:scale-[1.02]"
+          className="ease-out-quart group flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]"
           onClick={onLinkClick}
         >
-          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 ease-spring group-hover:scale-[1.05]">
+          <div className="ease-out-quart relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 group-hover:scale-[1.05]">
             <Image
               src="/logo.webp"
               alt="Qualia"

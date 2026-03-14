@@ -123,9 +123,9 @@ export default {
         'glow-pulse': 'glowPulse 2s ease-in-out infinite',
         'scale-in': 'scaleIn 0.2s cubic-bezier(0.16,1,0.3,1) forwards',
         'fade-in-up': 'fadeInUp 0.25s cubic-bezier(0.16,1,0.3,1) forwards',
-        'modal-enter': 'modalEnter 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        'modal-enter': 'modalEnter 0.3s cubic-bezier(0.19,1,0.22,1) forwards',
         'stagger-in': 'staggerIn 0.3s cubic-bezier(0.16,1,0.3,1) forwards',
-        'tooltip-pop': 'tooltipPop 0.2s cubic-bezier(0.34,1.56,0.64,1) forwards',
+        'tooltip-pop': 'tooltipPop 0.15s cubic-bezier(0.25,1,0.5,1) forwards',
       },
       keyframes: {
         float: {
@@ -179,24 +179,23 @@ export default {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         modalEnter: {
-          '0%': { opacity: '0', transform: 'scale(0.92)', filter: 'blur(4px)' },
-          '100%': { opacity: '1', transform: 'scale(1)', filter: 'blur(0)' },
+          '0%': { opacity: '0', transform: 'scale(0.96)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         },
         staggerIn: {
           '0%': { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         tooltipPop: {
-          '0%': { opacity: '0', transform: 'scale(0.9) translateY(2px)' },
-          '70%': { transform: 'scale(1.02) translateY(0)' },
+          '0%': { opacity: '0', transform: 'scale(0.95) translateY(2px)' },
           '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
       },
       transitionTimingFunction: {
         premium: 'cubic-bezier(0.16, 1, 0.3, 1)',
         'ease-out-expo': 'cubic-bezier(0.19, 1, 0.22, 1)',
-        spring: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
-        bounce: 'cubic-bezier(0.68, -0.6, 0.32, 1.6)',
+        'ease-out-quart': 'cubic-bezier(0.25, 1, 0.5, 1)',
+        'ease-out-quint': 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
       transitionDuration: {
         '400': '400ms',

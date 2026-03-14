@@ -20,8 +20,8 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F0F1F4' },
-    { media: '(prefers-color-scheme: dark)', color: '#0F0F12' },
+    { media: '(prefers-color-scheme: light)', color: '#EDF0F0' },
+    { media: '(prefers-color-scheme: dark)', color: '#121819' },
   ],
   width: 'device-width',
   initialScale: 1,
