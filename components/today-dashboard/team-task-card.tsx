@@ -2,15 +2,18 @@
 
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday } from 'date-fns';
-import { Clock, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
+import { TaskTimeTracker } from '@/components/task-time-tracker';
 
 interface TeamTaskCardProps {
   task: TeamMemberTask;
+  currentUserId?: string | null;
+  onTaskUpdate?: () => void;
 }
 
-export function TeamTaskCard({ task }: TeamTaskCardProps) {
+export function TeamTaskCard({ task, currentUserId, onTaskUpdate }: TeamTaskCardProps) {
   const priorityColor = ISSUE_PRIORITY_COLORS[task.priority as keyof typeof ISSUE_PRIORITY_COLORS];
   const statusColors = TASK_STATUS_COLORS[task.status as keyof typeof TASK_STATUS_COLORS];
 
@@ -20,12 +23,7 @@ export function TeamTaskCard({ task }: TeamTaskCardProps) {
     isPast(new Date(task.due_date + 'T23:59:59'));
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
 
-  const timeSpent =
-    task.time_log?.time_spent_minutes != null
-      ? task.time_log.time_spent_minutes >= 60
-        ? `${Math.floor(task.time_log.time_spent_minutes / 60)}h ${task.time_log.time_spent_minutes % 60}m`
-        : `${task.time_log.time_spent_minutes}m`
-      : null;
+  const isOwner = currentUserId != null && currentUserId === task.assignee_id;
 
   return (
     <div
@@ -96,11 +94,16 @@ export function TeamTaskCard({ task }: TeamTaskCardProps) {
           </span>
         )}
 
-        {timeSpent && (
-          <span className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
-            <Clock className="size-3" />
-            {timeSpent}
-          </span>
+        {/* Time tracker: interactive for task owner, read-only badge for others */}
+        {isOwner ? (
+          <TaskTimeTracker
+            taskId={task.id}
+            timeLog={task.time_log}
+            readOnly={false}
+            onUpdate={onTaskUpdate}
+          />
+        ) : (
+          <TaskTimeTracker taskId={task.id} timeLog={task.time_log} readOnly />
         )}
       </div>
     </div>

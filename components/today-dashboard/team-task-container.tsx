@@ -54,9 +54,16 @@ function TeamTaskSkeleton() {
 interface MemberGroupProps {
   member: TeamMemberTasks;
   defaultOpen?: boolean;
+  currentUserId?: string | null;
+  onTaskUpdate?: () => void;
 }
 
-function MemberGroup({ member, defaultOpen = true }: MemberGroupProps) {
+function MemberGroup({
+  member,
+  defaultOpen = true,
+  currentUserId,
+  onTaskUpdate,
+}: MemberGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const { profile, tasks } = member;
 
@@ -103,7 +110,14 @@ function MemberGroup({ member, defaultOpen = true }: MemberGroupProps) {
           {tasks.length === 0 ? (
             <p className="px-4 py-4 text-center text-xs text-muted-foreground">No active tasks</p>
           ) : (
-            tasks.map((task) => <TeamTaskCard key={task.id} task={task} />)
+            tasks.map((task) => (
+              <TeamTaskCard
+                key={task.id}
+                task={task}
+                currentUserId={currentUserId}
+                onTaskUpdate={onTaskUpdate}
+              />
+            ))
           )}
         </div>
       )}
@@ -315,11 +329,20 @@ function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
 interface TeamTaskContainerProps {
   workspaceId: string;
   userRole: string | null;
+  currentUserId?: string | null;
 }
 
-export function TeamTaskContainer({ workspaceId, userRole }: TeamTaskContainerProps) {
+export function TeamTaskContainer({
+  workspaceId,
+  userRole,
+  currentUserId,
+}: TeamTaskContainerProps) {
   const isAdmin = userRole === 'admin';
-  const { members, isLoading, isError } = useTeamTaskDashboard(workspaceId);
+  const { members, isLoading, isError, revalidate } = useTeamTaskDashboard(workspaceId);
+
+  const handleTaskUpdate = useCallback(() => {
+    revalidate();
+  }, [revalidate]);
 
   // Build flat profile list for check-in filter
   const profiles = members.map((m) => ({
@@ -356,7 +379,13 @@ export function TeamTaskContainer({ workspaceId, userRole }: TeamTaskContainerPr
                 </div>
               ) : (
                 members.map((member) => (
-                  <MemberGroup key={member.profile.id} member={member} defaultOpen />
+                  <MemberGroup
+                    key={member.profile.id}
+                    member={member}
+                    defaultOpen
+                    currentUserId={currentUserId}
+                    onTaskUpdate={handleTaskUpdate}
+                  />
                 ))
               )}
 
@@ -377,7 +406,12 @@ export function TeamTaskContainer({ workspaceId, userRole }: TeamTaskContainerPr
               ) : (
                 <div className="divide-y divide-border/30">
                   {members[0].tasks.map((task) => (
-                    <TeamTaskCard key={task.id} task={task} />
+                    <TeamTaskCard
+                      key={task.id}
+                      task={task}
+                      currentUserId={currentUserId}
+                      onTaskUpdate={handleTaskUpdate}
+                    />
                   ))}
                 </div>
               )}
