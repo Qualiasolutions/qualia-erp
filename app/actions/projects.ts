@@ -353,6 +353,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     target_date,
     metadata,
     status,
+    client_id,
   } = validation.data;
 
   // Get current project status if status is being updated
@@ -383,6 +384,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
       ...(target_date !== undefined && { target_date: target_date || null }),
       ...(parsedMetadata !== undefined && { metadata: parsedMetadata }),
       ...(status !== undefined && { status }),
+      ...(client_id !== undefined && { client_id: client_id || null }),
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
