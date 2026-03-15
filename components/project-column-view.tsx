@@ -149,12 +149,12 @@ export function ProjectColumnView({
   return (
     <div
       className={cn(
-        'shadow-subtle flex flex-col overflow-hidden rounded-xl border border-border/60 bg-card',
+        'flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card',
         className
       )}
     >
       {/* Column header */}
-      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/50 px-4 py-2.5">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/30 px-4 py-2.5">
         <span className="text-muted-foreground">{icon}</span>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
         <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
@@ -172,7 +172,7 @@ export function ProjectColumnView({
             <p className="text-sm text-muted-foreground">{emptyMessage}</p>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/30">
             {projects.map((project) => (
               <ProjectRow key={project.id} project={project} onProjectClick={onProjectClick} />
             ))}
