@@ -99,8 +99,56 @@ export async function createDailyCheckin(
     return { success: false, error: error.message };
   }
 
+  // Notify admins about the check-in (fire-and-forget)
+  notifyAdminsOfCheckin(supabase, user.id, workspaceId, input.checkin_type).catch(() => {});
+
   revalidatePath('/');
   return { success: true, data };
+}
+
+async function notifyAdminsOfCheckin(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  workspaceId: string,
+  checkinType: CheckinType
+) {
+  try {
+    // Get user's name
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', userId)
+      .single();
+
+    const name = profile?.full_name || 'An employee';
+    const label = checkinType === 'morning' ? 'morning check-in' : 'end-of-day check-out';
+
+    // Get all admins in workspace
+    const { data: admins } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .eq('role', 'admin')
+      .neq('id', userId);
+
+    if (!admins?.length) return;
+
+    const { createNotification } = await import('./notifications');
+    await Promise.all(
+      admins.map((admin) =>
+        createNotification(
+          admin.id,
+          workspaceId,
+          'system',
+          `${name} submitted their ${label}`,
+          undefined,
+          '/'
+        )
+      )
+    );
+  } catch (err) {
+    console.error('[notifyAdminsOfCheckin] Error:', err);
+  }
 }
 
 /**

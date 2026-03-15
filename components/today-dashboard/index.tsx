@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { RefreshCw, Settings, Menu, Plus } from 'lucide-react';
+import { RefreshCw, Settings, Menu, Plus, Eye } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -15,8 +15,16 @@ import { BuildingProjectsRow, type PipelineProject } from './building-projects-r
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
 import { CheckinModal } from './checkin-modal';
+import { EveningCheckinModal } from './evening-checkin-modal';
 import { useTransition, useState, useEffect } from 'react';
 import { type MeetingWithRelations, useMeetings, useTodaysCheckin } from '@/lib/swr';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { OwnerUpdatesBanner } from './owner-updates-banner';
 import { OwnerUpdatesCompose } from './owner-updates-compose';
@@ -53,15 +61,42 @@ export function TodayDashboard({
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [checkinDismissed, setCheckinDismissed] = useState(false);
-  const isNonAdmin = userRole !== 'admin';
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
+  const isRealAdmin = userRole === 'admin';
   const now = new Date();
+  const currentHour = now.getHours();
 
-  // Check-in gate for employees
-  const { morning: morningCheckin, isLoading: checkinLoading } = useTodaysCheckin(
-    isNonAdmin && !checkinDismissed ? workspaceId : null
-  );
-  const showCheckinModal =
-    isNonAdmin && !checkinDismissed && !checkinLoading && morningCheckin === null;
+  // "View as" — admin can impersonate employee's dashboard view
+  const effectiveUserId = viewAsUserId || currentUserId;
+  const effectiveRole = viewAsUserId ? 'employee' : userRole;
+  const isNonAdmin = effectiveRole !== 'admin';
+  const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
+
+  // Check-in gate for employees (and admin "view as" mode)
+  const {
+    morning: morningCheckin,
+    evening: eveningCheckin,
+    isLoading: checkinLoading,
+  } = useTodaysCheckin(isNonAdmin && !checkinDismissed ? workspaceId : null);
+
+  // Morning check-in: show if before 3 PM and no morning check-in
+  const showMorningCheckin =
+    isNonAdmin &&
+    !viewingAsEmployee &&
+    !checkinDismissed &&
+    !checkinLoading &&
+    morningCheckin === null &&
+    currentHour < 15;
+
+  // Evening check-in: show if 3 PM or later, morning done, no evening check-in
+  const showEveningCheckin =
+    isNonAdmin &&
+    !viewingAsEmployee &&
+    !checkinDismissed &&
+    !checkinLoading &&
+    morningCheckin !== null &&
+    eveningCheckin === null &&
+    currentHour >= 15;
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
@@ -103,6 +138,28 @@ export function TodayDashboard({
 
         {/* Right */}
         <div className="flex items-center gap-1">
+          {/* View As selector — admin only */}
+          {isRealAdmin && (
+            <Select
+              value={viewAsUserId || '__admin__'}
+              onValueChange={(v) => setViewAsUserId(v === '__admin__' ? null : v)}
+            >
+              <SelectTrigger className="h-8 w-36 gap-1.5 text-xs">
+                <Eye className="size-3" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__admin__">Admin view</SelectItem>
+                {profiles
+                  .filter((p) => p.id !== currentUserId)
+                  .map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.full_name || 'Unknown'}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
           {!isNonAdmin && (
             <Button
               variant="outline"
@@ -158,6 +215,23 @@ export function TodayDashboard({
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
+          {/* "Viewing as" indicator */}
+          {viewingAsEmployee && (
+            <div className="mb-2 flex shrink-0 items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-1.5">
+              <Eye className="size-3.5 text-amber-600" />
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                Viewing as {profiles.find((p) => p.id === viewAsUserId)?.full_name || 'employee'}
+              </span>
+              <button
+                type="button"
+                className="ml-auto text-xs text-amber-600 underline hover:no-underline dark:text-amber-400"
+                onClick={() => setViewAsUserId(null)}
+              >
+                Exit
+              </button>
+            </div>
+          )}
+
           {/* Owner updates banner — employees only */}
           {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
@@ -173,8 +247,8 @@ export function TodayDashboard({
             <div className="min-h-0 flex-1">
               <TeamTaskContainer
                 workspaceId={workspaceId}
-                userRole={userRole}
-                currentUserId={currentUserId}
+                userRole={effectiveRole}
+                currentUserId={effectiveUserId}
               />
             </div>
 
@@ -198,13 +272,20 @@ export function TodayDashboard({
         defaultScheduledTime={null}
       />
 
-      {/* Daily check-in gate (employees only) */}
-      {isNonAdmin && (
-        <CheckinModal
-          open={showCheckinModal}
-          workspaceId={workspaceId}
-          onSuccess={() => setCheckinDismissed(true)}
-        />
+      {/* Daily check-in gates (employees only, not in "view as" mode) */}
+      {isNonAdmin && !viewingAsEmployee && (
+        <>
+          <CheckinModal
+            open={showMorningCheckin}
+            workspaceId={workspaceId}
+            onSuccess={() => setCheckinDismissed(true)}
+          />
+          <EveningCheckinModal
+            open={showEveningCheckin}
+            workspaceId={workspaceId}
+            onSuccess={() => setCheckinDismissed(true)}
+          />
+        </>
       )}
     </div>
   );
