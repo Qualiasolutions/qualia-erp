@@ -2,7 +2,6 @@ import { Suspense, use } from 'react';
 import { connection } from 'next/server';
 import { getMeetings, getProfiles } from '@/app/actions';
 import { getCurrentWorkspaceId } from '@/app/actions/workspace';
-import { getScheduledTasks, getBacklogTasks } from '@/app/actions/inbox';
 import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { ScheduleContent } from '@/components/schedule-content';
 import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
@@ -13,22 +12,12 @@ async function ScheduleLoader({ view }: { view: string }) {
 
   try {
     const workspaceId = await getCurrentWorkspaceId();
-    const [meetings, tasks, backlog, profiles] = await Promise.all([
+    const [meetings, profiles] = await Promise.all([
       getMeetings(),
-      getScheduledTasks(),
-      getBacklogTasks(),
       getProfiles(workspaceId || undefined),
     ]);
 
-    return (
-      <ScheduleContent
-        view={view}
-        initialMeetings={meetings}
-        initialTasks={tasks}
-        initialBacklog={backlog}
-        profiles={profiles}
-      />
-    );
+    return <ScheduleContent view={view} initialMeetings={meetings} profiles={profiles} />;
   } catch (error) {
     console.error('Failed to load schedule data:', error);
     return (

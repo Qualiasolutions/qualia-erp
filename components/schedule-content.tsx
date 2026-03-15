@@ -1,17 +1,14 @@
 'use client';
 
-import { useMeetings, useScheduledTasks, type MeetingWithRelations } from '@/lib/swr';
-import type { Task } from '@/app/actions/inbox';
-import { ScheduleBlock } from '@/components/schedule-block';
+import { useMeetings, type MeetingWithRelations } from '@/lib/swr';
 import { WeeklyView } from '@/components/weekly-view';
 import { CalendarView } from '@/components/calendar-view';
 import { MeetingStats } from '@/components/meeting-stats';
+import { MeetingsDayView } from '@/components/meetings-day-view';
 
 interface ScheduleContentProps {
   view: string;
   initialMeetings: MeetingWithRelations[];
-  initialTasks?: Task[];
-  initialBacklog?: Task[];
   profiles?: {
     id: string;
     full_name: string | null;
@@ -20,15 +17,8 @@ interface ScheduleContentProps {
   }[];
 }
 
-export function ScheduleContent({
-  view,
-  initialMeetings,
-  initialTasks,
-  initialBacklog = [],
-  profiles = [],
-}: ScheduleContentProps) {
+export function ScheduleContent({ view, initialMeetings, profiles = [] }: ScheduleContentProps) {
   const { meetings } = useMeetings(initialMeetings);
-  const { tasks } = useScheduledTasks(initialTasks);
 
   const meetingsWithType = meetings.map((m) => ({ ...m, type: 'meeting' as const }));
 
@@ -50,13 +40,11 @@ export function ScheduleContent({
     );
   }
 
-  // Day view - member-split with toggle (same as dashboard)
+  // Day view — meetings only (tasks are on the dashboard now)
   return (
-    <ScheduleBlock
-      scheduledTasks={tasks}
-      backlogTasks={initialBacklog}
-      meetings={meetings}
-      profiles={profiles}
-    />
+    <div className="space-y-4">
+      <MeetingStats meetings={meetings} />
+      <MeetingsDayView meetings={meetings} profiles={profiles} />
+    </div>
   );
 }
