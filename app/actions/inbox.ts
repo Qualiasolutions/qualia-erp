@@ -616,6 +616,19 @@ export async function quickUpdateTask(
     updateData.description = updates.description?.trim() || null;
   if (updates.assignee_id !== undefined) updateData.assignee_id = updates.assignee_id;
 
+  // Fetch task info before update (needed for completion notification)
+  let taskWorkspaceId: string | null = null;
+  let taskTitle: string | null = null;
+  if (updates.status === 'Done') {
+    const { data: taskInfo } = await supabase
+      .from('tasks')
+      .select('workspace_id, title')
+      .eq('id', taskId)
+      .single();
+    taskWorkspaceId = taskInfo?.workspace_id || null;
+    taskTitle = taskInfo?.title || null;
+  }
+
   const { error } = await supabase.from('tasks').update(updateData).eq('id', taskId);
 
   if (error) {
@@ -623,7 +636,37 @@ export async function quickUpdateTask(
     return { success: false, error: error.message };
   }
 
-  // TODO: Task completion notifications added in plan 26-04
+  // Fire task completion notifications to all admins (except the actor)
+  if (updates.status === 'Done' && taskWorkspaceId && taskTitle) {
+    (async () => {
+      try {
+        const { createNotification } = await import('@/app/actions/notifications');
+        // Fetch all admin profiles in the workspace
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'admin')
+          .neq('id', user.id);
+
+        if (adminProfiles && adminProfiles.length > 0) {
+          await Promise.all(
+            adminProfiles.map((admin) =>
+              createNotification(
+                admin.id,
+                taskWorkspaceId!,
+                'task_completed',
+                'Task Completed',
+                `${taskTitle} was marked as done`,
+                `/inbox`
+              )
+            )
+          );
+        }
+      } catch (err) {
+        console.error('[quickUpdateTask] Failed to send completion notifications:', err);
+      }
+    })();
+  }
 
   revalidatePath('/inbox');
   return { success: true };
