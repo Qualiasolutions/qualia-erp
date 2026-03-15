@@ -6,72 +6,8 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5';
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
-      achievements: {
-        Row: {
-          category: string;
-          created_at: string | null;
-          description: string;
-          icon: string;
-          id: string;
-          is_active: boolean | null;
-          name: string;
-          rarity: string | null;
-          unlock_conditions: Json;
-          xp_reward: number | null;
-        };
-        Insert: {
-          category: string;
-          created_at?: string | null;
-          description: string;
-          icon: string;
-          id?: string;
-          is_active?: boolean | null;
-          name: string;
-          rarity?: string | null;
-          unlock_conditions?: Json;
-          xp_reward?: number | null;
-        };
-        Update: {
-          category?: string;
-          created_at?: string | null;
-          description?: string;
-          icon?: string;
-          id?: string;
-          is_active?: boolean | null;
-          name?: string;
-          rarity?: string | null;
-          unlock_conditions?: Json;
-          xp_reward?: number | null;
-        };
-        Relationships: [];
-      };
       activities: {
         Row: {
           actor_id: string | null;
@@ -491,6 +427,80 @@ export type Database = {
           },
         ];
       };
+      client_action_items: {
+        Row: {
+          action_type: string;
+          client_id: string;
+          completed_at: string | null;
+          completed_by: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          due_date: string | null;
+          id: string;
+          project_id: string;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          action_type?: string;
+          client_id: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          due_date?: string | null;
+          id?: string;
+          project_id: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          action_type?: string;
+          client_id?: string;
+          completed_at?: string | null;
+          completed_by?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          due_date?: string | null;
+          id?: string;
+          project_id?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'client_action_items_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_action_items_completed_by_fkey';
+            columns: ['completed_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_action_items_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'client_action_items_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       client_activities: {
         Row: {
           client_id: string;
@@ -896,6 +906,72 @@ export type Database = {
           },
         ];
       };
+      daily_checkins: {
+        Row: {
+          blockers: string | null;
+          checkin_date: string;
+          checkin_type: string;
+          completed_tasks: string[] | null;
+          created_at: string;
+          energy_level: number | null;
+          id: string;
+          mood: number | null;
+          planned_tasks: string[] | null;
+          profile_id: string;
+          tomorrow_plan: string | null;
+          updated_at: string;
+          wins: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          blockers?: string | null;
+          checkin_date?: string;
+          checkin_type: string;
+          completed_tasks?: string[] | null;
+          created_at?: string;
+          energy_level?: number | null;
+          id?: string;
+          mood?: number | null;
+          planned_tasks?: string[] | null;
+          profile_id: string;
+          tomorrow_plan?: string | null;
+          updated_at?: string;
+          wins?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          blockers?: string | null;
+          checkin_date?: string;
+          checkin_type?: string;
+          completed_tasks?: string[] | null;
+          created_at?: string;
+          energy_level?: number | null;
+          id?: string;
+          mood?: number | null;
+          planned_tasks?: string[] | null;
+          profile_id?: string;
+          tomorrow_plan?: string | null;
+          updated_at?: string;
+          wins?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'daily_checkins_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'daily_checkins_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       dashboard_notes: {
         Row: {
           author_id: string;
@@ -1062,13 +1138,6 @@ export type Database = {
             columns: ['issue_id'];
             isOneToOne: false;
             referencedRelation: 'issues';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'issue_skills_skill_id_fkey';
-            columns: ['skill_id'];
-            isOneToOne: false;
-            referencedRelation: 'skills';
             referencedColumns: ['id'];
           },
         ];
@@ -1565,6 +1634,93 @@ export type Database = {
           },
         ];
       };
+      owner_update_reads: {
+        Row: {
+          id: string;
+          profile_id: string;
+          read_at: string;
+          update_id: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          read_at?: string;
+          update_id: string;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          read_at?: string;
+          update_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'owner_update_reads_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_update_reads_update_id_fkey';
+            columns: ['update_id'];
+            isOneToOne: false;
+            referencedRelation: 'owner_updates';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      owner_updates: {
+        Row: {
+          author_id: string;
+          body: string;
+          created_at: string;
+          id: string;
+          pinned: boolean;
+          priority: string;
+          title: string;
+          updated_at: string;
+          workspace_id: string;
+        };
+        Insert: {
+          author_id: string;
+          body: string;
+          created_at?: string;
+          id?: string;
+          pinned?: boolean;
+          priority?: string;
+          title: string;
+          updated_at?: string;
+          workspace_id: string;
+        };
+        Update: {
+          author_id?: string;
+          body?: string;
+          created_at?: string;
+          id?: string;
+          pinned?: boolean;
+          priority?: string;
+          title?: string;
+          updated_at?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'owner_updates_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'owner_updates_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       payments: {
         Row: {
           amount: number;
@@ -1915,70 +2071,55 @@ export type Database = {
         Row: {
           avatar_url: string | null;
           created_at: string | null;
-          current_streak: number | null;
           email: string | null;
           full_name: string | null;
           id: string;
           is_trainee: boolean | null;
           job_title: string | null;
           last_activity_date: string | null;
-          learn_mode: boolean | null;
           location: string | null;
           longest_streak: number | null;
           mentor_id: string | null;
-          onboarding_completed: boolean | null;
-          onboarding_step: number | null;
           projects_completed: number | null;
           role: Database['public']['Enums']['user_role'] | null;
           skill_level: string | null;
           theme: string;
-          total_xp: number | null;
           updated_at: string | null;
         };
         Insert: {
           avatar_url?: string | null;
           created_at?: string | null;
-          current_streak?: number | null;
           email?: string | null;
           full_name?: string | null;
           id: string;
           is_trainee?: boolean | null;
           job_title?: string | null;
           last_activity_date?: string | null;
-          learn_mode?: boolean | null;
           location?: string | null;
           longest_streak?: number | null;
           mentor_id?: string | null;
-          onboarding_completed?: boolean | null;
-          onboarding_step?: number | null;
           projects_completed?: number | null;
           role?: Database['public']['Enums']['user_role'] | null;
           skill_level?: string | null;
           theme?: string;
-          total_xp?: number | null;
           updated_at?: string | null;
         };
         Update: {
           avatar_url?: string | null;
           created_at?: string | null;
-          current_streak?: number | null;
           email?: string | null;
           full_name?: string | null;
           id?: string;
           is_trainee?: boolean | null;
           job_title?: string | null;
           last_activity_date?: string | null;
-          learn_mode?: boolean | null;
           location?: string | null;
           longest_streak?: number | null;
           mentor_id?: string | null;
-          onboarding_completed?: boolean | null;
-          onboarding_step?: number | null;
           projects_completed?: number | null;
           role?: Database['public']['Enums']['user_role'] | null;
           skill_level?: string | null;
           theme?: string;
-          total_xp?: number | null;
           updated_at?: string | null;
         };
         Relationships: [
@@ -2520,6 +2661,7 @@ export type Database = {
           created_at: string | null;
           deployment_platform: Database['public']['Enums']['deployment_platform'] | null;
           description: string | null;
+          github_repo_url: string | null;
           id: string;
           is_building: boolean | null;
           is_finished: boolean;
@@ -2535,13 +2677,14 @@ export type Database = {
           project_category: string | null;
           project_group: Database['public']['Enums']['project_group'] | null;
           project_type: Database['public']['Enums']['project_type'] | null;
-          sort_order: number;
+          sort_order: number | null;
           start_date: string | null;
           status: Database['public']['Enums']['project_status'] | null;
           target_date: string | null;
           team_id: string | null;
           trainee_id: string | null;
           updated_at: string | null;
+          vercel_project_url: string | null;
           workspace_id: string | null;
         };
         Insert: {
@@ -2549,6 +2692,7 @@ export type Database = {
           created_at?: string | null;
           deployment_platform?: Database['public']['Enums']['deployment_platform'] | null;
           description?: string | null;
+          github_repo_url?: string | null;
           id?: string;
           is_building?: boolean | null;
           is_finished?: boolean;
@@ -2564,13 +2708,14 @@ export type Database = {
           project_category?: string | null;
           project_group?: Database['public']['Enums']['project_group'] | null;
           project_type?: Database['public']['Enums']['project_type'] | null;
-          sort_order?: number;
+          sort_order?: number | null;
           start_date?: string | null;
           status?: Database['public']['Enums']['project_status'] | null;
           target_date?: string | null;
           team_id?: string | null;
           trainee_id?: string | null;
           updated_at?: string | null;
+          vercel_project_url?: string | null;
           workspace_id?: string | null;
         };
         Update: {
@@ -2578,6 +2723,7 @@ export type Database = {
           created_at?: string | null;
           deployment_platform?: Database['public']['Enums']['deployment_platform'] | null;
           description?: string | null;
+          github_repo_url?: string | null;
           id?: string;
           is_building?: boolean | null;
           is_finished?: boolean;
@@ -2593,13 +2739,14 @@ export type Database = {
           project_category?: string | null;
           project_group?: Database['public']['Enums']['project_group'] | null;
           project_type?: Database['public']['Enums']['project_type'] | null;
-          sort_order?: number;
+          sort_order?: number | null;
           start_date?: string | null;
           status?: Database['public']['Enums']['project_status'] | null;
           target_date?: string | null;
           team_id?: string | null;
           trainee_id?: string | null;
           updated_at?: string | null;
+          vercel_project_url?: string | null;
           workspace_id?: string | null;
         };
         Relationships: [
@@ -2824,179 +2971,70 @@ export type Database = {
           },
         ];
       };
-      skill_categories: {
+      task_time_logs: {
         Row: {
-          color: string;
-          created_at: string | null;
-          description: string | null;
-          display_order: number | null;
-          icon: string;
-          id: string;
-          name: string;
-        };
-        Insert: {
-          color?: string;
-          created_at?: string | null;
-          description?: string | null;
-          display_order?: number | null;
-          icon?: string;
-          id?: string;
-          name: string;
-        };
-        Update: {
-          color?: string;
-          created_at?: string | null;
-          description?: string | null;
-          display_order?: number | null;
-          icon?: string;
-          id?: string;
-          name?: string;
-        };
-        Relationships: [];
-      };
-      skill_practice_log: {
-        Row: {
+          created_at: string;
+          duration_minutes: number | null;
+          ended_at: string | null;
           id: string;
           notes: string | null;
-          practiced_at: string | null;
           profile_id: string;
-          skill_id: string;
-          source_id: string | null;
-          source_type: string;
-          xp_earned: number | null;
-        };
-        Insert: {
-          id?: string;
-          notes?: string | null;
-          practiced_at?: string | null;
-          profile_id: string;
-          skill_id: string;
-          source_id?: string | null;
-          source_type: string;
-          xp_earned?: number | null;
-        };
-        Update: {
-          id?: string;
-          notes?: string | null;
-          practiced_at?: string | null;
-          profile_id?: string;
-          skill_id?: string;
-          source_id?: string | null;
-          source_type?: string;
-          xp_earned?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'skill_practice_log_profile_id_fkey';
-            columns: ['profile_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'skill_practice_log_skill_id_fkey';
-            columns: ['skill_id'];
-            isOneToOne: false;
-            referencedRelation: 'skills';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      skills: {
-        Row: {
-          applicable_project_types: string[] | null;
-          category_id: string | null;
-          complexity_level: number | null;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string;
-          project_types: string[] | null;
-        };
-        Insert: {
-          applicable_project_types?: string[] | null;
-          category_id?: string | null;
-          complexity_level?: number | null;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name: string;
-          project_types?: string[] | null;
-        };
-        Update: {
-          applicable_project_types?: string[] | null;
-          category_id?: string | null;
-          complexity_level?: number | null;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string;
-          project_types?: string[] | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'skills_category_id_fkey';
-            columns: ['category_id'];
-            isOneToOne: false;
-            referencedRelation: 'skill_categories';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      task_reflections: {
-        Row: {
-          challenges_faced: string | null;
-          created_at: string | null;
-          difficulty_rating: number | null;
-          id: string;
-          issue_id: string | null;
-          profile_id: string;
+          project_id: string | null;
+          started_at: string;
           task_id: string | null;
-          time_spent_minutes: number | null;
-          what_learned: string | null;
+          workspace_id: string;
         };
         Insert: {
-          challenges_faced?: string | null;
-          created_at?: string | null;
-          difficulty_rating?: number | null;
+          created_at?: string;
+          duration_minutes?: number | null;
+          ended_at?: string | null;
           id?: string;
-          issue_id?: string | null;
+          notes?: string | null;
           profile_id: string;
+          project_id?: string | null;
+          started_at?: string;
           task_id?: string | null;
-          time_spent_minutes?: number | null;
-          what_learned?: string | null;
+          workspace_id: string;
         };
         Update: {
-          challenges_faced?: string | null;
-          created_at?: string | null;
-          difficulty_rating?: number | null;
+          created_at?: string;
+          duration_minutes?: number | null;
+          ended_at?: string | null;
           id?: string;
-          issue_id?: string | null;
+          notes?: string | null;
           profile_id?: string;
+          project_id?: string | null;
+          started_at?: string;
           task_id?: string | null;
-          time_spent_minutes?: number | null;
-          what_learned?: string | null;
+          workspace_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: 'task_reflections_issue_id_fkey';
-            columns: ['issue_id'];
-            isOneToOne: false;
-            referencedRelation: 'issues';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_reflections_profile_id_fkey';
+            foreignKeyName: 'task_time_logs_profile_id_fkey';
             columns: ['profile_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'task_reflections_task_id_fkey';
+            foreignKeyName: 'task_time_logs_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_time_logs_task_id_fkey';
             columns: ['task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_time_logs_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -3114,54 +3152,6 @@ export type Database = {
             columns: ['workspace_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      teaching_notes: {
-        Row: {
-          content: string;
-          created_at: string | null;
-          id: string;
-          is_pinned: boolean | null;
-          issue_id: string | null;
-          mentor_id: string;
-          note_type: string;
-          phase_item_id: string | null;
-        };
-        Insert: {
-          content: string;
-          created_at?: string | null;
-          id?: string;
-          is_pinned?: boolean | null;
-          issue_id?: string | null;
-          mentor_id: string;
-          note_type: string;
-          phase_item_id?: string | null;
-        };
-        Update: {
-          content?: string;
-          created_at?: string | null;
-          id?: string;
-          is_pinned?: boolean | null;
-          issue_id?: string | null;
-          mentor_id?: string;
-          note_type?: string;
-          phase_item_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'teaching_notes_issue_id_fkey';
-            columns: ['issue_id'];
-            isOneToOne: false;
-            referencedRelation: 'issues';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'teaching_notes_mentor_id_fkey';
-            columns: ['mentor_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
             referencedColumns: ['id'];
           },
         ];
@@ -3441,96 +3431,6 @@ export type Database = {
           },
         ];
       };
-      user_achievements: {
-        Row: {
-          achievement_id: string;
-          earned_at: string | null;
-          id: string;
-          is_seen: boolean | null;
-          profile_id: string;
-        };
-        Insert: {
-          achievement_id: string;
-          earned_at?: string | null;
-          id?: string;
-          is_seen?: boolean | null;
-          profile_id: string;
-        };
-        Update: {
-          achievement_id?: string;
-          earned_at?: string | null;
-          id?: string;
-          is_seen?: boolean | null;
-          profile_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_achievements_achievement_id_fkey';
-            columns: ['achievement_id'];
-            isOneToOne: false;
-            referencedRelation: 'achievements';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_achievements_profile_id_fkey';
-            columns: ['profile_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_skills: {
-        Row: {
-          created_at: string | null;
-          id: string;
-          last_practiced_at: string | null;
-          proficiency_level: number | null;
-          profile_id: string;
-          skill_id: string;
-          times_practiced: number | null;
-          updated_at: string | null;
-          xp_earned: number | null;
-        };
-        Insert: {
-          created_at?: string | null;
-          id?: string;
-          last_practiced_at?: string | null;
-          proficiency_level?: number | null;
-          profile_id: string;
-          skill_id: string;
-          times_practiced?: number | null;
-          updated_at?: string | null;
-          xp_earned?: number | null;
-        };
-        Update: {
-          created_at?: string | null;
-          id?: string;
-          last_practiced_at?: string | null;
-          proficiency_level?: number | null;
-          profile_id?: string;
-          skill_id?: string;
-          times_practiced?: number | null;
-          updated_at?: string | null;
-          xp_earned?: number | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_skills_profile_id_fkey';
-            columns: ['profile_id'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_skills_skill_id_fkey';
-            columns: ['skill_id'];
-            isOneToOne: false;
-            referencedRelation: 'skills';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspace_integrations: {
         Row: {
           config: Json | null;
@@ -3710,10 +3610,10 @@ export type Database = {
           mapping_id: string | null;
           portal_client_email: string | null;
           portal_client_id: string | null;
-          portal_client_name: string | null;
           project_id: string | null;
           project_name: string | null;
           project_status: Database['public']['Enums']['project_status'] | null;
+          project_type: Database['public']['Enums']['project_type'] | null;
         };
         Relationships: [
           {
@@ -3825,11 +3725,8 @@ export type Database = {
           total_tasks: number;
         }[];
       };
-      increment_user_xp: {
-        Args: { user_id: string; xp_amount: number };
-        Returns: undefined;
-      };
       is_admin: { Args: never; Returns: boolean };
+      is_admin_or_manager: { Args: never; Returns: boolean };
       is_client_of_project: { Args: { p_project_id: string }; Returns: boolean };
       is_issue_assignee: { Args: { p_issue_id: string }; Returns: boolean };
       is_super_admin: { Args: never; Returns: boolean };
@@ -3855,13 +3752,6 @@ export type Database = {
           similarity: number;
           title: string;
           url: string;
-        }[];
-      };
-      on_task_completed: {
-        Args: { p_project_type?: string; p_task_id: string; p_user_id: string };
-        Returns: {
-          new_achievements: string[];
-          total_xp_earned: number;
         }[];
       };
       update_user_streak: { Args: { p_user_id: string }; Returns: undefined };
@@ -3903,7 +3793,7 @@ export type Database = {
         | 'demos'
         | 'other';
       project_status: 'Demos' | 'Active' | 'Launched' | 'Delayed' | 'Archived' | 'Canceled';
-      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads' | 'voice_agent' | 'ai_platform';
+      project_type: 'web_design' | 'ai_agent' | 'seo' | 'ads' | 'voice_agent';
       provisioning_status:
         | 'not_started'
         | 'pending'
@@ -4038,9 +3928,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       activity_type: [
@@ -4082,7 +3969,7 @@ export const Constants = {
         'other',
       ],
       project_status: ['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'],
-      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent', 'ai_platform'],
+      project_type: ['web_design', 'ai_agent', 'seo', 'ads', 'voice_agent'],
       provisioning_status: [
         'not_started',
         'pending',
@@ -4098,24 +3985,3 @@ export const Constants = {
     },
   },
 } as const;
-
-// ============================================================================
-// Type Aliases for Convenience
-// ============================================================================
-
-// Table type aliases
-export type Client = Tables<'clients'>;
-export type Project = Tables<'projects'>;
-export type Task = Tables<'tasks'>;
-export type Issue = Tables<'issues'>;
-export type Meeting = Tables<'meetings'>;
-export type Profile = Tables<'profiles'>;
-export type ProjectFile = Tables<'project_files'>;
-export type ProjectIntegration = Tables<'project_integrations'>;
-// Enum type aliases
-export type ProjectType = Database['public']['Enums']['project_type'];
-export type ProjectStatus = Database['public']['Enums']['project_status'];
-export type ProjectGroup = Database['public']['Enums']['project_group'];
-export type DeploymentPlatform = Database['public']['Enums']['deployment_platform'];
-export type UserRole = Database['public']['Enums']['user_role'];
-export type LeadStatus = Database['public']['Enums']['lead_status'];

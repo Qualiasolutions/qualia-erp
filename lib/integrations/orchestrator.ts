@@ -98,6 +98,12 @@ export async function setupProjectIntegrations(
           github_error: null,
         })
         .eq('project_id', config.projectId);
+
+      // Also store URL on projects table for quick access without join
+      await supabase
+        .from('projects')
+        .update({ github_repo_url: gitHubResult.data.repoUrl })
+        .eq('id', config.projectId);
     } else if (gitHubResult.error) {
       result.errors.push(`GitHub: ${gitHubResult.error}`);
 
@@ -142,6 +148,12 @@ export async function setupProjectIntegrations(
           vercel_error: null,
         })
         .eq('project_id', config.projectId);
+
+      // Also store URL on projects table for quick access without join
+      await supabase
+        .from('projects')
+        .update({ vercel_project_url: vercelResult.data.projectUrl })
+        .eq('id', config.projectId);
     } else if (vercelResult.error) {
       result.errors.push(`Vercel: ${vercelResult.error}`);
 
@@ -333,6 +345,12 @@ export async function retryProvisioningStep(
           status: 'completed',
         })
         .eq('project_id', projectId);
+
+      // Also store URL on projects table for quick access without join
+      await supabase
+        .from('projects')
+        .update({ github_repo_url: result.data.repoUrl })
+        .eq('id', projectId);
     } else {
       await supabase
         .from('project_provisioning')
@@ -364,6 +382,12 @@ export async function retryProvisioningStep(
           status: 'completed',
         })
         .eq('project_id', projectId);
+
+      // Also store URL on projects table for quick access without join
+      await supabase
+        .from('projects')
+        .update({ vercel_project_url: result.data.projectUrl })
+        .eq('id', projectId);
     } else {
       await supabase
         .from('project_provisioning')
