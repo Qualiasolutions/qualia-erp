@@ -1,5 +1,4 @@
 import { getCurrentWorkspaceId, getMeetings, getProfiles } from '@/app/actions';
-import { getTasks, type Task } from '@/app/actions/inbox';
 import { TodayDashboard } from '@/components/today-dashboard';
 import { createClient } from '@/lib/supabase/server';
 import type { ProjectType } from '@/types/database';
@@ -24,51 +23,15 @@ export default async function TodayPage() {
   const { data: currentProfile } = user
     ? await supabase.from('profiles').select('id, role').eq('id', user.id).single()
     : { data: null };
-  const [meetingsRaw, tasksRaw, projectsRaw, profiles] = await Promise.all([
+  const [meetingsRaw, projectsRaw, profiles] = await Promise.all([
     getMeetings(workspaceId),
-    getTasks(workspaceId, { status: ['Todo', 'In Progress', 'Done'], limit: 150, inboxOnly: true }),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
     getProfiles(workspaceId),
   ]);
 
   const meetings = meetingsRaw;
 
-  // Get only TASKS (not resources/notes/issues) from all projects
-  // Filter for Todo/In Progress OR Done today
-  const today = new Date().toISOString().split('T')[0];
-  const tasks = tasksRaw
-    .filter((t) => {
-      if (t.item_type !== 'task') return false;
-      if (t.status !== 'Done') return true;
-      // If done, only show if completed today
-      return t.completed_at?.startsWith(today);
-    })
-    .map((t) => ({
-      ...t,
-      status: t.status as 'Todo' | 'In Progress' | 'Done',
-      priority: t.priority as 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low',
-      assignee: t.assignee
-        ? {
-            id: t.assignee.id,
-            full_name: t.assignee.full_name,
-            avatar_url: t.assignee.avatar_url,
-          }
-        : t.project?.lead
-          ? {
-              id: t.project.lead.id,
-              full_name: t.project.lead.full_name,
-              avatar_url: t.project.lead.avatar_url,
-              isLead: true,
-            }
-          : null,
-      project: t.project
-        ? {
-            ...t.project,
-            id: t.project.id,
-            name: t.project.name,
-          }
-        : null,
-    })) as Task[];
+  // Tasks are now fetched client-side via useTeamTaskDashboard SWR hook
 
   // Map all projects for pipeline display
   const allProjects: PipelineProject[] = (projectsRaw.data || []).map(
@@ -91,7 +54,6 @@ export default async function TodayPage() {
   return (
     <TodayDashboard
       meetings={meetings}
-      tasks={tasks}
       building={building}
       profiles={profiles}
       currentUserId={currentProfile?.id || null}

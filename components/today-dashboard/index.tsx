@@ -15,22 +15,14 @@ import { BuildingProjectsRow, type PipelineProject } from './building-projects-r
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
 import { CheckinModal } from './checkin-modal';
-import { useTransition, useState, useEffect, useMemo } from 'react';
-import { type Task } from '@/app/actions/inbox';
-import {
-  type MeetingWithRelations,
-  useMeetings,
-  useScheduledTasks,
-  useTodaysCheckin,
-} from '@/lib/swr';
+import { useTransition, useState, useEffect } from 'react';
+import { type MeetingWithRelations, useMeetings, useTodaysCheckin } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
-import { ScheduleBlock } from '@/components/schedule-block';
 import { OwnerUpdatesBanner } from './owner-updates-banner';
 import { OwnerUpdatesCompose } from './owner-updates-compose';
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
-  tasks: Task[];
   building: PipelineProject[];
   profiles: {
     id: string;
@@ -49,7 +41,6 @@ interface TodayDashboardProps {
 
 export function TodayDashboard({
   meetings: initialMeetings,
-  tasks,
   building,
   profiles,
   currentUserId,
@@ -74,9 +65,6 @@ export function TodayDashboard({
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
-  const { tasks: swrScheduledTasks } = useScheduledTasks(
-    tasks.filter((t) => t.scheduled_start_time && t.scheduled_end_time)
-  );
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -88,16 +76,6 @@ export function TodayDashboard({
   const handleRefresh = () => {
     startRefresh(() => router.refresh());
   };
-
-  // Use SWR scheduled tasks (live data), fallback SSR backlog
-  const scheduledTasks = swrScheduledTasks;
-  const backlogTasks = useMemo(
-    () =>
-      tasks.filter(
-        (t) => !t.scheduled_start_time && t.status !== 'Done' && (t.status as string) !== 'Canceled'
-      ),
-    [tasks]
-  );
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -183,20 +161,19 @@ export function TodayDashboard({
           {/* Owner updates banner — employees only */}
           {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
-          {/* Schedule + Meetings Sidebar row */}
-          <div className="flex gap-4">
-            <div className="min-w-0 flex-1">
-              <ScheduleBlock
-                scheduledTasks={scheduledTasks}
-                backlogTasks={backlogTasks}
-                meetings={meetings}
-                profiles={isNonAdmin ? profiles.filter((p) => p.id === currentUserId) : profiles}
-                unified={isNonAdmin}
-                readOnly={isNonAdmin}
-                meetingsSidebar={!isNonAdmin ? <MeetingsSidebar meetings={meetings} /> : undefined}
-              />
+          {/* ── TEAM TASKS (replaces schedule block) ─────────────── */}
+          <TeamTaskContainer
+            workspaceId={workspaceId}
+            userRole={userRole}
+            currentUserId={currentUserId}
+          />
+
+          {/* Meetings sidebar — admin only, below team tasks */}
+          {!isNonAdmin && (
+            <div className="mt-4 shrink-0">
+              <MeetingsSidebar meetings={meetings} />
             </div>
-          </div>
+          )}
 
           {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
           {!isNonAdmin && (
@@ -204,13 +181,6 @@ export function TodayDashboard({
               <BuildingProjectsRow building={building} />
             </div>
           )}
-
-          {/* ── TEAM TASKS ──────────────────────────────────────────── */}
-          <TeamTaskContainer
-            workspaceId={workspaceId}
-            userRole={userRole}
-            currentUserId={currentUserId}
-          />
 
           {/* ── OWNER UPDATES COMPOSE — admin only ───────────────── */}
           {!isNonAdmin && (
