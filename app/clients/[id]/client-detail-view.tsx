@@ -1,18 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import type { Client } from '@/types/database';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, Phone, Globe, MapPin, Folder, User, Pencil } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Building2, Phone, Globe, MapPin, Folder, User, Pencil, Plus, X } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
 import { EditClientModal } from '@/components/edit-client-modal';
 import { LogoUpload } from '@/components/logo-upload';
 import { ClientProjectAccess } from '@/components/clients/client-project-access';
+import { updateProject } from '@/app/actions';
+import { toast } from 'sonner';
 
 const statusConfig = {
   dropped: { label: 'Dropped', bg: 'bg-gray-100', color: 'text-gray-600' },
@@ -35,10 +44,25 @@ interface Project {
   project_status?: string | null;
 }
 
+interface ERPProject {
+  id: string;
+  name: string;
+  project_type: string | null;
+  status: string;
+}
+
+interface ERPAvailableProject {
+  id: string;
+  name: string;
+  project_type: string | null;
+}
+
 interface ClientDetailViewProps {
   client: ExtendedClient;
   assignedProjects: Project[];
   availableProjects: Project[];
+  erpLinkedProjects: ERPProject[];
+  erpAvailableProjects: ERPAvailableProject[];
   isAdmin: boolean;
 }
 
@@ -83,12 +107,70 @@ export function ClientDetailView({
   client: initialClient,
   assignedProjects,
   availableProjects,
+  erpLinkedProjects: initialErpLinkedProjects,
+  erpAvailableProjects,
   isAdmin,
 }: ClientDetailViewProps) {
   const [client, setClient] = useState(initialClient);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [erpLinkedProjects, setErpLinkedProjects] =
+    useState<ERPProject[]>(initialErpLinkedProjects);
+  const [selectedErpProjectId, setSelectedErpProjectId] = useState('');
+  const [isLinkingProject, startLinkTransition] = useTransition();
   const status = statusConfig[client.lead_status || 'cold'] || statusConfig.cold;
   const workItems = getClientWorkItems(client.display_name);
+
+  const filteredErpAvailable = erpAvailableProjects.filter(
+    (p) => !erpLinkedProjects.some((lp) => lp.id === p.id)
+  );
+
+  function handleLinkProject() {
+    if (!selectedErpProjectId) return;
+    const toLink = erpAvailableProjects.find((p) => p.id === selectedErpProjectId);
+    if (!toLink) return;
+
+    const optimistic: ERPProject = {
+      id: toLink.id,
+      name: toLink.name,
+      project_type: toLink.project_type,
+      status: 'Active',
+    };
+    setErpLinkedProjects((prev) => [...prev, optimistic]);
+    setSelectedErpProjectId('');
+
+    startLinkTransition(async () => {
+      const fd = new FormData();
+      fd.set('id', toLink.id);
+      fd.set('client_id', client.id);
+      const result = await updateProject(fd);
+      if (result.success) {
+        toast.success('Project linked to client');
+      } else {
+        setErpLinkedProjects((prev) => prev.filter((p) => p.id !== toLink.id));
+        toast.error(result.error || 'Failed to link project');
+      }
+    });
+  }
+
+  function handleUnlinkProject(projectId: string) {
+    const toUnlink = erpLinkedProjects.find((p) => p.id === projectId);
+    if (!toUnlink) return;
+
+    setErpLinkedProjects((prev) => prev.filter((p) => p.id !== projectId));
+
+    startLinkTransition(async () => {
+      const fd = new FormData();
+      fd.set('id', projectId);
+      fd.set('client_id', '');
+      const result = await updateProject(fd);
+      if (result.success) {
+        toast.success('Project unlinked from client');
+      } else {
+        setErpLinkedProjects((prev) => [...prev, toUnlink]);
+        toast.error(result.error || 'Failed to unlink project');
+      }
+    });
+  }
 
   return (
     <div className="p-6">
@@ -254,18 +336,55 @@ export function ClientDetailView({
           </Card>
         )}
 
-        {/* Projects List */}
-        {client.projects && client.projects.length > 0 && (
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Folder className="h-4 w-4 text-qualia-500" />
-                Projects ({client.projects.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* ERP Linked Projects */}
+        <Card className="group transition-all duration-300 hover:shadow-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Folder className="h-4 w-4 text-qualia-500" />
+              Linked Projects ({erpLinkedProjects.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Link project dropdown (admin only) */}
+            {isAdmin && filteredErpAvailable.length > 0 && (
+              <div className="flex gap-2">
+                <Select value={selectedErpProjectId} onValueChange={setSelectedErpProjectId}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Link an existing project..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredErpAvailable.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                        {p.project_type && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            — {p.project_type.replace('_', ' ')}
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleLinkProject}
+                  disabled={!selectedErpProjectId || isLinkingProject}
+                  size="default"
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Link
+                </Button>
+              </div>
+            )}
+
+            {/* Linked project list */}
+            {erpLinkedProjects.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                No projects linked yet. {isAdmin ? 'Use the dropdown above to link a project.' : ''}
+              </p>
+            ) : (
               <div className="space-y-3">
-                {client.projects.map((project, index) => (
+                {erpLinkedProjects.map((project, index) => (
                   <div
                     key={project.id}
                     className="group/item flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5 hover:shadow-sm"
@@ -274,24 +393,38 @@ export function ClientDetailView({
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">{project.name}</p>
                       <p className="mt-1 text-sm capitalize text-muted-foreground">
-                        {project.project_type?.replace('_', ' ')} •{' '}
+                        {project.project_type?.replace(/_/g, ' ')} &bull;{' '}
                         <span className="capitalize">{project.status}</span>
                       </p>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="ml-4 hover:border-qualia-500/40 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
-                    >
-                      <a href={`/projects/${project.id}`}>View Project</a>
-                    </Button>
+                    <div className="ml-4 flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="hover:border-qualia-500/40 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
+                      >
+                        <a href={`/projects/${project.id}`}>View</a>
+                      </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isLinkingProject}
+                          onClick={() => handleUnlinkProject(project.id)}
+                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                          title="Unlink project"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+          </CardContent>
+        </Card>
 
         {/* Project Access Management */}
         <ClientProjectAccess

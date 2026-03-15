@@ -93,11 +93,42 @@ async function ClientLoader({ id }: ClientLoaderProps) {
     allProjects = projectsData || [];
   }
 
+  // Fetch ERP-linked projects (projects.client_id = this client)
+  const { data: erpLinkedRaw } = await supabase
+    .from('projects')
+    .select('id, name, project_type, status')
+    .eq('client_id', id)
+    .order('name');
+
+  const erpLinkedProjects = (erpLinkedRaw || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    project_type: p.project_type,
+    status: p.status,
+  }));
+
+  // Fetch all projects without a client_id for the link dropdown (admin only)
+  let erpAvailableProjects: Array<{ id: string; name: string; project_type: string | null }> = [];
+  if (isAdmin) {
+    const { data: unlinkedRaw } = await supabase
+      .from('projects')
+      .select('id, name, project_type')
+      .is('client_id', null)
+      .order('name');
+    erpAvailableProjects = (unlinkedRaw || []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      project_type: p.project_type,
+    }));
+  }
+
   return (
     <ClientDetailView
       client={client}
       assignedProjects={assignedProjects}
       availableProjects={allProjects}
+      erpLinkedProjects={erpLinkedProjects}
+      erpAvailableProjects={erpAvailableProjects}
       isAdmin={isAdmin}
     />
   );
