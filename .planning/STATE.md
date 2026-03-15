@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 ## Current Position
 
 Phase: 26 of 26 (26-team-sync-daily-structure)
-Plan: 08 of 8 complete
-Status: Phase complete
-Last activity: 2026-03-15 - Completed 26-08-PLAN.md (provisioned URLs stored on projects table)
+Plan: 05 of 8 executed (wave 2 in progress)
+Status: In progress
+Last activity: 2026-03-15 - Completed 26-05-PLAN.md (team dashboard action + morning email cron)
 
 Progress: [#############] 25 phases complete | v2.0 ready
 
@@ -20,11 +20,13 @@ Progress: [#############] 25 phases complete | v2.0 ready
 
 ### Key Decisions
 
-| #   | Decision                                                      | Rationale                                                                                       | Date       |
-| --- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
-| 1   | Renamed 20260315_add_daily_structure.sql to 20260315100000    | Avoid schema_migrations_pkey conflict when two migrations share same date prefix                | 2026-03-15 |
-| 2   | Kept SkillLevel type in lib/ai/memory.ts                      | Separate concept (profiles.skill_level column) — not related to XP/gamification learning system | 2026-03-15 |
-| 3   | task_time_logs.duration_minutes as GENERATED ALWAYS AS STORED | Eliminates app-side duration calculation; computed server-side automatically                    | 2026-03-15 |
+| #   | Decision                                                              | Rationale                                                                                       | Date       |
+| --- | --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| 1   | Renamed 20260315_add_daily_structure.sql to 20260315100000            | Avoid schema_migrations_pkey conflict when two migrations share same date prefix                | 2026-03-15 |
+| 2   | Kept SkillLevel type in lib/ai/memory.ts                              | Separate concept (profiles.skill_level column) — not related to XP/gamification learning system | 2026-03-15 |
+| 3   | task_time_logs.duration_minutes as GENERATED ALWAYS AS STORED         | Eliminates app-side duration calculation; computed server-side automatically                    | 2026-03-15 |
+| 4   | Morning email cron at 6 AM UTC Mon-Fri (separate from 9 AM reminders) | Different purpose: daily briefing vs overdue reminders — keeps concerns separate                | 2026-03-15 |
+| 5   | Direct role query instead of isUserAdmin() in team-dashboard.ts       | isUserAdmin() helper requires userId arg; inline query is simpler and correct                   | 2026-03-15 |
 
 ### Blockers/Concerns
 
@@ -48,8 +50,9 @@ Progress: [#############] 25 phases complete | v2.0 ready
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Phase 26, plan 08 complete (ALL PLANS DONE)
-**Next action:** Phase 26 verification / new milestone planning
+Stopped at: Phase 26, plan 05 complete (wave 2 in progress)
+Resume file: .planning/phases/26-team-sync-daily-structure/26-05-SUMMARY.md
+**Next action:** Continue wave 2 — plans 26-06 and 26-07 remain
 
 ---
 
