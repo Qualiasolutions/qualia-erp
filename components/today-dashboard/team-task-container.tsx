@@ -351,9 +351,9 @@ export function TeamTaskContainer({
   }));
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="flex min-h-0 flex-1 flex-col space-y-2">
       {/* Section header */}
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         <Users className="size-4 text-muted-foreground" />
         <h2 className="text-sm font-semibold text-foreground">Team Tasks</h2>
       </div>
@@ -368,7 +368,7 @@ export function TeamTaskContainer({
 
       {/* Content */}
       {!isLoading && !isError && (
-        <div className="max-h-[600px] space-y-3 overflow-y-auto pr-0.5">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-0.5">
           {isAdmin ? (
             <>
               {/* Admin: grouped by person */}

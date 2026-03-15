@@ -157,37 +157,36 @@ export function TodayDashboard({
 
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
           {/* Owner updates banner — employees only */}
           {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
-          {/* ── TEAM TASKS (replaces schedule block) ─────────────── */}
-          <TeamTaskContainer
-            workspaceId={workspaceId}
-            userRole={userRole}
-            currentUserId={currentUserId}
-          />
-
-          {/* Meetings sidebar — admin only, below team tasks */}
-          {!isNonAdmin && (
-            <div className="mt-4 shrink-0">
-              <MeetingsSidebar meetings={meetings} />
+          {/* Admin: side-by-side layout — tasks left, meetings+pipeline right */}
+          {/* Employee: full-width tasks only */}
+          <div
+            className={cn(
+              'flex min-h-0 flex-1 gap-4',
+              isNonAdmin ? 'flex-col' : 'flex-col lg:flex-row'
+            )}
+          >
+            {/* ── TEAM TASKS (primary panel, fills available space) ── */}
+            <div className="min-h-0 flex-1">
+              <TeamTaskContainer
+                workspaceId={workspaceId}
+                userRole={userRole}
+                currentUserId={currentUserId}
+              />
             </div>
-          )}
 
-          {/* ── CURRENTLY BUILDING ROW ──────────────────────────────── */}
-          {!isNonAdmin && (
-            <div className="mt-4 shrink-0">
-              <BuildingProjectsRow building={building} />
-            </div>
-          )}
-
-          {/* ── OWNER UPDATES COMPOSE — admin only ───────────────── */}
-          {!isNonAdmin && (
-            <div className="mt-3">
-              <OwnerUpdatesCompose workspaceId={workspaceId} profiles={profiles} />
-            </div>
-          )}
+            {/* ── RIGHT SIDEBAR — admin only on desktop ─────────── */}
+            {!isNonAdmin && (
+              <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-80 xl:w-96">
+                <MeetingsSidebar meetings={meetings} />
+                <BuildingProjectsRow building={building} />
+                <OwnerUpdatesCompose workspaceId={workspaceId} profiles={profiles} />
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
