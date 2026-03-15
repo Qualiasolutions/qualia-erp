@@ -10,6 +10,18 @@
 
 **Requirements:** CLEANUP-01, CLEANUP-02, CHECKIN-01, CHECKIN-02, NOTIF-01, NOTIF-02, DASH-01, DASH-02, TIME-01, TIME-02, TIME-03, UPDATE-01, UPDATE-02, PROV-01, PROV-02, PROV-03, DQ-01
 
+**Plans:** 7 plans
+
+Plans:
+
+- [ ] 26-01-PLAN.md — Delete learning system + migrate daily_checkins, owner_updates, task_time_logs tables
+- [ ] 26-02-PLAN.md — Fix hardcoded team members in daily-flow.ts with dynamic profile query
+- [ ] 26-03-PLAN.md — Remove VAPI from project creation wizard
+- [ ] 26-04-PLAN.md — Check-in actions, owner update actions, time log actions + task completion notification
+- [ ] 26-05-PLAN.md — Team dashboard data action + morning email cron
+- [ ] 26-06-PLAN.md — Team task container + daily check-in modal (dashboard UI)
+- [ ] 26-07-PLAN.md — Owner updates banner/compose + task time tracker UI
+
 **Success Criteria:**
 
 1. Learning system tables, actions, and components are fully removed — no orphan references
@@ -65,4 +77,4 @@
 ---
 
 _Roadmap created: 2026-03-15_
-_Last updated: 2026-03-15 after adding updates, provisioning, removing VAPI_
+_Last updated: 2026-03-15 — Phase 26 planned (7 plans, 3 waves)_
