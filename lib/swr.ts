@@ -71,6 +71,7 @@ export const cacheKeys = {
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
   timeLogs: (taskId: string) => `time-logs-${taskId}`,
   timeLogsBulk: (workspaceId: string) => `time-logs-bulk-${workspaceId}`,
+  teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1513,5 +1514,52 @@ export function invalidateTaskTimeLog(taskId: string, immediate = true) {
     mutate(cacheKeys.timeLogs(taskId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.timeLogs(taskId));
+  }
+}
+
+// ============================================================================
+// TEAM DASHBOARD HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch team task dashboard data.
+ * Admins see all team members with their active tasks.
+ * Employees see only their own tasks.
+ */
+export function useTeamTaskDashboard(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.teamDashboard(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return [];
+      const { getTeamTaskDashboard } = await import('@/app/actions/team-dashboard');
+      return getTeamTaskDashboard(workspaceId);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    members: data || [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate team dashboard cache
+ */
+export function invalidateTeamDashboard(workspaceId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.teamDashboard(workspaceId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.teamDashboard(workspaceId));
   }
 }
