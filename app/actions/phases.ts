@@ -407,7 +407,7 @@ export async function loadQualiaFrameworkPipeline(projectId: string) {
   const typePrefix =
     projectType === 'web_design'
       ? 'web'
-      : projectType === 'ai_agent' || projectType === 'ai_platform'
+      : projectType === 'ai_agent' || (projectType as string) === 'ai_platform'
         ? 'ai'
         : projectType === 'voice_agent'
           ? 'voice'
