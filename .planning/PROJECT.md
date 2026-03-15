@@ -67,7 +67,19 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ### Active
 
-(None — plan next milestone)
+- [ ] Fix hardcoded team members in daily-flow.ts (add Hasan)
+- [ ] Wire task completion notifications
+- [ ] Workload visibility (tasks per person rollup)
+- [ ] Phase-level assignees on project_phases
+- [ ] Daily check-in mechanism (async standup)
+- [ ] Client activity timeline on client detail page
+- [ ] Review queue for admin (pending task reviews)
+- [ ] Project health dashboard page
+- [ ] Activity feed UI (workspace-wide timeline)
+- [ ] Team overview page (replace /team redirect)
+- [ ] Shift awareness indicators
+- [ ] Scheduled morning email reports (cron)
+- [ ] Delete entire learning/mentorship/XP system
 
 ### Out of Scope
 
@@ -77,6 +89,11 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - 3D effects or parallax — anti-feature, hurts focus
 - Offline mode — web-first approach
 - Test coverage increase — important but separate effort
+- Learning/mentorship/XP/achievements system — deleted in v2.0, not needed for 3-person team
+- Supabase Realtime notifications — polling sufficient for 3 people
+- Time tracking (clock in/out) — manual schedule blocking is enough
+- AI weekly recap — nice-to-have, not this milestone
+- Push notifications — not needed yet
 
 ## Context
 
@@ -85,7 +102,19 @@ Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul, Res
 25 phases completed across 6 milestones, 49 plans executed.
 Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, Apple-like design system, end-to-end client onboarding flow, and production-ready security hardening.
 All IDOR vulnerabilities patched, token-based invitations, Zod input validation, and production observability in place.
-Ready for next milestone planning.
+
+## Current Milestone: v2.0 Team Efficiency & Owner Oversight
+
+**Goal:** Give Fawzi real-time visibility into team workload, activity, and project health — and give employees (Moayad, Hasan) clear daily structure with check-ins and phase ownership.
+
+**Target features:**
+
+- Team overview page with per-person workload and assignments
+- Activity feed, review queue, and project health dashboard
+- Daily check-in mechanism for async standups across split shifts
+- Phase-level assignees and shift awareness
+- Scheduled morning email reports
+- Delete unused learning/XP system (dead weight)
 
 ## Constraints
 
@@ -136,4 +165,4 @@ Ready for next milestone planning.
 
 ---
 
-_Last updated: 2026-03-10 after v1.5.1 milestone completion_
+_Last updated: 2026-03-15 after v2.0 milestone start_
