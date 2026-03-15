@@ -40,7 +40,6 @@ export async function setupProjectIntegrations(
     requiredProviders = [];
     if (config.selectedIntegrations.github) requiredProviders.push('github');
     if (config.selectedIntegrations.vercel) requiredProviders.push('vercel');
-    if (config.selectedIntegrations.vapi) requiredProviders.push('vapi');
   } else {
     // Fallback to automatic selection based on project type
     const provisioningMap: Record<string, string[]> = {

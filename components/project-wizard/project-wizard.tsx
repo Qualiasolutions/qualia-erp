@@ -128,12 +128,10 @@ export function ProjectWizard({
   const [configuredIntegrations, setConfiguredIntegrations] = useState<{
     github: boolean;
     vercel: boolean;
-    vapi: boolean;
-  }>({ github: false, vercel: false, vapi: false });
+  }>({ github: false, vercel: false });
   const [selectedIntegrations, setSelectedIntegrations] = useState<IntegrationSelections>({
     github: false,
     vercel: false,
-    vapi: false,
   });
   const [showProvisioning, setShowProvisioning] = useState(false);
   const [mode, setMode] = useState<'full' | 'demo'>('full');
@@ -162,12 +160,10 @@ export function ProjectWizard({
   }, [currentWorkspace?.id]);
 
   // Helper to check if any integrations are configured
-  const hasAnyIntegrations =
-    configuredIntegrations.github || configuredIntegrations.vercel || configuredIntegrations.vapi;
+  const hasAnyIntegrations = configuredIntegrations.github || configuredIntegrations.vercel;
 
   // Helper to check if any integrations are selected
-  const hasSelectedIntegrations =
-    selectedIntegrations.github || selectedIntegrations.vercel || selectedIntegrations.vapi;
+  const hasSelectedIntegrations = selectedIntegrations.github || selectedIntegrations.vercel;
 
   // Set default type when wizard opens with a defaultType
   useEffect(() => {
@@ -278,7 +274,7 @@ export function ProjectWizard({
       client_id: '',
       custom_client_name: '',
     });
-    setSelectedIntegrations({ github: false, vercel: false, vapi: false });
+    setSelectedIntegrations({ github: false, vercel: false });
     setError(null);
   };
 
@@ -563,27 +559,6 @@ export function ProjectWizard({
                             <span className="text-sm font-medium">Vercel</span>
                           </label>
                         )}
-
-                        {configuredIntegrations.vapi && (
-                          <label
-                            className={cn(
-                              'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
-                              selectedIntegrations.vapi
-                                ? 'border-pink-500/50 bg-pink-500/10'
-                                : 'border-border/50 bg-muted/30 hover:bg-muted/50'
-                            )}
-                          >
-                            <Checkbox
-                              checked={selectedIntegrations.vapi}
-                              onCheckedChange={(checked) =>
-                                setSelectedIntegrations((prev) => ({ ...prev, vapi: !!checked }))
-                              }
-                              className="h-4 w-4 data-[state=checked]:border-pink-500 data-[state=checked]:bg-pink-500"
-                            />
-                            <Phone className="h-4 w-4" />
-                            <span className="text-sm font-medium">VAPI</span>
-                          </label>
-                        )}
                       </div>
                     </div>
                   )}
@@ -634,7 +609,6 @@ export function ProjectWizard({
                   {[
                     selectedIntegrations.github && 'GitHub repo',
                     selectedIntegrations.vercel && 'Vercel project',
-                    selectedIntegrations.vapi && 'VAPI assistant',
                   ]
                     .filter(Boolean)
                     .join(' + ')}{' '}

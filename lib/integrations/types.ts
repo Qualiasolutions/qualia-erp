@@ -154,7 +154,6 @@ export interface ZohoConfig {
 export interface IntegrationSelections {
   github?: boolean;
   vercel?: boolean;
-  vapi?: boolean;
 }
 
 export interface ProjectProvisioningConfig {

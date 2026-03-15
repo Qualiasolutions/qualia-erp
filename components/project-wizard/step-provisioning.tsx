@@ -11,7 +11,6 @@ import {
   RefreshCw,
   Github,
   Globe,
-  Phone,
   SkipForward,
 } from 'lucide-react';
 import type { ProjectType } from '@/types/database';
@@ -19,7 +18,7 @@ import type { ProvisioningStatus, IntegrationSelections } from '@/lib/integratio
 import { getProjectProvisioningStatus, retryProvisioning } from '@/app/actions/integrations';
 
 interface ProvisioningStep {
-  id: 'github' | 'vercel' | 'vapi';
+  id: 'github' | 'vercel';
   name: string;
   description: string;
   icon: typeof Github;
@@ -38,7 +37,7 @@ interface StepProvisioningProps {
 }
 
 const STEP_CONFIG: Record<
-  'github' | 'vercel' | 'vapi',
+  'github' | 'vercel',
   { name: string; description: string; icon: typeof Github }
 > = {
   github: {
@@ -50,11 +49,6 @@ const STEP_CONFIG: Record<
     name: 'Vercel Project',
     description: 'Setting up deployment',
     icon: Globe,
-  },
-  vapi: {
-    name: 'VAPI Assistant',
-    description: 'Creating voice assistant',
-    icon: Phone,
   },
 };
 
@@ -73,10 +67,9 @@ export function StepProvisioning({
 
   // Initialize steps based on user-selected integrations
   useEffect(() => {
-    const selectedSteps: Array<'github' | 'vercel' | 'vapi'> = [];
+    const selectedSteps: Array<'github' | 'vercel'> = [];
     if (selectedIntegrations.github) selectedSteps.push('github');
     if (selectedIntegrations.vercel) selectedSteps.push('vercel');
-    if (selectedIntegrations.vapi) selectedSteps.push('vapi');
 
     const initialSteps: ProvisioningStep[] = selectedSteps.map((stepId) => ({
       id: stepId,
@@ -149,22 +142,6 @@ export function StepProvisioning({
                 error: result.data.vercel.error,
               };
             }
-            if (step.id === 'vapi' && result.data?.vapi) {
-              return {
-                ...step,
-                status: result.data.vapi.assistantId
-                  ? 'completed'
-                  : result.data.vapi.error
-                    ? 'failed'
-                    : step.status === 'pending'
-                      ? 'in_progress'
-                      : step.status,
-                url: result.data.vapi.assistantId
-                  ? `https://dashboard.vapi.ai/assistant/${result.data.vapi.assistantId}`
-                  : undefined,
-                error: result.data.vapi.error,
-              };
-            }
             // If status is in_progress and step has no specific data yet, show in_progress
             if (status === 'in_progress' && step.status === 'pending') {
               return { ...step, status: 'in_progress' };
@@ -186,7 +163,7 @@ export function StepProvisioning({
     return () => clearInterval(interval);
   }, [projectId, isPolling, steps.length]);
 
-  const handleRetry = async (stepId: 'github' | 'vercel' | 'vapi') => {
+  const handleRetry = async (stepId: 'github' | 'vercel') => {
     setRetrying(stepId);
     setSteps((prev) =>
       prev.map((s) => (s.id === stepId ? { ...s, status: 'in_progress', error: undefined } : s))
