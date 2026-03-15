@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 ## Current Position
 
 Phase: 26 of 26 (26-team-sync-daily-structure)
-Plan: 05 of 8 executed (wave 2 in progress)
+Plan: 06 of 8 executed (wave 3 in progress)
 Status: In progress
-Last activity: 2026-03-15 - Completed 26-05-PLAN.md (team dashboard action + morning email cron)
+Last activity: 2026-03-15 - Completed 26-06-PLAN.md (team task UI + check-in modal)
 
 Progress: [#############] 25 phases complete | v2.0 ready
 
@@ -27,6 +27,8 @@ Progress: [#############] 25 phases complete | v2.0 ready
 | 3   | task_time_logs.duration_minutes as GENERATED ALWAYS AS STORED         | Eliminates app-side duration calculation; computed server-side automatically                    | 2026-03-15 |
 | 4   | Morning email cron at 6 AM UTC Mon-Fri (separate from 9 AM reminders) | Different purpose: daily briefing vs overdue reminders — keeps concerns separate                | 2026-03-15 |
 | 5   | Direct role query instead of isUserAdmin() in team-dashboard.ts       | isUserAdmin() helper requires userId arg; inline query is simpler and correct                   | 2026-03-15 |
+| 6   | Removed currentUserId from TeamTaskContainer props                    | Server action derives identity from auth.uid() — no need to thread client-side ID               | 2026-03-15 |
+| 7   | AdminCheckinsSection lazy-loads on panel open, not mount              | Avoids unnecessary checkin queries on every dashboard load for admin users                      | 2026-03-15 |
 
 ### Blockers/Concerns
 
@@ -50,9 +52,9 @@ Progress: [#############] 25 phases complete | v2.0 ready
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Phase 26, plan 05 complete (wave 2 in progress)
-Resume file: .planning/phases/26-team-sync-daily-structure/26-05-SUMMARY.md
-**Next action:** Continue wave 2 — plans 26-06 and 26-07 remain
+Stopped at: Phase 26, plan 06 complete (wave 3 in progress)
+Resume file: .planning/phases/26-team-sync-daily-structure/26-06-SUMMARY.md
+**Next action:** Continue wave 3 — plan 26-07 remains
 
 ---
 
