@@ -23,7 +23,6 @@
  * - health.ts: Health monitoring
  * - logos.ts: Logo upload
  * - payments.ts: Payment tracking
- * - learning.ts: Mentorship features
  */
 
 // ============ SHARED TYPES & HELPERS ============
@@ -208,30 +207,7 @@ export {
   getRecurringSummary,
 } from './payments';
 
-// ============ LEARNING ============
-export {
-  updateLearnMode,
-  getExtendedProfile,
-  completeOnboardingStep,
-  getSkillCategories,
-  getSkills,
-  getUserSkills,
-  logSkillPractice,
-  getAchievements,
-  getUserAchievements,
-  awardAchievement,
-  markAchievementSeen,
-  getTeachingNotes,
-  createTeachingNote,
-  deleteTeachingNote,
-  createTaskReflection,
-  submitForReview,
-  approveTask,
-  requestRevision,
-  delegateToMoayad,
-  getTodaysFocus,
-  getSkillGrowthSummary,
-} from './learning';
+// Learning system removed in v2.0 — see .planning/phases/26-team-sync-daily-structure/26-01-PLAN.md
 
 // ============ DEPLOYMENTS ============
 export {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useActionState, useOptimistic } from 'react';
-import { CalendarIcon, User, FolderOpen, GraduationCap, Clock } from 'lucide-react';
+import { CalendarIcon, User, FolderOpen, Clock } from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, differenceInMinutes, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,6 @@ import {
   invalidateScheduledTasks,
   invalidateDailyFlow,
 } from '@/lib/swr';
-import { useLearnMode } from '@/components/providers/learn-mode-provider';
 
 interface EditTaskModalProps {
   task: Task;
@@ -39,8 +38,6 @@ interface EditTaskModalProps {
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
   const { profiles } = useProfiles();
   const { projects } = useProjects();
-  const { learnModeEnabled, isTrainee } = useLearnMode();
-
   // Date picker state (controlled for calendar component)
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.due_date ? new Date(task.due_date) : undefined
@@ -354,20 +351,6 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
               </PopoverContent>
             </Popover>
           </div>
-
-          {/* Learning mode section - visible when learning mode is enabled */}
-          {learnModeEnabled && isTrainee && (
-            <div className="space-y-2 rounded-lg border border-qualia-500/20 bg-qualia-500/5 p-3">
-              <div className="flex items-center gap-2 text-sm font-medium text-qualia-500">
-                <GraduationCap className="h-4 w-4" />
-                Learning Mode
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Complete this task to earn XP and improve your skills. Remember to check the project
-                documentation for guidance.
-              </p>
-            </div>
-          )}
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 

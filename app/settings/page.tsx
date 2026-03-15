@@ -3,7 +3,6 @@ import { SettingsLayout } from './settings-layout';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
-import { LearnModeSettings } from '@/components/settings/learn-mode-settings';
 import { NotificationSection } from '@/components/settings/notification-section';
 import { AdminNotesSection } from '@/components/ai-assistant/admin-notes-section';
 import { ChevronRight, Plug, MessageSquarePlus } from 'lucide-react';
@@ -174,10 +173,6 @@ function DangerZoneSection() {
   );
 }
 
-function LearningSection() {
-  return <LearnModeSettings />;
-}
-
 function NotificationsSection() {
   return <NotificationSection />;
 }
@@ -185,7 +180,6 @@ function NotificationsSection() {
 const sections = [
   { id: 'account', label: 'Account', content: <AccountSection /> },
   { id: 'appearance', label: 'Appearance', content: <AppearanceSection /> },
-  { id: 'learning', label: 'Learning', content: <LearningSection /> },
   { id: 'notifications', label: 'Notifications', content: <NotificationsSection /> },
   { id: 'ai-notes', label: 'AI Notes', content: <AINotesSection /> },
   { id: 'danger', label: 'Danger Zone', content: <DangerZoneSection />, danger: true },
