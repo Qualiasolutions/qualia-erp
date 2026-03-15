@@ -261,6 +261,9 @@ export function TodayDashboard({
               />
             </div>
 
+            {/* ── Currently Building — employees/managers at bottom ── */}
+            {isNonAdmin && <BuildingProjectsRow building={building} />}
+
             {/* ── RIGHT SIDEBAR — admin only on desktop ─────────── */}
             {!isNonAdmin && (
               <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-80 xl:w-96">
