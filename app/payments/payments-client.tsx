@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useMemo } from 'react';
-import { format, parseISO, addMonths, subMonths, isSameMonth } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -13,8 +13,6 @@ import {
   Trash2,
   Pencil,
   Building2,
-  ChevronLeft,
-  ChevronRight,
   TrendingUp,
   TrendingDown,
   CalendarDays,
@@ -1144,221 +1142,124 @@ export function PaymentsClient({
   const [showForm, setShowForm] = useState(false);
   const [showRetainerModal, setShowRetainerModal] = useState(false);
   const [showInstallmentModal, setShowInstallmentModal] = useState(false);
-  const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [view, setView] = useState<'month' | 'all'>('month');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'retainer'>(
-    'pending'
-  );
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed'>('pending');
+  const [hideRetainers, setHideRetainers] = useState(false);
 
-  const isCurrentMonth = isSameMonth(selectedMonth, new Date());
+  const isRetainer = (p: Payment) =>
+    p.category === 'retainer' || (p.description && /retainer/i.test(p.description));
 
-  const monthPayments = useMemo(() => {
-    return payments
-      .filter((p) => {
-        const date = parseISO(p.payment_date);
-        return isSameMonth(date, selectedMonth);
-      })
-      .sort((a, b) => parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime());
-  }, [payments, selectedMonth]);
+  // All-time net
+  const net = summary.totalIncoming - summary.totalOutgoing;
 
-  // Monthly summary
-  const monthlySummary = useMemo(() => {
-    return monthPayments.reduce(
-      (acc, p) => {
-        const amount = Number(p.amount);
-        if (p.type === 'incoming') {
-          acc.income += amount;
-          if (p.status === 'completed') acc.collected += amount;
-          if (p.status === 'pending') acc.pendingIn += amount;
-        } else {
-          acc.expenses += amount;
-          if (p.status === 'pending') acc.pendingOut += amount;
+  // Filter payments
+  const displayPayments = useMemo(() => {
+    let filtered = payments;
+
+    // Status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((p) => p.status === statusFilter);
+    }
+
+    // Retainer visibility: when hidden, only show upcoming (pending) retainers once
+    if (hideRetainers) {
+      const seenRetainerClients = new Set<string>();
+      filtered = filtered.filter((p) => {
+        if (!isRetainer(p)) return true;
+        // Show one upcoming pending retainer per client
+        if (p.status === 'pending') {
+          const key = p.client_id || p.description || 'unknown';
+          if (!seenRetainerClients.has(key)) {
+            seenRetainerClients.add(key);
+            return true;
+          }
         }
-        return acc;
-      },
-      { income: 0, expenses: 0, collected: 0, pendingIn: 0, pendingOut: 0 }
-    );
-  }, [monthPayments]);
-
-  // Upcoming (pending) payments for the month
-  const upcomingPayments = useMemo(() => {
-    return monthPayments
-      .filter((p) => p.status === 'pending')
-      .sort((a, b) => parseISO(a.payment_date).getTime() - parseISO(b.payment_date).getTime());
-  }, [monthPayments]);
-
-  // Per-client breakdown for the month
-  const clientMonthBreakdown = useMemo(() => {
-    const map = new Map<
-      string,
-      { name: string; displayName: string | null; paid: number; pending: number }
-    >();
-
-    monthPayments
-      .filter((p) => p.type === 'incoming' && p.client_id)
-      .forEach((p) => {
-        const clientId = p.client_id!;
-        const existing = map.get(clientId) || {
-          name: p.client?.name || 'Unknown',
-          displayName: p.client?.display_name || null,
-          paid: 0,
-          pending: 0,
-        };
-        const amount = Number(p.amount);
-        if (p.status === 'completed') existing.paid += amount;
-        if (p.status === 'pending') existing.pending += amount;
-        map.set(clientId, existing);
+        return false;
       });
+    }
 
-    return Array.from(map.entries()).sort(
-      ([, a], [, b]) => b.paid + b.pending - (a.paid + a.pending)
-    );
-  }, [monthPayments]);
-
-  const net = monthlySummary.income - monthlySummary.expenses;
-  const basePayments = view === 'month' ? monthPayments : payments;
-  const displayPayments =
-    statusFilter === 'all'
-      ? basePayments
-      : statusFilter === 'retainer'
-        ? basePayments.filter(
-            (p) => p.category === 'retainer' || (p.description && /retainer/i.test(p.description))
-          )
-        : basePayments.filter((p) => p.status === statusFilter);
+    return filtered;
+  }, [payments, statusFilter, hideRetainers]);
 
   return (
     <div className="space-y-5">
-      {/* Month Navigator */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSelectedMonth(subMonths(selectedMonth, 1))}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedMonth(new Date())}
-            className={cn(
-              'rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors',
-              isCurrentMonth
-                ? 'bg-qualia-500/10 text-qualia-600'
-                : 'bg-card text-foreground hover:bg-secondary'
-            )}
-          >
-            {format(selectedMonth, 'MMMM yyyy')}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex gap-1 rounded-lg bg-secondary/50 p-0.5">
-          {(['month', 'all'] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={cn(
-                'rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors',
-                view === v
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {v === 'month' ? 'This Month' : 'All Time'}
-            </button>
-          ))}
-        </div>
+      {/* Retainer toggle */}
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setHideRetainers(!hideRetainers)}
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+            hideRetainers
+              ? 'bg-qualia-500/10 text-qualia-600'
+              : 'bg-secondary/50 text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Repeat2 className="h-3.5 w-3.5" />
+          {hideRetainers ? 'Retainers hidden (next due shown)' : 'Showing all retainers'}
+        </button>
       </div>
 
-      {/* Monthly Summary Cards */}
+      {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <div className="rounded-xl border border-l-[3px] border-border border-l-emerald-500 bg-card p-4">
           <div className="flex items-center gap-1.5">
             <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-            <p className="text-xs text-muted-foreground">
-              {view === 'month' ? 'Income' : 'Total Income'}
-            </p>
+            <p className="text-xs text-muted-foreground">Income</p>
           </div>
           <p className="mt-1.5 text-xl font-bold tabular-nums text-emerald-600">
-            {formatCurrency(view === 'month' ? monthlySummary.income : summary.totalIncoming)}
+            {formatCurrency(summary.totalIncoming)}
           </p>
-          {(view === 'month' ? monthlySummary.pendingIn : summary.pendingIncoming) > 0 && (
+          {summary.pendingIncoming > 0 && (
             <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-              {formatCurrency(
-                view === 'month' ? monthlySummary.pendingIn : summary.pendingIncoming
-              )}{' '}
-              pending
+              {formatCurrency(summary.pendingIncoming)} pending
             </p>
           )}
         </div>
         <div className="rounded-xl border border-l-[3px] border-border border-l-red-500 bg-card p-4">
           <div className="flex items-center gap-1.5">
             <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-            <p className="text-xs text-muted-foreground">
-              {view === 'month' ? 'Expenses' : 'Total Expenses'}
-            </p>
+            <p className="text-xs text-muted-foreground">Expenses</p>
           </div>
           <p className="mt-1.5 text-xl font-bold tabular-nums text-red-500">
-            {formatCurrency(view === 'month' ? monthlySummary.expenses : summary.totalOutgoing)}
+            {formatCurrency(summary.totalOutgoing)}
           </p>
-          {(view === 'month' ? monthlySummary.pendingOut : summary.pendingOutgoing) > 0 && (
+          {summary.pendingOutgoing > 0 && (
             <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-              {formatCurrency(
-                view === 'month' ? monthlySummary.pendingOut : summary.pendingOutgoing
-              )}{' '}
-              pending
+              {formatCurrency(summary.pendingOutgoing)} pending
             </p>
           )}
         </div>
         <div
           className={cn(
             'rounded-xl border border-l-[3px] border-border bg-card p-4',
-            (view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing) >= 0
-              ? 'border-l-qualia-500'
-              : 'border-l-red-500'
+            net >= 0 ? 'border-l-qualia-500' : 'border-l-red-500'
           )}
         >
           <p className="text-xs text-muted-foreground">Net</p>
           <p
             className={cn(
               'mt-1.5 text-xl font-bold tabular-nums',
-              (view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing) >= 0
-                ? 'text-emerald-600'
-                : 'text-red-500'
+              net >= 0 ? 'text-emerald-600' : 'text-red-500'
             )}
           >
-            {formatCurrency(view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing)}
+            {formatCurrency(net)}
           </p>
-          {(view === 'month' ? monthlySummary.income : summary.totalIncoming) > 0 && (
+          {summary.totalIncoming > 0 && (
             <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-              {(
-                ((view === 'month' ? net : summary.totalIncoming - summary.totalOutgoing) /
-                  (view === 'month' ? monthlySummary.income : summary.totalIncoming)) *
-                100
-              ).toFixed(0)}
-              % margin
+              {((net / summary.totalIncoming) * 100).toFixed(0)}% margin
             </p>
           )}
         </div>
         <div className="rounded-xl border border-l-[3px] border-border border-l-amber-500 bg-card p-4">
           <div className="flex items-center gap-1.5">
             <CalendarDays className="h-3.5 w-3.5 text-amber-500" />
-            <p className="text-xs text-muted-foreground">Upcoming</p>
+            <p className="text-xs text-muted-foreground">Pending</p>
           </div>
           <p className="mt-1.5 text-xl font-bold tabular-nums text-amber-600">
-            {upcomingPayments.length}
+            {payments.filter((p) => p.status === 'pending').length}
           </p>
           <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground">
-            {formatCurrency(upcomingPayments.reduce((s, p) => s + Number(p.amount), 0))} total
-            pending
+            {formatCurrency(summary.pendingIncoming + summary.pendingOutgoing)} total
           </p>
         </div>
       </div>
@@ -1371,32 +1272,14 @@ export function PaymentsClient({
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
-                {view === 'month' ? 'Client Revenue' : 'All-Time Client Balances'}
+                Client Balances
               </h2>
               <span className="text-xs tabular-nums text-muted-foreground">
-                {view === 'month'
-                  ? `${clientMonthBreakdown.length} clients`
-                  : `${clientBalances.filter((b) => b.total_owed > 0).length} active`}
+                {clientBalances.filter((b) => b.total_owed > 0).length} active
               </span>
             </div>
             <div className="max-h-[400px] overflow-y-auto px-2">
-              {view === 'month' ? (
-                clientMonthBreakdown.length === 0 ? (
-                  <div className="py-8 text-center">
-                    <p className="text-sm text-muted-foreground">No client payments this month</p>
-                  </div>
-                ) : (
-                  clientMonthBreakdown.map(([clientId, data]) => (
-                    <ClientMonthRow
-                      key={clientId}
-                      clientName={data.name}
-                      displayName={data.displayName}
-                      paid={data.paid}
-                      pending={data.pending}
-                    />
-                  ))
-                )
-              ) : clientBalances.length === 0 ? (
+              {clientBalances.length === 0 ? (
                 <div className="py-8 text-center">
                   <p className="text-sm text-muted-foreground">No clients yet</p>
                 </div>
@@ -1418,15 +1301,9 @@ export function PaymentsClient({
             {/* Summary footer */}
             <div className="border-t border-border px-4 py-2.5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {view === 'month' ? 'Month Total' : 'All-Time'}
-                </span>
+                <span className="text-muted-foreground">All-Time</span>
                 <span className="font-semibold tabular-nums text-emerald-600">
-                  {formatCurrency(
-                    view === 'month'
-                      ? clientMonthBreakdown.reduce((s, [, d]) => s + d.paid + d.pending, 0)
-                      : clientBalances.reduce((s, b) => s + b.total_owed, 0)
-                  )}
+                  {formatCurrency(clientBalances.reduce((s, b) => s + b.total_owed, 0))}
                 </span>
               </div>
             </div>
@@ -1491,7 +1368,7 @@ export function PaymentsClient({
                 </span>
               </h2>
               <div className="flex items-center gap-1 rounded-lg bg-muted/40 p-0.5">
-                {(['all', 'pending', 'completed', 'retainer'] as const).map((s) => (
+                {(['all', 'pending', 'completed'] as const).map((s) => (
                   <button
                     key={s}
                     type="button"
@@ -1512,13 +1389,9 @@ export function PaymentsClient({
             <div className="max-h-[500px] overflow-y-auto px-2">
               {displayPayments.length === 0 ? (
                 <div className="py-8 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {view === 'month'
-                      ? `No payments in ${format(selectedMonth, 'MMMM yyyy')}`
-                      : 'No payments yet'}
-                  </p>
+                  <p className="text-sm text-muted-foreground">No payments yet</p>
                 </div>
-              ) : view === 'all' ? (
+              ) : (
                 (() => {
                   let lastMonth = '';
                   const sorted = [...displayPayments].sort(
@@ -1543,10 +1416,6 @@ export function PaymentsClient({
                     );
                   });
                 })()
-              ) : (
-                displayPayments.map((payment) => (
-                  <PaymentRow key={payment.id} payment={payment} clients={clients} />
-                ))
               )}
             </div>
           </div>
