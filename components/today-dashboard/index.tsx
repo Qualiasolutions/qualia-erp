@@ -13,9 +13,16 @@ import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
 import { MeetingsSidebar } from './meetings-sidebar';
+import { TeamTaskContainer } from './team-task-container';
+import { CheckinModal } from './checkin-modal';
 import { useTransition, useState, useEffect, useMemo } from 'react';
 import { type Task } from '@/app/actions/inbox';
-import { type MeetingWithRelations, useMeetings, useScheduledTasks } from '@/lib/swr';
+import {
+  type MeetingWithRelations,
+  useMeetings,
+  useScheduledTasks,
+  useTodaysCheckin,
+} from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { ScheduleBlock } from '@/components/schedule-block';
 
@@ -31,6 +38,7 @@ interface TodayDashboardProps {
   }[];
   currentUserId: string | null;
   userRole: string | null;
+  workspaceId: string;
 }
 
 // =============================================================================
@@ -44,14 +52,23 @@ export function TodayDashboard({
   profiles,
   currentUserId,
   userRole,
+  workspaceId,
 }: TodayDashboardProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [checkinDismissed, setCheckinDismissed] = useState(false);
   const isNonAdmin = userRole !== 'admin';
   const now = new Date();
+
+  // Check-in gate for employees
+  const { morning: morningCheckin, isLoading: checkinLoading } = useTodaysCheckin(
+    isNonAdmin && !checkinDismissed ? workspaceId : null
+  );
+  const showCheckinModal =
+    isNonAdmin && !checkinDismissed && !checkinLoading && morningCheckin === null;
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
@@ -182,6 +199,9 @@ export function TodayDashboard({
               <BuildingProjectsRow building={building} />
             </div>
           )}
+
+          {/* ── TEAM TASKS ──────────────────────────────────────────── */}
+          <TeamTaskContainer workspaceId={workspaceId} userRole={userRole} />
         </div>
       </main>
 
@@ -192,6 +212,15 @@ export function TodayDashboard({
         defaultAssigneeId={null}
         defaultScheduledTime={null}
       />
+
+      {/* Daily check-in gate (employees only) */}
+      {isNonAdmin && (
+        <CheckinModal
+          open={showCheckinModal}
+          workspaceId={workspaceId}
+          onSuccess={() => setCheckinDismissed(true)}
+        />
+      )}
     </div>
   );
 }

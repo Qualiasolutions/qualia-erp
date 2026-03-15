@@ -96,6 +96,7 @@ export default async function TodayPage() {
       profiles={profiles}
       currentUserId={currentProfile?.id || null}
       userRole={currentProfile?.role || null}
+      workspaceId={workspaceId}
     />
   );
 }
