@@ -25,6 +25,8 @@ import {
 } from '@/lib/swr';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { ScheduleBlock } from '@/components/schedule-block';
+import { OwnerUpdatesBanner } from './owner-updates-banner';
+import { OwnerUpdatesCompose } from './owner-updates-compose';
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
@@ -178,6 +180,9 @@ export function TodayDashboard({
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-y-auto px-5 py-4 sm:px-6">
+          {/* Owner updates banner — employees only */}
+          {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
+
           {/* Schedule + Meetings Sidebar row */}
           <div className="flex gap-4">
             <div className="min-w-0 flex-1">
@@ -201,7 +206,18 @@ export function TodayDashboard({
           )}
 
           {/* ── TEAM TASKS ──────────────────────────────────────────── */}
-          <TeamTaskContainer workspaceId={workspaceId} userRole={userRole} />
+          <TeamTaskContainer
+            workspaceId={workspaceId}
+            userRole={userRole}
+            currentUserId={currentUserId}
+          />
+
+          {/* ── OWNER UPDATES COMPOSE — admin only ───────────────── */}
+          {!isNonAdmin && (
+            <div className="mt-3">
+              <OwnerUpdatesCompose workspaceId={workspaceId} profiles={profiles} />
+            </div>
+          )}
         </div>
       </main>
 
