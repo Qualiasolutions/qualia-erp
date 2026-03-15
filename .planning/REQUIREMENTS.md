@@ -31,6 +31,17 @@
 - [ ] **TIME-02**: Employee can log when they finish a task (records `finished_at` timestamp, calculates duration)
 - [ ] **TIME-03**: Time spent is visible on task cards and in the team dashboard container
 
+### Owner Updates
+
+- [ ] **UPDATE-01**: Owner can post updates/notes to specific employees (or all) that appear contextually and cleanly — not cluttering the dashboard but discoverable (e.g. a slim notification banner, inline card, or collapsible section)
+- [ ] **UPDATE-02**: Employee sees unread owner updates on login — can acknowledge/dismiss them
+
+### Project Provisioning
+
+- [ ] **PROV-01**: Creating a project with GitHub selected auto-creates a GitHub repo (under the Qualia org) and stores the URL on the project
+- [ ] **PROV-02**: Creating a project with Vercel selected auto-creates a Vercel project, connects it to the GitHub repo, and stores the URL
+- [ ] **PROV-03**: VAPI option removed from project creation wizard
+
 ### Design Quality
 
 - [ ] **DQ-01**: All new UI passes `/critique` + `/polish` + `/harden` flow — impeccable design matching existing ERP aesthetic
@@ -74,15 +85,20 @@
 | TIME-01     | Phase 26 | Pending |
 | TIME-02     | Phase 26 | Pending |
 | TIME-03     | Phase 26 | Pending |
+| UPDATE-01   | Phase 26 | Pending |
+| UPDATE-02   | Phase 26 | Pending |
+| PROV-01     | Phase 26 | Pending |
+| PROV-02     | Phase 26 | Pending |
+| PROV-03     | Phase 26 | Pending |
 | DQ-01       | Phase 26 | Pending |
 
 **Coverage:**
 
-- v2.0 requirements: 12 total
-- Mapped to phases: 12
+- v2.0 requirements: 17 total
+- Mapped to phases: 17
 - Unmapped: 0
 
 ---
 
 _Requirements defined: 2026-03-15_
-_Last updated: 2026-03-15 after scope reduction to 1 phase_
+_Last updated: 2026-03-15 after adding updates, provisioning, removing VAPI_

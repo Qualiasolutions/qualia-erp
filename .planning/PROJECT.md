@@ -74,6 +74,9 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 - [ ] Scheduled morning email reports (cron)
 - [ ] Team task dashboard container (replace/enhance schedule)
 - [ ] Task time logging (start/finish timestamps)
+- [ ] Owner updates/notes system (clean, contextual delivery to employees)
+- [ ] GitHub + Vercel auto-provisioning on project creation (fix/verify)
+- [ ] Remove VAPI from project creation wizard
 
 ### Out of Scope
 
@@ -104,6 +107,9 @@ All IDOR vulnerabilities patched, token-based invitations, Zod input validation,
 **Target features:**
 
 - Delete unused learning/XP system (dead weight)
+- Owner updates/notes to employees (clean, contextual)
+- GitHub + Vercel auto-provisioning (fix existing system)
+- Remove VAPI from project wizard
 - Daily check-in prompt + owner view
 - Task completion notifications + morning email reports
 - Team task dashboard container on homepage
