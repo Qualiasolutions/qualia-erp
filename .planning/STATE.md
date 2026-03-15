@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 ## Current Position
 
 Phase: 26 of 26 (26-team-sync-daily-structure)
-Plan: 03 of 8
+Plan: 01 of 8 complete
 Status: In progress
-Last activity: 2026-03-15 - Completed 26-03-PLAN.md (remove VAPI from project creation wizard)
+Last activity: 2026-03-15 - Completed 26-01-PLAN.md (learning system deleted, daily structure tables created)
 
 Progress: [#############] 25 phases complete | v2.0 ready
 
@@ -20,9 +20,11 @@ Progress: [#############] 25 phases complete | v2.0 ready
 
 ### Key Decisions
 
-| #   | Decision | Rationale | Date |
-| --- | -------- | --------- | ---- |
-|     |          |           |      |
+| #   | Decision                                                      | Rationale                                                                                       | Date       |
+| --- | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| 1   | Renamed 20260315_add_daily_structure.sql to 20260315100000    | Avoid schema_migrations_pkey conflict when two migrations share same date prefix                | 2026-03-15 |
+| 2   | Kept SkillLevel type in lib/ai/memory.ts                      | Separate concept (profiles.skill_level column) — not related to XP/gamification learning system | 2026-03-15 |
+| 3   | task_time_logs.duration_minutes as GENERATED ALWAYS AS STORED | Eliminates app-side duration calculation; computed server-side automatically                    | 2026-03-15 |
 
 ### Blockers/Concerns
 
@@ -46,8 +48,8 @@ Progress: [#############] 25 phases complete | v2.0 ready
 ## Session Continuity
 
 Last session: 2026-03-15
-Stopped at: Phase 26, plan 03 complete
-**Next action:** Execute 26-04-PLAN.md
+Stopped at: Phase 26, plan 01 complete
+**Next action:** Execute 26-02-PLAN.md
 
 ---
 
