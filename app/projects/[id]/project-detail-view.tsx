@@ -125,9 +125,15 @@ interface Project {
   phase_progress?: Record<string, number[]>;
 }
 
+interface ClientOption {
+  id: string;
+  display_name: string | null;
+}
+
 interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
+  clients: ClientOption[];
   userRole?: 'admin' | 'manager' | 'employee';
   integrationStatus?: IntegrationStatus;
 }
@@ -135,6 +141,7 @@ interface ProjectDetailViewProps {
 export function ProjectDetailView({
   project: initialProject,
   profiles,
+  clients,
   userRole = 'employee',
   integrationStatus,
 }: ProjectDetailViewProps) {
@@ -156,6 +163,7 @@ export function ProjectDetailView({
     initialProject.project_type || null
   );
   const [leadId, setLeadId] = useState<string | null>(initialProject.lead?.id || null);
+  const [clientId, setClientId] = useState<string | null>(initialProject.client?.id || null);
   const [targetDate, setTargetDate] = useState(initialProject.target_date || '');
 
   // Track changes
@@ -165,9 +173,10 @@ export function ProjectDetailView({
       description !== (initialProject.description || '') ||
       projectType !== initialProject.project_type ||
       leadId !== (initialProject.lead?.id || null) ||
+      clientId !== (initialProject.client?.id || null) ||
       targetDate !== (initialProject.target_date || '');
     setHasChanges(changed);
-  }, [name, description, projectType, leadId, targetDate, initialProject]);
+  }, [name, description, projectType, leadId, clientId, targetDate, initialProject]);
 
   const handleSave = useCallback(async () => {
     if (!hasChanges) return;
@@ -182,6 +191,8 @@ export function ProjectDetailView({
     formData.set('description', description);
     if (projectType) formData.set('project_type', projectType);
     if (leadId) formData.set('lead_id', leadId);
+    // Send empty string to signal "clear client" when clientId is null
+    formData.set('client_id', clientId || '');
     if (targetDate) formData.set('target_date', targetDate);
 
     const result = await updateProject(formData);
@@ -196,7 +207,7 @@ export function ProjectDetailView({
     }
 
     setSaving(false);
-  }, [hasChanges, project.id, name, description, projectType, leadId, targetDate]);
+  }, [hasChanges, project.id, name, description, projectType, leadId, clientId, targetDate]);
 
   const handleDelete = async () => {
     if (
@@ -505,6 +516,26 @@ export function ProjectDetailView({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Client</label>
+              <Select
+                value={clientId || 'none'}
+                onValueChange={(v) => setClientId(v === 'none' ? null : v)}
+              >
+                <SelectTrigger className="h-10 rounded-lg">
+                  <SelectValue placeholder="No client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No client</SelectItem>
+                  {clients.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.display_name || c.id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">

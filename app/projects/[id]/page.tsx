@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
-import { getProjectById, getProfiles, getCurrentUserProfile } from '@/app/actions';
+import { getProjectById, getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
 import { getProjectIntegrationStatus } from '@/lib/integration-utils';
 import { createClient } from '@/lib/supabase/server';
 import { ProjectDetailView } from './project-detail-view';
@@ -30,12 +30,18 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   await connection();
 
   // Fetch all data in parallel on the server
-  const [project, profiles, userProfile, integrationStatus] = await Promise.all([
+  const [project, profiles, userProfile, integrationStatus, clientsRaw] = await Promise.all([
     getProjectById(id),
     getProfiles(),
     getCurrentUserProfile(),
     getProjectIntegrationStatus(id),
+    getClients(),
   ]);
+
+  const clients = (clientsRaw || []).map((c) => ({
+    id: c.id,
+    display_name: c.display_name,
+  }));
 
   if (!project) {
     notFound();
@@ -65,6 +71,7 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
     <ProjectDetailView
       project={project}
       profiles={profiles}
+      clients={clients}
       userRole={userProfile?.role || 'employee'}
       integrationStatus={integrationStatus}
     />

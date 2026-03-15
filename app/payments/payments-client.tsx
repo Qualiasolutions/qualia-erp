@@ -1147,7 +1147,7 @@ export function PaymentsClient({
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [view, setView] = useState<'month' | 'all'>('month');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'completed' | 'retainer'>(
-    'all'
+    'pending'
   );
 
   const isCurrentMonth = isSameMonth(selectedMonth, new Date());
@@ -1363,59 +1363,6 @@ export function PaymentsClient({
         </div>
       </div>
 
-      {/* Upcoming Payments (only in month view, only if there are pending) */}
-      {view === 'month' && upcomingPayments.length > 0 && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
-          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Clock className="h-4 w-4 text-amber-500" />
-            Upcoming This Month
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-medium text-amber-600">
-              {upcomingPayments.length}
-            </span>
-          </h3>
-          <div className="space-y-0">
-            {upcomingPayments.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center gap-3 border-b border-amber-500/10 py-2 last:border-0"
-              >
-                <div
-                  className={cn(
-                    'flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full',
-                    p.type === 'incoming' ? 'bg-emerald-500/10' : 'bg-red-500/10'
-                  )}
-                >
-                  {p.type === 'incoming' ? (
-                    <ArrowDownLeft className="h-3.5 w-3.5 text-emerald-500" />
-                  ) : (
-                    <ArrowUpRight className="h-3.5 w-3.5 text-red-500" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">
-                    {p.type === 'incoming' && p.client
-                      ? p.client.display_name || p.client.name
-                      : p.description}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Due {format(parseISO(p.payment_date), 'MMM d')}
-                  </p>
-                </div>
-                <p
-                  className={cn(
-                    'text-sm font-semibold tabular-nums',
-                    p.type === 'incoming' ? 'text-emerald-600' : 'text-red-500'
-                  )}
-                >
-                  {p.type === 'incoming' ? '+' : '-'}
-                  {formatCurrency(Number(p.amount))}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Two Column Layout */}
       <div className="grid gap-5 lg:grid-cols-5">
         {/* Left: Client Breakdown */}
@@ -1492,33 +1439,32 @@ export function PaymentsClient({
           {showForm ? (
             <AddPaymentForm clients={clients} onComplete={() => setShowForm(false)} />
           ) : (
-            <div className="mb-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setShowForm(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
-              >
-                <Plus className="h-4 w-4" />
-                Add Payment
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowRetainerModal(true)}
-                title="Generate Retainer Fees"
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-card/50 px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
-              >
-                <Repeat2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Retainer</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowInstallmentModal(true)}
-                title="Generate Project Installments"
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border bg-card/50 px-3 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-emerald-500 hover:bg-emerald-500/5 hover:text-emerald-600"
-              >
-                <Layers className="h-4 w-4" />
-                <span className="hidden sm:inline">Installments</span>
-              </button>
+            <div className="mb-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Payment
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="center" className="w-56">
+                  <DropdownMenuItem onClick={() => setShowForm(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    One-time Payment
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowRetainerModal(true)}>
+                    <Repeat2 className="mr-2 h-4 w-4" />
+                    Retainer (Monthly/Annual)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowInstallmentModal(true)}>
+                    <Layers className="mr-2 h-4 w-4" />
+                    Project Installments
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
