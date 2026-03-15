@@ -41,11 +41,12 @@ Progress: [#############] 25 phases complete | v1.5.1 shipped
 | 22  | Dashboard user-scoped schedule + portal design enhancement                     | 2026-03-13 | debdc31 | [22-dashboard-user-scoped-schedule-admin-por](./quick/22-dashboard-user-scoped-schedule-admin-por/) |
 | 23  | Pipeline flow view — visual node-based view for project phases                 | 2026-03-13 | 41f8eb8 | [23-pipeline-flow-view-visual-node-based-vie](./quick/23-pipeline-flow-view-visual-node-based-vie/) |
 | 24  | Qualia Framework Pipeline loader + GSD webhook + dead code cleanup             | 2026-03-13 | 57080ea | N/A                                                                                                 |
+| 24b | Assign clients to existing projects — updateProject fix + project/client UI    | 2026-03-15 | 3419d80 | [24-assign-clients-to-existing-projects-clie](./quick/24-assign-clients-to-existing-projects-clie/) |
 
 ## Session Continuity
 
-Last session: 2026-03-10
-Stopped at: v1.5.1 milestone complete — all security hardening done
+Last session: 2026-03-15
+Stopped at: Quick task 24b complete — client-project assignment wired end-to-end
 **Next action:** Plan next milestone with `/qualia:new-milestone`
 
 ---
