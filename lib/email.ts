@@ -2091,3 +2091,263 @@ export async function sendWeeklyDigests(): Promise<{ sent: number; errors: numbe
 
   return { sent, errors };
 }
+
+// ============================================================================
+// Morning Briefing Email
+// ============================================================================
+
+interface MorningTaskItem {
+  id: string;
+  title: string;
+  priority: string;
+  due_date: string | null;
+  project_name?: string | null;
+}
+
+interface MorningMeetingItem {
+  id: string;
+  title: string;
+  start_time: string | null;
+  end_time: string | null;
+  meeting_link?: string | null;
+}
+
+/**
+ * Send a morning briefing email to a team member.
+ * Three sections: Overdue (red), Due Today (teal), Meetings.
+ * If all empty: "You're all caught up!" message.
+ */
+export async function sendMorningEmail(
+  email: string,
+  name: string,
+  overdueTasks: MorningTaskItem[],
+  todayTasks: MorningTaskItem[],
+  meetings: MorningMeetingItem[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const resendClient = getResendClient();
+    if (!resendClient) {
+      console.warn('[sendMorningEmail] Resend not configured, skipping');
+      return { success: true };
+    }
+
+    const allEmpty = overdueTasks.length === 0 && todayTasks.length === 0 && meetings.length === 0;
+
+    const priorityBadge = (priority: string) => {
+      const colors: Record<string, string> = {
+        Urgent: '#dc2626',
+        High: '#ea580c',
+        Medium: '#d97706',
+        Low: '#6b7280',
+        'No Priority': '#9ca3af',
+      };
+      const color = colors[priority] || '#9ca3af';
+      return `<span style="font-size:11px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:0.05em;">${priority}</span>`;
+    };
+
+    const formatTime = (iso: string | null) => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
+    const taskRow = (task: MorningTaskItem, accentColor: string) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="width:3px;min-height:36px;background:${accentColor};border-radius:2px;flex-shrink:0;margin-top:2px;"></div>
+            <div>
+              <div style="font-size:14px;font-weight:500;color:#111827;margin-bottom:3px;">${task.title}</div>
+              <div style="font-size:12px;color:#9ca3af;">
+                ${task.project_name ? `<span style="margin-right:8px;">📁 ${task.project_name}</span>` : ''}
+                ${priorityBadge(task.priority)}
+                ${task.due_date ? `<span style="margin-left:8px;color:${accentColor};">Due: ${task.due_date}</span>` : ''}
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+
+    const meetingRow = (meeting: MorningMeetingItem) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+          <div style="display:flex;align-items:flex-start;gap:8px;">
+            <div style="width:3px;min-height:36px;background:#00A4AC;border-radius:2px;flex-shrink:0;margin-top:2px;"></div>
+            <div>
+              <div style="font-size:14px;font-weight:500;color:#111827;margin-bottom:3px;">${meeting.title}</div>
+              <div style="font-size:12px;color:#9ca3af;">
+                ${meeting.start_time ? `<span>${formatTime(meeting.start_time)}${meeting.end_time ? ` – ${formatTime(meeting.end_time)}` : ''}</span>` : ''}
+                ${meeting.meeting_link ? `<a href="${meeting.meeting_link}" style="margin-left:8px;color:#00A4AC;text-decoration:none;">Join</a>` : ''}
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+
+    const overdueSection =
+      overdueTasks.length > 0
+        ? `
+      <div style="margin-bottom:28px;">
+        <h2 style="margin:0 0 12px;font-size:13px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:0.08em;">
+          Overdue (${overdueTasks.length})
+        </h2>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${overdueTasks.map((t) => taskRow(t, '#dc2626')).join('')}
+        </table>
+      </div>`
+        : '';
+
+    const todaySection =
+      todayTasks.length > 0
+        ? `
+      <div style="margin-bottom:28px;">
+        <h2 style="margin:0 0 12px;font-size:13px;font-weight:700;color:#00A4AC;text-transform:uppercase;letter-spacing:0.08em;">
+          Due Today (${todayTasks.length})
+        </h2>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${todayTasks.map((t) => taskRow(t, '#00A4AC')).join('')}
+        </table>
+      </div>`
+        : '';
+
+    const meetingsSection =
+      meetings.length > 0
+        ? `
+      <div style="margin-bottom:28px;">
+        <h2 style="margin:0 0 12px;font-size:13px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:0.08em;">
+          Meetings (${meetings.length})
+        </h2>
+        <table width="100%" cellpadding="0" cellspacing="0">
+          ${meetings.map((m) => meetingRow(m)).join('')}
+        </table>
+      </div>`
+        : '';
+
+    const allCaughtUp = allEmpty
+      ? `
+      <div style="text-align:center;padding:40px 0;">
+        <div style="font-size:32px;margin-bottom:12px;">✓</div>
+        <p style="margin:0;font-size:18px;font-weight:600;color:#00A4AC;">You're all caught up!</p>
+        <p style="margin:8px 0 0;color:#9ca3af;font-size:14px;">No overdue tasks, nothing due today, and no meetings.</p>
+      </div>`
+      : '';
+
+    const today = new Date();
+    const dateLabel = today.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Morning Briefing — ${dateLabel}</title>
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background-color:#f5f7f7;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f7f7;padding:32px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,164,172,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#00A4AC 0%,#008C93 100%);padding:32px 32px 24px;">
+              <p style="margin:0 0 4px;color:rgba(255,255,255,0.75);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;">Morning Briefing</p>
+              <h1 style="margin:0 0 4px;color:#ffffff;font-size:22px;font-weight:700;letter-spacing:-0.3px;">${dateLabel}</h1>
+              <p style="margin:0;color:rgba(255,255,255,0.75);font-size:14px;">Good morning, ${name}</p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              ${allCaughtUp}
+              ${overdueSection}
+              ${todaySection}
+              ${meetingsSection}
+
+              <div style="text-align:center;margin-top:8px;">
+                <a href="${APP_URL}" style="display:inline-block;background:linear-gradient(135deg,#00A4AC 0%,#008C93 100%);color:white;text-decoration:none;padding:11px 28px;border-radius:7px;font-weight:600;font-size:14px;">
+                  Open Qualia
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f5f7f7;padding:20px 32px;border-top:1px solid #e5e7eb;">
+              <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
+                Sent Monday–Friday at 6 AM UTC · <a href="${APP_URL}/settings" style="color:#00A4AC;text-decoration:none;">Manage preferences</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+
+    const textLines: string[] = [`Morning Briefing — ${dateLabel}`, `Hi ${name},`, ''];
+
+    if (allEmpty) {
+      textLines.push("You're all caught up! No overdue tasks, nothing due today, and no meetings.");
+    } else {
+      if (overdueTasks.length > 0) {
+        textLines.push(`OVERDUE (${overdueTasks.length})`);
+        overdueTasks.forEach((t) => {
+          textLines.push(
+            `- ${t.title}${t.project_name ? ` [${t.project_name}]` : ''} — ${t.priority}${t.due_date ? ` (due ${t.due_date})` : ''}`
+          );
+        });
+        textLines.push('');
+      }
+      if (todayTasks.length > 0) {
+        textLines.push(`DUE TODAY (${todayTasks.length})`);
+        todayTasks.forEach((t) => {
+          textLines.push(
+            `- ${t.title}${t.project_name ? ` [${t.project_name}]` : ''} — ${t.priority}`
+          );
+        });
+        textLines.push('');
+      }
+      if (meetings.length > 0) {
+        textLines.push(`MEETINGS (${meetings.length})`);
+        meetings.forEach((m) => {
+          const time = m.start_time ? formatTime(m.start_time) : '';
+          textLines.push(
+            `- ${m.title}${time ? ` at ${time}` : ''}${m.meeting_link ? ` — ${m.meeting_link}` : ''}`
+          );
+        });
+        textLines.push('');
+      }
+    }
+
+    textLines.push(`Open Qualia: ${APP_URL}`, '', '---', 'Sent Monday–Friday at 6 AM UTC.');
+
+    const { error } = await resendClient.emails.send({
+      from: FROM_EMAIL,
+      to: email,
+      subject: `Morning Briefing — ${dateLabel}`,
+      html,
+      text: textLines.join('\n'),
+    });
+
+    if (error) {
+      console.error(`[sendMorningEmail] Failed to send to ${email}:`, error);
+      return { success: false, error: String(error) };
+    }
+
+    console.log(`[sendMorningEmail] Sent to ${email}`);
+    return { success: true };
+  } catch (error) {
+    console.error('[sendMorningEmail] Unexpected error:', error);
+    return { success: false, error: String(error) };
+  }
+}
