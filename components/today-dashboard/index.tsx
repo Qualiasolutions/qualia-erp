@@ -140,25 +140,34 @@ export function TodayDashboard({
         <div className="flex items-center gap-1">
           {/* View As selector — admin only */}
           {isRealAdmin && (
-            <Select
-              value={viewAsUserId || '__admin__'}
-              onValueChange={(v) => setViewAsUserId(v === '__admin__' ? null : v)}
-            >
-              <SelectTrigger className="h-8 w-36 gap-1.5 text-xs">
-                <Eye className="size-3" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__admin__">Admin view</SelectItem>
-                {profiles
-                  .filter((p) => p.id !== currentUserId)
-                  .map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.full_name || 'Unknown'}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            <>
+              <span className="mx-1 hidden h-5 w-px bg-border/40 sm:inline-block" />
+              <Select
+                value={viewAsUserId || '__admin__'}
+                onValueChange={(v) => setViewAsUserId(v === '__admin__' ? null : v)}
+              >
+                <SelectTrigger
+                  className={cn(
+                    'h-8 w-36 gap-1.5 text-xs',
+                    viewAsUserId && 'border-amber-500/30 bg-amber-500/5'
+                  )}
+                >
+                  <Eye className="size-3" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__admin__">Admin view</SelectItem>
+                  {profiles
+                    .filter((p) => p.id !== currentUserId)
+                    .map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.full_name || 'Unknown'}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <span className="mx-1 hidden h-5 w-px bg-border/40 sm:inline-block" />
+            </>
           )}
           {!isNonAdmin && (
             <Button
@@ -224,7 +233,7 @@ export function TodayDashboard({
               </span>
               <button
                 type="button"
-                className="ml-auto text-xs text-amber-600 underline hover:no-underline dark:text-amber-400"
+                className="ml-auto text-xs text-amber-600 hover:underline dark:text-amber-400"
                 onClick={() => setViewAsUserId(null)}
               >
                 Exit

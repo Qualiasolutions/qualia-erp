@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
 import { ChevronDown, ChevronRight, Users, ClipboardList, Filter } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -191,11 +192,11 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
           {/* Filter bar */}
           <div className="flex flex-wrap items-center gap-2 border-b border-border/30 bg-muted/20 px-4 py-2">
             <Filter className="size-3.5 shrink-0 text-muted-foreground" />
-            <input
+            <Input
               type="date"
               value={selectedDate}
               onChange={handleDateChange}
-              className="rounded border border-border/50 bg-background px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="h-7 w-36 text-xs"
             />
             <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
               <SelectTrigger className="h-7 w-40 text-xs">
@@ -266,7 +267,7 @@ function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
             'ml-1 shrink-0 text-xs',
             isMorning
               ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400'
-              : 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-400'
+              : 'border-qualia-500/20 bg-qualia-500/5 text-qualia-600 dark:border-qualia-500/30 dark:bg-qualia-500/10 dark:text-qualia-400'
           )}
         >
           {isMorning ? 'Morning' : 'Evening'}
@@ -353,9 +354,9 @@ export function TeamTaskContainer({
   return (
     <div className="flex min-h-0 flex-1 flex-col space-y-2">
       {/* Section header */}
-      <div className="flex shrink-0 items-center gap-2">
-        <Users className="size-4 text-muted-foreground" />
-        <h2 className="text-sm font-semibold text-foreground">Team Tasks</h2>
+      <div className="flex shrink-0 items-center gap-2 border-b border-border/30 pb-2">
+        <Users className="size-4 text-qualia-500" />
+        <h2 className="text-base font-semibold text-foreground">Team Tasks</h2>
       </div>
 
       {/* Loading */}

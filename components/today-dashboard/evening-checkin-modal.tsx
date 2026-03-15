@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Moon, Loader2, AlertCircle } from 'lucide-react';
+import { Sunset, Loader2, AlertCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -70,7 +70,7 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
       >
         <DialogHeader>
           <div className="mb-1 flex items-center gap-2">
-            <Moon className="size-5 text-indigo-500" />
+            <Sunset className="size-5 text-qualia-500" />
             <DialogTitle className="text-base font-semibold">End of Day Check-in</DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -145,7 +145,7 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
             <Button
               type="submit"
               disabled={isPending || !completedTasks.trim()}
-              className="gap-2 bg-indigo-500 text-white hover:bg-indigo-600"
+              className="gap-2 bg-foreground text-background hover:bg-foreground/90"
             >
               {isPending && <Loader2 className="size-3.5 animate-spin" />}
               {isPending ? 'Submitting…' : 'Submit Check-out'}

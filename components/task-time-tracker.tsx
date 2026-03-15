@@ -118,7 +118,7 @@ export function TaskTimeTracker({
       <Button
         variant="ghost"
         size="icon"
-        className="size-6 text-muted-foreground/50 hover:text-qualia-500"
+        className="size-6 text-muted-foreground/70 hover:text-qualia-500"
         onClick={handleStart}
         disabled={pending}
         aria-label="Start timer"
