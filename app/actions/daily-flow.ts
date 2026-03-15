@@ -4,12 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import type { Task } from '@/app/actions/inbox';
 
-// Team member IDs for filtering
-const TEAM_EMAILS = {
-  fawzi: 'info@qualiasolutions.net',
-  moayad: 'moayad@qualiasolutions.net',
-} as const;
-
 export type DailyMeeting = {
   id: string;
   title: string;
@@ -35,7 +29,7 @@ export type TeamMember = {
   email: string;
   full_name: string | null;
   role: 'lead' | 'trainee';
-  colorKey: 'fawzi' | 'moayad';
+  colorKey: string;
 };
 
 export type DailyFlowData = {
@@ -141,11 +135,12 @@ export async function getDailyFlowData(): Promise<DailyFlowData> {
       .limit(1)
       .maybeSingle(),
 
-    // Get team member profiles
+    // Get team member profiles dynamically by role
     supabase
       .from('profiles')
-      .select('id, email, full_name')
-      .in('email', [TEAM_EMAILS.fawzi, TEAM_EMAILS.moayad]),
+      .select('id, email, full_name, role')
+      .eq('workspace_id', workspaceId)
+      .in('role', ['admin', 'employee']),
   ]);
 
   // Normalize meetings (handle array FK responses)
@@ -181,17 +176,14 @@ export async function getDailyFlowData(): Promise<DailyFlowData> {
     };
   }
 
-  // Build team members list
-  const teamMembers: TeamMember[] = (profilesResult.data || []).map((profile) => {
-    const isFawzi = profile.email?.toLowerCase().includes('info@qualia');
-    return {
-      id: profile.id,
-      email: profile.email || '',
-      full_name: profile.full_name,
-      role: isFawzi ? ('lead' as const) : ('trainee' as const),
-      colorKey: isFawzi ? ('fawzi' as const) : ('moayad' as const),
-    };
-  });
+  // Build team members list dynamically from DB roles
+  const teamMembers: TeamMember[] = (profilesResult.data || []).map((profile) => ({
+    id: profile.id,
+    email: profile.email || '',
+    full_name: profile.full_name,
+    role: profile.role === 'admin' ? ('lead' as const) : ('trainee' as const),
+    colorKey: profile.id,
+  }));
 
   return {
     meetings,
