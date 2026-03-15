@@ -1313,35 +1313,10 @@ export function PaymentsClient({
         {/* Right: Transactions */}
         <div className="lg:col-span-3">
           {/* Add payment */}
-          {showForm ? (
-            <AddPaymentForm clients={clients} onComplete={() => setShowForm(false)} />
-          ) : (
+          {/* Inline add form (expands when triggered) */}
+          {showForm && (
             <div className="mb-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-card/50 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-solid hover:border-qualia-500 hover:bg-qualia-500/5 hover:text-qualia-600"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Payment
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="center" className="w-56">
-                  <DropdownMenuItem onClick={() => setShowForm(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    One-time Payment
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowRetainerModal(true)}>
-                    <Repeat2 className="mr-2 h-4 w-4" />
-                    Retainer (Monthly/Annual)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowInstallmentModal(true)}>
-                    <Layers className="mr-2 h-4 w-4" />
-                    Project Installments
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <AddPaymentForm clients={clients} onComplete={() => setShowForm(false)} />
             </div>
           )}
 
@@ -1367,22 +1342,48 @@ export function PaymentsClient({
                   ({displayPayments.length})
                 </span>
               </h2>
-              <div className="flex items-center gap-1 rounded-lg bg-muted/40 p-0.5">
-                {(['all', 'pending', 'completed'] as const).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setStatusFilter(s)}
-                    className={cn(
-                      'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all',
-                      statusFilter === s
-                        ? 'bg-card text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 rounded-lg bg-muted/40 p-0.5">
+                  {(['all', 'pending', 'completed'] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setStatusFilter(s)}
+                      className={cn(
+                        'rounded-md px-2.5 py-1 text-xs font-medium capitalize transition-all',
+                        statusFilter === s
+                          ? 'bg-card text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-qualia-500/10 hover:text-qualia-600"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem onClick={() => setShowForm(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      One-time Payment
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowRetainerModal(true)}>
+                      <Repeat2 className="mr-2 h-4 w-4" />
+                      Retainer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShowInstallmentModal(true)}>
+                      <Layers className="mr-2 h-4 w-4" />
+                      Installments
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
