@@ -67,19 +67,13 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ### Active
 
-- [ ] Fix hardcoded team members in daily-flow.ts (add Hasan)
-- [ ] Wire task completion notifications
-- [ ] Workload visibility (tasks per person rollup)
-- [ ] Phase-level assignees on project_phases
-- [ ] Daily check-in mechanism (async standup)
-- [ ] Client activity timeline on client detail page
-- [ ] Review queue for admin (pending task reviews)
-- [ ] Project health dashboard page
-- [ ] Activity feed UI (workspace-wide timeline)
-- [ ] Team overview page (replace /team redirect)
-- [ ] Shift awareness indicators
-- [ ] Scheduled morning email reports (cron)
 - [ ] Delete entire learning/mentorship/XP system
+- [ ] Fix hardcoded team members in daily-flow.ts (add Hasan)
+- [ ] Daily check-in mechanism (async standup)
+- [ ] Task completion notifications
+- [ ] Scheduled morning email reports (cron)
+- [ ] Team task dashboard container (replace/enhance schedule)
+- [ ] Task time logging (start/finish timestamps)
 
 ### Out of Scope
 
@@ -105,16 +99,15 @@ All IDOR vulnerabilities patched, token-based invitations, Zod input validation,
 
 ## Current Milestone: v2.0 Team Efficiency & Owner Oversight
 
-**Goal:** Give Fawzi real-time visibility into team workload, activity, and project health — and give employees (Moayad, Hasan) clear daily structure with check-ins and phase ownership.
+**Goal:** Give Fawzi visibility into team work and give employees clear daily structure — check-ins, time logging, and a useful task dashboard.
 
 **Target features:**
 
-- Team overview page with per-person workload and assignments
-- Activity feed, review queue, and project health dashboard
-- Daily check-in mechanism for async standups across split shifts
-- Phase-level assignees and shift awareness
-- Scheduled morning email reports
 - Delete unused learning/XP system (dead weight)
+- Daily check-in prompt + owner view
+- Task completion notifications + morning email reports
+- Team task dashboard container on homepage
+- Task time logging (start/finish)
 
 ## Constraints
 
