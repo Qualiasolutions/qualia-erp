@@ -64,6 +64,13 @@ export const cacheKeys = {
   portalProjectWithPhases: (projectId: string) => `portal-project-with-phases-${projectId}`,
   portalDashboard: (clientId: string) => `portal-dashboard-${clientId}`,
   clientActionItems: (clientId: string) => ['client-action-items', clientId] as const,
+  todaysCheckins: (workspaceId: string) => `todays-checkins-${workspaceId}`,
+  checkins: (workspaceId: string, profileId?: string, date?: string) =>
+    `checkins-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
+  ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
+    `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
+  timeLogs: (taskId: string) => `time-logs-${taskId}`,
+  timeLogsBulk: (workspaceId: string) => `time-logs-bulk-${workspaceId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1346,5 +1353,165 @@ export function invalidateClientActionItems(clientId: string, immediate = true) 
     mutate(cacheKeys.clientActionItems(clientId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.clientActionItems(clientId));
+  }
+}
+
+// ============================================================================
+// DAILY CHECK-IN HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch today's check-in(s) for the current user
+ */
+export function useTodaysCheckin(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.todaysCheckins(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return [];
+      const { getTodaysCheckin } = await import('@/app/actions/checkins');
+      return getTodaysCheckin(workspaceId);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    checkins: data || [],
+    morning: data?.find((c) => c.checkin_type === 'morning') || null,
+    evening: data?.find((c) => c.checkin_type === 'evening') || null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate today's check-in cache
+ */
+export function invalidateTodaysCheckin(workspaceId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.todaysCheckins(workspaceId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.todaysCheckins(workspaceId));
+  }
+}
+
+/**
+ * Invalidate check-ins cache (admin view)
+ */
+export function invalidateCheckins(
+  workspaceId: string,
+  profileId?: string,
+  date?: string,
+  immediate = true
+) {
+  const key = cacheKeys.checkins(workspaceId, profileId, date);
+  if (immediate) {
+    mutate(key, undefined, { revalidate: true });
+  } else {
+    mutate(key);
+  }
+  // Also invalidate today's view
+  invalidateTodaysCheckin(workspaceId, immediate);
+}
+
+// ============================================================================
+// OWNER UPDATES HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch owner updates with read status
+ */
+export function useOwnerUpdates(workspaceId: string | null, unreadOnly = false) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.ownerUpdates(workspaceId, unreadOnly) : null,
+    async () => {
+      if (!workspaceId) return [];
+      const { getOwnerUpdates } = await import('@/app/actions/owner-updates');
+      return getOwnerUpdates(workspaceId, { unreadOnly });
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    updates: data || [],
+    unreadCount: (data || []).filter((u) => !u.is_read).length,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate owner updates cache
+ */
+export function invalidateOwnerUpdates(workspaceId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.ownerUpdates(workspaceId, false), undefined, { revalidate: true });
+    mutate(cacheKeys.ownerUpdates(workspaceId, true), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.ownerUpdates(workspaceId, false));
+    mutate(cacheKeys.ownerUpdates(workspaceId, true));
+  }
+}
+
+// ============================================================================
+// TIME LOG HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch time log for a specific task
+ */
+export function useTaskTimeLog(taskId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    taskId ? cacheKeys.timeLogs(taskId) : null,
+    async () => {
+      if (!taskId) return null;
+      const { getTaskTimeLog } = await import('@/app/actions/time-logs');
+      return getTaskTimeLog(taskId);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    timeLog: data || null,
+    isRunning: !!data && !data.ended_at,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate time log cache for a task
+ */
+export function invalidateTaskTimeLog(taskId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.timeLogs(taskId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.timeLogs(taskId));
   }
 }
