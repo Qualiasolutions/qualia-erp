@@ -140,7 +140,7 @@ export async function getDailyFlowData(): Promise<DailyFlowData> {
       .from('profiles')
       .select('id, email, full_name, role')
       .eq('workspace_id', workspaceId)
-      .in('role', ['admin', 'employee']),
+      .in('role', ['admin', 'employee', 'manager']),
   ]);
 
   // Normalize meetings (handle array FK responses)

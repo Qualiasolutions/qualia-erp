@@ -66,7 +66,7 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
       .from('profiles')
       .select('id, full_name, avatar_url, role')
       .eq('workspace_id', workspaceId)
-      .in('role', ['admin', 'employee'])
+      .in('role', ['admin', 'employee', 'manager'])
       .order('full_name', { ascending: true });
 
     if (profilesError || !profiles) return [];

@@ -51,7 +51,7 @@ export async function GET(request: Request) {
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, email')
-      .eq('role', 'employee');
+      .in('role', ['employee', 'manager']);
 
     if (profilesError || !profiles || profiles.length === 0) {
       console.error('[cron/blog-tasks] No employee profiles found:', profilesError);
