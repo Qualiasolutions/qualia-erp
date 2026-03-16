@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Sunset, Loader2, AlertCircle } from 'lucide-react';
+import { Sunset, Loader2, AlertCircle, Clock } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { createDailyCheckin } from '@/app/actions/checkins';
 import { invalidateTodaysCheckin } from '@/lib/swr';
+import { format } from 'date-fns';
 
 interface EveningCheckinModalProps {
   open: boolean;
@@ -27,6 +28,8 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
   const [tomorrowPlan, setTomorrowPlan] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const clockOutTime = format(new Date(), 'h:mm a');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,7 +74,7 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
         <DialogHeader>
           <div className="mb-1 flex items-center gap-2">
             <Sunset className="size-5 text-qualia-500" />
-            <DialogTitle className="text-base font-semibold">End of Day Check-in</DialogTitle>
+            <DialogTitle className="text-base font-semibold">End of Day Check-out</DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
             Quick wrap-up before you sign off. What did you get done?
@@ -79,6 +82,15 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+          {/* Clock-out time (auto) */}
+          <div className="flex items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/[0.03] px-3 py-2.5">
+            <Clock className="size-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
+              Clocking out at{' '}
+              <span className="text-qualia-600 dark:text-qualia-400">{clockOutTime}</span>
+            </span>
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="completed" className="text-sm font-medium">
               What did you complete today?{' '}
@@ -109,7 +121,7 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
             </Label>
             <Textarea
               id="wins"
-              placeholder="Something you're proud of today…"
+              placeholder="Something you're proud of today..."
               value={wins}
               onChange={(e) => setWins(e.target.value)}
               rows={2}
@@ -125,7 +137,7 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
             </Label>
             <Textarea
               id="tomorrow"
-              placeholder="What's first on the list tomorrow…"
+              placeholder="What's first on the list tomorrow..."
               value={tomorrowPlan}
               onChange={(e) => setTomorrowPlan(e.target.value)}
               rows={2}
@@ -148,7 +160,7 @@ export function EveningCheckinModal({ open, workspaceId, onSuccess }: EveningChe
               className="gap-2 bg-foreground text-background hover:bg-foreground/90"
             >
               {isPending && <Loader2 className="size-3.5 animate-spin" />}
-              {isPending ? 'Submitting…' : 'Submit Check-out'}
+              {isPending ? 'Submitting...' : 'Submit Check-out'}
             </Button>
           </div>
         </form>

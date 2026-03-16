@@ -24,6 +24,10 @@ export interface DailyCheckin {
   wins: string | null;
   tomorrow_plan: string | null;
   mood: number | null;
+  // Clock tracking
+  clock_in_time: string | null;
+  planned_clock_out_time: string | null;
+  actual_clock_out_time: string | null;
   // Metadata
   created_at: string;
   updated_at: string;
@@ -40,6 +44,7 @@ export interface CreateCheckinInput {
   planned_tasks?: string[];
   energy_level?: number | null;
   blockers?: string | null;
+  planned_clock_out_time?: string | null;
   // Evening
   completed_tasks?: string[];
   wins?: string | null;
@@ -80,12 +85,17 @@ export async function createDailyCheckin(
     if (input.planned_tasks !== undefined) payload.planned_tasks = input.planned_tasks;
     if (input.energy_level !== undefined) payload.energy_level = input.energy_level;
     if (input.blockers !== undefined) payload.blockers = input.blockers?.trim() || null;
+    // Auto-capture clock-in time
+    payload.clock_in_time = new Date().toISOString();
+    if (input.planned_clock_out_time) payload.planned_clock_out_time = input.planned_clock_out_time;
   } else {
     if (input.completed_tasks !== undefined) payload.completed_tasks = input.completed_tasks;
     if (input.wins !== undefined) payload.wins = input.wins?.trim() || null;
     if (input.tomorrow_plan !== undefined)
       payload.tomorrow_plan = input.tomorrow_plan?.trim() || null;
     if (input.mood !== undefined) payload.mood = input.mood;
+    // Auto-capture actual clock-out time
+    payload.actual_clock_out_time = new Date().toISOString();
   }
 
   const { data, error } = await supabase
@@ -243,4 +253,79 @@ export async function getCheckins(
     ...row,
     profile: Array.isArray(row.profile) ? row.profile[0] || null : row.profile,
   })) as DailyCheckin[];
+}
+
+/**
+ * Get attendance logs for admin view — paired morning/evening entries per employee per day.
+ */
+export async function getAttendanceLogs(
+  workspaceId: string,
+  options: { limit?: number; profileId?: string } = {}
+): Promise<
+  {
+    date: string;
+    profile: { id: string; full_name: string | null; avatar_url: string | null } | null;
+    clock_in_time: string | null;
+    planned_clock_out_time: string | null;
+    actual_clock_out_time: string | null;
+    completed_tasks: string[] | null;
+  }[]
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const admin = await isUserAdmin(user.id);
+  if (!admin) return [];
+
+  // Get morning check-ins (clock_in data)
+  let morningQuery = supabase
+    .from('daily_checkins')
+    .select(
+      'checkin_date, profile_id, clock_in_time, planned_clock_out_time, profile:profiles!daily_checkins_profile_id_fkey (id, full_name, avatar_url)'
+    )
+    .eq('workspace_id', workspaceId)
+    .eq('checkin_type', 'morning')
+    .order('checkin_date', { ascending: false });
+
+  if (options.profileId) morningQuery = morningQuery.eq('profile_id', options.profileId);
+  if (options.limit) morningQuery = morningQuery.limit(options.limit);
+
+  // Get evening check-ins (clock_out data)
+  let eveningQuery = supabase
+    .from('daily_checkins')
+    .select('checkin_date, profile_id, actual_clock_out_time, completed_tasks')
+    .eq('workspace_id', workspaceId)
+    .eq('checkin_type', 'evening');
+
+  if (options.profileId) eveningQuery = eveningQuery.eq('profile_id', options.profileId);
+
+  const [{ data: mornings }, { data: evenings }] = await Promise.all([morningQuery, eveningQuery]);
+
+  if (!mornings) return [];
+
+  const eveningMap = new Map<
+    string,
+    { actual_clock_out_time: string | null; completed_tasks: string[] | null }
+  >();
+  for (const e of evenings || []) {
+    eveningMap.set(`${e.profile_id}_${e.checkin_date}`, {
+      actual_clock_out_time: e.actual_clock_out_time,
+      completed_tasks: e.completed_tasks,
+    });
+  }
+
+  return mornings.map((m) => {
+    const evening = eveningMap.get(`${m.profile_id}_${m.checkin_date}`);
+    return {
+      date: m.checkin_date,
+      profile: Array.isArray(m.profile) ? m.profile[0] || null : m.profile,
+      clock_in_time: m.clock_in_time,
+      planned_clock_out_time: m.planned_clock_out_time,
+      actual_clock_out_time: evening?.actual_clock_out_time || null,
+      completed_tasks: evening?.completed_tasks || null,
+    };
+  });
 }
