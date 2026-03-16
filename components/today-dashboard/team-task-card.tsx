@@ -1,19 +1,29 @@
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday } from 'date-fns';
-import { Calendar } from 'lucide-react';
+import { Calendar, Check } from 'lucide-react';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
 import { TaskTimeTracker } from '@/components/task-time-tracker';
+import { updateTask } from '@/app/actions/inbox';
+import { invalidateTeamDashboard, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 
 interface TeamTaskCardProps {
   task: TeamMemberTask;
   currentUserId?: string | null;
   onTaskUpdate?: () => void;
+  workspaceId?: string;
 }
 
-export function TeamTaskCard({ task, currentUserId, onTaskUpdate }: TeamTaskCardProps) {
+export function TeamTaskCard({
+  task,
+  currentUserId,
+  onTaskUpdate,
+  workspaceId,
+}: TeamTaskCardProps) {
+  const [marking, setMarking] = useState(false);
   const priorityColor = ISSUE_PRIORITY_COLORS[task.priority as keyof typeof ISSUE_PRIORITY_COLORS];
   const statusColors = TASK_STATUS_COLORS[task.status as keyof typeof TASK_STATUS_COLORS];
 
@@ -47,24 +57,44 @@ export function TeamTaskCard({ task, currentUserId, onTaskUpdate }: TeamTaskCard
         title={task.priority}
       />
 
-      {/* Status circle */}
-      <span
+      {/* Status circle — clickable to mark as done */}
+      <button
+        type="button"
+        disabled={marking || task.status === 'Done'}
+        onClick={async (e) => {
+          e.stopPropagation();
+          if (marking || task.status === 'Done') return;
+          setMarking(true);
+          const fd = new FormData();
+          fd.set('id', task.id);
+          fd.set('status', 'Done');
+          const result = await updateTask(fd);
+          if (result.success) {
+            if (workspaceId) invalidateTeamDashboard(workspaceId);
+            invalidateInboxTasks(true);
+            invalidateDailyFlow(true);
+            onTaskUpdate?.();
+          }
+          setMarking(false);
+        }}
         className={cn(
-          'size-3.5 shrink-0 rounded-full border-2 transition-all duration-200',
+          'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
           statusColors
             ? `${statusColors.border} ${task.status === 'In Progress' ? 'border-blue-500' : ''}`
             : 'border-muted-foreground/30',
           task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
           task.status === 'In Progress' && 'border-blue-500',
           task.status === 'Todo' &&
-            'border-muted-foreground/30 group-hover:border-muted-foreground/50'
+            'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50',
+          marking && 'animate-pulse border-emerald-500 bg-emerald-500/20'
         )}
-        title={task.status}
+        title={task.status === 'Done' ? 'Done' : 'Mark as done'}
       >
-        {task.status === 'In Progress' && (
+        {task.status === 'Done' && <Check className="size-2 text-white" />}
+        {task.status === 'In Progress' && !marking && (
           <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
         )}
-      </span>
+      </button>
 
       {/* Title + project */}
       <div className="min-w-0 flex-1">

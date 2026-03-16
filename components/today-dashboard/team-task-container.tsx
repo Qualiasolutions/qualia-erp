@@ -216,6 +216,7 @@ function MemberGroup({
                 task={task}
                 currentUserId={currentUserId}
                 onTaskUpdate={onTaskUpdate}
+                workspaceId={workspaceId}
               />
             ))
           )}
@@ -463,9 +464,12 @@ export function TeamTaskContainer({
   }));
 
   // For employee view (or admin "view as"), find the specific member
-  const viewedMember = currentUserId
-    ? (members.find((m) => m.profile.id === currentUserId) ?? members[0])
-    : members[0];
+  // When viewing as someone, only match that specific person — don't fall back to members[0]
+  const viewedMember = viewingAs
+    ? (members.find((m) => m.profile.id === currentUserId) ?? null)
+    : currentUserId
+      ? (members.find((m) => m.profile.id === currentUserId) ?? members[0])
+      : members[0];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col space-y-3">
@@ -545,6 +549,7 @@ export function TeamTaskContainer({
                       task={task}
                       currentUserId={currentUserId}
                       onTaskUpdate={handleTaskUpdate}
+                      workspaceId={workspaceId}
                     />
                   ))}
                 </div>
