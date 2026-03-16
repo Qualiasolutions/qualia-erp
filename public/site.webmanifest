@@ -1,7 +1,7 @@
 {
-  "name": "Qualia Internal Suite",
+  "name": "Qualia Solutions",
   "short_name": "Qualia",
-  "description": "Project Planning & Management platform by Qualia Solutions",
+  "description": "Project management & client portal by Qualia Solutions",
   "start_url": "/",
   "scope": "/",
   "icons": [
@@ -22,7 +22,7 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#050505",
-  "background_color": "#050505",
+  "theme_color": "#00A4AC",
+  "background_color": "#121819",
   "display": "standalone"
 }
