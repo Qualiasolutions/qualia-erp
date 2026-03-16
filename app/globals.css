@@ -21,38 +21,40 @@
   }
 
   :root {
-    /* Light mode — Warm teal-tinted surfaces */
-    --background: 185 8% 95%;
-    --foreground: 190 20% 10%;
-    --card: 180 4% 99%;
-    --card-foreground: 190 20% 10%;
-    --popover: 180 4% 99%;
-    --popover-foreground: 190 20% 10%;
+    /* Light mode — Warm teal-tinted surfaces
+       Border is intentionally dark (58% L) because components use border-border/40 everywhere.
+       At 40% opacity over ~96% bg, effective border ≈ 81% L — visible but subtle. */
+    --background: 185 5% 96%;
+    --foreground: 190 15% 13%;
+    --card: 185 4% 99%;
+    --card-foreground: 190 15% 13%;
+    --popover: 185 4% 99%;
+    --popover-foreground: 190 15% 13%;
     --primary: 174 60% 34%;
     --primary-foreground: 180 6% 99%;
-    --secondary: 185 8% 92%;
-    --secondary-foreground: 185 12% 25%;
-    --muted: 185 6% 90%;
-    --muted-foreground: 185 8% 38%;
-    --accent: 174 18% 94%;
-    --accent-foreground: 174 55% 24%;
+    --secondary: 185 6% 92%;
+    --secondary-foreground: 185 10% 22%;
+    --muted: 185 5% 91%;
+    --muted-foreground: 185 6% 35%;
+    --accent: 174 14% 94%;
+    --accent-foreground: 174 55% 22%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 180 6% 99%;
-    --border: 185 12% 78%;
-    --input: 185 10% 82%;
+    --border: 185 6% 58%;
+    --input: 185 6% 68%;
     --ring: 174 60% 34%;
     --radius: 0.625rem;
 
     /* Status colors — tinted toward brand */
-    --success: 155 55% 40%;
-    --warning: 40 82% 48%;
-    --info: 200 70% 46%;
+    --success: 155 55% 38%;
+    --warning: 40 82% 46%;
+    --info: 200 70% 44%;
 
-    /* Surface layers — subtle warm tinting */
-    --surface-1: 180 4% 99%;
-    --surface-2: 185 6% 96%;
-    --surface-3: 185 5% 93%;
-    --surface-hover: 180 6% 95%;
+    /* Surface layers — more contrast spread for visible depth */
+    --surface-1: 185 4% 99%;
+    --surface-2: 185 4% 95.5%;
+    --surface-3: 185 4% 92%;
+    --surface-hover: 185 4% 94%;
 
     /* Motion system — exponential deceleration only (Impeccable) */
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
