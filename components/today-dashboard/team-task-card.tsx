@@ -28,14 +28,20 @@ export function TeamTaskCard({ task, currentUserId, onTaskUpdate }: TeamTaskCard
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 px-4 py-2.5 transition-colors duration-100',
-        'hover:bg-muted/40'
+        'group relative flex items-center gap-3 px-4 py-2.5 transition-all duration-200',
+        'hover:bg-muted/30',
+        task.status === 'In Progress' && 'bg-blue-500/[0.02]'
       )}
     >
+      {/* Active task left accent */}
+      {task.status === 'In Progress' && (
+        <div className="absolute inset-y-0 left-0 w-[2px] rounded-r-full bg-blue-500/60" />
+      )}
+
       {/* Priority dot */}
       <span
         className={cn(
-          'size-2 shrink-0 rounded-full',
+          'group-hover:ring-current/10 size-1.5 shrink-0 rounded-full ring-2 ring-transparent transition-all duration-200',
           priorityColor ? priorityColor.icon.replace('text-', 'bg-') : 'bg-slate-300'
         )}
         title={task.priority}
@@ -44,13 +50,14 @@ export function TeamTaskCard({ task, currentUserId, onTaskUpdate }: TeamTaskCard
       {/* Status circle */}
       <span
         className={cn(
-          'size-3.5 shrink-0 rounded-full border-2',
+          'size-3.5 shrink-0 rounded-full border-2 transition-all duration-200',
           statusColors
             ? `${statusColors.border} ${task.status === 'In Progress' ? 'border-blue-500' : ''}`
             : 'border-muted-foreground/30',
           task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
           task.status === 'In Progress' && 'border-blue-500',
-          task.status === 'Todo' && 'border-muted-foreground/40'
+          task.status === 'Todo' &&
+            'border-muted-foreground/30 group-hover:border-muted-foreground/50'
         )}
         title={task.status}
       >
@@ -63,33 +70,34 @@ export function TeamTaskCard({ task, currentUserId, onTaskUpdate }: TeamTaskCard
       <div className="min-w-0 flex-1">
         <span
           className={cn(
-            'block truncate text-sm font-medium leading-tight text-foreground',
-            task.status === 'Done' && 'text-muted-foreground line-through'
+            'block truncate text-[13px] font-medium leading-tight text-foreground transition-colors duration-200',
+            task.status === 'Done' && 'text-muted-foreground/60 line-through',
+            task.status === 'In Progress' && 'text-foreground'
           )}
         >
           {task.title}
         </span>
         {task.project && (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+          <span className="mt-0.5 block truncate text-[11px] text-muted-foreground/60 transition-colors duration-200 group-hover:text-muted-foreground/80">
             {task.project.name}
           </span>
         )}
       </div>
 
       {/* Right side: due date + time spent */}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 opacity-80 transition-opacity duration-200 group-hover:opacity-100">
         {task.due_date && (
           <span
             className={cn(
-              'flex items-center gap-1 rounded px-1.5 py-0.5 text-xs tabular-nums',
+              'flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium tabular-nums',
               isOverdue
-                ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+                ? 'bg-red-500/8 text-red-600 ring-1 ring-inset ring-red-500/15 dark:bg-red-500/10 dark:text-red-400'
                 : isDueToday
-                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
-                  : 'bg-muted text-muted-foreground'
+                  ? 'bg-amber-500/8 text-amber-700 ring-1 ring-inset ring-amber-500/15 dark:bg-amber-500/10 dark:text-amber-400'
+                  : 'bg-muted/60 text-muted-foreground/70'
             )}
           >
-            <Calendar className="size-3" />
+            <Calendar className="size-2.5" />
             {format(new Date(task.due_date), 'MMM d')}
           </span>
         )}

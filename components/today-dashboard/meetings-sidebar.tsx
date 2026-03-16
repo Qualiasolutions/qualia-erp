@@ -52,15 +52,15 @@ export function MeetingsSidebar({ meetings }: MeetingsSidebarProps) {
   const now = new Date();
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border/20 px-4 py-3">
         <div className="flex size-7 items-center justify-center rounded-lg bg-violet-500/10">
           <Video className="size-3.5 text-violet-500" strokeWidth={1.5} />
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-foreground">Meetings</h2>
-          <p className="text-[10px] text-muted-foreground">{todayMeetings.length} today</p>
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">Meetings</h2>
+          <p className="text-[10px] text-muted-foreground/60">{todayMeetings.length} today</p>
         </div>
       </div>
 
@@ -186,9 +186,9 @@ export function MeetingsSidebar({ meetings }: MeetingsSidebarProps) {
       </div>
 
       {/* Bottom summary */}
-      <div className="shrink-0 border-t border-border/50 px-4 py-2">
+      <div className="shrink-0 border-t border-border/20 bg-muted/10 px-4 py-2">
         <div className="flex items-center justify-between">
-          <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+          <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/40">
             {
               todayMeetings.filter((m) => {
                 const end = toZonedTime(parseISO(m.end_time), timezone);

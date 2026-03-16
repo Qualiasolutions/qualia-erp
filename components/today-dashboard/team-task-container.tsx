@@ -2,15 +2,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
-import {
-  ChevronDown,
-  ChevronRight,
-  Users,
-  ClipboardList,
-  Filter,
-  Plus,
-  Loader2,
-} from 'lucide-react';
+import { ChevronDown, Users, ClipboardList, Filter, Plus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -182,38 +174,41 @@ function MemberGroup({
     : '?';
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/40 bg-card">
+    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md">
       {/* Header */}
       <button
         type="button"
-        className="flex w-full items-center gap-3 border-b border-border/40 px-4 py-3 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-center gap-3 border-b border-border/20 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
         onClick={() => setOpen((v) => !v)}
       >
-        <Avatar className="size-7 shrink-0">
+        <Avatar className="size-7 shrink-0 ring-1 ring-border/20">
           <AvatarImage
             src={profile.avatar_url ?? undefined}
             alt={profile.full_name ?? 'Team member'}
           />
-          <AvatarFallback className="text-xs font-medium">{initials}</AvatarFallback>
+          <AvatarFallback className="text-[10px] font-semibold">{initials}</AvatarFallback>
         </Avatar>
-        <span className="flex-1 text-sm font-semibold text-foreground">
+        <span className="flex-1 text-[13px] font-semibold tracking-tight text-foreground">
           {profile.full_name ?? 'Unknown'}
         </span>
-        <Badge variant="secondary" className="shrink-0 text-xs">
+        <span className="shrink-0 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
           {tasks.length}
-        </Badge>
-        {open ? (
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-        )}
+        </span>
+        <ChevronDown
+          className={cn(
+            'size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
+            !open && '-rotate-90'
+          )}
+        />
       </button>
 
       {/* Tasks + inline add */}
       {open && (
-        <div className="divide-y divide-border/30">
+        <div className="divide-y divide-border/20">
           {tasks.length === 0 ? (
-            <p className="px-4 py-4 text-center text-xs text-muted-foreground">No active tasks</p>
+            <p className="px-4 py-4 text-center text-xs text-muted-foreground/60">
+              No active tasks
+            </p>
           ) : (
             tasks.map((task) => (
               <TeamTaskCard
@@ -280,20 +275,25 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
       : checkins.filter((c) => c.profile_id === selectedProfileId);
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/40 bg-card">
+    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
       {/* Header toggle */}
       <button
         type="button"
-        className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
         onClick={handleOpen}
       >
-        <ClipboardList className="size-4 shrink-0 text-muted-foreground" />
-        <span className="flex-1 text-sm font-semibold text-foreground">Today&apos;s Check-ins</span>
-        {open ? (
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-        )}
+        <div className="flex size-6 items-center justify-center rounded-md bg-muted/40">
+          <ClipboardList className="size-3.5 shrink-0 text-muted-foreground/70" />
+        </div>
+        <span className="flex-1 text-[13px] font-semibold tracking-tight text-foreground">
+          Today&apos;s Check-ins
+        </span>
+        <ChevronDown
+          className={cn(
+            'size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
+            !open && '-rotate-90'
+          )}
+        />
       </button>
 
       {open && (
@@ -468,11 +468,22 @@ export function TeamTaskContainer({
     : members[0];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col space-y-2">
+    <div className="flex min-h-0 flex-1 flex-col space-y-3">
       {/* Section header */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border/30 pb-2">
-        <Users className="size-4 text-qualia-500" />
-        <h2 className="text-base font-semibold text-foreground">Team Tasks</h2>
+      <div className="flex shrink-0 items-center gap-2.5 pb-1">
+        <div className="flex size-7 items-center justify-center rounded-lg bg-qualia-500/10">
+          <Users className="size-3.5 text-qualia-500" />
+        </div>
+        <h2 className="text-sm font-semibold tracking-tight text-foreground">
+          {viewingAs ? 'My Tasks' : 'Team Tasks'}
+        </h2>
+        {!isLoading && !isError && (
+          <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
+            {isAdmin
+              ? members.reduce((sum, m) => sum + m.tasks.length, 0)
+              : (viewedMember?.tasks.length ?? 0)}
+          </span>
+        )}
       </div>
 
       {/* Loading */}
@@ -490,20 +501,25 @@ export function TeamTaskContainer({
             <>
               {/* Admin: grouped by person */}
               {members.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-lg border border-border/40 bg-card py-10 text-center">
-                  <Users className="mb-2 size-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">No team members found</p>
+                <div className="flex flex-col items-center justify-center rounded-xl border border-border/30 bg-card py-10 text-center">
+                  <Users className="mb-2 size-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground/70">No team members found</p>
                 </div>
               ) : (
-                members.map((member) => (
-                  <MemberGroup
+                members.map((member, i) => (
+                  <div
                     key={member.profile.id}
-                    member={member}
-                    workspaceId={workspaceId}
-                    defaultOpen
-                    currentUserId={currentUserId}
-                    onTaskUpdate={handleTaskUpdate}
-                  />
+                    className="animate-stagger-in"
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    <MemberGroup
+                      member={member}
+                      workspaceId={workspaceId}
+                      defaultOpen
+                      currentUserId={currentUserId}
+                      onTaskUpdate={handleTaskUpdate}
+                    />
+                  </div>
                 ))
               )}
 
@@ -512,17 +528,17 @@ export function TeamTaskContainer({
             </>
           ) : (
             /* Employee: flat list of own tasks (or admin "view as" filtered) */
-            <div className="overflow-hidden rounded-lg border border-border/40 bg-card">
+            <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
               {!viewedMember || viewedMember.tasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <ClipboardList className="mb-2 size-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">No active tasks</p>
-                  <p className="mt-1 text-xs text-muted-foreground/60">
+                  <ClipboardList className="mb-2 size-8 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground/70">No active tasks</p>
+                  <p className="mt-1 text-xs text-muted-foreground/50">
                     All caught up — great work!
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-border/30">
+                <div className="divide-y divide-border/20">
                   {viewedMember.tasks.map((task) => (
                     <TeamTaskCard
                       key={task.id}

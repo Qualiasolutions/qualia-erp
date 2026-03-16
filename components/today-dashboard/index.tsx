@@ -115,7 +115,7 @@ export function TodayDashboard({
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl">
+      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border/30 bg-card/70 px-6 py-3.5 backdrop-blur-2xl backdrop-saturate-150">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button
@@ -128,28 +128,30 @@ export function TodayDashboard({
           </Button>
 
           <div className="flex items-center gap-3">
-            <h1 className="text-base font-semibold text-foreground">{greeting}</h1>
-            <span className="hidden h-4 w-px bg-border/60 sm:inline-block" />
-            <span className="hidden text-sm tabular-nums text-muted-foreground sm:inline">
+            <h1 className="text-base font-semibold tracking-tight text-foreground">{greeting}</h1>
+            <span className="hidden h-4 w-px bg-border/40 sm:inline-block" />
+            <span className="hidden text-sm tabular-nums text-muted-foreground/70 sm:inline">
               {format(now, 'EEEE, MMMM d')}
             </span>
           </div>
         </div>
 
         {/* Right */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {/* View As selector — admin only */}
           {isRealAdmin && (
             <>
-              <span className="mx-1 hidden h-5 w-px bg-border/40 sm:inline-block" />
+              <span className="mx-1 hidden h-5 w-px bg-border/30 sm:inline-block" />
               <Select
                 value={viewAsUserId || '__admin__'}
                 onValueChange={(v) => setViewAsUserId(v === '__admin__' ? null : v)}
               >
                 <SelectTrigger
                   className={cn(
-                    'h-8 w-36 gap-1.5 text-xs',
-                    viewAsUserId && 'border-amber-500/30 bg-amber-500/5'
+                    'h-8 w-36 gap-1.5 rounded-lg text-xs transition-all duration-200',
+                    viewAsUserId
+                      ? 'bg-amber-500/8 border-amber-500/40 text-amber-700 dark:text-amber-300'
+                      : 'border-border/40'
                   )}
                 >
                   <Eye className="size-3" />
@@ -166,14 +168,14 @@ export function TodayDashboard({
                     ))}
                 </SelectContent>
               </Select>
-              <span className="mx-1 hidden h-5 w-px bg-border/40 sm:inline-block" />
+              <span className="mx-1 hidden h-5 w-px bg-border/30 sm:inline-block" />
             </>
           )}
           {!isNonAdmin && (
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5"
+              className="gap-1.5 rounded-lg border-border/40 transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
               onClick={() => setShowNewTaskModal(true)}
             >
               <Plus className="size-3.5" />
@@ -186,11 +188,16 @@ export function TodayDashboard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-8 min-h-[44px] min-w-[44px]"
+                  className="size-8 min-h-[44px] min-w-[44px] transition-all duration-200"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                 >
-                  <RefreshCw className={cn('size-3.5', isRefreshing && 'animate-spin')} />
+                  <RefreshCw
+                    className={cn(
+                      'size-3.5 transition-transform duration-500',
+                      isRefreshing && 'animate-spin'
+                    )}
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Refresh</TooltipContent>
@@ -226,14 +233,19 @@ export function TodayDashboard({
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-col px-5 py-3 sm:px-6">
           {/* "Viewing as" indicator */}
           {viewingAsEmployee && (
-            <div className="mb-2 flex shrink-0 items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-1.5">
-              <Eye className="size-3.5 text-amber-600" />
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">
-                Viewing as {profiles.find((p) => p.id === viewAsUserId)?.full_name || 'employee'}
+            <div className="bg-amber-500/6 mb-3 flex shrink-0 animate-slide-up items-center gap-2.5 rounded-lg border border-amber-500/25 px-4 py-2 backdrop-blur-sm">
+              <div className="flex size-6 items-center justify-center rounded-md bg-amber-500/15">
+                <Eye className="size-3 text-amber-600 dark:text-amber-400" />
+              </div>
+              <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                Viewing as{' '}
+                <span className="font-semibold">
+                  {profiles.find((p) => p.id === viewAsUserId)?.full_name || 'employee'}
+                </span>
               </span>
               <button
                 type="button"
-                className="ml-auto text-xs text-amber-600 hover:underline dark:text-amber-400"
+                className="ml-auto rounded-md px-2 py-0.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10 dark:text-amber-400"
                 onClick={() => setViewAsUserId(null)}
               >
                 Exit
@@ -274,7 +286,7 @@ export function TodayDashboard({
 
           {/* ── FULL-WIDTH BOTTOM: Currently Building + Post Update (admin) ── */}
           {!isNonAdmin && (
-            <div className="mt-3 flex shrink-0 flex-col gap-3 sm:flex-row sm:items-stretch">
+            <div className="mt-4 flex shrink-0 animate-fade-in flex-col gap-3 sm:flex-row sm:items-stretch">
               <div className="min-w-0 flex-1">
                 <BuildingProjectsRow building={building} />
               </div>

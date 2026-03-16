@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { ChevronDown, ChevronRight, Send } from 'lucide-react';
+import { ChevronDown, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -61,24 +61,25 @@ export function OwnerUpdatesCompose({ workspaceId, profiles }: OwnerUpdatesCompo
   };
 
   return (
-    <div className="h-full overflow-hidden rounded-xl border border-border/50 bg-card shadow-elevation-1">
+    <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
       {/* Toggle header */}
       <button
         type="button"
-        className="flex w-full items-center gap-2.5 border-b border-border/30 bg-muted/20 px-4 py-3 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-center gap-2.5 border-b border-border/20 bg-muted/10 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/15">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
           <Send className="size-3.5 shrink-0 text-qualia-500" />
         </div>
-        <span className="flex-1 text-[13px] font-semibold text-foreground">
+        <span className="flex-1 text-[13px] font-semibold tracking-tight text-foreground">
           Post update to team
         </span>
-        {open ? (
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-        )}
+        <ChevronDown
+          className={cn(
+            'size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
+            !open && '-rotate-90'
+          )}
+        />
       </button>
 
       {open && (
