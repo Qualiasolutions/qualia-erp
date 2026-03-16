@@ -302,7 +302,7 @@ export function TodayDashboard({
       <NewTaskModalControlled
         open={showNewTaskModal}
         onOpenChange={setShowNewTaskModal}
-        defaultAssigneeId={null}
+        defaultAssigneeId={viewAsUserId}
         defaultScheduledTime={null}
       />
 
