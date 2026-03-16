@@ -68,7 +68,7 @@ export function TodayDashboard({
 
   // "View as" — admin can preview employee's task list, but keeps admin layout
   const effectiveUserId = viewAsUserId || currentUserId;
-  const effectiveRole = userRole; // Admin always keeps admin role
+  const effectiveRole = userRole; // Admin keeps admin layout
   const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
 
@@ -257,6 +257,7 @@ export function TodayDashboard({
                 workspaceId={workspaceId}
                 userRole={effectiveRole}
                 currentUserId={effectiveUserId}
+                viewingAs={viewingAsEmployee}
               />
             </div>
 

@@ -1,8 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
-import { ChevronDown, ChevronRight, Users, ClipboardList, Filter } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  Users,
+  ClipboardList,
+  Filter,
+  Plus,
+  Loader2,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -14,7 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTeamTaskDashboard } from '@/lib/swr';
+import {
+  useTeamTaskDashboard,
+  invalidateInboxTasks,
+  invalidateDailyFlow,
+  invalidateTeamDashboard,
+} from '@/lib/swr';
+import { createTask } from '@/app/actions/inbox';
 import { TeamTaskCard } from './team-task-card';
 import type { TeamMemberTasks } from '@/app/actions/team-dashboard';
 import type { DailyCheckin } from '@/app/actions/checkins';
@@ -50,10 +64,99 @@ function TeamTaskSkeleton() {
   );
 }
 
+// ─── Inline Quick-Add ─────────────────────────────────────────────────────────
+
+interface InlineTaskAddProps {
+  assigneeId: string;
+  workspaceId: string;
+  onCreated?: () => void;
+}
+
+function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProps) {
+  const [active, setActive] = useState(false);
+  const [value, setValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSubmit = async () => {
+    const trimmed = value.trim();
+    if (!trimmed || loading) return;
+
+    setLoading(true);
+    const fd = new FormData();
+    fd.set('title', trimmed);
+    fd.set('status', 'Todo');
+    fd.set('show_in_inbox', 'true');
+    fd.set('assignee_id', assigneeId);
+    fd.set('due_date', format(new Date(), 'yyyy-MM-dd'));
+
+    const result = await createTask(fd);
+    setLoading(false);
+
+    if (result.success) {
+      setValue('');
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+      invalidateTeamDashboard(workspaceId);
+      onCreated?.();
+      // Keep input focused for rapid entry
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+    if (e.key === 'Escape') {
+      setValue('');
+      setActive(false);
+    }
+  };
+
+  if (!active) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setActive(true);
+          setTimeout(() => inputRef.current?.focus(), 50);
+        }}
+        className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs text-muted-foreground/50 transition-colors hover:bg-muted/30 hover:text-muted-foreground"
+      >
+        <Plus className="size-3" />
+        <span>Add task</span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-2">
+      <Plus className="size-3 shrink-0 text-muted-foreground/40" />
+      <input
+        ref={inputRef}
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => {
+          if (!value.trim()) setActive(false);
+        }}
+        placeholder="Task name — Enter to create, Esc to cancel"
+        disabled={loading}
+        className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+      />
+      {loading && <Loader2 className="size-3 shrink-0 animate-spin text-primary" />}
+    </div>
+  );
+}
+
 // ─── Member Group (Admin view) ────────────────────────────────────────────────
 
 interface MemberGroupProps {
   member: TeamMemberTasks;
+  workspaceId: string;
   defaultOpen?: boolean;
   currentUserId?: string | null;
   onTaskUpdate?: () => void;
@@ -61,6 +164,7 @@ interface MemberGroupProps {
 
 function MemberGroup({
   member,
+  workspaceId,
   defaultOpen = true,
   currentUserId,
   onTaskUpdate,
@@ -105,7 +209,7 @@ function MemberGroup({
         )}
       </button>
 
-      {/* Tasks */}
+      {/* Tasks + inline add */}
       {open && (
         <div className="divide-y divide-border/30">
           {tasks.length === 0 ? (
@@ -120,6 +224,11 @@ function MemberGroup({
               />
             ))
           )}
+          <InlineTaskAdd
+            assigneeId={profile.id}
+            workspaceId={workspaceId}
+            onCreated={onTaskUpdate}
+          />
         </div>
       )}
     </div>
@@ -331,14 +440,16 @@ interface TeamTaskContainerProps {
   workspaceId: string;
   userRole: string | null;
   currentUserId?: string | null;
+  viewingAs?: boolean;
 }
 
 export function TeamTaskContainer({
   workspaceId,
   userRole,
   currentUserId,
+  viewingAs = false,
 }: TeamTaskContainerProps) {
-  const isAdmin = userRole === 'admin';
+  const isAdmin = userRole === 'admin' && !viewingAs;
   const { members, isLoading, isError, revalidate } = useTeamTaskDashboard(workspaceId);
 
   const handleTaskUpdate = useCallback(() => {
@@ -388,6 +499,7 @@ export function TeamTaskContainer({
                   <MemberGroup
                     key={member.profile.id}
                     member={member}
+                    workspaceId={workspaceId}
                     defaultOpen
                     currentUserId={currentUserId}
                     onTaskUpdate={handleTaskUpdate}
