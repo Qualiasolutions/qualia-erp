@@ -114,7 +114,7 @@ function getPhaseStatusConfig(status: string) {
     ring: 'ring-muted-foreground/10',
     text: 'text-muted-foreground',
     bg: 'bg-card',
-    border: 'border-border/40',
+    border: 'border-border',
     label: 'Upcoming',
     icon: Circle,
   };
@@ -146,9 +146,7 @@ function DeliverableItem({ item }: { item: PhaseItem }) {
           {item.title}
         </p>
         {item.description && (
-          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/70">
-            {item.description}
-          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
         )}
       </div>
       {isDone && item.completed_at && (
@@ -322,7 +320,7 @@ function PhaseWithComments({
 
           {/* Dates */}
           {(phase.start_date || phase.target_date) && (
-            <div className="mt-3 flex flex-wrap gap-4 border-t border-border/30 pt-3 text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap gap-4 border-t border-border pt-3 text-xs text-muted-foreground">
               {phase.start_date && (
                 <span className="flex items-center gap-1.5">
                   <Clock className="size-3" />
@@ -339,7 +337,7 @@ function PhaseWithComments({
           )}
 
           {/* Comments toggle */}
-          <div className="mt-3 border-t border-border/30 pt-3">
+          <div className="mt-3 border-t border-border pt-3">
             <button
               onClick={() => setCommentsOpen(!commentsOpen)}
               className="flex w-full items-center justify-between rounded-md px-1 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -411,7 +409,7 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {/* Overall progress */}
-      <div className="col-span-2 rounded-xl border border-border/40 bg-card p-4 sm:col-span-1">
+      <div className="col-span-2 rounded-xl border border-border bg-card p-4 sm:col-span-1">
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Overall
         </p>
@@ -436,7 +434,7 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
       </div>
 
       {/* Phases */}
-      <div className="rounded-xl border border-border/40 bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Phases
         </p>
@@ -447,7 +445,7 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
       </div>
 
       {/* Deliverables */}
-      <div className="rounded-xl border border-border/40 bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Deliverables
         </p>
@@ -458,7 +456,7 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
       </div>
 
       {/* Current phase */}
-      <div className="rounded-xl border border-border/40 bg-card p-4">
+      <div className="rounded-xl border border-border bg-card p-4">
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           Current
         </p>
@@ -487,7 +485,7 @@ export function PortalRoadmap({
       <div className="space-y-6">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse rounded-xl border border-border/40 bg-card p-4">
+            <div key={i} className="animate-pulse rounded-xl border border-border bg-card p-4">
               <div className="h-3 w-16 rounded bg-muted" />
               <div className="mt-3 h-7 w-12 rounded bg-muted" />
             </div>
@@ -497,7 +495,7 @@ export function PortalRoadmap({
           {[0, 1, 2].map((i) => (
             <div key={i} className="flex gap-5">
               <div className="size-9 shrink-0 animate-pulse rounded-full bg-muted" />
-              <div className="flex-1 animate-pulse rounded-xl border border-border/40 bg-card p-5">
+              <div className="flex-1 animate-pulse rounded-xl border border-border bg-card p-5">
                 <div className="h-5 w-48 rounded bg-muted" />
                 <div className="mt-3 h-4 w-full rounded bg-muted" />
                 <div className="mt-2 h-4 w-3/4 rounded bg-muted" />
@@ -516,7 +514,7 @@ export function PortalRoadmap({
   return (
     <div className="space-y-6">
       {/* Project overview */}
-      <div className="relative rounded-xl border border-border/40 bg-card p-5 sm:p-6">
+      <div className="relative rounded-xl border border-border bg-card p-5 sm:p-6">
         {isValidating && (
           <div className="absolute right-4 top-4">
             <span className="relative flex size-2">

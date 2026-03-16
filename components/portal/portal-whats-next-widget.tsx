@@ -24,7 +24,7 @@ interface WhatsNextWidgetProps {
 
 function ProjectPhaseSkeleton() {
   return (
-    <div className="space-y-3 rounded-lg border border-border/40 bg-card px-5 py-4">
+    <div className="space-y-3 rounded-lg border border-border bg-card px-5 py-4">
       <Skeleton className="h-3 w-24" />
       <Skeleton className="h-8 w-16" />
       <Skeleton className="h-1 w-full rounded-full" />
@@ -41,20 +41,20 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
   const hasPhases = project.totalPhases > 0;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card px-5 py-5 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1">
+    <div className="rounded-xl border border-border bg-card px-5 py-5 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1">
       {/* Project name */}
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/50">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         {project.name}
       </p>
 
       {!hasPhases ? (
-        <p className="text-[13px] text-muted-foreground/60">No phases configured</p>
+        <p className="text-[13px] text-muted-foreground">No phases configured</p>
       ) : (
         <>
           {/* Hero progress number */}
           <p className="mb-3 text-3xl font-semibold tabular-nums leading-none text-foreground">
             {progressPct}
-            <span className="text-lg text-muted-foreground/40">%</span>
+            <span className="text-lg text-muted-foreground/70">%</span>
           </p>
 
           {/* Progress bar */}
@@ -69,7 +69,7 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
           <div className="flex items-start justify-between gap-4">
             {/* Current phase */}
             <div className="min-w-0 flex-1">
-              <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/40">
+              <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 Now
               </p>
               {project.currentPhase ? (
@@ -86,7 +86,7 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
 
             {/* Next phase */}
             <div className="min-w-0 flex-1 text-right">
-              <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/40">
+              <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
                 Next
               </p>
               <p

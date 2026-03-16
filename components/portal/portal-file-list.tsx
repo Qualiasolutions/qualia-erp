@@ -30,7 +30,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   const getFileIcon = (mimeType: string | null) => {
-    if (!mimeType) return <File className="h-8 w-8 text-muted-foreground/60" />;
+    if (!mimeType) return <File className="h-8 w-8 text-muted-foreground" />;
 
     if (mimeType.startsWith('image/')) {
       return <FileImage className="h-8 w-8 text-blue-500" />;
@@ -48,7 +48,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
       return <FileText className="h-8 w-8 text-red-500" />;
     }
 
-    return <File className="h-8 w-8 text-muted-foreground/60" />;
+    return <File className="h-8 w-8 text-muted-foreground" />;
   };
 
   const handleDownload = async (fileId: string, fileName: string) => {

@@ -36,10 +36,10 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
       <div className="flex min-h-[350px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
-            <Briefcase className="h-5 w-5 text-muted-foreground/40" />
+            <Briefcase className="h-5 w-5 text-muted-foreground/70" />
           </div>
           <p className="text-sm font-medium text-foreground">No projects yet</p>
-          <p className="mt-1 text-[13px] text-muted-foreground/60">
+          <p className="mt-1 text-[13px] text-muted-foreground">
             Projects will appear here once you&apos;ve been granted access.
           </p>
         </div>
@@ -49,7 +49,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
 
   return (
     <div
-      className={`divide-y divide-border/20 overflow-hidden rounded-xl border border-border/40 ${fadeInClasses}`}
+      className={`divide-y divide-border/20 overflow-hidden rounded-xl border border-border ${fadeInClasses}`}
     >
       {projects.map((clientProject, index) => {
         const project = Array.isArray(clientProject.project)
@@ -84,7 +84,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                 </Badge>
               </div>
               {project.description && (
-                <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground/50">
+                <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">
                   {project.description}
                 </p>
               )}
@@ -96,7 +96,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                       style={{ width: `${progress}%` }}
                     />
                   </div>
-                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/50">
+                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                     {progress}%
                   </span>
                 </div>
@@ -104,7 +104,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             </div>
 
             {/* Type */}
-            <span className="hidden text-[11px] capitalize text-muted-foreground/40 sm:block">
+            <span className="hidden text-[11px] capitalize text-muted-foreground/70 sm:block">
               {project.project_type?.replace(/_/g, ' ')}
             </span>
 
@@ -118,12 +118,12 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                   />
                 ) : null}
               </div>
-              <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground/40">
+              <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground/70">
                 {progress > 0 ? `${progress}%` : '—'}
               </span>
             </div>
 
-            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
+            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
           </Link>
         );
       })}

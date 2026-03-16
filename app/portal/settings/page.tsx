@@ -188,7 +188,7 @@ export default function PortalSettingsPage() {
   if (loading) {
     return (
       <div className="flex h-[400px] items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/40" />
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground/70" />
       </div>
     );
   }
@@ -197,7 +197,7 @@ export default function PortalSettingsPage() {
     <div className="mx-auto max-w-2xl space-y-10">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground/60">
+        <p className="mt-1 text-[13px] text-muted-foreground">
           Manage your account and notification preferences
         </p>
       </div>
@@ -210,13 +210,13 @@ export default function PortalSettingsPage() {
           </div>
           <div>
             <h2 className="text-sm font-medium text-foreground">Profile Information</h2>
-            <p className="text-[12px] text-muted-foreground/50">Update your personal details</p>
+            <p className="text-[12px] text-muted-foreground">Update your personal details</p>
           </div>
         </div>
 
         <form
           onSubmit={handleProfileSubmit}
-          className="space-y-4 rounded-xl border border-border/40 bg-card p-5"
+          className="space-y-4 rounded-xl border border-border bg-card p-5"
         >
           <div className="space-y-1.5">
             <Label htmlFor="full_name" className="text-[13px]">
@@ -244,7 +244,7 @@ export default function PortalSettingsPage() {
               disabled
               className="h-9 bg-muted/50"
             />
-            <p className="text-[11px] text-muted-foreground/40">
+            <p className="text-[11px] text-muted-foreground/70">
               Email cannot be changed. Contact support if you need to update it.
             </p>
           </div>
@@ -294,7 +294,7 @@ export default function PortalSettingsPage() {
           </div>
           <div>
             <h2 className="text-sm font-medium text-foreground">Notification Preferences</h2>
-            <p className="text-[12px] text-muted-foreground/50">
+            <p className="text-[12px] text-muted-foreground">
               Choose which notifications you receive
             </p>
           </div>
@@ -302,7 +302,7 @@ export default function PortalSettingsPage() {
 
         <form
           onSubmit={handleNotificationSubmit}
-          className="rounded-xl border border-border/40 bg-card"
+          className="rounded-xl border border-border bg-card"
         >
           {/* Notification Toggles */}
           <div className="divide-y divide-border/20">
@@ -312,7 +312,7 @@ export default function PortalSettingsPage() {
                   <Label htmlFor={item.id} className="text-[13px] font-medium">
                     {item.label}
                   </Label>
-                  <p className="text-[12px] text-muted-foreground/50">{item.description}</p>
+                  <p className="text-[12px] text-muted-foreground">{item.description}</p>
                 </div>
                 <Switch
                   id={item.id}
@@ -326,7 +326,7 @@ export default function PortalSettingsPage() {
           </div>
 
           {/* Delivery Method */}
-          <div className="border-t border-border/20 px-5 py-5">
+          <div className="border-t border-border/60 px-5 py-5">
             <Label className="mb-3 block text-[13px] font-medium">Delivery Method</Label>
             <RadioGroup
               value={notificationPrefs.delivery_method}
@@ -363,7 +363,7 @@ export default function PortalSettingsPage() {
           </div>
 
           {/* Save button */}
-          <div className="border-t border-border/20 px-5 py-4">
+          <div className="border-t border-border/60 px-5 py-4">
             <Button
               type="submit"
               disabled={notificationsSaving}

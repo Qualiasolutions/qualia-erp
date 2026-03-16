@@ -203,7 +203,7 @@ export function PhaseCommentThread({
                   {canDelete && (
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="shrink-0 rounded p-1 text-muted-foreground/60 hover:bg-muted hover:text-red-600"
+                      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-red-600"
                       disabled={isPending || isDeleting}
                       aria-label="Delete comment"
                     >

@@ -37,7 +37,7 @@ export function PortalRecentActivity({
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium text-foreground">Projects</h2>
         </div>
-        <div className="divide-y divide-border/20 overflow-hidden rounded-xl border border-border/40">
+        <div className="divide-y divide-border/20 overflow-hidden rounded-xl border border-border">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-4 bg-card px-5 py-4">
               <Skeleton className="h-4 w-32" />
@@ -51,12 +51,12 @@ export function PortalRecentActivity({
 
   if (projects.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-border/30 px-6 py-12 text-center">
+      <div className="rounded-xl border border-dashed border-border px-6 py-12 text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
-          <Folder className="h-5 w-5 text-muted-foreground/40" />
+          <Folder className="h-5 w-5 text-muted-foreground/70" />
         </div>
         <p className="text-sm font-medium text-foreground">No projects yet</p>
-        <p className="mt-1 text-[13px] text-muted-foreground/60">
+        <p className="mt-1 text-[13px] text-muted-foreground">
           Your projects will appear here once your team gets started.
         </p>
       </div>
@@ -73,13 +73,13 @@ export function PortalRecentActivity({
         <h2 className="text-sm font-medium text-foreground">Projects</h2>
         <Link
           href="/portal/projects"
-          className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
+          className="flex items-center gap-1 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           View all <ArrowRight className="h-3 w-3" />
         </Link>
       </div>
 
-      <div className="divide-y divide-border/20 overflow-hidden rounded-xl border border-border/40">
+      <div className="divide-y divide-border/20 overflow-hidden rounded-xl border border-border">
         {projects.map((project) => (
           <Link
             key={project.id}
@@ -100,7 +100,7 @@ export function PortalRecentActivity({
                 </Badge>
               </div>
               {project.currentPhase && (
-                <p className="mt-0.5 truncate text-[12px] text-muted-foreground/60">
+                <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
                   {project.currentPhase.name}
                 </p>
               )}
@@ -115,13 +115,13 @@ export function PortalRecentActivity({
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
-                <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground/50">
+                <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground">
                   {project.progress}%
                 </span>
               </div>
             )}
 
-            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
+            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
           </Link>
         ))}
       </div>

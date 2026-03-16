@@ -68,7 +68,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
 
   if (typedFeatures.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/40 p-12 text-center">
+      <div className="rounded-lg border border-dashed border-border p-12 text-center">
         <p className="text-sm text-muted-foreground">
           No features have been shared yet. Your team will add screenshots and design previews here
           as they become available.
@@ -86,7 +86,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
         {typedFeatures.map((feature, index) => (
           <div
             key={feature.id}
-            className="group relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-border/40 bg-muted/20 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-qualia-500/50 hover:shadow-elevation-2"
+            className="group relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-border bg-muted/20 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-qualia-500/50 hover:shadow-elevation-2"
             onClick={() => handleImageClick(index)}
           >
             {feature.url ? (
@@ -134,7 +134,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
           <DialogTitle className="sr-only">Feature Preview</DialogTitle>
           <div className="relative flex h-[85vh] flex-col bg-background">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-border/40 p-4">
+            <div className="flex items-center justify-between border-b border-border p-4">
               <div className="flex-1 pr-4">
                 <div className="flex items-center gap-2">
                   <h2 className="truncate text-lg font-semibold">
@@ -223,7 +223,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
             </div>
 
             {/* Footer - Image Counter */}
-            <div className="border-t border-border/40 p-3 text-center">
+            <div className="border-t border-border p-3 text-center">
               <p className="text-sm text-muted-foreground">
                 {currentIndex + 1} of {typedFeatures.length}
               </p>

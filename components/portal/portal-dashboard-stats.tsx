@@ -52,7 +52,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
     return (
       <div className="grid gap-4 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-border/40 bg-card px-5 py-5">
+          <div key={i} className="rounded-xl border border-border bg-card px-5 py-5">
             <Skeleton className="mb-3 h-8 w-8 rounded-lg" />
             <Skeleton className="h-8 w-12 rounded" />
             <Skeleton className="mt-1.5 h-3.5 w-24 rounded" />
@@ -69,7 +69,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
           key={metric.label}
           href={metric.href}
           className={cn(
-            'group relative overflow-hidden rounded-xl border border-border/40 bg-card px-5 py-5',
+            'group relative overflow-hidden rounded-xl border border-border bg-card px-5 py-5',
             'transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1'
           )}
         >
@@ -84,7 +84,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
           <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">
             {metric.value}
           </p>
-          <p className="mt-0.5 text-[12px] text-muted-foreground/60 transition-colors group-hover:text-muted-foreground">
+          <p className="mt-0.5 text-[12px] text-muted-foreground transition-colors group-hover:text-muted-foreground">
             {metric.label}
           </p>
           {metric.suffix && (

@@ -62,8 +62,8 @@ const URGENCY_STYLES: Record<Urgency, { dot: string; date: string; icon: string 
   },
   upcoming: {
     dot: 'bg-muted-foreground/30',
-    date: 'text-muted-foreground/60',
-    icon: 'text-muted-foreground/50',
+    date: 'text-muted-foreground',
+    icon: 'text-muted-foreground',
   },
 };
 
@@ -73,9 +73,9 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
   const overdueCount = items.filter((item) => getUrgency(item.due_date) === 'overdue').length;
 
   return (
-    <div className="rounded-xl border border-border/40 bg-card">
+    <div className="rounded-xl border border-border bg-card">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-border/30 px-5 py-3.5">
+      <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
         <span className="text-[13px] font-medium text-foreground">Action items</span>
         {!isLoading && items.length > 0 && (
           <span className="flex items-center gap-1.5">
@@ -117,7 +117,7 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
           </>
         ) : items.length === 0 ? (
           <div className="px-5 py-8 text-center">
-            <p className="text-[13px] text-muted-foreground/40">
+            <p className="text-[13px] text-muted-foreground/70">
               Nothing pending — you&apos;re all caught up.
             </p>
           </div>
@@ -139,7 +139,7 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-medium text-foreground">{item.title}</p>
                   {item.project && (
-                    <p className="truncate text-[11px] text-muted-foreground/50">
+                    <p className="truncate text-[11px] text-muted-foreground">
                       {item.project.name}
                     </p>
                   )}

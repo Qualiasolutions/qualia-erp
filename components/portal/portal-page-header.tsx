@@ -22,16 +22,14 @@ export function PortalPageHeader({
     <div className="flex items-start gap-4 sm:items-center">
       <Link
         href="/portal"
-        className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/40 text-muted-foreground/60 transition-all duration-200 hover:border-border/60 hover:bg-muted/30 hover:text-foreground sm:mt-0"
+        className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border text-muted-foreground transition-all duration-200 hover:border-border/60 hover:bg-muted/30 hover:text-foreground sm:mt-0"
         aria-label="Back to projects"
       >
         <ChevronLeft className="h-4 w-4" />
       </Link>
       <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-        {description && (
-          <p className="mt-1.5 text-[13px] text-muted-foreground/60">{description}</p>
-        )}
+        {description && <p className="mt-1.5 text-[13px] text-muted-foreground">{description}</p>}
         {showProgress && (
           <div className="mt-3 flex items-center gap-3">
             <div className="h-1.5 w-48 overflow-hidden rounded-full bg-border/30 dark:bg-border/20">
@@ -40,7 +38,7 @@ export function PortalPageHeader({
                 style={{ width: `${progressPct}%` }}
               />
             </div>
-            <span className="text-[12px] tabular-nums text-muted-foreground/50">
+            <span className="text-[12px] tabular-nums text-muted-foreground">
               {completedPhases} of {totalPhases} phases
             </span>
           </div>

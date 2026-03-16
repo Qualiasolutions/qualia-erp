@@ -68,7 +68,7 @@ export function PortalHeader({ user, profile, isAdminViewing }: PortalHeaderProp
   }
 
   return (
-    <header className="shrink-0 border-b border-border/40 bg-card/50 backdrop-blur-sm">
+    <header className="shrink-0 border-b border-border bg-card/50 backdrop-blur-sm">
       {/* Admin banner */}
       {isAdminViewing && (
         <div className="border-b border-qualia-200 bg-qualia-50 px-4 py-1.5">
@@ -95,7 +95,7 @@ export function PortalHeader({ user, profile, isAdminViewing }: PortalHeaderProp
         <nav className="hidden items-center gap-1 text-sm md:flex">
           {breadcrumbs.map((crumb, i) => (
             <div key={crumb.href} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/40" />}
+              {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/70" />}
               {i === breadcrumbs.length - 1 ? (
                 <span className="font-medium text-foreground">{crumb.label}</span>
               ) : (

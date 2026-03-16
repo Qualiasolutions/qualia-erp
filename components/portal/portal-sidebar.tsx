@@ -73,7 +73,7 @@ function NavLink({
           'h-4 w-4 flex-shrink-0 transition-colors duration-200',
           isActive
             ? 'text-qualia-600 dark:text-qualia-400'
-            : 'text-muted-foreground/50 group-hover:text-muted-foreground'
+            : 'text-muted-foreground group-hover:text-muted-foreground'
         )}
       />
       <span>{item.name}</span>
@@ -119,7 +119,7 @@ function UserMenu({
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
-            <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
+            <p className="truncate text-[11px] text-muted-foreground">{displayEmail}</p>
           </div>
           <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/30" />
         </button>
@@ -190,7 +190,7 @@ function SidebarContent({
       </div>
       {companyName && (
         <div className="-mt-2 px-4 pb-3">
-          <p className="truncate text-[10px] font-medium tracking-wide text-muted-foreground/40">
+          <p className="truncate text-[10px] font-medium tracking-wide text-muted-foreground/70">
             {companyName}
           </p>
         </div>
@@ -205,7 +205,7 @@ function SidebarContent({
         </nav>
 
         <div>
-          <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
+          <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
             Manage
           </p>
           <nav className="space-y-0.5">
@@ -222,9 +222,9 @@ function SidebarContent({
       </div>
 
       {/* Theme + User */}
-      <div className="border-t border-border/20 px-3 py-2.5">
+      <div className="border-t border-border/60 px-3 py-2.5">
         <div className="mb-1.5 flex items-center justify-between px-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/40">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
             Theme
           </span>
           <ThemeSwitcher />
@@ -264,7 +264,7 @@ export function PortalSidebar(props: PortalSidebarProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-52 flex-shrink-0 border-r border-border/30 md:block">
+      <aside className="hidden h-full w-52 flex-shrink-0 border-r border-border md:block">
         <SidebarContent {...props} onLinkClick={handleLinkClick} />
       </aside>
     </>

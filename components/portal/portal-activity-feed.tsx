@@ -165,7 +165,7 @@ export function PortalActivityFeed({
                   </div>
 
                   {/* Content */}
-                  <div className="rounded-lg border border-border/40 bg-card p-4 shadow-elevation-1 hover:shadow-elevation-2 transition-shadow duration-200 ease-premium">
+                  <div className="rounded-lg border border-border bg-card p-4 shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">

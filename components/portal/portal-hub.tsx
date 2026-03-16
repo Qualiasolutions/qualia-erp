@@ -375,7 +375,7 @@ export function PortalHub({
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Client Portal</h1>
-          <p className="mt-1 text-sm text-muted-foreground/60">
+          <p className="mt-1 text-sm text-muted-foreground">
             Manage portal access and view client projects
           </p>
         </div>
@@ -402,7 +402,7 @@ export function PortalHub({
             'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
             filter === 'with-access'
               ? 'bg-emerald-500/10 text-emerald-600'
-              : 'text-muted-foreground/60 hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <Shield className="h-3.5 w-3.5" />
@@ -417,7 +417,7 @@ export function PortalHub({
             'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
             filter === 'no-access'
               ? 'bg-amber-500/10 text-amber-600'
-              : 'text-muted-foreground/60 hover:text-foreground'
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <ShieldOff className="h-3.5 w-3.5" />
@@ -430,19 +430,19 @@ export function PortalHub({
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/70" />
         <Input
           placeholder="Search clients, projects..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-10 rounded-lg border-border/40 bg-card pl-10 text-sm placeholder:text-muted-foreground/40"
+          className="h-10 rounded-lg border-border bg-card pl-10 text-sm placeholder:text-muted-foreground/70"
         />
       </div>
 
       {/* Client Grid */}
       {filtered.length === 0 ? (
-        <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border/40">
-          <p className="text-sm text-muted-foreground/50">No clients found</p>
+        <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border">
+          <p className="text-sm text-muted-foreground">No clients found</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -452,7 +452,7 @@ export function PortalHub({
               className={cn(
                 'group relative flex flex-col rounded-xl border bg-card p-4 transition-all duration-200',
                 'hover:border-qualia-500/30 hover:shadow-md hover:shadow-qualia-500/5',
-                client.hasPortalAccess ? 'border-border/40' : 'border-dashed border-border/30'
+                client.hasPortalAccess ? 'border-border' : 'border-dashed border-border'
               )}
             >
               {/* Top: Avatar + Name + Status */}
@@ -463,9 +463,7 @@ export function PortalHub({
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-sm font-semibold text-foreground">{client.name}</h3>
                   {client.email && (
-                    <p className="mt-0.5 truncate text-xs text-muted-foreground/50">
-                      {client.email}
-                    </p>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{client.email}</p>
                   )}
                 </div>
                 {client.hasPortalAccess ? (
@@ -478,7 +476,7 @@ export function PortalHub({
                 ) : (
                   <Badge
                     variant="outline"
-                    className="shrink-0 border-border/30 bg-muted/30 text-[10px] text-muted-foreground/50"
+                    className="shrink-0 border-border bg-muted/30 text-[10px] text-muted-foreground"
                   >
                     No Portal
                   </Badge>
@@ -496,7 +494,7 @@ export function PortalHub({
                         'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-all',
                         'hover:border-qualia-500/30 hover:bg-qualia-500/5',
                         STATUS_COLORS[project.status || ''] ||
-                          'border-border/30 bg-muted/20 text-muted-foreground'
+                          'border-border bg-muted/20 text-muted-foreground'
                       )}
                     >
                       <Folder className="h-3 w-3 shrink-0" />
@@ -504,18 +502,18 @@ export function PortalHub({
                     </button>
                   ))}
                   {client.projects.length > 3 && (
-                    <span className="inline-flex items-center rounded-md px-2 py-1 text-[11px] text-muted-foreground/50">
+                    <span className="inline-flex items-center rounded-md px-2 py-1 text-[11px] text-muted-foreground">
                       +{client.projects.length - 3} more
                     </span>
                   )}
                 </div>
               ) : (
-                <p className="mt-3 text-[11px] text-muted-foreground/40">No projects assigned</p>
+                <p className="mt-3 text-[11px] text-muted-foreground/70">No projects assigned</p>
               )}
 
               {/* Last sign-in */}
               {client.hasPortalAccess && (
-                <p className="mt-2 text-[10px] text-muted-foreground/40">
+                <p className="mt-2 text-[10px] text-muted-foreground/70">
                   {client.lastSignIn
                     ? `Last seen ${formatDistanceToNow(new Date(client.lastSignIn), { addSuffix: true })}`
                     : 'Never signed in'}
@@ -660,13 +658,13 @@ export function PortalHub({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                     <div>
-                      <p className="text-xs text-muted-foreground/60">Email</p>
+                      <p className="text-xs text-muted-foreground">Email</p>
                       <p className="text-sm font-medium">{credentials.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                     <div>
-                      <p className="text-xs text-muted-foreground/60">Password</p>
+                      <p className="text-xs text-muted-foreground">Password</p>
                       <p className="font-mono text-sm font-medium">{credentials.password}</p>
                     </div>
                   </div>
@@ -708,10 +706,10 @@ export function PortalHub({
           ) : (
             <div className="space-y-4">
               <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground/60">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
                   Select projects to give access to:
                 </p>
-                <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border/30 p-2">
+                <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border p-2">
                   {allProjects.map((project) => {
                     const isSelected = selectedProjectIds.includes(project.id);
                     return (
@@ -741,7 +739,7 @@ export function PortalHub({
                             variant="outline"
                             className={cn(
                               'text-[10px]',
-                              STATUS_COLORS[project.status] || 'border-border/30'
+                              STATUS_COLORS[project.status] || 'border-border'
                             )}
                           >
                             {project.status}
@@ -827,13 +825,13 @@ export function PortalHub({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                     <div>
-                      <p className="text-xs text-muted-foreground/60">Email</p>
+                      <p className="text-xs text-muted-foreground">Email</p>
                       <p className="text-sm font-medium">{workspaceCredentials.email}</p>
                     </div>
                   </div>
                   <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                     <div>
-                      <p className="text-xs text-muted-foreground/60">Password</p>
+                      <p className="text-xs text-muted-foreground">Password</p>
                       <p className="font-mono text-sm font-medium">
                         {workspaceCredentials.password}
                       </p>
@@ -886,7 +884,7 @@ export function PortalHub({
                     value={newClientName}
                     onChange={(e) => setNewClientName(e.target.value)}
                     placeholder="e.g. Acme Corp"
-                    className="h-9 border-border/40 bg-card text-sm placeholder:text-muted-foreground/40"
+                    className="h-9 border-border bg-card text-sm placeholder:text-muted-foreground/70"
                   />
                 </div>
                 <div>
@@ -898,14 +896,14 @@ export function PortalHub({
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
                     placeholder="client@example.com"
-                    className="h-9 border-border/40 bg-card text-sm placeholder:text-muted-foreground/40"
+                    className="h-9 border-border bg-card text-sm placeholder:text-muted-foreground/70"
                   />
                 </div>
                 <div>
                   <p className="mb-1.5 text-xs font-medium text-muted-foreground/70">
                     Projects to grant access to:
                   </p>
-                  <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-border/30 p-2">
+                  <div className="max-h-52 space-y-1 overflow-y-auto rounded-lg border border-border p-2">
                     {allProjects.map((project) => {
                       const isSelected = newProjectIds.includes(project.id);
                       return (
@@ -935,7 +933,7 @@ export function PortalHub({
                               variant="outline"
                               className={cn(
                                 'text-[10px]',
-                                STATUS_COLORS[project.status] || 'border-border/30'
+                                STATUS_COLORS[project.status] || 'border-border'
                               )}
                             >
                               {project.status}
@@ -1002,7 +1000,7 @@ export function PortalHub({
               <p className="mb-1.5 text-xs font-medium text-muted-foreground/70">
                 Select projects this client can access:
               </p>
-              <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border/30 p-2">
+              <div className="max-h-60 space-y-1 overflow-y-auto rounded-lg border border-border p-2">
                 {allProjects.map((project) => {
                   const isSelected = managedProjectIds.includes(project.id);
                   // Hide projects assigned to OTHER clients (but show ones assigned to this client)
@@ -1038,7 +1036,7 @@ export function PortalHub({
                           variant="outline"
                           className={cn(
                             'text-[10px]',
-                            STATUS_COLORS[project.status] || 'border-border/30'
+                            STATUS_COLORS[project.status] || 'border-border'
                           )}
                         >
                           {project.status}
@@ -1102,13 +1100,13 @@ export function PortalHub({
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                 <div>
-                  <p className="text-xs text-muted-foreground/60">Email</p>
+                  <p className="text-xs text-muted-foreground">Email</p>
                   <p className="text-sm font-medium">{resetResult.email}</p>
                 </div>
               </div>
               <div className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2">
                 <div>
-                  <p className="text-xs text-muted-foreground/60">New Password</p>
+                  <p className="text-xs text-muted-foreground">New Password</p>
                   <p className="font-mono text-sm font-medium">{resetResult.tempPassword}</p>
                 </div>
               </div>

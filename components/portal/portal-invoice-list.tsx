@@ -35,7 +35,7 @@ function getInvoiceStatusColor(status: string) {
     case 'draft':
       return 'bg-muted text-muted-foreground border-border';
     case 'cancelled':
-      return 'bg-muted text-muted-foreground/60 border-border';
+      return 'bg-muted text-muted-foreground border-border';
     default:
       return 'bg-muted text-muted-foreground border-border';
   }
@@ -72,7 +72,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
           key={invoice.id}
           style={index < 6 ? getStaggerDelay(index) : undefined}
           className={cn(
-            'rounded-xl border-border/40 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1',
+            'rounded-xl border-border transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1',
             index < 6 && 'animate-fade-in-up fill-mode-both'
           )}
         >

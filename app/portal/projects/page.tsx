@@ -55,7 +55,7 @@ export default async function PortalProjectsPage() {
       <div className={`space-y-6 ${fadeInClasses}`}>
         <div>
           <h1 className="text-3xl font-semibold tracking-tight text-foreground">Projects</h1>
-          <p className="mt-1 text-[13px] text-muted-foreground/60">All active projects</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">All active projects</p>
         </div>
         <PortalProjectsList projects={formatted} progressMap={progressMap} />
       </div>
@@ -69,7 +69,7 @@ export default async function PortalProjectsPage() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <h2 className="text-sm font-medium text-foreground">Error loading projects</h2>
-          <p className="mt-1 text-[13px] text-muted-foreground/60">{result.error}</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">{result.error}</p>
         </div>
       </div>
     );
@@ -116,7 +116,7 @@ export default async function PortalProjectsPage() {
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">Your Projects</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground/60">
+        <p className="mt-1 text-[13px] text-muted-foreground">
           Track the progress of your active projects
         </p>
       </div>

@@ -609,7 +609,7 @@ export function PortalAdminPanel({
                         : `Copy for ${allManagedProjects.find((p) => p.id === exportProjectId)?.name || 'Project'}`}
                     </Button>
                   ) : (
-                    <p className="shrink-0 text-xs text-muted-foreground/60">
+                    <p className="shrink-0 text-xs text-muted-foreground">
                       Select a project to export
                     </p>
                   )}
@@ -760,10 +760,10 @@ export function PortalAdminPanel({
               clientManagement.clients.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted/50">
-                    <Users className="h-5 w-5 text-muted-foreground/50" />
+                    <Users className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium text-muted-foreground">No portal clients yet</p>
-                  <p className="mt-1 text-xs text-muted-foreground/60">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Switch to the Onboard tab to set up client access.
                   </p>
                 </div>
@@ -787,7 +787,7 @@ export function PortalAdminPanel({
                         <TableRow>
                           <TableCell
                             colSpan={6}
-                            className="py-6 text-center text-sm text-muted-foreground/60"
+                            className="py-6 text-center text-sm text-muted-foreground"
                           >
                             No clients match the selected filters
                           </TableCell>
@@ -810,7 +810,7 @@ export function PortalAdminPanel({
                                 <TableCell>
                                   <div className="flex flex-wrap gap-1">
                                     {client.projects.length === 0 ? (
-                                      <span className="text-sm text-muted-foreground/60">None</span>
+                                      <span className="text-sm text-muted-foreground">None</span>
                                     ) : (
                                       <>
                                         {visibleProjects.map((p) => (
@@ -906,7 +906,7 @@ export function PortalAdminPanel({
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-6 w-6 p-0 text-muted-foreground/40 hover:text-foreground"
+                                          className="h-6 w-6 p-0 text-muted-foreground/70 hover:text-foreground"
                                           onClick={() =>
                                             setResetResults((prev) => {
                                               const next = { ...prev };
@@ -954,7 +954,7 @@ export function PortalAdminPanel({
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {client.projects.length === 0 ? (
-                                <span className="text-sm text-muted-foreground/60">None</span>
+                                <span className="text-sm text-muted-foreground">None</span>
                               ) : (
                                 client.projects.map((p) =>
                                   p ? (
@@ -1098,7 +1098,7 @@ export function PortalAdminPanel({
                     2. Assign projects
                   </p>
                   {projects.length === 0 ? (
-                    <p className="text-sm text-muted-foreground/60">No active projects</p>
+                    <p className="text-sm text-muted-foreground">No active projects</p>
                   ) : (
                     <ProjectCheckboxList selected={selectedProjectIds} onToggle={toggleProject} />
                   )}
@@ -1134,7 +1134,7 @@ export function PortalAdminPanel({
                         <p className="mb-2 text-sm font-medium text-muted-foreground">
                           Credentials for {credentials.name} — share with the client:
                         </p>
-                        <div className="flex items-center justify-between rounded-lg border border-border/40 bg-muted/50 p-3 font-mono text-xs">
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 p-3 font-mono text-xs">
                           <div className="space-y-0.5">
                             <p>
                               <span className="text-muted-foreground">Email:</span>{' '}
@@ -1188,7 +1188,7 @@ export function PortalAdminPanel({
                     1. Select clients ({selectedCrmClientIds.length} selected)
                   </p>
                   {crmClients.length === 0 ? (
-                    <p className="text-sm text-muted-foreground/60">No CRM clients found</p>
+                    <p className="text-sm text-muted-foreground">No CRM clients found</p>
                   ) : (
                     <div className="grid gap-1.5 sm:grid-cols-2">
                       {crmClients.map((c) => {
@@ -1237,7 +1237,7 @@ export function PortalAdminPanel({
                     2. Assign projects to all selected clients
                   </p>
                   {projects.length === 0 ? (
-                    <p className="text-sm text-muted-foreground/60">No active projects</p>
+                    <p className="text-sm text-muted-foreground">No active projects</p>
                   ) : (
                     <ProjectCheckboxList
                       selected={bulkSelectedProjectIds}

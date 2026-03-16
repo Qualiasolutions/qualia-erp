@@ -87,7 +87,7 @@ export function PortalDashboardContent({
     <div className="space-y-10">
       {/* Welcome */}
       <div>
-        <p className="text-[13px] font-medium tracking-wide text-muted-foreground/50">
+        <p className="text-[13px] font-medium tracking-wide text-muted-foreground">
           {now.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
@@ -126,16 +126,16 @@ export function PortalDashboardContent({
             <Wrapper
               key={action.label}
               {...wrapperProps}
-              className="group flex items-center gap-3 rounded-xl border border-border/40 bg-card px-4 py-4 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1"
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-4 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1"
             >
               <action.icon
-                className={`h-4 w-4 shrink-0 text-muted-foreground/40 transition-colors duration-200 ${action.accent}`}
+                className={`h-4 w-4 shrink-0 text-muted-foreground/70 transition-colors duration-200 ${action.accent}`}
               />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-medium text-foreground">{action.label}</p>
-                <p className="text-[11px] text-muted-foreground/50">{action.description}</p>
+                <p className="text-[11px] text-muted-foreground">{action.description}</p>
               </div>
-              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
+              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground/70" />
             </Wrapper>
           );
         })}

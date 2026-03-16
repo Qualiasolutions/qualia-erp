@@ -140,11 +140,11 @@ export function PortalMessages({
 
               {dateActivities.map((activity) => (
                 <div key={activity.id} className="relative">
-                  <div className="absolute -left-7 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-border/30 bg-card shadow-sm dark:border-border/20">
+                  <div className="absolute -left-7 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-border bg-card shadow-sm dark:border-border/60">
                     {getActivityIcon(activity.action_type)}
                   </div>
 
-                  <div className="rounded-xl border border-border/40 bg-card p-4 transition-all duration-200 ease-premium hover:border-border/60 hover:shadow-elevation-1">
+                  <div className="rounded-xl border border-border bg-card p-4 transition-all duration-200 ease-premium hover:border-border/60 hover:shadow-elevation-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">

@@ -43,7 +43,7 @@ export default async function PortalMessagesPage() {
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">Messages</h1>
-        <p className="mt-1 text-[13px] text-muted-foreground/60">
+        <p className="mt-1 text-[13px] text-muted-foreground">
           Updates and activity across all your projects
         </p>
       </div>

@@ -71,7 +71,7 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
       {cards.map((card, index) => (
         <div
           key={card.label}
-          className="flex animate-fade-in-up items-center gap-4 rounded-xl border border-border/40 bg-card px-5 py-5 transition-all duration-200 fill-mode-both hover:border-border/60 hover:shadow-elevation-1"
+          className="flex animate-fade-in-up items-center gap-4 rounded-xl border border-border bg-card px-5 py-5 transition-all duration-200 fill-mode-both hover:border-border/60 hover:shadow-elevation-1"
           style={getStaggerDelay(index)}
         >
           <div
@@ -84,7 +84,7 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
           </div>
           <div>
             <p className="text-lg font-semibold tabular-nums text-foreground">{card.value}</p>
-            <p className="text-[12px] text-muted-foreground/60">{card.label}</p>
+            <p className="text-[12px] text-muted-foreground">{card.label}</p>
           </div>
         </div>
       ))}
