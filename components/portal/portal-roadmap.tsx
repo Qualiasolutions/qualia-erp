@@ -16,6 +16,9 @@ import {
   Package,
   Clock,
   Loader2,
+  Gauge,
+  Layers,
+  Compass,
 } from 'lucide-react';
 
 interface Project {
@@ -126,7 +129,12 @@ function DeliverableItem({ item }: { item: PhaseItem }) {
   const isDone = item.is_completed || item.status === 'completed' || item.status === 'done';
 
   return (
-    <div className="group flex items-start gap-3 py-2">
+    <div
+      className={cn(
+        'group -mx-2 flex items-start gap-3 rounded-md px-2 py-2 transition-colors duration-150',
+        isDone && 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.07]'
+      )}
+    >
       <div className="mt-0.5 shrink-0">
         {isDone ? (
           <CheckCircle2 className="size-4 text-emerald-500" />
@@ -239,7 +247,7 @@ function PhaseWithComments({
         {/* Dot */}
         <div
           className={cn(
-            'flex size-9 items-center justify-center rounded-full ring-4',
+            'flex size-10 items-center justify-center rounded-full shadow-sm ring-4',
             config.dot,
             config.ring
           )}
@@ -248,7 +256,7 @@ function PhaseWithComments({
         </div>
         {/* Connecting line */}
         {!isLast && (
-          <div className="mt-1 w-0.5 flex-1 bg-gradient-to-b from-border/60 to-border/20" />
+          <div className="mt-1 w-0.5 flex-1 bg-gradient-to-b from-border/50 to-transparent" />
         )}
       </div>
 
@@ -277,7 +285,7 @@ function PhaseWithComments({
             <Badge
               variant="outline"
               className={cn(
-                'shrink-0 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                'shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider',
                 config.text,
                 config.border
               )}
@@ -410,9 +418,12 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {/* Overall progress */}
       <div className="col-span-2 rounded-xl border border-border bg-card p-4 sm:col-span-1">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Overall
-        </p>
+        <div className="flex items-center gap-1.5">
+          <Gauge className="size-3 text-muted-foreground/50" />
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Overall
+          </p>
+        </div>
         <div className="mt-2 flex items-end gap-1">
           <span className="text-2xl font-bold tabular-nums text-foreground">
             {overallProgress}%
@@ -425,7 +436,7 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
               overallProgress === 100
                 ? 'bg-emerald-500'
                 : overallProgress > 0
-                  ? 'bg-qualia-500'
+                  ? 'bg-gradient-to-r from-qualia-600 to-qualia-400'
                   : 'bg-muted-foreground/20'
             )}
             style={{ width: `${overallProgress}%` }}
@@ -435,9 +446,12 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
 
       {/* Phases */}
       <div className="rounded-xl border border-border bg-card p-4">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Phases
-        </p>
+        <div className="flex items-center gap-1.5">
+          <Layers className="size-3 text-muted-foreground/50" />
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Phases
+          </p>
+        </div>
         <div className="mt-2 flex items-end gap-1">
           <span className="text-2xl font-bold tabular-nums text-foreground">{completedPhases}</span>
           <span className="mb-0.5 text-sm text-muted-foreground">/ {phases.length}</span>
@@ -446,9 +460,12 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
 
       {/* Deliverables */}
       <div className="rounded-xl border border-border bg-card p-4">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Deliverables
-        </p>
+        <div className="flex items-center gap-1.5">
+          <Package className="size-3 text-muted-foreground/50" />
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Deliverables
+          </p>
+        </div>
         <div className="mt-2 flex items-end gap-1">
           <span className="text-2xl font-bold tabular-nums text-foreground">{completedItems}</span>
           <span className="mb-0.5 text-sm text-muted-foreground">/ {totalItems}</span>
@@ -457,9 +474,12 @@ function ProgressSummary({ phases }: { phases: Phase[] }) {
 
       {/* Current phase */}
       <div className="rounded-xl border border-border bg-card p-4">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Current
-        </p>
+        <div className="flex items-center gap-1.5">
+          <Compass className="size-3 text-muted-foreground/50" />
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Current
+          </p>
+        </div>
         <p className="mt-2 truncate text-sm font-semibold text-foreground">
           {activePhase?.name?.replace(/^(Phase \d+|Milestone \d+):\s*/, '') || 'Not started'}
         </p>
@@ -514,7 +534,7 @@ export function PortalRoadmap({
   return (
     <div className="space-y-6">
       {/* Project overview */}
-      <div className="relative rounded-xl border border-border bg-card p-5 sm:p-6">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-card via-card to-qualia-500/[0.03] p-5 dark:to-qualia-500/[0.05] sm:p-6">
         {isValidating && (
           <div className="absolute right-4 top-4">
             <span className="relative flex size-2">

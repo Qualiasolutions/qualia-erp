@@ -64,7 +64,7 @@ function NavLink({
       className={cn(
         'group relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-all duration-200',
         isActive
-          ? 'bg-qualia-500/[0.08] text-foreground shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:bg-qualia-500/[0.12]'
+          ? 'bg-qualia-500/[0.06] text-foreground shadow-[inset_0_1px_0_0_rgba(0,164,172,0.05)] dark:bg-qualia-500/[0.10]'
           : 'text-muted-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground'
       )}
     >
@@ -78,7 +78,7 @@ function NavLink({
       />
       <span>{item.name}</span>
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-r-full bg-qualia-500 shadow-[0_0_6px_rgba(0,164,172,0.3)]" />
+        <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-r-full bg-qualia-500 shadow-[0_0_8px_rgba(0,164,172,0.25)]" />
       )}
     </Link>
   );
@@ -205,9 +205,12 @@ function SidebarContent({
         </nav>
 
         <div>
-          <p className="mb-1.5 px-2.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-            Manage
-          </p>
+          <div className="mb-2 flex items-center gap-2.5 px-2.5">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/50">
+              Manage
+            </p>
+            <div className="h-px flex-1 bg-border/40" />
+          </div>
           <nav className="space-y-0.5">
             {manageNav.map((item) => (
               <NavLink
@@ -222,7 +225,8 @@ function SidebarContent({
       </div>
 
       {/* Theme + User */}
-      <div className="border-t border-border/60 px-3 py-2.5">
+      <div className="relative border-t border-border/60 px-3 py-2.5">
+        <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-background/80 to-transparent" />
         <div className="mb-1.5 flex items-center justify-between px-2.5">
           <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
             Theme

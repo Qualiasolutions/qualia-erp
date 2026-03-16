@@ -66,13 +66,15 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             href={`/portal/${project.id}`}
             style={index < 8 ? getStaggerDelay(index) : undefined}
             className={cn(
-              'group flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20',
+              'group relative flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20',
+              'border-l-2 border-l-transparent hover:border-l-qualia-500',
               index < 8 && 'animate-fade-in-up fill-mode-both'
             )}
           >
             {/* Project info */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5">
+                <span className="size-1.5 shrink-0 rounded-full bg-qualia-500/60" />
                 <h3 className="truncate text-[13px] font-medium text-foreground">{project.name}</h3>
                 <Badge
                   className={cn(
@@ -84,15 +86,15 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                 </Badge>
               </div>
               {project.description && (
-                <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">
+                <p className="mt-0.5 line-clamp-1 pl-4 text-[12px] text-muted-foreground">
                   {project.description}
                 </p>
               )}
               {progress > 0 && (
-                <div className="mt-2 flex items-center gap-2 md:hidden">
+                <div className="mt-2 flex items-center gap-2 pl-4 md:hidden">
                   <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
                     <div
-                      className="h-full rounded-full bg-qualia-600 transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-500"
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -113,7 +115,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
               <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/50">
                 {progress > 0 ? (
                   <div
-                    className="h-full rounded-full bg-qualia-600 transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-500"
                     style={{ width: `${progress}%` }}
                   />
                 ) : null}
@@ -123,7 +125,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
               </span>
             </div>
 
-            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
+            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground" />
           </Link>
         );
       })}

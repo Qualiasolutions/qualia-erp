@@ -43,35 +43,55 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
   return (
     <div className="rounded-xl border border-border bg-card px-5 py-5 transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1">
       {/* Project name */}
-      <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+      <p className="mb-3 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
         {project.name}
       </p>
 
       {!hasPhases ? (
-        <p className="text-[13px] text-muted-foreground">No phases configured</p>
+        <p className="text-[13px] text-muted-foreground/60">No phases configured yet</p>
       ) : (
         <>
           {/* Hero progress number */}
-          <p className="mb-3 text-3xl font-semibold tabular-nums leading-none text-foreground">
+          <p className="mb-3 text-[30px] font-semibold tabular-nums leading-none tracking-tight text-foreground [font-variant-numeric:tabular-nums]">
             {progressPct}
-            <span className="text-lg text-muted-foreground/70">%</span>
+            <span className="text-lg font-normal text-muted-foreground/50">%</span>
           </p>
 
-          {/* Progress bar */}
+          {/* Progress bar with subtle shimmer highlight */}
           <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-border/30 dark:bg-border/20">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-500 transition-all duration-700 ease-out"
+              className="relative h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-700 ease-out"
               style={{ width: `${progressPct}%` }}
-            />
+            >
+              {progressPct > 0 && progressPct < 100 && (
+                <span
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'shimmer 2.5s ease-in-out infinite',
+                  }}
+                />
+              )}
+            </div>
           </div>
 
           {/* Now / Next columns */}
           <div className="flex items-start justify-between gap-4">
             {/* Current phase */}
             <div className="min-w-0 flex-1">
-              <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
-                Now
-              </p>
+              <div className="mb-0.5 flex items-center gap-1.5">
+                {project.currentPhase && (
+                  <span className="relative flex h-1.5 w-1.5 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-qualia-500 opacity-60" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-qualia-500" />
+                  </span>
+                )}
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                  Now
+                </p>
+              </div>
               {project.currentPhase ? (
                 <p className="truncate text-[13px] font-medium text-foreground">
                   {project.currentPhase.name}
@@ -86,13 +106,13 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
 
             {/* Next phase */}
             <div className="min-w-0 flex-1 text-right">
-              <p className="mb-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
+              <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                 Next
               </p>
               <p
                 className={cn(
                   'truncate text-[13px]',
-                  project.nextPhase ? 'text-muted-foreground' : 'text-muted-foreground/30'
+                  project.nextPhase ? 'text-muted-foreground' : 'text-muted-foreground/25'
                 )}
               >
                 {project.nextPhase ? project.nextPhase.name : '—'}

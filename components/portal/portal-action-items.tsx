@@ -2,7 +2,7 @@
 
 import { useClientActionItems } from '@/lib/swr';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckSquare, Upload, MessageSquare, CreditCard, Circle } from 'lucide-react';
+import { CheckSquare, Upload, MessageSquare, CreditCard, Circle, CheckCircle2 } from 'lucide-react';
 
 interface PortalActionItemsProps {
   clientId: string;
@@ -74,8 +74,8 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
 
   return (
     <div className="rounded-xl border border-border bg-card">
-      {/* Header */}
-      <div className="flex items-center gap-2 border-b border-border px-5 py-3.5">
+      {/* Header with subtle tinted background */}
+      <div className="flex items-center gap-2 rounded-t-xl border-b border-border bg-muted/30 px-5 py-3.5 dark:bg-muted/10">
         <span className="text-[13px] font-medium text-foreground">Action items</span>
         {!isLoading && items.length > 0 && (
           <span className="flex items-center gap-1.5">
@@ -84,10 +84,12 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
             </span>
             {overdueCount > 0 && (
               <span
-                className="flex h-4 items-center rounded-full bg-red-500/10 px-1.5 text-[10px] font-semibold text-red-500"
+                className="relative flex h-4 items-center rounded-full bg-red-500/10 px-1.5 text-[10px] font-semibold text-red-500"
                 title={`${overdueCount} overdue`}
               >
-                {overdueCount}
+                {/* Subtle pulse ring on overdue badge */}
+                <span className="absolute inset-0 animate-ping rounded-full bg-red-500/15 [animation-duration:2s]" />
+                <span className="relative">{overdueCount}</span>
               </span>
             )}
           </span>
@@ -116,9 +118,13 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
             </div>
           </>
         ) : items.length === 0 ? (
-          <div className="px-5 py-8 text-center">
-            <p className="text-[13px] text-muted-foreground/70">
-              Nothing pending — you&apos;re all caught up.
+          <div className="flex flex-col items-center px-5 py-8 text-center">
+            <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-full bg-muted/60">
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground/40" />
+            </div>
+            <p className="text-[13px] font-medium text-muted-foreground/60">All caught up</p>
+            <p className="mt-0.5 text-[12px] text-muted-foreground/40">
+              No pending actions right now.
             </p>
           </div>
         ) : (

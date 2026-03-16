@@ -84,8 +84,16 @@ export function PortalRecentActivity({
           <Link
             key={project.id}
             href={`/portal/${project.id}`}
-            className="group flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20"
+            className="group relative flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20"
           >
+            {/* Left border highlight on hover */}
+            <span className="absolute inset-y-0 left-0 w-[2px] rounded-r-full bg-qualia-500 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+
+            {/* Project type indicator dot */}
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-muted/60 transition-colors duration-200 group-hover:bg-muted">
+              <Folder className="h-3 w-3 text-muted-foreground/50 transition-colors duration-200 group-hover:text-qualia-500/70" />
+            </div>
+
             {/* Name + current phase */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -111,11 +119,11 @@ export function PortalRecentActivity({
               <div className="hidden w-32 shrink-0 items-center gap-2 sm:flex">
                 <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/50">
                   <div
-                    className="h-full rounded-full bg-qualia-600 transition-all duration-500"
+                    className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-500"
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
-                <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground">
+                <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground [font-variant-numeric:tabular-nums]">
                   {project.progress}%
                 </span>
               </div>
