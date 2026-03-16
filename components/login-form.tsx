@@ -28,14 +28,14 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
   if (!mode) {
     return (
-      <div className={cn('flex flex-col gap-4', className)} {...props}>
+      <div className={cn('flex flex-col gap-3', className)} {...props}>
         <button
           onClick={() => setMode('team')}
-          className="group relative flex items-center gap-4 rounded-xl border border-border/60 bg-card p-5 text-left transition-all duration-200 hover:border-primary/40 hover:bg-primary/[0.03]"
+          className="group relative flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5 text-left transition-all duration-300 hover:border-qualia-500/30 hover:shadow-[0_2px_12px_rgba(0,164,172,0.06)]"
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/10 ring-1 ring-qualia-500/10">
             <svg
-              className="h-5 w-5 text-primary"
+              className="h-[18px] w-[18px] text-qualia-600 dark:text-qualia-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -49,19 +49,21 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-sm font-semibold text-foreground">Team Login</span>
-            <p className="mt-0.5 text-xs text-muted-foreground">Admin &amp; employee access</p>
+            <span className="text-[14px] font-semibold text-foreground">Team</span>
+            <p className="mt-0.5 text-[12px] text-muted-foreground/70">
+              Admin &amp; employee access
+            </p>
           </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-all duration-300 group-hover:translate-x-1 group-hover:text-qualia-500" />
         </button>
 
         <button
           onClick={() => setMode('client')}
-          className="group relative flex items-center gap-4 rounded-xl border border-border/60 bg-card p-5 text-left transition-all duration-200 hover:border-primary/40 hover:bg-primary/[0.03]"
+          className="group relative flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5 text-left transition-all duration-300 hover:border-qualia-500/30 hover:shadow-[0_2px_12px_rgba(0,164,172,0.06)]"
         >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-qualia-500/10">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/10 ring-1 ring-qualia-500/10">
             <svg
-              className="h-5 w-5 text-qualia-500"
+              className="h-[18px] w-[18px] text-qualia-600 dark:text-qualia-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -75,14 +77,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             </svg>
           </div>
           <div className="min-w-0 flex-1">
-            <span className="text-sm font-semibold text-foreground">
-              Qualia Solutions Client Portal
-            </span>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Your project hub, powered by Qualia Solutions
+            <span className="text-[14px] font-semibold text-foreground">Client Portal</span>
+            <p className="mt-0.5 text-[12px] text-muted-foreground/70">
+              Track projects &amp; manage your account
             </p>
           </div>
-          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-primary" />
+          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-all duration-300 group-hover:translate-x-1 group-hover:text-qualia-500" />
         </button>
       </div>
     );
