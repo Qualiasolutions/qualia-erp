@@ -58,16 +58,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: 'No employees found' }, { status: 500 });
     }
 
-    // Build employee config with schedules (skip Hasan for now)
-    const employees: Employee[] = profiles
-      .filter((p) => !(p.full_name || '').toLowerCase().includes('hasan'))
-      .map((p) => ({
+    // Build employee config with schedules
+    const employees: Employee[] = profiles.map((p) => {
+      const name = (p.full_name || '').toLowerCase();
+      const isHasan = name.includes('hasan');
+      return {
         id: p.id,
         full_name: p.full_name || 'Employee',
-        scheduleStart: '10:00+03:00',
-        scheduleEnd: '11:00+03:00',
-        weekdaysOnly: false,
-      }));
+        scheduleStart: isHasan ? '19:00+03:00' : '10:00+03:00',
+        scheduleEnd: isHasan ? '20:00+03:00' : '11:00+03:00',
+        weekdaysOnly: isHasan,
+      };
+    });
 
     // Get workspace
     const { data: membership } = await supabase
