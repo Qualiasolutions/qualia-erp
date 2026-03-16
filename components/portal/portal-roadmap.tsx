@@ -8,12 +8,31 @@ import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
 import { getProjectStatusColor } from '@/lib/portal-styles';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
+import {
+  CheckCircle2,
+  Circle,
+  MessageSquare,
+  ChevronDown,
+  Package,
+  Clock,
+  Loader2,
+} from 'lucide-react';
 
 interface Project {
   id: string;
   name: string;
   project_status: string;
   description: string | null;
+}
+
+interface PhaseItem {
+  id: string;
+  title: string;
+  description: string | null;
+  display_order: number | null;
+  is_completed: boolean;
+  completed_at: string | null;
+  status: string | null;
 }
 
 interface Phase {
@@ -24,6 +43,7 @@ interface Phase {
   target_date: string | null;
   description: string | null;
   order_index: number;
+  items?: PhaseItem[];
 }
 
 interface CommentWithProfile {
@@ -52,234 +72,300 @@ interface PortalRoadmapProps {
   isValidating?: boolean;
 }
 
-function getStatusColor(status: string) {
-  const normalized = status.toLowerCase();
-  if (normalized.includes('complete') || normalized.includes('done')) {
+// ─── Status helpers ───────────────────────────────────────────────────────────
+
+function getPhaseStatusConfig(status: string) {
+  const s = status.toLowerCase();
+  if (s.includes('complete') || s.includes('done')) {
     return {
-      dot: 'bg-green-500',
-      text: 'text-green-700 dark:text-green-400',
-      bg: 'bg-green-500/10',
-      border: 'border-green-500/20',
+      dot: 'bg-emerald-500',
+      ring: 'ring-emerald-500/20',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      bg: 'bg-emerald-500/5 dark:bg-emerald-500/10',
+      border: 'border-emerald-500/20',
+      label: 'Completed',
+      icon: CheckCircle2,
     };
   }
-  if (normalized.includes('progress') || normalized.includes('active')) {
+  if (s.includes('progress') || s.includes('active')) {
     return {
-      dot: 'bg-yellow-500',
-      text: 'text-yellow-700 dark:text-yellow-400',
-      bg: 'bg-yellow-500/10',
-      border: 'border-yellow-500/20',
+      dot: 'bg-amber-500',
+      ring: 'ring-amber-500/20',
+      text: 'text-amber-700 dark:text-amber-400',
+      bg: 'bg-amber-500/5 dark:bg-amber-500/10',
+      border: 'border-amber-500/20',
+      label: 'In Progress',
+      icon: Clock,
     };
   }
-  if (normalized.includes('skip')) {
+  if (s.includes('skip')) {
     return {
       dot: 'bg-muted-foreground/30',
+      ring: 'ring-muted-foreground/10',
       text: 'text-muted-foreground',
-      bg: 'bg-muted',
+      bg: 'bg-muted/50',
       border: 'border-border',
+      label: 'Skipped',
+      icon: Circle,
     };
   }
-  // Default: not_started or pending
   return {
-    dot: 'bg-muted-foreground/40',
+    dot: 'bg-muted-foreground/30',
+    ring: 'ring-muted-foreground/10',
     text: 'text-muted-foreground',
-    bg: 'bg-muted',
-    border: 'border-border',
+    bg: 'bg-card',
+    border: 'border-border/40',
+    label: 'Upcoming',
+    icon: Circle,
   };
 }
 
+// ─── Deliverable item row ─────────────────────────────────────────────────────
+
+function DeliverableItem({ item }: { item: PhaseItem }) {
+  const isDone = item.is_completed || item.status === 'completed' || item.status === 'done';
+
+  return (
+    <div className="group flex items-start gap-3 py-2">
+      <div className="mt-0.5 shrink-0">
+        {isDone ? (
+          <CheckCircle2 className="size-4 text-emerald-500" />
+        ) : (
+          <Circle className="size-4 text-muted-foreground/30" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            'text-sm font-medium leading-tight',
+            isDone
+              ? 'text-muted-foreground line-through decoration-muted-foreground/30'
+              : 'text-foreground'
+          )}
+        >
+          {item.title}
+        </p>
+        {item.description && (
+          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground/70">
+            {item.description}
+          </p>
+        )}
+      </div>
+      {isDone && item.completed_at && (
+        <span className="shrink-0 text-[10px] tabular-nums text-emerald-600/60 dark:text-emerald-400/50">
+          {formatDate(item.completed_at)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Phase card ───────────────────────────────────────────────────────────────
+
 function PhaseWithComments({
   phase,
-  index,
   isLast,
   project,
   userRole,
   currentUserId,
 }: {
   phase: Phase;
-  index: number;
   isLast: boolean;
   project: Project;
   userRole: 'client' | 'admin' | 'manager' | 'employee';
   currentUserId: string;
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState<CommentWithProfile[]>([]);
   const [commentCount, setCommentCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
   const phaseRef = useRef(null);
-  const isInView = useInView(phaseRef, { once: true, margin: '-100px' });
-  const statusConfig = getStatusColor(phase.status);
+  const isInView = useInView(phaseRef, { once: true, margin: '-80px' });
+  const config = getPhaseStatusConfig(phase.status);
+  const StatusIcon = config.icon;
 
   const canSeeInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
 
+  const items = phase.items || [];
+  const completedItems = items.filter(
+    (i) => i.is_completed || i.status === 'completed' || i.status === 'done'
+  );
+  const hasItems = items.length > 0;
+  const progress = hasItems ? Math.round((completedItems.length / items.length) * 100) : 0;
+
   // Load comments when expanded
   useEffect(() => {
-    async function loadComments() {
-      if (!isExpanded) return;
+    if (!commentsOpen) return;
+    let cancelled = false;
 
-      setIsLoading(true);
-      const result = await getPhaseComments(
-        project.id,
-        phase.name,
-        canSeeInternal // includeInternal
-      );
-
-      if (result.success && result.data) {
+    async function load() {
+      setIsLoadingComments(true);
+      const result = await getPhaseComments(project.id, phase.name, canSeeInternal);
+      if (!cancelled && result.success && result.data) {
         setComments(result.data as CommentWithProfile[]);
       }
-      setIsLoading(false);
+      if (!cancelled) setIsLoadingComments(false);
     }
 
-    loadComments();
-  }, [isExpanded, project.id, phase.name, canSeeInternal]);
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [commentsOpen, project.id, phase.name, canSeeInternal]);
 
-  // Load comment count on mount (uses head: true — no data transfer)
+  // Load comment count on mount
   useEffect(() => {
-    async function loadCommentCount() {
+    let cancelled = false;
+    async function load() {
       const result = await getPhaseCommentCount(project.id, phase.name, canSeeInternal);
-
-      if (result.success && typeof result.data === 'number') {
+      if (!cancelled && result.success && typeof result.data === 'number') {
         setCommentCount(result.data);
       }
     }
-
-    loadCommentCount();
+    load();
+    return () => {
+      cancelled = true;
+    };
   }, [project.id, phase.name, canSeeInternal]);
 
   return (
     <motion.div
-      key={phase.id}
       ref={phaseRef}
-      initial={{ opacity: 0, y: 30 }}
-      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-      transition={{
-        duration: 0.5,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className="relative flex gap-3 sm:gap-6"
+      initial={{ opacity: 0, y: 24 }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="relative flex gap-4 sm:gap-5"
     >
-      {/* Status Indicator */}
+      {/* Timeline spine */}
       <div className="relative z-10 flex shrink-0 flex-col items-center">
+        {/* Dot */}
         <div
           className={cn(
-            'flex h-8 w-8 items-center justify-center rounded-full border-2 border-white',
-            statusConfig.dot
+            'flex size-9 items-center justify-center rounded-full ring-4',
+            config.dot,
+            config.ring
           )}
         >
-          <span className="text-xs font-semibold text-white">{index + 1}</span>
+          <StatusIcon className="size-4 text-white" strokeWidth={2.5} />
         </div>
+        {/* Connecting line */}
+        {!isLast && (
+          <div className="mt-1 w-0.5 flex-1 bg-gradient-to-b from-border/60 to-border/20" />
+        )}
       </div>
 
-      {/* Phase Content */}
-      <div className={cn('flex-1 pb-8', isLast && 'pb-0')}>
+      {/* Card */}
+      <div className={cn('flex-1', !isLast && 'pb-6')}>
         <div
           className={cn(
-            'rounded-lg border border-border/40 bg-card p-3 shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2 sm:p-4',
-            statusConfig.border,
-            statusConfig.bg
+            'rounded-xl border p-4 shadow-sm transition-all duration-200 sm:p-5',
+            config.border,
+            config.bg,
+            'hover:shadow-md'
           )}
         >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h3 className="text-base font-semibold text-foreground">{phase.name}</h3>
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[15px] font-semibold leading-snug text-foreground">
+                {phase.name}
+              </h3>
               {phase.description && (
-                <p className="mt-2 text-sm text-muted-foreground">{phase.description}</p>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                  {phase.description}
+                </p>
               )}
             </div>
-            <Badge className={cn('shrink-0', statusConfig.text)}>
-              {phase.status.replace(/_/g, ' ')}
+            <Badge
+              variant="outline"
+              className={cn(
+                'shrink-0 border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider',
+                config.text,
+                config.border
+              )}
+            >
+              {config.label}
             </Badge>
           </div>
 
+          {/* Progress bar + deliverables */}
+          {hasItems && (
+            <div className="mt-4">
+              {/* Mini progress bar */}
+              <div className="mb-3 flex items-center gap-3">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all duration-500',
+                      progress === 100
+                        ? 'bg-emerald-500'
+                        : progress > 0
+                          ? 'bg-amber-500'
+                          : 'bg-muted-foreground/20'
+                    )}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+                  {completedItems.length}/{items.length}
+                </span>
+              </div>
+
+              {/* Deliverable items */}
+              <div className="divide-y divide-border/30">
+                {items.map((item) => (
+                  <DeliverableItem key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Dates */}
           {(phase.start_date || phase.target_date) && (
-            <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground">
+            <div className="mt-3 flex flex-wrap gap-4 border-t border-border/30 pt-3 text-xs text-muted-foreground">
               {phase.start_date && (
-                <div className="flex items-center gap-1.5">
-                  <svg
-                    className="h-3.5 w-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <span>Started: {formatDate(phase.start_date)}</span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Clock className="size-3" />
+                  Started: {formatDate(phase.start_date)}
+                </span>
               )}
               {phase.target_date && (
-                <div className="flex items-center gap-1.5">
-                  <svg
-                    className="h-3.5 w-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                    />
-                  </svg>
-                  <span>Target: {formatDate(phase.target_date)}</span>
-                </div>
+                <span className="flex items-center gap-1.5">
+                  <Package className="size-3" />
+                  Target: {formatDate(phase.target_date)}
+                </span>
               )}
             </div>
           )}
 
-          {/* Comments Section */}
-          <div className="mt-4 border-t border-border pt-4">
+          {/* Comments toggle */}
+          <div className="mt-3 border-t border-border/30 pt-3">
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-muted-foreground"
+              onClick={() => setCommentsOpen(!commentsOpen)}
+              className="flex w-full items-center justify-between rounded-md px-1 py-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               <span className="flex items-center gap-2">
-                <svg
-                  className="h-4 w-4 text-muted-foreground/80"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-                Comments
+                <MessageSquare className="size-3.5" />
+                <span className="text-xs font-medium">Comments</span>
                 {commentCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
                     {commentCount}
                   </Badge>
                 )}
               </span>
-              <svg
-                className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')}
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <ChevronDown
+                className={cn(
+                  'size-3.5 transition-transform duration-200',
+                  commentsOpen && 'rotate-180'
+                )}
+              />
             </button>
 
-            {isExpanded && (
-              <div className="mt-4">
-                {isLoading ? (
-                  <div className="py-4 text-center text-sm text-muted-foreground/80">
-                    Loading comments...
+            {commentsOpen && (
+              <div className="mt-3">
+                {isLoadingComments ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="size-4 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
                   <PhaseCommentThread
@@ -299,6 +385,93 @@ function PhaseWithComments({
   );
 }
 
+// ─── Overall progress summary ─────────────────────────────────────────────────
+
+function ProgressSummary({ phases }: { phases: Phase[] }) {
+  const totalItems = phases.reduce((sum, p) => sum + (p.items?.length || 0), 0);
+  const completedItems = phases.reduce(
+    (sum, p) =>
+      sum +
+      (p.items || []).filter(
+        (i) => i.is_completed || i.status === 'completed' || i.status === 'done'
+      ).length,
+    0
+  );
+  const completedPhases = phases.filter((p) => {
+    const s = p.status.toLowerCase();
+    return s.includes('complete') || s.includes('done');
+  }).length;
+  const activePhase = phases.find((p) => {
+    const s = p.status.toLowerCase();
+    return s.includes('progress') || s.includes('active');
+  });
+
+  const overallProgress = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* Overall progress */}
+      <div className="col-span-2 rounded-xl border border-border/40 bg-card p-4 sm:col-span-1">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Overall
+        </p>
+        <div className="mt-2 flex items-end gap-1">
+          <span className="text-2xl font-bold tabular-nums text-foreground">
+            {overallProgress}%
+          </span>
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className={cn(
+              'h-full rounded-full transition-all duration-700',
+              overallProgress === 100
+                ? 'bg-emerald-500'
+                : overallProgress > 0
+                  ? 'bg-qualia-500'
+                  : 'bg-muted-foreground/20'
+            )}
+            style={{ width: `${overallProgress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Phases */}
+      <div className="rounded-xl border border-border/40 bg-card p-4">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Phases
+        </p>
+        <div className="mt-2 flex items-end gap-1">
+          <span className="text-2xl font-bold tabular-nums text-foreground">{completedPhases}</span>
+          <span className="mb-0.5 text-sm text-muted-foreground">/ {phases.length}</span>
+        </div>
+      </div>
+
+      {/* Deliverables */}
+      <div className="rounded-xl border border-border/40 bg-card p-4">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Deliverables
+        </p>
+        <div className="mt-2 flex items-end gap-1">
+          <span className="text-2xl font-bold tabular-nums text-foreground">{completedItems}</span>
+          <span className="mb-0.5 text-sm text-muted-foreground">/ {totalItems}</span>
+        </div>
+      </div>
+
+      {/* Current phase */}
+      <div className="rounded-xl border border-border/40 bg-card p-4">
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Current
+        </p>
+        <p className="mt-2 truncate text-sm font-semibold text-foreground">
+          {activePhase?.name?.replace(/^(Phase \d+|Milestone \d+):\s*/, '') || 'Not started'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main roadmap ─────────────────────────────────────────────────────────────
+
 export function PortalRoadmap({
   project,
   phases,
@@ -309,37 +482,32 @@ export function PortalRoadmap({
 }: PortalRoadmapProps) {
   const hasPhases = phases && phases.length > 0;
 
-  // Show loading skeleton during initial load
   if (isLoading) {
     return (
       <div className="space-y-6">
-        {/* Project Header skeleton */}
-        <div className="animate-pulse rounded-lg border border-border bg-card p-6">
-          <div className="flex items-center gap-3">
-            <div className="h-7 w-48 rounded bg-muted" />
-            <div className="h-6 w-20 rounded bg-muted" />
-          </div>
-          <div className="mt-3 h-4 w-full rounded bg-muted" />
-          <div className="mt-2 h-4 w-3/4 rounded bg-muted" />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse rounded-xl border border-border/40 bg-card p-4">
+              <div className="h-3 w-16 rounded bg-muted" />
+              <div className="mt-3 h-7 w-12 rounded bg-muted" />
+            </div>
+          ))}
         </div>
-
-        {/* Roadmap skeleton */}
-        <div className="rounded-lg border border-border bg-card p-6">
-          <div className="mb-6 h-7 w-40 animate-pulse rounded bg-muted" />
-          <div className="space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-6">
-                <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-muted" />
-                <div className="flex-1">
-                  <div className="rounded-lg border border-border bg-muted/50 p-4">
-                    <div className="h-5 w-48 animate-pulse rounded bg-muted" />
-                    <div className="mt-2 h-4 w-full animate-pulse rounded bg-muted" />
-                    <div className="mt-2 h-4 w-3/4 animate-pulse rounded bg-muted" />
-                  </div>
+        <div className="space-y-5">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="flex gap-5">
+              <div className="size-9 shrink-0 animate-pulse rounded-full bg-muted" />
+              <div className="flex-1 animate-pulse rounded-xl border border-border/40 bg-card p-5">
+                <div className="h-5 w-48 rounded bg-muted" />
+                <div className="mt-3 h-4 w-full rounded bg-muted" />
+                <div className="mt-2 h-4 w-3/4 rounded bg-muted" />
+                <div className="mt-4 space-y-2">
+                  <div className="h-3.5 w-64 rounded bg-muted" />
+                  <div className="h-3.5 w-56 rounded bg-muted" />
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -347,82 +515,65 @@ export function PortalRoadmap({
 
   return (
     <div className="space-y-6">
-      {/* Project Header */}
-      <div className="relative rounded-lg border border-border bg-card p-6">
-        {/* Subtle validating indicator */}
+      {/* Project overview */}
+      <div className="relative rounded-xl border border-border/40 bg-card p-5 sm:p-6">
         {isValidating && (
-          <div className="absolute right-3 top-3">
-            <div className="flex h-2 w-2 items-center justify-center">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-qualia-500/75 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-qualia-600" />
-            </div>
+          <div className="absolute right-4 top-4">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-qualia-500/75" />
+              <span className="relative inline-flex size-2 rounded-full bg-qualia-600" />
+            </span>
           </div>
         )}
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold text-foreground">Project Overview</h2>
-          <Badge className={cn('shrink-0', getProjectStatusColor(project.project_status))}>
+          <h2 className="text-lg font-semibold text-foreground">Project Overview</h2>
+          <Badge
+            variant="outline"
+            className={cn('shrink-0', getProjectStatusColor(project.project_status))}
+          >
             {project.project_status}
           </Badge>
         </div>
         {project.description && (
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {project.description}
           </p>
         )}
       </div>
 
-      {/* Roadmap Timeline */}
-      <div className="rounded-lg border border-border bg-card p-6">
-        <h2 className="mb-6 text-xl font-semibold text-foreground">Project Roadmap</h2>
+      {/* Progress summary cards */}
+      {hasPhases && <ProgressSummary phases={phases} />}
+
+      {/* Roadmap timeline */}
+      <div>
+        <h2 className="mb-5 text-lg font-semibold text-foreground">Development Roadmap</h2>
 
         {!hasPhases ? (
-          <div className="flex min-h-[200px] items-center justify-center">
+          <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border bg-card">
             <div className="text-center">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <svg
-                  className="h-6 w-6 text-muted-foreground/60"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">
+              <Package className="mx-auto size-10 text-muted-foreground/30" />
+              <p className="mt-3 text-sm text-muted-foreground">
                 No phases available yet. Your project manager will set up the roadmap soon.
               </p>
             </div>
           </div>
         ) : (
-          <div className={`relative space-y-8 ${fadeInClasses}`}>
-            {/* Vertical connecting line */}
-            <div className="absolute bottom-6 left-4 top-6 w-0.5 bg-muted" />
-
-            {phases.map((phase, index) => {
-              const isLast = index === phases.length - 1;
-
-              return (
-                <div
-                  key={phase.id}
-                  style={index < 3 ? getStaggerDelay(index) : undefined}
-                  className={index < 3 ? 'animate-fade-in-up fill-mode-both' : ''}
-                >
-                  <PhaseWithComments
-                    phase={phase}
-                    index={index}
-                    isLast={isLast}
-                    project={project}
-                    userRole={userRole}
-                    currentUserId={currentUserId}
-                  />
-                </div>
-              );
-            })}
+          <div className={`relative ${fadeInClasses}`}>
+            {phases.map((phase, index) => (
+              <div
+                key={phase.id}
+                style={index < 4 ? getStaggerDelay(index) : undefined}
+                className={index < 4 ? 'animate-fade-in-up fill-mode-both' : ''}
+              >
+                <PhaseWithComments
+                  phase={phase}
+                  isLast={index === phases.length - 1}
+                  project={project}
+                  userRole={userRole}
+                  currentUserId={currentUserId}
+                />
+              </div>
+            ))}
           </div>
         )}
       </div>

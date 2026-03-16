@@ -1199,21 +1199,36 @@ export function usePortalProjectWithPhases(projectId: string | null) {
 
       if (projectError || !project) return null;
 
-      // Fetch phases for the project
+      // Fetch phases with their items (deliverables)
       const { data: phases, error: phasesError } = await supabase
         .from('project_phases')
-        .select('id, name, status, start_date, target_date, description, order_index')
+        .select(
+          `
+          id, name, status, description, sort_order, completed_at,
+          items:phase_items(id, title, description, display_order, is_completed, completed_at, status)
+        `
+        )
         .eq('project_id', projectId)
-        .order('order_index', { ascending: true });
+        .order('sort_order', { ascending: true });
 
       if (phasesError) {
-        // If phases fail but project succeeded, return project with empty phases
         return { project, phases: [] };
       }
 
+      // Sort items within each phase by display_order
+      const phasesWithSortedItems = (phases || []).map((phase) => ({
+        ...phase,
+        order_index: phase.sort_order,
+        start_date: null,
+        target_date: null,
+        items: Array.isArray(phase.items)
+          ? [...phase.items].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+          : [],
+      }));
+
       return {
         project,
-        phases: phases || [],
+        phases: phasesWithSortedItems,
       };
     },
     autoRefreshConfig
