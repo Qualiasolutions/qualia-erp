@@ -99,17 +99,13 @@ export async function getProjectFiles(
       created_at,
       updated_at,
       description,
-      phase_id,
+      phase_name,
       is_client_visible,
       uploader:profiles!project_files_uploaded_by_fkey (
         id,
         full_name,
         email,
         avatar_url
-      ),
-      phase:project_phases!project_files_phase_id_fkey (
-        id,
-        phase_name
       )
     `
     )
@@ -131,7 +127,6 @@ export async function getProjectFiles(
   return (data || []).map((file) => ({
     ...file,
     uploader: Array.isArray(file.uploader) ? file.uploader[0] || null : file.uploader,
-    phase: Array.isArray(file.phase) ? file.phase[0] || null : file.phase,
   })) as unknown as ProjectFile[];
 }
 
