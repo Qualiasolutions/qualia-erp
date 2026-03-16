@@ -351,6 +351,11 @@ export function TeamTaskContainer({
     full_name: m.profile.full_name,
   }));
 
+  // For employee view (or admin "view as"), find the specific member
+  const viewedMember = currentUserId
+    ? (members.find((m) => m.profile.id === currentUserId) ?? members[0])
+    : members[0];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col space-y-2">
       {/* Section header */}
@@ -394,9 +399,9 @@ export function TeamTaskContainer({
               <AdminCheckinsSection workspaceId={workspaceId} profiles={profiles} />
             </>
           ) : (
-            /* Employee: flat list of own tasks */
+            /* Employee: flat list of own tasks (or admin "view as" filtered) */
             <div className="overflow-hidden rounded-lg border border-border/40 bg-card">
-              {members.length === 0 || members[0]?.tasks.length === 0 ? (
+              {!viewedMember || viewedMember.tasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 text-center">
                   <ClipboardList className="mb-2 size-8 text-muted-foreground/40" />
                   <p className="text-sm text-muted-foreground">No active tasks</p>
@@ -406,7 +411,7 @@ export function TeamTaskContainer({
                 </div>
               ) : (
                 <div className="divide-y divide-border/30">
-                  {members[0].tasks.map((task) => (
+                  {viewedMember.tasks.map((task) => (
                     <TeamTaskCard
                       key={task.id}
                       task={task}
