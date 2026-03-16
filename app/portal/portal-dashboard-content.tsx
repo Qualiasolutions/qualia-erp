@@ -7,6 +7,7 @@ import { WhatsNextWidget } from '@/components/portal/portal-whats-next-widget';
 import { PortalActionItems } from '@/components/portal/portal-action-items';
 import { ArrowRight, Lightbulb, Receipt, Headphones } from 'lucide-react';
 import Link from 'next/link';
+import { PortalWelcomeTour } from '@/components/portal/portal-welcome-tour';
 
 interface PortalDashboardContentProps {
   clientId: string;
@@ -85,6 +86,9 @@ export function PortalDashboardContent({
 
   return (
     <div className="space-y-10">
+      {/* Welcome tour for first-time clients */}
+      <PortalWelcomeTour displayName={displayName} companyName={companyName} />
+
       {/* Welcome */}
       <div>
         <p className="text-[13px] font-medium tracking-wide text-muted-foreground">

@@ -379,7 +379,7 @@ export async function getClientProjects(clientId: string): Promise<ActionResult>
           project_type,
           project_status:status,
           start_date,
-          end_date,
+          end_date:target_date,
           lead_id,
           client_id,
           workspace_id,

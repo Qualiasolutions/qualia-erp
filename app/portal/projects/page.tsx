@@ -28,7 +28,7 @@ export default async function PortalProjectsPage() {
   if (isAdmin) {
     const { data: allProjects } = await supabase
       .from('projects')
-      .select('id, name, description, project_type, status, start_date, end_date')
+      .select('id, name, description, project_type, status, start_date, end_date:target_date')
       .not('status', 'eq', 'Canceled')
       .order('name');
 
