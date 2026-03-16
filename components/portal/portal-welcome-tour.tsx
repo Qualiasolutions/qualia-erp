@@ -1,17 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import {
-  FolderOpen,
-  MessageSquare,
-  Lightbulb,
-  Receipt,
-  Settings,
-  X,
-  ArrowRight,
-  Sparkles,
-} from 'lucide-react';
+import { X, ArrowRight, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PortalWelcomeTourProps {
@@ -19,43 +10,27 @@ interface PortalWelcomeTourProps {
   companyName?: string | null;
 }
 
-const TOUR_STORAGE_KEY = 'qualia-portal-tour-seen';
+const TOUR_STORAGE_KEY = 'qualia-portal-tour-v2';
 
 const tourSteps = [
   {
-    icon: FolderOpen,
-    title: 'Projects',
-    description: 'Track progress on all your active projects with real-time phase updates.',
-    color: 'text-qualia-500',
-    bg: 'bg-qualia-500/10',
+    title: 'Track your projects',
+    description:
+      "See real-time progress on every project we're building for you — phases, milestones, and timelines all in one place.",
   },
   {
-    icon: MessageSquare,
-    title: 'Messages',
-    description: 'Communicate directly with our team — updates, questions, approvals.',
-    color: 'text-blue-500',
-    bg: 'bg-blue-500/10',
+    title: 'Message us directly',
+    description:
+      'No more email chains. Send messages, share files, and get quick responses from your dedicated team.',
   },
   {
-    icon: Lightbulb,
-    title: 'Requests',
-    description: 'Submit feature requests, changes, or ideas — we track every one.',
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
+    title: 'Submit requests',
+    description:
+      "Got an idea or need a change? Submit a request and we'll prioritize it in your project roadmap.",
   },
   {
-    icon: Receipt,
-    title: 'Billing',
-    description: 'View invoices, payment history, and outstanding balances.',
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10',
-  },
-  {
-    icon: Settings,
-    title: 'Settings',
-    description: 'Manage your profile, notification preferences, and account details.',
-    color: 'text-muted-foreground',
-    bg: 'bg-muted/50',
+    title: 'Billing & invoices',
+    description: 'View all your invoices, track payments, and stay on top of your account balance.',
   },
 ];
 
@@ -63,33 +38,23 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<'welcome' | 'tour'>('welcome');
   const [currentStep, setCurrentStep] = useState(0);
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     const seen = localStorage.getItem(TOUR_STORAGE_KEY);
     if (!seen) {
-      // Small delay so the page renders first
-      const timer = setTimeout(() => setVisible(true), 600);
+      const timer = setTimeout(() => setVisible(true), 400);
       return () => clearTimeout(timer);
     }
   }, []);
 
-  const dismiss = () => {
-    setVisible(false);
-    localStorage.setItem(TOUR_STORAGE_KEY, 'true');
-  };
-
-  const startTour = () => {
-    setStep('tour');
-    setCurrentStep(0);
-  };
-
-  const nextStep = () => {
-    if (currentStep < tourSteps.length - 1) {
-      setCurrentStep((s) => s + 1);
-    } else {
-      dismiss();
-    }
-  };
+  const dismiss = useCallback(() => {
+    setExiting(true);
+    setTimeout(() => {
+      setVisible(false);
+      localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+    }, 200);
+  }, []);
 
   if (!visible) return null;
 
@@ -97,112 +62,116 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
   const name = companyName || firstName;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+    <div
+      className={cn(
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-200',
+        exiting ? 'opacity-0' : 'opacity-100 duration-300 animate-in fade-in'
+      )}
+    >
       <div
         className={cn(
-          'relative mx-4 w-full max-w-lg overflow-hidden rounded-2xl border border-border/50 bg-card shadow-2xl',
-          'duration-300 animate-in fade-in zoom-in-95'
+          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-border/40 bg-card shadow-2xl transition-all duration-200',
+          exiting ? 'scale-95 opacity-0' : 'duration-300 animate-in fade-in zoom-in-95'
         )}
       >
-        {/* Close button */}
+        {/* Close */}
         <button
           type="button"
           onClick={dismiss}
-          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-muted-foreground"
+          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-muted-foreground"
         >
           <X className="size-4" />
         </button>
 
         {step === 'welcome' ? (
-          /* ───── Welcome Screen ───── */
-          <div className="px-8 pb-8 pt-10 text-center">
-            {/* Brand mark */}
-            <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-2xl bg-qualia-500/10 ring-1 ring-qualia-500/20">
-              <Sparkles className="size-7 text-qualia-500" />
+          <div className="px-8 pb-8 pt-12 text-center">
+            {/* Qualia logo mark */}
+            <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500 to-qualia-600 shadow-lg shadow-qualia-500/20">
+              <span className="text-xl font-bold text-white">Q</span>
             </div>
 
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Welcome to Qualia, {name}
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Welcome, {name}
             </h2>
 
-            <p className="mx-auto mt-3 max-w-sm text-[13px] leading-relaxed text-muted-foreground">
-              Your client portal is ready. Here you can track project progress, communicate with our
-              team, submit requests, and manage billing — all in one place.
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              Your client portal is ready. Track projects, communicate with our team, and manage
+              everything in one place.
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-3">
               <Button
-                onClick={startTour}
-                className="h-10 gap-2 rounded-xl bg-qualia-500 px-6 text-sm font-medium text-white shadow-md transition-all hover:bg-qualia-600 hover:shadow-lg"
+                onClick={() => setStep('tour')}
+                className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-qualia-500 text-sm font-medium text-white shadow-md transition-all hover:bg-qualia-600 hover:shadow-lg"
               >
-                Take a quick tour
+                Show me around
                 <ArrowRight className="size-3.5" />
               </Button>
 
               <button
                 type="button"
                 onClick={dismiss}
-                className="text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+                className="text-xs text-muted-foreground/50 transition-colors hover:text-muted-foreground"
               >
-                Skip for now
+                I&apos;ll explore on my own
               </button>
             </div>
           </div>
         ) : (
-          /* ───── Tour Steps ───── */
           <div className="px-8 pb-8 pt-10">
-            {/* Progress dots */}
-            <div className="mb-8 flex items-center justify-center gap-1.5">
+            {/* Progress bar */}
+            <div className="mb-8 flex gap-1.5">
               {tourSteps.map((_, i) => (
                 <div
                   key={i}
                   className={cn(
-                    'h-1 rounded-full transition-all duration-300',
-                    i === currentStep ? 'w-6 bg-qualia-500' : 'w-1.5 bg-muted-foreground/20',
-                    i < currentStep && 'w-1.5 bg-qualia-500/40'
+                    'h-1 flex-1 rounded-full transition-all duration-300',
+                    i <= currentStep ? 'bg-qualia-500' : 'bg-muted-foreground/10'
                   )}
                 />
               ))}
             </div>
 
             {/* Step content */}
-            <div className="text-center">
-              {(() => {
-                const s = tourSteps[currentStep];
-                const Icon = s.icon;
-                return (
-                  <div
-                    key={currentStep}
-                    className="duration-200 animate-in fade-in slide-in-from-right-4"
-                  >
-                    <div
-                      className={cn(
-                        'mx-auto mb-5 flex size-14 items-center justify-center rounded-xl',
-                        s.bg
-                      )}
-                    >
-                      <Icon className={cn('size-6', s.color)} />
-                    </div>
-
-                    <h3 className="text-lg font-semibold tracking-tight text-foreground">
-                      {s.title}
-                    </h3>
-                    <p className="mx-auto mt-2 max-w-xs text-[13px] leading-relaxed text-muted-foreground">
-                      {s.description}
-                    </p>
-                  </div>
-                );
-              })()}
+            <div className="min-h-[120px]">
+              <div
+                key={currentStep}
+                className="duration-200 animate-in fade-in slide-in-from-right-2"
+              >
+                <p className="text-xs font-medium uppercase tracking-wider text-qualia-500">
+                  Step {currentStep + 1} of {tourSteps.length}
+                </p>
+                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                  {tourSteps[currentStep].title}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  {tourSteps[currentStep].description}
+                </p>
+              </div>
             </div>
 
             {/* Navigation */}
-            <div className="mt-8 flex items-center justify-between">
-              <span className="text-xs tabular-nums text-muted-foreground/50">
-                {currentStep + 1} of {tourSteps.length}
-              </span>
+            <div className="mt-6 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
+                className={cn(
+                  'flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground',
+                  currentStep === 0 && 'invisible'
+                )}
+              >
+                <ChevronLeft className="size-3" />
+                Back
+              </button>
 
               <Button
-                onClick={nextStep}
+                onClick={() => {
+                  if (currentStep < tourSteps.length - 1) {
+                    setCurrentStep((s) => s + 1);
+                  } else {
+                    dismiss();
+                  }
+                }}
                 className="h-9 gap-1.5 rounded-xl bg-qualia-500 px-5 text-sm font-medium text-white transition-all hover:bg-qualia-600"
               >
                 {currentStep < tourSteps.length - 1 ? (
@@ -211,7 +180,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                     <ArrowRight className="size-3" />
                   </>
                 ) : (
-                  'Get started'
+                  "Let's go"
                 )}
               </Button>
             </div>
