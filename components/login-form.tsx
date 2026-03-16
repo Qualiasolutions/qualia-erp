@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActionState, useEffect, useState } from 'react';
-import { Loader2, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Loader2, Eye, EyeOff, ArrowRight, Users, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { loginAction } from '@/app/actions';
 
@@ -29,61 +29,18 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   if (!mode) {
     return (
       <div className={cn('flex flex-col gap-3', className)} {...props}>
-        <button
+        <PortalCard
+          title="Team"
+          description="Admin & employee access"
+          icon={<Users className="h-5 w-5" />}
           onClick={() => setMode('team')}
-          className="group relative flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5 text-left transition-all duration-300 hover:border-qualia-500/30 hover:shadow-[0_2px_12px_rgba(0,164,172,0.06)]"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/10 ring-1 ring-qualia-500/10">
-            <svg
-              className="h-[18px] w-[18px] text-qualia-600 dark:text-qualia-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z"
-              />
-            </svg>
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[14px] font-semibold text-foreground">Team</span>
-            <p className="mt-0.5 text-[12px] text-muted-foreground/70">
-              Admin &amp; employee access
-            </p>
-          </div>
-          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-all duration-300 group-hover:translate-x-1 group-hover:text-qualia-500" />
-        </button>
-
-        <button
+        />
+        <PortalCard
+          title="Client Portal"
+          description="Track projects & manage your account"
+          icon={<Briefcase className="h-5 w-5" />}
           onClick={() => setMode('client')}
-          className="group relative flex items-center gap-4 rounded-xl border border-border/50 bg-card p-5 text-left transition-all duration-300 hover:border-qualia-500/30 hover:shadow-[0_2px_12px_rgba(0,164,172,0.06)]"
-        >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-qualia-500/15 to-qualia-600/10 ring-1 ring-qualia-500/10">
-            <svg
-              className="h-[18px] w-[18px] text-qualia-600 dark:text-qualia-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-              />
-            </svg>
-          </div>
-          <div className="min-w-0 flex-1">
-            <span className="text-[14px] font-semibold text-foreground">Client Portal</span>
-            <p className="mt-0.5 text-[12px] text-muted-foreground/70">
-              Track projects &amp; manage your account
-            </p>
-          </div>
-          <ArrowRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-all duration-300 group-hover:translate-x-1 group-hover:text-qualia-500" />
-        </button>
+        />
       </div>
     );
   }
@@ -181,5 +138,51 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
         </Button>
       </form>
     </div>
+  );
+}
+
+function PortalCard({
+  title,
+  description,
+  icon,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick} className="group relative block w-full text-left">
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-xl border px-5 py-4 transition-all duration-300 ease-out',
+          'border-border/30 bg-foreground/[0.02] hover:border-qualia-500/50 hover:bg-qualia-500/[0.04]'
+        )}
+      >
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-lg transition-all duration-300',
+                'bg-foreground/[0.05] text-muted-foreground/60 group-hover:bg-qualia-500/20 group-hover:text-qualia-500'
+              )}
+            >
+              {icon}
+            </div>
+            <div>
+              <h3 className="font-medium text-foreground">{title}</h3>
+              <p className="text-sm text-muted-foreground/50">{description}</p>
+            </div>
+          </div>
+          <ArrowRight
+            className={cn(
+              'h-5 w-5 transition-all duration-300 ease-out',
+              'text-muted-foreground/20 group-hover:translate-x-1 group-hover:text-qualia-500'
+            )}
+          />
+        </div>
+      </div>
+    </button>
   );
 }
