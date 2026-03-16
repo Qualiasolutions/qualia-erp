@@ -122,8 +122,7 @@ async function fetchTasksForProfile(
     )
     .eq('workspace_id', workspaceId)
     .eq('assignee_id', profileId)
-    .in('status', ['Todo', 'In Progress'])
-    .or(`due_date.gte.${new Date().toISOString().split('T')[0]},due_date.is.null`);
+    .in('status', ['Todo', 'In Progress']);
 
   if (error || !rawTasks) return [];
 
