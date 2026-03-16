@@ -61,15 +61,19 @@ export function OwnerUpdatesCompose({ workspaceId, profiles }: OwnerUpdatesCompo
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/40 bg-card">
+    <div className="h-full overflow-hidden rounded-xl border border-border/50 bg-card shadow-elevation-1">
       {/* Toggle header */}
       <button
         type="button"
-        className="flex w-full items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-center gap-2.5 border-b border-border/30 bg-muted/20 px-4 py-3 text-left transition-colors hover:bg-muted/30"
         onClick={() => setOpen((v) => !v)}
       >
-        <Send className="size-4 shrink-0 text-qualia-500" />
-        <span className="flex-1 text-sm font-semibold text-foreground">Post update to team</span>
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/15">
+          <Send className="size-3.5 shrink-0 text-qualia-500" />
+        </div>
+        <span className="flex-1 text-[13px] font-semibold text-foreground">
+          Post update to team
+        </span>
         {open ? (
           <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
         ) : (
@@ -78,7 +82,7 @@ export function OwnerUpdatesCompose({ workspaceId, profiles }: OwnerUpdatesCompo
       </button>
 
       {open && (
-        <div className="space-y-3 border-t border-border/40 px-4 pb-4 pt-3">
+        <div className="space-y-3 px-4 pb-4 pt-3">
           {/* Title */}
           <Input
             placeholder="Update title"
