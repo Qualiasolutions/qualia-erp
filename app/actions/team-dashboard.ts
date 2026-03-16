@@ -61,15 +61,31 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
   const isAdmin = profileData?.role === 'admin';
 
   if (isAdmin) {
-    // Fetch all employee profiles
-    const { data: profiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('id, full_name, avatar_url, role')
-      .eq('workspace_id', workspaceId)
-      .in('role', ['admin', 'employee', 'manager'])
-      .order('full_name', { ascending: true });
+    // Fetch team profiles via workspace_members (profiles table has no workspace_id)
+    const { data: members, error: membersError } = await supabase
+      .from('workspace_members')
+      .select('profile:profiles!workspace_members_profile_id_fkey(id, full_name, avatar_url, role)')
+      .eq('workspace_id', workspaceId);
 
-    if (profilesError || !profiles) return [];
+    if (membersError || !members) return [];
+
+    const profiles = members
+      .map((m: { profile: unknown }) => {
+        const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+        return p as {
+          id: string;
+          full_name: string | null;
+          avatar_url: string | null;
+          role: string;
+        } | null;
+      })
+      .filter(
+        (
+          p
+        ): p is { id: string; full_name: string | null; avatar_url: string | null; role: string } =>
+          p !== null && ['admin', 'employee', 'manager'].includes(p.role)
+      )
+      .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
 
     // Parallel fetch tasks for all employees
     const memberTasksList = await Promise.all(

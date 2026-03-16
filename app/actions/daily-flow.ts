@@ -135,12 +135,11 @@ export async function getDailyFlowData(): Promise<DailyFlowData> {
       .limit(1)
       .maybeSingle(),
 
-    // Get team member profiles dynamically by role
+    // Get team member profiles via workspace_members (profiles has no workspace_id)
     supabase
-      .from('profiles')
-      .select('id, email, full_name, role')
-      .eq('workspace_id', workspaceId)
-      .in('role', ['admin', 'employee', 'manager']),
+      .from('workspace_members')
+      .select('profile:profiles!workspace_members_profile_id_fkey(id, email, full_name, role)')
+      .eq('workspace_id', workspaceId),
   ]);
 
   // Normalize meetings (handle array FK responses)
@@ -176,8 +175,22 @@ export async function getDailyFlowData(): Promise<DailyFlowData> {
     };
   }
 
-  // Build team members list dynamically from DB roles
-  const teamMembers: TeamMember[] = (profilesResult.data || []).map((profile) => ({
+  // Build team members list dynamically from DB roles (via workspace_members join)
+  const teamProfiles = (profilesResult.data || [])
+    .map((m: { profile: unknown }) => {
+      const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+      return p as {
+        id: string;
+        email: string | null;
+        full_name: string | null;
+        role: string;
+      } | null;
+    })
+    .filter(
+      (p): p is { id: string; email: string | null; full_name: string | null; role: string } =>
+        p !== null && ['admin', 'employee', 'manager'].includes(p.role)
+    );
+  const teamMembers: TeamMember[] = teamProfiles.map((profile) => ({
     id: profile.id,
     email: profile.email || '',
     full_name: profile.full_name,

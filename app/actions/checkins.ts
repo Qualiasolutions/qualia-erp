@@ -133,13 +133,20 @@ async function notifyAdminsOfCheckin(
     const name = profile?.full_name || 'An employee';
     const label = checkinType === 'morning' ? 'morning check-in' : 'end-of-day check-out';
 
-    // Get all admins in workspace
-    const { data: admins } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('workspace_id', workspaceId)
-      .eq('role', 'admin')
-      .neq('id', userId);
+    // Get all admins in workspace (via workspace_members — profiles has no workspace_id)
+    const { data: adminMembers } = await supabase
+      .from('workspace_members')
+      .select('profile:profiles!workspace_members_profile_id_fkey(id, role)')
+      .eq('workspace_id', workspaceId);
+    const admins = (adminMembers || [])
+      .map((m: { profile: unknown }) => {
+        const p = Array.isArray(m.profile) ? m.profile[0] : m.profile;
+        return p as { id: string; role: string } | null;
+      })
+      .filter(
+        (p): p is { id: string; role: string } =>
+          p !== null && p.role === 'admin' && p.id !== userId
+      );
 
     if (!admins?.length) return;
 
