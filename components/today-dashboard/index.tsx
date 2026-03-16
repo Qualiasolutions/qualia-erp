@@ -66,9 +66,9 @@ export function TodayDashboard({
   const now = new Date();
   const currentHour = now.getHours();
 
-  // "View as" — admin can impersonate employee's dashboard view
+  // "View as" — admin can preview employee's task list, but keeps admin layout
   const effectiveUserId = viewAsUserId || currentUserId;
-  const effectiveRole = viewAsUserId ? 'employee' : userRole;
+  const effectiveRole = userRole; // Admin always keeps admin role
   const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
 
