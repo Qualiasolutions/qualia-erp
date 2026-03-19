@@ -34,6 +34,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { EntityAvatar } from '@/components/entity-avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ProjectData } from '@/app/projects/page';
 import type { ProjectType } from '@/types/database';
 
@@ -226,6 +228,34 @@ function ProjectRow({
             </span>
           )}
         </div>
+
+        {/* Team avatars */}
+        {project.team && project.team.length > 0 && (
+          <TooltipProvider delayDuration={200}>
+            <div className="flex flex-shrink-0 -space-x-1.5">
+              {project.team.slice(0, 3).map((member) => (
+                <Tooltip key={member.id}>
+                  <TooltipTrigger asChild>
+                    <Avatar className="h-5 w-5 ring-1 ring-card">
+                      <AvatarImage src={member.avatar_url || ''} />
+                      <AvatarFallback className="bg-primary/10 text-[8px] font-medium text-primary">
+                        {member.full_name?.[0] || '?'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    {member.full_name || 'Unknown'}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+              {project.team.length > 3 && (
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[8px] font-medium text-muted-foreground ring-1 ring-card">
+                  +{project.team.length - 3}
+                </div>
+              )}
+            </div>
+          </TooltipProvider>
+        )}
 
         {/* Progress indicator */}
         {progress > 0 && (

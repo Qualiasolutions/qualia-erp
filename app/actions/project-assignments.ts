@@ -53,7 +53,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
 
   const { data: employee } = await supabase
     .from('profiles')
-    .select('workspace_id, full_name')
+    .select('id, full_name')
     .eq('id', employee_id)
     .single();
 
@@ -61,9 +61,16 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     return { success: false, error: 'Employee not found' };
   }
 
-  // Verify both belong to same workspace
-  if (project.workspace_id !== employee.workspace_id) {
-    return { success: false, error: 'Project and employee must be in the same workspace' };
+  // Verify employee belongs to the same workspace via workspace_members
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('profile_id', employee_id)
+    .eq('workspace_id', project.workspace_id)
+    .single();
+
+  if (!membership) {
+    return { success: false, error: 'Employee is not a member of this workspace' };
   }
 
   // Check for duplicate active assignment

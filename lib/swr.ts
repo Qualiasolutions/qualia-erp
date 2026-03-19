@@ -307,6 +307,7 @@ export interface ProjectStatsData {
   is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
   sort_order: number;
+  team?: { id: string; full_name: string | null; avatar_url: string | null }[];
 }
 
 /**

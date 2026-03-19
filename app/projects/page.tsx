@@ -7,6 +7,12 @@ import { Folder } from 'lucide-react';
 import { ProjectsClient } from './projects-client';
 import type { ProjectType } from '@/types/database';
 
+export interface ProjectTeamMember {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 export interface ProjectData {
   id: string;
   name: string;
@@ -32,6 +38,7 @@ export interface ProjectData {
   is_pre_production: boolean;
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
   sort_order: number;
+  team?: ProjectTeamMember[];
 }
 
 async function ProjectListLoader() {
@@ -51,15 +58,36 @@ async function ProjectListLoader() {
     return <ProjectsClient demos={[]} building={[]} preProduction={[]} live={[]} archived={[]} />;
   }
 
+  // Fetch all active project assignments with employee profiles
+  const { data: allAssignments } = await supabase
+    .from('project_assignments')
+    .select(
+      'project_id, employee:profiles!project_assignments_employee_id_fkey (id, full_name, avatar_url)'
+    )
+    .eq('workspace_id', workspaceId)
+    .is('removed_at', null);
+
+  // Build a map of project_id -> team members
+  const teamByProject = new Map<string, ProjectTeamMember[]>();
+  for (const a of allAssignments || []) {
+    const emp = Array.isArray(a.employee) ? a.employee[0] : a.employee;
+    if (!emp?.id) continue;
+    const existing = teamByProject.get(a.project_id) || [];
+    existing.push({ id: emp.id, full_name: emp.full_name, avatar_url: emp.avatar_url });
+    teamByProject.set(a.project_id, existing);
+  }
+
   // For employees, fetch their assigned project IDs
   let assignedProjectIds: Set<string> | null = null;
   if (userProfile?.role === 'employee') {
-    const { data: assignments } = await supabase
-      .from('project_assignments')
-      .select('project_id')
-      .eq('employee_id', userProfile.id)
-      .is('removed_at', null);
-    assignedProjectIds = new Set((assignments || []).map((a) => a.project_id));
+    assignedProjectIds = new Set(
+      (allAssignments || [])
+        .filter((a) => {
+          const emp = Array.isArray(a.employee) ? a.employee[0] : a.employee;
+          return emp?.id === userProfile.id;
+        })
+        .map((a) => a.project_id)
+    );
   }
 
   // Map RPC result to Project interface
@@ -90,6 +118,7 @@ async function ProjectListLoader() {
     is_pre_production: (p.is_pre_production as boolean) || false,
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
     sort_order: (p.sort_order as number) || 0,
+    team: teamByProject.get(p.id as string) || [],
   }));
 
   // Filter for employees: only assigned projects
