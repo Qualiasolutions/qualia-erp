@@ -21,6 +21,7 @@ import {
   Rocket,
   Archive,
   ClipboardCheck,
+  Smartphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -78,6 +79,12 @@ const PROJECT_TYPE_CONFIG: Record<
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     label: 'SEO',
+  },
+  app: {
+    icon: Smartphone,
+    color: 'text-teal-400',
+    bgColor: 'bg-teal-500/10',
+    label: 'App',
   },
   ads: {
     icon: Megaphone,

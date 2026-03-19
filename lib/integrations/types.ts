@@ -61,6 +61,7 @@ export const GITHUB_TEMPLATES: Record<ProjectType, string> = {
   ai_agent: 'qualia-ai-agent-template',
   voice_agent: 'qualia-voice-agent-template',
   ai_platform: 'qualia-ai-agent-template', // Reuse AI agent template
+  app: 'qualia-website-template', // App projects
   seo: 'qualia-website-template',
   ads: 'qualia-website-template',
 };
@@ -181,6 +182,7 @@ export const PROVISIONING_MAP: Record<ProjectType, IntegrationProvider[]> = {
   ai_agent: ['github', 'vercel'],
   voice_agent: ['github', 'vercel', 'vapi'],
   ai_platform: ['github', 'vercel'], // Same as AI agent
+  app: ['github', 'vercel'],
   seo: [],
   ads: [],
 };

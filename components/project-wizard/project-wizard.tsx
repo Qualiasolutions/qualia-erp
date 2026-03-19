@@ -19,6 +19,7 @@ import {
   Sparkles,
   Zap,
   Github,
+  Smartphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { createProjectWithRoadmap } from '@/app/actions';
@@ -93,6 +94,13 @@ const PROJECT_TYPES: Array<{
     bgGradient: 'from-emerald-500/10 to-green-500/10',
   },
   {
+    value: 'app',
+    label: 'App',
+    icon: <Smartphone className="h-5 w-5" />,
+    gradient: 'from-teal-500 to-cyan-500',
+    bgGradient: 'from-teal-500/10 to-cyan-500/10',
+  },
+  {
     value: 'ads',
     label: 'Ads',
     icon: <Megaphone className="h-5 w-5" />,
@@ -107,7 +115,8 @@ function getDeploymentPlatform(projectType: ProjectType | null): DeploymentPlatf
     projectType === 'web_design' ||
     projectType === 'ai_agent' ||
     projectType === 'voice_agent' ||
-    projectType === 'ai_platform'
+    projectType === 'ai_platform' ||
+    projectType === 'app'
   ) {
     return 'vercel';
   }
@@ -427,7 +436,7 @@ export function ProjectWizard({
                     <Label className="text-sm font-medium text-foreground/80">
                       Type <span className="text-qualia-500">*</span>
                     </Label>
-                    <div className="grid grid-cols-6 gap-2">
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
                       {PROJECT_TYPES.map((type) => {
                         const isSelected = wizardData.project_type === type.value;
                         return (

@@ -14,6 +14,7 @@ import {
   Phone,
   TrendingUp,
   Megaphone,
+  Smartphone,
   Folder,
   Inbox,
   MoreVertical,
@@ -86,6 +87,12 @@ const PROJECT_TYPE_CONFIG: Record<
     bgColor: 'bg-emerald-500/10',
     label: 'SEO',
   },
+  app: {
+    icon: Smartphone,
+    color: 'text-teal-400',
+    bgColor: 'bg-teal-500/10',
+    label: 'App',
+  },
   ads: {
     icon: Megaphone,
     color: 'text-amber-400',
@@ -107,6 +114,7 @@ const PROJECT_TYPES: ProjectType[] = [
   'voice_agent',
   'ai_platform',
   'web_design',
+  'app',
   'seo',
   'ads',
 ];

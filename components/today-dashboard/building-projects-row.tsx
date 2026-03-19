@@ -8,6 +8,7 @@ import {
   Phone,
   TrendingUp,
   Megaphone,
+  Smartphone,
   Sparkles,
   ChevronRight,
   Hammer,
@@ -32,6 +33,7 @@ const PROJECT_TYPE_CONFIG: Record<ProjectType, { icon: typeof Globe; color: stri
   ai_platform: { icon: Sparkles, color: 'text-indigo-500' },
   web_design: { icon: Globe, color: 'text-sky-500' },
   seo: { icon: TrendingUp, color: 'text-emerald-500' },
+  app: { icon: Smartphone, color: 'text-teal-500' },
   ads: { icon: Megaphone, color: 'text-amber-500' },
 };
 

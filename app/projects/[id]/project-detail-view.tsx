@@ -21,6 +21,7 @@ import {
   Users,
   UserPlus,
   X,
+  Smartphone,
 } from 'lucide-react';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -74,6 +75,7 @@ const PROJECT_TYPES: {
     color: 'text-pink-400 bg-pink-400/10',
   },
   { value: 'seo', label: 'SEO', icon: TrendingUp, color: 'text-emerald-400 bg-emerald-400/10' },
+  { value: 'app', label: 'App', icon: Smartphone, color: 'text-teal-400 bg-teal-400/10' },
   { value: 'ads', label: 'Ads', icon: Megaphone, color: 'text-amber-400 bg-amber-400/10' },
 ];
 

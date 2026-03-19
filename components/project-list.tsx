@@ -28,6 +28,7 @@ import {
   ChevronDown,
   ChevronRight,
   Edit2,
+  Smartphone,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -141,6 +142,16 @@ const PROJECT_TYPE_CONFIG: Record<
     gradientTo: 'to-emerald-500/5',
     label: 'SEO',
     description: 'Search optimization',
+  },
+  app: {
+    icon: Smartphone,
+    color: 'text-teal-400',
+    bgColor: 'bg-teal-500/10',
+    borderColor: 'border-teal-500/20',
+    gradientFrom: 'from-teal-500/20',
+    gradientTo: 'to-teal-500/5',
+    label: 'Apps',
+    description: 'Mobile & web apps',
   },
   ads: {
     icon: Megaphone,
