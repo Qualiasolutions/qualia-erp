@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import {
   CheckCircle2,
   AlertTriangle,
   XCircle,
   Globe,
-  RefreshCw,
-  ChevronDown,
   Zap,
+  ExternalLink,
+  Server,
+  Cloud,
+  Train,
 } from 'lucide-react';
 import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
 import { getStatusLabel } from '@/lib/uptime';
@@ -21,14 +24,24 @@ type OverallStatus = {
   degradedCount: number;
 };
 
-function StatusDot({ status }: { status: MonitorStatus }) {
+function getFaviconUrl(url: string): string | null {
+  if (!url) return null;
+  try {
+    const hostname = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?domain=${hostname}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function StatusIndicator({ status }: { status: MonitorStatus }) {
   return (
     <span
       className={cn(
-        'inline-block h-2.5 w-2.5 rounded-full',
-        status === 2 && 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]',
-        status === 8 && 'animate-pulse bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]',
-        status === 9 && 'animate-pulse bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.5)]',
+        'absolute -right-0.5 -top-0.5 block size-3 rounded-full border-2 border-card',
+        status === 2 && 'bg-emerald-500',
+        status === 8 && 'animate-pulse bg-amber-500',
+        status === 9 && 'animate-pulse bg-red-500',
         status === 0 && 'bg-muted-foreground/40',
         status === 1 && 'bg-muted-foreground/40'
       )}
@@ -36,11 +49,11 @@ function StatusDot({ status }: { status: MonitorStatus }) {
   );
 }
 
-function UptimeBar({ ratio }: { ratio: string }) {
+function UptimeMiniBar({ ratio }: { ratio: string }) {
   const pct = parseFloat(ratio);
   return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted/60">
+    <div className="flex items-center gap-1.5">
+      <div className="h-1 w-12 overflow-hidden rounded-full bg-muted/60">
         <div
           className={cn(
             'h-full rounded-full transition-all duration-500',
@@ -52,206 +65,189 @@ function UptimeBar({ ratio }: { ratio: string }) {
           style={{ width: `${Math.min(pct, 100)}%` }}
         />
       </div>
-      <span className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(2)}%</span>
+      <span className="text-[10px] tabular-nums text-muted-foreground/60">{pct.toFixed(1)}%</span>
     </div>
   );
 }
 
-const SOURCE_STYLES: Record<MonitorSource, { label: string; color: string }> = {
-  uptimerobot: {
-    label: 'Vercel',
-    color: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
-  },
-  betterstack: {
-    label: 'Edge Fn',
-    color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
-  },
-  railway: {
-    label: 'Railway',
-    color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
-  },
-};
-
-function MonitorCard({ monitor, index }: { monitor: Monitor; index: number }) {
-  const [expanded, setExpanded] = useState(false);
-  const uptimeRatios = monitor.custom_uptime_ratio?.split('-') || [];
-  const [uptime7d, uptime30d, uptime90d] = uptimeRatios;
+function MonitorTile({ monitor, index }: { monitor: Monitor; index: number }) {
+  const [showDetails, setShowDetails] = useState(false);
+  const faviconUrl = getFaviconUrl(monitor.url);
   const responseTime = parseInt(monitor.average_response_time || '0');
+  const uptimeRatios = monitor.custom_uptime_ratio?.split('-') || [];
+  const uptime30d = uptimeRatios[1];
+
   const displayName = monitor.friendly_name
     .replace(/^(https?:\/\/)?(www\.)?/, '')
-    .replace(/\/$/, '');
+    .replace(/\/$/, '')
+    .replace(/\.vercel\.app$/, '')
+    .replace(/\.supabase\.co\/functions\/v1\//, ' / ');
+
+  // Shorten long names
+  const shortName = displayName.length > 24 ? displayName.slice(0, 22) + '...' : displayName;
 
   return (
     <div
       className={cn(
-        'group relative rounded-xl border transition-all duration-300 ease-out',
-        'bg-card/50 backdrop-blur-sm',
-        monitor.status === 2 && 'border-border/50 hover:border-emerald-500/20',
-        monitor.status === 8 && 'border-amber-500/30 bg-amber-500/[0.02]',
-        monitor.status === 9 && 'border-red-500/30 bg-red-500/[0.02]',
-        monitor.status === 0 && 'border-border/30 opacity-60'
+        'group relative flex flex-col items-center rounded-xl border p-4 transition-all duration-300 ease-out',
+        'cursor-pointer select-none',
+        monitor.status === 2 &&
+          'border-border/40 bg-card hover:border-emerald-500/30 hover:shadow-[0_0_20px_-6px_rgba(16,185,129,0.15)]',
+        monitor.status === 8 &&
+          'border-amber-500/30 bg-amber-500/[0.03] hover:shadow-[0_0_20px_-6px_rgba(245,158,11,0.2)]',
+        monitor.status === 9 &&
+          'border-red-500/30 bg-red-500/[0.03] hover:shadow-[0_0_20px_-6px_rgba(239,68,68,0.2)]',
+        (monitor.status === 0 || monitor.status === 1) && 'border-border/20 bg-card/50 opacity-50'
       )}
-      style={{ animationDelay: `${index * 30}ms` }}
+      style={{ animationDelay: `${index * 40}ms` }}
+      onClick={() => setShowDetails(!showDetails)}
     >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between p-4 text-left"
+      {/* Favicon / icon */}
+      <div className="relative mb-3">
+        <div
+          className={cn(
+            'flex size-11 items-center justify-center overflow-hidden rounded-xl border transition-all duration-300',
+            monitor.status === 2 && 'border-border/40 bg-muted/30',
+            monitor.status === 8 && 'border-amber-500/20 bg-amber-500/5',
+            monitor.status === 9 && 'border-red-500/20 bg-red-500/5',
+            (monitor.status === 0 || monitor.status === 1) && 'border-border/20 bg-muted/20'
+          )}
+        >
+          {faviconUrl ? (
+            <Image src={faviconUrl} alt="" width={24} height={24} className="size-6" unoptimized />
+          ) : (
+            <Globe className="size-5 text-muted-foreground/40" />
+          )}
+        </div>
+        <StatusIndicator status={monitor.status} />
+      </div>
+
+      {/* Name */}
+      <span
+        className="mb-1 text-center text-[13px] font-medium leading-tight text-foreground"
+        title={monitor.friendly_name}
       >
-        <div className="flex min-w-0 items-center gap-3">
-          <StatusDot status={monitor.status} />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-sm font-medium text-foreground">{displayName}</span>
-              {monitor.status === 2 && responseTime > 0 && (
-                <span className="hidden items-center gap-1 font-mono text-[11px] text-muted-foreground/60 sm:inline-flex">
-                  <Zap size={10} />
-                  {responseTime}ms
-                </span>
-              )}
-            </div>
-            <span
-              className={cn(
-                'text-xs',
-                monitor.status === 2 && 'text-emerald-600 dark:text-emerald-400',
-                monitor.status === 8 && 'text-amber-600 dark:text-amber-400',
-                monitor.status === 9 && 'text-red-600 dark:text-red-400',
-                (monitor.status === 0 || monitor.status === 1) && 'text-muted-foreground'
-              )}
-            >
-              {getStatusLabel(monitor.status)}
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              'hidden rounded-md border px-1.5 py-0.5 text-[10px] font-medium sm:inline-block',
-              SOURCE_STYLES[monitor.source]?.color ||
-                'border-border/30 bg-muted/30 text-muted-foreground/60'
-            )}
-          >
-            {SOURCE_STYLES[monitor.source]?.label || monitor.source}
+        {shortName}
+      </span>
+
+      {/* Status + response time */}
+      <div className="flex items-center gap-1.5">
+        <span
+          className={cn(
+            'text-[11px] font-medium',
+            monitor.status === 2 && 'text-emerald-600 dark:text-emerald-400',
+            monitor.status === 8 && 'text-amber-600 dark:text-amber-400',
+            monitor.status === 9 && 'text-red-600 dark:text-red-400',
+            (monitor.status === 0 || monitor.status === 1) && 'text-muted-foreground/60'
+          )}
+        >
+          {getStatusLabel(monitor.status)}
+        </span>
+        {monitor.status === 2 && responseTime > 0 && (
+          <span className="text-[10px] tabular-nums text-muted-foreground/40">
+            {responseTime}ms
           </span>
-          {uptime30d && (
-            <span className="hidden md:block">
-              <UptimeBar ratio={uptime30d} />
-            </span>
-          )}
-          <ChevronDown
-            size={14}
-            className={cn(
-              'text-muted-foreground/40 transition-transform duration-200',
-              expanded && 'rotate-180'
-            )}
-          />
-        </div>
-      </button>
+        )}
+      </div>
 
-      {expanded && (
-        <div className="space-y-3 border-t border-border/50 px-4 pb-4 pt-3 duration-200 animate-in fade-in slide-in-from-top-1">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Globe size={12} />
-            <a
-              href={monitor.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 transition-colors hover:text-foreground"
-            >
-              {monitor.url}
-            </a>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            {uptime7d && (
-              <div className="space-y-1">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60">
-                  7 day
-                </span>
-                <UptimeBar ratio={uptime7d} />
-              </div>
-            )}
-            {uptime30d && (
-              <div className="space-y-1">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60">
-                  30 day
-                </span>
-                <UptimeBar ratio={uptime30d} />
-              </div>
-            )}
-            {uptime90d && (
-              <div className="space-y-1">
-                <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60">
-                  90 day
-                </span>
-                <UptimeBar ratio={uptime90d} />
-              </div>
-            )}
-          </div>
-
-          {responseTime > 0 && (
-            <div className="flex items-center gap-2">
-              <Zap size={12} className="text-muted-foreground/60" />
-              <span className="text-xs text-muted-foreground">
-                Avg response:{' '}
-                <span
-                  className={cn(
-                    'font-mono font-medium',
-                    responseTime < 300 && 'text-emerald-600 dark:text-emerald-400',
-                    responseTime >= 300 &&
-                      responseTime < 1000 &&
-                      'text-amber-600 dark:text-amber-400',
-                    responseTime >= 1000 && 'text-red-600 dark:text-red-400'
-                  )}
-                >
-                  {responseTime}ms
-                </span>
-              </span>
-            </div>
-          )}
-
-          {monitor.logs && monitor.logs.length > 0 && (
-            <div className="space-y-1.5">
-              <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60">
-                Recent events
-              </span>
-              <div className="space-y-1">
-                {monitor.logs.slice(0, 5).map((log, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <span
-                      className={cn(
-                        'h-1.5 w-1.5 flex-shrink-0 rounded-full',
-                        log.type === 1 && 'bg-red-500',
-                        log.type === 2 && 'bg-emerald-500',
-                        log.type === 98 && 'bg-blue-500',
-                        log.type === 99 && 'bg-muted-foreground'
-                      )}
-                    />
-                    <span className="font-mono tabular-nums">
-                      {new Date(log.datetime * 1000).toLocaleDateString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </span>
-                    <span>
-                      {log.type === 1 && 'Went down'}
-                      {log.type === 2 && 'Came back up'}
-                      {log.type === 98 && 'Monitoring started'}
-                      {log.type === 99 && 'Paused'}
-                    </span>
-                    {log.duration > 0 && (
-                      <span className="text-muted-foreground/50">
-                        ({Math.round(log.duration / 60)}m)
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+      {/* Uptime bar */}
+      {uptime30d && (
+        <div className="mt-2">
+          <UptimeMiniBar ratio={uptime30d} />
         </div>
       )}
+
+      {/* Hover overlay with link */}
+      {monitor.url && (
+        <a
+          href={monitor.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="absolute right-2 top-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        >
+          <ExternalLink className="size-3 text-muted-foreground/40 hover:text-foreground" />
+        </a>
+      )}
+
+      {/* Expanded details */}
+      {showDetails && monitor.logs && monitor.logs.length > 0 && (
+        <div className="mt-3 w-full space-y-1 border-t border-border/30 pt-2 duration-200 animate-in fade-in slide-in-from-top-1">
+          {monitor.logs.slice(0, 3).map((log, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+              <span
+                className={cn(
+                  'size-1 flex-shrink-0 rounded-full',
+                  log.type === 1 && 'bg-red-500',
+                  log.type === 2 && 'bg-emerald-500',
+                  log.type === 98 && 'bg-blue-500',
+                  log.type === 99 && 'bg-muted-foreground'
+                )}
+              />
+              <span className="tabular-nums">
+                {new Date(log.datetime * 1000).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+              <span>
+                {log.type === 1 && 'Down'}
+                {log.type === 2 && 'Recovered'}
+                {log.type === 98 && 'Started'}
+                {log.type === 99 && 'Paused'}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SECTION_CONFIG: Record<
+  MonitorSource,
+  { title: string; icon: typeof Globe; description: string }
+> = {
+  uptimerobot: { title: 'Websites', icon: Cloud, description: 'Client websites & web apps' },
+  betterstack: { title: 'Edge Functions', icon: Zap, description: 'Supabase Edge Functions' },
+  railway: { title: 'Railway Services', icon: Train, description: 'Backend workers & bots' },
+};
+
+function MonitorSection({
+  source,
+  monitors,
+  startIndex,
+}: {
+  source: MonitorSource;
+  monitors: Monitor[];
+  startIndex: number;
+}) {
+  if (monitors.length === 0) return null;
+  const config = SECTION_CONFIG[source];
+  const Icon = config.icon;
+  const upCount = monitors.filter((m) => m.status === 2).length;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <div className="flex size-7 items-center justify-center rounded-lg bg-muted/40">
+            <Icon className="size-3.5 text-muted-foreground/60" />
+          </div>
+          <div>
+            <h3 className="text-sm font-medium text-foreground">{config.title}</h3>
+            <p className="text-[11px] text-muted-foreground/50">{config.description}</p>
+          </div>
+        </div>
+        <span className="text-[11px] tabular-nums text-muted-foreground/50">
+          {upCount}/{monitors.length} up
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        {monitors.map((monitor, i) => (
+          <MonitorTile key={monitor.id} monitor={monitor} index={startIndex + i} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -266,23 +262,41 @@ export function StatusDashboard({
   error: string | null;
 }) {
   const upCount = monitors.filter((m) => m.status === 2).length;
+
+  // Group by source
+  const bySource: Record<MonitorSource, Monitor[]> = {
+    uptimerobot: [],
+    betterstack: [],
+    railway: [],
+  };
+  monitors.forEach((m) => {
+    if (bySource[m.source]) bySource[m.source].push(m);
+  });
+
+  // Compute avg uptime only from monitors that have it
+  const monitorsWithUptime = monitors.filter((m) => parseFloat(m.all_time_uptime_ratio || '0') > 0);
   const avgUptime =
-    monitors.length > 0
+    monitorsWithUptime.length > 0
       ? (
-          monitors.reduce((sum, m) => sum + parseFloat(m.all_time_uptime_ratio || '0'), 0) /
-          monitors.length
+          monitorsWithUptime.reduce((sum, m) => sum + parseFloat(m.all_time_uptime_ratio), 0) /
+          monitorsWithUptime.length
         ).toFixed(2)
-      : '0';
+      : '--';
+  const monitorsWithResponse = monitors.filter((m) => parseInt(m.average_response_time || '0') > 0);
   const avgResponse =
-    monitors.length > 0
+    monitorsWithResponse.length > 0
       ? Math.round(
-          monitors.reduce((sum, m) => sum + parseInt(m.average_response_time || '0'), 0) /
-            monitors.length
+          monitorsWithResponse.reduce(
+            (sum, m) => sum + parseInt(m.average_response_time || '0'),
+            0
+          ) / monitorsWithResponse.length
         )
       : 0;
 
+  let sectionIndex = 0;
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
+    <div className="mx-auto max-w-5xl space-y-8 px-4 py-8 sm:px-6">
       {/* Header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">System Status</h1>
@@ -296,16 +310,16 @@ export function StatusDashboard({
         className={cn(
           'relative overflow-hidden rounded-2xl border p-6',
           overall.allUp
-            ? 'border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.04] to-emerald-500/[0.01]'
+            ? 'border-emerald-500/20 bg-gradient-to-br from-emerald-500/[0.04] via-transparent to-emerald-500/[0.02]'
             : overall.downCount > 0
-              ? 'border-red-500/20 bg-gradient-to-br from-red-500/[0.04] to-red-500/[0.01]'
-              : 'border-amber-500/20 bg-gradient-to-br from-amber-500/[0.04] to-amber-500/[0.01]'
+              ? 'border-red-500/20 bg-gradient-to-br from-red-500/[0.04] via-transparent to-red-500/[0.02]'
+              : 'border-amber-500/20 bg-gradient-to-br from-amber-500/[0.04] via-transparent to-amber-500/[0.02]'
         )}
       >
         <div className="flex items-center gap-4">
           <div
             className={cn(
-              'flex h-12 w-12 items-center justify-center rounded-xl',
+              'flex size-12 items-center justify-center rounded-xl',
               overall.allUp && 'bg-emerald-500/10',
               overall.downCount > 0 && 'bg-red-500/10',
               overall.degradedCount > 0 && overall.downCount === 0 && 'bg-amber-500/10'
@@ -338,14 +352,22 @@ export function StatusDashboard({
           </div>
         </div>
 
-        {/* Stats row */}
-        <div className="mt-5 grid grid-cols-3 gap-4 border-t border-border/30 pt-4">
+        {/* Stats */}
+        <div className="mt-5 grid grid-cols-4 gap-4 border-t border-border/30 pt-4">
           <div>
             <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60">
-              Monitors
+              Total
             </span>
             <p className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">
               {monitors.length}
+            </p>
+          </div>
+          <div>
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground/60">
+              Websites
+            </span>
+            <p className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">
+              {bySource.uptimerobot.length}
             </p>
           </div>
           <div>
@@ -361,40 +383,49 @@ export function StatusDashboard({
               Avg Response
             </span>
             <p className="mt-0.5 text-xl font-semibold tabular-nums text-foreground">
-              {avgResponse}ms
+              {avgResponse > 0 ? `${avgResponse}ms` : '--'}
             </p>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/[0.04] p-4">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] p-4">
+          <p className="text-sm text-amber-600 dark:text-amber-400">{error}</p>
         </div>
       )}
 
-      {/* Monitor List */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
-            Services ({monitors.length})
-          </h3>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/50">
-            <RefreshCw size={10} />
-            Auto-refreshes every 60s
-          </div>
-        </div>
-        <div className="space-y-1.5">
-          {monitors.map((monitor, i) => (
-            <MonitorCard key={monitor.id} monitor={monitor} index={i} />
-          ))}
-        </div>
-      </div>
+      {/* Sections by source */}
+      {(['uptimerobot', 'betterstack', 'railway'] as MonitorSource[]).map((source) => {
+        const section = (
+          <MonitorSection
+            key={source}
+            source={source}
+            monitors={bySource[source]}
+            startIndex={sectionIndex}
+          />
+        );
+        sectionIndex += bySource[source].length;
+        return section;
+      })}
 
       {/* Footer */}
-      <p className="pt-4 text-center text-xs text-muted-foreground/40">
-        UptimeRobot &middot; Better Stack &middot; Railway
-      </p>
+      <div className="flex items-center justify-center gap-4 pt-2 text-[11px] text-muted-foreground/30">
+        <div className="flex items-center gap-1">
+          <Server size={10} />
+          UptimeRobot
+        </div>
+        <span>&middot;</span>
+        <div className="flex items-center gap-1">
+          <Zap size={10} />
+          Better Stack
+        </div>
+        <span>&middot;</span>
+        <div className="flex items-center gap-1">
+          <Train size={10} />
+          Railway
+        </div>
+      </div>
     </div>
   );
 }

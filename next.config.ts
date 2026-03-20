@@ -70,6 +70,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
       },
+      {
+        protocol: 'https',
+        hostname: 'www.google.com',
+        pathname: '/s2/favicons**',
+      },
     ],
   },
 

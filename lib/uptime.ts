@@ -56,12 +56,19 @@ async function getUptimeRobotMonitors(): Promise<Monitor[]> {
       cache: 'no-store',
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error('[UptimeRobot] HTTP error:', res.status);
+      return [];
+    }
     const data: UptimeResponse = await res.json();
-    if (data.stat !== 'ok') return [];
+    if (data.stat !== 'ok') {
+      console.error('[UptimeRobot] API error:', JSON.stringify(data).slice(0, 200));
+      return [];
+    }
 
     return data.monitors.map((m) => ({ ...m, source: 'uptimerobot' as const }));
-  } catch {
+  } catch (e) {
+    console.error('[UptimeRobot] Exception:', e);
     return [];
   }
 }
