@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useTransition, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronRight, Plus, Trash2, Pencil, Loader2, FolderPlus, Zap } from 'lucide-react';
+import {
+  Check,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Pencil,
+  Loader2,
+  FolderPlus,
+  Zap,
+  ClipboardList,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -90,9 +100,26 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     fetchData();
   }, [fetchData]);
 
-  // Get tasks for active phase
-  const activePhase = phases[activePhaseIndex];
-  const phaseTasks = activePhase ? tasks.filter((t) => t.phase_name === activePhase.name) : [];
+  // Unphased tasks (tasks linked to the project but not assigned to any phase)
+  const unphasedTasks = tasks.filter(
+    (t) => !t.phase_name || !phases.some((p) => p.name === t.phase_name)
+  );
+
+  // Auto-select "General" when there are no phases but there are unphased tasks
+  useEffect(() => {
+    if (!isLoading && phases.length === 0 && unphasedTasks.length > 0) {
+      setActivePhaseIndex(-1);
+    }
+  }, [isLoading, phases.length, unphasedTasks.length]);
+
+  // Get tasks for active phase (activePhaseIndex === -1 means "General" unphased view)
+  const activePhase = activePhaseIndex >= 0 ? phases[activePhaseIndex] : null;
+  const phaseTasks =
+    activePhaseIndex === -1
+      ? unphasedTasks
+      : activePhase
+        ? tasks.filter((t) => t.phase_name === activePhase.name)
+        : [];
 
   // Calculate progress
   const getPhaseProgress = (phase: Phase) => {
@@ -163,13 +190,17 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
 
   // Task CRUD handlers
   const handleAddTask = async () => {
-    if (!newTaskTitle.trim() || !activePhase) return;
+    if (!newTaskTitle.trim()) return;
+    // Must be on a phase or the General section
+    if (activePhaseIndex >= 0 && !activePhase) return;
 
     const formData = new FormData();
     formData.set('title', newTaskTitle.trim());
     formData.set('project_id', projectId);
     formData.set('workspace_id', workspaceId);
-    formData.set('phase_name', activePhase.name);
+    if (activePhase) {
+      formData.set('phase_name', activePhase.name);
+    }
     formData.set('status', 'Todo');
     formData.set('priority', 'No Priority');
     formData.set('show_in_inbox', 'true'); // Auto-show phase tasks in main inbox
@@ -257,7 +288,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     });
   };
 
-  if (phases.length === 0) {
+  if (phases.length === 0 && unphasedTasks.length === 0) {
     return (
       <div className={cn('space-y-8', className)}>
         <div className="rounded-2xl border border-border/30 bg-muted/20 p-8 text-center backdrop-blur-sm">
@@ -345,6 +376,49 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
       <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
         {/* Left: Phase Navigation */}
         <div className="space-y-2">
+          {/* General (unphased) tasks */}
+          {unphasedTasks.length > 0 && (
+            <div
+              className={cn(
+                'group relative cursor-pointer overflow-hidden rounded-xl border transition-all duration-200',
+                activePhaseIndex === -1
+                  ? 'border-primary/30 bg-primary/10 shadow-[0_0_20px_rgba(var(--primary-rgb),0.2)]'
+                  : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+              )}
+            >
+              <button onClick={() => setActivePhaseIndex(-1)} className="w-full p-4 text-left">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold transition-colors',
+                        activePhaseIndex === -1
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted/40 text-muted-foreground'
+                      )}
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span
+                        className={cn(
+                          'block font-bold',
+                          activePhaseIndex === -1 ? 'text-primary' : 'text-foreground'
+                        )}
+                      >
+                        General
+                      </span>
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        {unphasedTasks.filter((t) => t.status === 'Done').length}/
+                        {unphasedTasks.length} Tasks
+                      </span>
+                    </div>
+                  </div>
+                  {activePhaseIndex === -1 && <ChevronRight className="h-4 w-4 text-primary" />}
+                </div>
+              </button>
+            </div>
+          )}
           {phases.map((phase, idx) => {
             const { completed, total, percent } = getPhaseProgress(phase);
             const isComplete = total > 0 && completed === total;
@@ -492,19 +566,24 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
             {/* Decorative blob */}
             <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-primary/5 blur-[100px]" />
 
-            {activePhase && (
+            {(activePhase || activePhaseIndex === -1) && (
               <div className="relative z-10">
                 <div className="mb-8">
                   <h3 className="mb-2 flex items-center gap-3 text-3xl font-bold tracking-tight">
-                    {activePhase.name}
-                    {getPhaseProgress(activePhase).percent === 100 && (
+                    {activePhase ? activePhase.name : 'General'}
+                    {activePhase && getPhaseProgress(activePhase).percent === 100 && (
                       <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-xs font-bold uppercase tracking-wider text-emerald-500">
                         Completed
                       </span>
                     )}
                   </h3>
-                  {activePhase.description && (
+                  {activePhase?.description && (
                     <p className="text-lg text-muted-foreground">{activePhase.description}</p>
+                  )}
+                  {activePhaseIndex === -1 && (
+                    <p className="text-sm text-muted-foreground">
+                      Tasks assigned to this project without a specific phase.
+                    </p>
                   )}
                 </div>
 
