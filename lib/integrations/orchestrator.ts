@@ -7,7 +7,7 @@ import type {
   ProjectProvisioningResult,
   ProvisioningStatus,
 } from './types';
-import { createRepository } from './github';
+import { createRepository, clearGitHubClientCache } from './github';
 import { createVercelProject } from './vercel';
 import { createVAPIAssistant } from './vapi';
 
@@ -319,6 +319,9 @@ export async function retryProvisioningStep(
     .eq('project_id', projectId);
 
   const clientName = (project.client as { display_name?: string } | null)?.display_name;
+
+  // Clear cached client so we pick up any token changes
+  if (step === 'github') await clearGitHubClientCache(project.workspace_id);
 
   // Retry specific step
   if (step === 'github') {
