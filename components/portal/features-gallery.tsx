@@ -82,11 +82,11 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
   return (
     <>
       {/* Image Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {typedFeatures.map((feature, index) => (
           <div
             key={feature.id}
-            className="group relative aspect-video cursor-pointer overflow-hidden rounded-lg border border-border bg-muted/20 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-qualia-500/50 hover:shadow-elevation-2"
+            className="group relative aspect-[9/16] cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/10 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-qualia-500/50 hover:shadow-elevation-2"
             onClick={() => handleImageClick(index)}
           >
             {feature.url ? (
@@ -94,8 +94,8 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
                 src={feature.url}
                 alt={feature.description || feature.original_name}
                 fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="object-contain p-1 transition-transform duration-300 group-hover:scale-[1.02]"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               />
             ) : (
               <div className="flex h-full items-center justify-center">
