@@ -18,6 +18,7 @@ import {
   Shield,
   Wallet,
   ClipboardList,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -51,6 +52,7 @@ const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Payments', href: '/payments', icon: Wallet },
+  { name: 'Status', href: '/status', icon: Activity },
 ];
 
 type NavItem = (typeof workspaceNav)[0];
