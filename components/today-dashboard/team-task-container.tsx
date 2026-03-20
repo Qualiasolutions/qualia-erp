@@ -2,7 +2,15 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { format } from 'date-fns';
-import { ChevronDown, Users, ClipboardList, Filter, Plus, Loader2 } from 'lucide-react';
+import {
+  ChevronDown,
+  Users,
+  ClipboardList,
+  Filter,
+  Plus,
+  Loader2,
+  CheckCircle2,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -164,7 +172,10 @@ function MemberGroup({
   isAdmin,
 }: MemberGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const { profile, tasks } = member;
+  const [showCompleted, setShowCompleted] = useState(false);
+  const { profile, tasks: allTasks } = member;
+  const activeTasks = allTasks.filter((t) => t.status !== 'Done');
+  const completedTasks = allTasks.filter((t) => t.status === 'Done');
 
   const initials = profile.full_name
     ? profile.full_name
@@ -194,7 +205,7 @@ function MemberGroup({
           {profile.full_name ?? 'Unknown'}
         </span>
         <span className="shrink-0 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
-          {tasks.length}
+          {activeTasks.length}
         </span>
         <ChevronDown
           className={cn(
@@ -207,21 +218,56 @@ function MemberGroup({
       {/* Tasks + inline add */}
       {open && (
         <div className="divide-y divide-border/20">
-          {tasks.length === 0 ? (
+          {activeTasks.length === 0 && completedTasks.length === 0 ? (
             <p className="px-4 py-4 text-center text-xs text-muted-foreground/60">
               No active tasks
             </p>
           ) : (
-            tasks.map((task) => (
-              <TeamTaskCard
-                key={task.id}
-                task={task}
-                currentUserId={currentUserId}
-                onTaskUpdate={onTaskUpdate}
-                workspaceId={workspaceId}
-                isAdmin={isAdmin}
-              />
-            ))
+            <>
+              {activeTasks.map((task) => (
+                <TeamTaskCard
+                  key={task.id}
+                  task={task}
+                  currentUserId={currentUserId}
+                  onTaskUpdate={onTaskUpdate}
+                  workspaceId={workspaceId}
+                  isAdmin={isAdmin}
+                />
+              ))}
+
+              {/* Completed today section */}
+              {completedTasks.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCompleted((v) => !v)}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors hover:bg-muted/20"
+                  >
+                    <CheckCircle2 className="size-3 text-emerald-500" />
+                    <span className="font-medium text-emerald-500/80">
+                      {completedTasks.length} done today
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'ml-auto size-3 text-muted-foreground/40 transition-transform duration-200',
+                        !showCompleted && '-rotate-90'
+                      )}
+                    />
+                  </button>
+                  {showCompleted &&
+                    completedTasks.map((task) => (
+                      <TeamTaskCard
+                        key={task.id}
+                        task={task}
+                        currentUserId={currentUserId}
+                        onTaskUpdate={onTaskUpdate}
+                        workspaceId={workspaceId}
+                        isAdmin={isAdmin}
+                      />
+                    ))}
+                </div>
+              )}
+            </>
           )}
           <InlineTaskAdd
             assigneeId={profile.id}
@@ -438,6 +484,79 @@ function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
   );
 }
 
+// ─── Employee Task List (with completed section) ─────────────────────────────
+
+function EmployeeTaskList({
+  member,
+  currentUserId,
+  onTaskUpdate,
+  workspaceId,
+}: {
+  member: TeamMemberTasks | null;
+  currentUserId?: string | null;
+  onTaskUpdate?: () => void;
+  workspaceId: string;
+}) {
+  const [showCompleted, setShowCompleted] = useState(false);
+  const activeTasks = member?.tasks.filter((t) => t.status !== 'Done') ?? [];
+  const completedTasks = member?.tasks.filter((t) => t.status === 'Done') ?? [];
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
+      {!member || (activeTasks.length === 0 && completedTasks.length === 0) ? (
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <ClipboardList className="mb-2 size-8 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground/70">No active tasks</p>
+          <p className="mt-1 text-xs text-muted-foreground/50">All caught up — great work!</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-border/20">
+          {activeTasks.map((task) => (
+            <TeamTaskCard
+              key={task.id}
+              task={task}
+              currentUserId={currentUserId}
+              onTaskUpdate={onTaskUpdate}
+              workspaceId={workspaceId}
+            />
+          ))}
+
+          {completedTasks.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowCompleted((v) => !v)}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors hover:bg-muted/20"
+              >
+                <CheckCircle2 className="size-3 text-emerald-500" />
+                <span className="font-medium text-emerald-500/80">
+                  {completedTasks.length} done today
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'ml-auto size-3 text-muted-foreground/40 transition-transform duration-200',
+                    !showCompleted && '-rotate-90'
+                  )}
+                />
+              </button>
+              {showCompleted &&
+                completedTasks.map((task) => (
+                  <TeamTaskCard
+                    key={task.id}
+                    task={task}
+                    currentUserId={currentUserId}
+                    onTaskUpdate={onTaskUpdate}
+                    workspaceId={workspaceId}
+                  />
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Container ────────────────────────────────────────────────────────────
 
 interface TeamTaskContainerProps {
@@ -487,8 +606,11 @@ export function TeamTaskContainer({
         {!isLoading && !isError && (
           <span className="rounded-full bg-muted/60 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
             {isAdmin
-              ? members.reduce((sum, m) => sum + m.tasks.length, 0)
-              : (viewedMember?.tasks.length ?? 0)}
+              ? members.reduce(
+                  (sum, m) => sum + m.tasks.filter((t) => t.status !== 'Done').length,
+                  0
+                )
+              : (viewedMember?.tasks.filter((t) => t.status !== 'Done').length ?? 0)}
           </span>
         )}
       </div>
@@ -536,29 +658,12 @@ export function TeamTaskContainer({
             </>
           ) : (
             /* Employee: flat list of own tasks (or admin "view as" filtered) */
-            <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
-              {!viewedMember || viewedMember.tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center">
-                  <ClipboardList className="mb-2 size-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground/70">No active tasks</p>
-                  <p className="mt-1 text-xs text-muted-foreground/50">
-                    All caught up — great work!
-                  </p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/20">
-                  {viewedMember.tasks.map((task) => (
-                    <TeamTaskCard
-                      key={task.id}
-                      task={task}
-                      currentUserId={currentUserId}
-                      onTaskUpdate={handleTaskUpdate}
-                      workspaceId={workspaceId}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            <EmployeeTaskList
+              member={viewedMember}
+              currentUserId={currentUserId}
+              onTaskUpdate={handleTaskUpdate}
+              workspaceId={workspaceId}
+            />
           )}
         </div>
       )}

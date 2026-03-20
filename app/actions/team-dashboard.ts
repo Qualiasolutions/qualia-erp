@@ -16,6 +16,7 @@ export interface TeamMemberTask {
   status: string;
   priority: string;
   due_date: string | null;
+  completed_at: string | null;
   assignee_id: string | null;
   project: { id: string; name: string; project_type: string | null } | null;
   time_log: TeamMemberTaskTimeLog | null;
@@ -131,6 +132,7 @@ async function fetchTasksForProfile(
       status,
       priority,
       due_date,
+      completed_at,
       assignee_id,
       project:projects(id, name, project_type),
       time_log:task_time_logs(started_at, ended_at, duration_minutes)
@@ -138,7 +140,9 @@ async function fetchTasksForProfile(
     )
     .eq('workspace_id', workspaceId)
     .eq('assignee_id', profileId)
-    .in('status', ['Todo', 'In Progress']);
+    .or(
+      `status.in.(Todo,In Progress),and(status.eq.Done,completed_at.gte.${new Date().toISOString().split('T')[0]})`
+    );
 
   if (error || !rawTasks) return [];
 
@@ -150,6 +154,7 @@ async function fetchTasksForProfile(
       status: string;
       priority: string;
       due_date: string | null;
+      completed_at: string | null;
       assignee_id: string | null;
       project:
         | { id: string; name: string; project_type: string | null }
@@ -176,6 +181,7 @@ async function fetchTasksForProfile(
         status: t.status,
         priority: t.priority,
         due_date: t.due_date,
+        completed_at: t.completed_at,
         assignee_id: t.assignee_id,
         project,
         time_log,

@@ -181,14 +181,15 @@ export function TeamTaskCard({
         {/* Status circle — clickable to mark as done */}
         <button
           type="button"
-          disabled={marking || task.status === 'Done'}
+          disabled={marking}
           onClick={async (e) => {
             e.stopPropagation();
-            if (marking || task.status === 'Done') return;
+            if (marking) return;
             setMarking(true);
+            const newStatus = task.status === 'Done' ? 'Todo' : 'Done';
             const fd = new FormData();
             fd.set('id', task.id);
-            fd.set('status', 'Done');
+            fd.set('status', newStatus);
             const result = await updateTask(fd);
             if (result.success) {
               if (workspaceId) invalidateTeamDashboard(workspaceId);
@@ -209,7 +210,7 @@ export function TeamTaskCard({
               'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50',
             marking && 'animate-pulse border-emerald-500 bg-emerald-500/20'
           )}
-          title={task.status === 'Done' ? 'Done' : 'Mark as done'}
+          title={task.status === 'Done' ? 'Mark as todo' : 'Mark as done'}
         >
           {task.status === 'Done' && <Check className="size-2 text-white" />}
           {task.status === 'In Progress' && !marking && (
