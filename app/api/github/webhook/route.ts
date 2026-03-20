@@ -127,9 +127,9 @@ function parsePlanningFiles(allChangedFiles: string[]): PhaseUpdate[] {
 export async function POST(request: NextRequest) {
   try {
     const rawBody = await request.text();
-    const secret = process.env.GITHUB_WEBHOOK_SECRET;
+    const secret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET;
 
-    // Verify signature (skip only if secret not configured — dev mode)
+    // Verify signature if secret is configured
     if (secret) {
       const signature = request.headers.get('x-hub-signature-256');
       if (!verifySignature(rawBody, signature, secret)) {
