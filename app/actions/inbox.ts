@@ -976,3 +976,34 @@ export async function quickToggleTaskStatus(taskId: string): Promise<ActionResul
   revalidatePath('/schedule');
   return { success: true, data: { newStatus } };
 }
+
+/**
+ * Clear all completed tasks from inbox (hides them, doesn't delete)
+ * Tasks remain in the DB and can be found via project views
+ */
+export async function clearCompletedFromInbox(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const admin = await isUserAdmin(user.id);
+  if (!admin) return { success: false, error: 'No permission' };
+
+  const wsId = await getCurrentWorkspaceId();
+  if (!wsId) return { success: false, error: 'No workspace' };
+
+  const { error, count } = await supabase
+    .from('tasks')
+    .update({ show_in_inbox: false })
+    .eq('workspace_id', wsId)
+    .eq('show_in_inbox', true)
+    .eq('status', 'Done');
+
+  if (error) return { success: false, error: error.message };
+
+  revalidatePath('/');
+  return { success: true, data: { cleared: count } };
+}

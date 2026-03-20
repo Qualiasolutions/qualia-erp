@@ -22,6 +22,7 @@ import {
   Smartphone,
   Megaphone,
   Folder,
+  Archive,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -29,6 +30,7 @@ import {
   toggleTaskInbox,
   createTask,
   deleteTask,
+  clearCompletedFromInbox,
   type Task,
 } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
@@ -281,6 +283,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickAddValue, setQuickAddValue] = useState('');
   const [isAddingTask, setIsAddingTask] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   const handleQuickAdd = async () => {
     const title = quickAddValue.trim();
@@ -334,15 +337,19 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
   const { userId: currentUserId } = useAdminContext();
 
   // Use optimistic tasks for filtering to show instant updates
-  const visibleTasks = optimisticTasks.filter((t) => {
+  const allFilteredTasks = optimisticTasks.filter((t) => {
     if (hiddenTasks.has(t.id)) return false;
-    // "My Tasks" filter - only show tasks assigned to current user
     if (selectedUserId && t.assignee?.id !== selectedUserId) return false;
     return true;
   });
 
-  const pendingTasks = visibleTasks.filter((t) => t.status !== 'Done').length;
-  const completedTasks = visibleTasks.filter((t) => t.status === 'Done').length;
+  const pendingTasks = allFilteredTasks.filter((t) => t.status !== 'Done').length;
+  const completedTasks = allFilteredTasks.filter((t) => t.status === 'Done').length;
+
+  // Show either active or completed based on toggle
+  const visibleTasks = showCompleted
+    ? allFilteredTasks.filter((t) => t.status === 'Done')
+    : allFilteredTasks.filter((t) => t.status !== 'Done');
 
   // Optimistic toggle - instant feedback, then sync with server
   const handleToggleTask = useCallback(
@@ -387,6 +394,17 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
     [router, dispatchOptimistic]
   );
 
+  // Clear all completed tasks from inbox
+  const handleClearCompleted = useCallback(() => {
+    startTransition(async () => {
+      await clearCompletedFromInbox();
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+      setShowCompleted(false);
+      router.refresh();
+    });
+  }, [router]);
+
   // Virtualization for performance with large task lists
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -412,35 +430,67 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
           </p>
         </div>
 
-        {/* Simplified user filter for 2-person team */}
-        <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
-          <button
-            onClick={() => setSelectedUserId(null)}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-              !selectedUserId
-                ? 'bg-muted/50 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            All Tasks
-          </button>
-          <button
-            onClick={() => setSelectedUserId(currentUserId)}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
-              selectedUserId === currentUserId
-                ? 'bg-muted/50 text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            )}
-          >
-            My Tasks
-          </button>
+        <div className="flex items-center gap-2">
+          {/* Completed view toggle */}
+          {completedTasks > 0 && (
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => setShowCompleted(!showCompleted)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all',
+                      showCompleted
+                        ? 'bg-emerald-500/15 text-emerald-400'
+                        : 'text-muted-foreground hover:bg-muted/30 hover:text-foreground'
+                    )}
+                  >
+                    <Archive className="h-3.5 w-3.5" />
+                    {completedTasks}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  {showCompleted ? 'Show active tasks' : 'Show completed tasks'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* User filter */}
+          <div className="flex items-center gap-1 rounded-lg bg-muted/30 p-1">
+            <button
+              onClick={() => setSelectedUserId(null)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                !selectedUserId
+                  ? 'bg-muted/50 text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              All Tasks
+            </button>
+            <button
+              onClick={() => setSelectedUserId(currentUserId)}
+              className={cn(
+                'rounded-md px-3 py-1.5 text-xs font-medium transition-all',
+                selectedUserId === currentUserId
+                  ? 'bg-muted/50 text-foreground'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              My Tasks
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Quick Add */}
-      <div className="flex items-center gap-3 border-b border-border/40 px-5 py-3">
+      {/* Quick Add - hidden in completed view */}
+      <div
+        className={cn(
+          'flex items-center gap-3 border-b border-border/40 px-5 py-3',
+          showCompleted && 'hidden'
+        )}
+      >
         <input
           type="text"
           value={quickAddValue}
@@ -465,20 +515,47 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
         </Button>
       </div>
 
+      {/* Completed view header with clear action */}
+      {showCompleted && completedTasks > 0 && (
+        <div className="flex items-center justify-between border-b border-border/40 bg-emerald-500/5 px-5 py-2.5">
+          <span className="text-xs text-emerald-400">
+            {completedTasks} completed task{completedTasks !== 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={handleClearCompleted}
+            disabled={isPending}
+            className="flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground transition-all hover:bg-muted/30 hover:text-foreground"
+          >
+            <Archive className="h-3 w-3" />
+            Clear from inbox
+          </button>
+        </div>
+      )}
+
       {/* Task List - Virtualized for performance */}
       <div ref={parentRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {visibleTasks.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-16 text-center">
             <div className="mb-3 flex h-12 w-12 animate-float items-center justify-center rounded-full bg-amber-500/10">
-              <Check className="h-6 w-6 text-amber-500" />
+              {showCompleted ? (
+                <Archive className="h-6 w-6 text-amber-500" />
+              ) : (
+                <Check className="h-6 w-6 text-amber-500" />
+              )}
             </div>
             <p className="stagger-1 animate-stagger-in text-sm font-medium text-foreground">
-              {selectedUserId ? 'Nothing assigned to you' : 'All clear for today'}
+              {showCompleted
+                ? 'No completed tasks'
+                : selectedUserId
+                  ? 'Nothing assigned to you'
+                  : 'All clear for today'}
             </p>
             <p className="stagger-2 mt-1 animate-stagger-in text-xs text-muted-foreground">
-              {selectedUserId
-                ? 'Switch to All Tasks or add one above'
-                : 'Add a task above to get started'}
+              {showCompleted
+                ? 'Completed tasks will show up here'
+                : selectedUserId
+                  ? 'Switch to All Tasks or add one above'
+                  : 'Add a task above to get started'}
             </p>
           </div>
         ) : (
