@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
 import { useAdminContext } from '@/components/admin-provider';
 
-const employeeAllowedHrefs = ['/', '/schedule', '/knowledge', '/projects'];
+const employeeAllowedHrefs = ['/', '/schedule', '/knowledge', '/projects', '/status'];
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -40,6 +40,7 @@ const workspaceNav = [
   { name: 'Projects', href: '/projects', icon: Folder },
   { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Status', href: '/status', icon: Activity },
 ];
 
 const resourcesNav = [
@@ -52,7 +53,6 @@ const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Payments', href: '/payments', icon: Wallet },
-  { name: 'Status', href: '/status', icon: Activity },
 ];
 
 type NavItem = (typeof workspaceNav)[0];
