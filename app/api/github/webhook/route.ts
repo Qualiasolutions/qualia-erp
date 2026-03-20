@@ -129,10 +129,15 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
     const secret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET;
 
-    // Verify signature if secret is configured
+    // Verify auth: GitHub HMAC signature OR X-API-Key header (for GSD_WEBHOOK_SECRET)
     if (secret) {
       const signature = request.headers.get('x-hub-signature-256');
-      if (!verifySignature(rawBody, signature, secret)) {
+      const apiKey = request.headers.get('x-api-key');
+
+      const signatureValid = signature ? verifySignature(rawBody, signature, secret) : false;
+      const apiKeyValid = apiKey ? apiKey === secret : false;
+
+      if (!signatureValid && !apiKeyValid) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
     }
