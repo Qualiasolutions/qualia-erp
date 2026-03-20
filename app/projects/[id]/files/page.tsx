@@ -29,12 +29,15 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
     .eq('id', user.id)
     .single();
 
-  if (!profile || (profile.role !== 'admin' && profile.role !== 'employee')) {
+  if (
+    !profile ||
+    (profile.role !== 'admin' && profile.role !== 'employee' && profile.role !== 'manager')
+  ) {
     redirect(`/projects/${projectId}`);
   }
 
   // Employees can only access files for projects they're assigned to
-  if (profile.role === 'employee') {
+  if (profile.role !== 'admin') {
     const { data: assignment } = await supabase
       .from('project_assignments')
       .select('id')

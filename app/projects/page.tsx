@@ -79,7 +79,7 @@ async function ProjectListLoader() {
 
   // For employees, fetch their assigned project IDs
   let assignedProjectIds: Set<string> | null = null;
-  if (userProfile?.role === 'employee') {
+  if (userProfile && userProfile.role !== 'admin') {
     assignedProjectIds = new Set(
       (allAssignments || [])
         .filter((a) => {

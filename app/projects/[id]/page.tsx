@@ -48,7 +48,7 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   }
 
   // Employees can only view projects they're assigned to
-  if (userProfile?.role === 'employee') {
+  if (userProfile && userProfile.role !== 'admin') {
     const supabase = await createClient();
     const { data: assignment } = await supabase
       .from('project_assignments')

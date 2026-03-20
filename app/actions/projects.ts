@@ -154,6 +154,28 @@ export async function getProjects(workspaceId?: string | null) {
   }
 
   const { data: projects } = await query;
+
+  // Non-admin users only see assigned projects
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (profile?.role !== 'admin') {
+      const { data: assignments } = await supabase
+        .from('project_assignments')
+        .select('project_id')
+        .eq('employee_id', user.id)
+        .is('removed_at', null);
+      const assignedIds = new Set((assignments || []).map((a) => a.project_id));
+      return (projects || []).filter((p) => assignedIds.has(p.id));
+    }
+  }
+
   return projects || [];
 }
 
@@ -205,7 +227,7 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
       .select('role')
       .eq('id', user.id)
       .single();
-    if (profile?.role === 'employee') {
+    if (profile?.role !== 'admin') {
       const { data: assignments } = await supabase
         .from('project_assignments')
         .select('project_id')
