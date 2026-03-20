@@ -6,7 +6,23 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { format, parseISO, isToday, isPast } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Circle, Clock, EyeOff, FolderOpen, Edit2, Plus, Check, Trash2 } from 'lucide-react';
+import {
+  Circle,
+  Clock,
+  EyeOff,
+  Edit2,
+  Plus,
+  Check,
+  Trash2,
+  Globe,
+  Bot,
+  Phone,
+  Sparkles,
+  TrendingUp,
+  Smartphone,
+  Megaphone,
+  Folder,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   quickUpdateTask,
@@ -60,6 +76,16 @@ const PRIORITY_CONFIG = {
   Medium: 'fill-amber-500 text-amber-500',
   Low: 'fill-emerald-500 text-emerald-500',
   'No Priority': 'fill-muted-foreground/30 text-muted-foreground/30',
+};
+
+const PROJECT_TYPE_COLORS: Record<string, { icon: typeof Globe; color: string; bg: string }> = {
+  ai_agent: { icon: Bot, color: 'text-violet-500', bg: 'bg-violet-500/15' },
+  voice_agent: { icon: Phone, color: 'text-pink-500', bg: 'bg-pink-500/15' },
+  ai_platform: { icon: Sparkles, color: 'text-indigo-500', bg: 'bg-indigo-500/15' },
+  web_design: { icon: Globe, color: 'text-sky-500', bg: 'bg-sky-500/15' },
+  seo: { icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
+  app: { icon: Smartphone, color: 'text-teal-500', bg: 'bg-teal-500/15' },
+  ads: { icon: Megaphone, color: 'text-amber-500', bg: 'bg-amber-500/15' },
 };
 
 function formatDueTime(dueDate: string): string {
@@ -136,12 +162,26 @@ const TaskItem = React.memo(function TaskItem({
 
         {/* Meta row */}
         <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {task.project && (
-            <span className="flex items-center gap-1.5 rounded-md bg-muted/30 px-2 py-0.5">
-              <FolderOpen className="h-3 w-3 text-muted-foreground" />
-              <span className="max-w-[100px] truncate">{task.project.name}</span>
-            </span>
-          )}
+          {task.project &&
+            (() => {
+              const typeConfig = task.project.project_type
+                ? PROJECT_TYPE_COLORS[task.project.project_type]
+                : null;
+              const TypeIcon = typeConfig?.icon || Folder;
+              return (
+                <span
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-md px-2 py-0.5',
+                    typeConfig?.bg || 'bg-muted/30'
+                  )}
+                >
+                  <TypeIcon
+                    className={cn('h-3 w-3', typeConfig?.color || 'text-muted-foreground')}
+                  />
+                  <span className="max-w-[120px] truncate">{task.project.name}</span>
+                </span>
+              );
+            })()}
           {task.due_date && !isCompleted && (
             <span
               className={cn(

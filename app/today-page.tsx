@@ -49,7 +49,20 @@ export default async function TodayPage() {
     })
   );
 
-  const building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+  let building = allProjects.filter((p) => ['Active', 'Delayed'].includes(p.status));
+
+  // Non-admin users: only show projects they're assigned to
+  if (currentProfile && currentProfile.role !== 'admin') {
+    const { data: assignments } = await supabase
+      .from('project_assignments')
+      .select('project_id')
+      .eq('employee_id', currentProfile.id)
+      .is('removed_at', null);
+    const assignedIds = new Set(
+      (assignments || []).map((a: { project_id: string }) => a.project_id)
+    );
+    building = building.filter((p) => assignedIds.has(p.id));
+  }
 
   return (
     <TodayDashboard
