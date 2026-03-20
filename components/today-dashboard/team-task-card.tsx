@@ -3,12 +3,71 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday } from 'date-fns';
-import { Calendar, Check } from 'lucide-react';
+import {
+  Calendar,
+  Check,
+  Globe,
+  Bot,
+  Phone,
+  Sparkles,
+  TrendingUp,
+  Smartphone,
+  Megaphone,
+  Folder,
+} from 'lucide-react';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
 import { TaskTimeTracker } from '@/components/task-time-tracker';
 import { updateTask } from '@/app/actions/inbox';
 import { invalidateTeamDashboard, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
+
+const PROJECT_TYPE_STYLES: Record<
+  string,
+  { icon: typeof Globe; color: string; bg: string; border: string }
+> = {
+  ai_agent: {
+    icon: Bot,
+    color: 'text-violet-500',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+  },
+  voice_agent: {
+    icon: Phone,
+    color: 'text-pink-500',
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/20',
+  },
+  ai_platform: {
+    icon: Sparkles,
+    color: 'text-indigo-500',
+    bg: 'bg-indigo-500/10',
+    border: 'border-indigo-500/20',
+  },
+  web_design: {
+    icon: Globe,
+    color: 'text-sky-500',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/20',
+  },
+  seo: {
+    icon: TrendingUp,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20',
+  },
+  app: {
+    icon: Smartphone,
+    color: 'text-teal-500',
+    bg: 'bg-teal-500/10',
+    border: 'border-teal-500/20',
+  },
+  ads: {
+    icon: Megaphone,
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
+  },
+};
 
 interface TeamTaskCardProps {
   task: TeamMemberTask;
@@ -35,6 +94,12 @@ export function TeamTaskCard({
 
   const isOwner = currentUserId != null && currentUserId === task.assignee_id;
 
+  // Project type styling
+  const typeStyle = task.project?.project_type
+    ? PROJECT_TYPE_STYLES[task.project.project_type]
+    : null;
+  const ProjectIcon = typeStyle?.icon || Folder;
+
   return (
     <div
       className={cn(
@@ -46,6 +111,24 @@ export function TeamTaskCard({
       {/* Active task left accent */}
       {task.status === 'In Progress' && (
         <div className="absolute inset-y-0 left-0 w-[2px] rounded-r-full bg-blue-500/60" />
+      )}
+
+      {/* Project color indicator — vertical bar */}
+      {task.project && (
+        <div
+          className={cn(
+            'absolute inset-y-1 left-0 w-[3px] rounded-r-full',
+            task.status !== 'In Progress' &&
+              (typeStyle?.bg?.replace('/10', '/60') || 'bg-muted-foreground/20')
+          )}
+          style={
+            task.status !== 'In Progress' && typeStyle
+              ? {
+                  backgroundColor: `var(--tw-${typeStyle.color.replace('text-', '')}, currentColor)`,
+                }
+              : undefined
+          }
+        />
       )}
 
       {/* Priority dot */}
@@ -96,7 +179,7 @@ export function TeamTaskCard({
         )}
       </button>
 
-      {/* Title + project */}
+      {/* Title + project badge */}
       <div className="min-w-0 flex-1">
         <span
           className={cn(
@@ -108,7 +191,15 @@ export function TeamTaskCard({
           {task.title}
         </span>
         {task.project && (
-          <span className="mt-0.5 block truncate text-[11px] text-muted-foreground/60 transition-colors duration-200 group-hover:text-muted-foreground/80">
+          <span
+            className={cn(
+              'mt-1 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium',
+              typeStyle
+                ? `${typeStyle.bg} ${typeStyle.border} ${typeStyle.color}`
+                : 'border-border/40 bg-muted/30 text-muted-foreground/70'
+            )}
+          >
+            <ProjectIcon className="size-3" />
             {task.project.name}
           </span>
         )}

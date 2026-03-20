@@ -17,7 +17,7 @@ export interface TeamMemberTask {
   priority: string;
   due_date: string | null;
   assignee_id: string | null;
-  project: { id: string; name: string } | null;
+  project: { id: string; name: string; project_type: string | null } | null;
   time_log: TeamMemberTaskTimeLog | null;
 }
 
@@ -132,7 +132,7 @@ async function fetchTasksForProfile(
       priority,
       due_date,
       assignee_id,
-      project:projects(id, name),
+      project:projects(id, name, project_type),
       time_log:task_time_logs(started_at, ended_at, duration_minutes)
     `
     )
@@ -151,7 +151,10 @@ async function fetchTasksForProfile(
       priority: string;
       due_date: string | null;
       assignee_id: string | null;
-      project: { id: string; name: string } | { id: string; name: string }[] | null;
+      project:
+        | { id: string; name: string; project_type: string | null }
+        | { id: string; name: string; project_type: string | null }[]
+        | null;
       time_log:
         | { started_at: string; ended_at: string | null; duration_minutes: number | null }
         | { started_at: string; ended_at: string | null; duration_minutes: number | null }[]
