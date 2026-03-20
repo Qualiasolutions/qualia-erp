@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Calendar, CalendarDays, CalendarRange, Sun, Moon } from 'lucide-react';
+import { CalendarDays, CalendarRange, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 
@@ -41,7 +41,6 @@ export function ScheduleViewToggle({ currentView }: ScheduleViewToggleProps) {
   };
 
   const views = [
-    { id: 'day', label: 'Day', icon: Calendar },
     { id: 'week', label: 'Week', icon: CalendarRange },
     { id: 'month', label: 'Month', icon: CalendarDays },
   ];

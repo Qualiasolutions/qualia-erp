@@ -96,7 +96,7 @@ export default function SchedulePage({
 }) {
   // React 19: Use the use() hook to unwrap promises directly
   const params = use(searchParams);
-  const view = params.view || 'day';
+  const view = params.view || 'week';
 
   return (
     <div className="flex h-full flex-col">
