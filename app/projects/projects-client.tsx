@@ -120,14 +120,7 @@ function StageColumn({
             {projects.map((project, idx) => {
               const isDelayed = project.status === 'Delayed';
               return (
-                <div
-                  key={project.id}
-                  className={cn(
-                    'group/row relative flex items-center gap-1',
-                    (stage === 'building' || stage === 'preProduction') &&
-                      'card-interactive rounded-lg'
-                  )}
-                >
+                <div key={project.id} className="group/row relative flex items-center gap-1">
                   {/* Reorder arrows — admin only */}
                   {isSuperAdmin && onReorder && (
                     <div className="flex shrink-0 flex-col opacity-0 transition-opacity group-hover/row:opacity-100">
