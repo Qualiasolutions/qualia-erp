@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { FolderOpen, Clock, FileWarning } from 'lucide-react';
 
 interface DashboardStats {
   projectCount: number;
@@ -22,22 +23,28 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
       label: 'Active projects',
       value: stats?.projectCount ?? 0,
       href: '/portal/projects',
-      accent: 'text-qualia-600 dark:text-qualia-400',
-      dotColor: 'bg-qualia-500',
+      icon: FolderOpen,
+      accentBg: 'bg-qualia-500/10',
+      accentText: 'text-qualia-600 dark:text-qualia-400',
+      iconColor: 'text-qualia-500',
     },
     {
       label: 'Pending requests',
       value: stats?.pendingRequests ?? 0,
       href: '/portal/requests',
-      accent: 'text-amber-600 dark:text-amber-400',
-      dotColor: 'bg-amber-500',
+      icon: Clock,
+      accentBg: 'bg-amber-500/10',
+      accentText: 'text-amber-600 dark:text-amber-400',
+      iconColor: 'text-amber-500',
     },
     {
       label: 'Unpaid invoices',
       value: stats?.unpaidInvoiceCount ?? 0,
       href: '/portal/billing',
-      accent: 'text-rose-600 dark:text-rose-400',
-      dotColor: 'bg-rose-500',
+      icon: FileWarning,
+      accentBg: 'bg-rose-500/10',
+      accentText: 'text-rose-600 dark:text-rose-400',
+      iconColor: 'text-rose-500',
       suffix: stats?.unpaidTotal
         ? stats.unpaidTotal.toLocaleString('en', { style: 'currency', currency: 'EUR' })
         : undefined,
@@ -46,11 +53,11 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
 
   if (isLoading) {
     return (
-      <div className="flex gap-8">
+      <div className="grid grid-cols-3 gap-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="space-y-1.5">
-            <Skeleton className="h-8 w-10 rounded" />
-            <Skeleton className="h-3 w-20 rounded" />
+          <div key={i} className="rounded-xl border border-border/30 bg-background/50 px-4 py-3.5">
+            <Skeleton className="h-3 w-16 rounded" />
+            <Skeleton className="mt-2 h-7 w-10 rounded" />
           </div>
         ))}
       </div>
@@ -58,36 +65,44 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
   }
 
   return (
-    <div className="flex flex-wrap gap-x-10 gap-y-4">
+    <div className="grid grid-cols-3 gap-3">
       {metrics.map((metric) => {
         const isEmpty = metric.value === 0;
+        const Icon = metric.icon;
 
         return (
           <Link
             key={metric.label}
             href={metric.href}
-            className="group flex items-start gap-3 transition-opacity hover:opacity-80"
+            className={cn(
+              'group rounded-xl border border-border/30 bg-background/50 px-4 py-3.5 backdrop-blur-sm transition-all duration-200',
+              'hover:border-border/60 hover:bg-background/80 hover:shadow-sm'
+            )}
           >
-            <span
-              className={cn(
-                'mt-2.5 h-2 w-2 shrink-0 rounded-full transition-transform duration-150 group-hover:scale-125',
-                isEmpty ? 'bg-muted-foreground/20' : metric.dotColor
-              )}
-            />
-            <div>
-              <p
+            <div className="flex items-center gap-2">
+              <div
                 className={cn(
-                  'text-2xl font-semibold tabular-nums leading-none tracking-tight',
-                  isEmpty ? 'text-muted-foreground/30' : 'text-foreground'
+                  'flex h-5 w-5 items-center justify-center rounded-md',
+                  isEmpty ? 'bg-muted/40' : metric.accentBg
                 )}
               >
-                {isEmpty ? '0' : metric.value}
-              </p>
-              <p className="mt-1 text-[12px] text-muted-foreground">{metric.label}</p>
-              {metric.suffix && !isEmpty && (
-                <p className="mt-0.5 text-[11px] font-medium text-rose-500/70">{metric.suffix}</p>
-              )}
+                <Icon
+                  className={cn('h-3 w-3', isEmpty ? 'text-muted-foreground/30' : metric.iconColor)}
+                />
+              </div>
+              <p className="text-[11px] text-muted-foreground/60">{metric.label}</p>
             </div>
+            <p
+              className={cn(
+                'mt-2 text-[22px] font-semibold tabular-nums leading-none tracking-tight',
+                isEmpty ? 'text-muted-foreground/25' : 'text-foreground'
+              )}
+            >
+              {metric.value}
+            </p>
+            {metric.suffix && !isEmpty && (
+              <p className="mt-1 text-[11px] font-medium text-rose-500/70">{metric.suffix}</p>
+            )}
           </Link>
         );
       })}

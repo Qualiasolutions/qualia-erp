@@ -1627,20 +1627,18 @@ export async function getProjectFeatures(projectId: string): Promise<ActionResul
 
     if (error) throw error;
 
-    // Normalize FK arrays and get signed URLs
-    const features = await Promise.all(
-      (data || []).map(async (file) => {
-        const { data: urlData } = await supabase.storage
-          .from('project-files')
-          .createSignedUrl(file.storage_path, 3600); // 1 hour expiry
+    // Normalize FK arrays and get public URLs (bucket is public)
+    const features = (data || []).map((file) => {
+      const { data: urlData } = supabase.storage
+        .from('project-files')
+        .getPublicUrl(file.storage_path);
 
-        return {
-          ...file,
-          uploader: Array.isArray(file.uploader) ? file.uploader[0] || null : file.uploader,
-          url: urlData?.signedUrl || null,
-        };
-      })
-    );
+      return {
+        ...file,
+        uploader: Array.isArray(file.uploader) ? file.uploader[0] || null : file.uploader,
+        url: urlData?.publicUrl || null,
+      };
+    });
 
     return { success: true, data: features };
   } catch (error) {
