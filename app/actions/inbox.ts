@@ -161,6 +161,50 @@ export async function getTasks(
 }
 
 /**
+ * Get a single task by ID (for edit modal)
+ */
+export async function getTaskById(taskId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const { data: task, error } = await supabase
+    .from('tasks')
+    .select(
+      `*, creator:profiles!tasks_creator_id_fkey(id, full_name, email, avatar_url),
+       assignee:profiles!tasks_assignee_id_fkey(id, full_name, email, avatar_url),
+       project:projects!tasks_project_id_fkey(id, name, project_type)`
+    )
+    .eq('id', taskId)
+    .single();
+
+  if (error || !task) {
+    return { success: false, error: error?.message || 'Task not found' };
+  }
+
+  const t = task as unknown as {
+    creator: Task['creator'] | Task['creator'][] | null;
+    assignee: Task['assignee'] | Task['assignee'][] | null;
+    project: Task['project'] | Task['project'][];
+  };
+
+  return {
+    success: true,
+    data: {
+      ...task,
+      creator: Array.isArray(t.creator) ? t.creator[0] || null : t.creator,
+      assignee: Array.isArray(t.assignee) ? t.assignee[0] || null : t.assignee,
+      project: Array.isArray(t.project) ? t.project[0] : t.project,
+    } as Task,
+  };
+}
+
+/**
  * Create a new task
  */
 export async function createTask(formData: FormData): Promise<ActionResult> {

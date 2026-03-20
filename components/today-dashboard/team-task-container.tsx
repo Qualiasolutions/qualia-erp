@@ -152,6 +152,7 @@ interface MemberGroupProps {
   defaultOpen?: boolean;
   currentUserId?: string | null;
   onTaskUpdate?: () => void;
+  isAdmin?: boolean;
 }
 
 function MemberGroup({
@@ -160,6 +161,7 @@ function MemberGroup({
   defaultOpen = true,
   currentUserId,
   onTaskUpdate,
+  isAdmin,
 }: MemberGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const { profile, tasks } = member;
@@ -217,6 +219,7 @@ function MemberGroup({
                 currentUserId={currentUserId}
                 onTaskUpdate={onTaskUpdate}
                 workspaceId={workspaceId}
+                isAdmin={isAdmin}
               />
             ))
           )}
@@ -522,6 +525,7 @@ export function TeamTaskContainer({
                       defaultOpen
                       currentUserId={currentUserId}
                       onTaskUpdate={handleTaskUpdate}
+                      isAdmin={isAdmin}
                     />
                   </div>
                 ))

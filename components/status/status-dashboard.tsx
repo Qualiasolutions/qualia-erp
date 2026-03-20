@@ -11,7 +11,7 @@ import {
   ChevronDown,
   Zap,
 } from 'lucide-react';
-import type { Monitor, MonitorStatus } from '@/lib/uptime';
+import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
 import { getStatusLabel } from '@/lib/uptime';
 
 type OverallStatus = {
@@ -56,6 +56,21 @@ function UptimeBar({ ratio }: { ratio: string }) {
     </div>
   );
 }
+
+const SOURCE_STYLES: Record<MonitorSource, { label: string; color: string }> = {
+  uptimerobot: {
+    label: 'Vercel',
+    color: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20',
+  },
+  betterstack: {
+    label: 'Edge Fn',
+    color: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20',
+  },
+  railway: {
+    label: 'Railway',
+    color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20',
+  },
+};
 
 function MonitorCard({ monitor, index }: { monitor: Monitor; index: number }) {
   const [expanded, setExpanded] = useState(false);
@@ -108,6 +123,15 @@ function MonitorCard({ monitor, index }: { monitor: Monitor; index: number }) {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              'hidden rounded-md border px-1.5 py-0.5 text-[10px] font-medium sm:inline-block',
+              SOURCE_STYLES[monitor.source]?.color ||
+                'border-border/30 bg-muted/30 text-muted-foreground/60'
+            )}
+          >
+            {SOURCE_STYLES[monitor.source]?.label || monitor.source}
+          </span>
           {uptime30d && (
             <span className="hidden md:block">
               <UptimeBar ratio={uptime30d} />
@@ -369,7 +393,7 @@ export function StatusDashboard({
 
       {/* Footer */}
       <p className="pt-4 text-center text-xs text-muted-foreground/40">
-        Powered by UptimeRobot &middot; Checked every 5 minutes
+        UptimeRobot &middot; Better Stack &middot; Railway
       </p>
     </div>
   );

@@ -5,7 +5,7 @@ export const metadata = {
   title: 'System Status',
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function StatusPage() {
   let monitors: Monitor[] = [];
