@@ -269,7 +269,7 @@ Required (see `.env.example`):
 
 ## Deployment
 
-- **Production**: https://qualia-erp.vercel.app (auto-deploy from master)
+- **Production**: https://portal.qualiasolutions.net (auto-deploy from master)
 - **Pre-commit hooks**: ESLint, Prettier, TypeScript (via husky + lint-staged)
 
 ## Technical Debt & Remediation

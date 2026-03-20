@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
  *   status: "not_started" | "in_progress" | "completed" | "skipped"
  *
  * Example Claude Code hook:
- *   curl -s -X POST https://qualia-erp.vercel.app/api/gsd/update-phase \
+ *   curl -s -X POST https://portal.qualiasolutions.net/api/gsd/update-phase \
  *     -H "X-API-Key: $GSD_WEBHOOK_SECRET" \
  *     -H "Content-Type: application/json" \
  *     -d '{"project_id":"...","phase_name":"EXECUTE","status":"completed"}'

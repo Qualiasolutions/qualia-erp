@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { Octokit } from '@octokit/rest';
 import type { ActionResult } from './shared';
 import type {
   IntegrationProvider,
@@ -479,4 +480,101 @@ export async function checkIntegrationsConfigured(workspaceId: string): Promise<
   };
 
   return { success: true, data: configured };
+}
+
+// =====================================================
+// GitHub Webhook Auto-Sync
+// =====================================================
+
+const WEBHOOK_URL = 'https://portal.qualiasolutions.net/api/github/webhook';
+
+/**
+ * Sync GitHub webhooks for all projects linked via project_integrations.
+ * Creates a push webhook on each repo that doesn't already have one.
+ */
+export async function syncGitHubWebhooks(
+  workspaceId: string
+): Promise<ActionResult & { data?: { synced: number; skipped: number; failed: string[] } }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (profile?.role !== 'admin') return { success: false, error: 'Admin access required' };
+
+  // Get GitHub token from workspace integrations
+  const { data: githubIntegration } = await supabase
+    .from('workspace_integrations')
+    .select('encrypted_token, config')
+    .eq('workspace_id', workspaceId)
+    .eq('provider', 'github')
+    .single();
+
+  if (!githubIntegration?.encrypted_token) {
+    return { success: false, error: 'GitHub integration not configured' };
+  }
+
+  const octokit = new Octokit({ auth: githubIntegration.encrypted_token });
+  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET || '';
+
+  // Get all GitHub-linked projects
+  const { data: integrations } = await supabase
+    .from('project_integrations')
+    .select('external_url, project_id')
+    .eq('service_type', 'github');
+
+  if (!integrations || integrations.length === 0) {
+    return { success: true, data: { synced: 0, skipped: 0, failed: [] } };
+  }
+
+  let synced = 0;
+  let skipped = 0;
+  const failed: string[] = [];
+
+  for (const integration of integrations) {
+    const repoUrl = integration.external_url;
+    if (!repoUrl) continue;
+
+    // Extract owner/repo from URL
+    const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!match) continue;
+    const [, owner, repo] = match;
+
+    try {
+      // Check existing webhooks
+      const { data: hooks } = await octokit.repos.listWebhooks({ owner, repo });
+      const existing = hooks.find((h) => h.config.url === WEBHOOK_URL);
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      // Create webhook
+      await octokit.repos.createWebhook({
+        owner,
+        repo,
+        config: {
+          url: WEBHOOK_URL,
+          content_type: 'json',
+          secret: webhookSecret,
+        },
+        events: ['push'],
+        active: true,
+      });
+      synced++;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      failed.push(`${owner}/${repo}: ${msg}`);
+    }
+  }
+
+  return { success: true, data: { synced, skipped, failed } };
 }

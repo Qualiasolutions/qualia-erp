@@ -674,7 +674,7 @@ export function PortalHub({
                     className="w-full gap-2"
                     onClick={() =>
                       copyCredentials(
-                        `Portal: https://qualia-erp.vercel.app/portal\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
+                        `Portal: https://portal.qualiasolutions.net/portal\nEmail: ${credentials.email}\nPassword: ${credentials.password}`
                       )
                     }
                   >
@@ -843,7 +843,7 @@ export function PortalHub({
                     className="w-full gap-2"
                     onClick={() =>
                       copyWorkspaceCredentials(
-                        `Portal: https://qualia-erp.vercel.app/portal\nEmail: ${workspaceCredentials.email}\nPassword: ${workspaceCredentials.password}`
+                        `Portal: https://portal.qualiasolutions.net/portal\nEmail: ${workspaceCredentials.email}\nPassword: ${workspaceCredentials.password}`
                       )
                     }
                   >
@@ -1116,7 +1116,7 @@ export function PortalHub({
                 className="w-full gap-2"
                 onClick={() =>
                   copyResetCredentials(
-                    `Portal: https://qualia-erp.vercel.app/portal\nEmail: ${resetResult.email}\nPassword: ${resetResult.tempPassword}`
+                    `Portal: https://portal.qualiasolutions.net/portal\nEmail: ${resetResult.email}\nPassword: ${resetResult.tempPassword}`
                   )
                 }
               >

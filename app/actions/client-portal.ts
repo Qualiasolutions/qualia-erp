@@ -8,7 +8,7 @@ import { getCurrentWorkspaceId } from './workspace';
 import { randomBytes } from 'node:crypto';
 import { ClientProfileUpdateSchema } from '@/lib/validation';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 
 /**
  * Invite a client to a project by email.

@@ -99,7 +99,7 @@ export function PortalAdminPanel({
   const [assignments, setAssignments] = useState(initialAssignments);
   const [isPending, startTransition] = useTransition();
 
-  const portalUrl = 'https://qualia-erp.vercel.app/portal';
+  const portalUrl = 'https://portal.qualiasolutions.net/portal';
 
   // ── Onboard tab state ──────────────────────────────────────────────────────
   const [onboardMode, setOnboardMode] = useState<'single' | 'bulk'>('single');

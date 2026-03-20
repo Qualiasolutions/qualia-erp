@@ -11,7 +11,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
  *
  * Setup:
  *   1. In each GitHub repo → Settings → Webhooks → Add webhook
- *   2. Payload URL: https://qualia-erp.vercel.app/api/github/webhook
+ *   2. Payload URL: https://portal.qualiasolutions.net/api/github/webhook
  *   3. Content type: application/json
  *   4. Secret: (same as GITHUB_WEBHOOK_SECRET env var)
  *   5. Events: Just the push event

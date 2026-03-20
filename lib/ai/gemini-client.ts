@@ -11,7 +11,7 @@ const openrouter = createOpenAI({
   apiKey: process.env.OPENROUTER_API_KEY || '',
   baseURL: 'https://openrouter.ai/api/v1',
   headers: {
-    'HTTP-Referer': 'https://qualia-erp.vercel.app',
+    'HTTP-Referer': 'https://portal.qualiasolutions.net',
     'X-Title': 'Qualia ERP',
   },
 });

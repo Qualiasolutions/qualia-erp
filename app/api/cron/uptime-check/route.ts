@@ -134,7 +134,7 @@ export async function GET(request: Request) {
               <tbody>${servicesHtml}</tbody>
             </table>
             <div style="margin-top: 16px; text-align: center;">
-              <a href="https://qualia-erp.vercel.app/status" style="display: inline-block; padding: 8px 20px; background: #00A4AC; color: white; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500;">
+              <a href="https://portal.qualiasolutions.net/status" style="display: inline-block; padding: 8px 20px; background: #00A4AC; color: white; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 500;">
                 View Status Dashboard
               </a>
             </div>

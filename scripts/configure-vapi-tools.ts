@@ -7,7 +7,7 @@ const VAPI_PRIVATE_KEY = 'ac425145-0de6-4bdb-a905-c32ee3b5a9c8';
 const ASSISTANT_ID = '67d7928b-e292-4f70-bca6-339f0b9eae50';
 
 // Production webhook URL - update this to your actual Vercel deployment URL
-const WEBHOOK_URL = 'https://qualia-erp.vercel.app/api/vapi/webhook';
+const WEBHOOK_URL = 'https://portal.qualiasolutions.net/api/vapi/webhook';
 
 // Define all tools based on the webhook handlers
 const tools = [

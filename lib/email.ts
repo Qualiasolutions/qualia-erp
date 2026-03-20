@@ -15,7 +15,7 @@ function getResendClient(): Resend | null {
 
 // Email sender configuration
 const FROM_EMAIL = 'Qualia Platform <notifications@qualiasolutions.net>';
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 
 // Types for notification data
 type NotificationData = {

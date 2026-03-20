@@ -77,7 +77,7 @@ async function vapiFetch(
  * Build webhook URL for this project
  */
 function getWebhookUrl(projectId: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://qualia-erp.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
   return `${baseUrl}/api/vapi/webhook?project=${projectId}`;
 }
 

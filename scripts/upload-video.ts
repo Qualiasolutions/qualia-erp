@@ -12,7 +12,10 @@ async function upload() {
   });
 
   console.log('Video URL:', blob.url);
-  console.log('Video player URL:', 'https://qualia-erp.vercel.app/video-player/pharmacovigilance');
+  console.log(
+    'Video player URL:',
+    'https://portal.qualiasolutions.net/video-player/pharmacovigilance'
+  );
 }
 
 upload().catch(console.error);
