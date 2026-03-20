@@ -19,28 +19,30 @@ export function PortalPageHeader({
   const progressPct = showProgress ? Math.round((completedPhases! / totalPhases!) * 100) : 0;
 
   return (
-    <div className="border-b border-border/40 pb-5">
-      <div className="flex items-start gap-4 sm:items-center">
+    <div className="pb-6">
+      <div className="flex items-start gap-3 sm:items-center">
         <Link
           href="/portal"
-          className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border/60 text-muted-foreground transition-all duration-200 hover:scale-[1.04] hover:border-qualia-500/30 hover:bg-qualia-500/[0.04] hover:text-foreground hover:shadow-sm sm:mt-0"
-          aria-label="Back to projects"
+          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors duration-150 hover:bg-muted/30 hover:text-foreground sm:mt-0"
+          aria-label="Back to dashboard"
         >
           <ChevronLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0 flex-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
-          {description && <p className="mt-1.5 text-[13px] text-muted-foreground">{description}</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+          {description && (
+            <p className="mt-1 text-[13px] text-muted-foreground/60">{description}</p>
+          )}
           {showProgress && (
             <div className="mt-3 flex items-center gap-3">
-              <div className="h-1.5 w-48 overflow-hidden rounded-full bg-border/30 dark:bg-border/20">
+              <div className="h-1 w-40 overflow-hidden rounded-full bg-border/30">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-700 ease-out"
+                  className="h-full rounded-full bg-qualia-500 transition-all duration-700 ease-out"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>
-              <span className="text-[12px] tabular-nums text-muted-foreground">
-                {completedPhases} of {totalPhases} phases
+              <span className="text-[11px] tabular-nums text-muted-foreground/50">
+                {completedPhases}/{totalPhases} phases
               </span>
             </div>
           )}

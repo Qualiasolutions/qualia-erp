@@ -62,23 +62,24 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-[13px] font-medium transition-all duration-200',
+        'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-150',
         isActive
-          ? 'bg-qualia-500/[0.06] text-foreground shadow-[inset_0_1px_0_0_rgba(0,164,172,0.05)] dark:bg-qualia-500/[0.10]'
-          : 'text-muted-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground'
+          ? 'bg-qualia-500/[0.08] text-foreground dark:bg-qualia-500/[0.12]'
+          : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
       )}
     >
       <item.icon
         className={cn(
-          'h-4 w-4 flex-shrink-0 transition-colors duration-200',
+          'h-[15px] w-[15px] flex-shrink-0 transition-colors duration-150',
           isActive
             ? 'text-qualia-600 dark:text-qualia-400'
-            : 'text-muted-foreground group-hover:text-muted-foreground'
+            : 'text-muted-foreground/60 group-hover:text-muted-foreground'
         )}
+        strokeWidth={isActive ? 2 : 1.75}
       />
       <span>{item.name}</span>
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-5 w-[2.5px] -translate-y-1/2 rounded-r-full bg-qualia-500 shadow-[0_0_8px_rgba(0,164,172,0.25)]" />
+        <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-qualia-500" />
       )}
     </Link>
   );
@@ -109,19 +110,19 @@ function UserMenu({
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors duration-150',
-            'text-muted-foreground hover:bg-foreground/[0.04]',
-            'focus:outline-none focus-visible:ring-1 focus-visible:ring-qualia-600/30'
+            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
+            'hover:bg-foreground/[0.04]',
+            'focus:outline-none focus-visible:ring-1 focus-visible:ring-qualia-500/30'
           )}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-qualia-500 to-qualia-700 text-[11px] font-semibold text-white shadow-sm">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-qualia-500/10 text-[11px] font-semibold text-qualia-600 dark:text-qualia-400">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
-            <p className="truncate text-[11px] text-muted-foreground">{displayEmail}</p>
+            <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
           </div>
-          <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/30" />
+          <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/25" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-52">
@@ -171,33 +172,31 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Logo */}
-      <div className="flex h-14 items-center gap-2.5 px-4">
+    <div className="flex h-full flex-col bg-card/50">
+      {/* Logo area */}
+      <div className="flex h-[60px] items-center px-5">
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
-          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 group-hover:scale-105">
+          <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:scale-105">
             <Image
               src="/logo.webp"
               alt="Qualia"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain"
+              width={24}
+              height={24}
+              className="h-6 w-6 object-contain"
               priority
             />
           </div>
-          <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
+          <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
         </Link>
       </div>
       {companyName && (
-        <div className="-mt-2 px-4 pb-3">
-          <p className="truncate text-[10px] font-medium tracking-wide text-muted-foreground/70">
-            {companyName}
-          </p>
+        <div className="-mt-1 px-5 pb-4">
+          <p className="truncate text-[11px] font-medium text-muted-foreground/50">{companyName}</p>
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex-1 space-y-6 px-3 pt-2">
+      <div className="flex-1 space-y-5 px-3 pt-1">
         <nav className="space-y-0.5">
           {mainNav.map((item) => (
             <NavLink key={item.name} item={item} isActive={isActive(item)} onClick={onLinkClick} />
@@ -205,11 +204,10 @@ function SidebarContent({
         </nav>
 
         <div>
-          <div className="mb-2 flex items-center gap-2.5 px-2.5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/50">
+          <div className="mb-1.5 px-3">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/40">
               Manage
             </p>
-            <div className="h-px flex-1 bg-border/40" />
           </div>
           <nav className="space-y-0.5">
             {manageNav.map((item) => (
@@ -225,10 +223,9 @@ function SidebarContent({
       </div>
 
       {/* Theme + User */}
-      <div className="relative border-t border-border/60 px-3 py-2.5">
-        <div className="pointer-events-none absolute -top-8 left-0 right-0 h-8 bg-gradient-to-t from-background/80 to-transparent" />
-        <div className="mb-1.5 flex items-center justify-between px-2.5">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70">
+      <div className="border-t border-border/50 px-3 py-3">
+        <div className="mb-2 flex items-center justify-between px-3">
+          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
             Theme
           </span>
           <ThemeSwitcher />
@@ -268,7 +265,7 @@ export function PortalSidebar(props: PortalSidebarProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-52 flex-shrink-0 border-r border-border md:block">
+      <aside className="hidden h-full w-[220px] flex-shrink-0 border-r border-border/50 md:block">
         <SidebarContent {...props} onLinkClick={handleLinkClick} />
       </aside>
     </>

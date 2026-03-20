@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { getProjectStatusColor } from '@/lib/portal-styles';
-import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
+import { getStaggerDelay } from '@/lib/transitions';
 import { Briefcase, ArrowRight } from 'lucide-react';
 
 interface Project {
@@ -33,24 +33,20 @@ interface PortalProjectsListProps {
 export function PortalProjectsList({ projects, progressMap = {} }: PortalProjectsListProps) {
   if (!projects || projects.length === 0) {
     return (
-      <div className="flex min-h-[350px] items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-muted/50">
-            <Briefcase className="h-5 w-5 text-muted-foreground/70" />
-          </div>
-          <p className="text-sm font-medium text-foreground">No projects yet</p>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            Projects will appear here once you&apos;ve been granted access.
-          </p>
+      <div className="flex flex-col items-center py-20 text-center">
+        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted/40">
+          <Briefcase className="h-4 w-4 text-muted-foreground/40" />
         </div>
+        <p className="text-[13px] font-medium text-foreground">No projects yet</p>
+        <p className="mt-1 text-[12px] text-muted-foreground/60">
+          Projects will appear here once you&apos;ve been granted access.
+        </p>
       </div>
     );
   }
 
   return (
-    <div
-      className={`divide-y divide-border/20 overflow-hidden rounded-xl border border-border ${fadeInClasses}`}
-    >
+    <div className="space-y-1">
       {projects.map((clientProject, index) => {
         const project = Array.isArray(clientProject.project)
           ? clientProject.project[0]
@@ -64,21 +60,20 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
           <Link
             key={clientProject.id}
             href={`/portal/${project.id}`}
-            style={index < 8 ? getStaggerDelay(index) : undefined}
+            style={index < 10 ? getStaggerDelay(index) : undefined}
             className={cn(
-              'group relative flex items-center gap-4 bg-card px-5 py-4 transition-all duration-200 hover:bg-muted/20',
-              'border-l-2 border-l-transparent hover:border-l-qualia-500',
-              index < 8 && 'animate-fade-in-up fill-mode-both'
+              'group flex items-center gap-4 rounded-lg px-4 py-4 transition-all duration-150',
+              'hover:bg-muted/30',
+              index < 10 && 'animate-fade-in-up fill-mode-both'
             )}
           >
             {/* Project info */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5">
-                <span className="size-1.5 shrink-0 rounded-full bg-qualia-500/60" />
                 <h3 className="truncate text-[13px] font-medium text-foreground">{project.name}</h3>
                 <Badge
                   className={cn(
-                    'shrink-0 px-1.5 py-0 text-[10px] leading-4',
+                    'shrink-0 border px-1.5 py-0 text-[10px] leading-4',
                     getProjectStatusColor(project.project_status)
                   )}
                 >
@@ -86,46 +81,45 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                 </Badge>
               </div>
               {project.description && (
-                <p className="mt-0.5 line-clamp-1 pl-4 text-[12px] text-muted-foreground">
+                <p className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground/60">
                   {project.description}
                 </p>
-              )}
-              {progress > 0 && (
-                <div className="mt-2 flex items-center gap-2 pl-4 md:hidden">
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-500"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                    {progress}%
-                  </span>
-                </div>
               )}
             </div>
 
             {/* Type */}
-            <span className="hidden text-[11px] capitalize text-muted-foreground/70 sm:block">
+            <span className="hidden text-[11px] capitalize text-muted-foreground/50 sm:block">
               {project.project_type?.replace(/_/g, ' ')}
             </span>
 
-            {/* Progress bar — desktop column */}
+            {/* Progress */}
             <div className="hidden w-28 items-center gap-2 md:flex">
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/50">
-                {progress > 0 ? (
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
+                {progress > 0 && (
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-qualia-600 to-qualia-400 transition-all duration-500"
+                    className={cn(
+                      'h-full rounded-full transition-all duration-500',
+                      progress === 100 ? 'bg-emerald-500' : 'bg-qualia-500'
+                    )}
                     style={{ width: `${progress}%` }}
                   />
-                ) : null}
+                )}
               </div>
-              <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground/70">
-                {progress > 0 ? `${progress}%` : '—'}
+              <span className="w-7 text-right text-[11px] tabular-nums text-muted-foreground/50">
+                {progress > 0 ? `${progress}%` : '--'}
               </span>
             </div>
 
-            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/20 transition-all duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground" />
+            {/* Mobile progress */}
+            {progress > 0 && (
+              <div className="flex items-center gap-2 md:hidden">
+                <span className="text-[11px] tabular-nums text-muted-foreground/50">
+                  {progress}%
+                </span>
+              </div>
+            )}
+
+            <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/40" />
           </Link>
         );
       })}

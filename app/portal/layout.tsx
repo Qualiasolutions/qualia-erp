@@ -86,7 +86,7 @@ export default async function PortalLayout({ children }: { children: React.React
         )}
 
         <main className="flex-1 overflow-y-auto scroll-smooth">
-          <div className="px-6 py-8 md:px-10 lg:px-14">
+          <div className="mx-auto max-w-4xl px-6 py-8 md:px-10 lg:px-12">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>

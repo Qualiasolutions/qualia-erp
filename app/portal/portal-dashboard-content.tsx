@@ -50,14 +50,12 @@ const quickActions = [
     description: 'Feature idea or change',
     href: '/portal/requests',
     icon: Lightbulb,
-    accent: 'group-hover:text-amber-500',
   },
   {
     label: 'View billing',
     description: 'Invoices & payments',
     href: '/portal/billing',
     icon: Receipt,
-    accent: 'group-hover:text-qualia-500',
   },
   {
     label: 'Contact support',
@@ -65,7 +63,6 @@ const quickActions = [
     href: 'mailto:support@qualiasolutions.net',
     icon: Headphones,
     external: true,
-    accent: 'group-hover:text-blue-500',
   },
 ];
 
@@ -86,65 +83,47 @@ export function PortalDashboardContent({
   const firstName = displayName.split(' ')[0];
   const welcomeName = companyName || firstName;
 
-  const completedCount = projects.filter((p) => p.progress === 100).length;
-  const onTrackCount = projects.filter(
-    (p) => p.status === 'Active' || p.status === 'Launched'
-  ).length;
-  const statusLine =
-    projects.length === 0
-      ? null
-      : completedCount > 0
-        ? `${completedCount} project${completedCount > 1 ? 's' : ''} completed this month`
-        : onTrackCount === projects.length
-          ? 'Your projects are on track'
-          : 'Work in progress across your projects';
-
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       {/* Welcome tour for first-time clients */}
       <PortalWelcomeTour displayName={displayName} companyName={companyName} />
 
-      {/* Hero welcome section */}
-      <div
-        className={cn(fadeInClasses, 'border-b border-border/60 pb-8', 'relative')}
-        style={getStaggerDelay(0)}
-      >
-        {/* Subtle teal gradient line at bottom */}
-        <div className="absolute bottom-0 left-0 h-px w-24 bg-gradient-to-r from-qualia-500/60 to-transparent" />
-
-        <p className="text-[12px] font-medium uppercase tracking-widest text-muted-foreground/60">
+      {/* Welcome + stats section */}
+      <div className={cn(fadeInClasses)} style={getStaggerDelay(0)}>
+        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/50">
           {now.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'long',
             day: 'numeric',
           })}
         </p>
-        <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-foreground">
+        <h1 className="mt-1.5 text-[26px] font-semibold tracking-tight text-foreground">
           {greeting}, {welcomeName}
         </h1>
-        {statusLine && <p className="mt-1.5 text-[13px] text-muted-foreground/70">{statusLine}</p>}
+
+        {/* Stats inline below greeting */}
+        <div className="mt-6">
+          <PortalDashboardStats stats={stats} isLoading={isLoading} />
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className={cn(fadeInClasses)} style={getStaggerDelay(1)}>
-        <PortalDashboardStats stats={stats} isLoading={isLoading} />
-      </div>
-
-      {/* What's next */}
-      <div className={cn('space-y-3', fadeInClasses)} style={getStaggerDelay(2)}>
-        <h2 className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-          What&apos;s next
-        </h2>
-        <WhatsNextWidget projects={projects} isLoading={isLoading} />
-      </div>
+      {/* What's next — project phase progress */}
+      {(isLoading || projects.length > 0) && (
+        <div className={cn(fadeInClasses)} style={getStaggerDelay(1)}>
+          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/50">
+            What&apos;s next
+          </h2>
+          <WhatsNextWidget projects={projects} isLoading={isLoading} />
+        </div>
+      )}
 
       {/* Action items */}
-      <div className={cn('space-y-3', fadeInClasses)} style={getStaggerDelay(3)}>
+      <div className={cn(fadeInClasses)} style={getStaggerDelay(2)}>
         <PortalActionItems clientId={clientId} />
       </div>
 
-      {/* Projects */}
-      <div className={cn(fadeInClasses)} style={getStaggerDelay(4)}>
+      {/* Projects overview */}
+      <div className={cn(fadeInClasses)} style={getStaggerDelay(3)}>
         <PortalRecentActivity
           projects={projects}
           isLoading={isLoading}
@@ -152,29 +131,24 @@ export function PortalDashboardContent({
         />
       </div>
 
-      {/* Quick links */}
-      <div className={cn('grid gap-3 sm:grid-cols-3', fadeInClasses)} style={getStaggerDelay(5)}>
+      {/* Quick actions */}
+      <div className={cn('flex flex-wrap gap-3', fadeInClasses)} style={getStaggerDelay(4)}>
         {quickActions.map((action) => {
           const Wrapper = action.external ? 'a' : Link;
-          const wrapperProps = action.external ? { href: action.href } : { href: action.href };
+          const Icon = action.icon;
 
           return (
             <Wrapper
               key={action.label}
-              {...wrapperProps}
-              className="group flex items-center gap-3.5 rounded-xl border border-border bg-card px-4 py-4 transition-all duration-200 hover:border-border/60 hover:bg-muted/10 hover:shadow-elevation-1"
+              href={action.href}
+              className="group flex items-center gap-3 rounded-lg border border-border/50 px-4 py-3 transition-all duration-150 hover:border-border hover:bg-muted/30"
             >
-              {/* Icon with subtle tinted background */}
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 transition-colors duration-200 group-hover:bg-muted">
-                <action.icon
-                  className={`h-3.5 w-3.5 text-muted-foreground/60 transition-colors duration-200 ${action.accent}`}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
+              <Icon className="h-3.5 w-3.5 text-muted-foreground/50 transition-colors group-hover:text-muted-foreground" />
+              <div>
                 <p className="text-[13px] font-medium text-foreground">{action.label}</p>
-                <p className="text-[11px] text-muted-foreground/70">{action.description}</p>
+                <p className="text-[11px] text-muted-foreground/60">{action.description}</p>
               </div>
-              <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground/15 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-muted-foreground/60" />
+              <ArrowRight className="ml-2 h-3 w-3 text-muted-foreground/20 transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-muted-foreground/50" />
             </Wrapper>
           );
         })}

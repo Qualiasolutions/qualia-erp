@@ -19,28 +19,26 @@ export function PortalTabs({ projectId }: PortalTabsProps) {
   const pathname = usePathname();
 
   return (
-    <div className="-mx-4 border-b border-border px-4 sm:mx-0 sm:px-0">
-      <nav className="-mb-px flex gap-6 overflow-x-auto sm:gap-8" aria-label="Tabs">
-        {tabs.map((tab) => {
-          const fullHref = `/portal/${projectId}${tab.href}`;
-          const isActive = pathname === fullHref;
+    <div className="flex gap-1">
+      {tabs.map((tab) => {
+        const fullHref = `/portal/${projectId}${tab.href}`;
+        const isActive = pathname === fullHref;
 
-          return (
-            <Link
-              key={tab.name}
-              href={fullHref}
-              className={cn(
-                'whitespace-nowrap border-b-2 px-1 py-4 text-[13px] font-medium transition-all duration-200',
-                isActive
-                  ? 'border-qualia-500 text-qualia-600 dark:text-qualia-400'
-                  : 'border-transparent text-muted-foreground hover:border-border/60 hover:text-foreground'
-              )}
-            >
-              {tab.name}
-            </Link>
-          );
-        })}
-      </nav>
+        return (
+          <Link
+            key={tab.name}
+            href={fullHref}
+            className={cn(
+              'rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-all duration-150',
+              isActive
+                ? 'bg-qualia-500/[0.08] text-qualia-600 dark:bg-qualia-500/[0.12] dark:text-qualia-400'
+                : 'text-muted-foreground/60 hover:bg-muted/30 hover:text-foreground'
+            )}
+          >
+            {tab.name}
+          </Link>
+        );
+      })}
     </div>
   );
 }
