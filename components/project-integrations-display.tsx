@@ -181,8 +181,8 @@ export function ProjectIntegrationsDisplay({
         </Badge>
       )}
 
-      {/* Edit Button (Admin only) */}
-      {(userRole === 'admin' || userRole === 'manager') && (
+      {/* Edit Button (all assigned users) */}
+      {(userRole === 'admin' || userRole === 'manager' || userRole === 'employee') && (
         <Button
           variant="ghost"
           size="sm"
