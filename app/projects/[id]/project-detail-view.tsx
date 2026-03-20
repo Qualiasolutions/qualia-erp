@@ -345,15 +345,14 @@ export function ProjectDetailView({
       {/* Main Content */}
       <main className="relative flex-1 overflow-hidden">
         <div className="flex h-full">
-          {/* Workflow (always visible, scrollable) */}
-          <div className="scrollbar-thin flex-1 overflow-y-auto overflow-x-hidden">
-            <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-8">
-              <ProjectWorkflow
-                projectId={project.id}
-                projectType={project.project_type}
-                workspaceId={project.workspace_id}
-              />
-            </div>
+          {/* Workflow — fills available height, manages own scrolling */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <ProjectWorkflow
+              projectId={project.id}
+              projectType={project.project_type}
+              workspaceId={project.workspace_id}
+              className="h-full"
+            />
           </div>
 
           {/* Right Panel (xl+ only) */}
