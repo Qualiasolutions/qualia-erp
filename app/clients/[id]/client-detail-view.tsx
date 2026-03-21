@@ -20,6 +20,7 @@ import { WorkShowcase } from '@/components/work-showcase';
 import { EditClientModal } from '@/components/edit-client-modal';
 import { LogoUpload } from '@/components/logo-upload';
 import { ClientProjectAccess } from '@/components/clients/client-project-access';
+import { RichText } from '@/components/ui/rich-text';
 import { updateProject } from '@/app/actions';
 import { toast } from 'sonner';
 
@@ -328,9 +329,7 @@ export function ClientDetailView({
             </CardHeader>
             <CardContent>
               <div className="rounded-xl border border-border/40 bg-gradient-to-br from-muted/50 to-muted/30 p-4 backdrop-blur-sm">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">
-                  {client.notes}
-                </p>
+                <RichText className="text-foreground/90">{client.notes}</RichText>
               </div>
             </CardContent>
           </Card>

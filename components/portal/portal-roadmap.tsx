@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatDate } from '@/lib/utils';
+import { RichText } from '@/components/ui/rich-text';
 import { motion, useInView } from 'framer-motion';
 import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
@@ -154,7 +155,9 @@ function DeliverableItem({ item }: { item: PhaseItem }) {
           {item.title}
         </p>
         {item.description && (
-          <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
+          <RichText className="mt-0.5 text-muted-foreground [&_li]:text-xs [&_p]:text-xs">
+            {item.description}
+          </RichText>
         )}
       </div>
       {isDone && item.completed_at && (
@@ -277,9 +280,9 @@ function PhaseWithComments({
                 {phase.name}
               </h3>
               {phase.description && (
-                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                <RichText className="mt-1.5 text-muted-foreground [&_li]:text-[13px] [&_p]:text-[13px]">
                   {phase.description}
-                </p>
+                </RichText>
               )}
             </div>
             <Badge
@@ -553,9 +556,7 @@ export function PortalRoadmap({
           </Badge>
         </div>
         {project.description && (
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {project.description}
-          </p>
+          <RichText className="mt-2 text-muted-foreground">{project.description}</RichText>
         )}
       </div>
 

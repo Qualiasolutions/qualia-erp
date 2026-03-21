@@ -12,6 +12,7 @@ import { formatTimeAgo, getInitials } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { useWorkspace } from '@/components/workspace-provider';
 import { cn } from '@/lib/utils';
+import { RichText } from '@/components/ui/rich-text';
 
 interface Note {
   id: string;
@@ -400,9 +401,9 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
                         autoFocus
                       />
                     ) : (
-                      <p className="whitespace-pre-wrap break-words text-xs leading-relaxed text-foreground sm:text-sm">
+                      <RichText className="break-words text-foreground [&_li]:text-xs [&_li]:sm:text-sm [&_p]:text-xs [&_p]:sm:text-sm">
                         {note.content}
-                      </p>
+                      </RichText>
                     )}
                   </div>
                 </div>

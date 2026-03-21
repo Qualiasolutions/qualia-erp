@@ -15,6 +15,7 @@ import {
   type ProjectNote,
 } from '@/app/actions/pipeline';
 import { motion, AnimatePresence } from 'framer-motion';
+import { RichText } from '@/components/ui/rich-text';
 
 interface ProjectNotesProps {
   projectId: string;
@@ -147,20 +148,20 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="group rounded-lg border border-border/50 bg-card/50 p-3"
+                    className="group min-w-0 rounded-lg border border-border/50 bg-card/50 p-3"
                   >
                     {/* Author */}
-                    <div className="mb-2 flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
+                    <div className="mb-2 flex items-center gap-2 overflow-hidden">
+                      <Avatar className="h-6 w-6 shrink-0">
                         <AvatarImage src={note.profile?.avatar_url || undefined} />
                         <AvatarFallback className="text-[11px]">
                           {getInitials(note.profile?.full_name || note.profile?.email)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-xs font-medium">
+                      <span className="truncate text-xs font-medium">
                         {note.profile?.full_name || note.profile?.email || 'Unknown'}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
+                      <span className="shrink-0 text-[11px] text-muted-foreground">
                         {formatTimeAgo(note.created_at)}
                       </span>
                     </div>
@@ -197,9 +198,9 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                       </div>
                     ) : (
                       <>
-                        <p className="whitespace-pre-wrap text-sm text-foreground">
+                        <RichText className="min-w-0 break-words text-foreground">
                           {note.content}
-                        </p>
+                        </RichText>
 
                         {/* Actions */}
                         {isOwner && (

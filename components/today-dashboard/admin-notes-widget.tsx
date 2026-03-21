@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Send, Trash2, Edit2, X, Check, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RichText } from '@/components/ui/rich-text';
 import {
   createDashboardNote,
   updateDashboardNote,
@@ -121,9 +122,9 @@ const NoteItem = React.memo(function NoteItem({
               </Button>
             </div>
           ) : (
-            <p className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-foreground/85">
+            <RichText className="mt-1 text-foreground/85 [&_li]:text-[13px] [&_p]:text-[13px]">
               {note.content}
-            </p>
+            </RichText>
           )}
         </div>
 

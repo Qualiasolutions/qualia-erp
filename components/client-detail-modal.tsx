@@ -1,6 +1,7 @@
 'use client';
 
 import { Building2, Phone, Globe, MapPin, Folder } from 'lucide-react';
+import { RichText } from '@/components/ui/rich-text';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Dialog,
@@ -97,7 +98,7 @@ export function ClientDetailModal({ client, open, onOpenChange }: ClientDetailMo
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">Notes</h4>
               <div className="rounded-lg bg-muted/50 p-3">
-                <p className="whitespace-pre-wrap text-sm">{client.notes}</p>
+                <RichText>{client.notes}</RichText>
               </div>
             </div>
           )}

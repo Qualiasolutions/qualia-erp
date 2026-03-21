@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/lib/schedule-utils';
+import { RichText } from '@/components/ui/rich-text';
 import type { Task } from '@/app/actions/inbox';
 
 interface TaskDetailDialogProps {
@@ -140,9 +141,7 @@ export function TaskDetailDialog({
         {/* Description */}
         {task.description && (
           <div className="border-t border-border/50 px-6 py-4">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
-              {task.description}
-            </p>
+            <RichText className="text-foreground/80">{task.description}</RichText>
           </div>
         )}
 

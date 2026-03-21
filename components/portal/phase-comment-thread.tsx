@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { createPhaseComment, deletePhaseComment } from '@/app/actions/phase-comments';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { RichText } from '@/components/ui/rich-text';
 import { useServerAction } from '@/lib/hooks/use-server-action';
 
 interface CommentWithProfile {
@@ -195,9 +196,7 @@ export function PhaseCommentThread({
                       </span>
                     </div>
 
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                      {comment.comment_text}
-                    </p>
+                    <RichText className="text-muted-foreground">{comment.comment_text}</RichText>
                   </div>
 
                   {canDelete && (

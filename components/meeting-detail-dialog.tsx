@@ -6,6 +6,7 @@ import { Video, Clock, CalendarDays, FolderOpen, Pencil, ExternalLink, Users } f
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useTimezone } from '@/lib/schedule-utils';
+import { RichText } from '@/components/ui/rich-text';
 import type { MeetingWithRelations } from '@/lib/swr';
 
 interface MeetingDetailDialogProps {
@@ -102,9 +103,7 @@ export function MeetingDetailDialog({
         {/* Description */}
         {meeting.description && (
           <div className="border-t border-border/50 px-6 py-4">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/80">
-              {meeting.description}
-            </p>
+            <RichText className="text-foreground/80">{meeting.description}</RichText>
           </div>
         )}
 

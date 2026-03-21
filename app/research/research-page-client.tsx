@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { RichText } from '@/components/ui/rich-text';
 import { RESEARCH_CATEGORIES, CATEGORY_COLORS, getCategoryLabel } from '@/lib/research-constants';
 import {
   createResearchEntry,
@@ -227,29 +228,25 @@ ${entry.raw_content ? `## Raw Research Content\n${entry.raw_content}` : ''}
         <div className="space-y-6 py-4">
           {entry.summary && (
             <Section icon={FileText} title="Summary" color="text-blue-500">
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{entry.summary}</p>
+              <RichText className="text-muted-foreground">{entry.summary}</RichText>
             </Section>
           )}
 
           {entry.key_findings && (
             <Section icon={Lightbulb} title="Key Findings" color="text-amber-500">
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {entry.key_findings}
-              </p>
+              <RichText className="text-muted-foreground">{entry.key_findings}</RichText>
             </Section>
           )}
 
           {entry.action_items && (
             <Section icon={CheckCircle2} title="Action Items" color="text-green-500">
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">
-                {entry.action_items}
-              </p>
+              <RichText className="text-muted-foreground">{entry.action_items}</RichText>
             </Section>
           )}
 
           {entry.sources && (
             <Section icon={Link2} title="Sources" color="text-purple-500">
-              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{entry.sources}</p>
+              <RichText className="text-muted-foreground">{entry.sources}</RichText>
             </Section>
           )}
 

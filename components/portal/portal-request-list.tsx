@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { RichText } from '@/components/ui/rich-text';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 import { Lightbulb, MessageSquare, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -213,9 +214,9 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-foreground">{request.title}</h3>
                   {request.description && (
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                    <RichText compact className="mt-1">
                       {request.description}
-                    </p>
+                    </RichText>
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <Badge className={cn('text-xs', getStatusColor(request.status))}>
