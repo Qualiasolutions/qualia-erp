@@ -17,6 +17,7 @@ import {
   MoreHorizontal,
   Edit2,
   Trash2,
+  Eye,
 } from 'lucide-react';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
@@ -24,6 +25,7 @@ import { TaskTimeTracker } from '@/components/task-time-tracker';
 import { updateTask, deleteTask, getTaskById, type Task } from '@/app/actions/inbox';
 import { invalidateTeamDashboard, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
+import { TaskDetailDialog } from '@/components/task-detail-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,6 +100,8 @@ export function TeamTaskCard({
   const [deleting, setDeleting] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [viewTask, setViewTask] = useState<Task | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
   const priorityColor = ISSUE_PRIORITY_COLORS[task.priority as keyof typeof ISSUE_PRIORITY_COLORS];
   const statusColors = TASK_STATUS_COLORS[task.status as keyof typeof TASK_STATUS_COLORS];
 
@@ -114,6 +118,14 @@ export function TeamTaskCard({
     ? PROJECT_TYPE_STYLES[task.project.project_type]
     : null;
   const ProjectIcon = typeStyle?.icon || Folder;
+
+  const handleView = async () => {
+    const result = await getTaskById(task.id);
+    if (result.success && result.data) {
+      setViewTask(result.data as Task);
+      setViewOpen(true);
+    }
+  };
 
   const handleEdit = async () => {
     const result = await getTaskById(task.id);
@@ -274,34 +286,71 @@ export function TeamTaskCard({
             <TaskTimeTracker taskId={task.id} timeLog={task.time_log} readOnly />
           )}
 
-          {/* Admin actions menu */}
-          {isAdmin && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex size-6 items-center justify-center rounded-md text-muted-foreground/40 opacity-0 transition-all hover:bg-muted/60 hover:text-foreground group-hover:opacity-100"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal className="size-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-36">
-                <DropdownMenuItem onClick={handleEdit}>
-                  <Edit2 className="mr-2 size-3.5" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleDelete}
-                  className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
-                >
-                  <Trash2 className="mr-2 size-3.5" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          {/* Actions menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="flex size-6 items-center justify-center rounded-md text-muted-foreground/40 opacity-0 transition-all hover:bg-muted/60 hover:text-foreground group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="size-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem onClick={handleView}>
+                <Eye className="mr-2 size-3.5" />
+                View
+              </DropdownMenuItem>
+              {isAdmin && (
+                <>
+                  <DropdownMenuItem onClick={handleEdit}>
+                    <Edit2 className="mr-2 size-3.5" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={handleDelete}
+                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                  >
+                    <Trash2 className="mr-2 size-3.5" />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* View dialog */}
+      {viewTask && (
+        <TaskDetailDialog
+          task={viewTask}
+          open={viewOpen}
+          onOpenChange={(open) => {
+            setViewOpen(open);
+            if (!open) setViewTask(null);
+          }}
+          onEdit={(t) => {
+            setViewOpen(false);
+            setViewTask(null);
+            setEditTask(t);
+            setEditOpen(true);
+          }}
+          onToggleDone={async (t) => {
+            const newStatus = t.status === 'Done' ? 'Todo' : 'Done';
+            const fd = new FormData();
+            fd.set('id', t.id);
+            fd.set('status', newStatus);
+            await updateTask(fd);
+            if (workspaceId) invalidateTeamDashboard(workspaceId);
+            invalidateInboxTasks(true);
+            invalidateDailyFlow(true);
+            onTaskUpdate?.();
+            setViewOpen(false);
+            setViewTask(null);
+          }}
+        />
+      )}
 
       {/* Edit modal */}
       {editTask && (

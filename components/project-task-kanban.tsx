@@ -19,6 +19,7 @@ import {
   Layers,
   ChevronDown,
   ChevronRight,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,8 @@ import {
   invalidateProjectPhases,
 } from '@/lib/swr';
 import { cn } from '@/lib/utils';
+import { TaskDetailDialog } from '@/components/task-detail-dialog';
+import type { Task as InboxTask } from '@/app/actions/inbox';
 import { renderTextWithLinks, extractFirstUrl } from '@/lib/render-links';
 import { getPhasesForType, type Phase } from '@/lib/project-phases';
 import {
@@ -865,6 +868,7 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
   task: Task;
   onDelete: () => void;
 }) {
+  const [viewOpen, setViewOpen] = useState(false);
   const statusConfig = STATUS_CONFIG[task.status as TaskStatus] || STATUS_CONFIG.Todo;
   const StatusIcon = statusConfig.icon;
   const isDone = task.status === 'Done';
@@ -946,12 +950,34 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
+          {task.description && (
+            <DropdownMenuItem onClick={() => setViewOpen(true)}>
+              <Eye className="mr-2 h-4 w-4" />
+              View
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* View dialog */}
+      <TaskDetailDialog
+        task={task as unknown as InboxTask}
+        open={viewOpen}
+        onOpenChange={setViewOpen}
+        onEdit={() => setViewOpen(false)}
+        onToggleDone={() => {
+          const newStatus = isDone ? 'Todo' : 'Done';
+          quickUpdateTask(task.id, { status: newStatus as 'Todo' | 'Done' }).then(() => {
+            invalidateProjectTasks(task.project_id || '');
+            invalidateInboxTasks();
+          });
+          setViewOpen(false);
+        }}
+      />
     </div>
   );
 });

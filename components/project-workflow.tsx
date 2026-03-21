@@ -14,11 +14,14 @@ import {
   Circle,
   CheckCircle2,
   Clock,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { TaskDetailDialog } from '@/components/task-detail-dialog';
+import type { Task as InboxTask } from '@/app/actions/inbox';
 import {
   getProjectPhases,
   createProjectPhase,
@@ -99,6 +102,9 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
   // Task editing
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState('');
+
+  // Task view dialog
+  const [viewingTask, setViewingTask] = useState<Task | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -467,6 +473,15 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                       )}
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+                      {task.description && (
+                        <button
+                          onClick={() => setViewingTask(task)}
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-qualia-500/10 hover:text-qualia-500"
+                          title="View details"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </button>
+                      )}
                       {!isDone && (
                         <button
                           onClick={() => {
@@ -499,6 +514,26 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
             )}
           </div>
         </div>
+
+        {/* Task view dialog */}
+        <TaskDetailDialog
+          task={viewingTask as unknown as InboxTask}
+          open={!!viewingTask}
+          onOpenChange={(open) => {
+            if (!open) setViewingTask(null);
+          }}
+          onEdit={() => {
+            if (viewingTask) {
+              setEditingTaskId(viewingTask.id);
+              setEditingTaskTitle(viewingTask.title);
+              setViewingTask(null);
+            }
+          }}
+          onToggleDone={(t) => {
+            handleToggleTask(t.id, t.status);
+            setViewingTask(null);
+          }}
+        />
       </div>
     );
   }
