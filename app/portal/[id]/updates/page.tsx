@@ -1,7 +1,6 @@
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { canAccessProject } from '@/lib/portal-utils';
-import { getProjectActivityFeed } from '@/app/actions/activity-feed';
 import type { ActivityLogEntry } from '@/lib/activity-utils';
 import { PortalActivityFeed } from '@/components/portal/portal-activity-feed';
 import { PortalTabs } from '@/components/portal/portal-tabs';
@@ -43,9 +42,28 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
     redirect('/portal');
   }
 
-  // Fetch client-visible activities (first 20 for pagination)
-  const activityResult = await getProjectActivityFeed(projectId, true, 20);
-  const activities = activityResult.success ? (activityResult.data as ActivityLogEntry[]) : [];
+  // Fetch client-visible activities using admin client (bypasses RLS for webhook-inserted entries)
+  let activities: ActivityLogEntry[] = [];
+  try {
+    const adminSupabase = createAdminClient();
+    const { data } = await adminSupabase
+      .from('activity_log')
+      .select(
+        `id, project_id, action_type, actor_id, action_data, is_client_visible, created_at,
+         actor:profiles!activity_log_actor_id_fkey(id, full_name, avatar_url, email)`
+      )
+      .eq('project_id', projectId)
+      .eq('is_client_visible', true)
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    activities = ((data || []) as unknown as ActivityLogEntry[]).map((entry) => ({
+      ...entry,
+      actor: Array.isArray(entry.actor) ? entry.actor[0] || null : entry.actor,
+    })) as ActivityLogEntry[];
+  } catch {
+    // Fallback: no activities shown if admin client unavailable
+  }
 
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
