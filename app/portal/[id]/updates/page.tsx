@@ -8,6 +8,8 @@ import { PortalTabs } from '@/components/portal/portal-tabs';
 import { PortalPageHeader } from '@/components/portal/portal-page-header';
 import { fadeInClasses } from '@/lib/transitions';
 
+export const dynamic = 'force-dynamic';
+
 interface PortalUpdatesPageProps {
   params: Promise<{ id: string }>;
 }
