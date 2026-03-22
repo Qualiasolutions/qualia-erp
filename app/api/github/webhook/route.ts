@@ -213,6 +213,25 @@ export async function POST(request: NextRequest) {
     // ── Detect .planning phase changes ───────────────────────────────────
     const phaseUpdates = parsePlanningFiles([...allChangedFiles]);
 
+    // ── Resolve actor for client-visible activity_log ────────────────
+    // Use project lead_id, fallback to first admin profile
+    const { data: projectFull } = await supabase
+      .from('projects')
+      .select('lead_id')
+      .eq('id', projectId)
+      .single();
+
+    let actorId = projectFull?.lead_id;
+    if (!actorId) {
+      const { data: admin } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'admin')
+        .limit(1)
+        .single();
+      actorId = admin?.id;
+    }
+
     if (phaseUpdates.length === 0) {
       // No planning file changes — just log the push as activity
       const commitCount = payload.commits.length;
@@ -230,6 +249,28 @@ export async function POST(request: NextRequest) {
           commit_messages: payload.commits.slice(0, 5).map((c) => c.message.split('\n')[0]),
         },
       });
+
+      // Also log client-visible activity
+      if (actorId) {
+        const commitSummary = payload.commits
+          .slice(0, 5)
+          .map((c) => c.message.split('\n')[0])
+          .join('; ');
+
+        await supabase.from('activity_log').insert({
+          project_id: projectId,
+          action_type: 'code_push',
+          actor_id: actorId,
+          action_data: {
+            title: `${commitCount} commit${commitCount === 1 ? '' : 's'} pushed to ${branch}`,
+            description: commitSummary,
+            branch,
+            commit_count: commitCount,
+            head_sha: payload.head_commit?.id?.slice(0, 7),
+          },
+          is_client_visible: true,
+        });
+      }
 
       return NextResponse.json({
         ok: true,
@@ -319,7 +360,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ── Log activity ─────────────────────────────────────────────────────
+    // ── Log activity (internal) ──────────────────────────────────────────
     const commitCount = payload.commits.length;
 
     await supabase.from('activities').insert({
@@ -336,6 +377,48 @@ export async function POST(request: NextRequest) {
         phase_updates: results,
       },
     });
+
+    // ── Log activity (client-visible) ──────────────────────────────────
+    if (actorId) {
+      const completedPhases = results.filter((r) => r.action.includes('completed'));
+      const inProgressPhases = results.filter(
+        (r) => r.action.includes('in_progress') || r.action.includes('created')
+      );
+
+      let title = `${commitCount} commit${commitCount === 1 ? '' : 's'} pushed`;
+      let description = '';
+
+      if (completedPhases.length > 0) {
+        title = `Phase${completedPhases.length > 1 ? 's' : ''} completed: ${completedPhases.map((p) => p.phase).join(', ')}`;
+        description = `${completedPhases.length} phase${completedPhases.length > 1 ? 's' : ''} completed with ${commitCount} commits.`;
+      } else if (inProgressPhases.length > 0) {
+        title = `Development progress: ${inProgressPhases.map((p) => p.phase).join(', ')}`;
+        description = `${commitCount} commits advancing ${inProgressPhases.length} phase${inProgressPhases.length > 1 ? 's' : ''}.`;
+      }
+
+      const commitSummary = payload.commits
+        .slice(0, 5)
+        .map((c) => c.message.split('\n')[0])
+        .join('; ');
+      if (commitSummary) {
+        description += ` Latest: ${commitSummary}`;
+      }
+
+      await supabase.from('activity_log').insert({
+        project_id: projectId,
+        action_type: completedPhases.length > 0 ? 'phase_approved' : 'code_push',
+        actor_id: actorId,
+        action_data: {
+          title,
+          description: description.trim(),
+          branch,
+          commit_count: commitCount,
+          head_sha: payload.head_commit?.id?.slice(0, 7),
+          phase_updates: results,
+        },
+        is_client_visible: true,
+      });
+    }
 
     return NextResponse.json({
       ok: true,

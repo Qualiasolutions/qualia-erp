@@ -157,6 +157,46 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── Client-visible activity_log for production deploys ────────────
+    if (status === 'ready' && environment === 'production') {
+      // Resolve actor — project lead or first admin
+      const { data: projLead } = await supabase
+        .from('projects')
+        .select('lead_id')
+        .eq('id', ourProject.id)
+        .single();
+
+      let actorId = projLead?.lead_id;
+      if (!actorId) {
+        const { data: admin } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('role', 'admin')
+          .limit(1)
+          .single();
+        actorId = admin?.id;
+      }
+
+      if (actorId) {
+        const commitMsg = deployment.meta?.githubCommitMessage?.split('\n')[0] || '';
+        await supabase.from('activity_log').insert({
+          project_id: ourProject.id,
+          action_type: 'deployment',
+          actor_id: actorId,
+          action_data: {
+            title: `Deployed to production`,
+            description: commitMsg
+              ? `Latest change: ${commitMsg}`
+              : `Live at https://${deployment.url}`,
+            url: `https://${deployment.url}`,
+            environment: 'production',
+            commit_sha: deployment.meta?.githubCommitSha?.slice(0, 7),
+          },
+          is_client_visible: true,
+        });
+      }
+    }
+
     console.log('[Vercel Webhook] Processed:', ourProject.name, status);
     return NextResponse.json({ success: true });
   } catch (err) {
