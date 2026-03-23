@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qualia Framework Documentation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --teal: #00A4AC;
+  --teal-dim: #007a80;
+  --teal-faint: rgba(0, 164, 172, 0.08);
+  --teal-border: rgba(0, 164, 172, 0.2);
+  --bg: #121819;
+  --bg-raised: #181e1f;
+  --bg-card: #1a2021;
+  --bg-code: #1a1f20;
+  --bg-input: #161b1c;
+  --text: #d4dada;
+  --text-muted: #8a9494;
+  --text-dim: #5c6868;
+  --border: #252d2e;
+  --border-light: #2a3334;
+  --green: #34d399;
+  --green-bg: rgba(52, 211, 153, 0.08);
+  --amber: #fbbf24;
+  --amber-bg: rgba(251, 191, 36, 0.08);
+  --red: #f87171;
+}
+
+html { font-size: 16px; scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Header */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding: 1rem clamp(1rem, 4vw, 3rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: rgba(18, 24, 25, 0.92);
+  backdrop-filter: blur(12px);
+  z-index: 100;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logo {
+  width: 28px;
+  height: 28px;
+  background: var(--teal);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--bg);
+}
+
+.header-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.header-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--border);
+}
+
+/* Tab System */
+.tabs-container { border-bottom: 1px solid var(--border); background: var(--bg); }
+
+.tab-list {
+  display: flex;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab-list::-webkit-scrollbar { display: none; }
+
+input[name="tab"] { display: none; }
+
+.tab-label {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 150ms, border-color 150ms;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.tab-label:hover { color: var(--text); }
+
+#tab-framework:checked ~ .tab-list label[for="tab-framework"],
+#tab-connections:checked ~ .tab-list label[for="tab-connections"],
+#tab-portal:checked ~ .tab-list label[for="tab-portal"],
+#tab-checklists:checked ~ .tab-list label[for="tab-checklists"],
+#tab-reference:checked ~ .tab-list label[for="tab-reference"] {
+  color: var(--teal);
+  border-bottom-color: var(--teal);
+}
+
+.tab-panel { display: none; }
+
+#tab-framework:checked ~ .tab-panels .panel-framework,
+#tab-connections:checked ~ .tab-panels .panel-connections,
+#tab-portal:checked ~ .tab-panels .panel-portal,
+#tab-checklists:checked ~ .tab-panels .panel-checklists,
+#tab-reference:checked ~ .tab-panels .panel-reference { display: block; }
+
+.tab-panels { padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem); max-width: 1200px; margin: 0 auto; }
+
+/* Typography */
+h2 { font-size: 1.375rem; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+h3 { font-size: 1.0625rem; font-weight: 600; color: var(--text); letter-spacing: -0.01em; margin-top: 2rem; margin-bottom: 0.75rem; }
+h4 { font-size: 0.875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+p { color: var(--text-muted); margin-bottom: 0.75rem; font-size: 0.875rem; }
+.section-desc { max-width: 60ch; margin-bottom: 1.5rem; }
+
+/* Flow Diagram */
+.flow-diagram {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding: 1.5rem 0;
+  margin-bottom: 2rem;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 130px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.flow-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  right: -24px;
+  width: 20px;
+  height: 2px;
+  background: var(--border-light);
+}
+
+.flow-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: center;
+  width: 120px;
+}
+
+.flow-box.active {
+  border-color: var(--teal-border);
+  background: var(--teal-faint);
+  color: var(--teal);
+}
+
+.flow-arrow-down {
+  width: 1px;
+  height: 20px;
+  background: var(--border-light);
+  margin: 4px 0;
+  position: relative;
+}
+
+.flow-arrow-down::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -3px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--border-light);
+}
+
+.flow-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  text-align: center;
+}
+
+/* Agent Grid */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.agent-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.agent-group-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--teal);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agent-group-title::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--teal);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.8125rem;
+}
+
+.agent-item:last-child { border-bottom: none; }
+.agent-name { font-weight: 500; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+.agent-role { color: var(--text-muted); font-size: 0.75rem; text-align: right; }
+
+/* Skills Grid */
+.skills-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.skill-category {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.skill-category-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.skill-list {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.skill-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.625rem;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+  color: var(--text-muted);
+}
+
+/* Project Types */
+.project-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.project-type {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.project-type-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+.phase-list { list-style: none; }
+
+.phase-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.phase-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--teal-faint);
+  border: 1px solid var(--teal-border);
+  color: var(--teal);
+  font-size: 0.625rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Connections - Vertical Flow */
+.vertical-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  margin: 1.5rem 0 2rem;
+  padding-left: 1rem;
+}
+
+.vflow-step {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.vflow-node {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.625rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  max-width: 400px;
+}
+
+.vflow-node.highlight {
+  border-color: var(--teal-border);
+  background: var(--teal-faint);
+}
+
+.vflow-connector {
+  width: 1px;
+  height: 24px;
+  background: var(--border-light);
+  margin-left: 24px;
+  position: relative;
+}
+
+.vflow-connector::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: -3px;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--border-light);
+}
+
+/* Connected Projects */
+.projects-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr));
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.project-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Tables */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+  font-size: 0.8125rem;
+}
+
+.ref-table th {
+  text-align: left;
+  padding: 0.625rem 1rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+}
+
+.ref-table td {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.ref-table tr:hover td { background: var(--teal-faint); }
+
+.ref-table td:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--teal);
+  white-space: nowrap;
+}
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+}
+
+.badge-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+.badge-teal { background: var(--teal-faint); color: var(--teal); border: 1px solid var(--teal-border); }
+.badge-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+.badge-dim { background: var(--bg-code); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* Checklists / Details */
+details {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  transition: border-color 150ms;
+}
+
+details[open] { border-color: var(--teal-border); }
+
+summary {
+  padding: 0.875rem 1.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  list-style: none;
+  user-select: none;
+}
+
+summary::-webkit-details-marker { display: none; }
+
+summary::after {
+  content: '+';
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  transition: transform 150ms;
+}
+
+details[open] summary::after { content: '-'; }
+
+.checklist-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  color: var(--text-dim);
+  margin-left: auto;
+  margin-right: 1rem;
+  font-weight: 400;
+}
+
+.checklist-body { padding: 0 1.25rem 1rem; }
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.3rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.check-item::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--border-light);
+  border-radius: 3px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Code blocks */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8125em;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+  color: var(--teal);
+}
+
+.code-block {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.code-block .kw { color: var(--teal); }
+.code-block .cm { color: var(--text-dim); }
+.code-block .str { color: var(--green); }
+
+/* Portal Views */
+.view-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.view-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.view-card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feature-list { list-style: none; }
+
+.feature-item {
+  padding: 0.35rem 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.feature-item::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  background: var(--teal);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Wave Execution */
+.wave-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.5rem 0 2rem;
+}
+
+.wave-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.wave-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  width: 60px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.wave-tasks {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wave-task {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.75rem;
+  background: var(--teal-faint);
+  border: 1px solid var(--teal-border);
+  border-radius: 4px;
+  color: var(--teal);
+}
+
+.wave-task.secondary {
+  background: var(--bg-code);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* Review Workflow */
+.review-flow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 2rem;
+}
+
+.review-step {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.review-arrow {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+}
+
+/* Trigger list */
+.trigger-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.trigger-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  padding: 0.35rem 0;
+}
+
+.trigger-file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--teal);
+}
+
+.trigger-result { color: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .flow-diagram { flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+  .flow-step:not(:last-child)::after { display: none; }
+  .header-subtitle { display: none; }
+  .trigger-grid { grid-template-columns: 1fr; }
+  .tab-label { padding: 0.75rem 0.875rem; font-size: 0.75rem; }
+}
+
+@media (max-width: 480px) {
+  h2 { font-size: 1.125rem; }
+  .agent-item { flex-direction: column; gap: 0.15rem; }
+  .agent-role { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">Q</div>
+    <span class="header-title">Qualia Framework</span>
+    <span class="header-subtitle">Internal Documentation v2.0</span>
+  </div>
+  <span class="badge badge-teal">GSD System</span>
+</header>
+
+<div class="tabs-container">
+  <input type="radio" name="tab" id="tab-framework" checked>
+  <input type="radio" name="tab" id="tab-connections">
+  <input type="radio" name="tab" id="tab-portal">
+  <input type="radio" name="tab" id="tab-checklists">
+  <input type="radio" name="tab" id="tab-reference">
+
+  <div class="tab-list">
+    <label class="tab-label" for="tab-framework">Framework</label>
+    <label class="tab-label" for="tab-connections">Connections</label>
+    <label class="tab-label" for="tab-portal">Portal</label>
+    <label class="tab-label" for="tab-checklists">Checklists</label>
+    <label class="tab-label" for="tab-reference">Quick Reference</label>
+  </div>
+
+  <div class="tab-panels">
+
+    <!-- ======================== TAB 1: FRAMEWORK ======================== -->
+    <div class="tab-panel panel-framework">
+      <h2>Project Lifecycle</h2>
+      <p class="section-desc">Every Qualia project follows the GSD (Get Stuff Done) system &mdash; a structured lifecycle from intake to delivery with parallel execution and automated verification.</p>
+
+      <div class="flow-diagram">
+        <div class="flow-step">
+          <div class="flow-box active">NEW PROJECT</div>
+          <div class="flow-arrow-down"></div>
+          <div class="flow-file">PROJECT.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-box">DISCUSS</div>
+          <div class="flow-arrow-down"></div>
+          <div class="flow-file">CONTEXT.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-box">PLAN</div>
+          <div class="flow-arrow-down"></div>
+          <div class="flow-file">PLAN.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-box">EXECUTE</div>
+          <div class="flow-arrow-down"></div>
+          <div class="flow-file">SUMMARY.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-box">VERIFY</div>
+          <div class="flow-arrow-down"></div>
+          <div class="flow-file">VERIFY.md</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-box active">COMPLETE</div>
+          <div class="flow-arrow-down"></div>
+          <div class="flow-file">MILESTONE</div>
+        </div>
+      </div>
+
+      <h3>Wave-Based Parallel Execution</h3>
+      <p>Tasks within a phase are grouped into waves. Independent tasks run in parallel; dependent tasks wait for their prerequisites.</p>
+
+      <div class="wave-diagram">
+        <div class="wave-row">
+          <span class="wave-label">Wave 1</span>
+          <div class="wave-tasks">
+            <span class="wave-task">Database Schema</span>
+            <span class="wave-task">UI Components</span>
+            <span class="wave-task">Auth Setup</span>
+          </div>
+        </div>
+        <div class="wave-row">
+          <span class="wave-label">Wave 2</span>
+          <div class="wave-tasks">
+            <span class="wave-task">API Routes</span>
+            <span class="wave-task secondary">RLS Policies</span>
+            <span class="wave-task">Form Logic</span>
+          </div>
+        </div>
+        <div class="wave-row">
+          <span class="wave-label">Wave 3</span>
+          <div class="wave-tasks">
+            <span class="wave-task secondary">Integration Tests</span>
+            <span class="wave-task secondary">E2E Testing</span>
+          </div>
+        </div>
+        <div class="wave-row">
+          <span class="wave-label">Wave 4</span>
+          <div class="wave-tasks">
+            <span class="wave-task">Deploy &amp; Verify</span>
+          </div>
+        </div>
+      </div>
+
+      <h3>21 Agents</h3>
+      <p class="section-desc">Specialized agents handle each part of the lifecycle. They are spawned as needed and run in parallel when possible.</p>
+
+      <div class="agent-grid">
+        <div class="agent-group">
+          <div class="agent-group-title">Planning</div>
+          <div class="agent-item"><span class="agent-name">project-analyst</span><span class="agent-role">Scope &amp; requirements</span></div>
+          <div class="agent-item"><span class="agent-name">context-builder</span><span class="agent-role">Research &amp; context docs</span></div>
+          <div class="agent-item"><span class="agent-name">planner</span><span class="agent-role">Phase breakdown &amp; tasks</span></div>
+          <div class="agent-item"><span class="agent-name">wave-orchestrator</span><span class="agent-role">Parallel task scheduling</span></div>
+          <div class="agent-item"><span class="agent-name">estimator</span><span class="agent-role">Time &amp; effort estimates</span></div>
+        </div>
+        <div class="agent-group">
+          <div class="agent-group-title">Execution</div>
+          <div class="agent-item"><span class="agent-name">frontend-agent</span><span class="agent-role">React/Next.js UI work</span></div>
+          <div class="agent-item"><span class="agent-name">backend-agent</span><span class="agent-role">API routes &amp; server logic</span></div>
+          <div class="agent-item"><span class="agent-name">database-agent</span><span class="agent-role">Schema, migrations, RLS</span></div>
+          <div class="agent-item"><span class="agent-name">auth-agent</span><span class="agent-role">Authentication flows</span></div>
+          <div class="agent-item"><span class="agent-name">integration-agent</span><span class="agent-role">Third-party APIs</span></div>
+          <div class="agent-item"><span class="agent-name">voice-agent</span><span class="agent-role">VAPI/Retell voice builds</span></div>
+          <div class="agent-item"><span class="agent-name">ai-agent-builder</span><span class="agent-role">LLM agent construction</span></div>
+        </div>
+        <div class="agent-group">
+          <div class="agent-group-title">Review &amp; Quality</div>
+          <div class="agent-item"><span class="agent-name">verifier</span><span class="agent-role">Automated test &amp; checks</span></div>
+          <div class="agent-item"><span class="agent-name">security-auditor</span><span class="agent-role">RLS, auth, key exposure</span></div>
+          <div class="agent-item"><span class="agent-name">performance-agent</span><span class="agent-role">Lighthouse &amp; load times</span></div>
+          <div class="agent-item"><span class="agent-name">accessibility-agent</span><span class="agent-role">WCAG compliance</span></div>
+          <div class="agent-item"><span class="agent-name">deploy-agent</span><span class="agent-role">Vercel deploy &amp; verify</span></div>
+        </div>
+        <div class="agent-group">
+          <div class="agent-group-title">Research &amp; Support</div>
+          <div class="agent-item"><span class="agent-name">researcher</span><span class="agent-role">Docs, APIs, best practices</span></div>
+          <div class="agent-item"><span class="agent-name">debugger</span><span class="agent-role">Root cause analysis</span></div>
+          <div class="agent-item"><span class="agent-name">docs-agent</span><span class="agent-role">README &amp; documentation</span></div>
+          <div class="agent-item"><span class="agent-name">refactor-agent</span><span class="agent-role">Code quality &amp; cleanup</span></div>
+        </div>
+      </div>
+
+      <h3>80+ Skills by Category</h3>
+
+      <div class="skills-grid">
+        <div class="skill-category">
+          <div class="skill-category-name">Development</div>
+          <ul class="skill-list">
+            <li class="skill-tag">nextjs-app-router</li>
+            <li class="skill-tag">react-19</li>
+            <li class="skill-tag">typescript-strict</li>
+            <li class="skill-tag">server-components</li>
+            <li class="skill-tag">server-actions</li>
+            <li class="skill-tag">api-routes</li>
+            <li class="skill-tag">middleware</li>
+            <li class="skill-tag">streaming-ssr</li>
+            <li class="skill-tag">edge-runtime</li>
+            <li class="skill-tag">turbopack</li>
+            <li class="skill-tag">parallel-routes</li>
+            <li class="skill-tag">intercepting-routes</li>
+            <li class="skill-tag">suspense-boundaries</li>
+            <li class="skill-tag">error-boundaries</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">Database &amp; Auth</div>
+          <ul class="skill-list">
+            <li class="skill-tag">supabase-schema</li>
+            <li class="skill-tag">rls-policies</li>
+            <li class="skill-tag">migrations</li>
+            <li class="skill-tag">edge-functions</li>
+            <li class="skill-tag">realtime-subscriptions</li>
+            <li class="skill-tag">storage-buckets</li>
+            <li class="skill-tag">auth-helpers</li>
+            <li class="skill-tag">service-role-security</li>
+            <li class="skill-tag">row-level-security</li>
+            <li class="skill-tag">pg-triggers</li>
+            <li class="skill-tag">database-types-gen</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">Design &amp; UI</div>
+          <ul class="skill-list">
+            <li class="skill-tag">frontend-master</li>
+            <li class="skill-tag">tailwind-v4</li>
+            <li class="skill-tag">shadcn-ui</li>
+            <li class="skill-tag">responsive-design</li>
+            <li class="skill-tag">animation-toolkit</li>
+            <li class="skill-tag">framer-motion</li>
+            <li class="skill-tag">gsap</li>
+            <li class="skill-tag">css-grid-layouts</li>
+            <li class="skill-tag">dark-mode</li>
+            <li class="skill-tag">design-systems</li>
+            <li class="skill-tag">micro-interactions</li>
+            <li class="skill-tag">fluid-typography</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">AI &amp; Voice</div>
+          <ul class="skill-list">
+            <li class="skill-tag">vapi-voice</li>
+            <li class="skill-tag">retell-ai</li>
+            <li class="skill-tag">elevenlabs-tts</li>
+            <li class="skill-tag">openrouter</li>
+            <li class="skill-tag">llm-orchestration</li>
+            <li class="skill-tag">prompt-engineering</li>
+            <li class="skill-tag">rag-pipelines</li>
+            <li class="skill-tag">function-calling</li>
+            <li class="skill-tag">tool-use</li>
+            <li class="skill-tag">streaming-responses</li>
+            <li class="skill-tag">conversation-design</li>
+            <li class="skill-tag">telnyx-telephony</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">Deployment</div>
+          <ul class="skill-list">
+            <li class="skill-tag">vercel-deploy</li>
+            <li class="skill-tag">vercel-analytics</li>
+            <li class="skill-tag">dns-config</li>
+            <li class="skill-tag">ssl-certs</li>
+            <li class="skill-tag">env-management</li>
+            <li class="skill-tag">ci-cd-pipelines</li>
+            <li class="skill-tag">github-actions</li>
+            <li class="skill-tag">webhook-setup</li>
+            <li class="skill-tag">cloudflare-workers</li>
+            <li class="skill-tag">edge-deploy</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">Debug &amp; Quality</div>
+          <ul class="skill-list">
+            <li class="skill-tag">root-cause-analysis</li>
+            <li class="skill-tag">type-checking</li>
+            <li class="skill-tag">lint-fix</li>
+            <li class="skill-tag">performance-audit</li>
+            <li class="skill-tag">lighthouse</li>
+            <li class="skill-tag">bundle-analysis</li>
+            <li class="skill-tag">error-tracking</li>
+            <li class="skill-tag">log-analysis</li>
+            <li class="skill-tag">memory-profiling</li>
+            <li class="skill-tag">security-scanning</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">Domain-Specific</div>
+          <ul class="skill-list">
+            <li class="skill-tag">pharmacovigilance</li>
+            <li class="skill-tag">ecommerce</li>
+            <li class="skill-tag">saas-platforms</li>
+            <li class="skill-tag">booking-systems</li>
+            <li class="skill-tag">cms-integration</li>
+            <li class="skill-tag">payment-gateways</li>
+            <li class="skill-tag">email-systems</li>
+            <li class="skill-tag">pdf-generation</li>
+            <li class="skill-tag">i18n-localization</li>
+            <li class="skill-tag">seo-optimization</li>
+          </ul>
+        </div>
+        <div class="skill-category">
+          <div class="skill-category-name">Infrastructure</div>
+          <ul class="skill-list">
+            <li class="skill-tag">docker</li>
+            <li class="skill-tag">nginx</li>
+            <li class="skill-tag">cron-jobs</li>
+            <li class="skill-tag">websockets</li>
+            <li class="skill-tag">rate-limiting</li>
+            <li class="skill-tag">caching-strategies</li>
+            <li class="skill-tag">cdn-optimization</li>
+            <li class="skill-tag">monitoring</li>
+            <li class="skill-tag">logging</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Project Types &amp; Phases</h3>
+
+      <div class="project-types">
+        <div class="project-type">
+          <div class="project-type-name">Website</div>
+          <ul class="phase-list">
+            <li class="phase-item"><span class="phase-num">1</span>Foundation &amp; Setup</li>
+            <li class="phase-item"><span class="phase-num">2</span>Core Pages &amp; Layout</li>
+            <li class="phase-item"><span class="phase-num">3</span>Dynamic Features</li>
+            <li class="phase-item"><span class="phase-num">4</span>CMS &amp; Content</li>
+            <li class="phase-item"><span class="phase-num">5</span>SEO &amp; Performance</li>
+            <li class="phase-item"><span class="phase-num">6</span>Testing &amp; Launch</li>
+          </ul>
+        </div>
+        <div class="project-type">
+          <div class="project-type-name">AI Agent</div>
+          <ul class="phase-list">
+            <li class="phase-item"><span class="phase-num">1</span>Agent Architecture</li>
+            <li class="phase-item"><span class="phase-num">2</span>Knowledge Base &amp; RAG</li>
+            <li class="phase-item"><span class="phase-num">3</span>Tool Integration</li>
+            <li class="phase-item"><span class="phase-num">4</span>Conversation Flows</li>
+            <li class="phase-item"><span class="phase-num">5</span>Safety &amp; Guardrails</li>
+            <li class="phase-item"><span class="phase-num">6</span>Testing &amp; Monitoring</li>
+          </ul>
+        </div>
+        <div class="project-type">
+          <div class="project-type-name">Voice Agent</div>
+          <ul class="phase-list">
+            <li class="phase-item"><span class="phase-num">1</span>Voice Platform Setup</li>
+            <li class="phase-item"><span class="phase-num">2</span>Telephony &amp; Routing</li>
+            <li class="phase-item"><span class="phase-num">3</span>Dialog &amp; NLU Design</li>
+            <li class="phase-item"><span class="phase-num">4</span>Webhook Integrations</li>
+            <li class="phase-item"><span class="phase-num">5</span>Latency Optimization</li>
+            <li class="phase-item"><span class="phase-num">6</span>Live Testing &amp; QA</li>
+          </ul>
+        </div>
+        <div class="project-type">
+          <div class="project-type-name">Mobile App</div>
+          <ul class="phase-list">
+            <li class="phase-item"><span class="phase-num">1</span>App Architecture</li>
+            <li class="phase-item"><span class="phase-num">2</span>Core Screens &amp; Navigation</li>
+            <li class="phase-item"><span class="phase-num">3</span>Native Features</li>
+            <li class="phase-item"><span class="phase-num">4</span>Push &amp; Offline</li>
+            <li class="phase-item"><span class="phase-num">5</span>Store Submission Prep</li>
+            <li class="phase-item"><span class="phase-num">6</span>Beta Testing &amp; Launch</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================== TAB 2: CONNECTIONS ======================== -->
+    <div class="tab-panel panel-connections">
+      <h2>System Connections</h2>
+      <p class="section-desc">How GitHub, Claude Code, and the Qualia Portal synchronize project state automatically.</p>
+
+      <h3>Data Flow: Code to Portal</h3>
+
+      <div class="vertical-flow">
+        <div class="vflow-step"><div class="vflow-node">Developer pushes code to GitHub</div></div>
+        <div class="vflow-connector"></div>
+        <div class="vflow-step"><div class="vflow-node highlight">GitHub Webhook fires (push event)</div></div>
+        <div class="vflow-connector"></div>
+        <div class="vflow-step"><div class="vflow-node">Portal API receives at <code>/api/github/webhook</code></div></div>
+        <div class="vflow-connector"></div>
+        <div class="vflow-step"><div class="vflow-node">Parses <code>.planning/phases/</code> files from repo</div></div>
+        <div class="vflow-connector"></div>
+        <div class="vflow-step"><div class="vflow-node highlight">Creates/updates <code>project_phases</code> in Supabase</div></div>
+        <div class="vflow-connector"></div>
+        <div class="vflow-step"><div class="vflow-node">Staff sees progress in Portal &mdash; Client sees progress in Client Portal</div></div>
+      </div>
+
+      <h3>Auto-Update Triggers</h3>
+      <p>Phase status is automatically derived from file changes in the <code>.planning/</code> directory.</p>
+
+      <div class="trigger-grid">
+        <div class="trigger-item">
+          <span class="trigger-file">PLAN.md</span>
+          <span class="trigger-result"> created &rarr; <span class="badge badge-teal">in_progress</span></span>
+        </div>
+        <div class="trigger-item">
+          <span class="trigger-file">SUMMARY.md</span>
+          <span class="trigger-result"> created &rarr; <span class="badge badge-teal">in_progress</span></span>
+        </div>
+        <div class="trigger-item">
+          <span class="trigger-file">VERIFICATION.md</span>
+          <span class="trigger-result"> created &rarr; <span class="badge badge-green">completed</span></span>
+        </div>
+        <div class="trigger-item">
+          <span class="trigger-file">CONTEXT.md</span>
+          <span class="trigger-result"> updated &rarr; <span class="badge badge-teal">in_progress</span></span>
+        </div>
+      </div>
+
+      <h3>The <code>project_integrations</code> Table</h3>
+      <p>Links Supabase projects to their GitHub repos. Stores webhook secrets, repo names, and last sync timestamps.</p>
+
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Column</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>project_id</td><td>uuid</td><td>FK to projects table</td></tr>
+            <tr><td>github_repo</td><td>text</td><td>owner/repo format</td></tr>
+            <tr><td>webhook_secret</td><td>text</td><td>HMAC verification secret</td></tr>
+            <tr><td>last_synced_at</td><td>timestamptz</td><td>Last successful webhook parse</td></tr>
+            <tr><td>branch</td><td>text</td><td>Branch to watch (default: main)</td></tr>
+            <tr><td>auto_sync</td><td>boolean</td><td>Enable/disable auto-sync</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>23 Connected Projects</h3>
+
+      <div class="projects-list">
+        <div class="project-chip">aquador</div>
+        <div class="project-chip">maud</div>
+        <div class="project-chip">vero</div>
+        <div class="project-chip">aibossbrainz</div>
+        <div class="project-chip">mpm</div>
+        <div class="project-chip">zaid</div>
+        <div class="project-chip">dababneh</div>
+        <div class="project-chip">faris</div>
+        <div class="project-chip">hammah</div>
+        <div class="project-chip">sofiatesting</div>
+        <div class="project-chip">timo</div>
+        <div class="project-chip">under</div>
+        <div class="project-chip">armenius</div>
+        <div class="project-chip">glluztech</div>
+        <div class="project-chip">sigatalachana</div>
+        <div class="project-chip">qualia</div>
+        <div class="project-chip">qualia-portal</div>
+        <div class="project-chip">qualia-client</div>
+        <div class="project-chip">qualia-voice</div>
+        <div class="project-chip">qualia-ai</div>
+        <div class="project-chip">qualia-mobile</div>
+        <div class="project-chip">qualia-docs</div>
+        <div class="project-chip">qualia-analytics</div>
+      </div>
+
+      <h3>Claude Code Integration</h3>
+      <p>Claude Code runs locally and pushes to GitHub, which triggers the webhook pipeline. The GSD system generates <code>.planning/</code> files as it works through phases, giving the portal real-time visibility.</p>
+
+      <div class="code-block">
+<span class="cm"># Claude Code workflow</span>
+<span class="kw">1.</span> Claude Code receives task
+<span class="kw">2.</span> GSD system creates .planning/phases/phase-N/
+<span class="kw">3.</span> Writes PLAN.md, executes tasks, writes SUMMARY.md
+<span class="kw">4.</span> Runs verification, writes VERIFICATION.md
+<span class="kw">5.</span> Commits and pushes to GitHub
+<span class="kw">6.</span> Webhook fires &rarr; Portal updates automatically
+      </div>
+    </div>
+
+    <!-- ======================== TAB 3: PORTAL ======================== -->
+    <div class="tab-panel panel-portal">
+      <h2>Portal Views</h2>
+      <p class="section-desc">The Qualia Portal serves two audiences: internal staff managing projects, and external clients tracking progress.</p>
+
+      <div class="view-grid">
+        <div class="view-card">
+          <div class="view-card-title"><span class="badge badge-teal">Staff</span> Project Management</div>
+          <ul class="feature-list">
+            <li class="feature-item">Full project dashboard with all phases visible</li>
+            <li class="feature-item">Phase roadmap with drag-and-drop reordering</li>
+            <li class="feature-item">Task creation, assignment, and tracking</li>
+            <li class="feature-item">Phase review workflow (approve/reject)</li>
+            <li class="feature-item">AI assistant for project queries</li>
+            <li class="feature-item">GitHub commit history integration</li>
+            <li class="feature-item">Time tracking per phase and task</li>
+            <li class="feature-item">File upload and management</li>
+            <li class="feature-item">Internal notes and comments</li>
+            <li class="feature-item">Bulk operations on tasks</li>
+            <li class="feature-item">Project analytics and reports</li>
+          </ul>
+        </div>
+        <div class="view-card">
+          <div class="view-card-title"><span class="badge badge-green">Client</span> Client Portal</div>
+          <ul class="feature-list">
+            <li class="feature-item">Read-only phase roadmap with progress bars</li>
+            <li class="feature-item">Overall project progress percentage</li>
+            <li class="feature-item">Phase status indicators (pending, active, done)</li>
+            <li class="feature-item">Comment threads on each phase</li>
+            <li class="feature-item">Activity feed of recent updates</li>
+            <li class="feature-item">File download access for deliverables</li>
+            <li class="feature-item">Phase approval/feedback submission</li>
+            <li class="feature-item">Email notifications on phase completion</li>
+            <li class="feature-item">Mobile-responsive view</li>
+            <li class="feature-item">Branded experience per client</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Phase Review Workflow</h3>
+      <p>When a phase is completed, it enters the review pipeline. Staff submits for review, and the client can approve or request changes.</p>
+
+      <div class="review-flow">
+        <span class="review-step" style="background:var(--teal-faint);color:var(--teal);border:1px solid var(--teal-border)">Phase Complete</span>
+        <span class="review-arrow">&rarr;</span>
+        <span class="review-step" style="background:var(--amber-bg);color:var(--amber);border:1px solid rgba(251,191,36,0.2)">Submit for Review</span>
+        <span class="review-arrow">&rarr;</span>
+        <span class="review-step" style="background:var(--bg-card);color:var(--text-muted);border:1px solid var(--border)">Client Reviews</span>
+        <span class="review-arrow">&rarr;</span>
+        <span class="review-step" style="background:var(--green-bg);color:var(--green);border:1px solid rgba(52,211,153,0.2)">Approved</span>
+      </div>
+      <p style="margin-top:-0.5rem;font-size:0.75rem;color:var(--text-dim)">If changes are requested, the phase returns to active status with client feedback attached.</p>
+
+      <h3>Phase Status States</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Status</th><th>Badge</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>pending</td><td><span class="badge badge-dim">Pending</span></td><td>Phase not yet started</td></tr>
+            <tr><td>in_progress</td><td><span class="badge badge-teal">In Progress</span></td><td>Active development work</td></tr>
+            <tr><td>in_review</td><td><span class="badge badge-amber">In Review</span></td><td>Submitted for client review</td></tr>
+            <tr><td>changes_requested</td><td><span class="badge badge-amber">Changes Req.</span></td><td>Client requested modifications</td></tr>
+            <tr><td>completed</td><td><span class="badge badge-green">Completed</span></td><td>Approved and finalized</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Permissions Model</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Action</th><th>Staff</th><th>Client</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>View phases</td><td>All projects</td><td>Own projects only</td></tr>
+            <tr><td>Edit tasks</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Add comments</td><td>Yes</td><td>Yes (own phases)</td></tr>
+            <tr><td>Upload files</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Download files</td><td>Yes</td><td>Yes (deliverables)</td></tr>
+            <tr><td>Approve phases</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Submit for review</td><td>Yes</td><td>No</td></tr>
+            <tr><td>View analytics</td><td>Yes</td><td>Limited</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ======================== TAB 4: CHECKLISTS ======================== -->
+    <div class="tab-panel panel-checklists">
+      <h2>Completion Checklists</h2>
+      <p class="section-desc">Every project must pass its applicable checklists before delivery. Universal applies to all projects; type-specific checklists add domain requirements.</p>
+
+      <details>
+        <summary>Universal Checklist <span class="checklist-count">32 items</span></summary>
+        <div class="checklist-body">
+          <h4>Code Quality</h4>
+          <div class="check-item">TypeScript strict mode enabled, zero type errors</div>
+          <div class="check-item">No unused imports or variables</div>
+          <div class="check-item">Consistent naming conventions (camelCase, PascalCase)</div>
+          <div class="check-item">No hardcoded strings (use constants/env vars)</div>
+          <div class="check-item">Error boundaries on all route segments</div>
+          <div class="check-item">Loading states for all async operations</div>
+          <div class="check-item">Proper error handling with user-friendly messages</div>
+          <div class="check-item">No console.log in production code</div>
+          <h4>Security</h4>
+          <div class="check-item">Server-side auth on all protected routes</div>
+          <div class="check-item">RLS enabled on every Supabase table</div>
+          <div class="check-item">RLS policies tested with different user roles</div>
+          <div class="check-item">No service_role key in client-side code</div>
+          <div class="check-item">Zod validation on all form inputs</div>
+          <div class="check-item">CSRF protection on mutations</div>
+          <div class="check-item">No dangerouslySetInnerHTML usage</div>
+          <div class="check-item">Environment variables in .env.local (never committed)</div>
+          <h4>Performance</h4>
+          <div class="check-item">Lighthouse score above 90 on all categories</div>
+          <div class="check-item">Images optimized (WebP/AVIF, proper sizing)</div>
+          <div class="check-item">No layout shift (CLS below 0.1)</div>
+          <div class="check-item">First Contentful Paint under 1.5s</div>
+          <div class="check-item">Bundle size analyzed and optimized</div>
+          <div class="check-item">Database queries use proper indexes</div>
+          <h4>Infrastructure</h4>
+          <div class="check-item">Vercel deployment successful</div>
+          <div class="check-item">Custom domain configured with SSL</div>
+          <div class="check-item">Environment variables set in Vercel</div>
+          <div class="check-item">Error monitoring configured</div>
+          <div class="check-item">Backup strategy documented</div>
+          <h4>Documentation</h4>
+          <div class="check-item">README with setup instructions</div>
+          <div class="check-item">API endpoints documented</div>
+          <div class="check-item">Database schema documented</div>
+          <div class="check-item">Deployment process documented</div>
+          <div class="check-item">Known issues and limitations listed</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Website <span class="checklist-count">+25 items</span></summary>
+        <div class="checklist-body">
+          <h4>SEO</h4>
+          <div class="check-item">Meta titles and descriptions on all pages</div>
+          <div class="check-item">Open Graph tags for social sharing</div>
+          <div class="check-item">Canonical URLs set correctly</div>
+          <div class="check-item">Sitemap.xml generated and submitted</div>
+          <div class="check-item">Robots.txt configured properly</div>
+          <div class="check-item">Structured data (JSON-LD) where applicable</div>
+          <div class="check-item">H1-H6 hierarchy correct on all pages</div>
+          <div class="check-item">Alt text on all images</div>
+          <h4>Responsive Design</h4>
+          <div class="check-item">Tested on 320px, 375px, 768px, 1024px, 1440px</div>
+          <div class="check-item">No horizontal overflow on any breakpoint</div>
+          <div class="check-item">Touch targets minimum 44px on mobile</div>
+          <div class="check-item">Readable font sizes (minimum 16px body)</div>
+          <div class="check-item">Navigation works on mobile (hamburger or alternative)</div>
+          <div class="check-item">Forms usable on mobile with proper input types</div>
+          <div class="check-item">Images scale correctly across breakpoints</div>
+          <h4>Accessibility</h4>
+          <div class="check-item">WCAG 2.1 AA color contrast ratios</div>
+          <div class="check-item">Keyboard navigation works for all interactions</div>
+          <div class="check-item">Screen reader tested (VoiceOver or NVDA)</div>
+          <div class="check-item">Focus indicators visible on all interactive elements</div>
+          <div class="check-item">ARIA labels on icon-only buttons</div>
+          <div class="check-item">Skip-to-content link present</div>
+          <div class="check-item">Form labels associated with inputs</div>
+          <h4>Content</h4>
+          <div class="check-item">All placeholder content replaced</div>
+          <div class="check-item">404 page designed and functional</div>
+          <div class="check-item">Favicon and app icons set</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Platform + LLM <span class="checklist-count">+18 items</span></summary>
+        <div class="checklist-body">
+          <h4>AI Safety</h4>
+          <div class="check-item">Prompt injection defenses in place</div>
+          <div class="check-item">Output filtering for harmful content</div>
+          <div class="check-item">Rate limiting on AI endpoints</div>
+          <div class="check-item">Token usage monitoring and alerts</div>
+          <div class="check-item">Fallback responses when AI is unavailable</div>
+          <div class="check-item">User input sanitized before prompt injection</div>
+          <h4>Prompt Security</h4>
+          <div class="check-item">System prompts not exposed to users</div>
+          <div class="check-item">API keys for LLM providers secured server-side</div>
+          <div class="check-item">Model responses validated before display</div>
+          <div class="check-item">Conversation history length limited</div>
+          <div class="check-item">PII detection and redaction in prompts</div>
+          <h4>Platform Quality</h4>
+          <div class="check-item">Multi-tenant data isolation verified</div>
+          <div class="check-item">Webhook endpoints authenticated</div>
+          <div class="check-item">Background job processing reliable</div>
+          <div class="check-item">Database connection pooling configured</div>
+          <div class="check-item">Graceful degradation when services are down</div>
+          <div class="check-item">Audit logging for sensitive operations</div>
+          <div class="check-item">Data export capability for compliance</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>AI Agent <span class="checklist-count">+20 items</span></summary>
+        <div class="checklist-body">
+          <h4>Conversation Quality</h4>
+          <div class="check-item">Agent stays in character across long conversations</div>
+          <div class="check-item">Handles off-topic queries gracefully</div>
+          <div class="check-item">Provides source citations when applicable</div>
+          <div class="check-item">Conversation memory works correctly</div>
+          <div class="check-item">Multi-turn context maintained</div>
+          <div class="check-item">Handles ambiguous inputs with clarifying questions</div>
+          <div class="check-item">Graceful handoff to human support</div>
+          <h4>Tool Use</h4>
+          <div class="check-item">All tools tested with edge case inputs</div>
+          <div class="check-item">Tool errors handled without breaking conversation</div>
+          <div class="check-item">Tool execution timeouts configured</div>
+          <div class="check-item">Tool results formatted for readability</div>
+          <h4>Monitoring</h4>
+          <div class="check-item">Conversation logging enabled</div>
+          <div class="check-item">Token usage tracked per conversation</div>
+          <div class="check-item">Error rates monitored and alerted</div>
+          <div class="check-item">User satisfaction signals captured</div>
+          <div class="check-item">A/B testing framework for prompt variations</div>
+          <h4>Knowledge Base</h4>
+          <div class="check-item">RAG retrieval accuracy tested</div>
+          <div class="check-item">Knowledge base update pipeline automated</div>
+          <div class="check-item">Embedding model performance validated</div>
+          <div class="check-item">Chunk size and overlap optimized</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Voice Agent <span class="checklist-count">+22 items</span></summary>
+        <div class="checklist-body">
+          <h4>Voice UX</h4>
+          <div class="check-item">Natural conversation flow (no robotic patterns)</div>
+          <div class="check-item">Appropriate pause handling (barge-in support)</div>
+          <div class="check-item">Confirmation for critical actions ("Did you say...")</div>
+          <div class="check-item">Fallback for unrecognized speech</div>
+          <div class="check-item">DTMF input support where needed</div>
+          <div class="check-item">Background noise handling tested</div>
+          <div class="check-item">Multi-language support configured</div>
+          <h4>Latency</h4>
+          <div class="check-item">End-to-end latency under 800ms</div>
+          <div class="check-item">TTS generation time under 200ms</div>
+          <div class="check-item">STT processing under 300ms</div>
+          <div class="check-item">LLM response streaming enabled</div>
+          <div class="check-item">Connection pooling for telephony APIs</div>
+          <h4>Telephony</h4>
+          <div class="check-item">Phone numbers provisioned and tested</div>
+          <div class="check-item">Call recording configured (with consent)</div>
+          <div class="check-item">Transfer to human agent works</div>
+          <div class="check-item">Voicemail detection handling</div>
+          <div class="check-item">Concurrent call capacity tested</div>
+          <h4>Webhook Security</h4>
+          <div class="check-item">Webhook signatures verified (HMAC)</div>
+          <div class="check-item">Webhook endpoints rate-limited</div>
+          <div class="check-item">Webhook retry handling idempotent</div>
+          <div class="check-item">Call status webhooks processed reliably</div>
+          <div class="check-item">Webhook failures alerted immediately</div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Mobile App <span class="checklist-count">+28 items</span></summary>
+        <div class="checklist-body">
+          <h4>Store Submission</h4>
+          <div class="check-item">App icons for all required sizes generated</div>
+          <div class="check-item">Splash screens configured per platform</div>
+          <div class="check-item">App Store screenshots (6.7", 6.5", 5.5")</div>
+          <div class="check-item">Play Store screenshots (phone, tablet)</div>
+          <div class="check-item">Privacy policy URL active and accurate</div>
+          <div class="check-item">Terms of service URL active</div>
+          <div class="check-item">App description and keywords optimized</div>
+          <div class="check-item">Content rating questionnaire completed</div>
+          <div class="check-item">Build signed with production certificates</div>
+          <h4>Push Notifications</h4>
+          <div class="check-item">Push permission request at appropriate time</div>
+          <div class="check-item">FCM (Android) and APNs (iOS) configured</div>
+          <div class="check-item">Notification channels/categories defined</div>
+          <div class="check-item">Deep linking from notifications works</div>
+          <div class="check-item">Silent push for background data sync</div>
+          <div class="check-item">Notification opt-out respected</div>
+          <h4>Internationalization</h4>
+          <div class="check-item">String extraction complete (no hardcoded text)</div>
+          <div class="check-item">RTL layout support tested</div>
+          <div class="check-item">Date, time, and number formatting localized</div>
+          <div class="check-item">Currency handling for target markets</div>
+          <div class="check-item">Translation files organized and complete</div>
+          <h4>Native Features</h4>
+          <div class="check-item">Camera permissions and usage descriptions</div>
+          <div class="check-item">Location permissions minimal and justified</div>
+          <div class="check-item">Biometric auth (Face ID/fingerprint) implemented</div>
+          <div class="check-item">Offline mode works for core features</div>
+          <div class="check-item">App handles background/foreground transitions</div>
+          <div class="check-item">Memory usage profiled and optimized</div>
+          <div class="check-item">Battery usage profiled (no excessive wake locks)</div>
+          <div class="check-item">Secure storage for sensitive data (Keychain/Keystore)</div>
+        </div>
+      </details>
+    </div>
+
+    <!-- ======================== TAB 5: QUICK REFERENCE ======================== -->
+    <div class="tab-panel panel-reference">
+      <h2>Quick Reference</h2>
+      <p class="section-desc">Commands, shortcuts, and project references for daily use.</p>
+
+      <h3>/qualia Commands</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Command</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>/qualia:start</td><td>Initialize a new project with GSD system</td></tr>
+            <tr><td>/qualia:plan</td><td>Generate phase plan for current project</td></tr>
+            <tr><td>/qualia:execute</td><td>Execute next phase in the plan</td></tr>
+            <tr><td>/qualia:verify</td><td>Run verification on completed phase</td></tr>
+            <tr><td>/qualia:status</td><td>Show current project status and progress</td></tr>
+            <tr><td>/qualia:review</td><td>Submit phase for client review</td></tr>
+            <tr><td>/qualia:checklist</td><td>Run completion checklist for project type</td></tr>
+            <tr><td>/qualia:deploy</td><td>Full deploy pipeline (build, push, verify)</td></tr>
+            <tr><td>/qualia:sync</td><td>Sync .planning files to portal</td></tr>
+            <tr><td>/qualia:handoff</td><td>Generate handoff document for session end</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Claude Code Skills</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Trigger</th><th>Skill</th><th>What It Does</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>/ship</td><td>deploy-pipeline</td><td>Quality gates, commit, deploy, verify</td></tr>
+            <tr><td>/status</td><td>project-health</td><td>Quick health check of project state</td></tr>
+            <tr><td>/audit</td><td>security-audit</td><td>Deep security and quality review</td></tr>
+            <tr><td>/critique</td><td>design-review</td><td>Design director-level UI review</td></tr>
+            <tr><td>/polish</td><td>detail-pass</td><td>Final spacing, alignment, consistency</td></tr>
+            <tr><td>/harden</td><td>edge-cases</td><td>Overflow, i18n, error state robustness</td></tr>
+            <tr><td>/animate</td><td>motion-design</td><td>Purposeful micro-interactions</td></tr>
+            <tr><td>/bolder</td><td>amplify-design</td><td>Make safe designs more striking</td></tr>
+            <tr><td>/quieter</td><td>tone-down</td><td>Calm overly aggressive designs</td></tr>
+            <tr><td>/compact</td><td>context-save</td><td>Save context at 60% usage</td></tr>
+            <tr><td>/clear</td><td>session-reset</td><td>Clean slate between tasks</td></tr>
+            <tr><td>/learn</td><td>lesson-capture</td><td>Save a lesson from a mistake</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Deploy Commands</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Type</th><th>Command</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Next.js (Vercel)</td><td>vercel --prod</td><td>Standard deploy for all Next.js projects</td></tr>
+            <tr><td>Cloudflare Workers</td><td>wrangler deploy</td><td>Used for armenius project</td></tr>
+            <tr><td>Python Agent</td><td>docker compose up -d</td><td>Used for sigatalachana</td></tr>
+            <tr><td>Mobile (iOS)</td><td>eas build --platform ios</td><td>Expo Application Services</td></tr>
+            <tr><td>Mobile (Android)</td><td>eas build --platform android</td><td>Expo Application Services</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Supabase Project References</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Project</th><th>Ref ID</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>aquador</td><td>hznpuxplqgszbacxzbhv</td><td></td></tr>
+            <tr><td>maud</td><td>vspyxscitcuwnrhchskl</td><td></td></tr>
+            <tr><td>vero</td><td>zskfdlqyzhkzefafqkpx</td><td></td></tr>
+            <tr><td>aibossbrainz</td><td>esymbjpzjjkffpfqukxw</td><td></td></tr>
+            <tr><td>mpm</td><td>llherorsfgbdyqkrrlpc</td><td></td></tr>
+            <tr><td>zaid</td><td>uoqiwidqlsoamtugioik</td><td></td></tr>
+            <tr><td>dababneh</td><td>toovladeybmlyzblqtbl</td><td></td></tr>
+            <tr><td>faris</td><td>lrgwxcqqnhxvvrruepcv</td><td></td></tr>
+            <tr><td>hammah</td><td>ctcikdcjhxxqogwvtzrc</td><td>SERVICE_ROLE_KEY exposed - needs rotation</td></tr>
+            <tr><td>sofiatesting</td><td>vceeheaxcrhmpqueudqx</td><td></td></tr>
+            <tr><td>timo</td><td>qgaqvkmqterlljbegniu</td><td>Empty API keys - needs setup</td></tr>
+            <tr><td>under</td><td>vvppyijxpgeeijiozlve</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Project Gotchas</h3>
+      <div class="table-wrap">
+        <table class="ref-table">
+          <thead>
+            <tr><th>Project</th><th>Warning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>sigatalachana</td><td>Python agent (NOT web) &mdash; misclassified in aiagents</td></tr>
+            <tr><td>armenius</td><td>Cloudflare Workers + wrangler (NOT Vercel)</td></tr>
+            <tr><td>glluztech</td><td>Legacy Pages Router (NOT App Router)</td></tr>
+            <tr><td>hammah</td><td>SERVICE_ROLE_KEY exposed &mdash; rotate immediately</td></tr>
+            <tr><td>timo</td><td>Empty API keys &mdash; needs configuration</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /tab-panels -->
+</div><!-- /tabs-container -->
+
+</body>
+</html>
