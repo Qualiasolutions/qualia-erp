@@ -75,9 +75,9 @@ export async function canDeleteProject(userId: string, projectId: string): Promi
   return data?.lead_id === userId;
 }
 
-// Check if user can delete a meeting (creator or admin)
+// Check if user can delete a meeting (creator, manager, or admin)
 export async function canDeleteMeeting(userId: string, meetingId: string): Promise<boolean> {
-  if (await isUserAdmin(userId)) return true;
+  if (await isUserManagerOrAbove(userId)) return true;
 
   const supabase = await createClient();
   const { data } = await supabase
