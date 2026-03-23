@@ -75,14 +75,14 @@ function parsePlanningFiles(allChangedFiles: string[]): PhaseUpdate[] {
   const phaseMap = new Map<string, PhaseUpdate>();
 
   // Match .planning/phases/<dir>/<file> patterns
-  const phaseFileRegex = /^\.planning\/phases\/(\d+)-([^/]+)\/(.+)$/;
+  const phaseFileRegex = /^\.planning\/phases\/(\d+(?:\.\d+)?)-([^/]+)\/(.+)$/;
 
   for (const file of allChangedFiles) {
     const match = file.match(phaseFileRegex);
     if (!match) continue;
 
     const [, numStr, slug, fileName] = match;
-    const phaseNumber = parseInt(numStr, 10);
+    const phaseNumber = parseFloat(numStr);
     const dirName = `${numStr}-${slug}`;
     const phaseName = slug.replace(/-/g, ' ');
 
