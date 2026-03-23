@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useRef } from 'react';
 import {
   format,
   parseISO,
@@ -85,10 +85,11 @@ const STATUS_CONFIG = {
   archived: { label: 'Archived', color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' },
 };
 
-const TASK_STATUS_ICON = {
+const TASK_STATUS_ICON: Record<string, typeof Circle> = {
   Todo: Circle,
   'In Progress': Clock,
   Done: CheckCircle2,
+  Canceled: Circle,
 };
 
 export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClientProps) {
@@ -97,8 +98,11 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
 
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const todayRef = useRef(new Date());
+  const today = useMemo(() => {
+    const d = todayRef.current;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  }, []);
 
   // Stats per project
   const projectStats = useMemo(() => {
@@ -144,7 +148,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
         completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
       };
     });
-  }, [seoProjects, blogTasks, blogPosts, today]);
+  }, [seoProjects, blogTasks, blogPosts, today]); // today is stable ref
 
   // Recent blog tasks (last 30 days)
   const recentTasks = useMemo(() => {
@@ -346,7 +350,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                   </div>
                 ) : (
                   recentTasks.map((task) => {
-                    const StatusIcon = TASK_STATUS_ICON[task.status];
+                    const StatusIcon = TASK_STATUS_ICON[task.status] || Circle;
                     const isToday = task.due_date && isSameDay(parseISO(task.due_date), today);
                     return (
                       <div

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday } from 'date-fns';
 import {
@@ -89,7 +89,7 @@ interface TeamTaskCardProps {
   isAdmin?: boolean;
 }
 
-export function TeamTaskCard({
+export const TeamTaskCard = memo(function TeamTaskCard({
   task,
   currentUserId,
   onTaskUpdate,
@@ -371,4 +371,4 @@ export function TeamTaskCard({
       )}
     </>
   );
-}
+});
