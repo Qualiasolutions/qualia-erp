@@ -15,6 +15,7 @@ import {
   CheckCheck,
   ClipboardList,
   ArrowRight,
+  ListChecks,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -36,12 +37,14 @@ const categoryIcons: Record<string, React.ElementType> = {
   greenfield: Zap,
   brownfield: Flame,
   workflow: Terminal,
+  checklist: ListChecks,
 };
 
 const categoryLabels: Record<string, string> = {
   greenfield: 'New Projects',
   brownfield: 'Existing Projects',
   workflow: 'Workflows & Tools',
+  checklist: 'Shipping Checklists',
 };
 
 const categoryColors: Record<
@@ -68,6 +71,13 @@ const categoryColors: Record<
     border: 'border-blue-500/20',
     accent: 'bg-blue-500',
     gradient: 'from-blue-500/10 via-transparent to-transparent',
+  },
+  checklist: {
+    bg: 'bg-rose-500/8',
+    text: 'text-rose-600 dark:text-rose-400',
+    border: 'border-rose-500/20',
+    accent: 'bg-rose-500',
+    gradient: 'from-rose-500/10 via-transparent to-transparent',
   },
 };
 
@@ -455,6 +465,7 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
                 { key: 'greenfield', label: 'New', icon: Zap },
                 { key: 'brownfield', label: 'Existing', icon: Flame },
                 { key: 'workflow', label: 'Workflow', icon: Terminal },
+                { key: 'checklist', label: 'Checklists', icon: ListChecks },
               ].map((cat) => (
                 <button
                   key={cat.key}
@@ -478,7 +489,7 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
           {/* Guides by category */}
           <div className="space-y-8">
             {(selectedCategory === 'all'
-              ? ['greenfield', 'brownfield', 'workflow']
+              ? ['greenfield', 'brownfield', 'workflow', 'checklist']
               : [selectedCategory]
             ).map((category) => {
               const categoryGuides = filteredGuides.filter((g) => g.category === category);
