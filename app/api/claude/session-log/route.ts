@@ -26,14 +26,25 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-  const body = await request.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  if (!body.project || typeof body.project !== 'string') {
+    return NextResponse.json({ error: 'Missing or invalid "project" field' }, { status: 400 });
+  }
+
+  const git = (body.git as Record<string, unknown>) || {};
 
   const { error } = await supabase.from('claude_sessions').insert({
-    project_name: body.project || 'unknown',
-    branch: body.git?.branch || null,
-    files_changed: body.git?.files_changed || 0,
-    summary: body.summary || null,
-    working_directory: body.working_directory || null,
+    project_name: body.project,
+    branch: typeof git.branch === 'string' ? git.branch : null,
+    files_changed: typeof git.files_changed === 'number' ? git.files_changed : 0,
+    summary: typeof body.summary === 'string' ? body.summary.slice(0, 500) : null,
+    working_directory: typeof body.working_directory === 'string' ? body.working_directory : null,
   });
 
   if (error) {
