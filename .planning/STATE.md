@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 Phase: Not started (defining requirements)
 Plan: —
 Status: Defining requirements
-Last activity: 2026-03-24 — Milestone v2.1 started
+Last activity: 2026-03-24 — Completed quick task 28: Fix review blockers
 
 ## Accumulated Context
 
@@ -50,6 +50,7 @@ Last activity: 2026-03-24 — Milestone v2.1 started
 | 24b | Assign clients to existing projects — updateProject fix + project/client UI    | 2026-03-15 | 3419d80 | [24-assign-clients-to-existing-projects-clie](./quick/24-assign-clients-to-existing-projects-clie/) |
 | 26  | Status page visible to employees/managers — assigned projects only             | 2026-03-20 |         | [26-make-status-page-visible-to-employees-ma](./quick/26-make-status-page-visible-to-employees-ma/) |
 | 27  | Responsive design audit and fixes — mobile nav, touch actions, filter bars     | 2026-03-24 | 094dc77 | [27-responsive-design-audit-and-fixes-across](./quick/27-responsive-design-audit-and-fixes-across/) |
+| 28  | Fix review blockers — double cast, plaintext password, touch targets           | 2026-03-24 | 334ba2e | [28-fix-review-blockers-double-cast-plaintex](./quick/28-fix-review-blockers-double-cast-plaintex/) |
 
 ## Session Continuity
 
