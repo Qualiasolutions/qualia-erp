@@ -67,6 +67,10 @@ export const cacheKeys = {
   todaysCheckins: (workspaceId: string) => `todays-checkins-${workspaceId}`,
   checkins: (workspaceId: string, profileId?: string, date?: string) =>
     `checkins-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
+  activeSession: (workspaceId: string) => `active-session-${workspaceId}`,
+  todaysSessions: (workspaceId: string) => `todays-sessions-${workspaceId}`,
+  sessionsAdmin: (workspaceId: string, profileId?: string, date?: string) =>
+    `sessions-admin-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
   ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
   teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
@@ -1530,4 +1534,102 @@ export function invalidateTeamDashboard(workspaceId: string, immediate = true) {
   } else {
     mutate(cacheKeys.teamDashboard(workspaceId));
   }
+}
+
+// ============================================================================
+// WORK SESSION HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch the current user's active (open) work session.
+ * Polls every 30s when tab is visible for live clock-in status.
+ */
+export function useActiveSession(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.activeSession(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return null;
+      const { getActiveSession } = await import('@/app/actions/work-sessions');
+      return getActiveSession(workspaceId);
+    },
+    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
+  );
+
+  return {
+    session: data ?? null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch today's work sessions for the current user.
+ * Includes both open and closed sessions, ordered by start time.
+ */
+export function useTodaysSessions(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.todaysSessions(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return [];
+      const { getTodaysSessions } = await import('@/app/actions/work-sessions');
+      return getTodaysSessions(workspaceId);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    sessions: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate active session cache
+ */
+export function invalidateActiveSession(workspaceId: string, immediate = true) {
+  const key = cacheKeys.activeSession(workspaceId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+/**
+ * Invalidate today's sessions cache
+ */
+export function invalidateTodaysSessions(workspaceId: string, immediate = true) {
+  const key = cacheKeys.todaysSessions(workspaceId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+/**
+ * Invalidate sessions admin cache
+ */
+export function invalidateSessionsAdmin(
+  workspaceId: string,
+  profileId?: string,
+  date?: string,
+  immediate = true
+) {
+  const key = cacheKeys.sessionsAdmin(workspaceId, profileId, date);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
 }
