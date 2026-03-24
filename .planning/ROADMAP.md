@@ -42,12 +42,12 @@ Phase 26: Team Sync & Daily Structure — deleted learning system, added daily c
 3. `task_time_logs` table references are removed from all queries — `team-dashboard.ts` and any other action files query without it
 4. App builds clean (`npx tsc --noEmit`) with no orphan imports or missing module errors
 
-**Plans:** TBD
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] 28-01: Create work_sessions table migration + remove task_time_logs references from queries
-- [ ] 28-02: Remove TaskTimeTracker component + all timer UI from task cards
+- [ ] 28-01-PLAN.md — Create work_sessions table in Supabase + remove task_time_logs references from queries and SWR hooks
+- [ ] 28-02-PLAN.md — Remove TaskTimeTracker component file + strip all timer UI from team-task-card.tsx, verify clean build
 
 #### Phase 29: Session Clock-In / Clock-Out
 
@@ -123,7 +123,7 @@ Plans:
 | Phase                            | Milestone | Plans Complete | Status      | Completed  |
 | -------------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-26. (Phases 1-26)              | v1.0–v2.0 | All            | Complete    | 2026-03-24 |
-| 28. DB Migration & Cleanup       | v2.1      | 0/2            | Not started | -          |
+| 28. DB Migration & Cleanup       | v2.1      | 0/2            | Planned     | -          |
 | 29. Session Clock-In / Clock-Out | v2.1      | 0/4            | Not started | -          |
 | 30. Live Status Dashboard        | v2.1      | 0/3            | Not started | -          |
 | 31. Clock-Out Enforcement        | v2.1      | 0/2            | Not started | -          |
