@@ -28,8 +28,8 @@ export type TaskAttachment = {
   } | null;
 };
 
-// Max file size: 50MB
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+// Max file size: 1MB
+const MAX_FILE_SIZE = 1 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = [
   'image/jpeg',
@@ -116,7 +116,7 @@ export async function uploadTaskAttachment(formData: FormData): Promise<ActionRe
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return { success: false, error: 'File size exceeds 50MB limit' };
+    return { success: false, error: 'File size exceeds 1MB limit' };
   }
 
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {

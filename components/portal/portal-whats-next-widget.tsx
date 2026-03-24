@@ -124,10 +124,15 @@ export function WhatsNextWidget({ projects, isLoading }: WhatsNextWidgetProps) {
     );
   }
 
+  // With odd project count, last card spans full width
+  const isOdd = projects.length % 2 !== 0;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      {projects.map((project) => (
-        <ProjectPhaseCard key={project.id} project={project} />
+      {projects.map((project, i) => (
+        <div key={project.id} className={isOdd && i === projects.length - 1 ? 'sm:col-span-2' : ''}>
+          <ProjectPhaseCard project={project} />
+        </div>
       ))}
     </div>
   );

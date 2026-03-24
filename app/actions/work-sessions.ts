@@ -111,16 +111,11 @@ export async function clockOut(
     return { success: false, error: 'No active session found.' };
   }
 
-  const duration_minutes = Math.round(
-    (Date.now() - new Date(session.started_at).getTime()) / 60000
-  );
-
   const { data, error } = await supabase
     .from('work_sessions')
     .update({
       ended_at: new Date().toISOString(),
       summary: summary.trim(),
-      duration_minutes,
     })
     .eq('id', sessionId)
     .select()
