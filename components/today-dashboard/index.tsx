@@ -14,10 +14,9 @@ import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
-import { CheckinModal } from './checkin-modal';
-import { EveningCheckinModal } from './evening-checkin-modal';
+import { ClockInModal } from './clock-in-modal';
 import { useTransition, useState, useEffect } from 'react';
-import { type MeetingWithRelations, useMeetings, useTodaysCheckin } from '@/lib/swr';
+import { type MeetingWithRelations, useMeetings, useActiveSession } from '@/lib/swr';
 import {
   Select,
   SelectContent,
@@ -60,11 +59,10 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [checkinDismissed, setCheckinDismissed] = useState(false);
+  const [sessionDismissed, setSessionDismissed] = useState(false);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
   const isRealAdmin = userRole === 'admin';
   const now = new Date();
-  const currentHour = now.getHours();
 
   // "View as" — admin can preview employee's task list, but keeps admin layout
   const effectiveUserId = viewAsUserId || currentUserId;
@@ -72,31 +70,13 @@ export function TodayDashboard({
   const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
 
-  // Check-in gate for employees (and admin "view as" mode)
-  const {
-    morning: morningCheckin,
-    evening: eveningCheckin,
-    isLoading: checkinLoading,
-  } = useTodaysCheckin(isNonAdmin && !checkinDismissed ? workspaceId : null);
+  // Session gate for employees — poll only when relevant
+  const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
+    isNonAdmin && !sessionDismissed ? workspaceId : null
+  );
 
-  // Morning check-in: show if before 3 PM and no morning check-in
-  const showMorningCheckin =
-    isNonAdmin &&
-    !viewingAsEmployee &&
-    !checkinDismissed &&
-    !checkinLoading &&
-    morningCheckin === null &&
-    currentHour < 15;
-
-  // Evening check-in: show if 3 PM or later, morning done, no evening check-in
-  const showEveningCheckin =
-    isNonAdmin &&
-    !viewingAsEmployee &&
-    !checkinDismissed &&
-    !checkinLoading &&
-    morningCheckin !== null &&
-    eveningCheckin === null &&
-    currentHour >= 15;
+  // Show clock-in modal when employee has no active session (wait for loading to prevent flash)
+  const showClockIn = isNonAdmin && !viewingAsEmployee && !sessionLoading && activeSession === null;
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
@@ -306,20 +286,14 @@ export function TodayDashboard({
         defaultScheduledTime={null}
       />
 
-      {/* Daily check-in gates (employees only, not in "view as" mode) */}
+      {/* Session clock-in gate (employees only, not in "view as" mode) */}
       {isNonAdmin && !viewingAsEmployee && (
-        <>
-          <CheckinModal
-            open={showMorningCheckin}
-            workspaceId={workspaceId}
-            onSuccess={() => setCheckinDismissed(true)}
-          />
-          <EveningCheckinModal
-            open={showEveningCheckin}
-            workspaceId={workspaceId}
-            onSuccess={() => setCheckinDismissed(true)}
-          />
-        </>
+        <ClockInModal
+          open={showClockIn}
+          workspaceId={workspaceId}
+          currentUserId={currentUserId}
+          onSuccess={() => setSessionDismissed(true)}
+        />
       )}
     </div>
   );
