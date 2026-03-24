@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Shield, ShieldCheck, User, UserPlus, Crown, X } from 'lucide-react';
+import { Shield, ShieldCheck, User, UserPlus, Crown, X, Menu } from 'lucide-react';
+import { useSidebar } from '@/components/sidebar-provider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -164,6 +165,7 @@ function InviteDialog({
 }
 
 export default function AdminDashboard() {
+  const { toggleMobile } = useSidebar();
   const [members, setMembers] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -221,7 +223,26 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="px-4 py-8 sm:px-6 lg:px-8">
+    <div className="flex h-full flex-col">
+      {/* Mobile-only top bar */}
+      <header className="flex items-center gap-2 border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="min-h-[44px] min-w-[44px]"
+          onClick={toggleMobile}
+          aria-label="Open menu"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+          <Shield className="h-3.5 w-3.5 text-amber-500" />
+        </div>
+        <h1 className="text-sm font-semibold text-foreground">Admin</h1>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -320,6 +341,7 @@ export default function AdminDashboard() {
         onClose={() => setShowInvite(false)}
         onInvite={handleInvite}
       />
+      </div>
     </div>
   );
 }

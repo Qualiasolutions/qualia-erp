@@ -17,6 +17,7 @@ import {
   ArrowRight,
   ListChecks,
 } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -430,20 +431,16 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
-      {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
-            <BookOpen className="h-3.5 w-3.5 text-qualia-500" />
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground">Knowledge Base</h1>
-          </div>
-        </div>
+      <PageHeader
+        icon={<BookOpen className="h-3.5 w-3.5 text-qualia-500" />}
+        iconBg="bg-qualia-500/10"
+        title="Knowledge Base"
+        className="shrink-0"
+      >
         <span className="text-xs text-muted-foreground/50">
           {initialData.allGuides.length} guides
         </span>
-      </header>
+      </PageHeader>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">

@@ -16,7 +16,10 @@ import {
   Activity,
   ArrowUpRight,
   Clock,
+  Menu,
 } from 'lucide-react';
+import { useSidebar } from '@/components/sidebar-provider';
+import { Button } from '@/components/ui/button';
 import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
 import { getStatusLabel } from '@/lib/uptime';
 
@@ -412,6 +415,7 @@ export function StatusDashboard({
   overall: OverallStatus;
   error: string | null;
 }) {
+  const { toggleMobile } = useSidebar();
   const upCount = monitors.filter((m) => m.status === 2).length;
 
   // Group by source
@@ -447,9 +451,31 @@ export function StatusDashboard({
   let sectionIndex = 0;
 
   return (
+    <div className="flex h-full flex-col">
+      {/* Mobile-only top bar with hamburger */}
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
+        <div className="flex items-center gap-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="min-h-[44px] min-w-[44px]"
+            onClick={toggleMobile}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
+            <Activity className="h-3.5 w-3.5 text-qualia-500" />
+          </div>
+          <h1 className="text-sm font-semibold text-foreground">System Status</h1>
+        </div>
+      </header>
+
+    <div className="flex-1 overflow-y-auto">
     <div className="space-y-10 px-6 py-8 lg:px-8">
-      {/* Header */}
-      <div className="flex items-end justify-between">
+      {/* Header — desktop only */}
+      <div className="hidden items-end justify-between md:flex">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-qualia-500/10">
@@ -580,6 +606,8 @@ export function StatusDashboard({
           </div>
         ))}
       </div>
+    </div>
+    </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { ClientTableView } from '@/components/client-table-view';
 import { NewClientModal } from '@/components/new-client-modal';
 import { Building2 } from 'lucide-react';
 import { type Client } from '@/lib/client-utils';
+import { PageHeader } from '@/components/page-header';
 
 async function ClientListLoader() {
   const data = await getClients();
@@ -91,18 +92,13 @@ function ClientTableSkeleton() {
 export default function ClientsPage() {
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10">
-            <Building2 className="h-3.5 w-3.5 text-emerald-500" />
-          </div>
-          <h1 className="text-sm font-semibold text-foreground">Clients</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <NewClientModal />
-        </div>
-      </header>
+      <PageHeader
+        icon={<Building2 className="h-3.5 w-3.5 text-emerald-500" />}
+        iconBg="bg-emerald-500/10"
+        title="Clients"
+      >
+        <NewClientModal />
+      </PageHeader>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-5 sm:p-8">

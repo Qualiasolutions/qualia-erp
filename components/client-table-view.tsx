@@ -273,7 +273,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground md:opacity-0 md:group-hover:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-4 w-4" />
@@ -505,9 +505,9 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
         {/* Search */}
-        <div className="relative min-w-[200px] max-w-xs flex-1">
+        <div className="relative min-w-0 w-full sm:max-w-xs sm:flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search clients..."
