@@ -427,6 +427,39 @@ export type Database = {
           },
         ];
       };
+      claude_sessions: {
+        Row: {
+          branch: string | null;
+          created_at: string | null;
+          files_changed: number | null;
+          id: string;
+          project_name: string;
+          session_timestamp: string | null;
+          summary: string | null;
+          working_directory: string | null;
+        };
+        Insert: {
+          branch?: string | null;
+          created_at?: string | null;
+          files_changed?: number | null;
+          id?: string;
+          project_name: string;
+          session_timestamp?: string | null;
+          summary?: string | null;
+          working_directory?: string | null;
+        };
+        Update: {
+          branch?: string | null;
+          created_at?: string | null;
+          files_changed?: number | null;
+          id?: string;
+          project_name?: string;
+          session_timestamp?: string | null;
+          summary?: string | null;
+          working_directory?: string | null;
+        };
+        Relationships: [];
+      };
       client_action_items: {
         Row: {
           action_type: string;
@@ -908,14 +941,17 @@ export type Database = {
       };
       daily_checkins: {
         Row: {
+          actual_clock_out_time: string | null;
           blockers: string | null;
           checkin_date: string;
           checkin_type: string;
+          clock_in_time: string | null;
           completed_tasks: string[] | null;
           created_at: string;
           energy_level: number | null;
           id: string;
           mood: number | null;
+          planned_clock_out_time: string | null;
           planned_tasks: string[] | null;
           profile_id: string;
           tomorrow_plan: string | null;
@@ -924,14 +960,17 @@ export type Database = {
           workspace_id: string;
         };
         Insert: {
+          actual_clock_out_time?: string | null;
           blockers?: string | null;
           checkin_date?: string;
           checkin_type: string;
+          clock_in_time?: string | null;
           completed_tasks?: string[] | null;
           created_at?: string;
           energy_level?: number | null;
           id?: string;
           mood?: number | null;
+          planned_clock_out_time?: string | null;
           planned_tasks?: string[] | null;
           profile_id: string;
           tomorrow_plan?: string | null;
@@ -940,14 +979,17 @@ export type Database = {
           workspace_id: string;
         };
         Update: {
+          actual_clock_out_time?: string | null;
           blockers?: string | null;
           checkin_date?: string;
           checkin_type?: string;
+          clock_in_time?: string | null;
           completed_tasks?: string[] | null;
           created_at?: string;
           energy_level?: number | null;
           id?: string;
           mood?: number | null;
+          planned_clock_out_time?: string | null;
           planned_tasks?: string[] | null;
           profile_id?: string;
           tomorrow_plan?: string | null;
@@ -3431,6 +3473,64 @@ export type Database = {
           },
         ];
       };
+      work_sessions: {
+        Row: {
+          created_at: string;
+          duration_minutes: number | null;
+          ended_at: string | null;
+          id: string;
+          profile_id: string;
+          project_id: string | null;
+          started_at: string;
+          summary: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          duration_minutes?: number | null;
+          ended_at?: string | null;
+          id?: string;
+          profile_id: string;
+          project_id?: string | null;
+          started_at?: string;
+          summary?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string;
+          duration_minutes?: number | null;
+          ended_at?: string | null;
+          id?: string;
+          profile_id?: string;
+          project_id?: string | null;
+          started_at?: string;
+          summary?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'work_sessions_profile_id_fkey';
+            columns: ['profile_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'work_sessions_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'work_sessions_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_integrations: {
         Row: {
           config: Json | null;
@@ -3992,25 +4092,3 @@ export const Constants = {
     },
   },
 } as const;
-
-// ============================================================================
-// Type Aliases for Convenience
-// ============================================================================
-
-// Table type aliases
-export type Client = Tables<'clients'>;
-export type Project = Tables<'projects'>;
-export type Task = Tables<'tasks'>;
-export type Issue = Tables<'issues'>;
-export type Meeting = Tables<'meetings'>;
-export type Profile = Tables<'profiles'>;
-export type ProjectFile = Tables<'project_files'>;
-export type ProjectIntegration = Tables<'project_integrations'>;
-
-// Enum type aliases
-export type ProjectType = Database['public']['Enums']['project_type'];
-export type ProjectStatus = Database['public']['Enums']['project_status'];
-export type ProjectGroup = Database['public']['Enums']['project_group'];
-export type DeploymentPlatform = Database['public']['Enums']['deployment_platform'];
-export type UserRole = Database['public']['Enums']['user_role'];
-export type LeadStatus = Database['public']['Enums']['lead_status'];
