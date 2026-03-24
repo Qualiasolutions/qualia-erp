@@ -18,6 +18,7 @@ import {
   getEmployeeAssignments,
   getAssignmentHistory,
 } from '@/app/actions/project-assignments';
+import { getTaskAttachments } from '@/app/actions/task-attachments';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
 // Type for meetings with all relations
@@ -74,6 +75,7 @@ export const cacheKeys = {
   ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
   teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
+  taskAttachments: (taskId: string) => `task-attachments-${taskId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1587,6 +1589,40 @@ export function invalidateSessionsAdmin(
   immediate = true
 ) {
   const key = cacheKeys.sessionsAdmin(workspaceId, profileId, date);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+// ============ TASK ATTACHMENTS ============
+
+/**
+ * Hook to fetch attachments for a task
+ */
+export function useTaskAttachments(taskId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    mutate: revalidate,
+  } = useSWR(
+    taskId ? cacheKeys.taskAttachments(taskId) : null,
+    () => (taskId ? getTaskAttachments(taskId) : []),
+    swrConfig
+  );
+
+  return {
+    attachments: data || [],
+    isLoading,
+    isError: !!error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate task attachments cache
+ */
+export function invalidateTaskAttachments(taskId: string, immediate = true) {
+  const key = cacheKeys.taskAttachments(taskId);
   if (immediate) mutate(key, undefined, { revalidate: true });
   else mutate(key);
 }

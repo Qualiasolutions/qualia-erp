@@ -45,6 +45,7 @@ const ALLOWED_MIME_TYPES = [
   'text/plain',
   'text/csv',
   'text/markdown',
+  'text/html',
   'application/json',
   'application/zip',
   'application/x-rar-compressed',

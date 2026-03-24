@@ -116,6 +116,27 @@ Plans:
 - [ ] 31-01: Idle detection hook + "still working?" prompt + auto clock-out after extended idle
 - [ ] 31-02: Planned logout banner reminder + beforeunload warning
 
+#### Phase 32: Task File Attachments
+
+**Goal:** Users can upload file attachments (including HTML reports) to tasks, view/download them, and optionally mark tasks as done upon upload — enabling deliverable-based task completion.
+
+**Depends on:** Phase 29
+**Requirements:** Task attachment storage, upload/download/delete actions, UI in task detail dialog, "complete with deliverable" flow
+
+**Success Criteria** (what must be TRUE):
+
+1. Users can upload files (including `.html`) to any task via drag-and-drop or click
+2. Attachments are listed in the task detail dialog with download/delete options
+3. Uploading a file offers a "Mark task as done" checkbox that completes the task
+4. RLS prevents cross-workspace access to attachments
+
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 32-01-PLAN.md — Database table, server actions (upload/download/delete), SWR hook, MIME types
+- [ ] 32-02-PLAN.md — UI attachment section in task detail dialog + "complete with deliverable" flow
+
 ---
 
 ## Progress
@@ -127,3 +148,4 @@ Plans:
 | 29. Session Clock-In / Clock-Out | v2.1      | 4/4            | ✅ Complete | 2026-03-24 |
 | 30. Live Status Dashboard        | v2.1      | 0/3            | Not started | -          |
 | 31. Clock-Out Enforcement        | v2.1      | 0/2            | Not started | -          |
+| 32. Task File Attachments        | v2.2      | 0/2            | Not started | -          |

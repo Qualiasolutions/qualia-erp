@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/lib/schedule-utils';
 import { RichText } from '@/components/ui/rich-text';
+import { TaskAttachments } from '@/components/task-attachments';
 import type { Task } from '@/app/actions/inbox';
 
 interface TaskDetailDialogProps {
@@ -138,12 +139,22 @@ export function TaskDetailDialog({
           </div>
         </div>
 
-        {/* Description */}
-        {task.description && (
-          <div className="border-t border-border/50 px-6 py-4">
-            <RichText className="text-foreground/80">{task.description}</RichText>
-          </div>
-        )}
+        {/* Scrollable content area */}
+        <div className="max-h-[50vh] overflow-y-auto">
+          {/* Description */}
+          {task.description && (
+            <div className="border-t border-border/50 px-6 py-4">
+              <RichText className="text-foreground/80">{task.description}</RichText>
+            </div>
+          )}
+
+          {/* Attachments */}
+          <TaskAttachments
+            taskId={task.id}
+            taskStatus={done ? 'Done' : task.status}
+            onTaskMarkedDone={() => onToggleDone(task)}
+          />
+        </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2 border-t border-border/50 px-6 py-4">
