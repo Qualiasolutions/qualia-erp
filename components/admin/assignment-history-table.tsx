@@ -47,7 +47,7 @@ export function AssignmentHistoryTable() {
         <CardDescription>Complete audit trail of all employee-project assignments</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
+        <Table className="min-w-[600px]">
           <TableHeader>
             <TableRow>
               <TableHead>Status</TableHead>
