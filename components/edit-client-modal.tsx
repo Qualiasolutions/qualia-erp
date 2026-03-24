@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { updateClientRecord } from '@/app/actions';
-import type { Client } from '@/types/database';
 import { Loader2 } from 'lucide-react';
 
 type LeadStatus = 'dropped' | 'cold' | 'hot' | 'active_client' | 'inactive_client' | 'dead_lead';
@@ -29,8 +28,18 @@ const LEAD_STATUSES: { value: LeadStatus; label: string }[] = [
   { value: 'dead_lead', label: 'Dead Lead' },
 ];
 
+interface EditableClient {
+  id: string;
+  display_name: string | null;
+  phone: string | null;
+  website: string | null;
+  billing_address: string | null;
+  lead_status: string | null;
+  notes: string | null;
+}
+
 interface EditClientModalProps {
-  client: Client;
+  client: EditableClient;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
