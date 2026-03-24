@@ -18,6 +18,7 @@ import {
   getEmployeeAssignments,
   getAssignmentHistory,
 } from '@/app/actions/project-assignments';
+import { getTaskAttachments } from '@/app/actions/task-attachments';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
 
 // Type for meetings with all relations
@@ -67,11 +68,14 @@ export const cacheKeys = {
   todaysCheckins: (workspaceId: string) => `todays-checkins-${workspaceId}`,
   checkins: (workspaceId: string, profileId?: string, date?: string) =>
     `checkins-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
+  activeSession: (workspaceId: string) => `active-session-${workspaceId}`,
+  todaysSessions: (workspaceId: string) => `todays-sessions-${workspaceId}`,
+  sessionsAdmin: (workspaceId: string, profileId?: string, date?: string) =>
+    `sessions-admin-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
   ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
-  timeLogs: (taskId: string) => `time-logs-${taskId}`,
-  timeLogsBulk: (workspaceId: string) => `time-logs-bulk-${workspaceId}`,
   teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
+  taskAttachments: (taskId: string) => `task-attachments-${taskId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1378,49 +1382,6 @@ export function invalidateClientActionItems(clientId: string, immediate = true) 
 // ============================================================================
 
 /**
- * Hook to fetch today's check-in(s) for the current user
- */
-export function useTodaysCheckin(workspaceId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    workspaceId ? cacheKeys.todaysCheckins(workspaceId) : null,
-    async () => {
-      if (!workspaceId) return [];
-      const { getTodaysCheckin } = await import('@/app/actions/checkins');
-      return getTodaysCheckin(workspaceId);
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    checkins: data || [],
-    morning: data?.find((c) => c.checkin_type === 'morning') || null,
-    evening: data?.find((c) => c.checkin_type === 'evening') || null,
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate today's check-in cache
- */
-export function invalidateTodaysCheckin(workspaceId: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.todaysCheckins(workspaceId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.todaysCheckins(workspaceId));
-  }
-}
-
-/**
  * Invalidate check-ins cache (admin view)
  */
 export function invalidateCheckins(
@@ -1432,11 +1393,11 @@ export function invalidateCheckins(
   const key = cacheKeys.checkins(workspaceId, profileId, date);
   if (immediate) {
     mutate(key, undefined, { revalidate: true });
+    mutate(cacheKeys.todaysCheckins(workspaceId), undefined, { revalidate: true });
   } else {
     mutate(key);
+    mutate(cacheKeys.todaysCheckins(workspaceId));
   }
-  // Also invalidate today's view
-  invalidateTodaysCheckin(workspaceId, immediate);
 }
 
 // ============================================================================
@@ -1488,52 +1449,6 @@ export function invalidateOwnerUpdates(workspaceId: string, immediate = true) {
 }
 
 // ============================================================================
-// TIME LOG HOOKS
-// ============================================================================
-
-/**
- * Hook to fetch time log for a specific task
- */
-export function useTaskTimeLog(taskId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    taskId ? cacheKeys.timeLogs(taskId) : null,
-    async () => {
-      if (!taskId) return null;
-      const { getTaskTimeLog } = await import('@/app/actions/time-logs');
-      return getTaskTimeLog(taskId);
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    timeLog: data || null,
-    isRunning: !!data && !data.ended_at,
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate time log cache for a task
- */
-export function invalidateTaskTimeLog(taskId: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.timeLogs(taskId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.timeLogs(taskId));
-  }
-}
-
-// ============================================================================
 // TEAM DASHBOARD HOOKS
 // ============================================================================
 
@@ -1578,4 +1493,136 @@ export function invalidateTeamDashboard(workspaceId: string, immediate = true) {
   } else {
     mutate(cacheKeys.teamDashboard(workspaceId));
   }
+}
+
+// ============================================================================
+// WORK SESSION HOOKS
+// ============================================================================
+
+/**
+ * Hook to fetch the current user's active (open) work session.
+ * Polls every 30s when tab is visible for live clock-in status.
+ */
+export function useActiveSession(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.activeSession(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return null;
+      const { getActiveSession } = await import('@/app/actions/work-sessions');
+      return getActiveSession(workspaceId);
+    },
+    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
+  );
+
+  return {
+    session: data ?? null,
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Hook to fetch today's work sessions for the current user.
+ * Includes both open and closed sessions, ordered by start time.
+ */
+export function useTodaysSessions(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.todaysSessions(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return [];
+      const { getTodaysSessions } = await import('@/app/actions/work-sessions');
+      return getTodaysSessions(workspaceId);
+    },
+    autoRefreshConfig
+  );
+
+  return {
+    sessions: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate active session cache
+ */
+export function invalidateActiveSession(workspaceId: string, immediate = true) {
+  const key = cacheKeys.activeSession(workspaceId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+/**
+ * Invalidate today's sessions cache
+ */
+export function invalidateTodaysSessions(workspaceId: string, immediate = true) {
+  const key = cacheKeys.todaysSessions(workspaceId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+/**
+ * Invalidate sessions admin cache
+ */
+export function invalidateSessionsAdmin(
+  workspaceId: string,
+  profileId?: string,
+  date?: string,
+  immediate = true
+) {
+  const key = cacheKeys.sessionsAdmin(workspaceId, profileId, date);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+// ============ TASK ATTACHMENTS ============
+
+/**
+ * Hook to fetch attachments for a task
+ */
+export function useTaskAttachments(taskId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    mutate: revalidate,
+  } = useSWR(
+    taskId ? cacheKeys.taskAttachments(taskId) : null,
+    () => (taskId ? getTaskAttachments(taskId) : []),
+    swrConfig
+  );
+
+  return {
+    attachments: data || [],
+    isLoading,
+    isError: !!error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate task attachments cache
+ */
+export function invalidateTaskAttachments(taskId: string, immediate = true) {
+  const key = cacheKeys.taskAttachments(taskId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
 }

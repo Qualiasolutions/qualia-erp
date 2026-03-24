@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from '@/app/actions/shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
+import { MobileMenuButton } from '@/components/mobile-menu-button';
 
 function ClientDetailSkeleton() {
   return (
@@ -143,7 +144,8 @@ export default async function ClientDetailPage({ params }: PageProps) {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center gap-4 border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl">
+      <header className="flex items-center gap-2 border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl sm:px-8">
+        <MobileMenuButton />
         <Link href="/clients">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />

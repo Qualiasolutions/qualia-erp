@@ -67,53 +67,62 @@ Moayad can independently execute project phases with clear guidance while Fawzi 
 
 ### Active
 
-- [ ] Delete entire learning/mentorship/XP system
-- [ ] Fix hardcoded team members in daily-flow.ts (add Hasan)
-- [ ] Daily check-in mechanism (async standup)
-- [ ] Task completion notifications
-- [ ] Scheduled morning email reports (cron)
-- [ ] Team task dashboard container (replace/enhance schedule)
-- [ ] Task time logging (start/finish timestamps)
-- [ ] Owner updates/notes system (clean, contextual delivery to employees)
-- [ ] GitHub + Vercel auto-provisioning on project creation (fix/verify)
-- [ ] Remove VAPI from project creation wizard
+- [ ] Multi-session clock-in/clock-out (replace morning/evening with session-based)
+- [ ] Clock-in with project selection from assigned projects
+- [ ] Mandatory clock-out summary (what they completed)
+- [ ] Clock-out enforcement (idle detection, planned logout reminder, beforeunload)
+- [ ] Live employee status dashboard for admin (who's in, which project, duration)
+- [ ] Remove task time tracking (TaskTimeTracker, timer UI, per-task start/stop)
+- [ ] Update /admin/attendance to show session-based data
+- [ ] Replace old check-in modal with new session clock-in modal
+
+### Validated (v2.0)
+
+- ✓ Daily check-in mechanism (morning/evening) — v2.0 (being replaced by v2.1 sessions)
+- ✓ Task time logging (start/finish timestamps) — v2.0 (being removed in v2.1)
+- ✓ Team task dashboard container on homepage — v2.0
+- ✓ Task completion notifications — v2.0
+- ✓ Scheduled morning email reports (cron) — v2.0
+- ✓ Owner updates/notes system — v2.0
+- ✓ Delete entire learning/mentorship/XP system — v2.0
+- ✓ Fix hardcoded team members in daily-flow.ts — v2.0
+- ✓ GitHub + Vercel auto-provisioning fix — v2.0
+- ✓ Remove VAPI from project creation wizard — v2.0
 
 ### Out of Scope
 
 - GitHub/Vercel API integration — URL links sufficient for now
-- Real-time collaboration — not needed for 2-person team + clients
+- Real-time collaboration — not needed for 3-person team + clients
 - Client editing or task visibility — read-only + comments by design
 - 3D effects or parallax — anti-feature, hurts focus
 - Offline mode — web-first approach
 - Test coverage increase — important but separate effort
-- Learning/mentorship/XP/achievements system — deleted in v2.0, not needed for 3-person team
-- Supabase Realtime notifications — polling sufficient for 3 people
-- Time tracking (clock in/out) — manual schedule blocking is enough
+- Learning/mentorship/XP/achievements system — deleted in v2.0
+- Supabase Realtime subscriptions — SWR polling sufficient for 3 people
+- Per-task time tracking — replaced by session-based attendance in v2.1
 - AI weekly recap — nice-to-have, not this milestone
 - Push notifications — not needed yet
 
 ## Context
 
-Shipped v1.5.1 with 158,543 LOC TypeScript. 6 milestones complete (v1.0 MVP, v1.1 Production Polish, v1.2 Premium Animations, v1.3 Full ERP-Portal Integration, v1.4 Admin Portal Onboarding, v1.5.1 Security Hardening).
+Shipped v2.0 with 7 milestones complete (v1.0–v1.5.1 + v2.0). v2.0 added daily check-ins, task time logging, team dashboard, owner updates, morning emails, and task notifications. 26 phases completed, 50+ plans executed.
 Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul, Resend.
-25 phases completed across 6 milestones, 49 plans executed.
-Trainee system and client portal fully functional with complete ERP integration, real-time sync, unified notifications, Apple-like design system, end-to-end client onboarding flow, and production-ready security hardening.
-All IDOR vulnerabilities patched, token-based invitations, Zod input validation, and production observability in place.
+Trainee system and client portal fully functional. v2.1 evolves the attendance model from morning/evening check-ins to multi-session clock-in/clock-out with live oversight.
+Team: Fawzi (admin/owner), Moayad (employee), Hasna (employee).
 
-## Current Milestone: v2.0 Team Efficiency & Owner Oversight
+## Current Milestone: v2.1 Attendance & Live Oversight
 
-**Goal:** Give Fawzi visibility into team work and give employees clear daily structure — check-ins, time logging, and a useful task dashboard.
+**Goal:** Replace morning/evening check-ins with multi-session clock-in/clock-out, give Fawzi real-time visibility into who's working on what, enforce clock-outs, and remove per-task time tracking.
 
 **Target features:**
 
-- Delete unused learning/XP system (dead weight)
-- Owner updates/notes to employees (clean, contextual)
-- GitHub + Vercel auto-provisioning (fix existing system)
-- Remove VAPI from project wizard
-- Daily check-in prompt + owner view
-- Task completion notifications + morning email reports
-- Team task dashboard container on homepage
-- Task time logging (start/finish)
+- Multi-session clock-in/clock-out (forced on app open, multiple per day)
+- Project selection on clock-in (from assigned projects)
+- Mandatory completion summary on clock-out
+- Clock-out enforcement (idle detection, planned logout reminder, beforeunload warning)
+- Live employee status dashboard (who's in, which project, how long)
+- Remove TaskTimeTracker and per-task timer UI
+- Update attendance page to session-based data
 
 ## Constraints
 
@@ -162,6 +171,11 @@ All IDOR vulnerabilities patched, token-based invitations, Zod input validation,
 | Health endpoint returns 503 for degraded states              | Enables reliable monitoring and alerting                            | ✓ Good  |
 | Best-effort orphan rollback pattern                          | Cleanup failures logged but don't mask original errors              | ✓ Good  |
 
+| Session-based attendance replaces morning/evening check-ins | Multi-session is more accurate — people leave for lunch, step out | — Pending |
+| Project selection on clock-in (not free text tasks) | Cleaner data, maps to real projects, less friction | — Pending |
+| Remove per-task time tracking entirely | Session attendance is enough — task timers add friction not value | — Pending |
+| SWR polling for live status (not Supabase Realtime) | Consistent with existing patterns, 3 users don't need websockets | — Pending |
+
 ---
 
-_Last updated: 2026-03-15 after v2.0 milestone start_
+_Last updated: 2026-03-24 after v2.1 milestone start_

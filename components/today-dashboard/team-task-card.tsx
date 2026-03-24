@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
-import { TaskTimeTracker } from '@/components/task-time-tracker';
 import { updateTask, deleteTask, getTaskById, type Task } from '@/app/actions/inbox';
 import { invalidateTeamDashboard, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
@@ -91,7 +90,7 @@ interface TeamTaskCardProps {
 
 export const TeamTaskCard = memo(function TeamTaskCard({
   task,
-  currentUserId,
+  // currentUserId kept in props interface for API compatibility but not used after timer removal
   onTaskUpdate,
   workspaceId,
   isAdmin,
@@ -110,8 +109,6 @@ export const TeamTaskCard = memo(function TeamTaskCard({
     !['Done'].includes(task.status) &&
     isPast(new Date(task.due_date + 'T23:59:59'));
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
-
-  const isOwner = currentUserId != null && currentUserId === task.assignee_id;
 
   // Project type styling
   const typeStyle = task.project?.project_type
@@ -256,7 +253,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
           )}
         </div>
 
-        {/* Right side: due date + time spent + actions */}
+        {/* Right side: due date + actions */}
         <div className="flex shrink-0 items-center gap-2 opacity-80 transition-opacity duration-200 group-hover:opacity-100">
           {task.due_date && (
             <span
@@ -272,18 +269,6 @@ export const TeamTaskCard = memo(function TeamTaskCard({
               <Calendar className="size-2.5" />
               {format(new Date(task.due_date), 'MMM d')}
             </span>
-          )}
-
-          {/* Time tracker: interactive for task owner, read-only badge for others */}
-          {isOwner ? (
-            <TaskTimeTracker
-              taskId={task.id}
-              timeLog={task.time_log}
-              readOnly={false}
-              onUpdate={onTaskUpdate}
-            />
-          ) : (
-            <TaskTimeTracker taskId={task.id} timeLog={task.time_log} readOnly />
           )}
 
           {/* Actions menu */}

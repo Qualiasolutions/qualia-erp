@@ -5,6 +5,7 @@ import { getCurrentWorkspaceId, getCurrentUserProfile } from '@/app/actions';
 import { NewProjectModal } from '@/components/new-project-modal';
 import { Folder } from 'lucide-react';
 import { ProjectsClient } from './projects-client';
+import { PageHeader } from '@/components/page-header';
 import type { ProjectType } from '@/types/database';
 
 export interface ProjectTeamMember {
@@ -196,18 +197,13 @@ function ProjectsSkeleton() {
 export default function ProjectsPage() {
   return (
     <div className="flex h-full flex-col bg-background">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-            <Folder className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <h1 className="text-sm font-semibold text-foreground">Projects</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <NewProjectModal />
-        </div>
-      </header>
+      <PageHeader
+        icon={<Folder className="h-3.5 w-3.5 text-primary" />}
+        iconBg="bg-primary/10"
+        title="Projects"
+      >
+        <NewProjectModal />
+      </PageHeader>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">

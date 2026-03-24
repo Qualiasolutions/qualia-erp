@@ -16,9 +16,19 @@ import {
   Activity,
   ArrowUpRight,
   Clock,
+  Menu,
 } from 'lucide-react';
+import { useSidebar } from '@/components/sidebar-provider';
+import { Button } from '@/components/ui/button';
 import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
 import { getStatusLabel } from '@/lib/uptime';
+
+export type ProjectInfo = {
+  name: string;
+  logoUrl: string | null;
+  vercelUrl: string | null;
+  githubUrl: string | null;
+};
 
 type OverallStatus = {
   label: string;
@@ -96,7 +106,15 @@ function UptimeBarSegmented({ ratio }: { ratio: string }) {
   );
 }
 
-function MonitorCard({ monitor, index }: { monitor: Monitor; index: number }) {
+function MonitorCard({
+  monitor,
+  index,
+  project,
+}: {
+  monitor: Monitor;
+  index: number;
+  project?: ProjectInfo;
+}) {
   const [hovered, setHovered] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const faviconUrl = getFaviconUrl(monitor.url);
@@ -104,11 +122,13 @@ function MonitorCard({ monitor, index }: { monitor: Monitor; index: number }) {
   const uptimeRatios = monitor.custom_uptime_ratio?.split('-') || [];
   const [uptime7d, uptime30d] = uptimeRatios;
 
-  const displayName = monitor.friendly_name
-    .replace(/^(https?:\/\/)?(www\.)?/, '')
-    .replace(/\/$/, '')
-    .replace(/\.vercel\.app$/, '')
-    .replace(/\.supabase\.co\/functions\/v1\//, ': ');
+  const displayName =
+    project?.name ||
+    monitor.friendly_name
+      .replace(/^(https?:\/\/)?(www\.)?/, '')
+      .replace(/\/$/, '')
+      .replace(/\.vercel\.app$/, '')
+      .replace(/\.supabase\.co\/functions\/v1\//, ': ');
 
   return (
     <div
@@ -167,7 +187,16 @@ function MonitorCard({ monitor, index }: { monitor: Monitor; index: number }) {
               (monitor.status === 0 || monitor.status === 1) && 'border-border/10'
             )}
           >
-            {faviconUrl ? (
+            {project?.logoUrl ? (
+              <Image
+                src={project.logoUrl}
+                alt={project.name}
+                width={32}
+                height={32}
+                className="size-8 rounded-lg object-cover"
+                unoptimized
+              />
+            ) : faviconUrl ? (
               <Image
                 src={faviconUrl}
                 alt=""
@@ -344,10 +373,12 @@ function MonitorSection({
   source,
   monitors,
   startIndex,
+  projectMap,
 }: {
   source: MonitorSource;
   monitors: Monitor[];
   startIndex: number;
+  projectMap?: Record<string, ProjectInfo>;
 }) {
   if (monitors.length === 0) return null;
   const config = SECTION_CONFIG[source];
@@ -396,7 +427,12 @@ function MonitorSection({
       {/* Grid */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {monitors.map((monitor, i) => (
-          <MonitorCard key={monitor.id} monitor={monitor} index={startIndex + i} />
+          <MonitorCard
+            key={monitor.id}
+            monitor={monitor}
+            index={startIndex + i}
+            project={projectMap?.[String(monitor.id)]}
+          />
         ))}
       </div>
     </div>
@@ -407,11 +443,14 @@ export function StatusDashboard({
   monitors,
   overall,
   error,
+  projectMap,
 }: {
   monitors: Monitor[];
   overall: OverallStatus;
   error: string | null;
+  projectMap?: Record<string, ProjectInfo>;
 }) {
+  const { toggleMobile } = useSidebar();
   const upCount = monitors.filter((m) => m.status === 2).length;
 
   // Group by source
@@ -447,138 +486,165 @@ export function StatusDashboard({
   let sectionIndex = 0;
 
   return (
-    <div className="space-y-10 px-6 py-8 lg:px-8">
-      {/* Header */}
-      <div className="flex items-end justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-qualia-500/10">
-              <Activity className="size-5 text-qualia-500" />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">System Status</h1>
+    <div className="flex h-full flex-col">
+      {/* Mobile-only top bar with hamburger */}
+      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
+        <div className="flex items-center gap-2.5">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="min-h-[44px] min-w-[44px]"
+            onClick={toggleMobile}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
+            <Activity className="h-3.5 w-3.5 text-qualia-500" />
           </div>
-          <p className="ml-[52px] text-sm text-muted-foreground">
-            Real-time monitoring across {monitors.length} services
-          </p>
+          <h1 className="text-sm font-semibold text-foreground">System Status</h1>
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
-          <span className="relative flex size-1.5">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-30" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
-          </span>
-          Live
-        </div>
-      </div>
+      </header>
 
-      {/* Stats bar */}
-      <div
-        className={cn(
-          'relative overflow-hidden rounded-2xl border',
-          overall.allUp
-            ? 'border-emerald-500/15'
-            : overall.downCount > 0
-              ? 'border-red-500/20'
-              : 'border-amber-500/20'
-        )}
-      >
-        {/* Gradient bg */}
-        <div
-          className={cn(
-            'absolute inset-0',
-            overall.allUp
-              ? 'bg-gradient-to-r from-emerald-500/[0.04] via-transparent to-emerald-500/[0.02]'
-              : overall.downCount > 0
-                ? 'bg-gradient-to-r from-red-500/[0.05] via-transparent to-red-500/[0.02]'
-                : 'bg-gradient-to-r from-amber-500/[0.04] via-transparent to-amber-500/[0.02]'
-          )}
-        />
-
-        <div className="relative grid grid-cols-5 divide-x divide-border/20">
-          {/* Status */}
-          <div className="col-span-2 flex items-center gap-4 p-6">
-            <div
-              className={cn(
-                'flex size-12 items-center justify-center rounded-2xl',
-                overall.allUp && 'bg-emerald-500/10',
-                overall.downCount > 0 && 'bg-red-500/10',
-                overall.degradedCount > 0 && overall.downCount === 0 && 'bg-amber-500/10'
-              )}
-            >
-              {overall.allUp ? (
-                <CheckCircle2 size={24} className="text-emerald-500" />
-              ) : overall.downCount > 0 ? (
-                <XCircle size={24} className="animate-pulse text-red-500" />
-              ) : (
-                <AlertTriangle size={24} className="animate-pulse text-amber-500" />
-              )}
-            </div>
-            <div>
-              <h2
-                className={cn(
-                  'text-base font-semibold',
-                  overall.allUp && 'text-emerald-700 dark:text-emerald-400',
-                  overall.downCount > 0 && 'text-red-700 dark:text-red-400',
-                  overall.degradedCount > 0 &&
-                    overall.downCount === 0 &&
-                    'text-amber-700 dark:text-amber-400'
-                )}
-              >
-                {overall.label}
-              </h2>
-              <p className="text-xs text-muted-foreground/60">
-                {upCount}/{monitors.length} operational
+      <div className="flex-1 overflow-y-auto">
+        <div className="space-y-10 px-6 py-8 lg:px-8">
+          {/* Header — desktop only */}
+          <div className="hidden items-end justify-between md:flex">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-qualia-500/10">
+                  <Activity className="size-5 text-qualia-500" />
+                </div>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">System Status</h1>
+              </div>
+              <p className="ml-[52px] text-sm text-muted-foreground">
+                Real-time monitoring across {monitors.length} services
               </p>
             </div>
-          </div>
-
-          {/* Metrics */}
-          {[
-            { label: 'Websites', value: String(bySource.uptimerobot.length) },
-            { label: 'Avg Uptime', value: `${avgUptime}%` },
-            { label: 'Avg Response', value: avgResponse > 0 ? `${avgResponse}ms` : '--' },
-          ].map((stat) => (
-            <div key={stat.label} className="flex flex-col justify-center px-6 py-5">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
-                {stat.label}
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/40">
+              <span className="relative flex size-1.5">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-30" />
+                <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500" />
               </span>
-              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">{stat.value}</p>
+              Live
             </div>
-          ))}
-        </div>
-      </div>
-
-      {error && (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
-          <p className="text-sm text-amber-600 dark:text-amber-400">{error}</p>
-        </div>
-      )}
-
-      {/* Sections by source */}
-      {(['uptimerobot', 'betterstack', 'railway'] as MonitorSource[]).map((source) => {
-        const section = (
-          <MonitorSection
-            key={source}
-            source={source}
-            monitors={bySource[source]}
-            startIndex={sectionIndex}
-          />
-        );
-        sectionIndex += bySource[source].length;
-        return section;
-      })}
-
-      {/* Footer */}
-      <div className="flex items-center justify-center gap-6 pb-4 pt-2 text-[11px] text-muted-foreground/25">
-        {[
-          { icon: Server, label: 'UptimeRobot' },
-          { icon: Zap, label: 'Better Stack' },
-          { icon: Train, label: 'Railway' },
-        ].map(({ icon: FIcon, label }) => (
-          <div key={label} className="flex items-center gap-1.5">
-            <FIcon size={10} />
-            {label}
           </div>
-        ))}
+
+          {/* Stats bar */}
+          <div
+            className={cn(
+              'relative overflow-hidden rounded-2xl border',
+              overall.allUp
+                ? 'border-emerald-500/15'
+                : overall.downCount > 0
+                  ? 'border-red-500/20'
+                  : 'border-amber-500/20'
+            )}
+          >
+            {/* Gradient bg */}
+            <div
+              className={cn(
+                'absolute inset-0',
+                overall.allUp
+                  ? 'bg-gradient-to-r from-emerald-500/[0.04] via-transparent to-emerald-500/[0.02]'
+                  : overall.downCount > 0
+                    ? 'bg-gradient-to-r from-red-500/[0.05] via-transparent to-red-500/[0.02]'
+                    : 'bg-gradient-to-r from-amber-500/[0.04] via-transparent to-amber-500/[0.02]'
+              )}
+            />
+
+            <div className="relative grid grid-cols-5 divide-x divide-border/20">
+              {/* Status */}
+              <div className="col-span-2 flex items-center gap-4 p-6">
+                <div
+                  className={cn(
+                    'flex size-12 items-center justify-center rounded-2xl',
+                    overall.allUp && 'bg-emerald-500/10',
+                    overall.downCount > 0 && 'bg-red-500/10',
+                    overall.degradedCount > 0 && overall.downCount === 0 && 'bg-amber-500/10'
+                  )}
+                >
+                  {overall.allUp ? (
+                    <CheckCircle2 size={24} className="text-emerald-500" />
+                  ) : overall.downCount > 0 ? (
+                    <XCircle size={24} className="animate-pulse text-red-500" />
+                  ) : (
+                    <AlertTriangle size={24} className="animate-pulse text-amber-500" />
+                  )}
+                </div>
+                <div>
+                  <h2
+                    className={cn(
+                      'text-base font-semibold',
+                      overall.allUp && 'text-emerald-700 dark:text-emerald-400',
+                      overall.downCount > 0 && 'text-red-700 dark:text-red-400',
+                      overall.degradedCount > 0 &&
+                        overall.downCount === 0 &&
+                        'text-amber-700 dark:text-amber-400'
+                    )}
+                  >
+                    {overall.label}
+                  </h2>
+                  <p className="text-xs text-muted-foreground/60">
+                    {upCount}/{monitors.length} operational
+                  </p>
+                </div>
+              </div>
+
+              {/* Metrics */}
+              {[
+                { label: 'Websites', value: String(bySource.uptimerobot.length) },
+                { label: 'Avg Uptime', value: `${avgUptime}%` },
+                { label: 'Avg Response', value: avgResponse > 0 ? `${avgResponse}ms` : '--' },
+              ].map((stat) => (
+                <div key={stat.label} className="flex flex-col justify-center px-6 py-5">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground/40">
+                    {stat.label}
+                  </span>
+                  <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                    {stat.value}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {error && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.03] p-4">
+              <p className="text-sm text-amber-600 dark:text-amber-400">{error}</p>
+            </div>
+          )}
+
+          {/* Sections by source */}
+          {(['uptimerobot', 'betterstack', 'railway'] as MonitorSource[]).map((source) => {
+            const section = (
+              <MonitorSection
+                key={source}
+                source={source}
+                monitors={bySource[source]}
+                startIndex={sectionIndex}
+                projectMap={projectMap}
+              />
+            );
+            sectionIndex += bySource[source].length;
+            return section;
+          })}
+
+          {/* Footer */}
+          <div className="flex items-center justify-center gap-6 pb-4 pt-2 text-[11px] text-muted-foreground/25">
+            {[
+              { icon: Server, label: 'UptimeRobot' },
+              { icon: Zap, label: 'Better Stack' },
+              { icon: Train, label: 'Railway' },
+            ].map(({ icon: FIcon, label }) => (
+              <div key={label} className="flex items-center gap-1.5">
+                <FIcon size={10} />
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

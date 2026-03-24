@@ -6,6 +6,7 @@ import { NewMeetingModal } from '@/components/new-meeting-modal';
 import { ScheduleContent } from '@/components/schedule-content';
 import { ScheduleViewToggle } from '@/components/schedule-view-toggle';
 import { Calendar } from 'lucide-react';
+import { PageHeader } from '@/components/page-header';
 
 async function ScheduleLoader({ view }: { view: string }) {
   await connection();
@@ -100,19 +101,14 @@ export default function SchedulePage({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="flex flex-col gap-3 border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10">
-            <Calendar className="h-3.5 w-3.5 text-violet-500" />
-          </div>
-          <h1 className="text-sm font-semibold text-foreground">Schedule</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <ScheduleViewToggle currentView={view} />
-          <NewMeetingModal />
-        </div>
-      </header>
+      <PageHeader
+        icon={<Calendar className="h-3.5 w-3.5 text-violet-500" />}
+        iconBg="bg-violet-500/10"
+        title="Schedule"
+      >
+        <ScheduleViewToggle currentView={view} />
+        <NewMeetingModal />
+      </PageHeader>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-5 sm:p-8">

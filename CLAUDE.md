@@ -269,7 +269,9 @@ Required (see `.env.example`):
 
 ## Deployment
 
-- **Production**: https://portal.qualiasolutions.net (auto-deploy from master)
+- **Vercel Team**: `archivedqualia` (Archived) — NOT `qualiasolutionscy`
+- **Production**: https://qualia-erp.vercel.app (deploy via `vercel --prod --scope archivedqualia`)
+- **Supabase Ref**: `vbpzaiqovffpsroxaulv`
 - **Pre-commit hooks**: ESLint, Prettier, TypeScript (via husky + lint-staged)
 
 ## Technical Debt & Remediation

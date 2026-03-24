@@ -9,6 +9,7 @@ import React, {
   useMemo,
   useEffect,
 } from 'react';
+import { useSidebar } from '@/components/sidebar-provider';
 import { useRouter } from 'next/navigation';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { format, parseISO, isToday, isPast } from 'date-fns';
@@ -36,6 +37,7 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
+  Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
@@ -228,6 +230,7 @@ const TaskRow = React.memo(function TaskRow({
 
 export function InboxView({ initialTasks }: InboxViewProps) {
   const router = useRouter();
+  const { toggleMobile } = useSidebar();
   const [isPending, startTransition] = useTransition();
   const [optimisticTasks, dispatchOptimistic] = useOptimistic(initialTasks, tasksReducer);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -384,6 +387,14 @@ export function InboxView({ initialTasks }: InboxViewProps) {
       {/* Header */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 backdrop-blur-xl">
         <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={toggleMobile}
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+            aria-label="Open menu"
+          >
+            <Menu className="size-4" />
+          </button>
           <Link
             href="/"
             className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"

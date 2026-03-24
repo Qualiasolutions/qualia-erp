@@ -14,10 +14,9 @@ import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
-import { CheckinModal } from './checkin-modal';
-import { EveningCheckinModal } from './evening-checkin-modal';
+import { ClockInModal } from './clock-in-modal';
 import { useTransition, useState, useEffect } from 'react';
-import { type MeetingWithRelations, useMeetings, useTodaysCheckin } from '@/lib/swr';
+import { type MeetingWithRelations, useMeetings, useActiveSession } from '@/lib/swr';
 import {
   Select,
   SelectContent,
@@ -60,11 +59,10 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [checkinDismissed, setCheckinDismissed] = useState(false);
+  const [sessionDismissed, setSessionDismissed] = useState(false);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
   const isRealAdmin = userRole === 'admin';
   const now = new Date();
-  const currentHour = now.getHours();
 
   // "View as" — admin can preview employee's task list, but keeps admin layout
   const effectiveUserId = viewAsUserId || currentUserId;
@@ -72,31 +70,13 @@ export function TodayDashboard({
   const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
 
-  // Check-in gate for employees (and admin "view as" mode)
-  const {
-    morning: morningCheckin,
-    evening: eveningCheckin,
-    isLoading: checkinLoading,
-  } = useTodaysCheckin(isNonAdmin && !checkinDismissed ? workspaceId : null);
+  // Session gate for employees — poll only when relevant
+  const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
+    isNonAdmin && !sessionDismissed ? workspaceId : null
+  );
 
-  // Morning check-in: show if before 3 PM and no morning check-in
-  const showMorningCheckin =
-    isNonAdmin &&
-    !viewingAsEmployee &&
-    !checkinDismissed &&
-    !checkinLoading &&
-    morningCheckin === null &&
-    currentHour < 15;
-
-  // Evening check-in: show if 3 PM or later, morning done, no evening check-in
-  const showEveningCheckin =
-    isNonAdmin &&
-    !viewingAsEmployee &&
-    !checkinDismissed &&
-    !checkinLoading &&
-    morningCheckin !== null &&
-    eveningCheckin === null &&
-    currentHour >= 15;
+  // Show clock-in modal when employee has no active session (wait for loading to prevent flash)
+  const showClockIn = isNonAdmin && !viewingAsEmployee && !sessionLoading && activeSession === null;
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
@@ -229,8 +209,8 @@ export function TodayDashboard({
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-col px-5 py-3 sm:px-6">
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
           {/* "Viewing as" indicator */}
           {viewingAsEmployee && (
             <div className="bg-amber-500/6 mb-3 flex shrink-0 animate-slide-up items-center gap-2.5 rounded-lg border border-amber-500/25 px-4 py-2 backdrop-blur-sm">
@@ -256,15 +236,22 @@ export function TodayDashboard({
           {/* Owner updates banner — employees only */}
           {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
-          {/* Admin: tasks left + meetings right / Employee: full-width */}
+          {/* ── TOP ROW: Meetings + Tasks side by side (fills available height) ── */}
           <div
             className={cn(
-              'flex gap-4',
-              isNonAdmin ? 'min-h-0 flex-1 flex-col' : 'min-h-[400px] flex-col lg:flex-row'
+              'flex min-h-0 flex-1 gap-4',
+              isNonAdmin ? 'flex-col' : 'flex-col lg:flex-row'
             )}
           >
-            {/* ── TEAM TASKS (primary panel, fills available space) ── */}
-            <div className="min-h-0 flex-1">
+            {/* Meetings sidebar — admin: left column / employee: hidden */}
+            {!isNonAdmin && (
+              <div className="flex min-h-0 w-full shrink-0 flex-col lg:w-72 xl:w-80">
+                <MeetingsSidebar meetings={meetings} />
+              </div>
+            )}
+
+            {/* Tasks — fills remaining space */}
+            <div className="min-h-0 min-w-0 flex-1">
               <TeamTaskContainer
                 workspaceId={workspaceId}
                 userRole={effectiveRole}
@@ -272,29 +259,23 @@ export function TodayDashboard({
                 viewingAs={viewingAsEmployee}
               />
             </div>
-
-            {/* ── Currently Building — employees/managers at bottom ── */}
-            {isNonAdmin && <BuildingProjectsRow building={building} />}
-
-            {/* ── RIGHT SIDEBAR — admin only: meetings ─────────── */}
-            {!isNonAdmin && (
-              <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-80 xl:w-96">
-                <MeetingsSidebar meetings={meetings} />
-              </div>
-            )}
           </div>
 
-          {/* ── FULL-WIDTH BOTTOM: Currently Building + Post Update (admin) ── */}
-          {!isNonAdmin && (
-            <div className="mt-4 flex shrink-0 animate-fade-in flex-col gap-3 sm:flex-row sm:items-stretch">
-              <div className="min-w-0 flex-1">
-                <BuildingProjectsRow building={building} />
+          {/* ── BOTTOM ROW: Currently Building (full width) ── */}
+          <div className="mt-3 shrink-0 animate-fade-in">
+            {!isNonAdmin ? (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                <div className="min-w-0 flex-1">
+                  <BuildingProjectsRow building={building} />
+                </div>
+                <div className="sm:w-80 xl:w-96">
+                  <OwnerUpdatesCompose workspaceId={workspaceId} profiles={profiles} />
+                </div>
               </div>
-              <div className="sm:w-80 xl:w-96">
-                <OwnerUpdatesCompose workspaceId={workspaceId} profiles={profiles} />
-              </div>
-            </div>
-          )}
+            ) : (
+              <BuildingProjectsRow building={building} />
+            )}
+          </div>
         </div>
       </main>
 
@@ -306,20 +287,14 @@ export function TodayDashboard({
         defaultScheduledTime={null}
       />
 
-      {/* Daily check-in gates (employees only, not in "view as" mode) */}
+      {/* Session clock-in gate (employees only, not in "view as" mode) */}
       {isNonAdmin && !viewingAsEmployee && (
-        <>
-          <CheckinModal
-            open={showMorningCheckin}
-            workspaceId={workspaceId}
-            onSuccess={() => setCheckinDismissed(true)}
-          />
-          <EveningCheckinModal
-            open={showEveningCheckin}
-            workspaceId={workspaceId}
-            onSuccess={() => setCheckinDismissed(true)}
-          />
-        </>
+        <ClockInModal
+          open={showClockIn}
+          workspaceId={workspaceId}
+          currentUserId={currentUserId}
+          onSuccess={() => setSessionDismissed(true)}
+        />
       )}
     </div>
   );
