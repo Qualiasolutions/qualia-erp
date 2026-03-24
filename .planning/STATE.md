@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 ## Current Position
 
 Phase: 29 of 31 (Session Clock-In / Clock-Out)
-Plan: 1 of 4 in current phase
+Plan: 3 of 4 in current phase
 Status: In progress
-Last activity: 2026-03-24 — Completed 29-01-PLAN.md (work session server actions + SWR hooks)
+Last activity: 2026-03-24 — Completed 29-03-PLAN.md (clock-out button + modal)
 
-Progress: [███░░░░░░░] 27% (v2.1 scope, 3/11 plans)
+Progress: [████░░░░░░] 36% (v2.1 scope, 4/11 plans)
 
 ## Performance Metrics
 
@@ -28,7 +28,7 @@ Progress: [███░░░░░░░] 27% (v2.1 scope, 3/11 plans)
 | Phase | Plans | Total | Avg/Plan |
 | ----- | ----- | ----- | -------- |
 | 28    | 2/2   | 14min | 7min     |
-| 29    | 1/4   | 8min  | 8min     |
+| 29    | 3/4   | 10min | ~5min    |
 | 30    | 0/3   | —     | —        |
 | 31    | 0/2   | —     | —        |
 
@@ -36,12 +36,13 @@ Progress: [███░░░░░░░] 27% (v2.1 scope, 3/11 plans)
 
 ### Key Decisions
 
-| #   | Decision                                                    | Rationale                                                         | Date       |
-| --- | ----------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
-| 1   | Session-based attendance replaces morning/evening check-ins | Multi-session is more accurate — people leave for lunch, step out | 2026-03-24 |
-| 2   | Project selection on clock-in (not free text)               | Cleaner data, maps to real projects, less friction                | 2026-03-24 |
-| 3   | Remove per-task time tracking entirely                      | Session attendance is enough — task timers add friction not value | 2026-03-24 |
-| 4   | SWR polling for live status (not Supabase Realtime)         | Consistent with existing patterns, 3 users don't need websockets  | 2026-03-24 |
+| #   | Decision                                                       | Rationale                                                             | Date       |
+| --- | -------------------------------------------------------------- | --------------------------------------------------------------------- | ---------- |
+| 1   | Session-based attendance replaces morning/evening check-ins    | Multi-session is more accurate — people leave for lunch, step out     | 2026-03-24 |
+| 2   | Project selection on clock-in (not free text)                  | Cleaner data, maps to real projects, less friction                    | 2026-03-24 |
+| 3   | Remove per-task time tracking entirely                         | Session attendance is enough — task timers add friction not value     | 2026-03-24 |
+| 4   | SWR polling for live status (not Supabase Realtime)            | Consistent with existing patterns, 3 users don't need websockets      | 2026-03-24 |
+| 5   | useCurrentWorkspaceId() over useEffect + server action pattern | Already cached by SWR, deduplicated, consistent with rest of codebase | 2026-03-24 |
 
 ### What's Being Replaced (v2.1)
 
@@ -67,5 +68,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-24
-Stopped at: Phase 29, Plan 01 complete — work session server actions + SWR hooks
-**Next action:** Execute 29-02-PLAN.md (clock-in modal)
+Stopped at: Phase 29, Plan 03 complete — clock-out button + modal
+**Next action:** Execute 29-04-PLAN.md (today dashboard session list)
