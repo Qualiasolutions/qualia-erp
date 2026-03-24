@@ -98,7 +98,7 @@ const DURATION_OPTIONS = [
 
 interface Client {
   id: string;
-  display_name: string;
+  display_name: string | null;
 }
 
 interface NewMeetingModalProps {
@@ -349,7 +349,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                     <SelectWithOther
                       options={clients.map((client) => ({
                         value: client.id,
-                        label: client.display_name,
+                        label: client.display_name || 'Unnamed Client',
                       }))}
                       value={customClientName || selectedClientId}
                       onChange={(value, isCustom) => {
