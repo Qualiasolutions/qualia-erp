@@ -65,14 +65,14 @@ Plans:
 5. Multiple sessions per day work correctly — an employee who clocked out can clock back in and the new session is tracked independently
 6. `/admin/attendance` page shows session-based data (project, start time, end time, duration, summary) instead of morning/evening check-in format
 
-**Plans:** TBD
+**Plans:** 4 plans
 
 Plans:
 
-- [ ] 29-01: Session server actions (clock-in, clock-out, get active session, get today's sessions)
-- [ ] 29-02: Clock-in modal (forced on open, project selection from assignments)
-- [ ] 29-03: Persistent clock-out button + clock-out summary modal
-- [ ] 29-04: Update /admin/attendance page to session model
+- [ ] 29-01-PLAN.md — Session server actions (clockIn, clockOut, getActiveSession, getTodaysSessions, getSessionsAdmin) + SWR hooks
+- [ ] 29-02-PLAN.md — Forced clock-in modal with project selection from assignments + TodayDashboard gate update
+- [ ] 29-03-PLAN.md — Persistent clock-out button in sidebar + ClockOutModal with mandatory summary
+- [ ] 29-04-PLAN.md — Rewrite /admin/attendance page to session model (project, duration, summary columns)
 
 #### Phase 30: Live Status Dashboard
 
