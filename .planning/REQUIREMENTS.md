@@ -1,104 +1,86 @@
-# Requirements: Qualia ERP v2.0
+# Requirements: Qualia ERP v2.1
 
-**Defined:** 2026-03-15
-**Core Value:** Give Fawzi visibility into team work and give employees clear daily structure — check-ins, time logging, and a useful task dashboard.
+**Defined:** 2026-03-24
+**Core Value:** Fawzi has real-time visibility into who's working, when, and on what — employees clock in/out every session with zero friction.
 
-## v2.0 Requirements
+## v2.1 Requirements
 
-### Data Cleanup
+### Session Management
 
-- [ ] **CLEANUP-01**: Learning system fully deleted — tables (`skill_categories`, `skills`, `user_skills`, `skill_practice_log`, `achievements`, `user_achievements`, `task_reflections`, `teaching_notes`), profile fields (`learn_mode`, `total_xp`, `current_streak`, `onboarding_step`, `onboarding_completed`), all actions in `learning.ts`, and related UI components
-- [ ] **CLEANUP-02**: Fix hardcoded team members in `daily-flow.ts` — replace email-based lookup with dynamic profile query
+- [ ] **SESS-01**: Employee sees forced clock-in modal on app open if no active session
+- [ ] **SESS-02**: Clock-in modal shows employee's assigned projects to select from
+- [ ] **SESS-03**: Employee can clock out at any time via persistent UI element in header/sidebar
+- [ ] **SESS-04**: Clock-out requires mandatory summary of work completed before closing session
+- [ ] **SESS-05**: Multiple sessions per day tracked independently (morning, after-lunch, etc.)
+- [ ] **SESS-06**: New `work_sessions` table replaces `daily_checkins` for session storage
 
-### Daily Check-ins
+### Enforcement
 
-- [ ] **CHECKIN-01**: Employee is prompted with a daily check-in when opening the ERP (what did you do, what's blocked) stored as a `daily_checkins` record
-- [ ] **CHECKIN-02**: Owner can view employee check-ins on the dashboard, filterable by person and date
+- [ ] **ENFC-01**: Idle detection prompts "Are you still working?" after inactivity timeout
+- [ ] **ENFC-02**: Banner reminder appears when planned logout time is reached
+- [ ] **ENFC-03**: Browser beforeunload warns if employee closes tab without clocking out
+- [ ] **ENFC-04**: Auto clock-out after extended idle with no response
 
-### Notifications
+### Live Dashboard
 
-- [ ] **NOTIF-01**: Owner receives an in-app notification when a task is marked as completed by an employee
-- [ ] **NOTIF-02**: Owner and employees receive a scheduled morning email at shift start with today's due tasks, overdue items, and upcoming meetings
+- [ ] **LIVE-01**: Admin dashboard shows real-time employee status (clocked in/out, which project, session duration)
+- [ ] **LIVE-02**: Status indicators update via SWR polling (green = active, red = offline)
+- [ ] **LIVE-03**: Admin can view session history for any employee by date
 
-### Team Dashboard
+### Cleanup
 
-- [ ] **DASH-01**: Dashboard has a team task container (replacing or alongside the schedule) showing each employee's tasks grouped by status — useful at a glance for both managers and employees
-- [ ] **DASH-02**: Employee task cards show assignee, project, priority, and due date in a clean, scannable layout
+- [ ] **CLEAN-01**: Remove TaskTimeTracker component and all timer UI from task cards
+- [ ] **CLEAN-02**: Remove task_time_logs references from team dashboard queries
+- [ ] **CLEAN-03**: Replace old check-in modal with new session clock-in modal
+- [ ] **CLEAN-04**: Update /admin/attendance page to show session-based data
 
-### Time Logging
+## Future Requirements
 
-- [ ] **TIME-01**: Employee can log when they start working on a task (records `started_at` timestamp)
-- [ ] **TIME-02**: Employee can log when they finish a task (records `finished_at` timestamp, calculates duration)
-- [ ] **TIME-03**: Time spent is visible on task cards and in the team dashboard container
+### Attendance Analytics
 
-### Owner Updates
-
-- [ ] **UPDATE-01**: Owner can post updates/notes to specific employees (or all) that appear contextually and cleanly — not cluttering the dashboard but discoverable (e.g. a slim notification banner, inline card, or collapsible section)
-- [ ] **UPDATE-02**: Employee sees unread owner updates on login — can acknowledge/dismiss them
-
-### Project Provisioning
-
-- [ ] **PROV-01**: Creating a project with GitHub selected auto-creates a GitHub repo (under the Qualia org) and stores the URL on the project
-- [ ] **PROV-02**: Creating a project with Vercel selected auto-creates a Vercel project, connects it to the GitHub repo, and stores the URL
-- [ ] **PROV-03**: VAPI option removed from project creation wizard
-
-### Design Quality
-
-- [ ] **DQ-01**: All new UI passes `/critique` + `/polish` + `/harden` flow — impeccable design matching existing ERP aesthetic
-
-## v2.1 Requirements (Deferred)
-
-- **TEAM-01**: Dedicated team overview page with per-person workload rollup
-- **ACT-01**: Workspace-wide activity feed UI
-- **ACT-02**: Client activity timeline on client detail page
-- **REV-01**: Review queue for pending task reviews
-- **REV-02**: Project health dashboard page
-- **PHASE-01**: Phase-level assignees on project_phases
-- **REALTIME-01**: Supabase Realtime for instant notifications
-- **AI-01**: AI-powered weekly team performance recap
+- **ANALYTICS-01**: Weekly/monthly attendance summary per employee
+- **ANALYTICS-02**: Average session duration trends
+- **ANALYTICS-03**: Project time allocation breakdown
 
 ## Out of Scope
 
-| Feature                    | Reason                                    |
-| -------------------------- | ----------------------------------------- |
-| Supabase Realtime          | Polling at 45s is sufficient for 3 people |
-| Phase-level assignees      | Deferred to v2.1                          |
-| Activity feed page         | Deferred to v2.1                          |
-| Project health dashboard   | Deferred to v2.1                          |
-| Review queue               | Deferred to v2.1                          |
-| Client activity timeline   | Deferred to v2.1                          |
-| Shift awareness indicators | Deferred to v2.1                          |
-| Learning/XP/gamification   | Being deleted — dead weight               |
+| Feature                             | Reason                                                                    |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| Supabase Realtime for live status   | SWR polling sufficient for 3 users                                        |
+| GPS/location tracking               | Trust-based system, not surveillance                                      |
+| Per-task time tracking              | Replaced by session-based attendance                                      |
+| Overtime calculations               | Not relevant for current team structure                                   |
+| Break time tracking within sessions | Sessions are per-block (morning, afternoon) — breaks are between sessions |
 
 ## Traceability
 
-| Requirement | Phase    | Status  |
-| ----------- | -------- | ------- |
-| CLEANUP-01  | Phase 26 | Pending |
-| CLEANUP-02  | Phase 26 | Pending |
-| CHECKIN-01  | Phase 26 | Pending |
-| CHECKIN-02  | Phase 26 | Pending |
-| NOTIF-01    | Phase 26 | Pending |
-| NOTIF-02    | Phase 26 | Pending |
-| DASH-01     | Phase 26 | Pending |
-| DASH-02     | Phase 26 | Pending |
-| TIME-01     | Phase 26 | Pending |
-| TIME-02     | Phase 26 | Pending |
-| TIME-03     | Phase 26 | Pending |
-| UPDATE-01   | Phase 26 | Pending |
-| UPDATE-02   | Phase 26 | Pending |
-| PROV-01     | Phase 26 | Pending |
-| PROV-02     | Phase 26 | Pending |
-| PROV-03     | Phase 26 | Pending |
-| DQ-01       | Phase 26 | Pending |
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| SESS-01     | —     | Pending |
+| SESS-02     | —     | Pending |
+| SESS-03     | —     | Pending |
+| SESS-04     | —     | Pending |
+| SESS-05     | —     | Pending |
+| SESS-06     | —     | Pending |
+| ENFC-01     | —     | Pending |
+| ENFC-02     | —     | Pending |
+| ENFC-03     | —     | Pending |
+| ENFC-04     | —     | Pending |
+| LIVE-01     | —     | Pending |
+| LIVE-02     | —     | Pending |
+| LIVE-03     | —     | Pending |
+| CLEAN-01    | —     | Pending |
+| CLEAN-02    | —     | Pending |
+| CLEAN-03    | —     | Pending |
+| CLEAN-04    | —     | Pending |
 
 **Coverage:**
 
-- v2.0 requirements: 17 total
-- Mapped to phases: 17
-- Unmapped: 0
+- v2.1 requirements: 17 total
+- Mapped to phases: 0
+- Unmapped: 17 ⚠️
 
 ---
 
-_Requirements defined: 2026-03-15_
-_Last updated: 2026-03-15 after adding updates, provisioning, removing VAPI_
+_Requirements defined: 2026-03-24_
+_Last updated: 2026-03-24 after initial definition_
