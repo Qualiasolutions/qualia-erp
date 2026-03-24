@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Clock, AlertTriangle, CheckCircle2, User } from 'lucide-react';
+import { Clock, User, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -19,47 +19,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getAttendanceLogs } from '@/app/actions/checkins';
+import { getSessionsAdmin } from '@/app/actions/work-sessions';
 import { getTeamMembers, type AdminProfile } from '@/app/actions/admin';
 import { getCurrentWorkspaceId } from '@/app/actions';
 
-type AttendanceEntry = Awaited<ReturnType<typeof getAttendanceLogs>>[number];
+type SessionEntry = Awaited<ReturnType<typeof getSessionsAdmin>>[number];
 
-function formatTime(iso: string | null) {
-  if (!iso) return '—';
-  return format(parseISO(iso), 'h:mm a');
-}
-
-function LateIndicator({ planned, actual }: { planned: string | null; actual: string | null }) {
-  if (!planned || !actual) return null;
-  const plannedDate = parseISO(planned);
-  const actualDate = parseISO(actual);
-  const diffMinutes = Math.round((actualDate.getTime() - plannedDate.getTime()) / 60000);
-
-  if (diffMinutes <= 5) {
-    return (
-      <Badge
-        variant="outline"
-        className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-600"
-      >
-        <CheckCircle2 className="size-3" />
-        On time
-      </Badge>
-    );
-  }
-
-  return (
-    <Badge
-      variant="outline"
-      className="gap-1 border-amber-500/20 bg-amber-500/10 text-[10px] text-amber-600"
-    >
-      <AlertTriangle className="size-3" />+{diffMinutes}m late
-    </Badge>
-  );
+function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 export default function AttendancePage() {
-  const [logs, setLogs] = useState<AttendanceEntry[]>([]);
+  const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const [members, setMembers] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterProfile, setFilterProfile] = useState<string>('all');
@@ -73,14 +47,14 @@ export default function AttendancePage() {
   const fetchData = useCallback(async () => {
     if (!workspaceId) return;
     setLoading(true);
-    const [logsResult, membersResult] = await Promise.all([
-      getAttendanceLogs(workspaceId, {
-        limit: 60,
+    const [sessionsResult, membersResult] = await Promise.all([
+      getSessionsAdmin(workspaceId, {
+        limit: 100,
         profileId: filterProfile !== 'all' ? filterProfile : undefined,
       }),
       getTeamMembers(),
     ]);
-    setLogs(logsResult);
+    setSessions(sessionsResult);
     if (membersResult.success) {
       setMembers(membersResult.data as AdminProfile[]);
     }
@@ -106,7 +80,7 @@ export default function AttendancePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Attendance Log</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Daily clock-in / clock-out records for all team members
+            Work session records for all team members
           </p>
         </div>
         <Select value={filterProfile} onValueChange={setFilterProfile}>
@@ -127,7 +101,7 @@ export default function AttendancePage() {
         </Select>
       </div>
 
-      {logs.length === 0 ? (
+      {sessions.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
           <Clock className="mb-3 size-8 text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">No attendance records yet.</p>
@@ -139,69 +113,65 @@ export default function AttendancePage() {
               <TableRow className="hover:bg-transparent">
                 <TableHead className="w-[140px]">Date</TableHead>
                 <TableHead className="w-[180px]">Employee</TableHead>
-                <TableHead className="w-[110px]">Clock In</TableHead>
-                <TableHead className="w-[110px]">Planned Out</TableHead>
-                <TableHead className="w-[110px]">Actual Out</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead>Completed</TableHead>
+                <TableHead className="w-[160px]">Project</TableHead>
+                <TableHead className="w-[100px]">Clock In</TableHead>
+                <TableHead className="w-[100px]">Clock Out</TableHead>
+                <TableHead className="w-[90px]">Duration</TableHead>
+                <TableHead>Summary</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {logs.map((entry, i) => (
-                <TableRow key={`${entry.date}-${entry.profile?.id || i}`}>
+              {sessions.map((session) => (
+                <TableRow key={session.id}>
                   <TableCell className="text-sm font-medium">
-                    {format(parseISO(entry.date), 'MMM d, yyyy')}
+                    {format(parseISO(session.started_at), 'MMM d, yyyy')}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
                         <span className="text-[10px] font-semibold text-primary">
-                          {(entry.profile?.full_name || '?')[0].toUpperCase()}
+                          {(session.profile?.full_name || '?')[0].toUpperCase()}
                         </span>
                       </div>
-                      <span className="text-sm">{entry.profile?.full_name || 'Unknown'}</span>
+                      <span className="text-sm">{session.profile?.full_name || 'Unknown'}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Briefcase className="size-3.5 shrink-0" />
+                      <span className="truncate">{session.project?.name ?? '—'}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm tabular-nums text-muted-foreground">
-                    {formatTime(entry.clock_in_time)}
+                    {format(parseISO(session.started_at), 'h:mm a')}
                   </TableCell>
                   <TableCell className="text-sm tabular-nums text-muted-foreground">
-                    {formatTime(entry.planned_clock_out_time)}
-                  </TableCell>
-                  <TableCell className="text-sm tabular-nums text-muted-foreground">
-                    {formatTime(entry.actual_clock_out_time)}
+                    {session.ended_at ? format(parseISO(session.ended_at), 'h:mm a') : '—'}
                   </TableCell>
                   <TableCell>
-                    {entry.actual_clock_out_time ? (
-                      <LateIndicator
-                        planned={entry.planned_clock_out_time}
-                        actual={entry.actual_clock_out_time}
-                      />
-                    ) : entry.clock_in_time ? (
+                    {session.duration_minutes != null ? (
+                      <span className="text-sm tabular-nums text-muted-foreground">
+                        {formatDuration(session.duration_minutes)}
+                      </span>
+                    ) : !session.ended_at ? (
                       <Badge
                         variant="outline"
-                        className="border-blue-500/20 bg-blue-500/10 text-[10px] text-blue-600"
+                        className="gap-1 border-blue-500/20 bg-blue-500/10 text-[10px] text-blue-600"
                       >
+                        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500" />
                         Active
                       </Badge>
                     ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
+                      <span className="text-sm text-muted-foreground/40">—</span>
                     )}
                   </TableCell>
-                  <TableCell className="max-w-[250px]">
-                    {entry.completed_tasks && entry.completed_tasks.length > 0 ? (
-                      <ul className="space-y-0.5">
-                        {entry.completed_tasks.slice(0, 3).map((task, j) => (
-                          <li key={j} className="truncate text-xs text-muted-foreground">
-                            {task}
-                          </li>
-                        ))}
-                        {entry.completed_tasks.length > 3 && (
-                          <li className="text-[10px] text-muted-foreground/60">
-                            +{entry.completed_tasks.length - 3} more
-                          </li>
-                        )}
-                      </ul>
+                  <TableCell className="max-w-[280px]">
+                    {session.summary ? (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {session.summary.length > 80
+                          ? `${session.summary.slice(0, 80)}…`
+                          : session.summary}
+                      </span>
                     ) : (
                       <span className="text-xs text-muted-foreground/40">—</span>
                     )}
