@@ -4,12 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 
 // ============ TYPES ============
 
-export interface TeamMemberTaskTimeLog {
-  started_at: string;
-  finished_at: string | null;
-  time_spent_minutes: number | null;
-}
-
 export interface TeamMemberTask {
   id: string;
   title: string;
@@ -19,7 +13,6 @@ export interface TeamMemberTask {
   completed_at: string | null;
   assignee_id: string | null;
   project: { id: string; name: string; project_type: string | null } | null;
-  time_log: TeamMemberTaskTimeLog | null;
 }
 
 export interface TeamMemberTasks {
@@ -114,7 +107,7 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
 
 /**
  * Fetch active tasks (Todo/In Progress) for a specific profile,
- * joining project and time_log data.
+ * joining project data.
  * Sorted by priority then due_date ASC.
  */
 async function fetchTasksForProfile(
@@ -134,8 +127,7 @@ async function fetchTasksForProfile(
       due_date,
       completed_at,
       assignee_id,
-      project:projects(id, name, project_type),
-      time_log:task_time_logs(started_at, ended_at, duration_minutes)
+      project:projects(id, name, project_type)
     `
     )
     .eq('workspace_id', workspaceId)
@@ -160,20 +152,8 @@ async function fetchTasksForProfile(
         | { id: string; name: string; project_type: string | null }
         | { id: string; name: string; project_type: string | null }[]
         | null;
-      time_log:
-        | { started_at: string; ended_at: string | null; duration_minutes: number | null }
-        | { started_at: string; ended_at: string | null; duration_minutes: number | null }[]
-        | null;
     }) => {
       const project = Array.isArray(t.project) ? (t.project[0] ?? null) : t.project;
-      const rawLog = Array.isArray(t.time_log) ? (t.time_log[0] ?? null) : t.time_log;
-      const time_log: TeamMemberTaskTimeLog | null = rawLog
-        ? {
-            started_at: rawLog.started_at,
-            finished_at: rawLog.ended_at,
-            time_spent_minutes: rawLog.duration_minutes,
-          }
-        : null;
 
       return {
         id: t.id,
@@ -184,7 +164,6 @@ async function fetchTasksForProfile(
         completed_at: t.completed_at,
         assignee_id: t.assignee_id,
         project,
-        time_log,
       };
     }
   );

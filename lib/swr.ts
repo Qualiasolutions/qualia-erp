@@ -69,8 +69,6 @@ export const cacheKeys = {
     `checkins-${workspaceId}-${profileId || 'all'}-${date || 'all'}`,
   ownerUpdates: (workspaceId: string, unreadOnly?: boolean) =>
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
-  timeLogs: (taskId: string) => `time-logs-${taskId}`,
-  timeLogsBulk: (workspaceId: string) => `time-logs-bulk-${workspaceId}`,
   teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
 } as const;
 
@@ -1484,52 +1482,6 @@ export function invalidateOwnerUpdates(workspaceId: string, immediate = true) {
   } else {
     mutate(cacheKeys.ownerUpdates(workspaceId, false));
     mutate(cacheKeys.ownerUpdates(workspaceId, true));
-  }
-}
-
-// ============================================================================
-// TIME LOG HOOKS
-// ============================================================================
-
-/**
- * Hook to fetch time log for a specific task
- */
-export function useTaskTimeLog(taskId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    taskId ? cacheKeys.timeLogs(taskId) : null,
-    async () => {
-      if (!taskId) return null;
-      const { getTaskTimeLog } = await import('@/app/actions/time-logs');
-      return getTaskTimeLog(taskId);
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    timeLog: data || null,
-    isRunning: !!data && !data.ended_at,
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate time log cache for a task
- */
-export function invalidateTaskTimeLog(taskId: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.timeLogs(taskId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.timeLogs(taskId));
   }
 }
 

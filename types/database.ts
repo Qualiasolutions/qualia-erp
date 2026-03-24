@@ -4092,3 +4092,25 @@ export const Constants = {
     },
   },
 } as const;
+
+// ============================================================================
+// Type Aliases for Convenience
+// ============================================================================
+
+// Table type aliases
+export type Client = Tables<'clients'>;
+export type Project = Tables<'projects'>;
+export type Task = Tables<'tasks'>;
+export type Issue = Tables<'issues'>;
+export type Meeting = Tables<'meetings'>;
+export type Profile = Tables<'profiles'>;
+export type ProjectFile = Tables<'project_files'>;
+export type ProjectIntegration = Tables<'project_integrations'>;
+
+// Enum type aliases
+export type ProjectType = Database['public']['Enums']['project_type'];
+export type ProjectStatus = Database['public']['Enums']['project_status'];
+export type ProjectGroup = Database['public']['Enums']['project_group'];
+export type DeploymentPlatform = Database['public']['Enums']['deployment_platform'];
+export type UserRole = Database['public']['Enums']['user_role'];
+export type LeadStatus = Database['public']['Enums']['lead_status'];
