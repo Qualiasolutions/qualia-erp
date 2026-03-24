@@ -19,10 +19,13 @@ import {
   Wallet,
   ClipboardList,
   Activity,
+  Timer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
 import { useAdminContext } from '@/components/admin-provider';
+import { useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
+import { ClockOutModal } from '@/components/clock-out-modal';
 
 const employeeAllowedHrefs = ['/', '/schedule', '/knowledge', '/projects', '/status'];
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -156,6 +159,13 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
   const isEmployee = userRole === 'employee';
+  const [showClockOut, setShowClockOut] = useState(false);
+
+  // Session clock-out (employees only)
+  const { workspaceId } = useCurrentWorkspaceId();
+  const { session: activeSession } = useActiveSession(
+    isEmployee && workspaceId ? workspaceId : null
+  );
 
   const isActive = (href: string) =>
     pathname === href || (href !== '/' && pathname.startsWith(href));
@@ -257,6 +267,38 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           </div>
         )}
       </nav>
+
+      {/* Clock-out button — employees with active session only */}
+      {isEmployee && activeSession && workspaceId && (
+        <div className="px-3 pb-2">
+          <div className="mb-2 h-px bg-border/40" />
+          <button
+            type="button"
+            onClick={() => setShowClockOut(true)}
+            className="bg-qualia-500/8 flex w-full items-center gap-2.5 rounded-lg border border-qualia-500/30 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-qualia-500/15 dark:text-qualia-300"
+          >
+            <Timer className="size-4 shrink-0 text-qualia-500" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate font-semibold">
+                {activeSession.project?.name ?? 'Session active'}
+              </div>
+              <div className="text-[11px] text-qualia-600/70 dark:text-qualia-400/70">
+                Tap to clock out
+              </div>
+            </div>
+            <span className="shrink-0 rounded-md bg-qualia-500/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-qualia-600 dark:text-qualia-400">
+              LIVE
+            </span>
+          </button>
+          <ClockOutModal
+            open={showClockOut}
+            onOpenChange={setShowClockOut}
+            workspaceId={workspaceId}
+            session={activeSession}
+            onSuccess={() => setShowClockOut(false)}
+          />
+        </div>
+      )}
 
       {/* Bottom section — account menu */}
       <div className="border-t border-border/50 px-3 py-2.5">
