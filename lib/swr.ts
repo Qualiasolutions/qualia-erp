@@ -1380,49 +1380,6 @@ export function invalidateClientActionItems(clientId: string, immediate = true) 
 // ============================================================================
 
 /**
- * Hook to fetch today's check-in(s) for the current user
- */
-export function useTodaysCheckin(workspaceId: string | null) {
-  const {
-    data,
-    error,
-    isLoading,
-    isValidating,
-    mutate: revalidate,
-  } = useSWR(
-    workspaceId ? cacheKeys.todaysCheckins(workspaceId) : null,
-    async () => {
-      if (!workspaceId) return [];
-      const { getTodaysCheckin } = await import('@/app/actions/checkins');
-      return getTodaysCheckin(workspaceId);
-    },
-    autoRefreshConfig
-  );
-
-  return {
-    checkins: data || [],
-    morning: data?.find((c) => c.checkin_type === 'morning') || null,
-    evening: data?.find((c) => c.checkin_type === 'evening') || null,
-    isLoading,
-    isValidating,
-    isError: !!error,
-    error,
-    revalidate,
-  };
-}
-
-/**
- * Invalidate today's check-in cache
- */
-export function invalidateTodaysCheckin(workspaceId: string, immediate = true) {
-  if (immediate) {
-    mutate(cacheKeys.todaysCheckins(workspaceId), undefined, { revalidate: true });
-  } else {
-    mutate(cacheKeys.todaysCheckins(workspaceId));
-  }
-}
-
-/**
  * Invalidate check-ins cache (admin view)
  */
 export function invalidateCheckins(
@@ -1434,11 +1391,11 @@ export function invalidateCheckins(
   const key = cacheKeys.checkins(workspaceId, profileId, date);
   if (immediate) {
     mutate(key, undefined, { revalidate: true });
+    mutate(cacheKeys.todaysCheckins(workspaceId), undefined, { revalidate: true });
   } else {
     mutate(key);
+    mutate(cacheKeys.todaysCheckins(workspaceId));
   }
-  // Also invalidate today's view
-  invalidateTodaysCheckin(workspaceId, immediate);
 }
 
 // ============================================================================
