@@ -69,10 +69,10 @@ Plans:
 
 Plans:
 
-- [ ] 29-01-PLAN.md — Session server actions (clockIn, clockOut, getActiveSession, getTodaysSessions, getSessionsAdmin) + SWR hooks
-- [ ] 29-02-PLAN.md — Forced clock-in modal with project selection from assignments + TodayDashboard gate update
-- [ ] 29-03-PLAN.md — Persistent clock-out button in sidebar + ClockOutModal with mandatory summary
-- [ ] 29-04-PLAN.md — Rewrite /admin/attendance page to session model (project, duration, summary columns)
+- [x] 29-01-PLAN.md — Session server actions (clockIn, clockOut, getActiveSession, getTodaysSessions, getSessionsAdmin) + SWR hooks
+- [x] 29-02-PLAN.md — Forced clock-in modal with project selection from assignments + TodayDashboard gate update
+- [x] 29-03-PLAN.md — Persistent clock-out button in sidebar + ClockOutModal with mandatory summary
+- [x] 29-04-PLAN.md — Rewrite /admin/attendance page to session model (project, duration, summary columns)
 
 #### Phase 30: Live Status Dashboard
 
@@ -124,6 +124,6 @@ Plans:
 | -------------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-26. (Phases 1-26)              | v1.0–v2.0 | All            | Complete    | 2026-03-24 |
 | 28. DB Migration & Cleanup       | v2.1      | 2/2            | ✅ Complete | 2026-03-24 |
-| 29. Session Clock-In / Clock-Out | v2.1      | 0/4            | Not started | -          |
+| 29. Session Clock-In / Clock-Out | v2.1      | 4/4            | ✅ Complete | 2026-03-24 |
 | 30. Live Status Dashboard        | v2.1      | 0/3            | Not started | -          |
 | 31. Clock-Out Enforcement        | v2.1      | 0/2            | Not started | -          |

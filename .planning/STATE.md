@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-24)
 
 **Core value:** Fawzi has real-time visibility into who's working, when, and on what — employees clock in/out every session with zero friction.
-**Current focus:** v2.1 Attendance & Live Oversight — Phase 29 (Session Clock-In / Clock-Out)
+**Current focus:** v2.1 Attendance & Live Oversight — Phase 30 (Live Status Dashboard)
 
 ## Current Position
 
-Phase: 29 of 31 (Session Clock-In / Clock-Out)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-03-24 — Completed 29-04-PLAN.md (admin attendance page — session model)
+Phase: 30 of 31 (Live Status Dashboard)
+Plan: 0 of 3 in current phase
+Status: Ready to plan
+Last activity: 2026-03-24 — Phase 29 verified ✓ (session clock-in/out fully functional)
 
-Progress: [█████░░░░░] 45% (v2.1 scope, 5/11 plans)
+Progress: [██████░░░░] 55% (v2.1 scope, 6/11 plans)
 
 ## Performance Metrics
 
