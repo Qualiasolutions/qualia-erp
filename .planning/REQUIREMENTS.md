@@ -54,33 +54,33 @@
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| SESS-01     | —     | Pending |
-| SESS-02     | —     | Pending |
-| SESS-03     | —     | Pending |
-| SESS-04     | —     | Pending |
-| SESS-05     | —     | Pending |
-| SESS-06     | —     | Pending |
-| ENFC-01     | —     | Pending |
-| ENFC-02     | —     | Pending |
-| ENFC-03     | —     | Pending |
-| ENFC-04     | —     | Pending |
-| LIVE-01     | —     | Pending |
-| LIVE-02     | —     | Pending |
-| LIVE-03     | —     | Pending |
-| CLEAN-01    | —     | Pending |
-| CLEAN-02    | —     | Pending |
-| CLEAN-03    | —     | Pending |
-| CLEAN-04    | —     | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| SESS-01     | Phase 29 | Pending |
+| SESS-02     | Phase 29 | Pending |
+| SESS-03     | Phase 29 | Pending |
+| SESS-04     | Phase 29 | Pending |
+| SESS-05     | Phase 29 | Pending |
+| SESS-06     | Phase 28 | Pending |
+| ENFC-01     | Phase 31 | Pending |
+| ENFC-02     | Phase 31 | Pending |
+| ENFC-03     | Phase 31 | Pending |
+| ENFC-04     | Phase 31 | Pending |
+| LIVE-01     | Phase 30 | Pending |
+| LIVE-02     | Phase 30 | Pending |
+| LIVE-03     | Phase 30 | Pending |
+| CLEAN-01    | Phase 28 | Pending |
+| CLEAN-02    | Phase 28 | Pending |
+| CLEAN-03    | Phase 29 | Pending |
+| CLEAN-04    | Phase 29 | Pending |
 
 **Coverage:**
 
 - v2.1 requirements: 17 total
-- Mapped to phases: 0
-- Unmapped: 17 ⚠️
+- Mapped to phases: 17
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-03-24_
-_Last updated: 2026-03-24 after initial definition_
+_Last updated: 2026-03-24 after roadmap creation (phases 28-31)_

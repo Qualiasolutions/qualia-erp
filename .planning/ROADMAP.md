@@ -1,80 +1,129 @@
-# Roadmap: Qualia ERP v2.0
+# Roadmap: Qualia ERP
 
-**Milestone:** v2.0 Team Efficiency & Owner Oversight
-**Phases:** 1 (Phase 26)
-**Requirements:** 17
+## Milestones
 
-## Phase 26: Team Sync & Daily Structure
+- ✅ **v1.0 MVP** - Phases 1-3 (shipped 2026-03-01)
+- ✅ **v1.1 Production Polish** - Phases 4-8 (shipped 2026-03-04)
+- ✅ **v1.2 Premium Animations** - Phases 10-11 (shipped 2026-03-04)
+- ✅ **v1.3 Full ERP-Portal Integration** - Phases 12-16 (shipped 2026-03-06)
+- ✅ **v1.4 Admin Portal Onboarding** - Phases 17-19 (shipped 2026-03-09)
+- ✅ **v1.5.1 Security Hardening** - Phase 25 (shipped 2026-03-10)
+- ✅ **v2.0 Team Efficiency & Owner Oversight** - Phase 26 (shipped 2026-03-15)
+- 🚧 **v2.1 Attendance & Live Oversight** - Phases 28-31 (in progress)
 
-**Goal:** Delete dead learning system, add daily check-ins, task time logging, completion notifications, morning emails, team task dashboard, owner updates system, and fix GitHub/Vercel auto-provisioning — all with impeccable design quality.
+## Phases
 
-**Requirements:** CLEANUP-01, CLEANUP-02, CHECKIN-01, CHECKIN-02, NOTIF-01, NOTIF-02, DASH-01, DASH-02, TIME-01, TIME-02, TIME-03, UPDATE-01, UPDATE-02, PROV-01, PROV-02, PROV-03, DQ-01
+<details>
+<summary>✅ v1.0–v2.0 (Phases 1-26) — SHIPPED</summary>
 
-**Plans:** 7 plans
+Phases 1-26 complete. See MILESTONES.md for full history.
+
+Phase 26: Team Sync & Daily Structure — deleted learning system, added daily check-ins, task time logging, team dashboard, owner updates, morning emails, task notifications, GitHub/Vercel provisioning fix.
+
+</details>
+
+---
+
+### 🚧 v2.1 Attendance & Live Oversight (In Progress)
+
+**Milestone Goal:** Replace morning/evening check-ins with multi-session clock-in/clock-out, give Fawzi real-time visibility into who's working on what, enforce clock-outs, and remove per-task time tracking.
+
+#### Phase 28: DB Migration & Cleanup
+
+**Goal:** The codebase is free of the old check-in and task time tracking systems — new `work_sessions` schema is in place and ready to be built on.
+
+**Depends on:** Phase 26 (complete)
+**Requirements:** SESS-06, CLEAN-01, CLEAN-02
+
+**Success Criteria** (what must be TRUE):
+
+1. `work_sessions` table exists with correct schema — old `daily_checkins` table is either removed or preserved as archive with no active references
+2. `TaskTimeTracker` component and timer UI are gone from task cards — no timer buttons, start/stop controls, or duration displays remain
+3. `task_time_logs` table references are removed from all queries — `team-dashboard.ts` and any other action files query without it
+4. App builds clean (`npx tsc --noEmit`) with no orphan imports or missing module errors
+
+**Plans:** TBD
 
 Plans:
 
-- [ ] 26-01-PLAN.md — Delete learning system + migrate daily_checkins, owner_updates, task_time_logs tables
-- [ ] 26-02-PLAN.md — Fix hardcoded team members in daily-flow.ts with dynamic profile query
-- [ ] 26-03-PLAN.md — Remove VAPI from project creation wizard
-- [ ] 26-04-PLAN.md — Check-in actions, owner update actions, time log actions + task completion notification
-- [ ] 26-05-PLAN.md — Team dashboard data action + morning email cron
-- [ ] 26-06-PLAN.md — Team task container + daily check-in modal (dashboard UI)
-- [ ] 26-07-PLAN.md — Owner updates banner/compose + task time tracker UI
+- [ ] 28-01: Create work_sessions table migration + remove task_time_logs references from queries
+- [ ] 28-02: Remove TaskTimeTracker component + all timer UI from task cards
 
-**Success Criteria:**
+#### Phase 29: Session Clock-In / Clock-Out
 
-1. Learning system tables, actions, and components are fully removed — no orphan references
-2. `daily-flow.ts` dynamically queries profiles instead of hardcoding emails
-3. Employees see a check-in prompt on ERP open if they haven't checked in today — owner sees all check-ins
-4. Completing a task fires an in-app notification to the task creator / admin
-5. Cron sends morning email to each user with their due/overdue tasks and meetings
-6. Dashboard shows a team task container where managers see all employees' tasks and employees see their own — grouped by status, scannable
-7. Employees can log start/finish time on tasks — duration is calculated and visible
-8. Owner can post updates/notes to employees — employees see them on login and can acknowledge
-9. Creating a project with GitHub+Vercel auto-creates repo, Vercel project, and connects them
-10. VAPI removed from project creation wizard
-11. All new UI passes `/critique` + `/polish` + `/harden` — consistent with existing ERP aesthetic
+**Goal:** Employees can clock in when they start working (selecting a project) and clock out with a summary — the core session loop is fully functional.
+
+**Depends on:** Phase 28
+**Requirements:** SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, CLEAN-03, CLEAN-04
+
+**Success Criteria** (what must be TRUE):
+
+1. Employee opening the ERP app with no active session sees a clock-in modal — they cannot dismiss it without selecting a project and clocking in
+2. Clock-in modal shows only the employee's assigned projects (not all projects) to select from
+3. A persistent clock-out button is visible in the header/sidebar throughout the session — always accessible from any page
+4. Clicking clock-out opens a summary form — the session cannot close without a text summary of work completed
+5. Multiple sessions per day work correctly — an employee who clocked out can clock back in and the new session is tracked independently
+6. `/admin/attendance` page shows session-based data (project, start time, end time, duration, summary) instead of morning/evening check-in format
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 29-01: Session server actions (clock-in, clock-out, get active session, get today's sessions)
+- [ ] 29-02: Clock-in modal (forced on open, project selection from assignments)
+- [ ] 29-03: Persistent clock-out button + clock-out summary modal
+- [ ] 29-04: Update /admin/attendance page to session model
+
+#### Phase 30: Live Status Dashboard
+
+**Goal:** Fawzi can see at a glance who is currently working, on which project, for how long — and can drill into session history for any employee.
+
+**Depends on:** Phase 29
+**Requirements:** LIVE-01, LIVE-02, LIVE-03
+
+**Success Criteria** (what must be TRUE):
+
+1. Admin dashboard shows each employee's current status: clocked in (green indicator, project name, session duration ticking) or offline (red/grey indicator, time since last session)
+2. Status indicators refresh automatically via SWR polling — no manual reload needed
+3. Admin can select any employee and date to view their session history for that day (sessions list with project, start/end, duration, summary)
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 30-01: Live status data action + SWR hook for employee statuses
+- [ ] 30-02: Live status panel UI on admin dashboard (employee cards with active/offline state)
+- [ ] 30-03: Session history view for admin (per-employee, per-date drill-down)
+
+#### Phase 31: Clock-Out Enforcement
+
+**Goal:** Employees who forget or try to skip clocking out are caught — idle detection, planned logout reminders, and browser exit warnings keep sessions honest.
+
+**Depends on:** Phase 29
+**Requirements:** ENFC-01, ENFC-02, ENFC-03, ENFC-04
+
+**Success Criteria** (what must be TRUE):
+
+1. After a configurable idle period with no mouse/keyboard activity, a "Are you still working?" prompt appears — the session does not silently continue
+2. If an employee set a planned logout time and it passes while still clocked in, a banner reminder appears prompting them to clock out
+3. Closing or refreshing the browser tab while clocked in shows a native beforeunload warning — the session is not silently abandoned
+4. If an employee dismisses the idle prompt and remains idle for an extended period, the session auto-closes with a note indicating it was auto-closed due to inactivity
+
+**Plans:** TBD
+
+Plans:
+
+- [ ] 31-01: Idle detection hook + "still working?" prompt + auto clock-out after extended idle
+- [ ] 31-02: Planned logout banner reminder + beforeunload warning
 
 ---
 
-## Build Order
+## Progress
 
-### Wave 1: Cleanup & Data Layer
-
-1. Delete learning system (migration + code removal)
-2. Fix `daily-flow.ts` hardcoded emails
-3. Create `daily_checkins` table + server actions
-4. Add `started_at`, `finished_at`, `time_spent_minutes` fields to tasks (or separate `task_time_logs` table)
-5. Wire `notifyTaskCompleted` in task status change flow
-6. Create `owner_updates` table (message, target user/all, read status)
-
-### Wave 2: Backend — Check-ins, Time, Email, Provisioning
-
-7. Daily check-in server actions (create, get today's, get by person/date)
-8. Task time logging actions (start, finish, get time for task)
-9. Morning email cron endpoint + Resend template
-10. Team dashboard data action (tasks grouped by assignee + status)
-11. Owner updates server actions (create, get unread, acknowledge)
-12. Fix/verify GitHub auto-provisioning (create repo via GitHub API)
-13. Fix/verify Vercel auto-provisioning (create project, connect to repo)
-14. Remove VAPI from project wizard options
-
-### Wave 3: Frontend — Dashboard & UI
-
-15. Team task dashboard container component (replaces/enhances schedule block)
-16. Task time logging UI (start/stop buttons on task cards)
-17. Daily check-in prompt modal + owner check-in view
-18. Owner updates compose UI + employee update banner/card
-19. Morning email template design
-
-### Wave 4: Design Quality
-
-20. Run `/critique` on all new components
-21. Run `/polish` for final detail pass
-22. Run `/harden` for edge cases, empty states, loading states
-
----
-
-_Roadmap created: 2026-03-15_
-_Last updated: 2026-03-15 — Phase 26 planned (7 plans, 3 waves)_
+| Phase                            | Milestone | Plans Complete | Status      | Completed  |
+| -------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-26. (Phases 1-26)              | v1.0–v2.0 | All            | Complete    | 2026-03-24 |
+| 28. DB Migration & Cleanup       | v2.1      | 0/2            | Not started | -          |
+| 29. Session Clock-In / Clock-Out | v2.1      | 0/4            | Not started | -          |
+| 30. Live Status Dashboard        | v2.1      | 0/3            | Not started | -          |
+| 31. Clock-Out Enforcement        | v2.1      | 0/2            | Not started | -          |
