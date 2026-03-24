@@ -3,6 +3,7 @@
 import { useState, useTransition, useCallback, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { MobileMenuButton } from '@/components/mobile-menu-button';
 import {
   ArrowLeft,
   Folder,
@@ -254,6 +255,7 @@ export function ProjectDetailView({
       <header className="relative shrink-0 border-b border-border/40 bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <MobileMenuButton />
             <Link
               href="/projects"
               className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/50 bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
