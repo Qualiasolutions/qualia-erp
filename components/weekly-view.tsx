@@ -257,8 +257,12 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
           </div>
         </div>
 
-        {/* ===== Day Headers ===== */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
+        {/* ===== Day Headers =====
+             scrollbar-gutter: stable keeps header aligned with the scrollable grid below */}
+        <div
+          className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border"
+          style={{ scrollbarGutter: 'stable', overflowY: 'hidden' }}
+        >
           <div className="border-r border-border" />
           {days.map((day) => {
             const isToday = isTodayInTz(day);
@@ -308,7 +312,11 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
         </div>
 
         {/* ===== Time Grid ===== */}
-        <div ref={scrollRef} className="overflow-y-auto" style={{ maxHeight: '720px' }}>
+        <div
+          ref={scrollRef}
+          className="overflow-y-auto"
+          style={{ maxHeight: '720px', scrollbarGutter: 'stable' }}
+        >
           <div
             className="grid grid-cols-[60px_repeat(7,1fr)]"
             style={{ height: `${totalGridHeight}px` }}

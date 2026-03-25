@@ -78,34 +78,33 @@
   }
 
   .dark {
-    /* Dark mode — V0 blue-purple tinted darks (oklch → HSL)
-       Background hue 250 (blue-purple) for cooler, modern feel.
-       Primary stays teal 185 for brand identity. Accent is violet 290. */
-    --background: 250 5% 8%;
+    /* Dark mode — V0 exact oklch colors converted to HSL via precise math.
+       Near-black background, blue-tinted darks, vivid teal primary, violet accent. */
+    --background: 240 13% 3%;
     --foreground: 0 0% 93%;
-    --card: 250 6% 11%;
+    --card: 228 17% 6%;
     --card-foreground: 0 0% 93%;
-    --popover: 250 6% 11%;
+    --popover: 228 17% 6%;
     --popover-foreground: 0 0% 93%;
-    --primary: 185 55% 48%;
-    --primary-foreground: 250 5% 8%;
-    --secondary: 250 6% 15%;
+    --primary: 175 100% 40%;
+    --primary-foreground: 240 13% 3%;
+    --secondary: 225 14% 11%;
     --secondary-foreground: 0 0% 93%;
-    --muted: 250 6% 15%;
-    --muted-foreground: 0 0% 55%;
-    --accent: 290 40% 52%;
+    --muted: 225 14% 11%;
+    --muted-foreground: 0 0% 56%;
+    --accent: 264 75% 68%;
     --accent-foreground: 0 0% 93%;
     --destructive: 5 55% 40%;
     --destructive-foreground: 15 65% 55%;
-    --border: 250 6% 18%;
-    --input: 250 6% 15%;
-    --ring: 185 55% 48%;
+    --border: 228 14% 14%;
+    --input: 225 14% 11%;
+    --ring: 175 100% 40%;
 
-    /* Surface layers — blue-purple tinted depth steps */
-    --surface-1: 250 6% 11%;
-    --surface-2: 250 6% 15%;
-    --surface-3: 250 5% 19%;
-    --surface-hover: 250 6% 13%;
+    /* Surface layers — near-black depth steps */
+    --surface-1: 228 17% 6%;
+    --surface-2: 225 14% 11%;
+    --surface-3: 225 12% 15%;
+    --surface-hover: 228 15% 8%;
 
     /* Status colors — brighter for dark bg */
     --success: 155 60% 48%;
