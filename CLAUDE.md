@@ -42,7 +42,7 @@ npm test -- path/to/test # Run single test file
 
 ### Server Actions Pattern
 
-All mutations in `app/actions.ts` (~2900 lines) + `app/actions/*.ts`. Return `ActionResult`:
+All mutations in `app/actions/*.ts` (45 domain modules). `app/actions.ts` is a re-export router. Return `ActionResult`:
 
 ```typescript
 type ActionResult = { success: boolean; error?: string; data?: unknown };
@@ -50,7 +50,7 @@ type ActionResult = { success: boolean; error?: string; data?: unknown };
 
 Action files:
 
-- `app/actions.ts` - Main actions (issues, projects, clients, meetings, workspaces)
+- `app/actions.ts` - Re-export router (backward compatibility)
 - `app/actions/index.ts` - Re-exports + authorization helpers (`isUserAdmin`, `canDelete*`)
 - `app/actions/shared.ts` - `ActionResult` type, permission helpers
 - `app/actions/inbox.ts` - Task CRUD with inbox filtering
@@ -67,7 +67,7 @@ Action files:
 
 ```
 app/
-├── actions.ts              # Main server actions
+├── actions.ts              # Re-export router
 ├── actions/                # Domain-specific actions
 ├── api/chat/              # AI chat endpoint (Gemini)
 ├── api/vapi/webhook/      # Voice AI webhooks
@@ -94,7 +94,7 @@ lib/
 
 components/
 ├── ui/                     # shadcn/ui primitives
-├── daily-flow/             # Dashboard components
+├── today-dashboard/        # Dashboard components
 ├── project-wizard/         # Multi-step project creation
 
 types/database.ts           # Auto-generated Supabase types + enum constants
@@ -155,14 +155,12 @@ Supabase returns FKs as arrays. Use the helper or normalize manually:
 ```typescript
 import { normalizeFKResponse } from '@/lib/server-utils';
 
-// Preferred: Use the helper
-const normalized = normalizeFKResponse(data, ['project', 'client', 'assigned_to']);
+// Normalize a single FK field (returns T | null)
+const project = normalizeFKResponse(data.project);
+const client = normalizeFKResponse(data.client);
 
-// Manual: For simple cases
-return {
-  ...data,
-  project: Array.isArray(data.project) ? data.project[0] || null : data.project,
-};
+// Manual: For inline cases
+const assigned = Array.isArray(data.assigned_to) ? data.assigned_to[0] || null : data.assigned_to;
 ```
 
 ## Database
@@ -196,9 +194,6 @@ import { Tables, Enums, Task, Project, Client, Profile } from '@/types/database'
 // Use generated types
 const project: Tables<'projects'> = ...;
 const status: Enums<'project_status'> = 'Active';
-
-// Use constants (also exported from types/database.ts)
-import { TASK_STATUSES, PROJECT_TYPES, LEAD_STATUSES, PROJECT_STATUSES } from '@/types/database';
 ```
 
 ### Key Enums
@@ -212,23 +207,22 @@ import { TASK_STATUSES, PROJECT_TYPES, LEAD_STATUSES, PROJECT_STATUSES } from '@
 - `user_role`: `admin`, `employee`
 - `deployment_platform`: `vercel`, `squarespace`, `railway`, `meta`, `instagram`, `google_ads`, `tiktok`, `linkedin`, `none`
 
-Use exported constants for type safety: `TASK_STATUSES`, `PROJECT_TYPES`, `LEAD_STATUSES`, `PROJECT_STATUSES`, `PROJECT_GROUPS`, `DEPLOYMENT_PLATFORMS`
+Note: Enum constants like `PROJECT_TYPES`, `TASK_STATUSES` are defined locally in components that need them, not centrally exported.
 
 ## Routes
 
-| Route                    | Page                | Description                                |
-| ------------------------ | ------------------- | ------------------------------------------ |
-| `/`                      | `today-page.tsx`    | Dashboard with tasks, meetings, daily flow |
-| `/projects`              | List all projects   |                                            |
-| `/projects/[id]`         | Project detail      | Tasks, team, activity                      |
-| `/projects/[id]/roadmap` | Project roadmap     | Phases, milestones                         |
-| `/clients`               | CRM list            |                                            |
-| `/clients/[id]`          | Client detail       | Contacts, activities                       |
-| `/schedule`              | Team schedule       | Calendar view                              |
-| `/team`                  | Team members        |                                            |
-| `/payments`              | Payment tracking    |                                            |
-| `/documents`             | Document management |                                            |
-| `/settings`              | User settings       |                                            |
+| Route                    | Page              | Description                                |
+| ------------------------ | ----------------- | ------------------------------------------ |
+| `/`                      | `today-page.tsx`  | Dashboard with tasks, meetings, daily flow |
+| `/projects`              | List all projects |                                            |
+| `/projects/[id]`         | Project detail    | Tasks, team, activity                      |
+| `/projects/[id]/roadmap` | Project roadmap   | Phases, milestones                         |
+| `/clients`               | CRM list          |                                            |
+| `/clients/[id]`          | Client detail     | Contacts, activities                       |
+| `/schedule`              | Team schedule     | Calendar view                              |
+| `/team`                  | Team members      |                                            |
+| `/payments`              | Payment tracking  |                                            |
+| `/settings`              | User settings     |                                            |
 
 ## Auth & Middleware
 
@@ -242,11 +236,17 @@ Use exported constants for type safety: `TASK_STATUSES`, `PROJECT_TYPES`, `LEAD_
 
 **Z-index scale** (from tailwind.config.ts):
 
+- `z-inline-edit: 35`
 - `z-dropdown: 40`
+- `z-sticky: 45`
 - `z-modal: 50`
 - `z-popover: 55`
+- `z-overlay: 60`
+- `z-assistant: 65`
 - `z-toast: 70`
+- `z-tooltip: 80`
 - `z-command: 90`
+- `z-max: 100`
 
 Colors from `lib/color-constants.ts` - use `ISSUE_STATUS_COLORS`, `ISSUE_PRIORITY_COLORS`, etc.
 
@@ -270,7 +270,7 @@ Required (see `.env.example`):
 ## Deployment
 
 - **Vercel Team**: `archivedqualia` (Archived) — NOT `qualiasolutionscy`
-- **Production**: https://qualia-erp.vercel.app (deploy via `vercel --prod --scope archivedqualia`)
+- **Production**: https://portal.qualiasolutions.net (deploy via `vercel --prod --scope archivedqualia`)
 - **Supabase Ref**: `vbpzaiqovffpsroxaulv`
 - **Pre-commit hooks**: ESLint, Prettier, TypeScript (via husky + lint-staged)
 
@@ -278,16 +278,16 @@ Required (see `.env.example`):
 
 **Active Plan**: `~/.claude/plans/encapsulated-wibbling-fox.md`
 
-| Priority | Issue                                              | Status                          |
-| -------- | -------------------------------------------------- | ------------------------------- |
-| P0       | IDOR in file downloads (`project-files.ts`)        | Pending                         |
-| P0       | Missing auth in `deleteTask()`                     | Pending                         |
-| P0       | Webhook secret enforcement in prod                 | Pending                         |
-| P1       | Split `actions.ts` (2,940 lines) into domain files | DONE (44 files in app/actions/) |
-| P1       | Increase test coverage (1.68% → 50%)               | Pending                         |
-| P2       | Fix N+1 query in `getProjectById`                  | Pending                         |
-| P2       | Add virtualization to TasksWidget                  | Pending                         |
-| P2       | Implement Redis rate limiting                      | Pending                         |
+| Priority | Issue                                              | Status                                       |
+| -------- | -------------------------------------------------- | -------------------------------------------- |
+| P0       | IDOR in file downloads (`project-files.ts`)        | DONE (canAccessProject/canDeleteProjectFile) |
+| P0       | Missing auth in `deleteTask()`                     | DONE (canModifyTask check)                   |
+| P0       | Webhook secret enforcement in prod                 | DONE (rejects if no secret in prod)          |
+| P1       | Split `actions.ts` (2,940 lines) into domain files | DONE (45 files in app/actions/)              |
+| P1       | Increase test coverage (1.68% → 50%)               | Pending                                      |
+| P2       | Fix N+1 query in `getProjectById`                  | Pending                                      |
+| P2       | Add virtualization to TasksWidget                  | Pending                                      |
+| P2       | Implement Redis rate limiting                      | Pending                                      |
 
 ## API Routes
 
