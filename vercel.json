@@ -27,7 +27,7 @@
     },
     {
       "path": "/api/cron/attendance-report",
-      "schedule": "0 18 * * 1-5"
+      "schedule": "30 21 * * 0-5"
     }
   ]
 }

@@ -4,3 +4,10 @@ export const TEAM_MEMBERS = {
   MOAYAD_ID: 'e0472b7b-4378-4311-9c45-9d3e8ca94bd2',
   HASAN_ID: 'bac4ac28-1414-4346-bd5e-c4309f84db01',
 } as const;
+
+// Work schedules: days are JS getUTCDay() values (0=Sun, 1=Mon, ..., 6=Sat)
+// Times are in Cyprus local time for reference only
+export const WORK_SCHEDULES: Record<string, { days: number[]; shift: string }> = {
+  [TEAM_MEMBERS.MOAYAD_ID]: { days: [0, 1, 2, 3, 4, 5], shift: '8 AM – 4 PM' }, // Sun-Fri
+  [TEAM_MEMBERS.HASAN_ID]: { days: [1, 2, 3, 4, 5], shift: '6 PM – 11 PM' }, // Mon-Fri
+};
