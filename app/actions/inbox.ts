@@ -32,6 +32,7 @@ export type Task = {
   scheduled_start_time: string | null;
   scheduled_end_time: string | null;
   show_in_inbox: boolean;
+  requires_attachment: string | null;
   created_at: string;
   updated_at: string;
   creator?: {
@@ -114,6 +115,7 @@ export async function getTasks(
       scheduled_start_time,
       scheduled_end_time,
       show_in_inbox,
+      requires_attachment,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -238,6 +240,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     phase_id,
     scheduled_start_time,
     scheduled_end_time,
+    requires_attachment,
   } = validation.data;
 
   // Get workspace ID from form or from user's default
@@ -305,6 +308,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       show_in_inbox: show_in_inbox ?? true, // Default to true when no project
       scheduled_start_time: scheduled_start_time || null,
       scheduled_end_time: scheduled_end_time || null,
+      requires_attachment: requires_attachment?.trim() || null,
     })
     .select()
     .single();
@@ -366,6 +370,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     show_in_inbox,
     scheduled_start_time,
     scheduled_end_time,
+    requires_attachment,
   } = validation.data;
 
   if (!id) {
@@ -392,6 +397,8 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (scheduled_start_time !== undefined)
     updateData.scheduled_start_time = scheduled_start_time || null;
   if (scheduled_end_time !== undefined) updateData.scheduled_end_time = scheduled_end_time || null;
+  if (requires_attachment !== undefined)
+    updateData.requires_attachment = requires_attachment?.trim() || null;
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
@@ -541,6 +548,7 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       scheduled_start_time,
       scheduled_end_time,
       show_in_inbox,
+      requires_attachment,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -757,6 +765,7 @@ export async function getScheduledTasks(workspaceId?: string | null): Promise<Ta
       scheduled_start_time,
       scheduled_end_time,
       show_in_inbox,
+      requires_attachment,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -906,6 +915,7 @@ export async function getBacklogTasks(workspaceId?: string | null): Promise<Task
       scheduled_start_time,
       scheduled_end_time,
       show_in_inbox,
+      requires_attachment,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),

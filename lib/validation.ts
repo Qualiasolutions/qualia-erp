@@ -51,6 +51,11 @@ export const createTaskSchema = z.object({
   phase_id: z.string().uuid('Invalid phase ID').optional().nullable(),
   scheduled_start_time: z.string().optional().nullable(),
   scheduled_end_time: z.string().optional().nullable(),
+  requires_attachment: z
+    .string()
+    .max(500, 'Requirement description too long')
+    .optional()
+    .nullable(),
 });
 
 export const updateTaskSchema = z.object({
@@ -65,6 +70,7 @@ export const updateTaskSchema = z.object({
   show_in_inbox: z.boolean().optional(),
   scheduled_start_time: z.string().optional().nullable(),
   scheduled_end_time: z.string().optional().nullable(),
+  requires_attachment: z.string().max(500).optional().nullable(),
 });
 
 // =====================

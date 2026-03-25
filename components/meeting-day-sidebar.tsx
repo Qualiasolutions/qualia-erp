@@ -1,16 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  format,
-  parseISO,
-  startOfWeek,
-  endOfWeek,
-  eachDayOfInterval,
-  isToday,
-  isBefore,
-  startOfDay,
-} from 'date-fns';
+import { format, parseISO, isToday, isBefore, startOfDay } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Clock, Video, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,9 +29,7 @@ export function MeetingDaySidebar({ meetings }: MeetingDaySidebarProps) {
 
   const weekDays = useMemo(() => {
     const now = toZonedTime(new Date(), timezone);
-    const start = startOfWeek(now);
-    const end = endOfWeek(now);
-    return eachDayOfInterval({ start, end });
+    return [startOfDay(now)];
   }, [timezone]);
 
   const meetingsByDay = useMemo(() => {
@@ -72,7 +61,7 @@ export function MeetingDaySidebar({ meetings }: MeetingDaySidebarProps) {
     <div className="flex h-full flex-col">
       <div className="px-4 pb-2 pt-4">
         <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-          This Week
+          Today
         </h3>
       </div>
 

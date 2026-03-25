@@ -13,6 +13,7 @@ import {
   X,
   Clock,
   Timer,
+  Paperclip,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -85,6 +86,7 @@ export function NewTaskModal({
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [scheduledTime, setScheduledTime] = useState<string>('');
   const [duration, setDuration] = useState<string>('30');
+  const [requiresAttachment, setRequiresAttachment] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -100,6 +102,7 @@ export function NewTaskModal({
       setDueDate(undefined);
       setScheduledTime(defaultScheduledTime || '');
       setDuration('60');
+      setRequiresAttachment('');
       setError(null);
       setSuccess(false);
       setShowDescription(false);
@@ -145,6 +148,10 @@ export function NewTaskModal({
         const endTime = addMinutes(startTime, parseInt(duration, 10));
         fd.set('scheduled_start_time', startTime.toISOString());
         fd.set('scheduled_end_time', endTime.toISOString());
+      }
+
+      if (requiresAttachment.trim()) {
+        fd.set('requires_attachment', requiresAttachment.trim());
       }
 
       return fd;
@@ -412,6 +419,17 @@ export function NewTaskModal({
                     <Calendar mode="single" selected={dueDate} onSelect={setDueDate} />
                   </PopoverContent>
                 </Popover>
+              </MetadataField>
+
+              {/* Require attachment */}
+              <MetadataField label="Require upload" icon={Paperclip}>
+                <input
+                  type="text"
+                  value={requiresAttachment}
+                  onChange={(e) => setRequiresAttachment(e.target.value)}
+                  placeholder="e.g. Screenshot of completed work"
+                  className="h-8 w-full bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none"
+                />
               </MetadataField>
 
               {/* Duration — only when time is set */}

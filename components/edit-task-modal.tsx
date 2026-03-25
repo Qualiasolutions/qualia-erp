@@ -352,6 +352,21 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             </Popover>
           </div>
 
+          {/* Require attachment to mark done */}
+          <div className="space-y-2">
+            <Label htmlFor="edit-requires_attachment">Require upload to complete</Label>
+            <Input
+              id="edit-requires_attachment"
+              name="requires_attachment"
+              defaultValue={task.requires_attachment || ''}
+              placeholder="e.g. Screenshot of completed work"
+              className="border-border bg-background"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              If set, assignee must upload a file before marking this task done
+            </p>
+          </div>
+
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 
           <div className="flex gap-2">

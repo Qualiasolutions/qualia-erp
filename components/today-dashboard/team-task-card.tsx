@@ -229,7 +229,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
               e.stopPropagation();
               handleView();
             }}
-            className="flex items-center gap-1 rounded-md bg-qualia-500/10 px-2 py-1 text-[11px] font-medium text-qualia-600 opacity-0 transition-all duration-200 hover:bg-qualia-500/20 group-hover:opacity-100 dark:text-qualia-400"
+            className="flex items-center gap-1 rounded-md bg-qualia-500/10 px-2 py-1 text-[11px] font-medium text-qualia-600 transition-all duration-200 hover:bg-qualia-500/20 dark:text-qualia-400"
           >
             <Eye className="size-3" />
             View

@@ -296,6 +296,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
       status: 'Todo',
       priority: 'No Priority',
       show_in_inbox: true,
+      requires_attachment: null,
       item_type: 'task',
       workspace_id: '',
       creator_id: null,

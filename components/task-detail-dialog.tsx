@@ -2,13 +2,23 @@
 
 import { format, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { CheckCircle2, Circle, Clock, CalendarDays, FolderOpen, User, Pencil } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  Clock,
+  CalendarDays,
+  FolderOpen,
+  User,
+  Pencil,
+  AlertTriangle,
+} from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/lib/schedule-utils';
 import { RichText } from '@/components/ui/rich-text';
 import { TaskAttachments } from '@/components/task-attachments';
+import { useTaskAttachments } from '@/lib/swr';
 import type { Task } from '@/app/actions/inbox';
 
 interface TaskDetailDialogProps {
@@ -43,10 +53,12 @@ export function TaskDetailDialog({
   isDone: isDoneProp,
 }: TaskDetailDialogProps) {
   const { timezone } = useTimezone();
+  const { attachments } = useTaskAttachments(task?.id ?? '');
 
   if (!task) return null;
 
   const done = isDoneProp ?? task.status === 'Done';
+  const needsAttachment = !done && !!task.requires_attachment && attachments.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -60,8 +72,12 @@ export function TaskDetailDialog({
           <div className="flex items-start gap-3">
             <button
               type="button"
-              onClick={() => onToggleDone(task)}
-              className="group/check mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full transition-all hover:bg-muted/60 active:scale-90"
+              onClick={() => !needsAttachment && onToggleDone(task)}
+              disabled={needsAttachment}
+              className={cn(
+                'group/check mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full transition-all hover:bg-muted/60 active:scale-90',
+                needsAttachment && 'cursor-not-allowed opacity-50'
+              )}
               aria-label={done ? 'Mark incomplete' : 'Mark complete'}
             >
               {done ? (
@@ -137,6 +153,23 @@ export function TaskDetailDialog({
               </div>
             )}
           </div>
+
+          {/* Attachment requirement notice */}
+          {task.requires_attachment && (
+            <div
+              className={cn(
+                'mt-3 flex items-start gap-2 rounded-lg px-3 py-2 text-xs',
+                needsAttachment
+                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+              )}
+            >
+              <AlertTriangle className="mt-0.5 size-3 shrink-0" />
+              <span>
+                <span className="font-medium">Required upload:</span> {task.requires_attachment}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Scrollable content area */}
@@ -171,28 +204,38 @@ export function TaskDetailDialog({
             <Pencil className="size-3.5" />
             Edit
           </Button>
-          <Button
-            type="button"
-            variant={done ? 'outline' : 'default'}
-            size="sm"
-            onClick={() => onToggleDone(task)}
-            className={cn(
-              'ml-auto gap-1.5',
-              !done && 'bg-emerald-600 text-white hover:bg-emerald-700'
+          <div className="ml-auto flex items-center gap-2">
+            {needsAttachment && (
+              <span className="flex items-center gap-1 text-[11px] text-amber-500">
+                <AlertTriangle className="size-3" />
+                Upload required
+              </span>
             )}
-          >
-            {done ? (
-              <>
-                <Circle className="size-3.5" />
-                Reopen
-              </>
-            ) : (
-              <>
-                <CheckCircle2 className="size-3.5" />
-                Mark Done
-              </>
-            )}
-          </Button>
+            <Button
+              type="button"
+              variant={done ? 'outline' : 'default'}
+              size="sm"
+              disabled={needsAttachment}
+              onClick={() => onToggleDone(task)}
+              className={cn(
+                'gap-1.5',
+                !done && !needsAttachment && 'bg-emerald-600 text-white hover:bg-emerald-700',
+                needsAttachment && 'cursor-not-allowed opacity-50'
+              )}
+            >
+              {done ? (
+                <>
+                  <Circle className="size-3.5" />
+                  Reopen
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 className="size-3.5" />
+                  Mark Done
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
