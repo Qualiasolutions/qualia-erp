@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-24)
 Phase: 30 of 31 (Live Status Dashboard)
 Plan: 0 of 3 in current phase
 Status: Ready to plan
-Last activity: 2026-03-24 — Phase 29 verified ✓ (session clock-in/out fully functional)
+Last activity: 2026-03-25 — Quick task 29: review blockers fixed + DB performance advisors cleaned
 
 Progress: [██████░░░░] 55% (v2.1 scope, 6/11 plans)
 
@@ -59,14 +59,14 @@ None.
 
 ### Quick Tasks Completed (last 5)
 
-| #   | Description                                                          | Date       | Commit  |
-| --- | -------------------------------------------------------------------- | ---------- | ------- |
-| 26  | Status page visible to employees/managers                            | 2026-03-20 | —       |
-| 27  | Responsive design audit and fixes                                    | 2026-03-24 | 094dc77 |
-| 28  | Fix review blockers — double cast, plaintext password, touch targets | 2026-03-24 | 334ba2e |
+| #   | Description                                                                   | Date       | Commit  |
+| --- | ----------------------------------------------------------------------------- | ---------- | ------- |
+| 27  | Responsive design audit and fixes                                             | 2026-03-24 | 094dc77 |
+| 28  | Fix review blockers — double cast, plaintext password, touch targets          | 2026-03-24 | 334ba2e |
+| 29  | Fix review blockers — server-side attachment enforcement, admin-only, DB perf | 2026-03-25 | 380cb4b |
 
 ## Session Continuity
 
-Last session: 2026-03-24
-Stopped at: Phase 29 complete — all 4 plans done
+Last session: 2026-03-25
+Stopped at: Quick task 29 complete — all review blockers fixed + Supabase advisors cleaned
 **Next action:** Execute Phase 30 — live status / oversight dashboard (`/qualia:execute-phase 30`)
