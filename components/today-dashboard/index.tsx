@@ -26,7 +26,6 @@ import {
 } from '@/components/ui/select';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { OwnerUpdatesBanner } from './owner-updates-banner';
-import { OwnerUpdatesCompose } from './owner-updates-compose';
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
@@ -263,18 +262,7 @@ export function TodayDashboard({
 
           {/* ── BOTTOM ROW: Currently Building (full width) ── */}
           <div className="mt-3 shrink-0 animate-fade-in">
-            {!isNonAdmin ? (
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
-                <div className="min-w-0 flex-1">
-                  <BuildingProjectsRow building={building} />
-                </div>
-                <div className="sm:w-80 xl:w-96">
-                  <OwnerUpdatesCompose workspaceId={workspaceId} profiles={profiles} />
-                </div>
-              </div>
-            ) : (
-              <BuildingProjectsRow building={building} />
-            )}
+            <BuildingProjectsRow building={building} />
           </div>
         </div>
       </main>
