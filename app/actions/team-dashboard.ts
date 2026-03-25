@@ -12,6 +12,7 @@ export interface TeamMemberTask {
   due_date: string | null;
   completed_at: string | null;
   assignee_id: string | null;
+  scheduled_start_time: string | null;
   project: { id: string; name: string; project_type: string | null } | null;
 }
 
@@ -127,6 +128,7 @@ async function fetchTasksForProfile(
       due_date,
       completed_at,
       assignee_id,
+      scheduled_start_time,
       project:projects(id, name, project_type)
     `
     )
@@ -148,6 +150,7 @@ async function fetchTasksForProfile(
       due_date: string | null;
       completed_at: string | null;
       assignee_id: string | null;
+      scheduled_start_time: string | null;
       project:
         | { id: string; name: string; project_type: string | null }
         | { id: string; name: string; project_type: string | null }[]
@@ -163,13 +166,24 @@ async function fetchTasksForProfile(
         due_date: t.due_date,
         completed_at: t.completed_at,
         assignee_id: t.assignee_id,
+        scheduled_start_time: t.scheduled_start_time,
         project,
       };
     }
   );
 
-  // Sort by priority then due_date ASC (nulls last)
+  // Sort: scheduled tasks first (by start time), then by priority, then due_date
   tasks.sort((a, b) => {
+    // Scheduled tasks come first, sorted chronologically
+    const aScheduled = !!a.scheduled_start_time;
+    const bScheduled = !!b.scheduled_start_time;
+    if (aScheduled && bScheduled) {
+      return a.scheduled_start_time!.localeCompare(b.scheduled_start_time!);
+    }
+    if (aScheduled && !bScheduled) return -1;
+    if (!aScheduled && bScheduled) return 1;
+
+    // Non-scheduled: sort by priority then due_date
     const pA = PRIORITY_ORDER[a.priority] ?? 4;
     const pB = PRIORITY_ORDER[b.priority] ?? 4;
     if (pA !== pB) return pA - pB;

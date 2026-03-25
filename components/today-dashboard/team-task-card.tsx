@@ -14,23 +14,14 @@ import {
   Smartphone,
   Megaphone,
   Folder,
-  MoreHorizontal,
-  Edit2,
-  Trash2,
   Eye,
 } from 'lucide-react';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
-import { updateTask, deleteTask, getTaskById, type Task } from '@/app/actions/inbox';
+import { updateTask, getTaskById, type Task } from '@/app/actions/inbox';
 import { invalidateTeamDashboard, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { TaskDetailDialog } from '@/components/task-detail-dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 const PROJECT_TYPE_STYLES: Record<
   string,
@@ -93,10 +84,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
   // currentUserId kept in props interface for API compatibility but not used after timer removal
   onTaskUpdate,
   workspaceId,
-  isAdmin,
 }: TeamTaskCardProps) {
-  const [marking, setMarking] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [viewTask, setViewTask] = useState<Task | null>(null);
@@ -124,35 +112,13 @@ export const TeamTaskCard = memo(function TeamTaskCard({
     }
   };
 
-  const handleEdit = async () => {
-    const result = await getTaskById(task.id);
-    if (result.success && result.data) {
-      setEditTask(result.data as Task);
-      setEditOpen(true);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (deleting) return;
-    setDeleting(true);
-    const result = await deleteTask(task.id);
-    if (result.success) {
-      if (workspaceId) invalidateTeamDashboard(workspaceId);
-      invalidateInboxTasks(true);
-      invalidateDailyFlow(true);
-      onTaskUpdate?.();
-    }
-    setDeleting(false);
-  };
-
   return (
     <>
       <div
         className={cn(
           'group relative flex items-center gap-3 px-4 py-2.5 transition-all duration-200',
           'hover:bg-muted/30',
-          task.status === 'In Progress' && 'bg-blue-500/[0.02]',
-          deleting && 'pointer-events-none opacity-40'
+          task.status === 'In Progress' && 'bg-blue-500/[0.02]'
         )}
       >
         {/* Active task left accent */}
@@ -187,26 +153,12 @@ export const TeamTaskCard = memo(function TeamTaskCard({
           title={task.priority}
         />
 
-        {/* Status circle — clickable to mark as done */}
+        {/* Status circle — opens task detail to mark done from there */}
         <button
           type="button"
-          disabled={marking}
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
-            if (marking) return;
-            setMarking(true);
-            const newStatus = task.status === 'Done' ? 'Todo' : 'Done';
-            const fd = new FormData();
-            fd.set('id', task.id);
-            fd.set('status', newStatus);
-            const result = await updateTask(fd);
-            if (result.success) {
-              if (workspaceId) invalidateTeamDashboard(workspaceId);
-              invalidateInboxTasks(true);
-              invalidateDailyFlow(true);
-              onTaskUpdate?.();
-            }
-            setMarking(false);
+            handleView();
           }}
           className={cn(
             'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
@@ -216,13 +168,12 @@ export const TeamTaskCard = memo(function TeamTaskCard({
             task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
             task.status === 'In Progress' && 'border-blue-500',
             task.status === 'Todo' &&
-              'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50',
-            marking && 'animate-pulse border-emerald-500 bg-emerald-500/20'
+              'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50'
           )}
           title={task.status === 'Done' ? 'Mark as todo' : 'Mark as done'}
         >
           {task.status === 'Done' && <Check className="size-2 text-white" />}
-          {task.status === 'In Progress' && !marking && (
+          {task.status === 'In Progress' && (
             <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
           )}
         </button>
@@ -271,38 +222,18 @@ export const TeamTaskCard = memo(function TeamTaskCard({
             </span>
           )}
 
-          {/* Actions menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="flex size-6 items-center justify-center rounded-md text-muted-foreground/40 opacity-0 transition-all hover:bg-muted/60 hover:text-foreground group-hover:opacity-100"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreHorizontal className="size-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36">
-              <DropdownMenuItem onClick={handleView}>
-                <Eye className="mr-2 size-3.5" />
-                View
-              </DropdownMenuItem>
-              {isAdmin && (
-                <>
-                  <DropdownMenuItem onClick={handleEdit}>
-                    <Edit2 className="mr-2 size-3.5" />
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
-                  >
-                    <Trash2 className="mr-2 size-3.5" />
-                    Delete
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* View button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleView();
+            }}
+            className="flex items-center gap-1 rounded-md bg-qualia-500/10 px-2 py-1 text-[11px] font-medium text-qualia-600 opacity-0 transition-all duration-200 hover:bg-qualia-500/20 group-hover:opacity-100 dark:text-qualia-400"
+          >
+            <Eye className="size-3" />
+            View
+          </button>
         </div>
       </div>
 
