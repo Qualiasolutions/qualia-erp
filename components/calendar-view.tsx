@@ -143,9 +143,11 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-px overflow-hidden rounded-b-xl border-t border-border bg-border">
-          {/* Day Headers */}
+        {/* Calendar Grid — single grid with gap-px for perfect alignment
+            Day headers and day cells are ALL in the same 7-col grid.
+            bg-border fills the 1px gaps to create seamless borders. */}
+        <div className="grid grid-cols-7 gap-px overflow-hidden border-t border-border bg-border">
+          {/* Day Headers — same grid, same columns, perfectly aligned */}
           {DAYS_OF_WEEK.map((day) => (
             <div
               key={day}
@@ -155,7 +157,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
             </div>
           ))}
 
-          {/* Calendar Days */}
+          {/* Calendar Days — continues the same grid */}
           {days.map((day) => {
             const dateKey = format(day, 'yyyy-MM-dd');
             const dayMeetings = meetingsByDate.get(dateKey) || [];
@@ -164,14 +166,14 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
             const isExpanded = expandedDay === dateKey;
 
             return (
-              <button
+              <div
                 key={day.toISOString()}
                 onClick={() => {
                   onDateSelect?.(day);
                   setExpandedDay(isExpanded ? null : dateKey);
                 }}
                 className={cn(
-                  'group relative flex min-h-[96px] flex-col bg-card p-2 text-left transition-colors hover:bg-secondary/50',
+                  'group relative flex h-24 cursor-pointer flex-col bg-card p-2 transition-colors hover:bg-secondary/50',
                   !isCurrentMonthDay && 'bg-card/50'
                 )}
               >
@@ -194,7 +196,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                         key={m.id}
                         className={cn(
                           'h-1.5 w-1.5 rounded-full',
-                          m.client ? 'bg-violet-400' : 'bg-primary'
+                          m.client ? 'bg-accent' : 'bg-primary'
                         )}
                       />
                     ))}
@@ -214,7 +216,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                       return (
                         <div
                           key={meeting.id}
-                          className="group/item relative flex items-center gap-1 truncate rounded bg-violet-500/20 px-1 py-0.5 text-[11px] text-violet-300 transition-colors hover:bg-violet-500/30"
+                          className="group/item relative flex items-center gap-1 truncate rounded bg-accent/20 px-1 py-0.5 text-[11px] text-accent transition-colors hover:bg-accent/30"
                           onClick={(e) => e.stopPropagation()}
                         >
                           {hasLink ? (
@@ -232,7 +234,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                                 e.stopPropagation();
                                 handleEdit(meeting);
                               }}
-                              className="rounded p-0.5 text-muted-foreground hover:bg-violet-500/20 hover:text-violet-400"
+                              className="rounded p-0.5 text-muted-foreground hover:bg-accent/20 hover:text-accent"
                             >
                               <Pencil className="h-2.5 w-2.5" />
                             </button>
@@ -253,19 +255,19 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                     })}
                   </div>
                 )}
-              </button>
+              </div>
             );
           })}
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-end gap-4 border-t border-border px-6 py-3 text-xs text-muted-foreground">
+        <div className="flex items-center justify-end gap-4 px-6 py-3 text-xs text-muted-foreground">
           <div className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-primary" />
             <span>Meetings</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-violet-400" />
+            <span className="h-2 w-2 rounded-full bg-accent" />
             <span>Client meetings</span>
           </div>
         </div>
