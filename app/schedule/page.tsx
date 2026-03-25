@@ -36,21 +36,7 @@ async function ScheduleLoader({ view }: { view: string }) {
 
 function ScheduleSkeleton() {
   return (
-    <div className="space-y-5">
-      {/* Stats skeleton */}
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="h-9 w-10 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-12 animate-pulse rounded bg-muted" />
-        </div>
-        <div className="h-4 w-px bg-border" />
-        <div className="flex items-center gap-4">
-          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
-        </div>
-      </div>
-
-      {/* Two-panel skeleton */}
+    <div>
       <div className="flex gap-5">
         {/* Sidebar skeleton */}
         <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card lg:block">

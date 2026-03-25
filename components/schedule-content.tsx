@@ -3,7 +3,7 @@
 import { useMeetings, type MeetingWithRelations } from '@/lib/swr';
 import { WeeklyView } from '@/components/weekly-view';
 import { CalendarView } from '@/components/calendar-view';
-import { MeetingStats } from '@/components/meeting-stats';
+
 import { MeetingDaySidebar } from '@/components/meeting-day-sidebar';
 
 interface ScheduleContentProps {
@@ -30,8 +30,7 @@ export function ScheduleContent({ view, initialMeetings }: ScheduleContentProps)
     );
 
   return (
-    <div className="space-y-5">
-      <MeetingStats meetings={meetings} />
+    <div>
       <div className="flex gap-5">
         {/* Week sidebar — V0 design */}
         <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card lg:block">
