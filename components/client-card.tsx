@@ -182,7 +182,7 @@ export const ClientCard = memo(function ClientCard({
       )}
 
       {/* Footer Stats */}
-      <div className="flex items-center gap-4 border-t border-border/50 pt-3 text-xs">
+      <div className="flex items-center gap-4 border-t border-border pt-3 text-xs">
         {projectCount > 0 && (
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Folder className="h-3.5 w-3.5" />

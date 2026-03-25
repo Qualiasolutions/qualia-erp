@@ -61,15 +61,15 @@ export function OwnerUpdatesCompose({ workspaceId, profiles }: OwnerUpdatesCompo
   };
 
   return (
-    <div className="h-full overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
+    <div className="h-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       {/* Toggle header */}
       <button
         type="button"
-        className="flex w-full items-center gap-2.5 border-b border-border/20 bg-muted/10 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
+        className="flex w-full items-center gap-2.5 border-b border-border bg-muted/10 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
-          <Send className="size-3.5 shrink-0 text-qualia-500" />
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+          <Send className="size-3.5 shrink-0 text-primary" />
         </div>
         <span className="flex-1 text-[13px] font-semibold tracking-tight text-foreground">
           Post update to team

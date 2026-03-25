@@ -199,7 +199,7 @@ const TaskItem = React.memo(function TaskItem({
           )}
           {task.assignee && (
             <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-qualia-500" />
+              <span className="h-2 w-2 rounded-full bg-primary" />
               <span className="text-muted-foreground">
                 {task.assignee.full_name?.split(' ')[0]}
               </span>
@@ -418,7 +418,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
   return (
     <div className={cn('flex h-full flex-col', isPending && 'pointer-events-none opacity-70')}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div>
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-500/10">
@@ -488,7 +488,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
       {/* Quick Add - hidden in completed view */}
       <div
         className={cn(
-          'flex items-center gap-3 border-b border-border/40 px-5 py-3',
+          'flex items-center gap-3 border-b border-border px-5 py-3',
           showCompleted && 'hidden'
         )}
       >
@@ -504,7 +504,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
           }}
           placeholder="Add a new task..."
           disabled={isAddingTask}
-          className="h-9 flex-1 rounded-lg bg-muted/30 px-3 text-sm text-foreground outline-none ring-1 ring-border/40 transition-all placeholder:text-muted-foreground focus:ring-amber-500/50"
+          className="h-9 flex-1 rounded-lg bg-muted/30 px-3 text-sm text-foreground outline-none ring-1 ring-border transition-all placeholder:text-muted-foreground focus:ring-primary/50"
         />
         <Button
           size="sm"
@@ -518,7 +518,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
 
       {/* Completed view header with clear action */}
       {showCompleted && completedTasks > 0 && (
-        <div className="flex items-center justify-between border-b border-border/40 bg-emerald-500/5 px-5 py-2.5">
+        <div className="flex items-center justify-between border-b border-border bg-emerald-500/5 px-5 py-2.5">
           <span className="text-xs text-emerald-400">
             {completedTasks} completed task{completedTasks !== 1 ? 's' : ''}
           </span>

@@ -130,7 +130,7 @@ export function ListPagination({
                 key={page}
                 variant={isActive ? 'default' : 'ghost'}
                 size="sm"
-                className={cn('min-w-[32px]', isActive && 'bg-qualia-600 hover:bg-qualia-500')}
+                className={cn('min-w-[32px]', isActive && 'bg-primary hover:bg-primary')}
                 asChild={!isActive}
               >
                 {isActive ? (

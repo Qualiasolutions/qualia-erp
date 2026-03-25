@@ -27,10 +27,10 @@ export function OnboardingChecklist({ steps, onComplete, className }: Onboarding
   const allComplete = completedCount === steps.length;
 
   return (
-    <Card className={cn('border-qualia-500/30', className)}>
+    <Card className={cn('border-primary/30', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base font-medium">
-          <Sparkles className="h-4 w-4 text-qualia-500" />
+          <Sparkles className="h-4 w-4 text-primary" />
           Getting Started
         </CardTitle>
         <div className="space-y-1">
@@ -80,7 +80,7 @@ export function OnboardingChecklist({ steps, onComplete, className }: Onboarding
                 <Button
                   variant="link"
                   size="sm"
-                  className="mt-1 h-auto p-0 text-xs text-qualia-400"
+                  className="mt-1 h-auto p-0 text-xs text-primary"
                   onClick={step.action}
                 >
                   {step.actionLabel || 'Start'} <ArrowRight className="ml-1 h-3 w-3" />
@@ -91,7 +91,7 @@ export function OnboardingChecklist({ steps, onComplete, className }: Onboarding
         ))}
 
         {allComplete && onComplete && (
-          <Button onClick={onComplete} className="mt-3 w-full bg-qualia-600 hover:bg-qualia-500">
+          <Button onClick={onComplete} className="mt-3 w-full bg-primary hover:bg-primary">
             Complete Onboarding
           </Button>
         )}

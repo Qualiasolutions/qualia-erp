@@ -173,7 +173,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   return (
     <div className="flex h-full flex-col bg-card">
       {/* Logo */}
-      <div className="relative flex h-[60px] items-center border-b border-border/50 px-4">
+      <div className="relative flex h-[60px] items-center border-b border-border px-4">
         <Link
           href="/"
           className="ease-out-quart group flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]"
@@ -275,18 +275,18 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           <button
             type="button"
             onClick={() => setShowClockOut(true)}
-            className="bg-qualia-500/8 flex w-full items-center gap-2.5 rounded-lg border border-qualia-500/30 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-qualia-500/15 dark:text-qualia-300"
+            className="bg-primary/8 flex w-full items-center gap-2.5 rounded-lg border border-primary/30 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
           >
-            <Timer className="size-4 shrink-0 text-qualia-500" />
+            <Timer className="size-4 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="truncate font-semibold">
                 {activeSession.project?.name ?? 'Session active'}
               </div>
-              <div className="text-[11px] text-qualia-600/70 dark:text-qualia-400/70">
+              <div className="text-[11px] text-primary/70 dark:text-primary/70">
                 Tap to clock out
               </div>
             </div>
-            <span className="shrink-0 rounded-md bg-qualia-500/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-qualia-600 dark:text-qualia-400">
+            <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary dark:text-primary">
               LIVE
             </span>
           </button>
@@ -301,7 +301,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
       )}
 
       {/* Bottom section — account menu */}
-      <div className="border-t border-border/50 px-3 py-2.5">
+      <div className="border-t border-border px-3 py-2.5">
         <UserMenu onLinkClick={onLinkClick} />
       </div>
     </div>
@@ -326,7 +326,7 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border/40 bg-card md:block">
+      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border bg-card md:block">
         <SidebarContent onLinkClick={handleLinkClick} />
       </aside>
 

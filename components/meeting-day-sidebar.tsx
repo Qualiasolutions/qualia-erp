@@ -1,9 +1,18 @@
 'use client';
 
 import { useMemo } from 'react';
-import { format, parseISO, isToday, isBefore, startOfDay } from 'date-fns';
+import {
+  format,
+  parseISO,
+  isToday,
+  isBefore,
+  startOfDay,
+  startOfWeek,
+  eachDayOfInterval,
+  endOfWeek,
+} from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
-import { Clock, Video, MapPin } from 'lucide-react';
+import { Clock, Video } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTimezone } from '@/lib/schedule-utils';
 
@@ -14,6 +23,7 @@ interface Meeting {
   end_time: string;
   location?: string | null;
   meeting_link?: string | null;
+  client?: { id: string; display_name?: string | null } | null;
   project: {
     id: string;
     name: string;
@@ -27,22 +37,24 @@ interface MeetingDaySidebarProps {
 export function MeetingDaySidebar({ meetings }: MeetingDaySidebarProps) {
   const { timezone } = useTimezone();
 
+  const now = useMemo(() => toZonedTime(new Date(), timezone), [timezone]);
+
   const weekDays = useMemo(() => {
-    const now = toZonedTime(new Date(), timezone);
-    return [startOfDay(now)];
-  }, [timezone]);
+    const ws = startOfWeek(now);
+    const we = endOfWeek(now);
+    return eachDayOfInterval({ start: ws, end: we });
+  }, [now]);
 
   const meetingsByDay = useMemo(() => {
     const map = new Map<string, Meeting[]>();
 
-    meetings.forEach((m) => {
+    for (const m of meetings) {
       const mDate = toZonedTime(parseISO(m.start_time), timezone);
       const key = format(mDate, 'yyyy-MM-dd');
       const existing = map.get(key) || [];
       map.set(key, [...existing, m]);
-    });
+    }
 
-    // Sort meetings within each day by start time
     for (const [key, dayMeetings] of map) {
       map.set(
         key,
@@ -55,121 +67,95 @@ export function MeetingDaySidebar({ meetings }: MeetingDaySidebarProps) {
     return map;
   }, [meetings, timezone]);
 
-  const now = toZonedTime(new Date(), timezone);
-
   return (
     <div className="flex h-full flex-col">
-      <div className="px-4 pb-2 pt-4">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70">
-          Today
+      <div className="px-5 pb-3 pt-5">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          This Week
         </h3>
       </div>
 
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-2 pb-4">
+      <div className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
         {weekDays.map((day) => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayMeetings = meetingsByDay.get(dateKey) || [];
-          const today = isToday(day);
-          const past = isBefore(day, startOfDay(now)) && !today;
+          const dayIsToday = isToday(day);
+          const dayIsPast = isBefore(day, startOfDay(now)) && !dayIsToday;
 
           return (
-            <div
-              key={dateKey}
-              className={cn(
-                'rounded-lg px-3 py-2.5 transition-colors',
-                today && 'bg-qualia-500/[0.06] dark:bg-qualia-500/[0.08]',
-                past && !today && 'opacity-50'
-              )}
-            >
-              {/* Day header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div key={dateKey} className="group">
+              <div
+                className={cn(
+                  'flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors',
+                  dayIsToday && 'bg-primary/10',
+                  dayIsPast && 'opacity-50'
+                )}
+              >
+                <div className="flex items-center gap-3">
                   <span
                     className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold',
-                      today
-                        ? 'bg-qualia-500 text-white shadow-sm shadow-qualia-500/30'
-                        : 'text-foreground/80'
+                      'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
+                      dayIsToday ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
                     )}
                   >
                     {format(day, 'd')}
                   </span>
-                  <div>
-                    <span
-                      className={cn(
-                        'text-sm font-semibold',
-                        today ? 'text-qualia-600 dark:text-qualia-400' : 'text-foreground/80'
-                      )}
-                    >
-                      {format(day, 'EEEE')}
-                    </span>
-                  </div>
+                  <span
+                    className={cn('font-medium', dayIsToday ? 'text-primary' : 'text-foreground')}
+                  >
+                    {format(day, 'EEEE')}
+                  </span>
                 </div>
                 {dayMeetings.length > 0 && (
-                  <span
-                    className={cn(
-                      'rounded-full px-1.5 py-0.5 text-[10px] font-bold',
-                      today
-                        ? 'bg-qualia-500/15 text-qualia-600 dark:text-qualia-400'
-                        : 'bg-muted text-muted-foreground'
-                    )}
-                  >
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/20 text-xs font-medium text-violet-400">
                     {dayMeetings.length}
                   </span>
                 )}
               </div>
 
-              {/* Meetings list */}
               {dayMeetings.length > 0 ? (
-                <div className="mt-2 space-y-1.5 pl-9">
+                <div className="ml-11 space-y-2 py-2">
                   {dayMeetings.map((m) => {
                     const start = toZonedTime(parseISO(m.start_time), timezone);
                     const end = toZonedTime(parseISO(m.end_time), timezone);
                     const hasLink = !!m.meeting_link;
+                    const isClient = !!m.client;
 
                     return (
                       <div
                         key={m.id}
                         onClick={() => hasLink && window.open(m.meeting_link!, '_blank')}
                         className={cn(
-                          'group rounded-md border-l-2 border-l-violet-500/60 bg-violet-500/[0.04] px-2.5 py-1.5 transition-colors',
-                          'hover:bg-violet-500/[0.08] dark:bg-violet-500/[0.06] dark:hover:bg-violet-500/[0.10]',
+                          'rounded-lg border-l-2 px-3 py-2.5 transition-all',
+                          isClient
+                            ? 'border-l-violet-400 bg-violet-500/5 hover:bg-violet-500/10'
+                            : 'border-l-primary bg-primary/5 hover:bg-primary/10',
                           hasLink && 'cursor-pointer'
                         )}
                       >
                         <div className="flex items-start justify-between gap-1">
-                          <span className="truncate text-xs font-semibold text-foreground/90">
+                          <p className="line-clamp-1 text-sm font-medium text-foreground">
                             {m.title}
-                          </span>
+                          </p>
                           {hasLink && (
                             <Video className="mt-0.5 size-3 shrink-0 text-emerald-500/70" />
                           )}
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground/70">
-                          <div className="flex items-center gap-0.5">
-                            <Clock className="size-2.5" />
-                            <span className="tabular-nums">
-                              {format(start, 'h:mm')} – {format(end, 'h:mm a')}
-                            </span>
-                          </div>
-                          {m.location && (
-                            <div className="flex items-center gap-0.5 truncate">
-                              <MapPin className="size-2.5 shrink-0" />
-                              <span className="truncate">{m.location}</span>
-                            </div>
-                          )}
-                        </div>
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Clock className="h-3 w-3" />
+                          {format(start, 'h:mm')} – {format(end, 'h:mm a')}
+                        </p>
                         {m.project && (
-                          <div className="mt-0.5 truncate text-[10px] font-medium text-violet-500/50">
+                          <p className="mt-0.5 truncate text-[10px] font-medium text-violet-500/50">
                             {m.project.name}
-                          </div>
+                          </p>
                         )}
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <p className="mt-1 pl-9 text-[11px] text-muted-foreground/40">No meetings</p>
+                <p className="ml-11 py-1 text-xs text-muted-foreground/60">No meetings</p>
               )}
             </div>
           );

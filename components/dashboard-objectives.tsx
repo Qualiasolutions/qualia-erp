@@ -95,7 +95,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
 
   // Shared header component for consistency
   const ObjectivesHeader = () => (
-    <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+    <CardHeader className="shrink-0 border-b border-border px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
       <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-500 sm:h-8 sm:w-8">
           <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -107,7 +107,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
 
   if (!workspaceId) {
     return (
-      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+      <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm">
         <ObjectivesHeader />
         <CardContent className="flex flex-1 items-center justify-center p-6">
           <div className="text-center text-sm text-muted-foreground">
@@ -120,7 +120,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
 
   if (loading) {
     return (
-      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+      <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm">
         <ObjectivesHeader />
         <CardContent className="flex flex-1 items-center justify-center p-6">
           <Loader2 className="h-7 w-7 animate-spin text-muted-foreground sm:h-8 sm:w-8" />
@@ -133,8 +133,8 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
   const totalCount = projects.length;
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
-      <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+    <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+      <CardHeader className="shrink-0 border-b border-border px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
         <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/10 text-amber-500 sm:h-8 sm:w-8">
             <Target className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -226,7 +226,7 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
 
       {/* Progress Footer */}
       {projects.length > 0 && (
-        <div className="shrink-0 border-t border-border/40 bg-muted/20 px-4 py-3 sm:px-5 sm:py-3.5">
+        <div className="shrink-0 border-t border-border bg-muted/20 px-4 py-3 sm:px-5 sm:py-3.5">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground sm:text-xs">
             <span>Tap to complete</span>
             <span className="font-medium tabular-nums">

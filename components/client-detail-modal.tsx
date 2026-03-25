@@ -109,9 +109,9 @@ export function ClientDetailModal({ client, open, onOpenChange }: ClientDetailMo
               <h4 className="text-sm font-medium text-muted-foreground">
                 Projects ({client.projects.length})
               </h4>
-              <div className="flex items-center gap-2 rounded-lg bg-qualia-500/10 p-3">
-                <Folder className="h-4 w-4 text-qualia-500" />
-                <span className="text-sm font-medium text-qualia-500">
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 p-3">
+                <Folder className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium text-primary">
                   {client.projects.length} project{client.projects.length !== 1 ? 's' : ''}{' '}
                   connected
                 </span>

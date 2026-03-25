@@ -53,7 +53,7 @@ export function LoginLeftPanel() {
         <motion.div
           animate={{ y: [0, 20, 0], x: [0, -10, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute left-[15%] top-[60%] h-4 w-4 rounded-full bg-qualia-400/30 blur-sm"
+          className="absolute left-[15%] top-[60%] h-4 w-4 rounded-full bg-primary/30 blur-sm"
         />
         <motion.div
           animate={{ y: [0, -15, 0], scale: [1, 1.1, 1] }}
@@ -63,7 +63,7 @@ export function LoginLeftPanel() {
         <motion.div
           animate={{ y: [0, 25, 0] }}
           transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          className="absolute bottom-[20%] right-[25%] h-6 w-6 rounded-full bg-qualia-400/20"
+          className="absolute bottom-[20%] right-[25%] h-6 w-6 rounded-full bg-primary/20"
         />
         <motion.div
           animate={{ rotate: [0, 180, 360] }}
@@ -127,7 +127,7 @@ export function LoginLeftPanel() {
         >
           <span>Nicosia, Cyprus</span>
           <span className="h-1 w-1 rounded-full bg-white/40" />
-          <a href="https://qualiasolutions.net" className="transition-colors hover:text-qualia-400">
+          <a href="https://qualiasolutions.net" className="transition-colors hover:text-primary">
             qualiasolutions.net
           </a>
         </motion.div>

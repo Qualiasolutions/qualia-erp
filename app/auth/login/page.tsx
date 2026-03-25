@@ -46,7 +46,7 @@ export default function Page() {
                 Not a client yet?{' '}
                 <a
                   href="https://qualiasolutions.net"
-                  className="text-qualia-500 transition-colors hover:text-qualia-400"
+                  className="text-primary transition-colors hover:text-primary"
                 >
                   Get started
                 </a>

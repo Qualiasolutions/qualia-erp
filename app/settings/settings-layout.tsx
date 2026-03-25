@@ -26,7 +26,7 @@ export function SettingsLayout({ sections }: SettingsLayoutProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
+      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
         <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="icon" className="size-8 lg:hidden" onClick={toggleMobile}>
             <Menu className="size-4" />
@@ -41,7 +41,7 @@ export function SettingsLayout({ sections }: SettingsLayoutProps) {
       {/* Content: Sidebar + Main */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Mobile: Horizontal scrollable tabs */}
-        <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border/40 bg-card/50 px-4 py-2 md:hidden">
+        <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-card/50 px-4 py-2 md:hidden">
           {sections.map((section) => (
             <button
               key={section.id}
@@ -61,7 +61,7 @@ export function SettingsLayout({ sections }: SettingsLayoutProps) {
         </div>
 
         {/* Desktop: Sidebar nav */}
-        <nav className="hidden w-[200px] shrink-0 flex-col border-r border-border/40 bg-card/30 p-4 md:flex">
+        <nav className="hidden w-[200px] shrink-0 flex-col border-r border-border bg-card/30 p-4 md:flex">
           <div className="space-y-0.5">
             {sections.map((section) => (
               <button

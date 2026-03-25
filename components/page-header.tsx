@@ -30,7 +30,7 @@ export function PageHeader({ icon, iconBg, title, children, className }: PageHea
 
   return (
     <header
-      className={`flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 ${className ?? ''}`}
+      className={`flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 ${className ?? ''}`}
     >
       <div className="flex items-center gap-2.5">
         {/* Hamburger — mobile only, 44×44 touch target */}

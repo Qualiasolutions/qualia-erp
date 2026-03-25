@@ -182,7 +182,7 @@ function renderInline(text: string): React.ReactNode {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-0.5 text-qualia-500 hover:underline"
+            className="inline-flex items-center gap-0.5 text-primary hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
             {url.length > 50 ? url.substring(0, 50) + '...' : url}

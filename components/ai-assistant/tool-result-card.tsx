@@ -64,9 +64,9 @@ function TaskCard({ result }: { result: Record<string, unknown> }) {
   const priorityColors = TASK_PRIORITY_COLORS[priority] || TASK_PRIORITY_COLORS['No Priority'];
 
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 backdrop-blur-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 backdrop-blur-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2 border-b border-border/30 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <CheckSquare className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">Task</span>
       </div>
@@ -140,9 +140,9 @@ function InvoiceCard({ result }: { result: Record<string, unknown> }) {
   const statusColors = getInvoiceStatusColors(status);
 
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 backdrop-blur-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 backdrop-blur-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2 border-b border-border/30 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <Receipt className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">Invoice</span>
       </div>
@@ -196,9 +196,9 @@ function InvoiceCard({ result }: { result: Record<string, unknown> }) {
  */
 function MeetingCard({ result }: { result: Record<string, unknown> }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 backdrop-blur-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 backdrop-blur-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2 border-b border-border/30 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">Meeting</span>
       </div>
@@ -260,9 +260,9 @@ function ProjectCard({ result }: { result: Record<string, unknown> }) {
   const statusColors = getProjectStatusColors(status);
 
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 backdrop-blur-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 backdrop-blur-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2 border-b border-border/30 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <FolderKanban className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">Project</span>
       </div>
@@ -314,9 +314,9 @@ function ProjectCard({ result }: { result: Record<string, unknown> }) {
  */
 function ContactCard({ result }: { result: Record<string, unknown> }) {
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 backdrop-blur-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 backdrop-blur-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2 border-b border-border/30 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <UserCircle className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">Contact</span>
       </div>
@@ -361,9 +361,9 @@ function GenericCard({ toolName, result }: { toolName: string; result: Record<st
   const entries = Object.entries(result).filter(([, value]) => value != null);
 
   return (
-    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 backdrop-blur-sm">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 backdrop-blur-sm">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2 border-b border-border/30 pb-2">
+      <div className="mb-2 flex items-center gap-2 border-b border-border pb-2">
         <Wrench className="h-4 w-4 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">
           {formatToolName(toolName)}
@@ -423,7 +423,7 @@ function getInvoiceStatusColors(status: string) {
     default: // draft
       return {
         bg: 'bg-muted',
-        border: 'border-border/30',
+        border: 'border-border',
         text: 'text-muted-foreground',
       };
   }
@@ -457,7 +457,7 @@ function getProjectStatusColors(status: string) {
     default:
       return {
         bg: 'bg-muted',
-        border: 'border-border/30',
+        border: 'border-border',
         text: 'text-muted-foreground',
       };
   }

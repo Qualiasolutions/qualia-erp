@@ -124,7 +124,7 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/20">
             <Video className="h-4 w-4 text-violet-400" />

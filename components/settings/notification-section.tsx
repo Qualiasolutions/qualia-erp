@@ -74,7 +74,7 @@ export function NotificationSection() {
       {/* Notification Type Toggles */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Bell className="h-5 w-5 text-qualia-500" />
+          <Bell className="h-5 w-5 text-primary" />
           <h3 className="text-sm font-medium">Notification Types</h3>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -163,7 +163,7 @@ export function NotificationSection() {
       {/* Delivery Method */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Mail className="h-5 w-5 text-qualia-500" />
+          <Mail className="h-5 w-5 text-primary" />
           <h3 className="text-sm font-medium">Delivery Method</h3>
         </div>
         <p className="text-sm text-muted-foreground">

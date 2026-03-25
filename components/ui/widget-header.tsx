@@ -15,8 +15,8 @@ interface WidgetHeaderProps {
 export function WidgetHeader({
   icon: Icon,
   title,
-  iconColor = 'text-qualia-400',
-  iconBgColor = 'bg-qualia-500/10',
+  iconColor = 'text-primary',
+  iconBgColor = 'bg-primary/10',
   badge,
   action,
   className,

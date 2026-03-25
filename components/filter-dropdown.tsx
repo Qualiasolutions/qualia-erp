@@ -63,7 +63,7 @@ export function FilterDropdown({
           <Filter className="h-4 w-4" />
           <span>Filter</span>
           {activeCount > 0 && (
-            <span className="ml-1 rounded-full bg-qualia-600 px-1.5 py-0.5 text-xs text-white">
+            <span className="ml-1 rounded-full bg-primary px-1.5 py-0.5 text-xs text-white">
               {activeCount}
             </span>
           )}

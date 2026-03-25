@@ -40,7 +40,7 @@ function TemplateCard({ template }: { template: (typeof templates)[0] }) {
   const Icon = template.icon;
 
   return (
-    <div className="group flex items-center justify-between rounded-lg border border-border/50 bg-card/50 p-2.5 transition-all hover:border-border hover:bg-card">
+    <div className="group flex items-center justify-between rounded-lg border border-border bg-card/50 p-2.5 transition-all hover:border-border hover:bg-card">
       <div className="flex items-center gap-2.5">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-muted/50 ring-1 ring-border/50">
           <Icon className="h-4 w-4 text-muted-foreground" />

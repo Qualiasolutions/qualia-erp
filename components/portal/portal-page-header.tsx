@@ -37,7 +37,7 @@ export function PortalPageHeader({
             <div className="mt-3 flex items-center gap-3">
               <div className="h-1 w-40 overflow-hidden rounded-full bg-border/30">
                 <div
-                  className="h-full rounded-full bg-qualia-500 transition-all duration-700 ease-out"
+                  className="h-full rounded-full bg-primary transition-all duration-700 ease-out"
                   style={{ width: `${progressPct}%` }}
                 />
               </div>

@@ -77,7 +77,7 @@ export function PortalHeader({ user, profile, isAdminViewing }: PortalHeaderProp
               <span className="inline-flex items-center rounded-full bg-qualia-100 px-1.5 py-0.5 text-[10px] font-medium text-qualia-800">
                 Admin
               </span>
-              <span className="text-qualia-600">Preview mode</span>
+              <span className="text-primary">Preview mode</span>
             </div>
             <Link
               href="/"

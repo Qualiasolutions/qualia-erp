@@ -119,7 +119,7 @@ const ProjectRow = React.memo(function ProjectRow({
         size="md"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-foreground transition-colors group-hover:text-qualia-500">
+        <p className="truncate font-medium text-foreground transition-colors group-hover:text-primary">
           {project.name}
         </p>
         {project.lead && (
@@ -156,12 +156,12 @@ export function ProjectColumnView({
   return (
     <div
       className={cn(
-        'flex flex-col overflow-hidden rounded-xl border border-border/40 bg-card',
+        'flex flex-col overflow-hidden rounded-xl border border-border bg-card',
         className
       )}
     >
       {/* Column header */}
-      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border/30 px-4 py-2.5">
+      <div className="flex flex-shrink-0 items-center gap-2 border-b border-border px-4 py-2.5">
         <span className="text-muted-foreground">{icon}</span>
         <h2 className="text-sm font-semibold tracking-tight text-foreground">{title}</h2>
         <span className="ml-auto rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">

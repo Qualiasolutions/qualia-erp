@@ -377,7 +377,7 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
                   'group relative flex flex-col items-center gap-2 rounded-xl border-2 p-4 transition-all',
                   selectedType === type
                     ? `border-transparent ${bgColor} shadow-lg`
-                    : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                    : 'border-border bg-muted/20 hover:border-border hover:bg-muted/40'
                 )}
               >
                 <div className={cn('rounded-lg p-2', bgColor)}>

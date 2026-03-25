@@ -327,7 +327,7 @@ export function AIAssistantChat() {
                   key={index}
                   onClick={() => handleQuickAction(prompt)}
                   className={cn(
-                    'w-full rounded-lg border border-border/50 bg-card/50 px-3 py-2 text-left text-xs transition-all',
+                    'w-full rounded-lg border border-border bg-card/50 px-3 py-2 text-left text-xs transition-all',
                     'hover:border-border hover:bg-muted/50'
                   )}
                 >
@@ -394,7 +394,7 @@ export function AIAssistantChat() {
 
       {/* Actions Bar */}
       {hasAssistantMessage && (
-        <div className="flex items-center justify-between border-t border-border/50 bg-muted/20 px-3 py-1.5">
+        <div className="flex items-center justify-between border-t border-border bg-muted/20 px-3 py-1.5">
           <div className="flex items-center gap-2">
             <button
               onClick={clearConversation}

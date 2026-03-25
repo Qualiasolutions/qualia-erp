@@ -183,7 +183,7 @@ function ProjectsSkeleton() {
               </div>
               <div className="h-1.5 animate-pulse rounded-full bg-muted" />
             </div>
-            <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
               <div className="h-3 w-20 animate-pulse rounded bg-muted" />
               <div className="h-3 w-12 animate-pulse rounded bg-muted" />
             </div>

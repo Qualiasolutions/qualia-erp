@@ -28,7 +28,7 @@ export function IntegrationStatusBadge({
           className={cn(
             'gap-1 text-[10px]',
             hasPortalAccess
-              ? 'bg-qualia-600/10 text-qualia-700 hover:bg-qualia-600/20'
+              ? 'bg-primary/10 text-qualia-700 hover:bg-primary/20'
               : 'text-muted-foreground'
           )}
         >

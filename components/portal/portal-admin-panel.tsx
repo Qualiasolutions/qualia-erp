@@ -504,14 +504,14 @@ export function PortalAdminPanel({
             className={cn(
               'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
               checked
-                ? 'border-qualia-500/50 bg-qualia-500/10 text-foreground'
-                : 'border-border/50 bg-background text-muted-foreground hover:border-border hover:text-foreground'
+                ? 'border-primary/50 bg-primary/10 text-foreground'
+                : 'border-border bg-background text-muted-foreground hover:border-border hover:text-foreground'
             )}
           >
             <span
               className={cn(
                 'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
-                checked ? 'border-qualia-600 bg-qualia-600' : 'border-border bg-background'
+                checked ? 'border-qualia-600 bg-primary' : 'border-border bg-background'
               )}
             >
               {checked && <Check className="h-2.5 w-2.5 text-white" />}
@@ -531,7 +531,7 @@ export function PortalAdminPanel({
   return (
     <Tabs defaultValue="clients" className="space-y-0">
       <div className="flex items-center justify-between gap-4 pb-4">
-        <TabsList className="h-9 rounded-lg border border-border/50 bg-muted/40 p-1">
+        <TabsList className="h-9 rounded-lg border border-border bg-muted/40 p-1">
           <TabsTrigger
             value="clients"
             className="h-7 rounded-md px-4 text-sm data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm"
@@ -561,7 +561,7 @@ export function PortalAdminPanel({
           onClick={() => setShowExportSection((v) => !v)}
           className={cn(
             'h-8 gap-1.5 text-xs',
-            showExportSection && 'bg-qualia-600 text-white hover:bg-qualia-700'
+            showExportSection && 'bg-primary text-white hover:bg-qualia-700'
           )}
         >
           <Download className="h-3.5 w-3.5" />
@@ -575,7 +575,7 @@ export function PortalAdminPanel({
           <CardHeader className="pb-3 pt-4">
             {/* Export Credentials (collapsible inline section) */}
             {showExportSection && (
-              <div className="mb-3 space-y-3 rounded-lg border border-border/50 bg-muted/30 p-3">
+              <div className="mb-3 space-y-3 rounded-lg border border-border bg-muted/30 p-3">
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Export Credentials
                 </p>
@@ -697,7 +697,7 @@ export function PortalAdminPanel({
           <CardContent className="space-y-3 pt-0">
             {/* Bulk reset results */}
             {bulkResetResults && (
-              <div className="space-y-2 rounded-lg border border-border/50 bg-muted/20 p-3">
+              <div className="space-y-2 rounded-lg border border-border bg-muted/20 p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-foreground">Bulk Reset Results</p>
                   {bulkResetResults.some((r) => r.tempPassword) && (
@@ -873,7 +873,7 @@ export function PortalAdminPanel({
                               {resetResult && (
                                 <TableRow key={`${client.id}-reset`}>
                                   <TableCell colSpan={6} className="pb-2 pt-0">
-                                    <div className="flex items-center justify-between rounded-lg border border-qualia-500/20 bg-qualia-500/5 px-3 py-2 font-mono text-xs">
+                                    <div className="flex items-center justify-between rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 font-mono text-xs">
                                       <div className="space-y-0.5">
                                         <p>
                                           <span className="text-muted-foreground">Email:</span>{' '}
@@ -1008,7 +1008,7 @@ export function PortalAdminPanel({
                 </p>
               </div>
               {/* Single / Bulk pill toggle */}
-              <div className="flex items-center rounded-lg border border-border/50 bg-muted/40 p-0.5">
+              <div className="flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -1108,7 +1108,7 @@ export function PortalAdminPanel({
                 <Button
                   onClick={handleSetup}
                   disabled={isSettingUp || !selectedCrmClientId || selectedProjectIds.length === 0}
-                  className="gap-2 bg-qualia-600 text-white hover:bg-qualia-700"
+                  className="gap-2 bg-primary text-white hover:bg-qualia-700"
                 >
                   {isSettingUp ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -1120,12 +1120,12 @@ export function PortalAdminPanel({
 
                 {/* Credentials result */}
                 {credentials && (
-                  <div className="rounded-xl border border-qualia-500/20 bg-gradient-to-br from-qualia-500/5 to-transparent p-4 ring-1 ring-qualia-500/10">
+                  <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-qualia-500/5 to-transparent p-4 ring-1 ring-primary/10">
                     {credentials.password ? (
                       <>
                         <div className="mb-3 flex items-center gap-2">
-                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-qualia-500/15">
-                            <Check className="h-3.5 w-3.5 text-qualia-600" />
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15">
+                            <Check className="h-3.5 w-3.5 text-primary" />
                           </div>
                           <span className="text-sm font-semibold text-foreground">
                             Access created — {credentials.projectsLinked} project(s) linked
@@ -1165,8 +1165,8 @@ export function PortalAdminPanel({
                       </>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-qualia-500/15">
-                          <Check className="h-3.5 w-3.5 text-qualia-600" />
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/15">
+                          <Check className="h-3.5 w-3.5 text-primary" />
                         </div>
                         <p className="text-sm text-muted-foreground">
                           Existing portal account ({credentials.email}) linked to{' '}
@@ -1202,15 +1202,15 @@ export function PortalAdminPanel({
                             className={cn(
                               'flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
                               checked
-                                ? 'border-qualia-500/50 bg-qualia-500/10 text-foreground'
-                                : 'border-border/50 bg-background text-muted-foreground hover:border-border hover:text-foreground'
+                                ? 'border-primary/50 bg-primary/10 text-foreground'
+                                : 'border-border bg-background text-muted-foreground hover:border-border hover:text-foreground'
                             )}
                           >
                             <span
                               className={cn(
                                 'flex h-4 w-4 shrink-0 items-center justify-center rounded border',
                                 checked
-                                  ? 'border-qualia-600 bg-qualia-600'
+                                  ? 'border-qualia-600 bg-primary'
                                   : 'border-border bg-background'
                               )}
                             >
@@ -1254,7 +1254,7 @@ export function PortalAdminPanel({
                     selectedCrmClientIds.length === 0 ||
                     bulkSelectedProjectIds.length === 0
                   }
-                  className="gap-2 bg-qualia-600 text-white hover:bg-qualia-700"
+                  className="gap-2 bg-primary text-white hover:bg-qualia-700"
                 >
                   {isBulkPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

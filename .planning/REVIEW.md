@@ -1,11 +1,35 @@
 ---
-date: 2026-03-24 04:10
+date: 2026-03-25 11:30
 mode: general
 critical_count: 1
-high_count: 4
-medium_count: 9
-low_count: 10
+high_count: 2
+medium_count: 6
+low_count: 5
 status: has_blockers
+---
+
+# Review — 2026-03-25 (Session Changes)
+
+## Blockers (CRITICAL + HIGH)
+
+- [app/actions/inbox.ts:620-725] `requires_attachment` NOT enforced server-side — `quickUpdateTask`, `updateTask`, `quickToggleTaskStatus` all allow `status='Done'` without checking attachments exist. Entire feature is bypassable. (CRITICAL)
+- [app/actions/inbox.ts:311,400] Any task modifier (including assignee) can set/clear `requires_attachment` — employees can remove their own upload requirement. Should be admin-only. (HIGH)
+- [app/actions/task-attachments.ts:96-186] `uploadTaskAttachment` has no `canModifyTask()` check — any authenticated user can upload to any task by ID. Pre-existing IDOR. (HIGH)
+
+## Recommendations (MEDIUM + LOW)
+
+- [app/actions/inbox.ts:150-162,568-580,791-803,942-954] FK normalization duplicated 4x — use existing `normalizeFKResponse()` from server-utils.ts (MEDIUM)
+- [components/meeting-day-sidebar.tsx:30-80] Dead code: single-element array loop, unused `past` branch, `meetingsByDay` Map for one key — simplify (MEDIUM)
+- [app/actions/team-dashboard.ts:176-195] Scheduled task sort doesn't demote past times — 9 AM task still above Urgent task at 3 PM (MEDIUM)
+- [components/today-dashboard/team-task-card.tsx:83-87] Unused props `currentUserId` and `isAdmin` in interface — dead API surface (MEDIUM)
+- [app/actions/team-dashboard.ts:115-116] `supabase: any` loses type safety — use proper SupabaseClient type (MEDIUM)
+- [components/task-detail-dialog.tsx:56] `useTaskAttachments(task?.id ?? '')` passes empty string instead of null — triggers unnecessary SWR fetch (MEDIUM)
+- [lib/validation.ts:48 vs inbox.ts:308] `show_in_inbox` default `false` in schema but `true` in action — misleading (LOW)
+- [components/today-dashboard/meetings-sidebar.tsx:61] `tomorrow` variable computed outside useMemo — inconsistent with memoization pattern (LOW)
+- [components/today-dashboard/meetings-sidebar.tsx:99-102,209-212] Inline type assertions for meeting client repeated — extract typed helper (LOW)
+- [components/schedule-block.tsx:265,427] Pseudo-task factories must manually add every new Task field — fragile (LOW)
+- [components/new-task-modal.tsx,edit-task-modal.tsx] Time slot generation duplicated verbatim in both modals (LOW)
+
 ---
 
 # Review — 2026-03-24

@@ -63,7 +63,7 @@ export function MeetingDetailDialog({
         </div>
 
         {/* Metadata */}
-        <div className="space-y-3 border-t border-border/50 px-6 py-4">
+        <div className="space-y-3 border-t border-border px-6 py-4">
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <CalendarDays className="size-3.5 shrink-0" />
@@ -102,14 +102,14 @@ export function MeetingDetailDialog({
 
         {/* Description */}
         {meeting.description && (
-          <div className="border-t border-border/50 px-6 py-4">
+          <div className="border-t border-border px-6 py-4">
             <RichText className="text-foreground/80">{meeting.description}</RichText>
           </div>
         )}
 
         {/* Meeting Link */}
         {meeting.meeting_link && (
-          <div className="border-t border-border/50 px-6 py-4">
+          <div className="border-t border-border px-6 py-4">
             <a
               href={meeting.meeting_link}
               target="_blank"
@@ -123,7 +123,7 @@ export function MeetingDetailDialog({
         )}
 
         {/* Actions */}
-        <div className="flex items-center gap-2 border-t border-border/50 px-6 py-4">
+        <div className="flex items-center gap-2 border-t border-border px-6 py-4">
           <Button
             type="button"
             variant="outline"

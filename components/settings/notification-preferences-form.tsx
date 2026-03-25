@@ -58,7 +58,7 @@ export function NotificationPreferencesForm({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5 text-qualia-500" />
+            <Bell className="h-5 w-5 text-primary" />
             Email Notifications
           </CardTitle>
           <CardDescription>
@@ -192,7 +192,7 @@ export function NotificationPreferencesForm({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5 text-qualia-500" />
+            <Mail className="h-5 w-5 text-primary" />
             Delivery Method
           </CardTitle>
           <CardDescription>Choose how you&apos;d like to receive notifications</CardDescription>

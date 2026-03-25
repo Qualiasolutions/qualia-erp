@@ -96,7 +96,7 @@ const TaskRow = React.memo(function TaskRow({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 border-b border-border/40 px-4 py-3 transition-colors',
+        'group flex items-center gap-3 border-b border-border px-4 py-3 transition-colors',
         'hover:bg-accent/50',
         isCompleted && 'opacity-50'
       )}
@@ -147,7 +147,7 @@ const TaskRow = React.memo(function TaskRow({
           )}
           {task.assignee && (
             <span className="flex items-center gap-1">
-              <span className="size-1.5 rounded-full bg-qualia-500" />
+              <span className="size-1.5 rounded-full bg-primary" />
               <span className="text-foreground/60">{task.assignee.full_name?.split(' ')[0]}</span>
             </span>
           )}
@@ -344,7 +344,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       )}
     >
       {/* Header - Unified with other sections */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-muted/30 px-4">
         <div className="flex items-center gap-2.5">
           <Inbox className="size-4 text-foreground/70" />
           <h2 className="text-[13px] font-semibold text-foreground">Inbox</h2>
@@ -378,7 +378,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
       </div>
 
       {/* Smart Input - Search or Add */}
-      <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
         <div className="relative flex-1">
           <Plus className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground/50" />
           <Input
@@ -414,7 +414,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
 
       {/* Hint when typing */}
       {inputValue.trim() && (
-        <div className="border-b border-border/60 bg-muted/30 px-4 py-1.5">
+        <div className="border-b border-border bg-muted/30 px-4 py-1.5">
           <p className="text-xs text-foreground/60">
             {isSearchMode ? (
               <>

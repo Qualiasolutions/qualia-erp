@@ -92,9 +92,7 @@ export function WorkspaceSelector() {
             >
               <span className="flex-1 truncate">{workspace.name}</span>
               {!workspace.hasAccess && <Lock className="h-3 w-3 text-muted-foreground" />}
-              {currentWorkspace?.id === workspace.id && (
-                <Check className="h-4 w-4 text-qualia-400" />
-              )}
+              {currentWorkspace?.id === workspace.id && <Check className="h-4 w-4 text-primary" />}
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>

@@ -65,9 +65,9 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
   const totalMembers = (lead ? 1 : 0) + assignees.length;
 
   return (
-    <div className={cn('rounded-xl border border-border/50 bg-card', className)}>
+    <div className={cn('rounded-xl border border-border bg-card', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Team</h3>
@@ -156,7 +156,7 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
 
             {/* Avatar Stack Preview (if many members) */}
             {totalMembers > 5 && (
-              <div className="flex items-center gap-2 border-t border-border/50 pt-3">
+              <div className="flex items-center gap-2 border-t border-border pt-3">
                 <div className="flex -space-x-2">
                   {[lead, ...assignees].slice(0, 4).map(
                     (member) =>

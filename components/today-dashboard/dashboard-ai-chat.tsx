@@ -133,12 +133,12 @@ export function DashboardAIChat() {
     <div
       className={cn(
         'group relative flex h-full flex-col overflow-hidden rounded-xl transition-all duration-200 ease-premium',
-        'border border-border/40 bg-card shadow-elevation-1',
-        isFocused ? 'border-primary/30 shadow-glow-sm' : 'hover:border-border/50'
+        'border border-border bg-card shadow-elevation-1',
+        isFocused ? 'border-primary/30 shadow-glow-sm' : 'hover:border-border'
       )}
     >
       {/* Header */}
-      <div className="relative flex items-center justify-between border-b border-border/30 bg-muted/20 px-4 py-3">
+      <div className="relative flex items-center justify-between border-b border-border bg-muted/20 px-4 py-3">
         <div className="flex items-center gap-3">
           <div className="relative">
             <div className="bg-primary/8 flex h-7 w-7 items-center justify-center rounded-lg text-primary">
@@ -226,7 +226,7 @@ export function DashboardAIChat() {
                         setInput('');
                         sendMessage(cap.prompt);
                       }}
-                      className="group flex items-center gap-1.5 rounded-lg border border-border/30 bg-background/60 px-2.5 py-1.5 text-left transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm"
+                      className="group flex items-center gap-1.5 rounded-lg border border-border bg-background/60 px-2.5 py-1.5 text-left transition-all duration-200 ease-premium hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-sm"
                     >
                       <cap.icon className="h-3 w-3 shrink-0 text-muted-foreground/50 transition-colors group-hover:text-primary" />
                       <span className="text-[11px] font-medium text-muted-foreground/70 transition-colors group-hover:text-foreground">
@@ -254,7 +254,7 @@ export function DashboardAIChat() {
                         'max-w-[85%] rounded-2xl px-4 py-2.5 text-[13px] leading-relaxed shadow-sm',
                         message.role === 'user'
                           ? 'rounded-tr-sm bg-primary text-primary-foreground'
-                          : 'rounded-tl-sm border border-border/40 bg-card/80 text-foreground'
+                          : 'rounded-tl-sm border border-border bg-card/80 text-foreground'
                       )}
                     >
                       {message.content}
@@ -315,7 +315,7 @@ export function DashboardAIChat() {
         </div>
 
         {/* Dynamic Voice/Input Area */}
-        <div className="relative mt-auto border-t border-border/20 p-3">
+        <div className="relative mt-auto border-t border-border p-3">
           {/* Listening Overlay */}
           <AnimatePresence>
             {isListening && (
@@ -347,10 +347,8 @@ export function DashboardAIChat() {
           <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
             <div
               className={cn(
-                'flex flex-1 items-center gap-2 rounded-xl border border-border/30 bg-background/60 px-3 transition-all duration-200 ease-premium',
-                isFocused
-                  ? 'border-primary/40 bg-background shadow-glow-sm'
-                  : 'hover:border-border/50'
+                'flex flex-1 items-center gap-2 rounded-xl border border-border bg-background/60 px-3 transition-all duration-200 ease-premium',
+                isFocused ? 'border-primary/40 bg-background shadow-glow-sm' : 'hover:border-border'
               )}
             >
               {/* This button is now for text input, not voice */}

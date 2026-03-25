@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { isToday, isTomorrow, isThisWeek, parseISO, isFuture } from 'date-fns';
-import { CalendarCheck, CalendarClock, Users } from 'lucide-react';
+import { Calendar, Clock, Users } from 'lucide-react';
 
 interface Meeting {
   id: string;
@@ -34,39 +34,33 @@ export function MeetingStats({ meetings }: MeetingStatsProps) {
   }, [meetings]);
 
   return (
-    <div className="flex items-center gap-5">
-      {/* Total Today */}
+    <div className="flex items-center gap-6 text-sm">
+      {/* Big today number */}
       <div className="flex items-center gap-2">
-        <span className="text-2xl font-semibold text-foreground">{stats.today}</span>
-        <span className="text-sm text-muted-foreground">today</span>
+        <span className="text-3xl font-semibold text-primary">{stats.today}</span>
+        <span className="text-muted-foreground">today</span>
       </div>
 
-      <div className="h-5 w-px bg-border" />
+      <div className="h-4 w-px bg-border" />
 
-      {/* Quick Stats */}
-      <div className="flex items-center gap-4 text-sm">
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <CalendarClock className="h-3.5 w-3.5" />
-          <span>
-            <span className="font-medium text-foreground">{stats.tomorrow}</span> tomorrow
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted-foreground">
-          <CalendarCheck className="h-3.5 w-3.5" />
-          <span>
-            <span className="font-medium text-foreground">{stats.thisWeek}</span> this week
-          </span>
-        </div>
-        {stats.withClients > 0 && (
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Users className="h-3.5 w-3.5" />
-            <span>
-              <span className="font-medium text-emerald-400">{stats.withClients}</span> client
-              meetings
-            </span>
-          </div>
-        )}
+      {/* Secondary stats */}
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Calendar className="h-4 w-4" />
+        <span className="font-medium text-foreground">{stats.tomorrow}</span>
+        <span>tomorrow</span>
       </div>
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Clock className="h-4 w-4" />
+        <span className="font-medium text-foreground">{stats.thisWeek}</span>
+        <span>this week</span>
+      </div>
+      {stats.withClients > 0 && (
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Users className="h-4 w-4" />
+          <span className="font-medium text-violet-400">{stats.withClients}</span>
+          <span>client meetings</span>
+        </div>
+      )}
     </div>
   );
 }

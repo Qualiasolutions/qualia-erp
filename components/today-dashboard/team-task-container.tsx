@@ -39,8 +39,8 @@ function TeamTaskSkeleton() {
   return (
     <div className="animate-pulse space-y-4">
       {[0, 1].map((i) => (
-        <div key={i} className="rounded-lg border border-border/40 bg-card">
-          <div className="flex items-center gap-3 border-b border-border/40 px-4 py-3">
+        <div key={i} className="rounded-lg border border-border bg-card">
+          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
             <div className="size-7 rounded-full bg-muted" />
             <div className="h-4 w-28 rounded bg-muted" />
             <div className="ml-auto h-5 w-8 rounded-full bg-muted" />
@@ -187,11 +187,11 @@ function MemberGroup({
     : '?';
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm transition-shadow duration-300 hover:shadow-md">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow duration-300 hover:shadow-md">
       {/* Header */}
       <button
         type="button"
-        className="flex w-full items-center gap-3 border-b border-border/20 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
+        className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
         onClick={() => setOpen((v) => !v)}
       >
         <Avatar className="size-7 shrink-0 ring-1 ring-border/20">
@@ -325,7 +325,7 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
       : checkins.filter((c) => c.profile_id === selectedProfileId);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       {/* Header toggle */}
       <button
         type="button"
@@ -347,9 +347,9 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
       </button>
 
       {open && (
-        <div className="border-t border-border/40">
+        <div className="border-t border-border">
           {/* Filter bar */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-border/30 bg-muted/20 px-4 py-2">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/20 px-4 py-2">
             <Filter className="size-3.5 shrink-0 text-muted-foreground" />
             <Input
               type="date"
@@ -426,7 +426,7 @@ function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
             'ml-1 shrink-0 text-xs',
             isMorning
               ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400'
-              : 'border-qualia-500/20 bg-qualia-500/5 text-qualia-600 dark:border-qualia-500/30 dark:bg-qualia-500/10 dark:text-qualia-400'
+              : 'border-primary/20 bg-primary/5 text-primary dark:border-primary/30 dark:bg-primary/10'
           )}
         >
           {isMorning ? 'Morning' : 'Evening'}
@@ -502,7 +502,7 @@ function EmployeeTaskList({
   const completedTasks = member?.tasks.filter((t) => t.status === 'Done') ?? [];
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       {!member || (activeTasks.length === 0 && completedTasks.length === 0) ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <ClipboardList className="mb-2 size-8 text-muted-foreground/30" />
@@ -627,7 +627,7 @@ export function TeamTaskContainer({
             <>
               {/* Admin: grouped by person */}
               {members.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-border/30 bg-card py-10 text-center">
+                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-10 text-center">
                   <Users className="mb-2 size-8 text-muted-foreground/30" />
                   <p className="text-sm text-muted-foreground/70">No team members found</p>
                 </div>

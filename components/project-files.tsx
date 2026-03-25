@@ -221,7 +221,7 @@ export function ProjectFiles({ projectId }: ProjectFilesProps) {
         onDrop={handleDrop}
         className={cn(
           'rounded-lg border-2 border-dashed transition-colors',
-          isDragging ? 'border-qualia-500 bg-qualia-500/5' : 'border-border',
+          isDragging ? 'border-primary bg-primary/5' : 'border-border',
           files.length === 0 && !isLoading && 'min-h-[120px]'
         )}
       >

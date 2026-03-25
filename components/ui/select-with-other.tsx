@@ -156,9 +156,9 @@ export function SelectWithOther({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            'h-9 w-auto min-w-[140px] justify-between gap-2 border-border/50 bg-secondary/50 px-3 text-sm font-normal transition-all hover:bg-secondary',
+            'h-9 w-auto min-w-[140px] justify-between gap-2 border-border bg-secondary/50 px-3 text-sm font-normal transition-all hover:bg-secondary',
             value && 'border-primary/30 bg-primary/5',
-            (isCurrentValueCustom || isCustomMode) && 'border-qualia-500/30 bg-qualia-500/5',
+            (isCurrentValueCustom || isCustomMode) && 'border-primary/30 bg-primary/5',
             triggerClassName,
             className
           )}
@@ -168,7 +168,7 @@ export function SelectWithOther({
             {displayValue ? (
               <span className="flex items-center gap-1.5">
                 {(isCurrentValueCustom || (isCustomMode && customValue)) && (
-                  <Plus className="h-3 w-3 text-qualia-500" />
+                  <Plus className="h-3 w-3 text-primary" />
                 )}
                 <span className="truncate">{displayValue}</span>
               </span>
@@ -181,7 +181,7 @@ export function SelectWithOther({
       </PopoverTrigger>
       <PopoverContent
         className={cn(
-          'bg-card/98 w-[var(--radix-popover-trigger-width)] min-w-[280px] border-border/50 p-0 shadow-xl backdrop-blur-xl',
+          'bg-card/98 w-[var(--radix-popover-trigger-width)] min-w-[280px] border-border p-0 shadow-xl backdrop-blur-xl',
           contentClassName
         )}
         align="start"
@@ -191,7 +191,7 @@ export function SelectWithOther({
           /* Add new mode */
           <div className="p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
-              <Plus className="h-4 w-4 text-qualia-500" />
+              <Plus className="h-4 w-4 text-primary" />
               <span>Add new</span>
             </div>
             <div className="flex items-center gap-2">
@@ -202,7 +202,7 @@ export function SelectWithOther({
                 onChange={(e) => setCustomValue(e.target.value)}
                 onKeyDown={handleCustomKeyDown}
                 placeholder={otherPlaceholder}
-                className="h-10 flex-1 rounded-lg border border-border/50 bg-muted/50 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:outline-none focus:ring-2 focus:ring-qualia-500/20"
+                className="h-10 flex-1 rounded-lg border border-border bg-muted/50 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
               <Button
                 type="button"
@@ -221,7 +221,7 @@ export function SelectWithOther({
                 size="sm"
                 onClick={handleCustomSubmit}
                 disabled={!customValue.trim()}
-                className="h-10 shrink-0 bg-qualia-500 px-4 hover:bg-qualia-600"
+                className="h-10 shrink-0 bg-primary px-4 hover:bg-primary"
               >
                 Add
               </Button>
@@ -230,7 +230,7 @@ export function SelectWithOther({
         ) : (
           <>
             {/* Search input */}
-            <div className="border-b border-border/30 p-2">
+            <div className="border-b border-border p-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -240,24 +240,24 @@ export function SelectWithOther({
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
                   placeholder="Search..."
-                  className="h-9 w-full rounded-lg border-0 bg-muted/50 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-qualia-500/20"
+                  className="h-9 w-full rounded-lg border-0 bg-muted/50 pl-9 pr-3 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>
 
             {/* Add new button - prominent at top */}
-            <div className="border-b border-border/30 p-2">
+            <div className="border-b border-border p-2">
               <button
                 type="button"
                 onClick={handleSelectOther}
                 className={cn(
                   'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
-                  'bg-gradient-to-r from-qualia-500/10 to-qualia-600/10 text-qualia-600 dark:text-qualia-400',
+                  'bg-gradient-to-r from-qualia-500/10 to-qualia-600/10 text-primary dark:text-primary',
                   'hover:from-qualia-500/20 hover:to-qualia-600/20',
-                  'border border-qualia-500/20'
+                  'border border-primary/20'
                 )}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/20">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
                   <Plus className="h-4 w-4" />
                 </div>
                 <span>{otherLabel}</span>
@@ -274,7 +274,7 @@ export function SelectWithOther({
                       <button
                         type="button"
                         onClick={handleSelectOther}
-                        className="text-qualia-500 hover:underline"
+                        className="text-primary hover:underline"
                       >
                         Add &quot;{searchQuery}&quot; as new
                       </button>
@@ -295,7 +295,7 @@ export function SelectWithOther({
                         className={cn(
                           'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-all',
                           isSelected
-                            ? 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400'
+                            ? 'bg-primary/10 text-primary dark:text-primary'
                             : 'hover:bg-muted/80'
                         )}
                       >
@@ -312,7 +312,7 @@ export function SelectWithOther({
                             </div>
                           )}
                         </div>
-                        {isSelected && <Check className="h-4 w-4 shrink-0 text-qualia-500" />}
+                        {isSelected && <Check className="h-4 w-4 shrink-0 text-primary" />}
                       </button>
                     );
                   })}

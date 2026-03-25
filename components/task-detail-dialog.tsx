@@ -40,7 +40,7 @@ const PRIORITY_STYLES: Record<string, string> = {
 
 const STATUS_STYLES: Record<string, string> = {
   Todo: 'bg-muted text-muted-foreground',
-  'In Progress': 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400',
+  'In Progress': 'bg-primary/10 text-primary dark:text-primary',
   Done: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
 };
 
@@ -53,7 +53,7 @@ export function TaskDetailDialog({
   isDone: isDoneProp,
 }: TaskDetailDialogProps) {
   const { timezone } = useTimezone();
-  const { attachments } = useTaskAttachments(task?.id ?? '');
+  const { attachments } = useTaskAttachments(task?.id ?? null);
 
   if (!task) return null;
 
@@ -84,7 +84,7 @@ export function TaskDetailDialog({
                 <CheckCircle2 className="size-5 text-emerald-500" strokeWidth={2} />
               ) : (
                 <Circle
-                  className="size-5 text-border transition-colors group-hover/check:text-qualia-400"
+                  className="size-5 text-border transition-colors group-hover/check:text-primary"
                   strokeWidth={1.5}
                 />
               )}
@@ -101,7 +101,7 @@ export function TaskDetailDialog({
         </div>
 
         {/* Metadata */}
-        <div className="space-y-3 border-t border-border/50 px-6 py-4">
+        <div className="space-y-3 border-t border-border px-6 py-4">
           <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
@@ -176,7 +176,7 @@ export function TaskDetailDialog({
         <div className="max-h-[50vh] overflow-y-auto">
           {/* Description */}
           {task.description && (
-            <div className="border-t border-border/50 px-6 py-4">
+            <div className="border-t border-border px-6 py-4">
               <RichText className="text-foreground/80">{task.description}</RichText>
             </div>
           )}
@@ -190,7 +190,7 @@ export function TaskDetailDialog({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 border-t border-border/50 px-6 py-4">
+        <div className="flex items-center gap-2 border-t border-border px-6 py-4">
           <Button
             type="button"
             variant="outline"

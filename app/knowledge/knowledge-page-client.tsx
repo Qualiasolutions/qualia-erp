@@ -192,7 +192,7 @@ function StepCard({
                 key={i}
                 className="flex items-start gap-2 text-[13px] leading-relaxed text-muted-foreground"
               >
-                <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-qualia-500/60" />
+                <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary/60" />
                 <span>{tip}</span>
               </div>
             ))}
@@ -241,10 +241,10 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-2xl flex-col border-l border-border/40 bg-background shadow-2xl"
+        className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl"
       >
         {/* Panel header */}
-        <div className="relative shrink-0 border-b border-border/40 px-6 pb-5 pt-6">
+        <div className="relative shrink-0 border-b border-border px-6 pb-5 pt-6">
           {/* Category gradient */}
           <div
             className={cn(
@@ -313,10 +313,10 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
             {/* Checklist */}
             <div className="mt-8">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ClipboardList className="h-4 w-4 text-qualia-500" />
+                <ClipboardList className="h-4 w-4 text-primary" />
                 {guide.checklist.title}
               </div>
-              <div className="mt-3 rounded-xl border border-border/50 bg-muted/20 p-4">
+              <div className="mt-3 rounded-xl border border-border bg-muted/20 p-4">
                 <ul className="space-y-2.5">
                   {guide.checklist.items.map((item, i) => (
                     <motion.li
@@ -326,8 +326,8 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
                       transition={{ delay: 0.3 + i * 0.04 }}
                       className="flex items-start gap-3 text-[13px]"
                     >
-                      <div className="bg-qualia-500/8 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border border-qualia-500/20">
-                        <Check className="h-3 w-3 text-qualia-500" />
+                      <div className="bg-primary/8 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border border-primary/20">
+                        <Check className="h-3 w-3 text-primary" />
                       </div>
                       <span className="text-muted-foreground">{item}</span>
                     </motion.li>
@@ -365,7 +365,7 @@ function GuideCard({
       transition={{ delay: index * 0.04, duration: 0.3 }}
       onClick={onClick}
       className={cn(
-        'group relative flex flex-col rounded-xl border border-border/40 bg-card p-5 text-left transition-all duration-200',
+        'group relative flex flex-col rounded-xl border border-border bg-card p-5 text-left transition-all duration-200',
         'hover:border-border/70 hover:shadow-lg hover:shadow-black/5',
         'active:scale-[0.98]'
       )}
@@ -432,8 +432,8 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       <PageHeader
-        icon={<BookOpen className="h-3.5 w-3.5 text-qualia-500" />}
-        iconBg="bg-qualia-500/10"
+        icon={<BookOpen className="h-3.5 w-3.5 text-primary" />}
+        iconBg="bg-primary/10"
         title="Knowledge Base"
         className="shrink-0"
       >
@@ -471,9 +471,9 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
                     'inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all',
                     selectedCategory === cat.key
                       ? cat.key === 'all'
-                        ? 'border-qualia-500/30 bg-qualia-500/10 text-qualia-600 dark:text-qualia-400'
+                        ? 'border-primary/30 bg-primary/10 text-primary dark:text-primary'
                         : `${categoryColors[cat.key].border} ${categoryColors[cat.key].bg} ${categoryColors[cat.key].text}`
-                      : 'border-border/40 bg-transparent text-muted-foreground/60 hover:bg-muted/30 hover:text-muted-foreground'
+                      : 'border-border bg-transparent text-muted-foreground/60 hover:bg-muted/30 hover:text-muted-foreground'
                   )}
                 >
                   {cat.icon && <cat.icon className="h-3 w-3" />}

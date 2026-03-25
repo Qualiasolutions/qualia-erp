@@ -64,8 +64,8 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-qualia-500/10">
-            <Folder className="h-5 w-5 text-qualia-500" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+            <Folder className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h2 className="text-lg font-semibold">Project Overview</h2>
@@ -150,7 +150,7 @@ export function ProjectOverview({ project }: ProjectOverviewProps) {
                 <Link
                   href={`/issues/${issue.id}`}
                   className={cn(
-                    'flex-1 text-sm transition-colors hover:text-qualia-500',
+                    'flex-1 text-sm transition-colors hover:text-primary',
                     issue.status === 'Done' && 'text-muted-foreground line-through'
                   )}
                 >

@@ -34,8 +34,8 @@ const TEAM = [
 
 const COLOR_MAP = {
   qualia: {
-    active: 'bg-qualia-500 text-white ring-2 ring-qualia-500/30',
-    idle: 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400 hover:bg-qualia-500/20',
+    active: 'bg-primary text-white ring-2 ring-primary/30',
+    idle: 'bg-primary/10 text-primary dark:text-primary hover:bg-primary/20',
   },
   indigo: {
     active: 'bg-indigo-500 text-white ring-2 ring-indigo-500/30',

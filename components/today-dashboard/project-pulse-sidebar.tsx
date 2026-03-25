@@ -64,7 +64,7 @@ export function ProjectPulseSidebar({
     <div className="flex h-full flex-col">
       {/* Active Projects */}
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="flex items-center justify-between border-b border-border/30 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
             <div className="flex items-center gap-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/10">
@@ -101,7 +101,7 @@ export function ProjectPulseSidebar({
 
       {/* Completed Projects */}
       {finishedProjects.length > 0 && (
-        <div className="flex min-h-0 flex-col border-t border-border/30">
+        <div className="flex min-h-0 flex-col border-t border-border">
           <div className="px-5 py-4">
             <div className="flex items-center gap-2">
               <div className="flex h-5 w-5 items-center justify-center rounded-md bg-sky-500/10">

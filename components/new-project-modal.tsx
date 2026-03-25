@@ -61,7 +61,7 @@ export function NewProjectModal() {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
+          <Button className="flex items-center gap-2 bg-primary hover:bg-primary">
             <Plus className="h-4 w-4" />
             <span>New Project</span>
             <ChevronDown className="h-3 w-3 opacity-60" />

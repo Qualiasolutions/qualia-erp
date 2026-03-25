@@ -123,8 +123,8 @@ export function PortalActivityFeed({
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="max-w-md text-center">
           {/* Icon Container */}
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-qualia-500/10">
-            <Clock className="h-10 w-10 text-qualia-600/60" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-primary/10">
+            <Clock className="h-10 w-10 text-primary/60" />
           </div>
 
           {/* Heading */}

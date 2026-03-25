@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
           <Card>
             <CardHeader>
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-qualia-100">
-                <Mail className="h-6 w-6 text-qualia-600" />
+                <Mail className="h-6 w-6 text-primary" />
               </div>
               <CardTitle className="pt-4 text-center text-2xl">Check your email</CardTitle>
             </CardHeader>
@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
                     required
                     autoComplete="email"
                     autoFocus
-                    className="h-12 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
+                    className="h-12 focus-visible:border-primary/50 focus-visible:ring-primary/30"
                   />
                 </div>
 

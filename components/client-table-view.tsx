@@ -144,7 +144,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
     <tr
       onClick={handleRowClick}
       className={cn(
-        'group cursor-pointer border-b border-border/40 transition-colors',
+        'group cursor-pointer border-b border-border transition-colors',
         'hover:bg-secondary/40',
         isPending && 'pointer-events-none opacity-50'
       )}
@@ -161,7 +161,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <span className="block truncate font-medium text-foreground transition-colors group-hover:text-qualia-500">
+            <span className="block truncate font-medium text-foreground transition-colors group-hover:text-primary">
               {client.display_name || 'Unnamed Client'}
             </span>
             {client.billing_address && (
@@ -204,7 +204,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
         {client.assigned ? (
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarFallback className="bg-qualia-500/10 text-xs text-qualia-500">
+              <AvatarFallback className="bg-primary/10 text-xs text-primary">
                 {getInitials(client.assigned.full_name || 'U')}
               </AvatarFallback>
             </Avatar>
@@ -239,7 +239,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-qualia-500"
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
           >
             <Globe className="h-3.5 w-3.5" />
             <span className="max-w-[100px] truncate">
@@ -257,7 +257,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
           <a
             href={`tel:${client.phone}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-qualia-500"
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
           >
             <Phone className="h-3.5 w-3.5" />
             <span>{client.phone}</span>
@@ -443,7 +443,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
   if (clients.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
-        <div className="mb-4 rounded-2xl bg-secondary/50 p-5">
+        <div className="mb-4 rounded-xl bg-secondary/50 p-5">
           <Inbox className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-lg font-semibold text-foreground">No clients yet</p>
@@ -456,18 +456,18 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
     <div className="space-y-4">
       {/* Stats Bar */}
       <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {clients.length}
           </span>
           <span className="text-xs text-muted-foreground">total</span>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
           <span className="h-2 w-2 rounded-full bg-emerald-500" />
           <span className="text-sm font-semibold tabular-nums text-foreground">{activeCount}</span>
           <span className="text-xs text-muted-foreground">active</span>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
           <span className="h-2 w-2 rounded-full bg-amber-500" />
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {inactiveCount}
@@ -476,7 +476,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
         </div>
 
         {/* View Toggle */}
-        <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-border/40 bg-secondary/50 p-0.5">
+        <div className="ml-auto flex items-center gap-0.5 rounded-lg border border-border bg-secondary/50 p-0.5">
           <button
             type="button"
             onClick={() => setViewMode('table')}

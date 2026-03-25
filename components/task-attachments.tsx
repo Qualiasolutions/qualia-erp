@@ -121,7 +121,7 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
   const isNotDone = taskStatus !== 'Done';
 
   return (
-    <div className="border-t border-border/50 px-6 py-4">
+    <div className="border-t border-border px-6 py-4">
       {/* Header */}
       <div className="mb-3 flex items-center gap-2">
         <Paperclip className="size-3.5 text-muted-foreground" />
@@ -146,14 +146,14 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
         className={cn(
           'mb-3 flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-dashed p-4 transition-colors',
           dragOver
-            ? 'border-qualia-500 bg-qualia-500/5'
-            : 'border-border/60 hover:border-border hover:bg-muted/30',
+            ? 'border-primary bg-primary/5'
+            : 'border-border hover:border-border hover:bg-muted/30',
           uploading && 'pointer-events-none opacity-60'
         )}
         onClick={() => fileInputRef.current?.click()}
       >
         {uploading ? (
-          <Loader2 className="size-5 animate-spin text-qualia-500" />
+          <Loader2 className="size-5 animate-spin text-primary" />
         ) : (
           <Upload className="size-5 text-muted-foreground/60" />
         )}

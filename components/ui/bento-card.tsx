@@ -19,11 +19,11 @@ const sizeClasses = {
 };
 
 const variantClasses = {
-  default: 'border-border/60 bg-card',
+  default: 'border-border bg-card',
   highlight:
-    'border-qualia-500/30 bg-gradient-to-br from-qualia-500/10 via-qualia-500/5 to-transparent',
-  gradient: 'border-border/40 bg-gradient-to-br from-card via-card to-muted/30',
-  glass: 'border-border/30 bg-card/80 backdrop-blur-sm',
+    'border-primary/30 bg-gradient-to-br from-qualia-500/10 via-qualia-500/5 to-transparent',
+  gradient: 'border-border bg-gradient-to-br from-card via-card to-muted/30',
+  glass: 'border-border bg-card/80 backdrop-blur-sm',
 };
 
 const BentoCard = React.forwardRef<HTMLDivElement, BentoCardProps>(
@@ -46,8 +46,8 @@ const BentoCard = React.forwardRef<HTMLDivElement, BentoCardProps>(
           'relative overflow-hidden rounded-2xl border transition-all duration-300',
           sizeClasses[size],
           variantClasses[variant],
-          interactive && 'hover:border-qualia-500/40 hover:shadow-lg',
-          glow && 'shadow-qualia-500/5 hover:shadow-qualia-500/10',
+          interactive && 'hover:border-primary/40 hover:shadow-lg',
+          glow && 'shadow-primary/5 hover:shadow-primary/10',
           className
         )}
         whileHover={interactive ? { y: -2, scale: 1.01 } : undefined}
@@ -84,7 +84,7 @@ const BentoCardHeader = React.forwardRef<HTMLDivElement, BentoCardHeaderProps>(
       <div ref={ref} className={cn('mb-4 flex items-center justify-between', className)} {...props}>
         <div className="flex items-center gap-2.5">
           {icon && (
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-qualia-500/10 text-qualia-500">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               {icon}
             </div>
           )}

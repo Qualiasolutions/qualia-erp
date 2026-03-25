@@ -82,7 +82,7 @@ function StageColumn({
   const { isSuperAdmin } = useAdminContext();
 
   return (
-    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border/40 bg-card shadow-elevation-1">
+    <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-elevation-1">
       {/* Column header */}
       <div
         className={cn(
@@ -226,14 +226,14 @@ export function ProjectsClient({
     <div className="flex h-full w-full flex-col gap-5 overflow-hidden p-5 md:p-6">
       {/* Stats strip */}
       <div className="flex shrink-0 items-center gap-2 overflow-x-auto">
-        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
           <Folder className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {totalProjects}
           </span>
           <span className="text-xs text-muted-foreground">total</span>
         </div>
-        <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
           <Hammer className="h-3.5 w-3.5 text-emerald-500" />
           <span className="text-sm font-semibold tabular-nums text-foreground">
             {building.length}
@@ -241,7 +241,7 @@ export function ProjectsClient({
           <span className="text-xs text-muted-foreground">building</span>
         </div>
         {preProduction.length > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
             <ClipboardCheck className="h-3.5 w-3.5 text-amber-500" />
             <span className="text-sm font-semibold tabular-nums text-foreground">
               {preProduction.length}
@@ -250,7 +250,7 @@ export function ProjectsClient({
           </div>
         )}
         {avgCompletion > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card/60 px-3 py-1.5">
             <span className="text-sm font-semibold tabular-nums text-foreground">
               {avgCompletion}%
             </span>
@@ -303,7 +303,7 @@ export function ProjectsClient({
             <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{archived.length}</span>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="mt-2 rounded-xl border border-border/40 bg-card/50 p-3">
+            <div className="mt-2 rounded-xl border border-border bg-card/50 p-3">
               <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
                 {archived.map((project) => (
                   <div key={project.id} className="w-[220px] flex-shrink-0">

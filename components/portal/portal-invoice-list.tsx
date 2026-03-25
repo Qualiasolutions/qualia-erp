@@ -52,8 +52,8 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
   if (invoices.length === 0) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center px-4">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-qualia-500/20">
-          <Receipt className="h-10 w-10 text-qualia-600 dark:text-qualia-400" />
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-primary/20">
+          <Receipt className="h-10 w-10 text-primary dark:text-primary" />
         </div>
         <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">
           No invoices yet
@@ -72,7 +72,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
           key={invoice.id}
           style={index < 6 ? getStaggerDelay(index) : undefined}
           className={cn(
-            'rounded-xl border-border transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1',
+            'rounded-xl border-border transition-all duration-200 hover:border-border hover:shadow-elevation-1',
             index < 6 && 'animate-fade-in-up fill-mode-both'
           )}
         >
@@ -115,7 +115,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
                     href={invoice.file_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-qualia-600 hover:text-qualia-700"
+                    className="flex items-center gap-1 text-xs text-primary hover:text-qualia-700"
                   >
                     <ExternalLink className="h-3 w-3" />
                     View PDF
@@ -127,7 +127,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
                   href={invoice.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1 text-xs text-qualia-600 hover:text-qualia-700 sm:hidden"
+                  className="flex items-center gap-1 text-xs text-primary hover:text-qualia-700 sm:hidden"
                 >
                   <ExternalLink className="h-3 w-3" />
                   View PDF

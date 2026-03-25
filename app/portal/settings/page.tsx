@@ -205,8 +205,8 @@ export default function PortalSettingsPage() {
       {/* Profile Settings */}
       <section className="space-y-5">
         <div className="flex items-center gap-2.5">
-          <div className="bg-qualia-500/8 flex h-8 w-8 items-center justify-center rounded-lg dark:bg-qualia-500/15">
-            <User className="h-4 w-4 text-qualia-600 dark:text-qualia-400" />
+          <div className="bg-primary/8 flex h-8 w-8 items-center justify-center rounded-lg dark:bg-primary/15">
+            <User className="h-4 w-4 text-primary dark:text-primary" />
           </div>
           <div>
             <h2 className="text-sm font-medium text-foreground">Profile Information</h2>
@@ -268,7 +268,7 @@ export default function PortalSettingsPage() {
               type="submit"
               disabled={profileSaving}
               size="sm"
-              className="bg-qualia-600 text-white hover:bg-qualia-700"
+              className="bg-primary text-white hover:bg-qualia-700"
             >
               {profileSaving ? (
                 <>
@@ -326,7 +326,7 @@ export default function PortalSettingsPage() {
           </div>
 
           {/* Delivery Method */}
-          <div className="border-t border-border/60 px-5 py-5">
+          <div className="border-t border-border px-5 py-5">
             <Label className="mb-3 block text-[13px] font-medium">Delivery Method</Label>
             <RadioGroup
               value={notificationPrefs.delivery_method}
@@ -363,12 +363,12 @@ export default function PortalSettingsPage() {
           </div>
 
           {/* Save button */}
-          <div className="border-t border-border/60 px-5 py-4">
+          <div className="border-t border-border px-5 py-4">
             <Button
               type="submit"
               disabled={notificationsSaving}
               size="sm"
-              className="bg-qualia-600 text-white hover:bg-qualia-700"
+              className="bg-primary text-white hover:bg-qualia-700"
             >
               {notificationsSaving ? (
                 <>

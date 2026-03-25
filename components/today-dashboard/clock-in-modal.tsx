@@ -93,7 +93,7 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
       >
         <DialogHeader>
           <div className="mb-1 flex items-center gap-2">
-            <LogIn className="size-5 text-qualia-500" />
+            <LogIn className="size-5 text-primary" />
             <DialogTitle className="text-base font-semibold">Clock In</DialogTitle>
           </div>
           <DialogDescription className="text-sm text-muted-foreground">
@@ -103,13 +103,11 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
 
         <form onSubmit={handleSubmit} className="mt-2 space-y-4">
           {/* Session start time */}
-          <div className="flex items-center gap-2 rounded-lg border border-qualia-500/20 bg-qualia-500/5 px-3 py-2.5">
-            <Clock className="size-4 text-qualia-500" />
+          <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+            <Clock className="size-4 text-primary" />
             <span className="text-sm font-medium text-foreground">
               Starting session at{' '}
-              <span className="text-qualia-600 dark:text-qualia-400">
-                {format(new Date(), 'h:mm a')}
-              </span>
+              <span className="text-primary dark:text-primary">{format(new Date(), 'h:mm a')}</span>
             </span>
           </div>
 
@@ -162,7 +160,7 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
             <Button
               type="submit"
               disabled={!selectedProjectId || isPending || loadingProjects}
-              className="gap-2 bg-qualia-500 text-white hover:bg-qualia-600"
+              className="gap-2 bg-primary text-white hover:bg-primary"
             >
               {isPending && <Loader2 className="size-3.5 animate-spin" />}
               {isPending ? 'Clocking In...' : 'Clock In'}

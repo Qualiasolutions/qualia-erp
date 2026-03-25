@@ -262,7 +262,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
           exit={{ opacity: 0 }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 text-base font-semibold">
                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
@@ -331,7 +331,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                       placeholder="Meeting title (e.g., Team Standup)"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="h-11 w-full rounded-xl border border-border/50 bg-secondary/30 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                      className="h-11 w-full rounded-xl border border-border bg-secondary/30 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
                     />
                   </motion.div>
                 )}
@@ -366,7 +366,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                       otherPlaceholder="Client name..."
                       icon={<Building2 className="h-4 w-4 text-muted-foreground" />}
                       className="w-full"
-                      triggerClassName="h-11 w-full justify-between rounded-xl border-border/50 bg-secondary/30"
+                      triggerClassName="h-11 w-full justify-between rounded-xl border-border bg-secondary/30"
                     />
                   </motion.div>
                 )}
@@ -380,7 +380,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 justify-start gap-2 rounded-xl border-border/50 bg-secondary/30 font-normal hover:bg-secondary/50"
+                      className="h-11 justify-start gap-2 rounded-xl border-border bg-secondary/30 font-normal hover:bg-secondary/50"
                     >
                       <CalendarIcon className="h-4 w-4 text-primary" />
                       <span className="truncate">
@@ -389,7 +389,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-auto border-border/50 bg-card/95 p-0 backdrop-blur-xl"
+                    className="w-auto border-border bg-card/95 p-0 backdrop-blur-xl"
                     align="start"
                   >
                     <Calendar
@@ -407,14 +407,14 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                     <Button
                       type="button"
                       variant="outline"
-                      className="h-11 justify-start gap-2 rounded-xl border-border/50 bg-secondary/30 font-normal hover:bg-secondary/50"
+                      className="h-11 justify-start gap-2 rounded-xl border-border bg-secondary/30 font-normal hover:bg-secondary/50"
                     >
                       <Clock className="h-4 w-4 text-primary" />
                       {TIME_SLOTS.find((t) => t.value === selectedTime)?.label}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-40 border-border/50 bg-card/95 p-1 backdrop-blur-xl"
+                    className="w-40 border-border bg-card/95 p-1 backdrop-blur-xl"
                     align="start"
                   >
                     <div className="max-h-56 overflow-y-auto">
@@ -487,7 +487,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                               'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all',
                               isSelected
                                 ? 'border-primary/30 bg-primary/10 text-primary'
-                                : 'border-border/50 bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                : 'border-border bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground'
                             )}
                           >
                             <span
@@ -519,7 +519,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                   placeholder="Paste meeting link (optional)"
                   value={meetingLink}
                   onChange={(e) => setMeetingLink(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-border/50 bg-secondary/30 pl-10 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
+                  className="h-11 w-full rounded-xl border border-border bg-secondary/30 pl-10 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
                 />
                 {meetingLink && (
                   <motion.div
@@ -537,7 +537,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-border/50 bg-gradient-to-br from-secondary/30 to-secondary/10 p-4"
+                  className="rounded-xl border border-border bg-gradient-to-br from-secondary/30 to-secondary/10 p-4"
                 >
                   <p className="font-medium text-foreground">{title}</p>
                   <div className="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
@@ -587,7 +587,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
             </div>
 
             {/* Footer */}
-            <div className="mt-6 flex items-center justify-end gap-3 border-t border-border/50 pt-4">
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-border pt-4">
               <Button
                 type="button"
                 variant="ghost"
@@ -634,7 +634,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
             </span>
           </Button>
         </DrawerTrigger>
-        <DrawerContent className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl">
+        <DrawerContent className="overflow-hidden border-border bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl">
           <DrawerHeader className="sr-only">
             <DrawerTitle>Quick Schedule</DrawerTitle>
             <DrawerDescription>Schedule a new meeting</DrawerDescription>
@@ -657,7 +657,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="overflow-hidden border-border/50 bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[420px]"
+        className="overflow-hidden border-border bg-gradient-to-b from-card to-card/95 p-0 shadow-2xl backdrop-blur-xl sm:max-w-[420px]"
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">

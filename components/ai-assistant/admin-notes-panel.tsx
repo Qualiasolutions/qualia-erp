@@ -107,7 +107,7 @@ export function AdminNotesPanel({ targetUserId, targetUserName }: AdminNotesPane
               className={cn(
                 'rounded-md border px-3 py-2 text-xs',
                 n.delivered
-                  ? 'border-border/50 bg-muted/30 text-muted-foreground'
+                  ? 'border-border bg-muted/30 text-muted-foreground'
                   : 'border-primary/20 bg-primary/5 text-foreground'
               )}
             >

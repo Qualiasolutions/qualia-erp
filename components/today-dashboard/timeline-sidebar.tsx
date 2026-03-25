@@ -58,7 +58,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header - Unified with other sections */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/60 bg-muted/30 px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border bg-muted/30 px-4">
         <div className="flex items-center gap-2.5">
           <Clock className="size-4 text-foreground/70" />
           <h2 className="text-[13px] font-semibold text-foreground">Today</h2>
@@ -97,7 +97,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
             <div
               key={slot.hour}
               className={cn(
-                'group relative flex h-16 border-b border-border/40',
+                'group relative flex h-16 border-b border-border',
                 slot.isPast && 'opacity-40'
               )}
             >
@@ -122,7 +122,7 @@ export function TimelineSidebar({ meetings }: TimelineSidebarProps) {
                       'absolute inset-x-0 top-1 rounded-lg border p-2 transition-all',
                       slot.isCurrent
                         ? 'border-violet-500/40 bg-violet-500/10'
-                        : 'border-border/60 bg-muted/50 hover:bg-muted'
+                        : 'border-border bg-muted/50 hover:bg-muted'
                     )}
                   >
                     <div className="flex items-start justify-between gap-2">

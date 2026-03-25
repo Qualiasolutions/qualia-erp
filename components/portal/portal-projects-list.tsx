@@ -99,7 +99,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-500',
-                      progress === 100 ? 'bg-emerald-500' : 'bg-qualia-500'
+                      progress === 100 ? 'bg-emerald-500' : 'bg-primary'
                     )}
                     style={{ width: `${progress}%` }}
                   />

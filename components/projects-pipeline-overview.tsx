@@ -29,7 +29,7 @@ export function ProjectsPipelineOverview({ projects }: ProjectsPipelineOverviewP
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-border/50">
+            <tr className="border-b border-border">
               <th className="pb-2 text-left text-xs font-medium text-muted-foreground">Project</th>
               {UNIVERSAL_PIPELINE.map((phase) => {
                 const config = getPipelinePhaseConfig(phase.name);
@@ -50,7 +50,7 @@ export function ProjectsPipelineOverview({ projects }: ProjectsPipelineOverviewP
           </thead>
           <tbody>
             {projects.map((project) => (
-              <tr key={project.id} className="border-b border-border/30 last:border-0">
+              <tr key={project.id} className="border-b border-border last:border-0">
                 <td className="py-2 pr-4">
                   <Link
                     href={`/projects/${project.id}`}

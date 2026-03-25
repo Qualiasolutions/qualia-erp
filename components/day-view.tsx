@@ -200,7 +200,7 @@ function DraggableItem({
       )}
 
       {/* Action buttons */}
-      <div className="absolute right-2 top-2 flex gap-1 rounded-md border border-border/50 bg-background/50 p-0.5 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100">
+      <div className="absolute right-2 top-2 flex gap-1 rounded-md border border-border bg-background/50 p-0.5 opacity-0 backdrop-blur-md transition-opacity group-hover:opacity-100">
         <button
           type="button"
           onClick={(e) => {
@@ -301,8 +301,8 @@ function TimeSlot({
       className={cn('relative h-full transition-all duration-200', isOver && 'bg-primary/5')}
       style={{ height: `${HOUR_HEIGHT / 2}px` }}
     >
-      <div className="absolute inset-x-0 bottom-0 border-b border-dashed border-border/20" />
-      {minute === 0 && <div className="absolute inset-x-0 top-0 border-b border-border/40" />}
+      <div className="absolute inset-x-0 bottom-0 border-b border-dashed border-border" />
+      {minute === 0 && <div className="absolute inset-x-0 top-0 border-b border-border" />}
     </div>
   );
 }
@@ -512,7 +512,7 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
         <div
           className={cn(
             'flex items-center justify-between',
-            embedded ? 'border-b border-border/30 px-5 py-4' : ''
+            embedded ? 'border-b border-border px-5 py-4' : ''
           )}
         >
           <div className="flex items-center gap-4">
@@ -605,13 +605,13 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
               {!embedded && (
                 <div
                   className={cn(
-                    'sticky top-0 z-30 grid border-b border-border/60 bg-card',
+                    'sticky top-0 z-30 grid border-b border-border bg-card',
                     showTasks ? 'grid-cols-[80px_1fr_1fr]' : 'grid-cols-[80px_1fr]'
                   )}
                 >
-                  <div className="border-r border-border/50 px-3 py-2" />
+                  <div className="border-r border-border px-3 py-2" />
                   {showTasks && (
-                    <div className="flex items-center gap-2 border-r border-border/30 px-4 py-2">
+                    <div className="flex items-center gap-2 border-r border-border px-4 py-2">
                       <ListTodo className="h-3.5 w-3.5 text-blue-500" />
                       <span className="text-xs font-semibold uppercase tracking-wider text-blue-500">
                         Tasks
@@ -648,7 +648,7 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
                 <div
                   className={cn(
                     'relative border-r',
-                    embedded ? 'border-border/30 bg-muted/20' : 'border-border/50 bg-secondary/20'
+                    embedded ? 'border-border bg-muted/20' : 'border-border bg-secondary/20'
                   )}
                 >
                   {hours.map((hour) => (
@@ -672,7 +672,7 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
                   <div
                     className={cn(
                       'relative',
-                      !embedded && 'border-r border-border/30',
+                      !embedded && 'border-r border-border',
                       isToday && 'bg-blue-500/[0.01]'
                     )}
                   >

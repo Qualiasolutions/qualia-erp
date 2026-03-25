@@ -15,7 +15,7 @@ export function AdminBadge() {
     <div
       className={cn(
         'admin-badge flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all duration-300',
-        isSuperAdmin ? 'border-qualia-500/30 text-qualia-400' : 'border-amber-500/30 text-amber-400'
+        isSuperAdmin ? 'border-primary/30 text-primary' : 'border-amber-500/30 text-amber-400'
       )}
     >
       {isSuperAdmin ? (

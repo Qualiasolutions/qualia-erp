@@ -54,10 +54,10 @@ function getTagColor(tag?: string | null) {
   if (!tag) return '';
   const map: Record<string, string> = {
     Testing: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400',
-    Production: 'bg-qualia-50 text-qualia-700 dark:bg-qualia-500/10 dark:text-qualia-400',
+    Production: 'bg-qualia-50 text-qualia-700 dark:bg-primary/10 dark:text-primary',
     Client: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
     Review: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
-    Strategy: 'bg-qualia-50 text-qualia-700 dark:bg-qualia-500/10 dark:text-qualia-400',
+    Strategy: 'bg-qualia-50 text-qualia-700 dark:bg-primary/10 dark:text-primary',
     Research: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400',
     Analytics: 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400',
     Design: 'bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400',
@@ -651,7 +651,7 @@ export function ScheduleBlock({
               <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={1.5} />
               <span className="text-xs font-medium text-foreground">{totalTasks} tasks</span>
               <span className="mx-1 h-3 w-px bg-border" />
-              <span className="text-xs font-medium text-qualia-600 dark:text-qualia-400">
+              <span className="text-xs font-medium text-primary dark:text-primary">
                 {doneTasks} done
               </span>
             </div>
@@ -691,7 +691,7 @@ export function ScheduleBlock({
                     ? `Quick add task for ${activeFilterLabel}...`
                     : 'Quick add task...'
                 }
-                className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-qualia-500/50 focus:ring-1 focus:ring-qualia-500/20"
+                className="h-9 w-full rounded-lg border border-border bg-card px-3.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-primary/50 focus:ring-1 focus:ring-primary/20"
               />
             </form>
           </div>
@@ -733,7 +733,7 @@ export function ScheduleBlock({
                     aria-label="Mark complete"
                   >
                     <Circle
-                      className="size-4 text-muted-foreground/40 transition-colors group-hover/check:text-qualia-400"
+                      className="size-4 text-muted-foreground/40 transition-colors group-hover/check:text-primary"
                       strokeWidth={1.5}
                     />
                   </button>
@@ -844,7 +844,7 @@ export function ScheduleBlock({
                           key={`time-${hour}`}
                           className={cn(
                             'flex items-start justify-end border-r border-border px-2.5 pt-3',
-                            !isLastRow && 'border-b border-border/50'
+                            !isLastRow && 'border-b border-border'
                           )}
                           style={{ gridRow: rowStart, gridColumn: 1 }}
                         >
@@ -889,11 +889,11 @@ export function ScheduleBlock({
                             key={`${member.id}-${hour}`}
                             className={cn(
                               'group relative min-h-[72px] transition-all',
-                              memberIdx < filteredMembers.length - 1 && 'border-r border-border/50',
+                              memberIdx < filteredMembers.length - 1 && 'border-r border-border',
                               // Only add bottom border if this cell doesn't span to the last row
                               !isLastRow &&
                                 timeIdx + spanRows - 1 < visibleSlotHours.length - 1 &&
-                                'border-b border-border/50',
+                                'border-b border-border',
                               isOutOfRange && !displayItems.length && 'bg-muted/10'
                             )}
                             style={{
@@ -906,7 +906,7 @@ export function ScheduleBlock({
                                 className={cn(
                                   'absolute left-0 right-0 z-10 overflow-hidden px-4 py-3',
                                   isInProgress &&
-                                    'border-l-2 border-l-qualia-500 bg-qualia-500/[0.03]',
+                                    'border-l-2 border-l-qualia-500 bg-primary/[0.03]',
                                   isMeetingItem &&
                                     !isInProgress &&
                                     'border-l-2 border-l-violet-500 bg-violet-500/[0.03]'
@@ -928,7 +928,7 @@ export function ScheduleBlock({
                                       className={cn(
                                         'flex items-start gap-3 transition-opacity duration-300',
                                         itemIsDone && 'opacity-35',
-                                        itemIdx > 0 && 'border-t border-border/30 pt-3'
+                                        itemIdx > 0 && 'border-t border-border pt-3'
                                       )}
                                     >
                                       {!itemIsMeeting ? (
@@ -943,14 +943,14 @@ export function ScheduleBlock({
                                         >
                                           {itemIsDone ? (
                                             <CheckCircle2
-                                              className="size-4 text-qualia-500 transition-colors group-hover/check:text-qualia-400"
+                                              className="size-4 text-primary transition-colors group-hover/check:text-primary"
                                               strokeWidth={2}
                                             />
                                           ) : (
                                             <Circle
                                               className={cn(
-                                                'size-4 transition-colors group-hover/check:text-qualia-400',
-                                                itemIsInProgress ? 'text-qualia-500' : 'text-border'
+                                                'size-4 transition-colors group-hover/check:text-primary',
+                                                itemIsInProgress ? 'text-primary' : 'text-border'
                                               )}
                                               strokeWidth={1.5}
                                             />
@@ -981,7 +981,7 @@ export function ScheduleBlock({
                                             itemIsDone
                                               ? 'text-muted-foreground line-through decoration-muted-foreground/30'
                                               : itemIsInProgress
-                                                ? 'font-medium text-foreground hover:text-qualia-600 dark:hover:text-qualia-400'
+                                                ? 'font-medium text-foreground hover:text-primary dark:hover:text-primary'
                                                 : itemIsMeeting
                                                   ? 'font-medium text-foreground hover:text-violet-600 dark:hover:text-violet-400'
                                                   : 'text-foreground/90 hover:text-foreground'
@@ -1064,7 +1064,7 @@ export function ScheduleBlock({
                                       {!itemIsMeeting &&
                                         getPriorityFromTask(item.priority) === 'high' &&
                                         !itemIsDone && (
-                                          <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-qualia-500" />
+                                          <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                                         )}
                                     </div>
                                   );
@@ -1106,7 +1106,7 @@ export function ScheduleBlock({
                 </span>
                 <div className="h-1 w-24 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full rounded-full bg-qualia-500 transition-all duration-500"
+                    className="h-full rounded-full bg-primary transition-all duration-500"
                     style={{
                       width: `${totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0}%`,
                     }}

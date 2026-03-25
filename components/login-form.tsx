@@ -71,7 +71,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             required
             autoComplete="email"
             autoFocus
-            className="h-12 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
+            className="h-12 focus-visible:border-primary/50 focus-visible:ring-primary/30"
           />
         </div>
 
@@ -96,7 +96,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
               type={showPassword ? 'text' : 'password'}
               required
               autoComplete="current-password"
-              className="h-12 pr-11 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
+              className="h-12 pr-11 focus-visible:border-primary/50 focus-visible:ring-primary/30"
             />
             <button
               type="button"
@@ -157,7 +157,7 @@ function PortalCard({
       <div
         className={cn(
           'relative overflow-hidden rounded-xl border px-5 py-4 transition-all duration-300 ease-out',
-          'border-border/30 bg-foreground/[0.02] hover:border-qualia-500/50 hover:bg-qualia-500/[0.04]'
+          'border-border bg-foreground/[0.02] hover:border-primary/50 hover:bg-primary/[0.04]'
         )}
       >
         <div className="relative flex items-center justify-between">
@@ -165,7 +165,7 @@ function PortalCard({
             <div
               className={cn(
                 'flex h-11 w-11 items-center justify-center rounded-lg transition-all duration-300',
-                'bg-foreground/[0.05] text-muted-foreground/60 group-hover:bg-qualia-500/20 group-hover:text-qualia-500'
+                'bg-foreground/[0.05] text-muted-foreground/60 group-hover:bg-primary/20 group-hover:text-primary'
               )}
             >
               {icon}
@@ -178,7 +178,7 @@ function PortalCard({
           <ArrowRight
             className={cn(
               'h-5 w-5 transition-all duration-300 ease-out',
-              'text-muted-foreground/20 group-hover:translate-x-1 group-hover:text-qualia-500'
+              'text-muted-foreground/20 group-hover:translate-x-1 group-hover:text-primary'
             )}
           />
         </div>

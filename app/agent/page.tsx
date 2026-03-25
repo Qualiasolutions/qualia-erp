@@ -277,7 +277,7 @@ export default function AgentPage() {
       {/* Main Chat Area */}
       <div className="flex flex-1 flex-col bg-background">
         {/* Header */}
-        <div className="flex h-14 items-center justify-between border-b border-border/40 bg-card/80 px-4 backdrop-blur-xl">
+        <div className="flex h-14 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}

@@ -13,7 +13,7 @@ interface OwnerUpdatesBannerProps {
 const PRIORITY_STYLES: Record<string, string> = {
   urgent: 'border-l-red-500 bg-red-500/5',
   high: 'border-l-amber-500 bg-amber-500/5',
-  normal: 'border-l-qualia-500 bg-qualia-500/5',
+  normal: 'border-l-qualia-500 bg-primary/5',
   low: 'border-l-muted-foreground/40 bg-muted/30',
 };
 

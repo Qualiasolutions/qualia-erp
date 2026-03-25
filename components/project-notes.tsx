@@ -111,11 +111,9 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
   };
 
   return (
-    <div
-      className={cn('flex h-full flex-col rounded-xl border border-border/50 bg-card', className)}
-    >
+    <div className={cn('flex h-full flex-col rounded-xl border border-border bg-card', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <MessageSquare className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold">Notes</h3>
@@ -148,7 +146,7 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -10 }}
-                    className="group min-w-0 rounded-lg border border-border/50 bg-card/50 p-3"
+                    className="group min-w-0 rounded-lg border border-border bg-card/50 p-3"
                   >
                     {/* Author */}
                     <div className="mb-2 flex items-center gap-2 overflow-hidden">
@@ -236,7 +234,7 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
       </div>
 
       {/* Input */}
-      <div className="border-t border-border/50 p-3">
+      <div className="border-t border-border p-3">
         <div className="flex gap-2">
           <Textarea
             value={newNote}

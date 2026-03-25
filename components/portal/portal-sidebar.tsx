@@ -64,7 +64,7 @@ function NavLink({
       className={cn(
         'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-150',
         isActive
-          ? 'bg-qualia-500/[0.08] text-foreground dark:bg-qualia-500/[0.12]'
+          ? 'bg-primary/[0.08] text-foreground dark:bg-primary/[0.12]'
           : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
       )}
     >
@@ -72,14 +72,14 @@ function NavLink({
         className={cn(
           'h-[15px] w-[15px] flex-shrink-0 transition-colors duration-150',
           isActive
-            ? 'text-qualia-600 dark:text-qualia-400'
+            ? 'text-primary dark:text-primary'
             : 'text-muted-foreground/60 group-hover:text-muted-foreground'
         )}
         strokeWidth={isActive ? 2 : 1.75}
       />
       <span>{item.name}</span>
       {isActive && (
-        <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-qualia-500" />
+        <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-primary" />
       )}
     </Link>
   );
@@ -112,10 +112,10 @@ function UserMenu({
           className={cn(
             'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
             'hover:bg-foreground/[0.04]',
-            'focus:outline-none focus-visible:ring-1 focus-visible:ring-qualia-500/30'
+            'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30'
           )}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-qualia-500/10 text-[11px] font-semibold text-qualia-600 dark:text-qualia-400">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary dark:text-primary">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -223,7 +223,7 @@ function SidebarContent({
       </div>
 
       {/* Theme + User */}
-      <div className="border-t border-border/50 px-3 py-3">
+      <div className="border-t border-border px-3 py-3">
         <div className="mb-2 flex items-center justify-between px-3">
           <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
             Theme
@@ -265,7 +265,7 @@ export function PortalSidebar(props: PortalSidebarProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-[220px] flex-shrink-0 border-r border-border/50 md:block">
+      <aside className="hidden h-full w-[220px] flex-shrink-0 border-r border-border md:block">
         <SidebarContent {...props} onLinkClick={handleLinkClick} />
       </aside>
     </>

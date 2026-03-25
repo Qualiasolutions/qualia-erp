@@ -63,7 +63,7 @@ export function PortalRequestForm({ projects }: PortalRequestFormProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Lightbulb className="h-4 w-4 text-qualia-600" />
+          <Lightbulb className="h-4 w-4 text-primary" />
           New Request
         </CardTitle>
       </CardHeader>

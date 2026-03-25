@@ -67,17 +67,17 @@ export default async function PortalLayout({ children }: { children: React.React
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner — floating, not a full header */}
         {isAdminViewing && (
-          <div className="shrink-0 border-b border-qualia-500/10 bg-qualia-950/5 px-6 py-1.5 dark:bg-qualia-500/5">
+          <div className="shrink-0 border-b border-primary/10 bg-qualia-950/5 px-6 py-1.5 dark:bg-primary/5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-xs">
-                <span className="inline-flex items-center rounded-full border border-qualia-500/20 bg-qualia-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-qualia-700 dark:text-qualia-400">
+                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-qualia-700 dark:text-primary">
                   {userRole === 'admin' ? 'Admin' : userRole === 'manager' ? 'Manager' : 'Team'}
                 </span>
                 <span className="text-muted-foreground">Viewing as client</span>
               </div>
               <Link
                 href="/"
-                className="text-xs font-medium text-qualia-600 transition-colors hover:text-qualia-800 dark:hover:text-qualia-300"
+                className="text-xs font-medium text-primary transition-colors hover:text-qualia-800 dark:hover:text-qualia-300"
               >
                 Exit preview
               </Link>

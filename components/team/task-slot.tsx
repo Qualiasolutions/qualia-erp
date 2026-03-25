@@ -39,7 +39,7 @@ export const TaskSlot = memo(function TaskSlot({
     <div
       onClick={() => onClick?.(task)}
       className={cn(
-        'group flex items-center gap-3 rounded-md border border-border/50 bg-background/50 px-3 py-2',
+        'group flex items-center gap-3 rounded-md border border-border bg-background/50 px-3 py-2',
         'cursor-pointer transition-all duration-150',
         'hover:border-border hover:bg-muted/30',
         isCompleted && 'opacity-40'

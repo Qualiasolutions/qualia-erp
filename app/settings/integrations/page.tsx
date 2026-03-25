@@ -76,14 +76,14 @@ function IntegrationsSkeleton() {
 export default function IntegrationsPage() {
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-3.5 backdrop-blur-xl">
+      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-3.5 backdrop-blur-xl">
         <div>
           <h1 className="text-lg font-medium text-foreground">Integrations</h1>
           <p className="text-sm text-muted-foreground">
             Connect external services to automate project setup
           </p>
         </div>
-        <span className="rounded-full bg-qualia-500/10 px-2 py-1 text-xs font-medium text-qualia-500">
+        <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
           Admin Only
         </span>
       </header>
@@ -95,7 +95,7 @@ export default function IntegrationsPage() {
           </Suspense>
 
           {/* Help Section */}
-          <div className="rounded-lg border border-border/50 bg-muted/30 p-4">
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
             <h3 className="text-sm font-medium text-foreground">How it works</h3>
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>

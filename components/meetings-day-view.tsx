@@ -37,7 +37,7 @@ export function MeetingsDayView({ meetings }: MeetingsDayViewProps) {
 
   if (todaysMeetings.length === 0) {
     return (
-      <div className="flex min-h-[300px] items-center justify-center rounded-lg border border-border/40 bg-card">
+      <div className="flex min-h-[300px] items-center justify-center rounded-lg border border-border bg-card">
         <div className="text-center">
           <Clock className="mx-auto mb-3 size-8 text-muted-foreground/40" />
           <p className="text-sm font-medium text-muted-foreground">No meetings today</p>
@@ -63,10 +63,10 @@ export function MeetingsDayView({ meetings }: MeetingsDayViewProps) {
               onClick={() => setDetailMeeting(meeting)}
               className={`group flex w-full cursor-pointer items-start gap-4 rounded-lg border px-4 py-3 text-left transition-colors ${
                 isNow
-                  ? 'hover:bg-qualia-500/8 border-qualia-500/30 bg-qualia-500/5'
+                  ? 'hover:bg-primary/8 border-primary/30 bg-primary/5'
                   : isPast
-                    ? 'border-border/30 bg-muted/30 opacity-60 hover:opacity-80'
-                    : 'border-border/40 bg-card hover:bg-accent/30'
+                    ? 'border-border bg-muted/30 opacity-60 hover:opacity-80'
+                    : 'border-border bg-card hover:bg-accent/30'
               }`}
             >
               {/* Time column */}
@@ -83,7 +83,7 @@ export function MeetingsDayView({ meetings }: MeetingsDayViewProps) {
 
               {/* Divider */}
               <div className="relative flex flex-col items-center self-stretch">
-                <div className={`size-2.5 rounded-full ${isNow ? 'bg-qualia-500' : 'bg-border'}`} />
+                <div className={`size-2.5 rounded-full ${isNow ? 'bg-primary' : 'bg-border'}`} />
                 <div className="w-px flex-1 bg-border/40" />
               </div>
 
@@ -94,7 +94,7 @@ export function MeetingsDayView({ meetings }: MeetingsDayViewProps) {
                   {isNow && (
                     <Badge
                       variant="outline"
-                      className="shrink-0 border-qualia-500/30 bg-qualia-500/10 text-[10px] text-qualia-600"
+                      className="shrink-0 border-primary/30 bg-primary/10 text-[10px] text-primary"
                     >
                       Now
                     </Badge>
@@ -109,7 +109,7 @@ export function MeetingsDayView({ meetings }: MeetingsDayViewProps) {
 
                 <div className="flex flex-wrap items-center gap-3">
                   {meeting.meeting_link && (
-                    <span className="inline-flex items-center gap-1 text-xs text-qualia-500">
+                    <span className="inline-flex items-center gap-1 text-xs text-primary">
                       <Video className="size-3" />
                       Join meeting
                       <ExternalLink className="size-2.5" />

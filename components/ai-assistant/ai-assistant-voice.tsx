@@ -247,8 +247,8 @@ export function AIAssistantVoice({ userName = 'Fawzi' }: AIAssistantVoiceProps) 
             <div
               className={cn(
                 'absolute -inset-4 rounded-full transition-all duration-300',
-                callState === 'speaking' && 'bg-qualia-500/30',
-                callState === 'listening' && 'bg-qualia-400/20'
+                callState === 'speaking' && 'bg-primary/30',
+                callState === 'listening' && 'bg-primary/20'
               )}
               style={{
                 transform: `scale(${1 + volumeLevel * 0.3})`,
@@ -258,8 +258,8 @@ export function AIAssistantVoice({ userName = 'Fawzi' }: AIAssistantVoiceProps) 
             <div
               className={cn(
                 'absolute -inset-8 rounded-full transition-all duration-500',
-                callState === 'speaking' && 'bg-qualia-500/20',
-                callState === 'listening' && 'bg-qualia-400/10'
+                callState === 'speaking' && 'bg-primary/20',
+                callState === 'listening' && 'bg-primary/10'
               )}
               style={{
                 transform: `scale(${1 + volumeLevel * 0.2})`,
@@ -272,8 +272,8 @@ export function AIAssistantVoice({ userName = 'Fawzi' }: AIAssistantVoiceProps) 
         {/* Connecting animation */}
         {callState === 'connecting' && (
           <>
-            <div className="absolute -inset-4 animate-ping rounded-full bg-qualia-500/30" />
-            <div className="absolute -inset-8 animate-ping rounded-full bg-qualia-500/20 [animation-delay:150ms]" />
+            <div className="absolute -inset-4 animate-ping rounded-full bg-primary/30" />
+            <div className="absolute -inset-8 animate-ping rounded-full bg-primary/20 [animation-delay:150ms]" />
           </>
         )}
 
@@ -284,7 +284,7 @@ export function AIAssistantVoice({ userName = 'Fawzi' }: AIAssistantVoiceProps) 
             'relative flex h-24 w-24 items-center justify-center rounded-full transition-all',
             callState === 'idle' &&
               'bg-gradient-to-br from-qualia-500 to-qualia-700 text-white hover:shadow-glow',
-            callState === 'connecting' && 'bg-qualia-500/50 text-white',
+            callState === 'connecting' && 'bg-primary/50 text-white',
             isInCall && 'bg-destructive text-destructive-foreground',
             'disabled:cursor-not-allowed disabled:opacity-50'
           )}

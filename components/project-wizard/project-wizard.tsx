@@ -416,14 +416,14 @@ export function ProjectWizard({
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium text-foreground/80">
                   {mode === 'demo' ? 'Demo Name' : 'Project Name'}{' '}
-                  <span className="text-qualia-500">*</span>
+                  <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="name"
                   value={wizardData.name}
                   onChange={(e) => updateWizardData({ name: e.target.value })}
                   placeholder={mode === 'demo' ? 'e.g. Acme Corp Demo' : 'e.g. Acme Corp Website'}
-                  className="h-12 rounded-xl border-border/30 bg-muted/30 text-base transition-all focus:border-qualia-500/50 focus:bg-background focus:ring-2 focus:ring-qualia-500/20"
+                  className="h-12 rounded-xl border-border bg-muted/30 text-base transition-all focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/20"
                   autoFocus
                 />
               </div>
@@ -434,7 +434,7 @@ export function ProjectWizard({
                   {/* Project Type */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-foreground/80">
-                      Type <span className="text-qualia-500">*</span>
+                      Type <span className="text-primary">*</span>
                     </Label>
                     <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
                       {PROJECT_TYPES.map((type) => {
@@ -449,7 +449,7 @@ export function ProjectWizard({
                               isSelected
                                 ? 'border-transparent bg-gradient-to-br shadow-lg ' +
                                     type.bgGradient
-                                : 'border-border/30 bg-muted/20 hover:border-border/50 hover:bg-muted/40'
+                                : 'border-border bg-muted/20 hover:border-border hover:bg-muted/40'
                             )}
                           >
                             {/* Selection indicator */}
@@ -491,7 +491,7 @@ export function ProjectWizard({
                   {/* Client */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-foreground/80">
-                      Client <span className="text-qualia-500">*</span>
+                      Client <span className="text-primary">*</span>
                     </Label>
                     <SelectWithOther
                       options={clients.map((client) => ({
@@ -513,7 +513,7 @@ export function ProjectWizard({
                       otherPlaceholder="Enter client name"
                       icon={<Building className="h-4 w-4 text-muted-foreground" />}
                       className="w-full"
-                      triggerClassName="h-12 w-full rounded-xl border-border/30 bg-muted/30 transition-all hover:bg-muted/50 focus:border-qualia-500/50 focus:ring-2 focus:ring-qualia-500/20"
+                      triggerClassName="h-12 w-full rounded-xl border-border bg-muted/30 transition-all hover:bg-muted/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
                     />
                   </div>
 
@@ -531,7 +531,7 @@ export function ProjectWizard({
                               'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
                               selectedIntegrations.github
                                 ? 'border-border bg-muted'
-                                : 'border-border/50 bg-muted/30 hover:bg-muted/50'
+                                : 'border-border bg-muted/30 hover:bg-muted/50'
                             )}
                           >
                             <Checkbox
@@ -552,7 +552,7 @@ export function ProjectWizard({
                               'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all',
                               selectedIntegrations.vercel
                                 ? 'border-black/30 bg-black/5 dark:border-white/30 dark:bg-white/5'
-                                : 'border-border/50 bg-muted/30 hover:bg-muted/50',
+                                : 'border-border bg-muted/30 hover:bg-muted/50',
                               !selectedIntegrations.github && 'cursor-not-allowed opacity-50'
                             )}
                           >

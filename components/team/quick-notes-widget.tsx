@@ -74,9 +74,9 @@ export function QuickNotesWidget({ className }: QuickNotesWidgetProps) {
   };
 
   return (
-    <div className={cn('rounded-lg border border-border/60 bg-card/50', className)}>
+    <div className={cn('rounded-lg border border-border bg-card/50', className)}>
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <span className="text-sm font-medium text-foreground">Notes</span>
         <span className="text-xs text-muted-foreground/50">
           {isSaving ? 'Saving...' : lastSaved ? `Saved ${formatLastSaved()}` : ''}
@@ -98,7 +98,7 @@ export function QuickNotesWidget({ className }: QuickNotesWidgetProps) {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-border/40 px-4 py-2">
+      <div className="border-t border-border px-4 py-2">
         <p className="text-xs text-muted-foreground/40">Auto-saved locally. Resets daily.</p>
       </div>
     </div>

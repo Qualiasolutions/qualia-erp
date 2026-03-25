@@ -36,53 +36,58 @@ async function ScheduleLoader({ view }: { view: string }) {
 
 function ScheduleSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Stats skeleton */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
-          <div className="h-7 w-8 animate-pulse rounded bg-muted" />
+          <div className="h-9 w-10 animate-pulse rounded bg-muted" />
           <div className="h-4 w-12 animate-pulse rounded bg-muted" />
         </div>
-        <div className="h-5 w-px bg-border" />
+        <div className="h-4 w-px bg-border" />
         <div className="flex items-center gap-4">
-          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
         </div>
       </div>
 
-      {/* Calendar skeleton */}
-      <div className="overflow-hidden rounded-lg border border-border bg-card">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-border bg-secondary/50 px-4 py-3">
-          <div className="flex items-center gap-4">
-            <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-            <div className="h-6 w-24 animate-pulse rounded bg-muted" />
+      {/* Two-panel skeleton */}
+      <div className="flex gap-5">
+        {/* Sidebar skeleton */}
+        <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card lg:block">
+          <div className="px-5 pb-3 pt-5">
+            <div className="h-4 w-20 animate-pulse rounded bg-muted" />
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-14 animate-pulse rounded bg-muted" />
-            <div className="h-7 w-7 animate-pulse rounded bg-muted" />
-            <div className="h-7 w-7 animate-pulse rounded bg-muted" />
-          </div>
-        </div>
-        {/* Single-column meetings grid skeleton */}
-        <div className="grid grid-cols-[80px_1fr]">
-          <div className="space-y-0">
-            {[...Array(12)].map((_, i) => (
-              <div
-                key={i}
-                className="flex h-[55px] items-start justify-end border-b border-border/50 pr-2"
-              >
-                <div className="h-3 w-8 animate-pulse rounded bg-muted" />
+          <div className="space-y-2 px-3 pb-4">
+            {[...Array(7)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
               </div>
             ))}
           </div>
-          <div className="relative border-l border-border">
-            {[...Array(12)].map((_, i) => (
-              <div key={i} className="h-[55px] border-b border-border/50" />
+        </div>
+
+        {/* Calendar skeleton */}
+        <div className="flex-1 overflow-hidden rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between px-6 py-4">
+            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-16 animate-pulse rounded-lg bg-muted" />
+              <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
+              <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
+            </div>
+          </div>
+          <div className="grid grid-cols-7 gap-px border-t border-border bg-border">
+            {[...Array(7)].map((_, i) => (
+              <div key={i} className="bg-secondary/50 py-3 text-center">
+                <div className="mx-auto h-3 w-8 animate-pulse rounded bg-muted" />
+              </div>
             ))}
-            {/* Meeting placeholders */}
-            <div className="absolute left-2 right-2 top-[165px] h-[82px] animate-pulse rounded-md bg-violet-500/10" />
-            <div className="absolute left-2 right-2 top-[385px] h-[55px] animate-pulse rounded-md bg-violet-500/10" />
+            {[...Array(35)].map((_, i) => (
+              <div key={i} className="h-24 bg-card p-2">
+                <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -95,7 +100,6 @@ export default function SchedulePage({
 }: {
   searchParams: Promise<{ view?: string }>;
 }) {
-  // React 19: Use the use() hook to unwrap promises directly
   const params = use(searchParams);
   const view = params.view || 'week';
 
@@ -111,7 +115,7 @@ export default function SchedulePage({
       </PageHeader>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-5 sm:p-8">
+      <div className="flex-1 overflow-y-auto p-6">
         <Suspense fallback={<ScheduleSkeleton />}>
           <ScheduleLoader view={view} />
         </Suspense>

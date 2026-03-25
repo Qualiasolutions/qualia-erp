@@ -86,8 +86,8 @@ export function SignupForm({ invitation }: SignupFormProps) {
 
       {/* Project badge */}
       <div className="mb-6">
-        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-qualia-500" />
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5">
+          <div className="h-1.5 w-1.5 rounded-full bg-primary" />
           <span className="text-xs font-medium text-muted-foreground">
             Creating account for <span className="text-foreground">{invitation.projectName}</span>
           </span>
@@ -124,7 +124,7 @@ export function SignupForm({ invitation }: SignupFormProps) {
             placeholder="John Doe"
             required
             autoFocus
-            className="h-12 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
+            className="h-12 focus-visible:border-primary/50 focus-visible:ring-primary/30"
           />
         </div>
 
@@ -143,7 +143,7 @@ export function SignupForm({ invitation }: SignupFormProps) {
               value={password}
               onChange={handlePasswordChange}
               className={cn(
-                'h-12 pr-11 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30',
+                'h-12 pr-11 focus-visible:border-primary/50 focus-visible:ring-primary/30',
                 passwordError && 'border-destructive/50'
               )}
             />
@@ -175,7 +175,7 @@ export function SignupForm({ invitation }: SignupFormProps) {
               value={confirmPassword}
               onChange={handleConfirmPasswordChange}
               className={cn(
-                'h-12 pr-11 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30',
+                'h-12 pr-11 focus-visible:border-primary/50 focus-visible:ring-primary/30',
                 confirmPasswordError && 'border-destructive/50'
               )}
             />
@@ -208,7 +208,7 @@ export function SignupForm({ invitation }: SignupFormProps) {
         <Button
           type="submit"
           size="lg"
-          className="group h-12 w-full bg-qualia-600 text-sm font-semibold hover:bg-qualia-700"
+          className="group h-12 w-full bg-primary text-sm font-semibold hover:bg-qualia-700"
           disabled={isPending || !!passwordError || !!confirmPasswordError}
         >
           {isPending ? (

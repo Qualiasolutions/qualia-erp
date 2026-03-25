@@ -103,7 +103,7 @@ export function NewIssueModal({
     <Dialog open={open} onOpenChange={setOpen}>
       {!isControlled && (
         <DialogTrigger asChild>
-          <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-500">
+          <Button className="flex items-center gap-2 bg-primary hover:bg-primary">
             <Plus className="h-4 w-4" />
             <span>New Task</span>
           </Button>
@@ -205,7 +205,7 @@ export function NewIssueModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="bg-qualia-600 hover:bg-qualia-500">
+            <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary">
               {loading ? 'Creating...' : 'Create Task'}
             </Button>
           </div>

@@ -213,8 +213,8 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
               setPopoverOpen(false);
             }}
             className={cn(
-              'flex w-full items-center gap-2.5 rounded-lg border border-qualia-500/50 bg-qualia-500/10 px-3 py-2.5 text-sm font-medium text-qualia-500 transition-all sm:gap-3',
-              'active:scale-98 sm:hover:bg-qualia-500 sm:hover:text-white'
+              'flex w-full items-center gap-2.5 rounded-lg border border-primary/50 bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition-all sm:gap-3',
+              'active:scale-98 sm:hover:bg-primary sm:hover:text-white'
             )}
           >
             <CalendarDays className="h-4 w-4" />
@@ -271,7 +271,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
   // Shared header for all states
   const MeetingsHeader = ({ showMeetButton = true }: { showMeetButton?: boolean }) => (
-    <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+    <CardHeader className="shrink-0 border-b border-border px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
       <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500 sm:h-8 sm:w-8">
           <Video className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -292,7 +292,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   if (meetings.length === 0) {
     return (
       <>
-        <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+        <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
           <MeetingsHeader showMeetButton={false} />
           <CardContent className="flex flex-1 items-center justify-center p-4 sm:p-6">
             <div className="space-y-3 text-center">
@@ -302,8 +302,8 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                 <button
                   onClick={() => setShowNewMeetingModal(true)}
                   className={cn(
-                    'flex h-9 items-center gap-1.5 rounded-lg bg-qualia-500 px-3 text-xs font-semibold text-white transition-all sm:h-10 sm:px-4',
-                    'active:scale-95 sm:hover:bg-qualia-600'
+                    'flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-all sm:h-10 sm:px-4',
+                    'active:scale-95 sm:hover:bg-primary'
                   )}
                 >
                   <Plus className="h-3.5 w-3.5" />
@@ -334,7 +334,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   }
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+    <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
       <MeetingsHeader />
 
       <ScrollArea className="min-h-0 flex-1">
@@ -420,10 +420,10 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
             {/* Next Meeting - Emphasized */}
             {nextMeeting && !currentMeeting && (
-              <div className="group/meeting border-l-2 border-qualia-500 bg-qualia-500/5 p-3 sm:p-4">
+              <div className="group/meeting border-l-2 border-primary bg-primary/5 p-3 sm:p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-[11px] font-semibold text-qualia-500">
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                       Up Next
                     </span>
                     <span className="text-[11px] text-muted-foreground sm:text-xs">
@@ -432,7 +432,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                     <div className="flex gap-0.5 opacity-0 transition-opacity group-hover/meeting:opacity-100">
                       <button
                         onClick={() => setEditingMeeting(nextMeeting)}
-                        className="rounded p-1 text-muted-foreground hover:bg-qualia-500/20 hover:text-qualia-500"
+                        className="rounded p-1 text-muted-foreground hover:bg-primary/20 hover:text-primary"
                         title="Edit meeting"
                       >
                         <Pencil className="h-3 w-3" />
@@ -495,7 +495,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                 key={meeting.id}
                 className={cn(
                   'group/item p-3 transition-all duration-200 sm:p-4',
-                  'active:bg-qualia-500/10 sm:hover:bg-qualia-500/5'
+                  'active:bg-primary/10 sm:hover:bg-primary/5'
                 )}
               >
                 <div className="flex items-start justify-between gap-2 sm:gap-3">
@@ -573,10 +573,10 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
 
           {/* View All Link */}
           {totalActiveMeetings > 3 && (
-            <div className="border-t border-border/40 p-3 sm:p-4">
+            <div className="border-t border-border p-3 sm:p-4">
               <Link
                 href="/schedule"
-                className="flex items-center justify-center gap-1 text-xs font-medium text-qualia-500 transition-colors hover:text-qualia-600 active:text-qualia-700 dark:hover:text-qualia-400"
+                className="flex items-center justify-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary active:text-qualia-700 dark:hover:text-primary"
               >
                 View all {totalActiveMeetings} meetings
                 <ExternalLink className="h-3 w-3" />

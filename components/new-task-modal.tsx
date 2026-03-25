@@ -55,6 +55,7 @@ import {
   invalidateDailyFlow,
 } from '@/lib/swr';
 import { setHours, setMinutes, addMinutes } from 'date-fns';
+import { useAdminContext } from '@/components/admin-provider';
 
 interface NewTaskModalProps {
   open?: boolean;
@@ -71,6 +72,7 @@ export function NewTaskModal({
 }: NewTaskModalProps = {}) {
   const { profiles } = useProfiles();
   const { projects } = useProjects();
+  const { isAdmin } = useAdminContext();
   const inputRef = useRef<HTMLInputElement>(null);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -262,7 +264,7 @@ export function NewTaskModal({
                 rows={2}
                 autoFocus
                 aria-label="Task description"
-                className="mt-2 w-full resize-none rounded-lg border border-border/30 bg-muted/30 px-3 py-2 text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:border-border/50 focus:outline-none dark:bg-muted/20"
+                className="mt-2 w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:border-border focus:outline-none dark:bg-muted/20"
               />
             ) : (
               <button
@@ -331,7 +333,7 @@ export function NewTaskModal({
                       <SelectValue placeholder="None" />
                     )}
                   </SelectTrigger>
-                  <SelectContent className="border-border/40 bg-card shadow-xl dark:border-border/50">
+                  <SelectContent className="border-border bg-card shadow-xl dark:border-border">
                     <SelectItem value="unassigned">
                       <span className="text-muted-foreground">Unassigned</span>
                     </SelectItem>
@@ -367,7 +369,7 @@ export function NewTaskModal({
                   <SelectTrigger className="h-8 w-full border-0 bg-transparent px-0 text-sm font-normal text-foreground/80 shadow-none hover:bg-transparent focus:ring-0">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px] border-border/40 bg-card shadow-xl dark:border-border/50">
+                  <SelectContent className="max-h-[200px] border-border bg-card shadow-xl dark:border-border">
                     <SelectItem value="none">No time</SelectItem>
                     {Array.from({ length: 17 }, (_, i) => {
                       const totalMinutes = 7.5 * 60 + i * 30;
@@ -413,7 +415,7 @@ export function NewTaskModal({
                     </button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-auto border-border/40 bg-card p-0 shadow-xl dark:border-border/50"
+                    className="w-auto border-border bg-card p-0 shadow-xl dark:border-border"
                     align="start"
                   >
                     <Calendar mode="single" selected={dueDate} onSelect={setDueDate} />
@@ -421,16 +423,18 @@ export function NewTaskModal({
                 </Popover>
               </MetadataField>
 
-              {/* Require attachment */}
-              <MetadataField label="Require upload" icon={Paperclip}>
-                <input
-                  type="text"
-                  value={requiresAttachment}
-                  onChange={(e) => setRequiresAttachment(e.target.value)}
-                  placeholder="e.g. Screenshot of completed work"
-                  className="h-8 w-full bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none"
-                />
-              </MetadataField>
+              {/* Require attachment — admin only */}
+              {isAdmin && (
+                <MetadataField label="Require upload" icon={Paperclip}>
+                  <input
+                    type="text"
+                    value={requiresAttachment}
+                    onChange={(e) => setRequiresAttachment(e.target.value)}
+                    placeholder="e.g. Screenshot of completed work"
+                    className="h-8 w-full bg-transparent text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:outline-none"
+                  />
+                </MetadataField>
+              )}
 
               {/* Duration — only when time is set */}
               {scheduledTime && scheduledTime !== 'none' && (
@@ -439,7 +443,7 @@ export function NewTaskModal({
                     <SelectTrigger className="h-8 w-full border-0 bg-transparent px-0 text-sm font-normal text-foreground/80 shadow-none hover:bg-transparent focus:ring-0">
                       <SelectValue placeholder="30 min" />
                     </SelectTrigger>
-                    <SelectContent className="border-border/40 bg-card shadow-xl dark:border-border/50">
+                    <SelectContent className="border-border bg-card shadow-xl dark:border-border">
                       <SelectItem value="15">15 min</SelectItem>
                       <SelectItem value="30">30 min</SelectItem>
                       <SelectItem value="60">1 hour</SelectItem>
@@ -468,10 +472,10 @@ export function NewTaskModal({
             {/* Footer */}
             <div className="mt-5 flex items-center justify-between">
               <span className="flex items-center gap-1 text-xs text-muted-foreground/40">
-                <kbd className="rounded border border-border/30 bg-muted/50 px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground/50">
+                <kbd className="rounded border border-border bg-muted/50 px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground/50">
                   {'\u2318'}
                 </kbd>
-                <kbd className="rounded border border-border/30 bg-muted/50 px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground/50">
+                <kbd className="rounded border border-border bg-muted/50 px-1 py-0.5 font-mono text-[10px] leading-none text-muted-foreground/50">
                   {'\u23CE'}
                 </kbd>
               </span>
@@ -512,7 +516,7 @@ export function NewTaskModal({
             </Button>
           </DrawerTrigger>
         )}
-        <DrawerContent className="dark:bg-card/98 border-border/40 bg-card p-0 shadow-2xl dark:border-border/50">
+        <DrawerContent className="dark:bg-card/98 border-border bg-card p-0 shadow-2xl dark:border-border">
           <DrawerHeader className="sr-only">
             <DrawerTitle>New Task</DrawerTitle>
             <DrawerDescription>Create a new task</DrawerDescription>
@@ -537,7 +541,7 @@ export function NewTaskModal({
         </DialogTrigger>
       )}
       <DialogContent
-        className="dark:bg-card/98 overflow-hidden border-border/40 bg-card p-0 shadow-2xl dark:border-border/50 sm:max-w-[520px]"
+        className="dark:bg-card/98 overflow-hidden border-border bg-card p-0 shadow-2xl dark:border-border sm:max-w-[520px]"
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">

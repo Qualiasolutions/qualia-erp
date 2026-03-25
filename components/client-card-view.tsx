@@ -21,7 +21,7 @@ const ClientCard = React.memo(function ClientCard({
     <button
       type="button"
       onClick={() => onOpenDetail(client)}
-      className="card-interactive flex w-full flex-col gap-3 rounded-xl border border-border/40 bg-card p-4 text-left transition-all"
+      className="card-interactive flex w-full flex-col gap-3 rounded-xl border border-border bg-card p-4 text-left transition-all"
     >
       {/* Header: Avatar + Name + Status */}
       <div className="flex items-start gap-3">
@@ -55,7 +55,7 @@ const ClientCard = React.memo(function ClientCard({
       </div>
 
       {/* Footer: Projects, Contact, Website */}
-      <div className="flex items-center gap-3 border-t border-border/30 pt-3 text-xs text-muted-foreground">
+      <div className="flex items-center gap-3 border-t border-border pt-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1">
           <Folder className="h-3 w-3" />
           <span className="tabular-nums">{projectCount}</span>

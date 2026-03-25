@@ -541,8 +541,8 @@ export function PortalRoadmap({
         {isValidating && (
           <div className="absolute right-4 top-4">
             <span className="relative flex size-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-qualia-500/75" />
-              <span className="relative inline-flex size-2 rounded-full bg-qualia-600" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/75" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
             </span>
           </div>
         )}

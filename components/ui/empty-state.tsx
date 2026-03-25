@@ -33,7 +33,7 @@ export function EmptyState({
     <div
       className={cn(
         'flex animate-fade-in flex-col items-center justify-center gap-3 text-center',
-        !minimal && 'rounded-xl border border-dashed border-border/60 bg-card/50',
+        !minimal && 'rounded-xl border border-dashed border-border bg-card/50',
         compact ? 'p-8' : 'p-10',
         className
       )}

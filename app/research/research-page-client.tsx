@@ -67,7 +67,7 @@ function ResearchCard({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="group relative rounded-xl border border-border/50 bg-gradient-to-br from-card to-card/50 p-5 transition-all hover:border-border/80 hover:shadow-md"
+      className="group relative rounded-xl border border-border bg-gradient-to-br from-card to-card/50 p-5 transition-all hover:border-border/80 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -180,7 +180,7 @@ ${entry.raw_content ? `## Raw Research Content\n${entry.raw_content}` : ''}
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
-        <DialogHeader className="border-b border-border/40 pb-4">
+        <DialogHeader className="border-b border-border pb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               <div
@@ -346,7 +346,7 @@ function NewResearchModal({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <FlaskConical className="h-5 w-5 text-qualia-500" />
+            <FlaskConical className="h-5 w-5 text-primary" />
             Log Research
           </DialogTitle>
           <DialogDescription>
@@ -523,14 +523,14 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
+      <header className="flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
         <div className="flex items-center gap-2.5">
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10"
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10"
           >
-            <FlaskConical className="h-3.5 w-3.5 text-qualia-500" />
+            <FlaskConical className="h-3.5 w-3.5 text-primary" />
           </motion.div>
           <div>
             <h1 className="text-sm font-semibold text-foreground">Research</h1>
@@ -579,8 +579,8 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
               className={cn(
                 'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                 selectedCategory === 'all'
-                  ? 'border-qualia-500/30 bg-qualia-500/15 text-qualia-600 dark:text-qualia-400'
-                  : 'border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                  ? 'border-primary/30 bg-primary/15 text-primary dark:text-primary'
+                  : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
               )}
             >
               All ({entries.length})
@@ -597,7 +597,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
                     'rounded-full border px-3 py-1.5 text-xs font-medium transition-all',
                     selectedCategory === cat.value
                       ? `${colors.border} ${colors.bg} ${colors.text}`
-                      : 'border-border/50 bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                      : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
                   )}
                 >
                   {cat.label} ({count})
@@ -608,7 +608,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
 
           {/* Research Entries */}
           {filteredEntries.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-16">
+            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16">
               <FlaskConical className="mb-4 h-12 w-12 text-muted-foreground/30" />
               <h3 className="mb-2 font-medium text-foreground">No research entries yet</h3>
               <p className="mb-4 text-sm text-muted-foreground">

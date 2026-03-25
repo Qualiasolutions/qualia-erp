@@ -227,7 +227,7 @@ export function StepProvisioning({
                 'flex items-center justify-between rounded-lg border p-4 transition-colors',
                 step.status === 'completed' && 'border-green-500/30 bg-green-500/5',
                 step.status === 'failed' && 'border-destructive/30 bg-destructive/5',
-                step.status === 'in_progress' && 'border-qualia-500/30 bg-qualia-500/5',
+                step.status === 'in_progress' && 'border-primary/30 bg-primary/5',
                 step.status === 'pending' && 'border-border bg-muted/30'
               )}
             >
@@ -237,7 +237,7 @@ export function StepProvisioning({
                     'flex h-10 w-10 items-center justify-center rounded-lg',
                     step.status === 'completed' && 'bg-green-500',
                     step.status === 'failed' && 'bg-destructive',
-                    step.status === 'in_progress' && 'bg-qualia-500',
+                    step.status === 'in_progress' && 'bg-primary',
                     step.status === 'pending' && 'bg-muted-foreground/20'
                   )}
                 >
@@ -258,7 +258,7 @@ export function StepProvisioning({
                       href={step.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-qualia-500 hover:underline"
+                      className="flex items-center gap-1 text-sm text-primary hover:underline"
                     >
                       View resource <ExternalLink className="h-3 w-3" />
                     </a>

@@ -137,7 +137,7 @@ function MonitorCard({
         // 3D tilt effect via perspective
         'hover:[transform:perspective(800px)_rotateX(1deg)_rotateY(-1deg)_translateY(-2px)]',
         monitor.status === 2 && [
-          'border-border/40 bg-card',
+          'border-border bg-card',
           'hover:border-emerald-500/30',
           'hover:shadow-[0_8px_30px_-8px_rgba(16,185,129,0.12),0_2px_8px_-2px_rgba(0,0,0,0.1)]',
         ],
@@ -149,7 +149,7 @@ function MonitorCard({
           'border-red-500/40 bg-card',
           'shadow-[0_4px_20px_-6px_rgba(239,68,68,0.2)]',
         ],
-        (monitor.status === 0 || monitor.status === 1) && 'border-border/20 bg-card/60 opacity-50'
+        (monitor.status === 0 || monitor.status === 1) && 'border-border bg-card/60 opacity-50'
       )}
       style={{
         animationDelay: `${index * 50}ms`,
@@ -181,7 +181,7 @@ function MonitorCard({
             className={cn(
               'flex size-14 items-center justify-center overflow-hidden rounded-2xl border-2 transition-all duration-300',
               'bg-gradient-to-br from-muted/40 to-muted/10',
-              monitor.status === 2 && 'border-border/30 group-hover:border-emerald-500/20',
+              monitor.status === 2 && 'border-border group-hover:border-emerald-500/20',
               monitor.status === 8 && 'border-amber-500/20',
               monitor.status === 9 && 'border-red-500/20',
               (monitor.status === 0 || monitor.status === 1) && 'border-border/10'
@@ -219,7 +219,7 @@ function MonitorCard({
                 onClick={(e) => e.stopPropagation()}
                 className={cn(
                   'flex size-7 items-center justify-center rounded-lg border transition-all duration-200',
-                  'border-transparent opacity-0 group-hover:border-border/40 group-hover:opacity-100',
+                  'border-transparent opacity-0 group-hover:border-border group-hover:opacity-100',
                   'hover:bg-muted/40'
                 )}
               >
@@ -263,7 +263,7 @@ function MonitorCard({
 
         {/* Expanded details */}
         {expanded && (
-          <div className="mt-4 space-y-3 border-t border-border/20 pt-3 duration-200 animate-in fade-in slide-in-from-top-2">
+          <div className="mt-4 space-y-3 border-t border-border pt-3 duration-200 animate-in fade-in slide-in-from-top-2">
             {/* Uptime stats */}
             <div className="grid grid-cols-2 gap-2">
               {uptime7d && (
@@ -488,7 +488,7 @@ export function StatusDashboard({
   return (
     <div className="flex h-full flex-col">
       {/* Mobile-only top bar with hamburger */}
-      <header className="flex items-center justify-between border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
+      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
         <div className="flex items-center gap-2.5">
           <Button
             type="button"
@@ -500,8 +500,8 @@ export function StatusDashboard({
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
-            <Activity className="h-3.5 w-3.5 text-qualia-500" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+            <Activity className="h-3.5 w-3.5 text-primary" />
           </div>
           <h1 className="text-sm font-semibold text-foreground">System Status</h1>
         </div>
@@ -513,8 +513,8 @@ export function StatusDashboard({
           <div className="hidden items-end justify-between md:flex">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-qualia-500/10">
-                  <Activity className="size-5 text-qualia-500" />
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+                  <Activity className="size-5 text-primary" />
                 </div>
                 <h1 className="text-2xl font-bold tracking-tight text-foreground">System Status</h1>
               </div>

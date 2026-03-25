@@ -96,10 +96,10 @@ export function PortalDashboardContent({
 
       {/* Hero greeting with date */}
       <div className={cn(fadeInClasses)} style={getStaggerDelay(0)}>
-        <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card via-card to-muted/20 px-8 py-8">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-card to-muted/20 px-8 py-8">
           {/* Subtle decorative accent */}
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-qualia-500/[0.03] blur-3xl" />
-          <div className="absolute -bottom-32 -left-16 h-48 w-48 rounded-full bg-qualia-500/[0.02] blur-2xl" />
+          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/[0.03] blur-3xl" />
+          <div className="absolute -bottom-32 -left-16 h-48 w-48 rounded-full bg-primary/[0.02] blur-2xl" />
 
           <div className="relative">
             <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-muted-foreground/40">
@@ -165,7 +165,7 @@ export function PortalDashboardContent({
               key={action.label}
               href={action.href}
               className={cn(
-                'group relative overflow-hidden rounded-xl border border-border/40 bg-gradient-to-br px-5 py-4 transition-all duration-200',
+                'group relative overflow-hidden rounded-xl border border-border bg-gradient-to-br px-5 py-4 transition-all duration-200',
                 'hover:border-border/80 hover:shadow-md hover:shadow-black/[0.03]',
                 action.gradient
               )}
@@ -174,7 +174,7 @@ export function PortalDashboardContent({
                 <div
                   className={cn(
                     'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background/80 shadow-sm transition-transform duration-200 group-hover:scale-105',
-                    'border border-border/30'
+                    'border border-border'
                   )}
                 >
                   <Icon className={cn('h-4 w-4', action.iconColor)} />

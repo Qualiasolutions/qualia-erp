@@ -70,7 +70,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
     >
       <div
         className={cn(
-          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-border/40 bg-card shadow-2xl transition-all duration-200',
+          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all duration-200',
           exiting ? 'scale-95 opacity-0' : 'duration-300 animate-in fade-in zoom-in-95'
         )}
       >
@@ -86,7 +86,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
         {step === 'welcome' ? (
           <div className="px-8 pb-8 pt-12 text-center">
             {/* Qualia logo mark */}
-            <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500 to-qualia-600 shadow-lg shadow-qualia-500/20">
+            <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500 to-qualia-600 shadow-lg shadow-primary/20">
               <span className="text-xl font-bold text-white">Q</span>
             </div>
 
@@ -102,7 +102,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
             <div className="mt-8 flex flex-col items-center gap-3">
               <Button
                 onClick={() => setStep('tour')}
-                className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-qualia-500 text-sm font-medium text-white shadow-md transition-all hover:bg-qualia-600 hover:shadow-lg"
+                className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-md transition-all hover:bg-primary hover:shadow-lg"
               >
                 Show me around
                 <ArrowRight className="size-3.5" />
@@ -126,7 +126,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                   key={i}
                   className={cn(
                     'h-1 flex-1 rounded-full transition-all duration-300',
-                    i <= currentStep ? 'bg-qualia-500' : 'bg-muted-foreground/10'
+                    i <= currentStep ? 'bg-primary' : 'bg-muted-foreground/10'
                   )}
                 />
               ))}
@@ -138,7 +138,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                 key={currentStep}
                 className="duration-200 animate-in fade-in slide-in-from-right-2"
               >
-                <p className="text-xs font-medium uppercase tracking-wider text-qualia-500">
+                <p className="text-xs font-medium uppercase tracking-wider text-primary">
                   Step {currentStep + 1} of {tourSteps.length}
                 </p>
                 <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
@@ -172,7 +172,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                     dismiss();
                   }
                 }}
-                className="h-9 gap-1.5 rounded-xl bg-qualia-500 px-5 text-sm font-medium text-white transition-all hover:bg-qualia-600"
+                className="h-9 gap-1.5 rounded-xl bg-primary px-5 text-sm font-medium text-white transition-all hover:bg-primary"
               >
                 {currentStep < tourSteps.length - 1 ? (
                   <>

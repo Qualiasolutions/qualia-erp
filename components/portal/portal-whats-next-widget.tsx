@@ -30,7 +30,7 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
   return (
     <Link
       href={`/portal/${project.id}`}
-      className="group block rounded-xl border border-border/50 bg-card px-5 py-5 transition-all duration-150 hover:border-border hover:shadow-sm"
+      className="group block rounded-xl border border-border bg-card px-5 py-5 transition-all duration-150 hover:border-border hover:shadow-sm"
     >
       {/* Project name */}
       <div className="flex items-center justify-between gap-3">
@@ -54,7 +54,7 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
             <div
               className={cn(
                 'h-full rounded-full transition-all duration-700 ease-out',
-                progressPct === 100 ? 'bg-emerald-500' : 'bg-qualia-500'
+                progressPct === 100 ? 'bg-emerald-500' : 'bg-primary'
               )}
               style={{ width: `${progressPct}%` }}
             />
@@ -66,8 +66,8 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
               <div className="mb-0.5 flex items-center gap-1.5">
                 {project.currentPhase && (
                   <span className="relative flex h-1.5 w-1.5 shrink-0">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-qualia-500 opacity-50" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-qualia-500" />
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-50" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
                   </span>
                 )}
                 <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/45">
@@ -111,7 +111,7 @@ export function WhatsNextWidget({ projects, isLoading }: WhatsNextWidgetProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="rounded-xl border border-border/50 bg-card px-5 py-5">
+        <div className="rounded-xl border border-border bg-card px-5 py-5">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="mt-3 h-6 w-12" />
           <Skeleton className="mt-3 h-1 w-full rounded-full" />

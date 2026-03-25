@@ -94,7 +94,7 @@ export function TodayDashboard({
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border/30 bg-card/70 px-6 py-3.5 backdrop-blur-2xl backdrop-saturate-150">
+      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button
@@ -108,7 +108,7 @@ export function TodayDashboard({
 
           <div className="flex items-center gap-3">
             <h1 className="text-base font-semibold tracking-tight text-foreground">{greeting}</h1>
-            <span className="hidden h-4 w-px bg-border/40 sm:inline-block" />
+            <span className="hidden h-4 w-px bg-border sm:inline-block" />
             <span className="hidden text-sm tabular-nums text-muted-foreground/70 sm:inline">
               {format(now, 'EEEE, MMMM d')}
             </span>
@@ -120,7 +120,7 @@ export function TodayDashboard({
           {/* View As selector — admin only */}
           {isRealAdmin && (
             <>
-              <span className="mx-1 hidden h-5 w-px bg-border/30 sm:inline-block" />
+              <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" />
               <Select
                 value={viewAsUserId || '__admin__'}
                 onValueChange={(v) => setViewAsUserId(v === '__admin__' ? null : v)}
@@ -129,8 +129,8 @@ export function TodayDashboard({
                   className={cn(
                     'h-8 w-36 gap-1.5 rounded-lg text-xs transition-all duration-200',
                     viewAsUserId
-                      ? 'bg-amber-500/8 border-amber-500/40 text-amber-700 dark:text-amber-300'
-                      : 'border-border/40'
+                      ? 'border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                      : 'border-border'
                   )}
                 >
                   <Eye className="size-3" />
@@ -147,14 +147,14 @@ export function TodayDashboard({
                     ))}
                 </SelectContent>
               </Select>
-              <span className="mx-1 hidden h-5 w-px bg-border/30 sm:inline-block" />
+              <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" />
             </>
           )}
           {!isNonAdmin && (
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 rounded-lg border-border/40 transition-all duration-200 hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+              className="gap-1.5 rounded-lg border-border transition-colors hover:bg-primary/10 hover:text-primary"
               onClick={() => setShowNewTaskModal(true)}
             >
               <Plus className="size-3.5" />

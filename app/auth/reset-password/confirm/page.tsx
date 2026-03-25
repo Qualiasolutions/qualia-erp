@@ -101,7 +101,7 @@ export default function ResetPasswordConfirmPage() {
                       required
                       autoComplete="new-password"
                       autoFocus
-                      className="h-12 pr-11 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
+                      className="h-12 pr-11 focus-visible:border-primary/50 focus-visible:ring-primary/30"
                     />
                     <button
                       type="button"
@@ -129,7 +129,7 @@ export default function ResetPasswordConfirmPage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     autoComplete="new-password"
-                    className="h-12 focus-visible:border-qualia-500/50 focus-visible:ring-qualia-500/30"
+                    className="h-12 focus-visible:border-primary/50 focus-visible:ring-primary/30"
                   />
                   {confirmPassword.length > 0 && (
                     <p

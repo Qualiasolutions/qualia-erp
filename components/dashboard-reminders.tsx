@@ -149,7 +149,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
 
   // Shared header component
   const RemindersHeader = () => (
-    <CardHeader className="shrink-0 border-b border-border/50 px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
+    <CardHeader className="shrink-0 border-b border-border px-4 pb-3 pt-4 sm:px-5 sm:pb-4">
       <CardTitle className="flex items-center gap-2 text-sm font-semibold sm:gap-2.5 sm:text-base">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500/20 to-pink-500/10 text-rose-500 sm:h-8 sm:w-8">
           <Bell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
@@ -190,7 +190,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
 
   if (!workspaceId) {
     return (
-      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+      <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm">
         <RemindersHeader />
         {!isCollapsed && (
           <CardContent className="flex flex-1 items-center justify-center p-6">
@@ -205,7 +205,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
 
   if (loading) {
     return (
-      <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm">
+      <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm">
         <RemindersHeader />
         {!isCollapsed && (
           <CardContent className="flex flex-1 items-center justify-center p-6">
@@ -217,7 +217,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
   }
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden border-border/50 bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
+    <Card className="flex h-full flex-col overflow-hidden border-border bg-card/80 shadow-md backdrop-blur-sm transition-shadow duration-300 hover:shadow-lg">
       <RemindersHeader />
 
       {!isCollapsed && (
@@ -225,7 +225,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
           <CardContent className="p-0">
             {/* Add reminder input */}
             {isAdding && (
-              <div className="border-b border-border/30 bg-rose-500/5 p-3 sm:p-4">
+              <div className="border-b border-border bg-rose-500/5 p-3 sm:p-4">
                 <div className="flex items-center gap-2">
                   <input
                     ref={inputRef}

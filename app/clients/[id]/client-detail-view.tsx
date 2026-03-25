@@ -219,7 +219,7 @@ export function ClientDetailView({
           <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Phone className="h-4 w-4 text-qualia-500" />
+                <Phone className="h-4 w-4 text-primary" />
                 Contact Information
               </CardTitle>
             </CardHeader>
@@ -227,9 +227,9 @@ export function ClientDetailView({
               {client.phone && (
                 <a
                   href={`tel:${client.phone}`}
-                  className="group/item flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5 hover:shadow-sm"
+                  className="group/item flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-qualia-500/10 text-qualia-500 transition-colors group-hover/item:bg-qualia-500/20">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
                     <Phone className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium">{client.phone}</span>
@@ -242,16 +242,16 @@ export function ClientDetailView({
                   }
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group/item flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5 hover:shadow-sm"
+                  className="group/item flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-qualia-500/10 text-qualia-500 transition-colors group-hover/item:bg-qualia-500/20">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
                     <Globe className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium">{client.website}</span>
                 </a>
               )}
               {client.billing_address && (
-                <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-muted/30 p-4">
+                <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
                   <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <MapPin className="h-4 w-4" />
                   </div>
@@ -270,16 +270,16 @@ export function ClientDetailView({
           <Card className="group transition-all duration-300 hover:shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <User className="h-4 w-4 text-qualia-500" />
+                <User className="h-4 w-4 text-primary" />
                 Account Details
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Assigned To */}
               {client.assigned && (
-                <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5">
-                  <Avatar className="h-10 w-10 ring-2 ring-qualia-500/20">
-                    <AvatarFallback className="bg-qualia-500/10 font-semibold text-qualia-600 dark:text-qualia-400">
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                    <AvatarFallback className="bg-primary/10 font-semibold text-primary dark:text-primary">
                       {getInitials(client.assigned.full_name || 'U')}
                     </AvatarFallback>
                   </Avatar>
@@ -296,8 +296,8 @@ export function ClientDetailView({
 
               {/* Projects */}
               {client.projects && client.projects.length > 0 && (
-                <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-qualia-500/10 text-qualia-500">
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
                     <Folder className="h-4 w-4" />
                   </div>
                   <span className="text-sm font-medium">
@@ -308,7 +308,7 @@ export function ClientDetailView({
               )}
 
               {/* Created Date */}
-              <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-muted/30 p-4">
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                   <User className="h-4 w-4" />
                 </div>
@@ -328,7 +328,7 @@ export function ClientDetailView({
               <CardTitle className="text-lg font-semibold">Notes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="rounded-xl border border-border/40 bg-gradient-to-br from-muted/50 to-muted/30 p-4 backdrop-blur-sm">
+              <div className="rounded-xl border border-border bg-gradient-to-br from-muted/50 to-muted/30 p-4 backdrop-blur-sm">
                 <RichText className="text-foreground/90">{client.notes}</RichText>
               </div>
             </CardContent>
@@ -339,7 +339,7 @@ export function ClientDetailView({
         <Card className="group transition-all duration-300 hover:shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Folder className="h-4 w-4 text-qualia-500" />
+              <Folder className="h-4 w-4 text-primary" />
               Linked Projects ({erpLinkedProjects.length})
             </CardTitle>
           </CardHeader>
@@ -386,7 +386,7 @@ export function ClientDetailView({
                 {erpLinkedProjects.map((project, index) => (
                   <div
                     key={project.id}
-                    className="group/item flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5 hover:shadow-sm"
+                    className="group/item flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex-1">
@@ -401,7 +401,7 @@ export function ClientDetailView({
                         variant="outline"
                         size="sm"
                         asChild
-                        className="hover:border-qualia-500/40 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
+                        className="hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:hover:text-primary"
                       >
                         <a href={`/projects/${project.id}`}>View</a>
                       </Button>

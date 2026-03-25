@@ -6,7 +6,7 @@ export default function InboxLoading() {
   return (
     <div className="flex h-screen flex-col bg-background">
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/30 px-6">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-6">
         <div className="flex items-center gap-4">
           <Link
             href="/"
@@ -32,7 +32,7 @@ export default function InboxLoading() {
       </header>
 
       {/* Toolbar */}
-      <div className="flex items-center gap-4 border-b border-border/30 px-6 py-3">
+      <div className="flex items-center gap-4 border-b border-border px-6 py-3">
         <Skeleton className="h-9 w-64 rounded-md bg-muted" />
         <Skeleton className="h-9 w-32 rounded-md bg-muted" />
         <Skeleton className="h-9 w-32 rounded-md bg-muted" />
@@ -42,7 +42,7 @@ export default function InboxLoading() {
       </div>
 
       {/* Table Header */}
-      <div className="flex items-center border-b border-border/30 bg-muted/50 px-6 py-2">
+      <div className="flex items-center border-b border-border bg-muted/50 px-6 py-2">
         <Skeleton className="h-3 w-5 bg-muted" />
         <Skeleton className="ml-4 h-3 w-12 bg-muted" />
         <div className="flex-1" />
@@ -57,7 +57,7 @@ export default function InboxLoading() {
         {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
           <div
             key={i}
-            className="flex animate-pulse items-center gap-4 border-b border-border/20 px-6 py-4"
+            className="flex animate-pulse items-center gap-4 border-b border-border px-6 py-4"
             style={{ animationDelay: `${i * 0.05}s` }}
           >
             <Skeleton className="h-5 w-5 rounded-md bg-muted" />

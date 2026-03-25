@@ -212,12 +212,12 @@ export function AdminNotesWidget({ notes, isManagerOrAbove, fullHeight }: AdminN
     <div
       className={cn(
         'flex flex-col overflow-hidden bg-card',
-        fullHeight ? 'h-full' : 'rounded-2xl border border-border/50',
+        fullHeight ? 'h-full' : 'rounded-2xl border border-border',
         isPending && 'pointer-events-none opacity-60'
       )}
     >
       {/* Header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3.5">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
             <MessageSquare className="h-3.5 w-3.5 text-primary" />
@@ -253,7 +253,7 @@ export function AdminNotesWidget({ notes, isManagerOrAbove, fullHeight }: AdminN
 
       {/* Compose (admin/manager only) */}
       {isManagerOrAbove && (
-        <div className="border-t border-border/40 p-3">
+        <div className="border-t border-border p-3">
           <div className="flex items-center gap-2">
             <input
               value={newNote}

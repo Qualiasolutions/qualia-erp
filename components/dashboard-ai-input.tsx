@@ -34,7 +34,7 @@ export function DashboardAIInput() {
             'flex items-center gap-2 rounded-xl border bg-card/90 px-3 py-2.5 backdrop-blur-sm transition-all sm:gap-3 sm:px-4 sm:py-3.5',
             isFocused
               ? 'border-primary/50 shadow-lg shadow-primary/10 ring-2 ring-primary/20'
-              : 'border-border/60 hover:border-border'
+              : 'border-border hover:border-border'
           )}
         >
           <Search className="h-4 w-4 shrink-0 text-muted-foreground sm:h-5 sm:w-5" />

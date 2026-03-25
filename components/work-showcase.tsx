@@ -31,12 +31,12 @@ function PhoneFrame({ children, className }: { children: React.ReactNode; classN
     >
       {/* Notch */}
       <div className="absolute left-1/2 top-0 z-10 h-6 w-32 -translate-x-1/2 rounded-b-2xl bg-gray-900" />
-      
+
       {/* Screen */}
       <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-black">
         {children}
       </div>
-      
+
       {/* Home indicator */}
       <div className="absolute bottom-2 left-1/2 h-1 w-32 -translate-x-1/2 rounded-full bg-white/30" />
     </div>
@@ -48,16 +48,14 @@ function LaptopFrame({ children, className }: { children: React.ReactNode; class
   return (
     <div className={cn('relative mx-auto w-full', className)}>
       {/* Screen */}
-      <div 
+      <div
         className="relative w-full overflow-hidden rounded-t-xl bg-gray-900 p-2 shadow-2xl"
         style={{ aspectRatio: '16/9' }}
       >
         {/* Screen bezel */}
-        <div className="relative h-full w-full overflow-hidden rounded-lg bg-black">
-          {children}
-        </div>
+        <div className="relative h-full w-full overflow-hidden rounded-lg bg-black">{children}</div>
       </div>
-      
+
       {/* Keyboard/base */}
       <div className="relative -mt-1 h-6 w-full rounded-b-xl bg-gradient-to-b from-gray-800 to-gray-900 shadow-xl">
         <div className="absolute left-1/2 top-1/2 h-1 w-1/3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-700" />
@@ -84,8 +82,8 @@ function WorkItemCard({ item }: { item: WorkItem }) {
       {/* Enhanced glow effect */}
       <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-qualia-500/20 via-qualia-400/10 to-transparent opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100" />
       <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-br from-qualia-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-      
-      <div className="relative rounded-2xl bg-card/50 backdrop-blur-sm border border-border/40 p-4 md:p-6 shadow-lg group-hover:border-qualia-500/30 transition-all duration-500">
+
+      <div className="relative rounded-2xl border border-border bg-card/50 p-4 shadow-lg backdrop-blur-sm transition-all duration-500 group-hover:border-primary/30 md:p-6">
         {/* Frame wrapper with proper aspect ratio - 16:9 for desktop, mobile maintains phone ratio */}
         <div
           className={cn(
@@ -148,14 +146,14 @@ function WorkItemCard({ item }: { item: WorkItem }) {
 
         {/* Title and description */}
         {(item.title || item.description) && (
-          <div className="mt-6 text-center space-y-2">
+          <div className="mt-6 space-y-2 text-center">
             {item.title && (
-              <h3 className="text-lg font-semibold text-foreground transition-colors group-hover:text-qualia-500">
+              <h3 className="text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
                 {item.title}
               </h3>
             )}
             {item.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>
             )}
           </div>
         )}
@@ -172,11 +170,12 @@ export function WorkShowcase({ clientName, workItems }: WorkShowcaseProps) {
   return (
     <div className="space-y-8">
       <div className="animate-in fade-in slide-in-from-bottom-2">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+        <h2 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-2xl font-bold tracking-tight text-foreground">
           Work Showcase
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Showcasing our work for <span className="font-medium text-foreground/80">{clientName}</span>
+          Showcasing our work for{' '}
+          <span className="font-medium text-foreground/80">{clientName}</span>
         </p>
       </div>
 
@@ -194,4 +193,3 @@ export function WorkShowcase({ clientName, workItems }: WorkShowcaseProps) {
     </div>
   );
 }
-

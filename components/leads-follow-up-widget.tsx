@@ -104,7 +104,7 @@ function LeadCard({
       className={cn(
         'group relative overflow-hidden rounded-xl border bg-card/50 p-4 backdrop-blur-sm transition-all duration-300',
         'hover:bg-card hover:shadow-lg hover:shadow-black/5',
-        isUrgent ? 'border-orange-500/40' : 'border-border/50'
+        isUrgent ? 'border-orange-500/40' : 'border-border'
       )}
     >
       {/* Priority indicator bar */}

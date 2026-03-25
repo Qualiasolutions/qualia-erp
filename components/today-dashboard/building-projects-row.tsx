@@ -45,8 +45,8 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
   if (building.length === 0) return null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
-      <div className="flex items-center justify-between border-b border-border/20 bg-muted/10 px-4 py-3">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between border-b border-border bg-muted/10 px-4 py-3">
         <div className="flex items-center gap-2.5">
           <div className="bg-emerald-500/12 flex h-7 w-7 items-center justify-center rounded-lg">
             <Hammer className="h-3.5 w-3.5 text-emerald-500" />
@@ -96,8 +96,8 @@ function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor
       href={`/projects/${project.id}`}
       className={cn(
         'group flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200',
-        'border border-border/25 bg-muted/20',
-        'hover:border-border/50 hover:bg-muted/40 hover:shadow-sm'
+        'border border-border bg-card',
+        'hover:border-primary/50 hover:bg-muted/40 hover:shadow-sm'
       )}
     >
       <EntityAvatar
@@ -106,7 +106,7 @@ function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor
         fallbackBgColor="bg-muted"
         fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
         size="sm"
-        className="h-6 w-6 rounded-md ring-1 ring-border/15 transition-transform duration-200 group-hover:scale-105"
+        className="h-6 w-6 rounded-md ring-1 ring-border transition-transform duration-200 group-hover:scale-105"
       />
 
       <div className="flex items-center gap-1.5">

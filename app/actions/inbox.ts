@@ -7,6 +7,33 @@ import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
 import { canModifyTask, isUserAdmin } from './shared';
 
+/**
+ * Check if a task with requires_attachment can be marked as Done.
+ * Returns null if OK, or error string if blocked.
+ */
+async function checkAttachmentRequirement(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  taskId: string
+): Promise<string | null> {
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('requires_attachment')
+    .eq('id', taskId)
+    .single();
+
+  if (!task?.requires_attachment) return null;
+
+  const { count } = await supabase
+    .from('task_attachments')
+    .select('id', { count: 'exact', head: true })
+    .eq('task_id', taskId);
+
+  if (!count || count === 0) {
+    return `This task requires an upload before completion: ${task.requires_attachment}`;
+  }
+  return null;
+}
+
 export type ActionResult = {
   success: boolean;
   error?: string;
@@ -308,7 +335,11 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
       show_in_inbox: show_in_inbox ?? true, // Default to true when no project
       scheduled_start_time: scheduled_start_time || null,
       scheduled_end_time: scheduled_end_time || null,
-      requires_attachment: requires_attachment?.trim() || null,
+      // Only admins can set requires_attachment on creation
+      requires_attachment:
+        requires_attachment && (await isUserAdmin(user.id))
+          ? requires_attachment.trim() || null
+          : null,
     })
     .select()
     .single();
@@ -397,12 +428,22 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (scheduled_start_time !== undefined)
     updateData.scheduled_start_time = scheduled_start_time || null;
   if (scheduled_end_time !== undefined) updateData.scheduled_end_time = scheduled_end_time || null;
-  if (requires_attachment !== undefined)
-    updateData.requires_attachment = requires_attachment?.trim() || null;
+  // Only admins can set/clear requires_attachment
+  if (requires_attachment !== undefined) {
+    const admin = await isUserAdmin(user.id);
+    if (admin) {
+      updateData.requires_attachment = requires_attachment?.trim() || null;
+    }
+  }
 
   // Set completed_at when status changes to Done
   if (status !== undefined) {
     if (status === 'Done') {
+      // Server-side enforcement: check attachment requirement
+      const attachmentError = await checkAttachmentRequirement(supabase, id);
+      if (attachmentError) {
+        return { success: false, error: attachmentError };
+      }
       updateData.completed_at = new Date().toISOString();
     } else {
       updateData.completed_at = null;
@@ -657,6 +698,11 @@ export async function quickUpdateTask(
     updateData.status = updates.status;
     // Update completed_at when status changes
     if (updates.status === 'Done') {
+      // Server-side enforcement: check attachment requirement
+      const attachmentError = await checkAttachmentRequirement(supabase, taskId);
+      if (attachmentError) {
+        return { success: false, error: attachmentError };
+      }
       updateData.completed_at = new Date().toISOString();
     } else {
       updateData.completed_at = null;
@@ -969,11 +1015,24 @@ export async function quickToggleTaskStatus(taskId: string): Promise<ActionResul
   if (!canModify) return { success: false, error: 'No permission' };
 
   // Get current status
-  const { data: task } = await supabase.from('tasks').select('status').eq('id', taskId).single();
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('status, requires_attachment')
+    .eq('id', taskId)
+    .single();
 
   if (!task) return { success: false, error: 'Task not found' };
 
   const newStatus = task.status === 'Done' ? 'Todo' : 'Done';
+
+  // Server-side enforcement: check attachment requirement
+  if (newStatus === 'Done') {
+    const attachmentError = await checkAttachmentRequirement(supabase, taskId);
+    if (attachmentError) {
+      return { success: false, error: attachmentError };
+    }
+  }
+
   const completedAt = newStatus === 'Done' ? new Date().toISOString() : null;
 
   const { error } = await supabase

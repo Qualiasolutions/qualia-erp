@@ -214,52 +214,52 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         {/* ===== Header ===== */}
-        <div className="flex items-center justify-between border-b border-border/30 bg-card px-5 py-3">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-4">
-            <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
-              {formatWeekRange()}
-            </h2>
-            <select
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-              className="cursor-pointer rounded-md border border-border/40 bg-secondary/30 px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus:ring-1 focus:ring-qualia-500/30"
-            >
-              <option value="Europe/Nicosia">Cyprus</option>
-              <option value="Asia/Amman">Jordan</option>
-            </select>
+            <h2 className="text-xl font-semibold text-foreground">{formatWeekRange()}</h2>
+            <div className="flex items-center gap-1 rounded-full border border-border bg-secondary/50 px-3 py-1.5 text-xs text-muted-foreground">
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="cursor-pointer bg-transparent text-xs font-medium text-muted-foreground focus:outline-none"
+              >
+                <option value="Europe/Nicosia">Cyprus</option>
+                <option value="Asia/Amman">Jordan</option>
+              </select>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             <button
               onClick={goToToday}
               className={cn(
-                'mr-1.5 rounded-md px-3 py-1.5 text-[11px] font-semibold transition-all',
+                'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors',
                 isCurrentWeek
-                  ? 'bg-qualia-500/10 text-qualia-600 dark:text-qualia-400'
-                  : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
               Today
             </button>
             <button
               onClick={goToPreviousWeek}
-              className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-secondary/60 hover:text-foreground"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
-              <ChevronLeft className="size-4" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={goToNextWeek}
-              className="rounded-md p-1.5 text-muted-foreground/70 transition-colors hover:bg-secondary/60 hover:text-foreground"
+              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             >
-              <ChevronRight className="size-4" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
 
         {/* ===== Day Headers ===== */}
-        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border/30">
-          <div className="border-r border-border/20" />
+        <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border">
+          <div className="border-r border-border" />
           {days.map((day) => {
             const isToday = isTodayInTz(day);
             const count = meetingsByDate.get(format(day, 'yyyy-MM-dd'))?.length || 0;
@@ -267,14 +267,14 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
               <div
                 key={day.toISOString()}
                 className={cn(
-                  'border-r border-border/20 py-3 text-center transition-colors last:border-r-0',
-                  isToday && 'bg-qualia-500/[0.04]'
+                  'border-r border-border py-3 text-center transition-colors last:border-r-0',
+                  isToday && 'bg-primary/[0.04]'
                 )}
               >
                 <div
                   className={cn(
-                    'text-[10px] font-semibold uppercase tracking-[0.12em]',
-                    isToday ? 'text-qualia-600 dark:text-qualia-400' : 'text-muted-foreground/50'
+                    'text-xs font-semibold uppercase tracking-wider',
+                    isToday ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
                   {format(day, 'EEE')}
@@ -282,10 +282,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                 <div className="mt-1.5 flex items-center justify-center">
                   <span
                     className={cn(
-                      'flex size-8 items-center justify-center rounded-full text-sm font-bold transition-all',
-                      isToday
-                        ? 'bg-qualia-500 text-white shadow-md shadow-qualia-500/25'
-                        : 'text-foreground/80'
+                      'flex size-8 items-center justify-center rounded-full text-sm font-medium transition-all',
+                      isToday ? 'bg-primary text-primary-foreground' : 'text-foreground/80'
                     )}
                   >
                     {format(day, 'd')}
@@ -297,8 +295,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                       <span
                         key={i}
                         className={cn(
-                          'size-1 rounded-full',
-                          isToday ? 'bg-qualia-500' : 'bg-violet-400/50'
+                          'size-1.5 rounded-full',
+                          isToday ? 'bg-primary' : 'bg-violet-400/50'
                         )}
                       />
                     ))}
@@ -316,7 +314,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
             style={{ height: `${totalGridHeight}px` }}
           >
             {/* Hour labels */}
-            <div className="relative border-r border-border/20">
+            <div className="relative border-r border-border">
               {hours.map((hour, i) => (
                 <div
                   key={hour}
@@ -324,7 +322,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   style={{ top: `${i * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
                 >
                   {i !== 0 && (
-                    <span className="relative -top-[7px] select-none text-[10px] font-medium tabular-nums text-muted-foreground/45">
+                    <span className="relative -top-[7px] select-none text-[10px] font-medium tabular-nums text-muted-foreground/50">
                       {format(new Date(2000, 0, 1, hour), 'h a')}
                     </span>
                   )}
@@ -343,8 +341,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'relative border-r border-border/20 last:border-r-0',
-                    isToday && 'bg-qualia-500/[0.02]'
+                    'relative border-r border-border last:border-r-0',
+                    isToday && 'bg-primary/[0.02]'
                   )}
                 >
                   {/* Hour grid lines */}
@@ -355,11 +353,11 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                       style={{ top: `${i * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
                     >
                       {i !== 0 && (
-                        <div className="absolute inset-x-0 top-0 border-t border-border/15" />
+                        <div className="absolute inset-x-0 top-0 border-t border-border" />
                       )}
                       {/* Half-hour dashed line */}
                       <div
-                        className="border-border/8 absolute inset-x-0 border-t border-dashed"
+                        className="absolute inset-x-0 border-t border-dashed border-border/10"
                         style={{ top: `${HOUR_HEIGHT / 2}px` }}
                       />
                     </div>
@@ -372,8 +370,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                       style={{ top: `${timelinePosition}%` }}
                     >
                       <div className="flex items-center">
-                        <div className="-ml-[5px] size-2.5 rounded-full bg-qualia-500 shadow-sm shadow-qualia-500/40 ring-2 ring-card" />
-                        <div className="h-[2px] flex-1 bg-qualia-500/60" />
+                        <div className="-ml-[5px] size-2.5 rounded-full bg-primary shadow-sm shadow-primary/40 ring-2 ring-card" />
+                        <div className="h-[2px] flex-1 bg-primary/60" />
                       </div>
                     </div>
                   )}

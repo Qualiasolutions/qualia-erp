@@ -134,7 +134,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="left" className="flex w-full flex-col overflow-hidden p-0 sm:max-w-md">
-        <SheetHeader className="shrink-0 border-b border-border/60 px-5 pb-5 pt-5">
+        <SheetHeader className="shrink-0 border-b border-border px-5 pb-5 pt-5">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <SheetTitle className="truncate text-base font-semibold">
@@ -154,7 +154,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
 
           {/* Overall Progress -- visually distinct card */}
           {totalTasks > 0 && (
-            <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
+            <div className="mt-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
               <div className="mb-2.5 flex items-center justify-between">
                 <span className="text-xs font-medium text-foreground/50">Overall progress</span>
                 <div className="flex items-baseline gap-1.5">
@@ -275,7 +275,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
 
                     {/* Phase Tasks */}
                     {phaseTasks.length > 0 ? (
-                      <div className="relative ml-[2.1rem] border-l border-border/40 pb-2 pl-4 pr-5">
+                      <div className="relative ml-[2.1rem] border-l border-border pb-2 pl-4 pr-5">
                         <motion.div
                           variants={taskContainerVariants}
                           initial="hidden"
@@ -350,7 +350,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                         </motion.div>
                       </div>
                     ) : (
-                      <div className="ml-[2.1rem] border-l border-border/40 pb-2 pl-4 pr-5">
+                      <div className="ml-[2.1rem] border-l border-border pb-2 pl-4 pr-5">
                         <p className="px-2.5 py-2 text-[12px] italic text-foreground/25">
                           No tasks yet
                         </p>

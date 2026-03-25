@@ -109,8 +109,8 @@ export function PortalMessages({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="max-w-md text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-qualia-500/10">
-            <MessageSquare className="h-10 w-10 text-qualia-600/60" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500/10 to-qualia-600/5 ring-1 ring-primary/10">
+            <MessageSquare className="h-10 w-10 text-primary/60" />
           </div>
           <h3 className="text-xl font-semibold tracking-tight text-foreground">No updates yet</h3>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground/80">
@@ -140,11 +140,11 @@ export function PortalMessages({
 
               {dateActivities.map((activity) => (
                 <div key={activity.id} className="relative">
-                  <div className="absolute -left-7 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-border bg-card shadow-sm dark:border-border/60">
+                  <div className="absolute -left-7 flex h-[18px] w-[18px] items-center justify-center rounded-full border border-border bg-card shadow-sm dark:border-border">
                     {getActivityIcon(activity.action_type)}
                   </div>
 
-                  <div className="rounded-xl border border-border bg-card p-4 transition-all duration-200 ease-premium hover:border-border/60 hover:shadow-elevation-1">
+                  <div className="rounded-xl border border-border bg-card p-4 transition-all duration-200 ease-premium hover:border-border hover:shadow-elevation-1">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-foreground">

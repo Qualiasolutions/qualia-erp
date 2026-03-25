@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { isUserAdmin } from './shared';
+import { isUserAdmin, canModifyTask } from './shared';
 
 export type ActionResult = {
   success: boolean;
@@ -121,6 +121,12 @@ export async function uploadTaskAttachment(formData: FormData): Promise<ActionRe
 
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     return { success: false, error: `File type ${file.type} is not allowed` };
+  }
+
+  // Authorization: Only task creator, assignee, project lead, or admin can upload
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to upload to this task' };
   }
 
   // Get workspace from task

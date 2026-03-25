@@ -81,7 +81,6 @@ interface TeamTaskCardProps {
 
 export const TeamTaskCard = memo(function TeamTaskCard({
   task,
-  // currentUserId kept in props interface for API compatibility but not used after timer removal
   onTaskUpdate,
   workspaceId,
 }: TeamTaskCardProps) {
@@ -195,7 +194,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
                 'mt-1 inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-medium',
                 typeStyle
                   ? `${typeStyle.bg} ${typeStyle.border} ${typeStyle.color}`
-                  : 'border-border/40 bg-muted/30 text-muted-foreground/70'
+                  : 'border-border bg-muted/30 text-muted-foreground/70'
               )}
             >
               <ProjectIcon className="size-3" />
@@ -229,7 +228,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
               e.stopPropagation();
               handleView();
             }}
-            className="flex items-center gap-1 rounded-md bg-qualia-500/10 px-2 py-1 text-[11px] font-medium text-qualia-600 transition-all duration-200 hover:bg-qualia-500/20 dark:text-qualia-400"
+            className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition-all duration-200 hover:bg-primary/20 dark:text-primary"
           >
             <Eye className="size-3" />
             View

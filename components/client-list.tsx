@@ -269,7 +269,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
           {!searchQuery && (
             <Button
               onClick={() => setIsNewClientModalOpen(true)}
-              className="bg-qualia-600 hover:bg-qualia-700"
+              className="bg-primary hover:bg-qualia-700"
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Client
@@ -291,7 +291,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
             </div>
             <div className="space-y-2">
               {groupedClients.active.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+                <div className="rounded-lg border border-dashed border-border p-4 text-center">
                   <p className="text-xs text-muted-foreground">No active clients</p>
                 </div>
               ) : (
@@ -327,7 +327,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
             </div>
             <div className="space-y-2">
               {groupedClients.inactive.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border/50 p-4 text-center">
+                <div className="rounded-lg border border-dashed border-border p-4 text-center">
                   <p className="text-xs text-muted-foreground">No inactive clients</p>
                 </div>
               ) : (

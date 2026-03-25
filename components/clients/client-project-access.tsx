@@ -152,7 +152,7 @@ export function ClientProjectAccess({
         <Card className="group transition-all duration-300 hover:shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Folder className="h-4 w-4 text-qualia-500" />
+              <Folder className="h-4 w-4 text-primary" />
               Project Access
             </CardTitle>
           </CardHeader>
@@ -169,7 +169,7 @@ export function ClientProjectAccess({
       <Card className="group transition-all duration-300 hover:shadow-lg">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Folder className="h-4 w-4 text-qualia-500" />
+            <Folder className="h-4 w-4 text-primary" />
             Project Access ({projects.length})
           </CardTitle>
         </CardHeader>
@@ -178,7 +178,7 @@ export function ClientProjectAccess({
             {projects.map((project, index) => (
               <div
                 key={project.id}
-                className="flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5"
+                className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <div className="flex-1">
@@ -203,7 +203,7 @@ export function ClientProjectAccess({
     <Card className="group transition-all duration-300 hover:shadow-lg">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-          <Folder className="h-4 w-4 text-qualia-500" />
+          <Folder className="h-4 w-4 text-primary" />
           Project Access ({projects.length})
         </CardTitle>
       </CardHeader>
@@ -251,7 +251,7 @@ export function ClientProjectAccess({
 
           {/* Invite by email form */}
           {showInviteForm && (
-            <div className="space-y-3 rounded-lg border border-border/60 bg-muted/20 p-4">
+            <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
               <p className="text-sm font-medium text-foreground">Invite new client to portal</p>
               <p className="text-xs text-muted-foreground">
                 They&apos;ll receive an email with a link to set their password and access the
@@ -314,7 +314,7 @@ export function ClientProjectAccess({
               {projects.map((project, index) => (
                 <div
                   key={project.id}
-                  className="group/item flex items-center justify-between rounded-xl border border-border/60 bg-muted/30 p-4 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/5 hover:shadow-sm"
+                  className="group/item flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex-1">

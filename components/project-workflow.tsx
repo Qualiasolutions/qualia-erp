@@ -74,7 +74,7 @@ function getStatusIcon(status: string, progress: { completed: number; total: num
     return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
   }
   if (status === 'in_progress' || progress.completed > 0) {
-    return <Clock className="h-4 w-4 text-qualia-500" />;
+    return <Clock className="h-4 w-4 text-primary" />;
   }
   return <Circle className="h-4 w-4 text-muted-foreground/30" />;
 }
@@ -366,7 +366,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     return (
       <div className={cn('flex flex-col', className)}>
         {/* Phase header bar */}
-        <div className="flex shrink-0 items-center gap-3 border-b border-border/40 px-5 py-3">
+        <div className="flex shrink-0 items-center gap-3 border-b border-border px-5 py-3">
           <button
             onClick={() => setActivePhaseId(null)}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
@@ -386,7 +386,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
           <div className="px-5 py-3">
             {/* Add task input */}
-            <div className="mb-3 flex items-center gap-2 rounded-lg border border-border/30 bg-muted/10 px-3 py-2">
+            <div className="mb-3 flex items-center gap-2 rounded-lg border border-border bg-muted/10 px-3 py-2">
               <Plus
                 className={cn(
                   'h-4 w-4 shrink-0',
@@ -476,7 +476,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
                       {task.description && (
                         <button
                           onClick={() => setViewingTask(task)}
-                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-qualia-500/10 hover:text-qualia-500"
+                          className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-primary/10 hover:text-primary"
                           title="View details"
                         >
                           <Eye className="h-3 w-3" />
@@ -542,7 +542,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
   return (
     <div className={cn('flex flex-col', className)}>
       {/* Compact header */}
-      <div className="flex shrink-0 items-center justify-between border-b border-border/40 px-5 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-semibold text-foreground">Workflow</h2>
           <span className="rounded-md bg-muted/40 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
@@ -616,7 +616,7 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
               </p>
               <button
                 onClick={() => setActivePhaseId('__general')}
-                className="group flex w-full items-center gap-3 rounded-lg border border-border/30 px-4 py-3 text-left transition-all hover:border-primary/20 hover:bg-muted/20"
+                className="group flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left transition-all hover:border-primary/20 hover:bg-muted/20"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/30">
                   <ClipboardList className="h-4 w-4 text-muted-foreground" />

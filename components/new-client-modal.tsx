@@ -110,7 +110,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
       {!isControlled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="flex items-center gap-2 bg-qualia-600 hover:bg-qualia-700">
+            <Button className="flex items-center gap-2 bg-primary hover:bg-qualia-700">
               <Plus className="h-4 w-4" />
               <span>Add Client</span>
               <ChevronDown className="h-3 w-3 opacity-60" />
@@ -227,7 +227,7 @@ export function NewClientModal({ open, onOpenChange, onSuccess }: NewClientModal
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-qualia-600 hover:bg-qualia-700"
+              className="bg-primary hover:bg-qualia-700"
             >
               {isSubmitting ? 'Creating...' : 'Create Client'}
             </Button>

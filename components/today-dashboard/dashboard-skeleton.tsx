@@ -10,7 +10,7 @@ function ScheduleGridSkeleton() {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
         <div className="flex items-center gap-2.5">
           <Clock className="size-3.5 text-foreground/15" />
           <Skeleton className="h-4 w-16" />
@@ -23,9 +23,9 @@ function ScheduleGridSkeleton() {
       </div>
 
       {/* Column Headers */}
-      <div className="flex shrink-0 border-b border-border/30" style={{ height: 36 }}>
-        <div className="shrink-0 border-r border-border/30" style={{ width: 56 }} />
-        <div className="flex flex-1 items-center gap-2 border-r border-dashed border-border/25 px-3">
+      <div className="flex shrink-0 border-b border-border" style={{ height: 36 }}>
+        <div className="shrink-0 border-r border-border" style={{ width: 56 }} />
+        <div className="flex flex-1 items-center gap-2 border-r border-dashed border-border px-3">
           <Skeleton className="size-[7px] rounded-full" />
           <Skeleton className="h-3 w-10" />
         </div>
@@ -41,11 +41,11 @@ function ScheduleGridSkeleton() {
           {Array.from({ length: 10 }, (_, i) => (
             <div
               key={i}
-              className="absolute left-0 right-0 border-b border-border/20"
+              className="absolute left-0 right-0 border-b border-border"
               style={{ top: i * 72, height: 72 }}
             >
               <div
-                className="absolute top-0 flex items-start justify-end border-r border-border/30 pr-3 pt-2"
+                className="absolute top-0 flex items-start justify-end border-r border-border pr-3 pt-2"
                 style={{ width: 56 }}
               >
                 <Skeleton className="h-2.5 w-6" />
@@ -88,7 +88,7 @@ function ScheduleGridSkeleton() {
  */
 function StatCardSkeleton() {
   return (
-    <div className="rounded-xl border border-border/30 bg-card/50 px-4 py-3">
+    <div className="rounded-xl border border-border bg-card/50 px-4 py-3">
       <div className="flex items-center gap-2">
         <Skeleton className="size-7 rounded-lg" />
         <Skeleton className="h-3 w-14" />
@@ -104,7 +104,7 @@ function StatCardSkeleton() {
 function InboxSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border/40 px-4">
+      <div className="flex h-12 shrink-0 items-center justify-between border-b border-border px-4">
         <div className="flex items-center gap-2.5">
           <Skeleton className="size-4 rounded" />
           <Skeleton className="h-4 w-10" />
@@ -116,12 +116,12 @@ function InboxSkeleton() {
           ))}
         </div>
       </div>
-      <div className="border-b border-border/40 px-4 py-2">
+      <div className="border-b border-border px-4 py-2">
         <Skeleton className="h-9 w-full rounded-md" />
       </div>
       <div className="flex-1 px-4 py-3">
         {[1, 2, 3, 4, 5, 6].map((i) => (
-          <div key={i} className="flex items-center gap-3 border-b border-border/20 py-3">
+          <div key={i} className="flex items-center gap-3 border-b border-border py-3">
             <Skeleton className="size-5 rounded-md" />
             <div className="flex-1">
               <Skeleton className="h-3.5 w-3/4" />
@@ -140,7 +140,7 @@ function InboxSkeleton() {
 function MeetingsSkeleton() {
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-3">
           <Skeleton className="size-8 rounded-lg" />
           <div>
@@ -172,7 +172,7 @@ function MeetingsSkeleton() {
 function ProjectsSkeleton() {
   return (
     <div className="flex flex-col">
-      <div className="flex items-center justify-between border-b border-border/40 px-5 py-4">
+      <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div>
           <div className="flex items-center gap-2">
             <Skeleton className="size-6 rounded-lg" />
@@ -204,7 +204,7 @@ export function DashboardSkeleton() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* Top Bar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/40 bg-background px-5">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-5">
         <div className="flex items-center gap-3">
           <Skeleton className="size-8 rounded-md lg:hidden" />
           <div className="flex items-center gap-2">
@@ -234,12 +234,12 @@ export function DashboardSkeleton() {
           <div className="grid gap-5 lg:grid-cols-5 xl:grid-cols-12">
             {/* Left Column */}
             <div className="space-y-5 lg:col-span-3 xl:col-span-7">
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border bg-card/50">
                 <div className="h-[640px]">
                   <ScheduleGridSkeleton />
                 </div>
               </div>
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border bg-card/50">
                 <div className="max-h-[440px]">
                   <MeetingsSkeleton />
                 </div>
@@ -248,12 +248,12 @@ export function DashboardSkeleton() {
 
             {/* Right Column */}
             <div className="space-y-5 lg:col-span-2 xl:col-span-5">
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border bg-card/50">
                 <div className="h-[640px]">
                   <InboxSkeleton />
                 </div>
               </div>
-              <div className="overflow-hidden rounded-xl border border-border/30 bg-card/50">
+              <div className="overflow-hidden rounded-xl border border-border bg-card/50">
                 <div className="max-h-[440px]">
                   <ProjectsSkeleton />
                 </div>

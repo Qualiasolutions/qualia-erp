@@ -88,7 +88,7 @@ const STATUS_CONFIG: Record<
   inactive_client: {
     label: 'Inactive',
     icon: Users,
-    className: 'bg-muted text-muted-foreground border-border/30',
+    className: 'bg-muted text-muted-foreground border-border',
     iconClass: 'text-muted-foreground',
   },
   dropped: {
@@ -100,7 +100,7 @@ const STATUS_CONFIG: Record<
   dead_lead: {
     label: 'Dead',
     icon: Users,
-    className: 'bg-muted text-muted-foreground/70 border-border/30',
+    className: 'bg-muted text-muted-foreground/70 border-border',
     iconClass: 'text-muted-foreground/70',
   },
 };

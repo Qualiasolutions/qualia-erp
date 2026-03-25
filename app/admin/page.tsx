@@ -225,7 +225,7 @@ export default function AdminDashboard() {
   return (
     <div className="flex h-full flex-col">
       {/* Mobile-only top bar */}
-      <header className="flex items-center gap-2 border-b border-border/40 bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
+      <header className="flex items-center gap-2 border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
         <Button
           type="button"
           variant="ghost"
@@ -258,7 +258,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Role legend */}
-        <div className="mb-6 flex flex-wrap gap-4 rounded-lg border border-border/50 bg-muted/30 px-4 py-3">
+        <div className="mb-6 flex flex-wrap gap-4 rounded-lg border border-border bg-muted/30 px-4 py-3">
           <div className="flex items-center gap-2 text-sm">
             <RoleBadge role="admin" />
             <span className="text-muted-foreground">Full access, manage roles</span>

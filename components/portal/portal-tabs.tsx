@@ -31,7 +31,7 @@ export function PortalTabs({ projectId }: PortalTabsProps) {
             className={cn(
               'rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-all duration-150',
               isActive
-                ? 'bg-qualia-500/[0.08] text-qualia-600 dark:bg-qualia-500/[0.12] dark:text-qualia-400'
+                ? 'bg-primary/[0.08] text-primary dark:bg-primary/[0.12] dark:text-primary'
                 : 'text-muted-foreground/60 hover:bg-muted/30 hover:text-foreground'
             )}
           >

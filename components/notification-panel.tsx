@@ -76,7 +76,7 @@ export function NotificationPanel() {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="group relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
+          className="group relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-primary/10 hover:text-primary dark:hover:text-primary"
           title="Notifications"
         >
           <Bell className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
@@ -88,7 +88,7 @@ export function NotificationPanel() {
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end" sideOffset={8}>
-        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <h3 className="font-semibold">Notifications</h3>
           {unreadCount > 0 && (
             <Button

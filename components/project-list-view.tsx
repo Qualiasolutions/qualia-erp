@@ -208,7 +208,7 @@ function ProjectRow({
         className={cn(
           'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card/40 px-3.5 py-2.5 transition-all duration-200',
           'hover:border-primary/20 hover:bg-card hover:shadow-sm',
-          isPartnership ? 'border-orange-500/30' : 'border-border/40',
+          isPartnership ? 'border-orange-500/30' : 'border-border',
           isComplete && 'opacity-40',
           isPending && 'pointer-events-none opacity-50'
         )}
@@ -285,7 +285,7 @@ function ProjectRow({
                 stroke="currentColor"
                 strokeWidth="2"
                 strokeDasharray={`${progress * 0.5} 50`}
-                className={isComplete ? 'text-emerald-500' : 'text-qualia-500'}
+                className={isComplete ? 'text-emerald-500' : 'text-primary'}
               />
             </svg>
           </div>
@@ -346,7 +346,7 @@ function ProjectRow({
       className={cn(
         'group relative flex cursor-pointer items-center gap-4 rounded-xl border-2 bg-card p-4 transition-all duration-200',
         'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
-        isPartnership ? 'border-orange-500/40' : 'border-border hover:border-qualia-500/30',
+        isPartnership ? 'border-orange-500/40' : 'border-border hover:border-primary/30',
         isComplete && 'opacity-60',
         isPending && 'pointer-events-none opacity-50'
       )}
@@ -366,7 +366,7 @@ function ProjectRow({
         <div className="flex items-center gap-2">
           <Link
             href={`/projects/${project.id}`}
-            className="truncate text-base font-semibold text-foreground transition-colors hover:text-qualia-500"
+            className="truncate text-base font-semibold text-foreground transition-colors hover:text-primary"
           >
             {project.name}
           </Link>

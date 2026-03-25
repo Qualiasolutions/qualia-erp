@@ -167,7 +167,7 @@ export const TimeBlockRow = memo(function TimeBlockRow({
 
       {/* Break description */}
       {block.type === 'break' && !hasContent && (
-        <div className="border-t border-border/40 px-4 py-2">
+        <div className="border-t border-border px-4 py-2">
           <p className="text-xs text-muted-foreground/50">{block.description}</p>
         </div>
       )}

@@ -236,8 +236,8 @@ function TaskCard({
     <div
       className={cn(
         'group/task absolute cursor-pointer overflow-hidden border-l-[3px] transition-all duration-200 ease-premium',
-        'rounded-lg border border-border/40 bg-card/80',
-        'hover:-translate-y-px hover:border-border/60 hover:bg-card',
+        'rounded-lg border border-border bg-card/80',
+        'hover:-translate-y-px hover:border-border hover:bg-card',
         'hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.12)] dark:hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.3)]',
         accent,
         isDone && 'opacity-25'
@@ -246,7 +246,7 @@ function TaskCard({
       onClick={() => onTaskClick(task)}
     >
       {/* Hover actions */}
-      <div className="absolute right-1 top-1 z-10 flex items-center gap-px rounded-md border border-border/40 bg-card/90 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-all duration-150 group-hover/task:opacity-100">
+      <div className="absolute right-1 top-1 z-10 flex items-center gap-px rounded-md border border-border bg-card/90 p-0.5 opacity-0 shadow-sm backdrop-blur-sm transition-all duration-150 group-hover/task:opacity-100">
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -535,14 +535,14 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   return (
     <div className="flex h-full flex-col">
       {/* ── Quick-Add Bar ────────────────────────────────────────────────────── */}
-      <div className="flex shrink-0 items-center gap-2 border-b border-border/30 bg-muted/20 px-4 py-3">
+      <div className="flex shrink-0 items-center gap-2 border-b border-border bg-muted/20 px-4 py-3">
         <input
           type="text"
           value={quickInput}
           onChange={(e) => setQuickInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleQuickAdd()}
           placeholder="Quick add task..."
-          className="min-w-0 flex-1 rounded-lg border border-border/40 bg-background/60 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
+          className="min-w-0 flex-1 rounded-lg border border-border bg-background/60 px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
         />
         <div className="flex items-center gap-1">
           {(['fawzi', 'moayad', 'hasan', 'both'] as const).map((who) => (
@@ -577,7 +577,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
 
       {/* ── Backlog (unscheduled tasks) ──────────────────────────────────────── */}
       {backlogTasks.length > 0 && (
-        <div className="shrink-0 border-b border-border/40">
+        <div className="shrink-0 border-b border-border">
           <button
             onClick={() => setBacklogOpen(!backlogOpen)}
             className="flex w-full items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
@@ -595,7 +595,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
               {backlogTasks.map((t) => (
                 <div
                   key={t.id}
-                  className="group/chip flex items-center gap-1.5 rounded-lg border border-border/40 bg-background/50 px-2.5 py-1 transition-colors hover:border-border/60"
+                  className="group/chip flex items-center gap-1.5 rounded-lg border border-border bg-background/50 px-2.5 py-1 transition-colors hover:border-border"
                 >
                   <button onClick={() => handleComplete(t.id, t.status)} className="shrink-0">
                     <Circle className="size-3 text-border/50 transition-colors hover:text-border" />
@@ -614,11 +614,11 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
       )}
 
       {/* ── Column Headers ──────────────────────────────────────────────────── */}
-      <div className="flex shrink-0 border-b border-border/40 bg-card/90" style={{ height: 44 }}>
+      <div className="flex shrink-0 border-b border-border bg-card/90" style={{ height: 44 }}>
         <div className="shrink-0" style={{ width: TIME_GUTTER }} />
 
         {/* Fawzi */}
-        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border/30 px-3">
+        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border px-3">
           <div className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-full bg-sky-500/10 text-xs font-bold text-sky-500">
               F
@@ -634,7 +634,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
         </div>
 
         {/* Moayad */}
-        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border/30 px-3">
+        <div className="flex flex-1 items-center justify-between border-r border-dashed border-border px-3">
           <div className="flex items-center gap-2">
             <div className="flex size-6 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-500">
               M
@@ -701,7 +701,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 </div>
 
                 <div
-                  className="absolute right-0 border-b border-dotted border-border/25"
+                  className="absolute right-0 border-b border-dotted border-border"
                   style={{ top: HOUR_HEIGHT / 2, left: TIME_GUTTER }}
                 />
 
@@ -709,7 +709,7 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
                 {[1, 2].map((i) => (
                   <div
                     key={i}
-                    className="absolute bottom-0 top-0 border-l border-dashed border-border/30"
+                    className="absolute bottom-0 top-0 border-l border-dashed border-border"
                     style={{ left: `calc(${(i * 100) / NUM_COLUMNS}% + ${TIME_GUTTER / 2}px)` }}
                   />
                 ))}

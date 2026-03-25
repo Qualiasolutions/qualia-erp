@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
+import { useAdminContext } from '@/components/admin-provider';
 import { updateTask, type Task } from '@/app/actions/inbox';
 import {
   useProfiles,
@@ -38,6 +39,7 @@ interface EditTaskModalProps {
 export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) {
   const { profiles } = useProfiles();
   const { projects } = useProjects();
+  const { isAdmin } = useAdminContext();
   // Date picker state (controlled for calendar component)
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.due_date ? new Date(task.due_date) : undefined
@@ -248,7 +250,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                           {profile.avatar_url ? (
                             <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
                           ) : null}
-                          <AvatarFallback className="bg-qualia-600 text-[11px] text-white">
+                          <AvatarFallback className="bg-primary text-[11px] text-white">
                             {getInitials(profile.full_name || profile.email || 'U')}
                           </AvatarFallback>
                         </Avatar>
@@ -352,20 +354,22 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
             </Popover>
           </div>
 
-          {/* Require attachment to mark done */}
-          <div className="space-y-2">
-            <Label htmlFor="edit-requires_attachment">Require upload to complete</Label>
-            <Input
-              id="edit-requires_attachment"
-              name="requires_attachment"
-              defaultValue={task.requires_attachment || ''}
-              placeholder="e.g. Screenshot of completed work"
-              className="border-border bg-background"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              If set, assignee must upload a file before marking this task done
-            </p>
-          </div>
+          {/* Require attachment to mark done — admin only */}
+          {isAdmin && (
+            <div className="space-y-2">
+              <Label htmlFor="edit-requires_attachment">Require upload to complete</Label>
+              <Input
+                id="edit-requires_attachment"
+                name="requires_attachment"
+                defaultValue={task.requires_attachment || ''}
+                placeholder="e.g. Screenshot of completed work"
+                className="border-border bg-background"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                If set, assignee must upload a file before marking this task done
+              </p>
+            </div>
+          )}
 
           {state.error && <p className="text-sm text-destructive">{state.error}</p>}
 

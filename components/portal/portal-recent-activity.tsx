@@ -67,7 +67,7 @@ export function PortalRecentActivity({
   return (
     <div className="relative">
       {isValidating && (
-        <div className="absolute -top-1 right-0 h-0.5 w-8 animate-pulse rounded-full bg-qualia-500/30" />
+        <div className="absolute -top-1 right-0 h-0.5 w-8 animate-pulse rounded-full bg-primary/30" />
       )}
 
       <div className="mb-4 flex items-center justify-between">
@@ -116,7 +116,7 @@ export function PortalRecentActivity({
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-500',
-                      project.progress === 100 ? 'bg-emerald-500' : 'bg-qualia-500'
+                      project.progress === 100 ? 'bg-emerald-500' : 'bg-primary'
                     )}
                     style={{ width: `${project.progress}%` }}
                   />

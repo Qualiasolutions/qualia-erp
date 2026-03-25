@@ -381,7 +381,7 @@ export function PortalHub({
         </div>
         <Button
           size="sm"
-          className="gap-1.5 bg-qualia-600 text-white hover:bg-qualia-700"
+          className="gap-1.5 bg-primary text-white hover:bg-qualia-700"
           onClick={() => {
             setCreateWorkspaceOpen(true);
             setWorkspaceCredentials(null);
@@ -451,7 +451,7 @@ export function PortalHub({
               key={client.id}
               className={cn(
                 'group relative flex flex-col rounded-xl border bg-card p-4 transition-all duration-200',
-                'hover:border-qualia-500/30 hover:shadow-md hover:shadow-qualia-500/5',
+                'hover:border-primary/30 hover:shadow-md hover:shadow-primary/5',
                 client.hasPortalAccess ? 'border-border' : 'border-dashed border-border'
               )}
             >
@@ -492,7 +492,7 @@ export function PortalHub({
                       onClick={() => router.push(`/portal/${project.id}`)}
                       className={cn(
                         'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-all',
-                        'hover:border-qualia-500/30 hover:bg-qualia-500/5',
+                        'hover:border-primary/30 hover:bg-primary/5',
                         STATUS_COLORS[project.status || ''] ||
                           'border-border bg-muted/20 text-muted-foreground'
                       )}
@@ -611,7 +611,7 @@ export function PortalHub({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 gap-1.5 border-qualia-500/20 text-xs text-qualia-600 hover:bg-qualia-500/10"
+                    className="h-7 gap-1.5 border-primary/20 text-xs text-primary hover:bg-primary/10"
                     onClick={() => openCredentialDialog(client.id, client.name)}
                   >
                     <KeyRound className="h-3 w-3" />
@@ -719,16 +719,14 @@ export function PortalHub({
                         className={cn(
                           'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-all',
                           isSelected
-                            ? 'bg-qualia-500/10 text-foreground'
+                            ? 'bg-primary/10 text-foreground'
                             : 'text-muted-foreground hover:bg-muted/30'
                         )}
                       >
                         <div
                           className={cn(
                             'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all',
-                            isSelected
-                              ? 'border-qualia-500 bg-qualia-500 text-white'
-                              : 'border-border/50'
+                            isSelected ? 'border-primary bg-primary text-white' : 'border-border'
                           )}
                         >
                           {isSelected && <Check className="h-3 w-3" />}
@@ -762,7 +760,7 @@ export function PortalHub({
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700"
+                  className="flex-1 bg-primary text-white hover:bg-qualia-700"
                   onClick={handleCreateCredentials}
                   disabled={isCreating || selectedProjectIds.length === 0}
                 >
@@ -913,16 +911,14 @@ export function PortalHub({
                           className={cn(
                             'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-all',
                             isSelected
-                              ? 'bg-qualia-500/10 text-foreground'
+                              ? 'bg-primary/10 text-foreground'
                               : 'text-muted-foreground hover:bg-muted/30'
                           )}
                         >
                           <div
                             className={cn(
                               'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all',
-                              isSelected
-                                ? 'border-qualia-500 bg-qualia-500 text-white'
-                                : 'border-border/50'
+                              isSelected ? 'border-primary bg-primary text-white' : 'border-border'
                             )}
                           >
                             {isSelected && <Check className="h-3 w-3" />}
@@ -957,7 +953,7 @@ export function PortalHub({
                 </Button>
                 <Button
                   size="sm"
-                  className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="flex-1 bg-primary text-white hover:bg-qualia-700 disabled:cursor-not-allowed disabled:opacity-40"
                   onClick={handleCreateWorkspace}
                   disabled={isCreatingWorkspace || newProjectIds.length === 0}
                 >
@@ -1016,16 +1012,14 @@ export function PortalHub({
                       className={cn(
                         'flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-all',
                         isSelected
-                          ? 'bg-qualia-500/10 text-foreground'
+                          ? 'bg-primary/10 text-foreground'
                           : 'text-muted-foreground hover:bg-muted/30'
                       )}
                     >
                       <div
                         className={cn(
                           'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all',
-                          isSelected
-                            ? 'border-qualia-500 bg-qualia-500 text-white'
-                            : 'border-border/50'
+                          isSelected ? 'border-primary bg-primary text-white' : 'border-border'
                         )}
                       >
                         {isSelected && <Check className="h-3 w-3" />}
@@ -1061,7 +1055,7 @@ export function PortalHub({
               </Button>
               <Button
                 size="sm"
-                className="flex-1 bg-qualia-600 text-white hover:bg-qualia-700"
+                className="flex-1 bg-primary text-white hover:bg-qualia-700"
                 onClick={handleSaveProjects}
                 disabled={isSavingProjects}
               >

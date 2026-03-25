@@ -257,7 +257,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
             fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
             size="sm"
           />
-          <span className="font-medium text-foreground transition-colors group-hover:text-qualia-500">
+          <span className="font-medium text-foreground transition-colors group-hover:text-primary">
             {project.name}
           </span>
         </div>
@@ -268,7 +268,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
         {project.lead ? (
           <div className="flex items-center gap-2">
             <Avatar className="h-6 w-6">
-              <AvatarFallback className="bg-qualia-500/10 text-[11px] text-qualia-500">
+              <AvatarFallback className="bg-primary/10 text-[11px] text-primary">
                 {getInitials(project.lead.full_name || '')}
               </AvatarFallback>
             </Avatar>

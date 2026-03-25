@@ -86,7 +86,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
         {typedFeatures.map((feature, index) => (
           <div
             key={feature.id}
-            className="group relative aspect-[9/16] cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/10 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-qualia-500/50 hover:shadow-elevation-2"
+            className="group relative aspect-[9/16] cursor-pointer overflow-hidden rounded-xl border border-border bg-muted/10 shadow-elevation-1 transition-all duration-200 ease-premium hover:border-primary/50 hover:shadow-elevation-2"
             onClick={() => handleImageClick(index)}
           >
             {feature.url ? (
@@ -109,7 +109,7 @@ export function FeaturesGallery({ features }: FeaturesGalleryProps) {
                 {feature.phase_name && (
                   <Badge
                     variant="secondary"
-                    className="mb-2 bg-qualia-500/20 text-qualia-100 hover:bg-qualia-500/30"
+                    className="mb-2 bg-primary/20 text-qualia-100 hover:bg-primary/30"
                   >
                     {feature.phase_name}
                   </Badge>

@@ -298,7 +298,7 @@ export function IntegrationCard({
                       href="https://github.com/settings/tokens"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-qualia-500 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       GitHub Settings
                     </a>
@@ -312,7 +312,7 @@ export function IntegrationCard({
                       href="https://vercel.com/account/tokens"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-qualia-500 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       Vercel Settings
                     </a>
@@ -325,7 +325,7 @@ export function IntegrationCard({
                       href="https://dashboard.vapi.ai/account"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-qualia-500 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       VAPI Dashboard
                     </a>

@@ -507,7 +507,7 @@ const DroppableColumn = memo(function DroppableColumn({
 
         {/* Empty State - Minimal */}
         {tasks.length === 0 && !isAddingItem && (
-          <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-border/50">
+          <div className="flex h-24 flex-col items-center justify-center rounded-md border border-dashed border-border">
             <p className="text-xs text-muted-foreground">No {config.pluralLabel.toLowerCase()}</p>
             <button
               onClick={onStartAddItem}
@@ -687,8 +687,8 @@ const PhaseGroup = memo(function PhaseGroup({
           : 'not_started';
 
   const statusColors = {
-    empty: 'border-border/50 bg-secondary/20',
-    not_started: 'border-border/50 bg-card/50',
+    empty: 'border-border bg-secondary/20',
+    not_started: 'border-border bg-card/50',
     in_progress: 'border-primary/30 bg-primary/5',
     completed: 'border-emerald-500/30 bg-emerald-500/5',
   };
@@ -809,7 +809,7 @@ const PhaseGroup = memo(function PhaseGroup({
 
       {/* Tasks List */}
       {isExpanded && (
-        <div className="space-y-2 border-t border-border/50 p-4">
+        <div className="space-y-2 border-t border-border p-4">
           {tasks.map((task) => (
             <PhaseTaskCard key={task.id} task={task} onDelete={() => onDeleteTask(task.id)} />
           ))}
@@ -848,7 +848,7 @@ const PhaseGroup = memo(function PhaseGroup({
                 e.stopPropagation();
                 onAddTask();
               }}
-              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border py-2 text-sm text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
             >
               <Plus className="h-3.5 w-3.5" />
               Add task
@@ -879,7 +879,7 @@ const PhaseTaskCard = memo(function PhaseTaskCard({
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 rounded-lg border border-border/50 bg-card/80 p-3 transition-all duration-200 ease-premium hover:-translate-y-px hover:border-primary/30 hover:shadow-sm',
+        'group flex items-center gap-3 rounded-lg border border-border bg-card/80 p-3 transition-all duration-200 ease-premium hover:-translate-y-px hover:border-primary/30 hover:shadow-sm',
         isDone && 'opacity-60'
       )}
     >
@@ -1227,7 +1227,7 @@ export function ProjectTaskKanban({
         <div className="flex items-center justify-end">
           {/* View Toggle - Only show if project has phases */}
           {availablePhases.length > 0 && (
-            <div className="flex rounded-lg border border-border/50 bg-secondary/30 p-1">
+            <div className="flex rounded-lg border border-border bg-secondary/30 p-1">
               <button
                 onClick={() => setViewMode('type')}
                 className={cn(
@@ -1351,7 +1351,7 @@ export function ProjectTaskKanban({
               ) : (
                 <button
                   onClick={() => setIsAddingPhase(true)}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border/50 py-3 text-sm text-muted-foreground transition-all hover:border-primary/50 hover:bg-secondary/20 hover:text-foreground"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-3 text-sm text-muted-foreground transition-all hover:border-primary/50 hover:bg-secondary/20 hover:text-foreground"
                 >
                   <Plus className="h-4 w-4" />
                   Add Custom Phase

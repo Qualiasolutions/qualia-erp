@@ -78,7 +78,7 @@ export function ProjectMetricBar({ metrics, className }: ProjectMetricBarProps) 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: idx * 0.1 }}
-          className="group relative overflow-hidden rounded-2xl border border-border/30 bg-muted/20 p-5 shadow-glow-sm backdrop-blur-sm transition-all hover:border-primary/20 hover:bg-muted/40"
+          className="group relative overflow-hidden rounded-2xl border border-border bg-muted/20 p-5 shadow-glow-sm backdrop-blur-sm transition-all hover:border-primary/20 hover:bg-muted/40"
         >
           <div className="flex items-center gap-4">
             <div

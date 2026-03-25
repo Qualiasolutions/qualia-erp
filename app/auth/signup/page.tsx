@@ -23,7 +23,7 @@ export default async function Page({ searchParams }: PageProps) {
           </p>
           <Link
             href="/auth/login"
-            className="mt-6 inline-block text-sm text-qualia-600 hover:text-qualia-700"
+            className="mt-6 inline-block text-sm text-primary hover:text-qualia-700"
           >
             Go to Login
           </Link>
@@ -43,7 +43,7 @@ export default async function Page({ searchParams }: PageProps) {
           <p className="mt-4 text-sm text-destructive">{invitationResult.error}</p>
           <Link
             href="/auth/login"
-            className="mt-6 inline-block text-sm text-qualia-600 hover:text-qualia-700"
+            className="mt-6 inline-block text-sm text-primary hover:text-qualia-700"
           >
             Go to Login
           </Link>
@@ -72,8 +72,8 @@ export default async function Page({ searchParams }: PageProps) {
           }}
         />
         {/* Subtle radial glows */}
-        <div className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-qualia-500/10 blur-[140px]" />
-        <div className="bg-qualia-600/8 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[120px]" />
+        <div className="pointer-events-none absolute -left-32 -top-32 h-[500px] w-[500px] rounded-full bg-primary/10 blur-[140px]" />
+        <div className="bg-primary/8 pointer-events-none absolute -right-20 bottom-0 h-[400px] w-[400px] rounded-full blur-[120px]" />
 
         {/* Top — Logo */}
         <div className="relative z-10">
@@ -86,7 +86,7 @@ export default async function Page({ searchParams }: PageProps) {
         {/* Center — Headline + Feature bullets */}
         <div className="relative z-10 max-w-md">
           <h1 className="text-[3.25rem] font-bold leading-[1.06] tracking-[-0.04em] text-white">
-            Welcome to <span className="text-qualia-400">Qualia.</span>
+            Welcome to <span className="text-primary">Qualia.</span>
           </h1>
           <p className="mt-5 text-base leading-relaxed text-qualia-200/60">
             Your client portal for real-time project updates, direct communication, and secure
@@ -96,20 +96,20 @@ export default async function Page({ searchParams }: PageProps) {
           {/* Feature highlights */}
           <div className="mt-8 space-y-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/15">
-                <FileText className="h-4 w-4 text-qualia-400" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+                <FileText className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm text-qualia-200/70">Real-time project updates</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/15">
-                <MessageSquare className="h-4 w-4 text-qualia-400" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+                <MessageSquare className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm text-qualia-200/70">Direct communication with team</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-qualia-500/15">
-                <Shield className="h-4 w-4 text-qualia-400" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+                <Shield className="h-4 w-4 text-primary" />
               </div>
               <span className="text-sm text-qualia-200/70">Secure file sharing</span>
             </div>
@@ -157,7 +157,7 @@ export default async function Page({ searchParams }: PageProps) {
       {/* Right Panel — Form */}
       <div className="relative flex flex-1 items-center justify-center bg-background px-6 py-12 sm:px-12">
         {/* Subtle top-right glow on dark */}
-        <div className="pointer-events-none absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-qualia-500/[0.03] blur-[80px] dark:bg-qualia-500/[0.06]" />
+        <div className="pointer-events-none absolute right-0 top-0 h-[300px] w-[300px] rounded-full bg-primary/[0.03] blur-[80px] dark:bg-primary/[0.06]" />
 
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile logo */}

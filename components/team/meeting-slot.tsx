@@ -42,7 +42,7 @@ export const MeetingSlot = memo(function MeetingSlot({
     <div
       onClick={() => onClick?.(meeting)}
       className={cn(
-        'group flex items-center gap-3 rounded-md border border-border/50 bg-background/50 px-3 py-2',
+        'group flex items-center gap-3 rounded-md border border-border bg-background/50 px-3 py-2',
         'cursor-pointer transition-all duration-150',
         'hover:border-border hover:bg-muted/30'
       )}
@@ -78,7 +78,7 @@ export const MeetingSlot = memo(function MeetingSlot({
         <button
           onClick={handleLinkClick}
           className={cn(
-            'shrink-0 rounded-md border border-border/60 bg-background px-2 py-1',
+            'shrink-0 rounded-md border border-border bg-background px-2 py-1',
             'text-xs font-medium text-foreground/60',
             'opacity-0 transition-all duration-150 group-hover:opacity-100',
             'hover:bg-muted hover:text-foreground'

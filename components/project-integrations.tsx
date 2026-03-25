@@ -112,7 +112,7 @@ export function ProjectIntegrations({ projectId, compact = false }: ProjectInteg
               rel="noopener noreferrer"
               className={cn(
                 'flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors',
-                'border border-border/50 hover:bg-muted/50',
+                'border border-border hover:bg-muted/50',
                 config.color
               )}
             >
@@ -154,7 +154,7 @@ export function ProjectIntegrations({ projectId, compact = false }: ProjectInteg
         return (
           <div
             key={link.id}
-            className="group flex items-center gap-3 rounded-lg border border-border/50 px-3 py-2"
+            className="group flex items-center gap-3 rounded-lg border border-border px-3 py-2"
           >
             <Icon className={cn('h-4 w-4 shrink-0', config.color)} />
             <a

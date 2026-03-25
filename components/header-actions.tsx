@@ -34,7 +34,7 @@ export function HeaderActions() {
       {/* Settings */}
       <Link
         href="/settings"
-        className="group relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-qualia-500/10 hover:text-qualia-600 dark:hover:text-qualia-400"
+        className="group relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all duration-200 hover:scale-105 hover:bg-primary/10 hover:text-primary dark:hover:text-primary"
         title="Settings"
       >
         <Settings className="h-4 w-4 transition-transform duration-200 group-hover:rotate-90" />

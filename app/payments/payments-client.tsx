@@ -159,7 +159,7 @@ function EditPaymentModal({
             <select
               name="client_id"
               defaultValue={payment.client_id || ''}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">No client</option>
               {clients.map((client) => (
@@ -178,7 +178,7 @@ function EditPaymentModal({
               name="description"
               defaultValue={payment.description}
               required
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
@@ -193,7 +193,7 @@ function EditPaymentModal({
                 min="0"
                 defaultValue={payment.amount}
                 required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
@@ -202,7 +202,7 @@ function EditPaymentModal({
                 type="date"
                 name="payment_date"
                 defaultValue={payment.payment_date}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -216,7 +216,7 @@ function EditPaymentModal({
                 name="category"
                 defaultValue={payment.category || ''}
                 placeholder="e.g. Software, Hosting"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
@@ -224,7 +224,7 @@ function EditPaymentModal({
               <select
                 name="status"
                 defaultValue={payment.status}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               >
                 <option value="pending">Pending</option>
                 <option value="completed">Completed</option>
@@ -241,7 +241,7 @@ function EditPaymentModal({
               defaultValue={payment.notes || ''}
               rows={2}
               placeholder="Additional notes..."
-              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
@@ -257,7 +257,7 @@ function EditPaymentModal({
             <button
               type="submit"
               disabled={isPending}
-              className="rounded-lg bg-qualia-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-qualia-700 disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {isPending ? 'Saving...' : 'Save Changes'}
             </button>
@@ -354,8 +354,8 @@ function RetainerGeneratorModal({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-qualia-500/10">
-              <Repeat2 className="h-4 w-4 text-qualia-600" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+              <Repeat2 className="h-4 w-4 text-primary" />
             </div>
             Retainer Fee Generator
           </DialogTitle>
@@ -372,7 +372,7 @@ function RetainerGeneratorModal({
                 className={cn(
                   'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
                   frequency === 'monthly'
-                    ? 'bg-qualia-600 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-secondary text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -394,7 +394,7 @@ function RetainerGeneratorModal({
                 className={cn(
                   'flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-medium transition-all',
                   frequency === 'annual'
-                    ? 'bg-qualia-600 text-white'
+                    ? 'bg-primary text-white'
                     : 'bg-secondary text-muted-foreground hover:text-foreground'
                 )}
               >
@@ -420,7 +420,7 @@ function RetainerGeneratorModal({
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               required
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">Select client</option>
               {clients.map((c) => (
@@ -445,7 +445,7 @@ function RetainerGeneratorModal({
                 onChange={(e) => setAmount(e.target.value)}
                 required
                 placeholder="e.g. 500"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
@@ -457,7 +457,7 @@ function RetainerGeneratorModal({
                 value={startDate.substring(0, 7)}
                 onChange={(e) => setStartDate(e.target.value + '-01')}
                 required
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           </div>
@@ -473,7 +473,7 @@ function RetainerGeneratorModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={`Retainer — ${selectedClient?.display_name || selectedClient?.name || 'client name'}`}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
@@ -500,7 +500,7 @@ function RetainerGeneratorModal({
                   {previewEntries.map((entry, i) => (
                     <div
                       key={entry.date}
-                      className="flex items-center justify-between border-b border-border/40 px-3 py-2 last:border-0"
+                      className="flex items-center justify-between border-b border-border px-3 py-2 last:border-0"
                     >
                       <span className="text-xs text-muted-foreground">
                         #{i + 1} — {entry.label}
@@ -529,7 +529,7 @@ function RetainerGeneratorModal({
             <button
               type="submit"
               disabled={isPending}
-              className="rounded-lg bg-qualia-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-qualia-700 disabled:opacity-50"
+              className="rounded-lg bg-primary px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
               {isPending
                 ? 'Generating...'
@@ -647,7 +647,7 @@ function InstallmentGeneratorModal({
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               required
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">Select client</option>
               {clients.map((c) => (
@@ -670,7 +670,7 @@ function InstallmentGeneratorModal({
               required
               placeholder="e.g. Website Redesign"
               list="projects-list"
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
             {projects.length > 0 && (
               <datalist id="projects-list">
@@ -725,14 +725,14 @@ function InstallmentGeneratorModal({
                   onChange={(e) => updateRow(i, 'amount', e.target.value)}
                   required
                   placeholder="Amount"
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <input
                   type="date"
                   value={row.date}
                   onChange={(e) => updateRow(i, 'date', e.target.value)}
                   required
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             ))}
@@ -801,7 +801,7 @@ function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] 
       <div
         onClick={() => hasDetails && setExpanded(!expanded)}
         className={cn(
-          'group flex items-center gap-3 border-b border-border/50 px-1 py-3 last:border-0',
+          'group flex items-center gap-3 border-b border-border px-1 py-3 last:border-0',
           isPending && 'opacity-50',
           hasDetails && 'cursor-pointer'
         )}
@@ -906,7 +906,7 @@ function PaymentRow({ payment, clients }: { payment: Payment; clients: Client[] 
 
       {/* Expandable details */}
       {expanded && hasDetails && (
-        <div className="border-b border-border/30 bg-muted/20 px-4 py-2.5">
+        <div className="border-b border-border bg-muted/20 px-4 py-2.5">
           <div className="grid gap-1.5 text-xs">
             {payment.description && isIncoming && (
               <div className="flex gap-2">
@@ -1013,7 +1013,7 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
             <select
               name="client_id"
               required
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             >
               <option value="">Select client</option>
               {clients.map((client) => (
@@ -1028,7 +1028,7 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
               name="description"
               required
               placeholder="Description"
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             />
           )}
           <input
@@ -1038,7 +1038,7 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
             min="0"
             required
             placeholder="Amount"
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm font-semibold tabular-nums focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
@@ -1048,18 +1048,18 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
             type="date"
             name="payment_date"
             defaultValue={new Date().toISOString().split('T')[0]}
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <input
             type="text"
             name="category"
             placeholder="Category"
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <select
             name="status"
             defaultValue="pending"
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           >
             <option value="pending">Pending</option>
             <option value="completed">Completed</option>
@@ -1072,7 +1072,7 @@ function AddPaymentForm({ clients, onComplete }: { clients: Client[]; onComplete
             type="text"
             name="notes"
             placeholder="Notes (optional)"
-            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
             type="submit"
@@ -1109,9 +1109,9 @@ function ClientMonthRow({
   if (total === 0) return null;
 
   return (
-    <div className="flex items-center gap-3 border-b border-border/50 px-2 py-2.5 last:border-0">
-      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-qualia-500/10">
-        <Building2 className="h-3.5 w-3.5 text-qualia-600" />
+    <div className="flex items-center gap-3 border-b border-border px-2 py-2.5 last:border-0">
+      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+        <Building2 className="h-3.5 w-3.5 text-primary" />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{displayName || clientName}</p>
@@ -1190,7 +1190,7 @@ export function PaymentsClient({
           className={cn(
             'flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
             hideRetainers
-              ? 'bg-qualia-500/10 text-qualia-600'
+              ? 'bg-primary/10 text-primary'
               : 'bg-secondary/50 text-muted-foreground hover:text-foreground'
           )}
         >
@@ -1232,7 +1232,7 @@ export function PaymentsClient({
         <div
           className={cn(
             'rounded-xl border border-l-[3px] border-border bg-card p-4',
-            net >= 0 ? 'border-l-qualia-500' : 'border-l-red-500'
+            net >= 0 ? 'border-l-primary' : 'border-l-red-500'
           )}
         >
           <p className="text-xs text-muted-foreground">Net</p>
@@ -1364,7 +1364,7 @@ export function PaymentsClient({
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-qualia-500/10 hover:text-qualia-600"
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
@@ -1406,7 +1406,7 @@ export function PaymentsClient({
                     return (
                       <div key={payment.id}>
                         {showHeader && (
-                          <div className="sticky top-0 z-10 border-b border-border/30 bg-card/95 px-1 py-2 backdrop-blur-sm">
+                          <div className="sticky top-0 z-10 border-b border-border bg-card/95 px-1 py-2 backdrop-blur-sm">
                             <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                               {monthKey}
                             </span>

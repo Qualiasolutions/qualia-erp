@@ -53,7 +53,7 @@ async function PortalFeaturesContent({ projectId }: { projectId: string }) {
       <PortalTabs projectId={projectId} />
 
       {/* Info Banner */}
-      <div className="rounded-lg border border-qualia-500/20 bg-qualia-500/10 p-4">
+      <div className="rounded-lg border border-primary/20 bg-primary/10 p-4">
         <p className="text-sm text-qualia-800 dark:text-qualia-300">
           Browse screenshots, mockups, and design previews from your project. Click any image to
           view it in full screen.

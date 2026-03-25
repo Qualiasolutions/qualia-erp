@@ -64,7 +64,7 @@ function getStatusColor(status: string) {
     case 'planned':
       return 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/20';
     case 'in_progress':
-      return 'bg-qualia-500/15 text-qualia-700 dark:text-qualia-400 border-qualia-500/20';
+      return 'bg-primary/15 text-qualia-700 dark:text-primary border-primary/20';
     case 'completed':
       return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/20';
     case 'declined':
@@ -139,8 +139,8 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
   if (requests.length === 0) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center px-4">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-qualia-500/20">
-          <Lightbulb className="h-10 w-10 text-qualia-600 dark:text-qualia-400" />
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-primary/20">
+          <Lightbulb className="h-10 w-10 text-primary dark:text-primary" />
         </div>
         <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">
           No requests yet
@@ -167,7 +167,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
                 className={cn(
                   'rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
                   statusFilter === tab.value
-                    ? 'bg-qualia-500/10 text-qualia-700 shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:text-qualia-400'
+                    ? 'bg-primary/10 text-qualia-700 shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:text-primary'
                     : 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground'
                 )}
               >
@@ -205,7 +205,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
             key={request.id}
             style={index < 6 ? getStaggerDelay(index) : undefined}
             className={cn(
-              'rounded-xl border-border transition-all duration-200 hover:border-border/60 hover:shadow-elevation-1',
+              'rounded-xl border-border transition-all duration-200 hover:border-border hover:shadow-elevation-1',
               index < 6 && 'animate-fade-in-up fill-mode-both'
             )}
           >
@@ -256,7 +256,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
 
               {request.admin_response && expandedIds.has(request.id) && (
                 <div className="mt-4 rounded-lg border border-qualia-200 bg-qualia-50/50 p-3 dark:border-qualia-800/30 dark:bg-qualia-950/20">
-                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-qualia-700 dark:text-qualia-400">
+                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-qualia-700 dark:text-primary">
                     <MessageSquare className="h-3 w-3" />
                     Response from Qualia
                   </div>
@@ -270,7 +270,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
               {request.admin_response && !expandedIds.has(request.id) && (
                 <button
                   onClick={() => toggleExpanded(request.id)}
-                  className="mt-2 flex items-center gap-1 text-xs text-qualia-600 hover:text-qualia-700"
+                  className="mt-2 flex items-center gap-1 text-xs text-primary hover:text-qualia-700"
                 >
                   <MessageSquare className="h-3 w-3" />
                   View response

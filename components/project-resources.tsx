@@ -138,13 +138,13 @@ export function ProjectResources({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-xl border border-border/50 bg-card',
+        'flex flex-col rounded-xl border border-border bg-card',
         isPending && 'opacity-70',
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2">
           <LinkIcon className="h-4 w-4 text-muted-foreground" />
           <h3 className="font-medium">Resources</h3>

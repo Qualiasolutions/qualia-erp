@@ -63,9 +63,9 @@ export function MeetingsSidebar({ meetings }: MeetingsSidebarProps) {
   const now = new Date();
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border/30 bg-card shadow-sm">
+    <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       {/* Header */}
-      <div className="flex shrink-0 items-center gap-3 border-b border-border/20 px-4 py-3">
+      <div className="flex shrink-0 items-center gap-3 border-b border-border px-4 py-3">
         <div className="flex size-7 items-center justify-center rounded-lg bg-violet-500/10">
           <Video className="size-3.5 text-violet-500" strokeWidth={1.5} />
         </div>
@@ -198,7 +198,7 @@ export function MeetingsSidebar({ meetings }: MeetingsSidebarProps) {
             {/* Tomorrow's meetings */}
             {tomorrowMeetings.length > 0 && (
               <>
-                <div className="mx-1 mb-1 mt-3 border-t border-border/20 pt-3">
+                <div className="mx-1 mb-1 mt-3 border-t border-border pt-3">
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                     {format(tomorrow, 'EEEE, MMM d')}
                   </p>
@@ -255,7 +255,7 @@ export function MeetingsSidebar({ meetings }: MeetingsSidebarProps) {
       </div>
 
       {/* Bottom summary */}
-      <div className="shrink-0 border-t border-border/20 bg-muted/10 px-4 py-2">
+      <div className="shrink-0 border-t border-border bg-muted/10 px-4 py-2">
         <div className="flex items-center justify-between">
           <span className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/40">
             {

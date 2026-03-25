@@ -24,9 +24,9 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
       value: stats?.projectCount ?? 0,
       href: '/portal/projects',
       icon: FolderOpen,
-      accentBg: 'bg-qualia-500/10',
-      accentText: 'text-qualia-600 dark:text-qualia-400',
-      iconColor: 'text-qualia-500',
+      accentBg: 'bg-primary/10',
+      accentText: 'text-primary dark:text-primary',
+      iconColor: 'text-primary',
     },
     {
       label: 'Pending requests',
@@ -55,7 +55,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
     return (
       <div className="grid grid-cols-3 gap-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-border/30 bg-background/50 px-4 py-3.5">
+          <div key={i} className="rounded-xl border border-border bg-background/50 px-4 py-3.5">
             <Skeleton className="h-3 w-16 rounded" />
             <Skeleton className="mt-2 h-7 w-10 rounded" />
           </div>
@@ -75,8 +75,8 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
             key={metric.label}
             href={metric.href}
             className={cn(
-              'group rounded-xl border border-border/30 bg-background/50 px-4 py-3.5 backdrop-blur-sm transition-all duration-200',
-              'hover:border-border/60 hover:bg-background/80 hover:shadow-sm'
+              'group rounded-xl border border-border bg-background/50 px-4 py-3.5 backdrop-blur-sm transition-all duration-200',
+              'hover:border-border hover:bg-background/80 hover:shadow-sm'
             )}
           >
             <div className="flex items-center gap-2">

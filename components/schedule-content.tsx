@@ -30,14 +30,14 @@ export function ScheduleContent({ view, initialMeetings }: ScheduleContentProps)
     );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <MeetingStats meetings={meetings} />
       <div className="flex gap-5">
-        {/* Day sidebar */}
-        <div className="hidden w-[280px] shrink-0 overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm lg:block">
+        {/* Week sidebar — V0 design */}
+        <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card lg:block">
           <MeetingDaySidebar meetings={meetingsWithType} />
         </div>
-        {/* Calendar */}
+        {/* Calendar / Week view */}
         <div className="min-w-0 flex-1">{calendarContent}</div>
       </div>
     </div>

@@ -59,7 +59,7 @@ export function QuickStatsBar({
       {stats.map((stat) => (
         <div
           key={stat.key}
-          className="flex shrink-0 items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5 backdrop-blur-sm"
+          className="flex shrink-0 items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5"
         >
           <div className={cn('flex h-5 w-5 items-center justify-center rounded', stat.bg)}>
             <stat.icon className={cn('h-3 w-3', stat.color)} />

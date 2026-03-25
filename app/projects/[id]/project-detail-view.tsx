@@ -252,13 +252,13 @@ export function ProjectDetailView({
   return (
     <div className="flex h-full flex-col bg-background">
       {/* Compact Header */}
-      <header className="relative shrink-0 border-b border-border/40 bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6">
+      <header className="relative shrink-0 border-b border-border bg-card/80 px-4 py-3 backdrop-blur-xl sm:px-6">
         <div className="mx-auto flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <MobileMenuButton />
             <Link
               href="/projects"
-              className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/50 bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
+              className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
             </Link>
@@ -271,7 +271,7 @@ export function ProjectDetailView({
                 selectedProjectType?.color.split(' ')[0] || 'text-muted-foreground'
               }
               size="lg"
-              className="flex-shrink-0 rounded-xl border border-border/50"
+              className="flex-shrink-0 rounded-xl border border-border"
             />
 
             <div className="min-w-0">
@@ -358,15 +358,15 @@ export function ProjectDetailView({
           </div>
 
           {/* Right Panel (xl+ only) */}
-          <aside className="hidden w-80 flex-col border-l border-border/50 bg-card/30 xl:flex">
+          <aside className="hidden w-80 flex-col border-l border-border bg-card/30 xl:flex">
             {/* Personnel */}
-            <div className="shrink-0 space-y-3 border-b border-border/50 p-4">
+            <div className="shrink-0 space-y-3 border-b border-border p-4">
               <div className="flex items-center gap-3">
                 <EntityAvatar
                   src={project.lead?.avatar_url}
                   fallbackIcon={<User className="h-3.5 w-3.5" />}
                   size="sm"
-                  className="rounded-lg border border-border/50"
+                  className="rounded-lg border border-border"
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-foreground">
@@ -377,7 +377,7 @@ export function ProjectDetailView({
               </div>
               {project.client && (
                 <div className="flex items-center gap-3">
-                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border/50 bg-blue-500/10">
+                  <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-blue-500/10">
                     <Building2 className="h-3.5 w-3.5 text-blue-400" />
                   </div>
                   <div className="min-w-0 flex-1">
@@ -393,9 +393,9 @@ export function ProjectDetailView({
             </div>
 
             {/* Assigned Employees */}
-            <div className="shrink-0 space-y-3 border-b border-border/50 p-4">
+            <div className="shrink-0 space-y-3 border-b border-border p-4">
               <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border/50 bg-purple-500/10">
+                <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg border border-border bg-purple-500/10">
                   <Users className="h-3.5 w-3.5 text-purple-400" />
                 </div>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
@@ -410,7 +410,7 @@ export function ProjectDetailView({
             </div>
 
             {/* Resources */}
-            <div className="min-h-0 flex-1 border-b border-border/50">
+            <div className="min-h-0 flex-1 border-b border-border">
               <ProjectResources
                 projectId={project.id}
                 initialResources={project.metadata?.resources || []}
@@ -584,7 +584,7 @@ export function ProjectDetailView({
       {/* Mobile Panel Sheet (below xl) */}
       <Sheet open={panelSheetOpen} onOpenChange={setPanelSheetOpen}>
         <SheetContent side="right" className="flex w-full flex-col p-0 sm:max-w-[420px]">
-          <SheetHeader className="border-b border-border/50 px-4 py-3">
+          <SheetHeader className="border-b border-border px-4 py-3">
             <SheetTitle>Project Info</SheetTitle>
           </SheetHeader>
 

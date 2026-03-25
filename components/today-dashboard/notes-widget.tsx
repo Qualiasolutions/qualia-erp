@@ -242,12 +242,12 @@ export function NotesWidget({ notes, projects, teamMembers, workspaceId }: Notes
   return (
     <div
       className={cn(
-        'flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card',
+        'flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card',
         isPending && 'pointer-events-none opacity-70'
       )}
     >
       {/* Header */}
-      <div className="border-b border-border/50 px-5 py-4">
+      <div className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
@@ -330,7 +330,7 @@ export function NotesWidget({ notes, projects, teamMembers, workspaceId }: Notes
       </div>
 
       {/* Add Note Form */}
-      <div className="border-t border-border/50 p-4">
+      <div className="border-t border-border p-4">
         <div className="flex gap-2">
           <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
             <SelectTrigger className="w-[180px]">

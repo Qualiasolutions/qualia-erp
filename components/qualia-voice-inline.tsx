@@ -788,8 +788,8 @@ export function QualiaVoiceInline({
             <div
               className={cn(
                 'absolute -inset-3 rounded-full transition-all duration-300',
-                callState === 'speaking' && 'bg-qualia-500/30',
-                callState === 'listening' && 'bg-qualia-400/20'
+                callState === 'speaking' && 'bg-primary/30',
+                callState === 'listening' && 'bg-primary/20'
               )}
               style={{
                 transform: `scale(${1 + volumeLevel * 0.3})`,
@@ -799,8 +799,8 @@ export function QualiaVoiceInline({
             <div
               className={cn(
                 'absolute -inset-6 rounded-full transition-all duration-500',
-                callState === 'speaking' && 'bg-qualia-500/20',
-                callState === 'listening' && 'bg-qualia-400/10'
+                callState === 'speaking' && 'bg-primary/20',
+                callState === 'listening' && 'bg-primary/10'
               )}
               style={{
                 transform: `scale(${1 + volumeLevel * 0.2})`,
@@ -813,8 +813,8 @@ export function QualiaVoiceInline({
         {/* Connecting animation */}
         {callState === 'connecting' && (
           <>
-            <div className="absolute -inset-3 animate-ping rounded-full bg-qualia-500/30" />
-            <div className="absolute -inset-6 animate-ping rounded-full bg-qualia-500/20 [animation-delay:150ms]" />
+            <div className="absolute -inset-3 animate-ping rounded-full bg-primary/30" />
+            <div className="absolute -inset-6 animate-ping rounded-full bg-primary/20 [animation-delay:150ms]" />
           </>
         )}
 
@@ -824,9 +824,9 @@ export function QualiaVoiceInline({
           disabled={callState === 'connecting'}
           className={cn(
             'group relative rounded-3xl p-2 transition-all',
-            callState === 'idle' && 'hover:bg-qualia-500/10',
+            callState === 'idle' && 'hover:bg-primary/10',
             callState === 'connecting' && 'cursor-not-allowed',
-            isInCall && 'bg-qualia-500/10'
+            isInCall && 'bg-primary/10'
           )}
         >
           <div className="relative">
@@ -834,9 +834,9 @@ export function QualiaVoiceInline({
             <div
               className={cn(
                 'absolute -inset-2 rounded-full blur-xl transition-opacity duration-500',
-                callState === 'idle' && 'bg-qualia-500/20 opacity-0 group-hover:opacity-100',
-                callState === 'connecting' && 'animate-pulse bg-qualia-500/30 opacity-100',
-                isInCall && 'bg-qualia-500/30 opacity-100'
+                callState === 'idle' && 'bg-primary/20 opacity-0 group-hover:opacity-100',
+                callState === 'connecting' && 'animate-pulse bg-primary/30 opacity-100',
+                isInCall && 'bg-primary/30 opacity-100'
               )}
             />
             <Image
@@ -867,8 +867,8 @@ export function QualiaVoiceInline({
           className={cn(
             'text-xs font-medium transition-colors',
             callState === 'idle' && 'text-muted-foreground',
-            callState === 'connecting' && 'animate-pulse text-qualia-500',
-            callState === 'listening' && 'text-qualia-400',
+            callState === 'connecting' && 'animate-pulse text-primary',
+            callState === 'listening' && 'text-primary',
             callState === 'speaking' && 'text-qualia-300'
           )}
         >
@@ -889,7 +889,7 @@ export function QualiaVoiceInline({
             </p>
           )}
           {assistantMessage && (
-            <p className="text-xs text-qualia-400">
+            <p className="text-xs text-primary">
               <span className="font-medium text-qualia-300">Qualia:</span> &ldquo;
               {assistantMessage.slice(0, 150)}
               {assistantMessage.length > 150 ? '...' : ''}&rdquo;

@@ -207,7 +207,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border/60 bg-background/95 px-6 backdrop-blur-sm">
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
             <BarChart3 className="h-5 w-5 text-muted-foreground" />
@@ -290,7 +290,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                   publishedPosts,
                   completionRate,
                 }) => (
-                  <div key={project.id} className="rounded-lg border border-border/60 bg-card p-4">
+                  <div key={project.id} className="rounded-lg border border-border bg-card p-4">
                     <div className="flex items-center justify-between">
                       <h3 className="truncate text-sm font-medium text-foreground">
                         {project.name}
@@ -336,8 +336,8 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               Daily Log (Last 30 Days)
             </h2>
-            <div className="rounded-lg border border-border/60">
-              <div className="grid grid-cols-[100px_1fr_120px_80px] gap-4 border-b border-border/60 bg-muted/30 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            <div className="rounded-lg border border-border">
+              <div className="grid grid-cols-[100px_1fr_120px_80px] gap-4 border-b border-border bg-muted/30 px-4 py-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 <span>Date</span>
                 <span>Task</span>
                 <span>Project</span>
@@ -356,7 +356,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
                       <div
                         key={task.id}
                         className={cn(
-                          'grid grid-cols-[100px_1fr_120px_80px] items-center gap-4 border-b border-border/30 px-4 py-2.5 text-sm last:border-b-0',
+                          'grid grid-cols-[100px_1fr_120px_80px] items-center gap-4 border-b border-border px-4 py-2.5 text-sm last:border-b-0',
                           isToday && 'bg-muted/20'
                         )}
                       >
@@ -401,12 +401,12 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Published Blog Posts ({blogPosts.length})
               </h2>
-              <div className="rounded-lg border border-border/60">
+              <div className="rounded-lg border border-border">
                 <div className="max-h-[400px] overflow-y-auto">
                   {blogPosts.map((post) => (
                     <div
                       key={post.id}
-                      className="flex items-center justify-between border-b border-border/30 px-4 py-3 last:border-b-0"
+                      className="flex items-center justify-between border-b border-border px-4 py-3 last:border-b-0"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">

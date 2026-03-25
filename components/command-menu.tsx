@@ -187,7 +187,7 @@ export function CommandMenu() {
       onClick={handleClose}
     >
       <div
-        className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border/50 bg-card shadow-elevation-4"
+        className="animate-modal-entrance w-full max-w-[560px] overflow-hidden rounded-2xl border border-border bg-card shadow-elevation-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mode indicator */}
