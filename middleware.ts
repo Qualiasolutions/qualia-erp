@@ -113,6 +113,25 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/';
         return NextResponse.redirect(url);
       }
+
+      // Enforce daily clock-in: redirect to dashboard if no today session
+      // (dashboard shows the clock-in modal). Skip for API and the root itself.
+      if (pathname !== '/' && !pathname.startsWith('/api') && !pathname.startsWith('/auth')) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todaySession } = await supabase
+          .from('work_sessions')
+          .select('id')
+          .eq('profile_id', user.sub)
+          .gte('started_at', `${today}T00:00:00.000Z`)
+          .limit(1)
+          .maybeSingle();
+
+        if (!todaySession) {
+          const url = request.nextUrl.clone();
+          url.pathname = '/';
+          return NextResponse.redirect(url);
+        }
+      }
     }
 
     // If user is authenticated and trying to access /auth/login or /auth/signup, redirect based on role

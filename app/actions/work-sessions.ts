@@ -24,8 +24,16 @@ export interface WorkSession {
 // ============ ACTIONS ============
 
 /**
+ * Get today's date string in UTC (YYYY-MM-DD).
+ */
+function todayUTC(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
  * Clock in: create a new work session.
- * Rejects if user already has an open session (ended_at IS NULL).
+ * Rejects if user already has an open session TODAY.
+ * Stale sessions from previous days are auto-closed before creating a new one.
  */
 export async function clockIn(workspaceId: string, projectId: string): Promise<ActionResult> {
   const supabase = await createClient();
@@ -37,13 +45,37 @@ export async function clockIn(workspaceId: string, projectId: string): Promise<A
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Check for existing open session
+  // Auto-close any stale open sessions from previous days (cap at 8h from start)
+  const today = todayUTC();
+  const { data: staleSessions } = await supabase
+    .from('work_sessions')
+    .select('id, started_at')
+    .eq('profile_id', user.id)
+    .eq('workspace_id', workspaceId)
+    .is('ended_at', null)
+    .lt('started_at', `${today}T00:00:00.000Z`);
+
+  if (staleSessions && staleSessions.length > 0) {
+    for (const stale of staleSessions) {
+      const cappedEnd = new Date(
+        new Date(stale.started_at).getTime() + 8 * 60 * 60 * 1000
+      ).toISOString();
+      await supabase
+        .from('work_sessions')
+        .update({ ended_at: cappedEnd, summary: '[Auto-closed: forgot to clock out]' })
+        .eq('id', stale.id)
+        .eq('profile_id', user.id);
+    }
+  }
+
+  // Check for existing open session TODAY
   const { data: existing } = await supabase
     .from('work_sessions')
     .select('id')
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
     .is('ended_at', null)
+    .gte('started_at', `${today}T00:00:00.000Z`)
     .maybeSingle();
 
   if (existing) {
@@ -118,6 +150,7 @@ export async function clockOut(
       summary: summary.trim(),
     })
     .eq('id', sessionId)
+    .eq('profile_id', user.id)
     .select()
     .single();
 
@@ -141,12 +174,15 @@ export async function getActiveSession(workspaceId: string): Promise<WorkSession
 
   if (!user) return null;
 
+  const today = todayUTC();
+
   const { data, error } = await supabase
     .from('work_sessions')
     .select('*, project:projects!work_sessions_project_id_fkey (id, name)')
     .eq('profile_id', user.id)
     .eq('workspace_id', workspaceId)
     .is('ended_at', null)
+    .gte('started_at', `${today}T00:00:00.000Z`)
     .limit(1)
     .maybeSingle();
 

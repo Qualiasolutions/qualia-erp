@@ -58,7 +58,7 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [sessionDismissed, setSessionDismissed] = useState(false);
+  const [justClockedIn, setJustClockedIn] = useState(false);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
   const isRealAdmin = userRole === 'admin';
   const now = new Date();
@@ -69,13 +69,14 @@ export function TodayDashboard({
   const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
 
-  // Session gate for employees — poll only when relevant
+  // Session gate for employees — poll only when relevant (requires daily clock-in)
   const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
-    isNonAdmin && !sessionDismissed ? workspaceId : null
+    isNonAdmin ? workspaceId : null
   );
 
-  // Show clock-in modal when employee has no active session (wait for loading to prevent flash)
-  const showClockIn = isNonAdmin && !viewingAsEmployee && !sessionLoading && activeSession === null;
+  // Show clock-in modal when employee has no active TODAY session
+  const showClockIn =
+    isNonAdmin && !viewingAsEmployee && !justClockedIn && !sessionLoading && activeSession === null;
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
@@ -281,7 +282,7 @@ export function TodayDashboard({
           open={showClockIn}
           workspaceId={workspaceId}
           currentUserId={currentUserId}
-          onSuccess={() => setSessionDismissed(true)}
+          onSuccess={() => setJustClockedIn(true)}
         />
       )}
     </div>
