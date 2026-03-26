@@ -10,7 +10,7 @@ export type IntegrationResult<T = unknown> = {
   data?: T;
 };
 
-export type IntegrationProvider = 'github' | 'vercel' | 'vapi' | 'zoho';
+export type IntegrationProvider = 'github' | 'vercel' | 'zoho';
 
 export type ProvisioningStatus =
   | 'not_started'
@@ -29,7 +29,7 @@ export const PROVISIONING_STATUSES: ProvisioningStatus[] = [
   'failed',
 ];
 
-export const INTEGRATION_PROVIDERS: IntegrationProvider[] = ['github', 'vercel', 'vapi', 'zoho'];
+export const INTEGRATION_PROVIDERS: IntegrationProvider[] = ['github', 'vercel', 'zoho'];
 
 // =====================================================
 // GitHub Types
@@ -90,52 +90,6 @@ export interface VercelProjectResult {
 }
 
 // =====================================================
-// VAPI Types
-// =====================================================
-
-export interface VAPIConfig {
-  defaultPhoneNumberId?: string;
-}
-
-export interface VAPIAssistantConfig {
-  name: string;
-  projectId: string;
-  projectType: ProjectType;
-  voiceId?: string;
-  model?: string;
-  customSystemPrompt?: string;
-}
-
-export interface VAPIAssistantResult {
-  assistantId: string;
-  phoneNumberId?: string;
-  webhookUrl: string;
-}
-
-// Voice configuration by project type
-export const VAPI_VOICE_CONFIGS: Record<
-  'voice_agent' | 'ai_agent',
-  {
-    defaultVoice: string;
-    defaultModel: string;
-    basePrompt: string;
-  }
-> = {
-  voice_agent: {
-    defaultVoice: 'rachel',
-    defaultModel: 'gpt-4-turbo-preview',
-    basePrompt:
-      'You are a helpful voice assistant for {company}. Be friendly, professional, and concise.',
-  },
-  ai_agent: {
-    defaultVoice: 'adam',
-    defaultModel: 'gpt-4-turbo-preview',
-    basePrompt:
-      'You are an AI agent assistant for {company}. Help users with their requests efficiently.',
-  },
-};
-
-// =====================================================
 // Zoho Types
 // =====================================================
 
@@ -172,7 +126,6 @@ export interface ProjectProvisioningConfig {
 export interface ProjectProvisioningResult {
   github?: GitHubRepoResult;
   vercel?: VercelProjectResult;
-  vapi?: VAPIAssistantResult;
   errors: string[];
 }
 
@@ -180,7 +133,7 @@ export interface ProjectProvisioningResult {
 export const PROVISIONING_MAP: Record<ProjectType, IntegrationProvider[]> = {
   web_design: ['github', 'vercel'],
   ai_agent: ['github', 'vercel'],
-  voice_agent: ['github', 'vercel', 'vapi'],
+  voice_agent: ['github', 'vercel'],
   ai_platform: ['github', 'vercel'], // Same as AI agent
   app: ['github', 'vercel'],
   seo: [],
@@ -196,7 +149,7 @@ export interface WorkspaceIntegration {
   workspace_id: string;
   provider: IntegrationProvider;
   encrypted_token: string;
-  config: GitHubConfig | VercelConfig | VAPIConfig;
+  config: GitHubConfig | VercelConfig;
   is_connected: boolean;
   last_verified_at: string | null;
   created_at: string;
@@ -222,13 +175,6 @@ export interface ProjectProvisioning {
   vercel_deployment_url: string | null;
   vercel_provisioned_at: string | null;
   vercel_error: string | null;
-
-  // VAPI
-  vapi_assistant_id: string | null;
-  vapi_phone_number_id: string | null;
-  vapi_webhook_url: string | null;
-  vapi_provisioned_at: string | null;
-  vapi_error: string | null;
 
   // Metadata
   started_at: string | null;

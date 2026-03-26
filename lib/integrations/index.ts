@@ -18,15 +18,6 @@ export {
   clearVercelClientCache,
 } from './vercel';
 
-// VAPI Service
-export {
-  createVAPIAssistant,
-  checkAssistantExists,
-  testVAPIConnection,
-  deleteVAPIAssistant,
-  clearVAPIClientCache,
-} from './vapi';
-
 // Orchestrator
 export {
   setupProjectIntegrations,

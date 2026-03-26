@@ -12,7 +12,7 @@ import {
 import { getMessages } from '@/app/actions/ai-conversations';
 import { invalidateConversations } from '@/lib/swr';
 
-export type AssistantMode = 'chat' | 'voice' | 'document';
+export type AssistantMode = 'chat' | 'voice' | 'document'; // 'voice' kept for backward compat with localStorage
 export type GuidedTask = 'create-project' | 'create-client' | null;
 
 interface Message {

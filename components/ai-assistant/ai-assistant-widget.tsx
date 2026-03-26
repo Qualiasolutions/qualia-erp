@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Minus, MessageSquare, Mic, FileText, Bot, FileStack, History } from 'lucide-react';
+import { X, Minus, MessageSquare, FileText, Bot, FileStack, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAIAssistant, AssistantMode } from './ai-assistant-provider';
 import { AIAssistantChat } from './ai-assistant-chat';
-import { AIAssistantVoice } from './ai-assistant-voice';
 import { AIAssistantTemplates } from './ai-assistant-templates';
 import { ConversationSidebar } from './conversation-sidebar';
-import { useCurrentUser } from '@/hooks/use-current-user';
 
-const modeConfig: Record<AssistantMode, { label: string; icon: typeof MessageSquare }> = {
+const modeConfig: Record<
+  Exclude<AssistantMode, 'voice'>,
+  { label: string; icon: typeof MessageSquare }
+> = {
   chat: { label: 'Chat', icon: MessageSquare },
-  voice: { label: 'Voice', icon: Mic },
   document: { label: 'Docs', icon: FileText },
 };
 
@@ -31,8 +31,6 @@ export function AIAssistantWidget() {
     newConversation,
   } = useAIAssistant();
   const [showHistory, setShowHistory] = useState(false);
-  const { user } = useCurrentUser();
-  const userName = user?.fullName?.split(' ')[0] || 'User';
 
   // Keyboard shortcut: Cmd/Ctrl + J to toggle
   useEffect(() => {
@@ -131,27 +129,30 @@ export function AIAssistantWidget() {
 
           {/* Mode Tabs */}
           <div className="flex border-b border-border bg-muted/30">
-            {(Object.entries(modeConfig) as [AssistantMode, typeof modeConfig.chat][]).map(
-              ([key, config]) => {
-                const Icon = config.icon;
-                const isActive = mode === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setMode(key)}
-                    className={cn(
-                      'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs transition-colors',
-                      isActive
-                        ? 'border-b-2 border-primary bg-background text-foreground'
-                        : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {config.label}
-                  </button>
-                );
-              }
-            )}
+            {(
+              Object.entries(modeConfig) as [
+                Exclude<AssistantMode, 'voice'>,
+                (typeof modeConfig)['chat'],
+              ][]
+            ).map(([key, config]) => {
+              const Icon = config.icon;
+              const isActive = mode === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setMode(key)}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-1.5 py-2 text-xs transition-colors',
+                    isActive
+                      ? 'border-b-2 border-primary bg-background text-foreground'
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {config.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Content Area */}
@@ -177,7 +178,7 @@ export function AIAssistantWidget() {
 
             {/* Mode Content */}
             <div className={cn('h-full', (showTemplates || showHistory) && 'invisible')}>
-              {mode === 'voice' ? <AIAssistantVoice userName={userName} /> : <AIAssistantChat />}
+              <AIAssistantChat />
             </div>
           </div>
         </div>

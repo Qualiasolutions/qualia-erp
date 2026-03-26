@@ -41,15 +41,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // Voice AI: VAPI, ElevenLabs, Telnyx need script/connect access
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://vercel.live https://cdn.vapi.ai https://elevenlabs.io",
+              "script-src 'self' 'unsafe-inline' blob: https://vercel.live",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              // Voice AI: WebSocket connections for real-time voice
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live https://api.vapi.ai wss://api.vapi.ai https://api.elevenlabs.io https://api.telnyx.com wss://*.telnyx.com",
-              // Voice AI: Media streams for audio/video calls
-              "media-src 'self' blob: https: mediastream:",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live",
+              "media-src 'self' blob:",
               "worker-src 'self' blob:",
               "frame-src 'self' https://vercel.live",
               "frame-ancestors 'none'",

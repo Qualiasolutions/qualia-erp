@@ -9,7 +9,6 @@ import type {
 } from './types';
 import { createRepository, clearGitHubClientCache } from './github';
 import { createVercelProject } from './vercel';
-import { createVAPIAssistant } from './vapi';
 
 // =====================================================
 // Main Orchestration
@@ -45,7 +44,7 @@ export async function setupProjectIntegrations(
     const provisioningMap: Record<string, string[]> = {
       web_design: ['github', 'vercel'],
       ai_agent: ['github', 'vercel'],
-      voice_agent: ['github', 'vercel', 'vapi'],
+      voice_agent: ['github', 'vercel'],
       seo: [],
       ads: [],
     };
@@ -166,48 +165,11 @@ export async function setupProjectIntegrations(
     }
   }
 
-  // 3. Create VAPI assistant (for voice_agent)
-  if (requiredProviders.includes('vapi')) {
-    const vapiResult = await createVAPIAssistant(
-      config.workspaceId,
-      {
-        name: config.projectName,
-        projectId: config.projectId,
-        projectType: config.projectType,
-      },
-      config.clientName
-    );
-
-    if (vapiResult.success && vapiResult.data) {
-      result.vapi = vapiResult.data;
-
-      await supabase
-        .from('project_provisioning')
-        .update({
-          vapi_assistant_id: vapiResult.data.assistantId,
-          vapi_phone_number_id: vapiResult.data.phoneNumberId,
-          vapi_webhook_url: vapiResult.data.webhookUrl,
-          vapi_provisioned_at: new Date().toISOString(),
-          vapi_error: null,
-        })
-        .eq('project_id', config.projectId);
-    } else if (vapiResult.error) {
-      result.errors.push(`VAPI: ${vapiResult.error}`);
-
-      await supabase
-        .from('project_provisioning')
-        .update({
-          vapi_error: vapiResult.error,
-        })
-        .eq('project_id', config.projectId);
-    }
-  }
-
-  // 4. Update final status
+  // 3. Update final status
   let finalStatus: ProvisioningStatus;
   if (result.errors.length === 0) {
     finalStatus = 'completed';
-  } else if (result.github || result.vercel || result.vapi) {
+  } else if (result.github || result.vercel) {
     finalStatus = 'partial_failure';
   } else {
     finalStatus = 'failed';
@@ -236,7 +198,6 @@ export async function getProvisioningStatus(projectId: string): Promise<
     status: ProvisioningStatus;
     github?: { url?: string; error?: string };
     vercel?: { url?: string; error?: string };
-    vapi?: { assistantId?: string; error?: string };
   }>
 > {
   const supabase = await createClient();
@@ -272,10 +233,6 @@ export async function getProvisioningStatus(projectId: string): Promise<
         data.vercel_project_url || data.vercel_error
           ? { url: data.vercel_project_url, error: data.vercel_error }
           : undefined,
-      vapi:
-        data.vapi_assistant_id || data.vapi_error
-          ? { assistantId: data.vapi_assistant_id, error: data.vapi_error }
-          : undefined,
     },
   };
 }
@@ -285,7 +242,7 @@ export async function getProvisioningStatus(projectId: string): Promise<
  */
 export async function retryProvisioningStep(
   projectId: string,
-  step: 'github' | 'vercel' | 'vapi'
+  step: 'github' | 'vercel'
 ): Promise<IntegrationResult<void>> {
   const supabase = await createClient();
 
@@ -396,41 +353,6 @@ export async function retryProvisioningStep(
         .from('project_provisioning')
         .update({
           vercel_error: result.error,
-          status: 'partial_failure',
-        })
-        .eq('project_id', projectId);
-      return { success: false, error: result.error };
-    }
-  }
-
-  if (step === 'vapi') {
-    const result = await createVAPIAssistant(
-      project.workspace_id,
-      {
-        name: project.name,
-        projectId: project.id,
-        projectType: project.project_type,
-      },
-      clientName
-    );
-
-    if (result.success && result.data) {
-      await supabase
-        .from('project_provisioning')
-        .update({
-          vapi_assistant_id: result.data.assistantId,
-          vapi_phone_number_id: result.data.phoneNumberId,
-          vapi_webhook_url: result.data.webhookUrl,
-          vapi_provisioned_at: new Date().toISOString(),
-          vapi_error: null,
-          status: 'completed',
-        })
-        .eq('project_id', projectId);
-    } else {
-      await supabase
-        .from('project_provisioning')
-        .update({
-          vapi_error: result.error,
           status: 'partial_failure',
         })
         .eq('project_id', projectId);

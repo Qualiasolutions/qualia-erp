@@ -762,7 +762,6 @@ export async function createProjectWithRoadmap(
     selectedIntegrations?: {
       github?: boolean;
       vercel?: boolean;
-      vapi?: boolean;
     };
   }
 ): Promise<ActionResult> {
