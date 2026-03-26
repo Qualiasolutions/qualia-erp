@@ -1,86 +1,119 @@
-# Requirements: Qualia ERP v2.1
+# Requirements: Qualia ERP v3.0
 
-**Defined:** 2026-03-24
-**Core Value:** Fawzi has real-time visibility into who's working, when, and on what — employees clock in/out every session with zero friction.
+**Defined:** 2026-03-26
+**Core Value:** Production-hardened internal suite — secure, performant, observable, with polished design
 
-## v2.1 Requirements
+## v3.0 Requirements
 
-### Session Management
+Based on the 2026-03-26 web production audit (`.planning/REVIEW.md`) + design review + finish remaining v2.1 phases.
 
-- [ ] **SESS-01**: Employee sees forced clock-in modal on app open if no active session
-- [ ] **SESS-02**: Clock-in modal shows employee's assigned projects to select from
-- [ ] **SESS-03**: Employee can clock out at any time via persistent UI element in header/sidebar
-- [ ] **SESS-04**: Clock-out requires mandatory summary of work completed before closing session
-- [ ] **SESS-05**: Multiple sessions per day tracked independently (morning, after-lunch, etc.)
-- [ ] **SESS-06**: New `work_sessions` table replaces `daily_checkins` for session storage
+### Security (SEC)
 
-### Enforcement
+- [ ] **SEC-01**: Next.js upgraded to latest stable, resolving all 5 CVEs including Server Action CSRF bypass
+- [ ] **SEC-02**: Cron routes require CRON_SECRET auth in ALL environments (not just production)
+- [ ] **SEC-03**: Unparameterized `.or()` filter injection in Vercel webhook handler is fixed with parameterized queries
+- [ ] **SEC-04**: API key comparisons in `/api/claude/*` routes use `crypto.timingSafeEqual()`
+- [ ] **SEC-05**: SVG uploads either removed from allowed types or served with Content-Disposition: attachment only
+- [ ] **SEC-06**: CSP `unsafe-eval` confirmed removed (was for VAPI, now deleted)
 
-- [ ] **ENFC-01**: Idle detection prompts "Are you still working?" after inactivity timeout
-- [ ] **ENFC-02**: Banner reminder appears when planned logout time is reached
-- [ ] **ENFC-03**: Browser beforeunload warns if employee closes tab without clocking out
-- [ ] **ENFC-04**: Auto clock-out after extended idle with no response
+### Performance (PERF)
 
-### Live Dashboard
+- [ ] **PERF-01**: Middleware role check eliminated — user role stored in JWT custom claims via Supabase hook
+- [ ] **PERF-02**: `reorderTasks` uses batch RPC or single upsert instead of N+1 writes
+- [ ] **PERF-03**: `canModifyTask` loop in reorder is parallelized or replaced with single batch query
+- [ ] **PERF-04**: `isUserAdmin` / `isUserManagerOrAbove` cached per-request using React `cache()`
+- [ ] **PERF-05**: framer-motion lazily loaded in non-critical components via `dynamic()`
+- [ ] **PERF-06**: Chat API caches enriched context per conversation (TTL 30-60s)
+- [ ] **PERF-07**: Sequential queries in `getProjectHealth` and `today-page.tsx` parallelized with `Promise.all`
+- [ ] **PERF-08**: `assigned_to` column reference in chat route fixed to correct `assignee_id`
 
-- [ ] **LIVE-01**: Admin dashboard shows real-time employee status (clocked in/out, which project, session duration)
-- [ ] **LIVE-02**: Status indicators update via SWR polling (green = active, red = offline)
-- [ ] **LIVE-03**: Admin can view session history for any employee by date
+### Observability (OBS)
 
-### Cleanup
+- [ ] **OBS-01**: Sentry SDK installed and configured (`@sentry/nextjs` with client/server/edge configs)
+- [ ] **OBS-02**: Vercel Analytics + Speed Insights added to `app/layout.tsx`
+- [ ] **OBS-03**: Uptime cron frequency increased from daily to every 15 minutes, or removed in favor of UptimeRobot native alerting
 
-- [ ] **CLEAN-01**: Remove TaskTimeTracker component and all timer UI from task cards
-- [ ] **CLEAN-02**: Remove task_time_logs references from team dashboard queries
-- [ ] **CLEAN-03**: Replace old check-in modal with new session clock-in modal
-- [ ] **CLEAN-04**: Update /admin/attendance page to show session-based data
+### Reliability (REL)
 
-## Future Requirements
+- [ ] **REL-01**: Test coverage increased to 30%+ (from 0.75%) with focus on action modules
+- [ ] **REL-02**: Failing voice assistant tests fixed or removed (stale Arabic phrase assertions)
+- [ ] **REL-03**: Route-level `error.tsx` added for `/projects`, `/clients`, `/schedule`, `/payments`, `/inbox`, `/team`
+- [ ] **REL-04**: Cron routes sanitize error responses (no `String(error)` leaking internal paths)
+- [ ] **REL-05**: `tsc --noEmit` added to pre-commit or pre-push hook
 
-### Attendance Analytics
+### Deployment (DEP)
 
-- **ANALYTICS-01**: Weekly/monthly attendance summary per employee
-- **ANALYTICS-02**: Average session duration trends
-- **ANALYTICS-03**: Project time allocation breakdown
+- [ ] **DEP-01**: Duplicate migration timestamp `20260324000000` renamed
+- [ ] **DEP-02**: Health endpoint responds under 500ms (optimize or cache DB check)
+- [ ] **DEP-03**: `/research` route marked `force-dynamic` to fix build warning
+
+### Design (DES)
+
+- [ ] **DES-01**: Full design audit of all pages against Impeccable v4.0 spec (tinted neutrals, fluid type, layered surfaces)
+- [ ] **DES-02**: Dashboard homepage polished — spacing, hierarchy, visual density
+- [ ] **DES-03**: Projects list and detail pages reviewed for consistency
+- [ ] **DES-04**: Settings pages cleaned up (VAPI card removed, layout tightened)
+- [ ] **DES-05**: Schedule page design consistency check
+
+### Remaining v2.1 (V21)
+
+- [ ] **V21-01**: Phase 30 — Live Status Dashboard (admin sees who's clocked in, project, duration)
+- [ ] **V21-02**: Phase 31 — Clock-Out Enforcement (idle detection, planned logout, beforeunload)
 
 ## Out of Scope
 
-| Feature                             | Reason                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------- |
-| Supabase Realtime for live status   | SWR polling sufficient for 3 users                                        |
-| GPS/location tracking               | Trust-based system, not surveillance                                      |
-| Per-task time tracking              | Replaced by session-based attendance                                      |
-| Overtime calculations               | Not relevant for current team structure                                   |
-| Break time tracking within sessions | Sessions are per-block (morning, afternoon) — breaks are between sessions |
+| Feature                              | Reason                                                          |
+| ------------------------------------ | --------------------------------------------------------------- |
+| Redis rate limiting                  | P2 tech debt, in-memory sufficient for 3 users                  |
+| Test coverage to 50%                 | 30% is the pragmatic first target                               |
+| Structured logging (Axiom/Logtail)   | Sentry + Vercel Analytics covers most observability needs first |
+| Database N+1 fix in `getProjectById` | Existing tech debt, not triggered by audit                      |
+| Virtualization for TasksWidget       | Existing tech debt, not urgent                                  |
 
 ## Traceability
 
-| Requirement | Phase    | Status      |
-| ----------- | -------- | ----------- |
-| SESS-01     | Phase 29 | ✅ Complete |
-| SESS-02     | Phase 29 | ✅ Complete |
-| SESS-03     | Phase 29 | ✅ Complete |
-| SESS-04     | Phase 29 | ✅ Complete |
-| SESS-05     | Phase 29 | ✅ Complete |
-| SESS-06     | Phase 28 | ✅ Complete |
-| ENFC-01     | Phase 31 | Pending     |
-| ENFC-02     | Phase 31 | Pending     |
-| ENFC-03     | Phase 31 | Pending     |
-| ENFC-04     | Phase 31 | Pending     |
-| LIVE-01     | Phase 30 | Pending     |
-| LIVE-02     | Phase 30 | Pending     |
-| LIVE-03     | Phase 30 | Pending     |
-| CLEAN-01    | Phase 28 | ✅ Complete |
-| CLEAN-02    | Phase 28 | ✅ Complete |
-| CLEAN-03    | Phase 29 | ✅ Complete |
-| CLEAN-04    | Phase 29 | ✅ Complete |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| V21-01      | Phase 30 | Pending |
+| V21-02      | Phase 31 | Pending |
+| SEC-01      | Phase 33 | Pending |
+| SEC-02      | Phase 33 | Pending |
+| SEC-03      | Phase 33 | Pending |
+| SEC-04      | Phase 33 | Pending |
+| SEC-05      | Phase 33 | Pending |
+| SEC-06      | Phase 33 | Pending |
+| PERF-01     | Phase 34 | Pending |
+| PERF-02     | Phase 34 | Pending |
+| PERF-03     | Phase 34 | Pending |
+| PERF-04     | Phase 34 | Pending |
+| PERF-05     | Phase 34 | Pending |
+| PERF-06     | Phase 34 | Pending |
+| PERF-07     | Phase 34 | Pending |
+| PERF-08     | Phase 34 | Pending |
+| OBS-01      | Phase 35 | Pending |
+| OBS-02      | Phase 35 | Pending |
+| OBS-03      | Phase 35 | Pending |
+| REL-01      | Phase 36 | Pending |
+| REL-02      | Phase 36 | Pending |
+| REL-03      | Phase 36 | Pending |
+| REL-04      | Phase 36 | Pending |
+| REL-05      | Phase 36 | Pending |
+| DEP-01      | Phase 37 | Pending |
+| DEP-02      | Phase 37 | Pending |
+| DEP-03      | Phase 37 | Pending |
+| DES-01      | Phase 38 | Pending |
+| DES-02      | Phase 38 | Pending |
+| DES-03      | Phase 38 | Pending |
+| DES-04      | Phase 38 | Pending |
+| DES-05      | Phase 38 | Pending |
 
 **Coverage:**
 
-- v2.1 requirements: 17 total
-- Mapped to phases: 17
-- Unmapped: 0 ✓
+- v3.0 requirements: 30 total
+- Mapped to phases: 30
+- Unmapped: 0
 
 ---
 
-_Requirements defined: 2026-03-24_
-_Last updated: 2026-03-24 after roadmap creation (phases 28-31)_
+_Requirements defined: 2026-03-26_
+_Last updated: 2026-03-26 after production audit_

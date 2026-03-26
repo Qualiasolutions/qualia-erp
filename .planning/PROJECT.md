@@ -110,19 +110,20 @@ Tech stack: Next.js 16, Supabase, Tailwind/shadcn, SWR, Framer Motion, Vaul, Res
 Trainee system and client portal fully functional. v2.1 evolves the attendance model from morning/evening check-ins to multi-session clock-in/clock-out with live oversight.
 Team: Fawzi (admin/owner), Moayad (employee), Hasna (employee).
 
-## Current Milestone: v2.1 Attendance & Live Oversight
+## Current Milestone: v3.0 Production Hardening & Design
 
-**Goal:** Replace morning/evening check-ins with multi-session clock-in/clock-out, give Fawzi real-time visibility into who's working on what, enforce clock-outs, and remove per-task time tracking.
+**Goal:** Close all CRITICAL/HIGH findings from 2026-03-26 production audit, add observability (Sentry + Analytics), increase test coverage to 30%+, polish design to Impeccable v4.0 spec, and finish remaining v2.1 attendance features.
 
 **Target features:**
 
-- Multi-session clock-in/clock-out (forced on app open, multiple per day)
-- Project selection on clock-in (from assigned projects)
-- Mandatory completion summary on clock-out
-- Clock-out enforcement (idle detection, planned logout reminder, beforeunload warning)
-- Live employee status dashboard (who's in, which project, how long)
-- Remove TaskTimeTracker and per-task timer UI
-- Update attendance page to session-based data
+- Security: Next.js CVE fixes, cron auth hardening, filter injection fix, timing-safe API keys
+- Performance: JWT role claims in middleware, batch reorder, React cache(), lazy framer-motion
+- Observability: Sentry SDK, Vercel Analytics + Speed Insights
+- Reliability: 30%+ test coverage, error boundaries on all routes, tsc in pre-commit
+- Design: Full audit against Impeccable v4.0, polish all key pages
+- v2.1 carry-over: Live status dashboard, clock-out enforcement
+
+**Completed pre-work:** VAPI removal (9,500 lines, unsafe-eval in CSP)
 
 ## Constraints
 

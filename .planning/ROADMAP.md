@@ -9,143 +9,217 @@
 - ✅ **v1.4 Admin Portal Onboarding** - Phases 17-19 (shipped 2026-03-09)
 - ✅ **v1.5.1 Security Hardening** - Phase 25 (shipped 2026-03-10)
 - ✅ **v2.0 Team Efficiency & Owner Oversight** - Phase 26 (shipped 2026-03-15)
-- 🚧 **v2.1 Attendance & Live Oversight** - Phases 28-31 (in progress)
+- 🚧 **v2.1 Attendance & Live Oversight** - Phases 28-31 (carry-over: 30-31)
+- 🚧 **v3.0 Production Hardening & Design** - Phases 33-38 (new)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0–v2.0 (Phases 1-26) — SHIPPED</summary>
+<summary>✅ v1.0–v2.0 (Phases 1-29) — SHIPPED</summary>
 
-Phases 1-26 complete. See MILESTONES.md for full history.
+Phases 1-29 complete. See MILESTONES.md for full history.
 
-Phase 26: Team Sync & Daily Structure — deleted learning system, added daily check-ins, task time logging, team dashboard, owner updates, morning emails, task notifications, GitHub/Vercel provisioning fix.
+Phase 28-29: v2.1 DB migration, session clock-in/clock-out — complete.
 
 </details>
 
 ---
 
-### 🚧 v2.1 Attendance & Live Oversight (In Progress)
-
-**Milestone Goal:** Replace morning/evening check-ins with multi-session clock-in/clock-out, give Fawzi real-time visibility into who's working on what, enforce clock-outs, and remove per-task time tracking.
-
-#### Phase 28: DB Migration & Cleanup
-
-**Goal:** The codebase is free of the old check-in and task time tracking systems — new `work_sessions` schema is in place and ready to be built on.
-
-**Depends on:** Phase 26 (complete)
-**Requirements:** SESS-06, CLEAN-01, CLEAN-02
-
-**Success Criteria** (what must be TRUE):
-
-1. `work_sessions` table exists with correct schema — old `daily_checkins` table is either removed or preserved as archive with no active references
-2. `TaskTimeTracker` component and timer UI are gone from task cards — no timer buttons, start/stop controls, or duration displays remain
-3. `task_time_logs` table references are removed from all queries — `team-dashboard.ts` and any other action files query without it
-4. App builds clean (`npx tsc --noEmit`) with no orphan imports or missing module errors
-
-**Plans:** 2 plans
-
-Plans:
-
-- [x] 28-01-PLAN.md — Create work_sessions table in Supabase + remove task_time_logs references from queries and SWR hooks
-- [x] 28-02-PLAN.md — Remove TaskTimeTracker component file + strip all timer UI from team-task-card.tsx, verify clean build
-
-#### Phase 29: Session Clock-In / Clock-Out
-
-**Goal:** Employees can clock in when they start working (selecting a project) and clock out with a summary — the core session loop is fully functional.
-
-**Depends on:** Phase 28
-**Requirements:** SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, CLEAN-03, CLEAN-04
-
-**Success Criteria** (what must be TRUE):
-
-1. Employee opening the ERP app with no active session sees a clock-in modal — they cannot dismiss it without selecting a project and clocking in
-2. Clock-in modal shows only the employee's assigned projects (not all projects) to select from
-3. A persistent clock-out button is visible in the header/sidebar throughout the session — always accessible from any page
-4. Clicking clock-out opens a summary form — the session cannot close without a text summary of work completed
-5. Multiple sessions per day work correctly — an employee who clocked out can clock back in and the new session is tracked independently
-6. `/admin/attendance` page shows session-based data (project, start time, end time, duration, summary) instead of morning/evening check-in format
-
-**Plans:** 4 plans
-
-Plans:
-
-- [x] 29-01-PLAN.md — Session server actions (clockIn, clockOut, getActiveSession, getTodaysSessions, getSessionsAdmin) + SWR hooks
-- [x] 29-02-PLAN.md — Forced clock-in modal with project selection from assignments + TodayDashboard gate update
-- [x] 29-03-PLAN.md — Persistent clock-out button in sidebar + ClockOutModal with mandatory summary
-- [x] 29-04-PLAN.md — Rewrite /admin/attendance page to session model (project, duration, summary columns)
+### 🚧 v2.1 Carry-Over (In Progress)
 
 #### Phase 30: Live Status Dashboard
 
 **Goal:** Fawzi can see at a glance who is currently working, on which project, for how long — and can drill into session history for any employee.
 
-**Depends on:** Phase 29
-**Requirements:** LIVE-01, LIVE-02, LIVE-03
+**Depends on:** Phase 29 (complete)
+**Requirements:** V21-01
 
-**Success Criteria** (what must be TRUE):
+**Success Criteria:**
 
-1. Admin dashboard shows each employee's current status: clocked in (green indicator, project name, session duration ticking) or offline (red/grey indicator, time since last session)
-2. Status indicators refresh automatically via SWR polling — no manual reload needed
-3. Admin can select any employee and date to view their session history for that day (sessions list with project, start/end, duration, summary)
+1. Admin dashboard shows each employee's current status: clocked in (green, project name, duration ticking) or offline (grey, time since last session)
+2. Status indicators refresh automatically via SWR polling
+3. Admin can select any employee and date to view their session history
 
-**Plans:** TBD
+**Plans:** 3 plans
 
 Plans:
 
-- [ ] 30-01: Live status data action + SWR hook for employee statuses
-- [ ] 30-02: Live status panel UI on admin dashboard (employee cards with active/offline state)
-- [ ] 30-03: Session history view for admin (per-employee, per-date drill-down)
+- [ ] 30-01: Live status data action + SWR hook
+- [ ] 30-02: Live status panel UI on admin dashboard
+- [ ] 30-03: Session history view (per-employee, per-date)
 
 #### Phase 31: Clock-Out Enforcement
 
-**Goal:** Employees who forget or try to skip clocking out are caught — idle detection, planned logout reminders, and browser exit warnings keep sessions honest.
+**Goal:** Employees who forget to clock out are caught — idle detection, planned logout reminders, browser exit warnings.
 
-**Depends on:** Phase 29
-**Requirements:** ENFC-01, ENFC-02, ENFC-03, ENFC-04
+**Depends on:** Phase 29 (complete)
+**Requirements:** V21-02
 
-**Success Criteria** (what must be TRUE):
+**Success Criteria:**
 
-1. After a configurable idle period with no mouse/keyboard activity, a "Are you still working?" prompt appears — the session does not silently continue
-2. If an employee set a planned logout time and it passes while still clocked in, a banner reminder appears prompting them to clock out
-3. Closing or refreshing the browser tab while clocked in shows a native beforeunload warning — the session is not silently abandoned
-4. If an employee dismisses the idle prompt and remains idle for an extended period, the session auto-closes with a note indicating it was auto-closed due to inactivity
-
-**Plans:** TBD
-
-Plans:
-
-- [ ] 31-01: Idle detection hook + "still working?" prompt + auto clock-out after extended idle
-- [ ] 31-02: Planned logout banner reminder + beforeunload warning
-
-#### Phase 32: Task File Attachments
-
-**Goal:** Users can upload file attachments (including HTML reports) to tasks, view/download them, and optionally mark tasks as done upon upload — enabling deliverable-based task completion.
-
-**Depends on:** Phase 29
-**Requirements:** Task attachment storage, upload/download/delete actions, UI in task detail dialog, "complete with deliverable" flow
-
-**Success Criteria** (what must be TRUE):
-
-1. Users can upload files (including `.html`) to any task via drag-and-drop or click
-2. Attachments are listed in the task detail dialog with download/delete options
-3. Uploading a file offers a "Mark task as done" checkbox that completes the task
-4. RLS prevents cross-workspace access to attachments
+1. After configurable idle period, "Are you still working?" prompt appears
+2. If planned logout time passes while clocked in, banner reminder appears
+3. Closing browser tab while clocked in shows native beforeunload warning
+4. Extended idle auto-closes session with inactivity note
 
 **Plans:** 2 plans
 
 Plans:
 
-- [ ] 32-01-PLAN.md — Database table, server actions (upload/download/delete), SWR hook, MIME types
-- [ ] 32-02-PLAN.md — UI attachment section in task detail dialog + "complete with deliverable" flow
+- [ ] 31-01: Idle detection hook + "still working?" prompt + auto clock-out
+- [ ] 31-02: Planned logout banner + beforeunload warning
+
+---
+
+### 🚧 v3.0 Production Hardening & Design (New)
+
+**Milestone Goal:** Close all CRITICAL and HIGH findings from the 2026-03-26 production audit, add observability, increase test coverage, and polish the design to match Impeccable v4.0 spec.
+
+#### Phase 33: Security Fixes
+
+**Goal:** All security vulnerabilities from the audit are resolved — CVEs patched, injection vectors closed, auth hardened.
+
+**Depends on:** None (can start immediately)
+**Requirements:** SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06
+
+**Success Criteria:**
+
+1. `npm audit --omit=dev` shows zero high/critical vulnerabilities
+2. All cron endpoints require auth in every environment (no `NODE_ENV` guard)
+3. Vercel webhook `.or()` uses parameterized filters — no string interpolation of user input
+4. `/api/claude/*` routes use `crypto.timingSafeEqual()` for API key comparison
+5. SVG removed from allowed MIME types in `project-files.ts`
+6. CSP has no `unsafe-eval` directive
+
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 33-01: Next.js upgrade + npm audit fix + cron auth hardening + CSP cleanup
+- [ ] 33-02: Fix Vercel webhook filter injection + claude API timing-safe + SVG upload removal
+
+#### Phase 34: Performance Optimization
+
+**Goal:** Middleware is fast (no DB query for role), reorder is efficient, and AI chat doesn't rebuild context on every message.
+
+**Depends on:** None (can run parallel to Phase 33)
+**Requirements:** PERF-01 through PERF-08
+
+**Success Criteria:**
+
+1. Middleware makes zero DB queries for authenticated users (role in JWT claims)
+2. `reorderTasks` sends at most 2 DB queries regardless of task count (1 auth check, 1 batch update)
+3. `isUserAdmin()` uses React `cache()` — verified by checking only 1 profiles query per request
+4. `framer-motion` not in initial page bundle (lazy loaded)
+5. Chat route uses `assignee_id` (not `assigned_to`) and caches context per conversation
+6. `getProjectHealth` and `today-page.tsx` use `Promise.all` for parallel queries
+
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 34-01: JWT custom claims for role in middleware (Supabase auth hook + middleware rewrite)
+- [ ] 34-02: Batch reorder RPC + React cache() for auth helpers + Promise.all for parallel queries + fix assignee_id
+- [ ] 34-03: Lazy-load framer-motion + chat context caching
+
+#### Phase 35: Observability
+
+**Goal:** Production errors are tracked, page performance is measured, and uptime monitoring actually alerts.
+
+**Depends on:** None (can run parallel)
+**Requirements:** OBS-01, OBS-02, OBS-03
+
+**Success Criteria:**
+
+1. Sentry captures unhandled exceptions in production (client + server + edge)
+2. Vercel Analytics dashboard shows page views and Core Web Vitals
+3. Speed Insights active in production
+4. Uptime monitoring fires alerts within 15 minutes of downtime (either via cron or UptimeRobot native)
+
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 35-01: Install @sentry/nextjs, configure client/server/edge, create Sentry project
+- [ ] 35-02: Add @vercel/analytics + @vercel/speed-insights to layout + fix uptime cron frequency
+
+#### Phase 36: Reliability & Testing
+
+**Goal:** Test coverage reaches 30%+, error boundaries cover all routes, and build pipeline catches type errors.
+
+**Depends on:** None (can run parallel)
+**Requirements:** REL-01 through REL-05
+
+**Success Criteria:**
+
+1. `npm test -- --coverage` shows 30%+ statement coverage
+2. Every top-level route under `app/` has an `error.tsx`
+3. Cron route error responses are sanitized (no internal paths)
+4. Pre-commit or pre-push hook runs `tsc --noEmit`
+5. All existing tests pass (`npm test` exits 0)
+
+**Plans:** 3 plans
+
+Plans:
+
+- [ ] 36-01: Fix/remove failing tests + add error.tsx to all routes + tsc hook + sanitize cron errors
+- [ ] 36-02: Write tests for core action modules (inbox, projects, phases, daily-flow)
+- [ ] 36-03: Write tests for auth helpers, integrations, server-utils
+
+#### Phase 37: Deployment Cleanup
+
+**Goal:** Build is clean, migrations are ordered correctly, and health endpoint is fast.
+
+**Depends on:** Phase 33 (needs Next.js upgrade first)
+**Requirements:** DEP-01, DEP-02, DEP-03
+
+**Success Criteria:**
+
+1. No duplicate migration timestamps — all migration files have unique timestamps
+2. `/api/health` responds under 500ms consistently
+3. `npm run build` produces zero warnings
+4. Full deploy to Vercel + post-deploy verification passes
+
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] 37-01: Rename duplicate migration + optimize health endpoint + force-dynamic on /research + deploy + verify
+
+#### Phase 38: Design Review & Polish
+
+**Goal:** Every page matches the Impeccable v4.0 design spec — tinted neutrals, fluid type, layered surfaces, consistent spacing.
+
+**Depends on:** All other phases (final pass)
+**Requirements:** DES-01 through DES-05
+
+**Success Criteria:**
+
+1. Dashboard homepage has clear visual hierarchy, consistent spacing, no orphan elements
+2. Projects list/detail pages use tinted neutrals (no pure gray) and consistent surface layers
+3. Settings pages are clean (no VAPI remnants, tight layout)
+4. Schedule page matches dashboard design language
+5. `/critique` audit on 3 key pages shows no CRITICAL or HIGH design issues
+
+**Plans:** 2 plans
+
+Plans:
+
+- [ ] 38-01: Design audit all pages with `/critique` — document findings
+- [ ] 38-02: Implement design fixes across dashboard, projects, settings, schedule
 
 ---
 
 ## Progress
 
-| Phase                            | Milestone | Plans Complete | Status      | Completed  |
-| -------------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1-26. (Phases 1-26)              | v1.0–v2.0 | All            | Complete    | 2026-03-24 |
-| 28. DB Migration & Cleanup       | v2.1      | 2/2            | ✅ Complete | 2026-03-24 |
-| 29. Session Clock-In / Clock-Out | v2.1      | 4/4            | ✅ Complete | 2026-03-24 |
-| 30. Live Status Dashboard        | v2.1      | 0/3            | Not started | -          |
-| 31. Clock-Out Enforcement        | v2.1      | 0/2            | Not started | -          |
-| 32. Task File Attachments        | v2.2      | 0/2            | Not started | -          |
+| Phase                        | Milestone | Plans Complete | Status      | Completed  |
+| ---------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-29                         | v1.0–v2.1 | All            | Complete    | 2026-03-25 |
+| 30. Live Status Dashboard    | v2.1      | 0/3            | Not started | -          |
+| 31. Clock-Out Enforcement    | v2.1      | 0/2            | Not started | -          |
+| 33. Security Fixes           | v3.0      | 0/2            | Not started | -          |
+| 34. Performance Optimization | v3.0      | 0/3            | Not started | -          |
+| 35. Observability            | v3.0      | 0/2            | Not started | -          |
+| 36. Reliability & Testing    | v3.0      | 0/3            | Not started | -          |
+| 37. Deployment Cleanup       | v3.0      | 0/1            | Not started | -          |
+| 38. Design Review & Polish   | v3.0      | 0/2            | Not started | -          |
