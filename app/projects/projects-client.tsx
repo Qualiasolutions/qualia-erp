@@ -6,6 +6,7 @@ import {
   Hammer,
   Rocket,
   Archive,
+  CheckCircle2,
   ChevronRight,
   ChevronUp,
   ChevronDown,
@@ -26,6 +27,7 @@ interface ProjectsClientProps {
   building: ProjectData[];
   preProduction: ProjectData[];
   live: ProjectData[];
+  done: ProjectData[];
   archived: ProjectData[];
 }
 
@@ -175,18 +177,21 @@ export function ProjectsClient({
   building: initialBuilding,
   preProduction: initialPreProduction,
   live: initialLive,
+  done: initialDone,
   archived: initialArchived,
 }: ProjectsClientProps) {
-  const { demos, building, preProduction, live, archived } = useProjectStats({
+  const { demos, building, preProduction, live, done, archived } = useProjectStats({
     demos: initialDemos as ProjectStatsData[],
     building: initialBuilding as ProjectStatsData[],
     preProduction: initialPreProduction as ProjectStatsData[],
     live: initialLive as ProjectStatsData[],
+    done: initialDone as ProjectStatsData[],
     archived: initialArchived as ProjectStatsData[],
   });
 
   const [selectedDemo, setSelectedDemo] = useState<ProjectData | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -210,7 +215,8 @@ export function ProjectsClient({
   };
 
   // Compute stats
-  const totalProjects = demos.length + building.length + preProduction.length + live.length;
+  const totalProjects =
+    demos.length + building.length + preProduction.length + live.length + done.length;
   const avgCompletion = useMemo(() => {
     const allActive = [...building, ...preProduction, ...live];
     if (allActive.length === 0) return 0;
@@ -247,6 +253,15 @@ export function ProjectsClient({
               {preProduction.length}
             </span>
             <span className="text-xs text-muted-foreground">pre-prod</span>
+          </div>
+        )}
+        {done.length > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-teal-500" />
+            <span className="text-sm font-semibold tabular-nums text-foreground">
+              {done.length}
+            </span>
+            <span className="text-xs text-muted-foreground">done</span>
           </div>
         )}
         {avgCompletion > 0 && (
@@ -287,6 +302,36 @@ export function ProjectsClient({
           isReordering={isPending}
         />
       </div>
+
+      {/* Done — collapsible */}
+      {done.length > 0 && (
+        <Collapsible open={doneOpen} onOpenChange={setDoneOpen}>
+          <CollapsibleTrigger className="group flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground">
+            <ChevronRight
+              className={cn(
+                'h-3.5 w-3.5 transition-transform duration-200',
+                doneOpen && 'rotate-90'
+              )}
+            />
+            <CheckCircle2 className="h-3.5 w-3.5 text-teal-500" />
+            <span className="font-medium">Done</span>
+            <span className="rounded-full bg-teal-500/10 px-2 py-0.5 text-xs text-teal-500">
+              {done.length}
+            </span>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="mt-2 rounded-xl border border-teal-500/20 bg-teal-500/5 p-3">
+              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
+                {done.map((project) => (
+                  <div key={project.id} className="w-[220px] flex-shrink-0">
+                    <ProjectListView projects={[project as ProjectData]} compact />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* Archived — collapsible */}
       {archived.length > 0 && (

@@ -20,6 +20,7 @@ import {
   Hammer,
   Rocket,
   Archive,
+  CheckCircle2,
   ClipboardCheck,
   Smartphone,
 } from 'lucide-react';
@@ -99,6 +100,7 @@ const STAGE_MOVES = [
   { label: 'Move to Demo', status: 'Demos', icon: Beaker, color: 'text-violet-500' },
   { label: 'Move to Building', status: 'Active', icon: Hammer, color: 'text-emerald-500' },
   { label: 'Mark as Live', status: 'Launched', icon: Rocket, color: 'text-sky-500' },
+  { label: 'Mark as Done', status: 'Done', icon: CheckCircle2, color: 'text-teal-500' },
   { label: 'Archive', status: 'Archived', icon: Archive, color: 'text-muted-foreground' },
 ] as const;
 
@@ -126,6 +128,7 @@ function ProjectRow({
         : 0;
 
   const isComplete = progress === 100;
+  const isDone = project.status === 'Done';
   const isPartnership = project.metadata?.is_partnership;
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -193,6 +196,7 @@ function ProjectRow({
     Active: 'Active',
     Delayed: 'Active',
     Launched: 'Launched',
+    Done: 'Done',
     Archived: 'Archived',
     Canceled: 'Archived',
   };
@@ -206,10 +210,12 @@ function ProjectRow({
       <div
         onClick={handleClick}
         className={cn(
-          'group relative flex cursor-pointer items-start gap-3 rounded-lg border bg-card/40 px-3.5 py-2.5 transition-all duration-200',
-          'hover:border-primary/20 hover:bg-card hover:shadow-sm',
-          isPartnership ? 'border-orange-500/30' : 'border-border',
-          isComplete && 'opacity-40',
+          'group relative flex cursor-pointer items-start gap-3 rounded-lg border px-3.5 py-2.5 transition-all duration-200',
+          isDone
+            ? 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/40 hover:bg-emerald-500/10'
+            : 'bg-card/40 hover:border-primary/20 hover:bg-card hover:shadow-sm',
+          !isDone && (isPartnership ? 'border-orange-500/30' : 'border-border'),
+          isComplete && !isDone && 'opacity-40',
           isPending && 'pointer-events-none opacity-50'
         )}
       >
@@ -344,10 +350,13 @@ function ProjectRow({
     <div
       onClick={handleClick}
       className={cn(
-        'group relative flex cursor-pointer items-center gap-4 rounded-xl border-2 bg-card p-4 transition-all duration-200',
-        'hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
-        isPartnership ? 'border-orange-500/40' : 'border-border hover:border-primary/30',
-        isComplete && 'opacity-60',
+        'group relative flex cursor-pointer items-center gap-4 rounded-xl border-2 p-4 transition-all duration-200',
+        isDone
+          ? 'border-emerald-500/30 bg-emerald-500/5 hover:border-emerald-500/40 hover:bg-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/5'
+          : 'bg-card hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20',
+        !isDone &&
+          (isPartnership ? 'border-orange-500/40' : 'border-border hover:border-primary/30'),
+        isComplete && !isDone && 'opacity-60',
         isPending && 'pointer-events-none opacity-50'
       )}
     >

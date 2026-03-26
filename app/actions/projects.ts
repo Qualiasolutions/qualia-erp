@@ -187,6 +187,7 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
   building: ProjectStatsData[];
   preProduction: ProjectStatsData[];
   live: ProjectStatsData[];
+  done: ProjectStatsData[];
   archived: ProjectStatsData[];
 }> {
   const supabase = await createClient();
@@ -202,7 +203,7 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
 
   if (error) {
     console.error('Error fetching project stats:', error);
-    return { demos: [], building: [], preProduction: [], live: [], archived: [] };
+    return { demos: [], building: [], preProduction: [], live: [], done: [], archived: [] };
   }
 
   // Fetch sort_order separately (not in RPC)
@@ -279,11 +280,12 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
   const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const done = visibleProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
   const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
 
-  return { demos, building, preProduction, live, archived };
+  return { demos, building, preProduction, live, done, archived };
 }
 
 /**

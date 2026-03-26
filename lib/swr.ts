@@ -251,6 +251,7 @@ export function useProjectStats(initialData?: {
   building: ProjectStatsData[];
   preProduction: ProjectStatsData[];
   live: ProjectStatsData[];
+  done: ProjectStatsData[];
   archived: ProjectStatsData[];
 }) {
   const {
@@ -276,6 +277,7 @@ export function useProjectStats(initialData?: {
     building: data?.building || [],
     preProduction: data?.preProduction || [],
     live: data?.live || [],
+    done: data?.done || [],
     archived: data?.archived || [],
     isLoading,
     isValidating,

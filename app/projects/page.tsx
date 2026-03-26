@@ -56,7 +56,16 @@ async function ProjectListLoader() {
 
   if (error) {
     console.error('Error fetching projects:', error);
-    return <ProjectsClient demos={[]} building={[]} preProduction={[]} live={[]} archived={[]} />;
+    return (
+      <ProjectsClient
+        demos={[]}
+        building={[]}
+        preProduction={[]}
+        live={[]}
+        done={[]}
+        archived={[]}
+      />
+    );
   }
 
   // Fetch all active project assignments with employee profiles
@@ -135,6 +144,7 @@ async function ProjectListLoader() {
   const building = activeDelayed.filter((p) => !p.is_pre_production).sort(sortByOrder);
   const preProduction = activeDelayed.filter((p) => p.is_pre_production).sort(sortByOrder);
   const live = visibleProjects.filter((p) => p.status === 'Launched').sort(sortByOrder);
+  const done = visibleProjects.filter((p) => p.status === 'Done').sort(sortByOrder);
   const archived = visibleProjects
     .filter((p) => ['Archived', 'Canceled'].includes(p.status))
     .sort(sortByOrder);
@@ -145,6 +155,7 @@ async function ProjectListLoader() {
       building={building}
       preProduction={preProduction}
       live={live}
+      done={done}
       archived={archived}
     />
   );
