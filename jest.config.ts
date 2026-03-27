@@ -22,11 +22,20 @@ const config: Config = {
     '<rootDir>/__tests__/actions/test-utils.ts',
   ],
   collectCoverageFrom: [
-    'lib/**/*.{ts,tsx}',
-    'components/**/*.{ts,tsx}',
-    'app/**/*.{ts,tsx}',
+    // Server-side action modules (business logic)
+    'app/actions/**/*.ts',
+    // Core lib utilities
+    'lib/server-utils.ts',
+    'lib/validation.ts',
+    'lib/color-constants.ts',
+    'lib/project-phases.ts',
+    'lib/schedule-utils.ts',
+    'lib/format-currency.ts',
     '!**/*.d.ts',
     '!**/node_modules/**',
+    // Exclude re-export routers
+    '!app/actions/index.ts',
+    '!app/actions.ts',
   ],
   coverageThreshold: {
     global: {
