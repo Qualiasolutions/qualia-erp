@@ -118,9 +118,9 @@ Plans:
 
 Plans:
 
-- [ ] 34-01: JWT custom claims for role in middleware (Supabase auth hook + middleware rewrite)
-- [ ] 34-02: Batch reorder RPC + React cache() for auth helpers + Promise.all for parallel queries + fix assignee_id
-- [ ] 34-03: Lazy-load framer-motion + chat context caching
+- [x] 34-01: JWT custom claims for role in middleware (Supabase auth hook + middleware rewrite)
+- [x] 34-02: Batch reorder RPC + React cache() for auth helpers + Promise.all for parallel queries + fix assignee_id
+- [x] 34-03: Lazy-load framer-motion + chat context caching
 
 #### Phase 35: Observability
 
@@ -140,8 +140,8 @@ Plans:
 
 Plans:
 
-- [ ] 35-01: Install @sentry/nextjs, configure client/server/edge, create Sentry project
-- [ ] 35-02: Add @vercel/analytics + @vercel/speed-insights to layout + fix uptime cron frequency
+- [x] 35-01: Install @sentry/nextjs, configure client/server/edge, create Sentry project
+- [x] 35-02: Add @vercel/analytics + @vercel/speed-insights to layout + fix uptime cron frequency
 
 #### Phase 36: Reliability & Testing
 
@@ -218,8 +218,8 @@ Plans:
 | 30. Live Status Dashboard    | v2.1      | 0/3            | Not started | -          |
 | 31. Clock-Out Enforcement    | v2.1      | 0/2            | Not started | -          |
 | 33. Security Fixes           | v3.0      | 2/2            | Complete    | 2026-03-27 |
-| 34. Performance Optimization | v3.0      | 0/3            | Not started | -          |
-| 35. Observability            | v3.0      | 0/2            | Not started | -          |
+| 34. Performance Optimization | v3.0      | 3/3            | Complete    | 2026-03-27 |
+| 35. Observability            | v3.0      | 2/2            | Complete    | 2026-03-27 |
 | 36. Reliability & Testing    | v3.0      | 0/3            | Not started | -          |
 | 37. Deployment Cleanup       | v3.0      | 0/1            | Not started | -          |
 | 38. Design Review & Polish   | v3.0      | 0/2            | Not started | -          |

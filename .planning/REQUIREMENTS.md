@@ -29,9 +29,9 @@ Based on the 2026-03-26 web production audit (`.planning/REVIEW.md`) + design re
 
 ### Observability (OBS)
 
-- [ ] **OBS-01**: Sentry SDK installed and configured (`@sentry/nextjs` with client/server/edge configs)
-- [ ] **OBS-02**: Vercel Analytics + Speed Insights added to `app/layout.tsx`
-- [ ] **OBS-03**: Uptime cron frequency increased from daily to every 15 minutes, or removed in favor of UptimeRobot native alerting
+- [x] **OBS-01**: Sentry SDK installed and configured (`@sentry/nextjs` with client/server/edge configs)
+- [x] **OBS-02**: Vercel Analytics + Speed Insights added to `app/layout.tsx`
+- [x] **OBS-03**: Uptime cron frequency increased from daily to every 15 minutes, or removed in favor of UptimeRobot native alerting
 
 ### Reliability (REL)
 
@@ -90,9 +90,9 @@ Based on the 2026-03-26 web production audit (`.planning/REVIEW.md`) + design re
 | PERF-06     | Phase 34 | Pending |
 | PERF-07     | Phase 34 | Pending |
 | PERF-08     | Phase 34 | Pending |
-| OBS-01      | Phase 35 | Pending |
-| OBS-02      | Phase 35 | Pending |
-| OBS-03      | Phase 35 | Pending |
+| OBS-01      | Phase 35 | Done    |
+| OBS-02      | Phase 35 | Done    |
+| OBS-03      | Phase 35 | Done    |
 | REL-01      | Phase 36 | Pending |
 | REL-02      | Phase 36 | Pending |
 | REL-03      | Phase 36 | Pending |
