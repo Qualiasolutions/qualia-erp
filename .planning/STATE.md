@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 37 (Deployment Cleanup) — COMPLETE (1/1 plans)
-Plans complete: 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01
-Status: Phase 37 complete — Phase 38 (Design Review & Polish) next
-Last activity: 2026-03-27 — Migration rename, force-dynamic /research, health endpoint optimized
+Phase: 30 (Live Status Dashboard) — In Progress (1/3 plans)
+Plans complete: 30-01, 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01
+Status: Phase 30 in progress — 30-02 (UI layer) next
+Last activity: 2026-03-27 — getTeamStatus server action + useTeamStatus SWR hook (data layer)
 
-Progress: [█████░░░░░] 50% (v3.0 scope, 9/18 plans — 33x2, 34x3, 35x2, 36x3 done)
+Progress: [█████░░░░░] 55% (v3.0 scope, 10/18 plans — 30x1, 33x2, 34x3, 35x2, 36x3, 37x1 done)
 
 ## Milestone Overview
 
@@ -57,6 +57,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Phase 36 plan 03 complete — 298 tests, 57% coverage on in-scope files.
-Resume file: `.planning/phases/36-reliability-testing/36-03-SUMMARY.md`
-**Next action:** Execute Phase 37 (Deployment Cleanup — requires Phase 33 which is done). Phases 30, 37 pending. Phase 38 (Design) is last.
+Stopped at: Phase 30 plan 01 complete — getTeamStatus action + useTeamStatus hook (data layer).
+Resume file: `.planning/phases/30-live-status-dashboard/30-01-SUMMARY.md`
+**Next action:** Execute Phase 30 plan 02 (Live Status Dashboard UI layer).
