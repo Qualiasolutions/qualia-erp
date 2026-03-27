@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 const AI_CAPABILITIES = [
   { icon: BarChart3, label: 'Daily briefing', prompt: 'Give me my daily briefing' },
@@ -113,7 +113,7 @@ export function DashboardAIChat() {
         <div className="scrollbar-none flex-1 overflow-y-auto px-4 py-4">
           <AnimatePresence mode="popLayout" initial={false}>
             {!hasMessages ? (
-              <motion.div
+              <m.div
                 key="empty"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -125,7 +125,7 @@ export function DashboardAIChat() {
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {AI_CAPABILITIES.map((cap, i) => (
-                    <motion.button
+                    <m.button
                       key={cap.prompt}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -140,14 +140,14 @@ export function DashboardAIChat() {
                       <span className="text-[11px] font-medium text-muted-foreground/70 transition-colors group-hover:text-foreground">
                         {cap.label}
                       </span>
-                    </motion.button>
+                    </m.button>
                   ))}
                 </div>
-              </motion.div>
+              </m.div>
             ) : (
               <div className="space-y-4">
                 {(messages || []).map((message) => (
-                  <motion.div
+                  <m.div
                     key={message.id}
                     initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -167,19 +167,19 @@ export function DashboardAIChat() {
                     >
                       {message.content}
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
 
                 {/* Thinking indicator */}
                 {isStreaming && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-center gap-3 px-2"
                   >
                     <div className="flex h-8 items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-3 py-1.5">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <motion.div
+                        <m.div
                           key={i}
                           animate={{
                             height: [4, 8, 4],
@@ -197,7 +197,7 @@ export function DashboardAIChat() {
                         THINKING
                       </span>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 <div ref={messagesEndRef} />

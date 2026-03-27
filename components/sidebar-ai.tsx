@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Sparkles, Mic, MicOff, Send, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SpeechRecognitionType = any;
@@ -210,7 +210,7 @@ export function SidebarAI() {
   return (
     <>
       {/* Sidebar trigger — compact icon button */}
-      <motion.button
+      <m.button
         onClick={() => setIsOpen(true)}
         className="group flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/15 to-purple-500/15 text-primary ring-1 ring-white/[0.06] transition-all duration-200 hover:from-primary/25 hover:to-purple-500/25 hover:ring-primary/30"
         whileHover={{ scale: 1.05 }}
@@ -218,12 +218,12 @@ export function SidebarAI() {
         title="Ask AI"
       >
         <Sparkles className="h-3.5 w-3.5" />
-      </motion.button>
+      </m.button>
 
       {/* Bottom center popup - no overlay */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
@@ -248,21 +248,21 @@ export function SidebarAI() {
                       Clear
                     </button>
                   )}
-                  <motion.button
+                  <m.button
                     onClick={() => setIsOpen(false)}
                     className="rounded-md p-1.5 text-muted-foreground/50 transition-colors hover:bg-muted/50 hover:text-foreground/70"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                   >
                     <X className="h-4 w-4" />
-                  </motion.button>
+                  </m.button>
                 </div>
               </div>
 
               {/* Messages */}
               <AnimatePresence mode="popLayout">
                 {messages.length > 0 && (
-                  <motion.div
+                  <m.div
                     className="scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 max-h-64 overflow-y-auto px-4 py-3"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
@@ -270,7 +270,7 @@ export function SidebarAI() {
                   >
                     <div className="space-y-2.5">
                       {messages.map((message) => (
-                        <motion.div
+                        <m.div
                           key={message.id}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -293,19 +293,19 @@ export function SidebarAI() {
                             <AlertCircle className="mr-1.5 inline-block h-3 w-3" />
                           )}
                           <span className="whitespace-pre-wrap break-words">{message.content}</span>
-                        </motion.div>
+                        </m.div>
                       ))}
 
                       {/* Loading indicator */}
                       {isLoading && (
-                        <motion.div
+                        <m.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="mr-8 flex items-center gap-2 rounded-xl bg-white/[0.03] px-3 py-2.5 ring-1 ring-white/[0.06]"
                         >
                           <div className="flex gap-1">
                             {[0, 1, 2].map((i) => (
-                              <motion.span
+                              <m.span
                                 key={i}
                                 className="h-1.5 w-1.5 rounded-full bg-primary/60"
                                 animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
@@ -314,31 +314,31 @@ export function SidebarAI() {
                             ))}
                           </div>
                           <span className="text-xs text-muted-foreground/50">Thinking...</span>
-                        </motion.div>
+                        </m.div>
                       )}
                       <div ref={messagesEndRef} />
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
               {/* Error */}
               <AnimatePresence>
                 {error && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                     className="mx-4 mb-2 overflow-hidden rounded-lg bg-red-500/10 px-3 py-2 text-xs text-red-400/80 ring-1 ring-red-500/20"
                   >
                     {error}
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
               {/* Input */}
               <form onSubmit={handleSubmit} className="flex items-center gap-2 p-3">
-                <motion.button
+                <m.button
                   type="button"
                   onClick={toggleListening}
                   disabled={isLoading}
@@ -352,7 +352,7 @@ export function SidebarAI() {
                   whileTap={{ scale: 0.95 }}
                 >
                   {isListening && (
-                    <motion.div
+                    <m.div
                       className="absolute inset-0 rounded-xl bg-red-500/20"
                       animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
@@ -363,7 +363,7 @@ export function SidebarAI() {
                   ) : (
                     <Mic className="relative h-4 w-4" />
                   )}
-                </motion.button>
+                </m.button>
 
                 <input
                   ref={inputRef}
@@ -376,7 +376,7 @@ export function SidebarAI() {
                   className="h-10 flex-1 rounded-xl border-0 bg-white/[0.03] px-4 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/30 disabled:opacity-50"
                 />
 
-                <motion.button
+                <m.button
                   type="submit"
                   disabled={!input.trim() || isLoading}
                   className={cn(
@@ -393,7 +393,7 @@ export function SidebarAI() {
                   ) : (
                     <Send className="h-4 w-4" />
                   )}
-                </motion.button>
+                </m.button>
               </form>
 
               {/* Hint when empty */}
@@ -405,7 +405,7 @@ export function SidebarAI() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

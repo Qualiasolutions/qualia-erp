@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from 'react';
 import { Command, Send, X, Sparkles } from 'lucide-react';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 export function AISpotlight() {
   const { messages, isStreaming, sendMessage, clearConversation } = useAIAssistant();
@@ -56,7 +56,7 @@ export function AISpotlight() {
   return (
     <>
       {/* Floating trigger button */}
-      <motion.button
+      <m.button
         onClick={() => setIsOpen(true)}
         className={cn(
           'fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full px-4 py-2.5',
@@ -72,14 +72,14 @@ export function AISpotlight() {
         <kbd className="ml-1 hidden rounded bg-background/20 px-1.5 py-0.5 text-[11px] font-medium sm:inline-block">
           <Command className="mr-0.5 inline h-2.5 w-2.5" />K
         </kbd>
-      </motion.button>
+      </m.button>
 
       {/* Spotlight overlay */}
       <AnimatePresence>
         {isOpen && (
           <>
             {/* Backdrop */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -88,7 +88,7 @@ export function AISpotlight() {
             />
 
             {/* Spotlight panel */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -135,7 +135,7 @@ export function AISpotlight() {
                   <div className="max-h-[50vh] overflow-y-auto p-4">
                     <div className="space-y-4">
                       {(messages || []).map((message) => (
-                        <motion.div
+                        <m.div
                           key={message.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -154,19 +154,19 @@ export function AISpotlight() {
                           >
                             {message.content}
                           </div>
-                        </motion.div>
+                        </m.div>
                       ))}
 
                       {/* Typing indicator */}
                       {isStreaming && (
-                        <motion.div
+                        <m.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="flex items-center gap-2 text-sm text-muted-foreground"
                         >
                           <div className="flex gap-1">
                             {[0, 1, 2].map((i) => (
-                              <motion.span
+                              <m.span
                                 key={i}
                                 animate={{ opacity: [0.4, 1, 0.4] }}
                                 transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
@@ -175,7 +175,7 @@ export function AISpotlight() {
                             ))}
                           </div>
                           <span className="text-xs">Thinking...</span>
-                        </motion.div>
+                        </m.div>
                       )}
                       <div ref={messagesEndRef} />
                     </div>
@@ -208,7 +208,7 @@ export function AISpotlight() {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

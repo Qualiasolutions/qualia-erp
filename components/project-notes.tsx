@@ -14,7 +14,7 @@ import {
   deleteProjectNote,
   type ProjectNote,
 } from '@/app/actions/pipeline';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { RichText } from '@/components/ui/rich-text';
 
 interface ProjectNotesProps {
@@ -141,7 +141,7 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                 const isEditing = editingId === note.id;
 
                 return (
-                  <motion.div
+                  <m.div
                     key={note.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -225,7 +225,7 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
                         )}
                       </>
                     )}
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </div>

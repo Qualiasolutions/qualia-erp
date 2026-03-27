@@ -24,7 +24,7 @@ import {
   updateProjectNote,
   type DashboardNote,
 } from '@/app/actions/pipeline';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 interface Project {
   id: string;
@@ -82,7 +82,7 @@ const NoteItem = React.memo(function NoteItem({
   };
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -190,7 +190,7 @@ const NoteItem = React.memo(function NoteItem({
           </div>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 });
 

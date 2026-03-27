@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { Check, Loader2, ExternalLink, Layers } from 'lucide-react';
 import {
   Sheet,
@@ -167,7 +167,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                 </div>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-foreground/[0.06]">
-                <motion.div
+                <m.div
                   className={cn(
                     'h-full rounded-full',
                     overallPercent === 100 ? 'bg-emerald-500' : 'bg-primary'
@@ -256,7 +256,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                       {/* Phase progress bar */}
                       {total > 0 && (
                         <div className="mx-5 mb-1 h-[2px] overflow-hidden rounded-full bg-foreground/[0.04]">
-                          <motion.div
+                          <m.div
                             className={cn(
                               'h-full rounded-full transition-colors duration-300',
                               isPhaseComplete
@@ -276,18 +276,14 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                     {/* Phase Tasks */}
                     {phaseTasks.length > 0 ? (
                       <div className="relative ml-[2.1rem] border-l border-border pb-2 pl-4 pr-5">
-                        <motion.div
-                          variants={taskContainerVariants}
-                          initial="hidden"
-                          animate="visible"
-                        >
+                        <m.div variants={taskContainerVariants} initial="hidden" animate="visible">
                           <AnimatePresence mode="popLayout">
                             {phaseTasks.map((task) => {
                               const isDone = task.status === 'Done';
                               const wasJustToggled = recentlyToggled === task.id;
 
                               return (
-                                <motion.button
+                                <m.button
                                   key={task.id}
                                   layout
                                   variants={taskItemVariants}
@@ -301,7 +297,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                                   )}
                                 >
                                   {/* Checkbox with scale animation */}
-                                  <motion.span
+                                  <m.span
                                     className={cn(
                                       'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-200',
                                       isDone
@@ -319,7 +315,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                                   >
                                     <AnimatePresence mode="wait">
                                       {isDone && (
-                                        <motion.span
+                                        <m.span
                                           key="check"
                                           initial={{ opacity: 0, scale: 0.5 }}
                                           animate={{ opacity: 1, scale: 1 }}
@@ -327,10 +323,10 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                                           transition={{ duration: 0.15 }}
                                         >
                                           <Check className="size-2.5" strokeWidth={3} />
-                                        </motion.span>
+                                        </m.span>
                                       )}
                                     </AnimatePresence>
-                                  </motion.span>
+                                  </m.span>
 
                                   {/* Title */}
                                   <span
@@ -343,11 +339,11 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                                   >
                                     {task.title}
                                   </span>
-                                </motion.button>
+                                </m.button>
                               );
                             })}
                           </AnimatePresence>
-                        </motion.div>
+                        </m.div>
                       </div>
                     ) : (
                       <div className="ml-[2.1rem] border-l border-border pb-2 pl-4 pr-5">

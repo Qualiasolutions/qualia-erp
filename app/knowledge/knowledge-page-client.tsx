@@ -18,7 +18,7 @@ import {
   ListChecks,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { Guide, GuideStep } from '@/lib/guides-data';
@@ -125,7 +125,7 @@ function StepCard({
   const isLast = index === total - 1;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, x: 12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03, duration: 0.25 }}
@@ -199,7 +199,7 @@ function StepCard({
           </div>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -226,7 +226,7 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
   return (
     <>
       {/* Backdrop */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -236,7 +236,7 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
       />
 
       {/* Panel */}
-      <motion.div
+      <m.div
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
@@ -319,7 +319,7 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
               <div className="mt-3 rounded-xl border border-border bg-muted/20 p-4">
                 <ul className="space-y-2.5">
                   {guide.checklist.items.map((item, i) => (
-                    <motion.li
+                    <m.li
                       key={i}
                       initial={{ opacity: 0, x: 8 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -330,14 +330,14 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
                         <Check className="h-3 w-3 text-primary" />
                       </div>
                       <span className="text-muted-foreground">{item}</span>
-                    </motion.li>
+                    </m.li>
                   ))}
                 </ul>
               </div>
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </>
   );
 }
@@ -359,7 +359,7 @@ function GuideCard({
   const commandCount = guide.steps.reduce((sum, s) => sum + (s.commands?.length || 0), 0);
 
   return (
-    <motion.button
+    <m.button
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
@@ -411,7 +411,7 @@ function GuideCard({
           </span>
         )}
       </div>
-    </motion.button>
+    </m.button>
   );
 }
 

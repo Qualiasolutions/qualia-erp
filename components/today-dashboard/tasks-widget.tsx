@@ -35,7 +35,7 @@ import {
 } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { useAdminContext } from '@/components/admin-provider';
 
 // Optimistic action types for instant UI feedback
@@ -127,7 +127,7 @@ const TaskItem = React.memo(function TaskItem({
   const dueToday = isDueToday(task.due_date);
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -270,7 +270,7 @@ const TaskItem = React.memo(function TaskItem({
           </TooltipProvider>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 });
 
@@ -571,7 +571,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const task = visibleTasks[virtualRow.index];
                 return (
-                  <motion.div
+                  <m.div
                     key={task.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -597,7 +597,7 @@ export function TasksWidget({ tasks }: TasksWidgetProps) {
                       onEdit={setEditingTask}
                       isPending={isPending}
                     />
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </AnimatePresence>

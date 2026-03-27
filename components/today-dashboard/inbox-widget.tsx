@@ -23,7 +23,7 @@ import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
 import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { useAdminContext } from '@/components/admin-provider';
 import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 
@@ -470,7 +470,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
               {virtualizer.getVirtualItems().map((virtualRow) => {
                 const task = filteredTasks[virtualRow.index];
                 return (
-                  <motion.div
+                  <m.div
                     key={task.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -495,7 +495,7 @@ export function InboxWidget({ tasks }: InboxWidgetProps) {
                       onHide={handleHideTask}
                       onEdit={setEditingTask}
                     />
-                  </motion.div>
+                  </m.div>
                 );
               })}
             </AnimatePresence>

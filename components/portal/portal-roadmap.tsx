@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatDate } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
-import { motion, useInView } from 'framer-motion';
+import { useInView } from 'framer-motion';
+import { m } from '@/lib/lazy-motion';
 import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
 import { getProjectStatusColor } from '@/lib/portal-styles';
@@ -238,7 +239,7 @@ function PhaseWithComments({
   }, [project.id, phase.name, canSeeInternal]);
 
   return (
-    <motion.div
+    <m.div
       ref={phaseRef}
       initial={{ opacity: 0, y: 24 }}
       animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
@@ -390,7 +391,7 @@ function PhaseWithComments({
           </div>
         </div>
       </div>
-    </motion.div>
+    </m.div>
   );
 }
 

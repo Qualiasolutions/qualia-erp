@@ -1,7 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { motion, type HTMLMotionProps } from 'framer-motion';
+import { type HTMLMotionProps } from 'framer-motion';
+import { m } from '@/lib/lazy-motion';
 import { cn } from '@/lib/utils';
 
 interface BentoCardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
@@ -40,7 +41,7 @@ const BentoCard = React.forwardRef<HTMLDivElement, BentoCardProps>(
     ref
   ) => {
     return (
-      <motion.div
+      <m.div
         ref={ref}
         className={cn(
           'relative overflow-hidden rounded-2xl border transition-all duration-300',
@@ -66,7 +67,7 @@ const BentoCard = React.forwardRef<HTMLDivElement, BentoCardProps>(
         )}
 
         <div className="relative z-10">{children}</div>
-      </motion.div>
+      </m.div>
     );
   }
 );

@@ -1,14 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
+import { m } from '@/lib/lazy-motion';
 
 export function LoginLeftPanel() {
   return (
     <div className="relative hidden overflow-hidden bg-[#0a1a1f] lg:flex lg:w-1/2">
       {/* Animated Gradient Mesh */}
       <div className="absolute inset-0">
-        <motion.div
+        <m.div
           animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
           className="absolute -left-1/2 -top-1/2 h-[200%] w-[200%]"
@@ -25,7 +25,7 @@ export function LoginLeftPanel() {
       {/* Geometric Shapes */}
       <div className="absolute inset-0 overflow-hidden">
         {/* Rotating rings */}
-        <motion.div
+        <m.div
           animate={{ rotate: 360 }}
           transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
@@ -42,37 +42,37 @@ export function LoginLeftPanel() {
             />
             <circle cx="300" cy="300" r="150" stroke="rgba(0,164,172,0.06)" strokeWidth="1" />
           </svg>
-        </motion.div>
+        </m.div>
 
         {/* Floating elements */}
-        <motion.div
+        <m.div
           animate={{ y: [0, -30, 0], x: [0, 15, 0] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute left-[20%] top-[15%] h-32 w-32 rounded-full border border-qualia-400/20"
         />
-        <motion.div
+        <m.div
           animate={{ y: [0, 20, 0], x: [0, -10, 0] }}
           transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
           className="absolute left-[15%] top-[60%] h-4 w-4 rounded-full bg-primary/30 blur-sm"
         />
-        <motion.div
+        <m.div
           animate={{ y: [0, -15, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
           className="absolute right-[20%] top-[25%] h-20 w-20 rotate-45 rounded-xl border border-cyan-400/15"
         />
-        <motion.div
+        <m.div
           animate={{ y: [0, 25, 0] }}
           transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
           className="absolute bottom-[20%] right-[25%] h-6 w-6 rounded-full bg-primary/20"
         />
-        <motion.div
+        <m.div
           animate={{ rotate: [0, 180, 360] }}
           transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
           className="absolute right-[10%] top-[45%] h-16 w-16 border border-qualia-400/10"
         />
 
         {/* Glowing orb */}
-        <motion.div
+        <m.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
           transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-qualia-500/20 to-cyan-500/10 blur-3xl"
@@ -82,7 +82,7 @@ export function LoginLeftPanel() {
       {/* Content Overlay */}
       <div className="relative z-10 flex h-full w-full flex-col justify-between p-12">
         {/* Logo — top left */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
@@ -99,11 +99,11 @@ export function LoginLeftPanel() {
           <span className="text-sm font-semibold uppercase tracking-[0.2em] text-white/90">
             Qualia Solutions
           </span>
-        </motion.div>
+        </m.div>
 
         {/* Center Content */}
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <motion.div
+          <m.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
@@ -115,11 +115,11 @@ export function LoginLeftPanel() {
             <p className="mx-auto mt-6 max-w-xs text-lg leading-relaxed text-white/50">
               Track your projects and stay connected with your team.
             </p>
-          </motion.div>
+          </m.div>
         </div>
 
         {/* Footer */}
-        <motion.div
+        <m.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
@@ -130,7 +130,7 @@ export function LoginLeftPanel() {
           <a href="https://qualiasolutions.net" className="transition-colors hover:text-primary">
             qualiasolutions.net
           </a>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );
