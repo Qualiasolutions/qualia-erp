@@ -7,6 +7,18 @@ import type { ActionResult } from './shared';
 
 // ============ TYPES ============
 
+export interface TeamMemberStatus {
+  profileId: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  status: 'online' | 'offline';
+  // When online:
+  projectName: string | null;
+  sessionStartedAt: string | null;
+  // When offline:
+  lastSessionEndedAt: string | null;
+}
+
 export interface WorkSession {
   id: string;
   workspace_id: string;
@@ -294,4 +306,120 @@ export async function getSessionsAdmin(
     profile: Array.isArray(row.profile) ? row.profile[0] || null : row.profile,
     project: Array.isArray(row.project) ? row.project[0] || null : row.project,
   })) as WorkSession[];
+}
+
+/**
+ * Get live status for all employees in the workspace.
+ * Returns each employee as online (clocked in) or offline (last session time).
+ * Admin only. Results are sorted: online first, then offline; alphabetically within each group.
+ */
+export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStatus[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const admin = await isUserAdmin(user.id);
+  if (!admin) {
+    console.warn('[getTeamStatus] Non-admin attempted to access team status');
+    return [];
+  }
+
+  // Query 1: All profiles in the workspace
+  const { data: profiles, error: profilesError } = await supabase
+    .from('profiles')
+    .select('id, full_name, avatar_url')
+    .eq('workspace_id', workspaceId);
+
+  if (profilesError) {
+    console.error('[getTeamStatus] Profiles error:', profilesError);
+    return [];
+  }
+
+  if (!profiles || profiles.length === 0) return [];
+
+  // Query 2: All open sessions (ended_at IS NULL) for this workspace
+  const { data: openSessions, error: openError } = await supabase
+    .from('work_sessions')
+    .select('profile_id, started_at, project:projects!work_sessions_project_id_fkey (id, name)')
+    .eq('workspace_id', workspaceId)
+    .is('ended_at', null);
+
+  if (openError) {
+    console.error('[getTeamStatus] Open sessions error:', openError);
+    return [];
+  }
+
+  // Build a map of profileId -> open session
+  const openSessionMap = new Map<string, { started_at: string; projectName: string | null }>();
+  for (const session of openSessions || []) {
+    const project = Array.isArray(session.project) ? session.project[0] || null : session.project;
+    openSessionMap.set(session.profile_id, {
+      started_at: session.started_at,
+      projectName: (project as { name: string } | null)?.name ?? null,
+    });
+  }
+
+  // Query 3: Most recent closed session per profile (for offline last-seen time)
+  const offlineProfileIds = profiles.map((p) => p.id).filter((id) => !openSessionMap.has(id));
+
+  const lastSessionMap = new Map<string, string | null>();
+  if (offlineProfileIds.length > 0) {
+    const { data: recentSessions, error: recentError } = await supabase
+      .from('work_sessions')
+      .select('profile_id, ended_at')
+      .eq('workspace_id', workspaceId)
+      .in('profile_id', offlineProfileIds)
+      .not('ended_at', 'is', null)
+      .order('ended_at', { ascending: false });
+
+    if (recentError) {
+      console.error('[getTeamStatus] Recent sessions error:', recentError);
+    } else {
+      // Take first result per profile_id (most recent)
+      for (const session of recentSessions || []) {
+        if (!lastSessionMap.has(session.profile_id)) {
+          lastSessionMap.set(session.profile_id, session.ended_at);
+        }
+      }
+    }
+  }
+
+  // Map profiles to TeamMemberStatus
+  const statuses: TeamMemberStatus[] = profiles.map((profile) => {
+    const openSession = openSessionMap.get(profile.id);
+    if (openSession) {
+      return {
+        profileId: profile.id,
+        fullName: profile.full_name,
+        avatarUrl: profile.avatar_url,
+        status: 'online',
+        projectName: openSession.projectName,
+        sessionStartedAt: openSession.started_at,
+        lastSessionEndedAt: null,
+      };
+    } else {
+      return {
+        profileId: profile.id,
+        fullName: profile.full_name,
+        avatarUrl: profile.avatar_url,
+        status: 'offline',
+        projectName: null,
+        sessionStartedAt: null,
+        lastSessionEndedAt: lastSessionMap.get(profile.id) ?? null,
+      };
+    }
+  });
+
+  // Sort: online first, then offline; alphabetically by fullName within each group
+  statuses.sort((a, b) => {
+    if (a.status !== b.status) {
+      return a.status === 'online' ? -1 : 1;
+    }
+    return (a.fullName ?? '').localeCompare(b.fullName ?? '');
+  });
+
+  return statuses;
 }
