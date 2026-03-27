@@ -20,14 +20,17 @@ export default async function TodayPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: currentProfile } = user
-    ? await supabase.from('profiles').select('id, role').eq('id', user.id).single()
-    : { data: null };
-  const [meetingsRaw, projectsRaw, profiles] = await Promise.all([
+
+  // Run profile query in parallel with other fetches
+  const [meetingsRaw, projectsRaw, profiles, profileResult] = await Promise.all([
     getMeetings(workspaceId),
     supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
     getProfiles(workspaceId),
+    user
+      ? supabase.from('profiles').select('id, role').eq('id', user.id).single()
+      : Promise.resolve({ data: null }),
   ]);
+  const currentProfile = profileResult.data;
 
   const meetings = meetingsRaw;
 

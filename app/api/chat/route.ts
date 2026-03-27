@@ -86,7 +86,7 @@ export async function POST(req: Request) {
         supabase
           .from('tasks')
           .select('title, due_date, priority')
-          .eq('assigned_to', user.id)
+          .eq('assignee_id', user.id)
           .in('status', ['Todo', 'In Progress'])
           .order('due_date', { ascending: true, nullsFirst: false })
           .limit(5),
