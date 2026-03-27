@@ -160,7 +160,7 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
             <Button
               type="submit"
               disabled={!selectedProjectId || isPending || loadingProjects}
-              className="gap-2 bg-primary text-white hover:bg-primary"
+              className="gap-2 bg-primary text-primary-foreground hover:bg-primary"
             >
               {isPending && <Loader2 className="size-3.5 animate-spin" />}
               {isPending ? 'Clocking In...' : 'Clock In'}

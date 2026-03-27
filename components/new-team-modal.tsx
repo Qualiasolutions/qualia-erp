@@ -140,7 +140,7 @@ export function NewTeamModal() {
                         className="border-border data-[state=checked]:border-qualia-600 data-[state=checked]:bg-primary"
                       />
                       <div className="flex min-w-0 flex-1 items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-white">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                           {profile.full_name?.charAt(0) || profile.email?.charAt(0) || '?'}
                         </div>
                         <div className="min-w-0">

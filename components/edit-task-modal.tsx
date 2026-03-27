@@ -250,7 +250,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
                           {profile.avatar_url ? (
                             <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
                           ) : null}
-                          <AvatarFallback className="bg-primary text-[11px] text-white">
+                          <AvatarFallback className="bg-primary text-[11px] text-primary-foreground">
                             {getInitials(profile.full_name || profile.email || 'U')}
                           </AvatarFallback>
                         </Avatar>

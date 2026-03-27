@@ -302,7 +302,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
                 <button
                   onClick={() => setShowNewMeetingModal(true)}
                   className={cn(
-                    'flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-all sm:h-10 sm:px-4',
+                    'flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-foreground transition-all sm:h-10 sm:px-4',
                     'active:scale-95 sm:hover:bg-primary'
                   )}
                 >
