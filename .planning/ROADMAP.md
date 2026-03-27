@@ -205,7 +205,7 @@ Plans:
 
 Plans:
 
-- [ ] 38-01: Design audit all pages with `/critique` — document findings
+- [x] 38-01: Design audit all pages with `/critique` — document findings
 - [ ] 38-02: Implement design fixes across dashboard, projects, settings, schedule
 
 ---

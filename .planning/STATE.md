@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 31 (Clock-Out Enforcement) — COMPLETE (2/2 plans)
-Plans complete: 30-01, 30-02, 30-03, 31-01, 31-02, 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01
-Status: Phase 31 complete — Next: Phase 38 (Design Review & Polish)
-Last activity: 2026-03-27 — Planned logout banner, beforeunload guard, work schedule settings
+Phase: 38 (Design Review & Polish) — IN PROGRESS (1/2 plans)
+Plans complete: 30-01, 30-02, 30-03, 31-01, 31-02, 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01, 38-01
+Status: Phase 38 in progress — 38-01 audit complete, 38-02 fixes pending
+Last activity: 2026-03-27 — Completed design audit, found 29 violations (9 HIGH / 10 MEDIUM / 10 LOW)
 
-Progress: [████████░░] 89% (v3.0 scope, 16/18 plans — 30x3, 31x2, 33x2, 34x3, 35x2, 36x3, 37x1 done)
+Progress: [█████████░] 94% (v3.0 scope, 17/18 plans — 30x3, 31x2, 33x2, 34x3, 35x2, 36x3, 37x1, 38x1 done)
 
 ## Milestone Overview
 
@@ -49,6 +49,7 @@ Phases 30, 33, 34, 35, 36 can all run in parallel. Phase 37 needs 33 first. Phas
 | 8   | Inline buildChain() per test file            | Avoids cross-test state pollution vs shared factory; each file owns its mock                                                       | 2026-03-27 |
 | 9   | collectCoverageFrom scoped to tested modules | 18,219 lines of untested action modules + swr.ts/ai-tools would dilute global % to <10% — scope to in-scope tested files instead   | 2026-03-27 |
 | 10  | Supabase mock object mutation pattern        | `const supabase = { from: jest.fn() }` captured by factory closure — avoids jest.mock hoisting issues with variable initialization | 2026-03-27 |
+| 11  | text-white → text-primary-foreground (HIGH)  | text-white bypasses theme system; text-primary-foreground is the correct semantic token for on-primary text                        | 2026-03-27 |
 
 ### Blockers/Concerns
 
@@ -57,6 +58,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Phase 31 complete — all clock-out enforcement features live.
-Resume file: `.planning/phases/31-clock-out-enforcement/31-02-SUMMARY.md`
-**Next action:** Execute Phase 38 (Design Review & Polish — 2 plans).
+Stopped at: Phase 38 Plan 01 complete — design audit with 29 violations documented.
+Resume file: `.planning/phases/38-design-review-polish/38-01-SUMMARY.md`
+**Next action:** Execute Phase 38 Plan 02 — implement design fixes (see AUDIT.md Priority Fix Order).
