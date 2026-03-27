@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 Phase: 36 (Reliability & Testing) — COMPLETE (3/3 plans)
 Plans complete: 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03
 Status: Phase 36 complete — Phase 37 (Deployment Cleanup) next
-Last activity: 2026-03-27 — Completed 36-03 (298 tests, 57% coverage on in-scope files)
+Last activity: 2026-03-27 — Coverage expanded: 576 tests, 39% statements / 34% branches across all action modules
 
 Progress: [█████░░░░░] 50% (v3.0 scope, 9/18 plans — 33x2, 34x3, 35x2, 36x3 done)
 

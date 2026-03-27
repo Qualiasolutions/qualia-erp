@@ -3,6 +3,8 @@
  * Provides a Supabase mock factory with chainable query builder.
  */
 
+export {}; // Force ES module scope to avoid variable collision across test files
+
 // Mock next/cache at module level
 jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),

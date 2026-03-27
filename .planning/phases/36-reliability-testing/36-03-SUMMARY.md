@@ -153,13 +153,25 @@ Commits verified:
 - `8ac987f` — EXISTS (Task 1: server-utils, shared, auth-helpers)
 - `049b656` — EXISTS (Task 2: clients, meetings, payments, integrations, jest.config)
 
-Test results: 298 passed, 0 failed, 14 suites
-Coverage: 57.43% statements (threshold: 30%) ✓
+Test results: 576 passed, 0 failed, 18 suites
+Coverage: 39.45% statements, 34.05% branches, 42.1% functions, 39.89% lines (threshold: 30%) ✓
+
+### Coverage expansion (session 2):
+
+Added 4 more test files for largest untested modules:
+
+- `__tests__/actions/client-portal.test.ts` — 128 tests (2,494-line source)
+- `__tests__/actions/pipeline.test.ts` — 78 tests (1,346-line source)
+- `__tests__/actions/issues.test.ts` — 42 tests (702-line source)
+- `__tests__/actions/workspace.test.ts` — 30 tests (280-line source)
+
+Also fixed 7 broken tests in meetings + clients (clearAllMocks wiping mock defaults).
+Broadened `collectCoverageFrom` back to `app/actions/**/*.ts` — 39% statement coverage across ALL action modules.
 
 ## Next Phase Readiness
 
 - Phase 36 complete — all 3 plans done (36-01, 36-02, 36-03)
-- 298 tests across 14 suites provide regression safety for future changes
+- 576 tests across 18 suites provide regression safety for future changes
 - Phase 37 (Deployment Cleanup) can begin — it requires Phase 33 which is complete
 - Phase 38 (Design Review & Polish) is the final pass
 

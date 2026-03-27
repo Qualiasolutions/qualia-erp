@@ -162,9 +162,9 @@ Plans:
 
 Plans:
 
-- [ ] 36-01: Fix/remove failing tests + add error.tsx to all routes + tsc hook + sanitize cron errors
-- [ ] 36-02: Write tests for core action modules (inbox, projects, phases, daily-flow)
-- [ ] 36-03: Write tests for auth helpers, integrations, server-utils
+- [x] 36-01: Fix/remove failing tests + add error.tsx to all routes + tsc hook + sanitize cron errors
+- [x] 36-02: Write tests for core action modules (inbox, projects, phases, daily-flow)
+- [x] 36-03: Write tests for auth helpers, integrations, server-utils + expand to 576 tests / 39% coverage
 
 #### Phase 37: Deployment Cleanup
 
@@ -220,6 +220,6 @@ Plans:
 | 33. Security Fixes           | v3.0      | 2/2            | Complete    | 2026-03-27 |
 | 34. Performance Optimization | v3.0      | 3/3            | Complete    | 2026-03-27 |
 | 35. Observability            | v3.0      | 2/2            | Complete    | 2026-03-27 |
-| 36. Reliability & Testing    | v3.0      | 0/3            | Not started | -          |
+| 36. Reliability & Testing    | v3.0      | 3/3            | Complete    | 2026-03-27 |
 | 37. Deployment Cleanup       | v3.0      | 0/1            | Not started | -          |
 | 38. Design Review & Polish   | v3.0      | 0/2            | Not started | -          |
