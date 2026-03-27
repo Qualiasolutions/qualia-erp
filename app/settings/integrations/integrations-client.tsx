@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Github, Globe, Phone, FileText } from 'lucide-react';
+import { Github, Globe, FileText } from 'lucide-react';
 import { IntegrationCard } from '@/components/settings/integration-card';
 import { toast } from '@/components/ui/use-toast';
 import {
@@ -14,7 +14,6 @@ import type {
   IntegrationProvider,
   GitHubConfig,
   VercelConfig,
-  VAPIConfig,
   ZohoConfig,
 } from '@/lib/integrations/types';
 
@@ -41,7 +40,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
     async (
       provider: IntegrationProvider,
       token: string,
-      config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig
+      config: GitHubConfig | VercelConfig | ZohoConfig
     ) => {
       const result = await saveIntegrationToken(workspaceId, provider, token, config);
 
@@ -142,7 +141,6 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
 
   const githubIntegration = getIntegration('github');
   const vercelIntegration = getIntegration('vercel');
-  const vapiIntegration = getIntegration('vapi');
   const zohoIntegration = getIntegration('zoho');
 
   return (
@@ -174,20 +172,6 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
         onConnect={(token, config) => handleConnect('vercel', token, config)}
         onDisconnect={() => handleDisconnect('vercel')}
         onTest={() => handleTest('vercel')}
-      />
-
-      <IntegrationCard
-        provider="vapi"
-        title="VAPI"
-        description="Create voice assistants for Voice Agent projects"
-        icon={Phone}
-        iconColor="bg-pink-600"
-        isConnected={vapiIntegration?.is_connected || false}
-        lastVerified={vapiIntegration?.last_verified_at || null}
-        config={vapiIntegration?.config as VAPIConfig | undefined}
-        onConnect={(token, config) => handleConnect('vapi', token, config)}
-        onDisconnect={() => handleDisconnect('vapi')}
-        onTest={() => handleTest('vapi')}
       />
 
       <IntegrationCard

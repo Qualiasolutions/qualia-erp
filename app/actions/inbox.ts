@@ -493,7 +493,11 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
 
 /**
  * Reorder tasks (batch update sort_order)
- * Used for drag-and-drop reordering
+ * Used for drag-and-drop reordering.
+ *
+ * Performance: at most 2 DB round-trips regardless of batch size —
+ *   1. auth check (1 query for admin, or 1 batch ownership query for non-admin)
+ *   2. single RPC call to batch_update_task_orders
  */
 export async function reorderTasks(
   taskUpdates: Array<{ id: string; sort_order: number; status?: string }>
@@ -507,46 +511,35 @@ export async function reorderTasks(
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Authorization: Verify user can modify all tasks in the batch
-  // For efficiency, only admins can batch reorder multiple tasks
-  // Non-admins can only reorder if they can modify all tasks
+  // Authorization: single query — check admin first (cached), then batch ownership check
   const isAdmin = await isUserAdmin(user.id);
   if (!isAdmin) {
-    // Check each task - if any fails, reject the whole batch
-    for (const { id } of taskUpdates) {
-      const canModify = await canModifyTask(user.id, id);
-      if (!canModify) {
-        return { success: false, error: 'You do not have permission to reorder one or more tasks' };
-      }
+    const taskIds = taskUpdates.map(({ id }) => id);
+    const { data: accessibleTasks, error: authError } = await supabase
+      .from('tasks')
+      .select('id')
+      .in('id', taskIds)
+      .or(`creator_id.eq.${user.id},assignee_id.eq.${user.id}`);
+
+    if (authError) {
+      return { success: false, error: 'Authorization check failed' };
+    }
+
+    const accessibleIds = new Set((accessibleTasks || []).map((t) => t.id));
+    const unauthorized = taskIds.find((id) => !accessibleIds.has(id));
+    if (unauthorized) {
+      return { success: false, error: 'You do not have permission to reorder one or more tasks' };
     }
   }
 
-  // Batch update tasks
-  const updates = taskUpdates.map(({ id, sort_order, status }) => {
-    const updateData: { sort_order: number; status?: string; completed_at?: string | null } = {
-      sort_order,
-    };
-
-    if (status !== undefined) {
-      updateData.status = status;
-      // Update completed_at when status changes
-      if (status === 'Done') {
-        updateData.completed_at = new Date().toISOString();
-      } else {
-        updateData.completed_at = null;
-      }
-    }
-
-    return supabase.from('tasks').update(updateData).eq('id', id);
+  // Single RPC call — batch_update_task_orders handles sort_order + status + completed_at
+  const { error } = await supabase.rpc('batch_update_task_orders', {
+    updates: JSON.stringify(taskUpdates),
   });
 
-  const results = await Promise.all(updates);
-
-  // Check for errors
-  const errors = results.filter((r) => r.error);
-  if (errors.length > 0) {
-    console.error('[reorderTasks] Error reordering tasks:', errors);
-    return { success: false, error: 'Failed to reorder some tasks' };
+  if (error) {
+    console.error('[reorderTasks] RPC error:', error);
+    return { success: false, error: 'Failed to reorder tasks' };
   }
 
   revalidatePath('/inbox');

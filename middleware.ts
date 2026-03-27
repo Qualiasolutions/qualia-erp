@@ -36,7 +36,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if needed - this extends the session
+  // Refresh session if needed — getClaims() also refreshes the session
   const { data } = await supabase.auth.getClaims();
   const user = data?.claims;
 
@@ -51,15 +51,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Role-based routing: Fetch user role to determine access permissions
+  // Role-based routing: read role from JWT claims (injected by custom_access_token_hook).
+  // Zero DB queries for role when the hook is active in Supabase Dashboard.
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.sub)
-      .single();
+    // Primary: read role from JWT custom claims set by custom_access_token_hook
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let userRole: string | undefined = (user as any).user_role as string | undefined;
 
-    const userRole = profile?.role;
+    // Fallback: query DB if hook is not yet enabled (remove once hook is confirmed working)
+    if (!userRole) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.sub)
+        .single();
+      userRole = profile?.role ?? undefined;
+    }
+
     const pathname = request.nextUrl.pathname;
 
     // Internal routes that clients cannot access
@@ -114,8 +122,10 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
       }
 
-      // Enforce daily clock-in: redirect to dashboard if no today session
+      // Enforce daily clock-in: redirect to dashboard if no today session.
       // (dashboard shows the clock-in modal). Skip for API and the root itself.
+      // NOTE: This is the ONLY remaining DB query in middleware — intentionally kept
+      // because clock-in state changes throughout the day and cannot be stored in JWT.
       if (pathname !== '/' && !pathname.startsWith('/api') && !pathname.startsWith('/auth')) {
         const today = new Date().toISOString().split('T')[0];
         const { data: todaySession } = await supabase

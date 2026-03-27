@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 
@@ -35,7 +35,7 @@ export function PageTransition({ children }: PageTransitionProps) {
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <motion.div
+      <m.div
         key={pathname}
         initial="initial"
         animate="enter"
@@ -44,7 +44,7 @@ export function PageTransition({ children }: PageTransitionProps) {
         className="h-full w-full"
       >
         {children}
-      </motion.div>
+      </m.div>
     </AnimatePresence>
   );
 }
@@ -52,13 +52,13 @@ export function PageTransition({ children }: PageTransitionProps) {
 // Simpler fade-only variant for modals and overlays
 export function FadeTransition({ children }: PageTransitionProps) {
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

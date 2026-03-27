@@ -96,42 +96,36 @@ export async function getProjectHealthDetails(projectId: string): Promise<Action
   try {
     const supabase = await createClient();
 
-    // Calculate fresh health metrics
-    const { data: health, error: healthError } = await supabase.rpc('calculate_project_health', {
-      p_project_id: projectId,
-    });
+    // Run all 3 queries in parallel
+    const [healthResult, insightsResult, historyResult] = await Promise.all([
+      supabase.rpc('calculate_project_health', { p_project_id: projectId }),
+      supabase
+        .from('project_health_insights')
+        .select('*')
+        .eq('project_id', projectId)
+        .eq('status', 'active')
+        .order('severity', { ascending: false })
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('project_health_metrics')
+        .select(
+          'measured_at, overall_health_score, schedule_health, velocity_health, quality_health, communication_health'
+        )
+        .eq('project_id', projectId)
+        .gte('measured_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .order('measured_at', { ascending: true }),
+    ]);
 
-    if (healthError) throw healthError;
-
-    // Get active insights
-    const { data: insights, error: insightsError } = await supabase
-      .from('project_health_insights')
-      .select('*')
-      .eq('project_id', projectId)
-      .eq('status', 'active')
-      .order('severity', { ascending: false })
-      .order('created_at', { ascending: false });
-
-    if (insightsError) throw insightsError;
-
-    // Get historical trend (last 30 days)
-    const { data: history, error: historyError } = await supabase
-      .from('project_health_metrics')
-      .select(
-        'measured_at, overall_health_score, schedule_health, velocity_health, quality_health, communication_health'
-      )
-      .eq('project_id', projectId)
-      .gte('measured_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      .order('measured_at', { ascending: true });
-
-    if (historyError) throw historyError;
+    if (healthResult.error) throw healthResult.error;
+    if (insightsResult.error) throw insightsResult.error;
+    if (historyResult.error) throw historyResult.error;
 
     return {
       success: true,
       data: {
-        current: health as HealthMetrics,
-        insights: insights as HealthInsight[],
-        history,
+        current: healthResult.data as HealthMetrics,
+        insights: insightsResult.data as HealthInsight[],
+        history: historyResult.data,
       },
     };
   } catch (error) {
@@ -354,37 +348,39 @@ export async function getProjectHealth(projectId: string): Promise<ProjectHealth
   try {
     const supabase = await createClient();
 
-    // Get latest health metrics
-    const { data: metrics, error: metricsError } = await supabase
-      .from('project_health_metrics')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('measured_at', { ascending: false })
-      .limit(2);
+    // Run all 3 queries in parallel
+    const [metricsResult, activeInsightsResult, criticalInsightsResult] = await Promise.all([
+      supabase
+        .from('project_health_metrics')
+        .select('*')
+        .eq('project_id', projectId)
+        .order('measured_at', { ascending: false })
+        .limit(2),
+      supabase
+        .from('project_health_insights')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+        .eq('status', 'active'),
+      supabase
+        .from('project_health_insights')
+        .select('*', { count: 'exact', head: true })
+        .eq('project_id', projectId)
+        .eq('status', 'active')
+        .eq('severity', 'critical'),
+    ]);
+
+    const { data: metrics, error: metricsError } = metricsResult;
+    const { count: activeInsights, error: insightsError } = activeInsightsResult;
+    const { count: criticalInsights } = criticalInsightsResult;
 
     if (metricsError) {
       console.error('[getProjectHealth] Metrics error:', metricsError);
       return null;
     }
 
-    // Get active insights count
-    const { count: activeInsights, error: insightsError } = await supabase
-      .from('project_health_insights')
-      .select('*', { count: 'exact', head: true })
-      .eq('project_id', projectId)
-      .eq('status', 'active');
-
     if (insightsError) {
       console.error('[getProjectHealth] Insights error:', insightsError);
     }
-
-    // Get critical insights count
-    const { count: criticalInsights } = await supabase
-      .from('project_health_insights')
-      .select('*', { count: 'exact', head: true })
-      .eq('project_id', projectId)
-      .eq('status', 'active')
-      .eq('severity', 'critical');
 
     if (!metrics || metrics.length === 0) {
       // No health data yet, return defaults

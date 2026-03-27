@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { format } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import {
   FlaskConical,
   Plus,
@@ -63,7 +63,7 @@ function ResearchCard({
   const colors = CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.general;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
@@ -123,7 +123,7 @@ function ResearchCard({
         className="absolute inset-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
         aria-label={`View ${entry.title}`}
       />
-    </motion.div>
+    </m.div>
   );
 }
 
@@ -525,13 +525,13 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
       {/* Header */}
       <header className="flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
         <div className="flex items-center gap-2.5">
-          <motion.div
+          <m.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10"
           >
             <FlaskConical className="h-3.5 w-3.5 text-primary" />
-          </motion.div>
+          </m.div>
           <div>
             <h1 className="text-sm font-semibold text-foreground">Research</h1>
           </div>

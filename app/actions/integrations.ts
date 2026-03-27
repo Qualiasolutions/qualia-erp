@@ -8,17 +8,14 @@ import type {
   IntegrationProvider,
   GitHubConfig,
   VercelConfig,
-  VAPIConfig,
   ZohoConfig,
   IntegrationSelections,
 } from '@/lib/integrations/types';
 import {
   testGitHubConnection,
   testVercelConnection,
-  testVAPIConnection,
   clearGitHubClientCache,
   clearVercelClientCache,
-  clearVAPIClientCache,
   setupProjectIntegrations,
   getProvisioningStatus as getProvisioningStatusFromLib,
   retryProvisioningStep as retryProvisioningStepFromLib,
@@ -38,7 +35,7 @@ export async function getIntegrations(workspaceId: string): Promise<
       provider: IntegrationProvider;
       isConnected: boolean;
       lastVerified: string | null;
-      config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig;
+      config: GitHubConfig | VercelConfig | ZohoConfig;
     }>;
   }
 > {
@@ -77,7 +74,7 @@ export async function getIntegrations(workspaceId: string): Promise<
       provider: row.provider as IntegrationProvider,
       isConnected: row.is_connected,
       lastVerified: row.last_verified_at,
-      config: row.config as GitHubConfig | VercelConfig | VAPIConfig,
+      config: row.config as GitHubConfig | VercelConfig | ZohoConfig,
     })),
   };
 }
@@ -89,7 +86,7 @@ export async function saveIntegrationToken(
   workspaceId: string,
   provider: IntegrationProvider,
   token: string,
-  config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig
+  config: GitHubConfig | VercelConfig | ZohoConfig
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -123,7 +120,7 @@ export async function saveIntegrationToken(
     // Zoho uses OAuth refresh token, skip validation on save
     testResult = { success: true };
   } else {
-    testResult = await testVAPIConnection(token);
+    testResult = { success: true };
   }
 
   if (!testResult.success) {
@@ -152,7 +149,6 @@ export async function saveIntegrationToken(
   // Clear cached client
   if (provider === 'github') await clearGitHubClientCache(workspaceId);
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
-  if (provider === 'vapi') await clearVAPIClientCache(workspaceId);
   if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
   revalidatePath('/settings/integrations');
@@ -199,7 +195,6 @@ export async function removeIntegration(
   // Clear cached client
   if (provider === 'github') await clearGitHubClientCache(workspaceId);
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
-  if (provider === 'vapi') await clearVAPIClientCache(workspaceId);
   if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
   revalidatePath('/settings/integrations');
@@ -257,7 +252,7 @@ export async function testIntegration(
     const result = await testZohoConnection(workspaceId);
     testResult = { success: result.valid, error: result.error };
   } else {
-    testResult = await testVAPIConnection(integration.encrypted_token);
+    testResult = { success: true };
   }
 
   // Update last verified timestamp
@@ -427,7 +422,6 @@ export async function getProjectProvisioningStatus(projectId: string): Promise<
       status: string;
       github?: { url?: string; error?: string };
       vercel?: { url?: string; error?: string };
-      vapi?: { assistantId?: string; error?: string };
     };
   }
 > {
@@ -444,7 +438,7 @@ export async function getProjectProvisioningStatus(projectId: string): Promise<
  */
 export async function retryProvisioning(
   projectId: string,
-  step: 'github' | 'vercel' | 'vapi'
+  step: 'github' | 'vercel'
 ): Promise<ActionResult> {
   const result = await retryProvisioningStepFromLib(projectId, step);
   return result;
@@ -458,7 +452,6 @@ export async function checkIntegrationsConfigured(workspaceId: string): Promise<
     data?: {
       github: boolean;
       vercel: boolean;
-      vapi: boolean;
     };
   }
 > {
@@ -476,7 +469,6 @@ export async function checkIntegrationsConfigured(workspaceId: string): Promise<
   const configured = {
     github: data?.some((i) => i.provider === 'github' && i.is_connected) || false,
     vercel: data?.some((i) => i.provider === 'vercel' && i.is_connected) || false,
-    vapi: data?.some((i) => i.provider === 'vapi' && i.is_connected) || false,
   };
 
   return { success: true, data: configured };

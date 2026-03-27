@@ -333,7 +333,7 @@ export async function getProjectById(id: string) {
     .eq('project_id', id);
 
   const totalIssues = issueStatuses?.length || 0;
-  const doneIssues = issueStatuses?.filter((i) => i.status === 'Done').length || 0;
+  const doneIssues = issueStatuses?.filter((i) => i.status === 'Done')?.length || 0;
 
   return {
     ...project,
@@ -762,7 +762,6 @@ export async function createProjectWithRoadmap(
     selectedIntegrations?: {
       github?: boolean;
       vercel?: boolean;
-      vapi?: boolean;
     };
   }
 ): Promise<ActionResult> {

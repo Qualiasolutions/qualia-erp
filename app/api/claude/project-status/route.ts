@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { safeCompare } from '@/lib/auth-utils';
 
 /**
  * GET /api/claude/project-status
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   const apiKey = request.headers.get('x-api-key');
   const expectedKey = process.env.CLAUDE_API_KEY;
 
-  if (!expectedKey || apiKey !== expectedKey) {
+  if (!expectedKey || !safeCompare(apiKey, expectedKey)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

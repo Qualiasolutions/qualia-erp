@@ -28,7 +28,6 @@ import type {
   IntegrationProvider,
   GitHubConfig,
   VercelConfig,
-  VAPIConfig,
   ZohoConfig,
 } from '@/lib/integrations/types';
 
@@ -40,11 +39,8 @@ interface IntegrationCardProps {
   iconColor: string;
   isConnected: boolean;
   lastVerified: string | null;
-  config?: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig;
-  onConnect: (
-    token: string,
-    config: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig
-  ) => Promise<void>;
+  config?: GitHubConfig | VercelConfig | ZohoConfig;
+  onConnect: (token: string, config: GitHubConfig | VercelConfig | ZohoConfig) => Promise<void>;
   onDisconnect: () => Promise<void>;
   onTest: () => Promise<{ valid: boolean; error?: string }>;
   onConfigureTemplates?: (templates: GitHubConfig['templates']) => Promise<void>;
@@ -86,14 +82,14 @@ export function IntegrationCard({
 
     setIsLoading(true);
     try {
-      let newConfig: GitHubConfig | VercelConfig | VAPIConfig | ZohoConfig;
+      let newConfig: GitHubConfig | VercelConfig | ZohoConfig;
 
       if (provider === 'github') {
         newConfig = { org, templates } as GitHubConfig;
       } else if (provider === 'vercel') {
         newConfig = teamId ? { teamId } : ({} as VercelConfig);
       } else {
-        newConfig = {} as VAPIConfig;
+        newConfig = {} as ZohoConfig;
       }
 
       await onConnect(token, newConfig);
@@ -276,7 +272,7 @@ export function IntegrationCard({
                       ? 'ghp_xxxxxxxxxxxx'
                       : provider === 'vercel'
                         ? 'xxxxxxxxxxxx'
-                        : 'vapi_xxxxxxxxxxxx'
+                        : 'xxxxxxxxxxxx'
                   }
                   className="pr-10"
                 />
@@ -315,19 +311,6 @@ export function IntegrationCard({
                       className="text-primary hover:underline"
                     >
                       Vercel Settings
-                    </a>
-                  </>
-                )}
-                {provider === 'vapi' && (
-                  <>
-                    Get your API key from{' '}
-                    <a
-                      href="https://dashboard.vapi.ai/account"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      VAPI Dashboard
                     </a>
                   </>
                 )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import {
   Plus,
   CalendarIcon,
@@ -230,37 +230,32 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
   const formContent = (
     <AnimatePresence mode="wait">
       {success ? (
-        <motion.div
+        <m.div
           key="success"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           className="flex flex-col items-center justify-center py-16"
         >
-          <motion.div
+          <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', damping: 15, stiffness: 300, delay: 0.1 }}
             className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10"
           >
             <Check className="h-8 w-8 text-emerald-500" />
-          </motion.div>
-          <motion.p
+          </m.div>
+          <m.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="text-lg font-medium text-foreground"
           >
             Meeting scheduled!
-          </motion.p>
-        </motion.div>
+          </m.p>
+        </m.div>
       ) : (
-        <motion.div
-          key="form"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
+        <m.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="flex-1">
@@ -284,7 +279,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
             <div className="space-y-5">
               {/* Meeting Type Toggle - Sleek segmented control */}
               <div className="relative flex rounded-xl bg-secondary/50 p-1">
-                <motion.div
+                <m.div
                   className="absolute inset-y-1 rounded-lg bg-card shadow-sm"
                   layoutId="meeting-type-bg"
                   animate={{
@@ -320,7 +315,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
               {/* Title for Internal Meetings */}
               <AnimatePresence>
                 {meetingType === 'internal' && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -333,14 +328,14 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                       onChange={(e) => setTitle(e.target.value)}
                       className="h-11 w-full rounded-xl border border-border bg-secondary/30 px-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
                     />
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
               {/* Client Selector */}
               <AnimatePresence>
                 {meetingType === 'client' && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -368,7 +363,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                       className="w-full"
                       triggerClassName="h-11 w-full justify-between rounded-xl border-border bg-secondary/30"
                     />
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
 
@@ -522,19 +517,19 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                   className="h-11 w-full rounded-xl border border-border bg-secondary/30 pl-10 pr-3 text-sm placeholder:text-muted-foreground/60 focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20"
                 />
                 {meetingLink && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="absolute right-3 top-1/2 -translate-y-1/2"
                   >
                     <Link2 className="h-4 w-4 text-emerald-500" />
-                  </motion.div>
+                  </m.div>
                 )}
               </div>
 
               {/* Summary Card */}
               {selectedDate && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="rounded-xl border border-border bg-gradient-to-br from-secondary/30 to-secondary/10 p-4"
@@ -568,20 +563,20 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                       <span className="font-medium">Video link attached</span>
                     </div>
                   )}
-                </motion.div>
+                </m.div>
               )}
 
               {/* Error */}
               <AnimatePresence>
                 {error && (
-                  <motion.p
+                  <m.p
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     className="text-sm text-destructive"
                   >
                     {error}
-                  </motion.p>
+                  </m.p>
                 )}
               </AnimatePresence>
             </div>
@@ -606,7 +601,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                 className="min-w-[120px]"
               >
                 {loading ? (
-                  <motion.div
+                  <m.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
@@ -617,7 +612,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
               </Button>
             </div>
           </form>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

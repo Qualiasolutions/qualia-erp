@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Crown, UserCheck } from 'lucide-react';
 import { cn, getInitials } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
-import { motion } from 'framer-motion';
+import { m } from '@/lib/lazy-motion';
 
 interface Profile {
   id: string;
@@ -93,7 +93,7 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
           <div className="space-y-3">
             {/* Lead */}
             {lead && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-center gap-3 rounded-lg bg-primary/5 p-2"
@@ -113,7 +113,7 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
                   </div>
                   <span className="text-xs text-muted-foreground">Project Lead</span>
                 </div>
-              </motion.div>
+              </m.div>
             )}
 
             {/* Assignees */}
@@ -130,7 +130,7 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
                 )}
 
                 {assignees.map((assignee, index) => (
-                  <motion.div
+                  <m.div
                     key={assignee.id}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -149,7 +149,7 @@ export function ProjectTeamView({ projectId, lead, className }: ProjectTeamViewP
                       </span>
                     </div>
                     <UserCheck className="h-3.5 w-3.5 text-muted-foreground/50" />
-                  </motion.div>
+                  </m.div>
                 ))}
               </div>
             )}

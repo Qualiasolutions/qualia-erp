@@ -1,14 +1,10 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import {
-  Mic,
-  MicOff,
   Send,
   X,
   Bot,
-  VolumeX,
-  Loader2,
   ListTodo,
   FolderKanban,
   Users,
@@ -22,12 +18,7 @@ import {
 } from 'lucide-react';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import Vapi from '@vapi-ai/web';
-
-// VAPI Constants from user request
-const VAPI_ASSISTANT_ID = '67d7928b-e292-4f70-bca6-339f0b9eae50';
-const VAPI_PUBLIC_KEY = '58d3e7c2-5eb3-47dd-a304-5b6a55447ecc';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 const AI_CAPABILITIES = [
   { icon: BarChart3, label: 'Daily briefing', prompt: 'Give me my daily briefing' },
@@ -46,72 +37,19 @@ export function DashboardAIChat() {
   const { messages, isStreaming, sendMessage, clearConversation } = useAIAssistant();
 
   const [input, setInput] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [vapiCallState, setVapiCallState] = useState<'idle' | 'connecting' | 'connected'>('idle');
-  const [volumeLevel, setVolumeLevel] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const vapiRef = useRef<Vapi | null>(null);
-
-  // Initialize VAPI
-  useEffect(() => {
-    const vapi = new Vapi(VAPI_PUBLIC_KEY);
-    vapiRef.current = vapi;
-
-    vapi.on('call-start', () => setVapiCallState('connected'));
-    vapi.on('call-end', () => {
-      setVapiCallState('idle');
-      setIsListening(false);
-      setIsSpeaking(false);
-    });
-    vapi.on('speech-start', () => setIsSpeaking(true));
-    vapi.on('speech-end', () => setIsSpeaking(false));
-    vapi.on('volume-level', (v) => setVolumeLevel(v));
-
-    return () => {
-      vapi.stop();
-    };
-  }, []);
 
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const stopSpeaking = useCallback(() => {
-    // Vapi handles stopping its own speech when the call ends or is stopped.
-    if (vapiRef.current && vapiCallState === 'connected') {
-      vapiRef.current.stop();
-    }
-    setIsSpeaking(false);
-  }, [vapiCallState]);
-
-  const toggleListening = async () => {
-    if (!vapiRef.current) return;
-
-    if (vapiCallState === 'connected') {
-      vapiRef.current.stop();
-      setIsListening(false);
-    } else {
-      setIsListening(true);
-      setVapiCallState('connecting');
-      try {
-        await vapiRef.current.start(VAPI_ASSISTANT_ID);
-      } catch (error) {
-        console.error('Vapi connection failed:', error);
-        setVapiCallState('idle');
-        setIsListening(false);
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
-    stopSpeaking(); // Stop any ongoing Vapi speech if user types
     const text = input.trim();
     setInput('');
     await sendMessage(text);
@@ -120,11 +58,7 @@ export function DashboardAIChat() {
 
   const hasMessages = (messages?.length || 0) > 0;
 
-  // Status text
   const getStatusText = () => {
-    if (vapiCallState === 'connecting') return 'Connecting...';
-    if (isListening) return 'Listening...';
-    if (isSpeaking) return 'Speaking...';
     if (isStreaming) return 'Thinking...';
     return 'Ask anything';
   };
@@ -144,7 +78,7 @@ export function DashboardAIChat() {
             <div className="bg-primary/8 flex h-7 w-7 items-center justify-center rounded-lg text-primary">
               <Bot className="h-3.5 w-3.5" />
             </div>
-            {(isListening || isSpeaking || isStreaming || vapiCallState === 'connecting') && (
+            {isStreaming && (
               <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex h-3 w-3 rounded-full bg-primary"></span>
@@ -163,32 +97,6 @@ export function DashboardAIChat() {
 
         {/* Controls */}
         <div className="flex items-center gap-1.5">
-          {/* Stop speaking button is now handled by stopping the Vapi call */}
-          {vapiCallState === 'connected' && (
-            <motion.button
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              onClick={stopSpeaking}
-              className="flex h-8 w-8 items-center justify-center rounded-xl bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
-              title="Stop voice interaction"
-            >
-              <VolumeX className="h-4 w-4" />
-            </motion.button>
-          )}
-          {/* Voice enabled toggle is removed as Vapi is always voice-enabled when connected */}
-          {/* <button
-            onClick={() => setVoiceEnabled(!voiceEnabled)}
-            className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-xl transition-all',
-              voiceEnabled
-                ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                : 'bg-muted text-muted-foreground/50 hover:bg-muted/80'
-            )}
-            title={voiceEnabled ? 'Mute voice' : 'Enable voice'}
-          >
-            {voiceEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </button> */}
           <button
             onClick={clearConversation}
             className="flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive"
@@ -205,7 +113,7 @@ export function DashboardAIChat() {
         <div className="scrollbar-none flex-1 overflow-y-auto px-4 py-4">
           <AnimatePresence mode="popLayout" initial={false}>
             {!hasMessages ? (
-              <motion.div
+              <m.div
                 key="empty"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -217,7 +125,7 @@ export function DashboardAIChat() {
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {AI_CAPABILITIES.map((cap, i) => (
-                    <motion.button
+                    <m.button
                       key={cap.prompt}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -232,14 +140,14 @@ export function DashboardAIChat() {
                       <span className="text-[11px] font-medium text-muted-foreground/70 transition-colors group-hover:text-foreground">
                         {cap.label}
                       </span>
-                    </motion.button>
+                    </m.button>
                   ))}
                 </div>
-              </motion.div>
+              </m.div>
             ) : (
               <div className="space-y-4">
                 {(messages || []).map((message) => (
-                  <motion.div
+                  <m.div
                     key={message.id}
                     initial={{ opacity: 0, y: 10, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -259,22 +167,22 @@ export function DashboardAIChat() {
                     >
                       {message.content}
                     </div>
-                  </motion.div>
+                  </m.div>
                 ))}
 
-                {/* Waveform indicator when busy */}
-                {(isStreaming || isListening || isSpeaking || vapiCallState === 'connecting') && (
-                  <motion.div
+                {/* Thinking indicator */}
+                {isStreaming && (
+                  <m.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-center gap-3 px-2"
                   >
                     <div className="flex h-8 items-center gap-1.5 rounded-full border border-primary/10 bg-primary/5 px-3 py-1.5">
                       {[1, 2, 3, 4, 5].map((i) => (
-                        <motion.div
+                        <m.div
                           key={i}
                           animate={{
-                            height: isListening ? [4, 16, 4] : isSpeaking ? [8, 20, 8] : [4, 8, 4],
+                            height: [4, 8, 4],
                             opacity: [0.5, 1, 0.5],
                           }}
                           transition={{
@@ -282,30 +190,14 @@ export function DashboardAIChat() {
                             repeat: Infinity,
                             delay: i * 0.1,
                           }}
-                          className={cn(
-                            'w-1.5 rounded-full',
-                            isListening
-                              ? 'bg-amber-400'
-                              : isSpeaking
-                                ? 'bg-primary'
-                                : 'bg-muted-foreground/30'
-                          )}
-                          style={{
-                            height: isSpeaking ? `${8 + volumeLevel * 20}px` : '4px',
-                          }}
+                          className="w-1.5 rounded-full bg-muted-foreground/30"
                         />
                       ))}
                       <span className="ml-1 text-[11px] font-bold uppercase tracking-wider text-primary/60">
-                        {isListening
-                          ? vapiCallState === 'connecting'
-                            ? 'CONNECTING'
-                            : 'LISTENING'
-                          : isSpeaking
-                            ? 'SPEAKING'
-                            : 'THINKING'}
+                        THINKING
                       </span>
                     </div>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 <div ref={messagesEndRef} />
@@ -314,36 +206,8 @@ export function DashboardAIChat() {
           </AnimatePresence>
         </div>
 
-        {/* Dynamic Voice/Input Area */}
+        {/* Input Area */}
         <div className="relative mt-auto border-t border-border p-3">
-          {/* Listening Overlay */}
-          <AnimatePresence>
-            {isListening && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.05 }}
-                className="absolute inset-x-4 bottom-4 top-4 z-10 flex items-center gap-3 rounded-xl bg-rose-500/10 px-4 backdrop-blur-md"
-              >
-                <div className="flex h-3 w-3">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-500 opacity-75"></span>
-                  <span className="relative inline-flex h-3 w-3 rounded-full bg-rose-500"></span>
-                </div>
-                <span className="text-xs font-bold text-rose-600 dark:text-rose-400">
-                  {vapiCallState === 'connecting'
-                    ? 'Connecting to voice assistant...'
-                    : 'Listening to you...'}
-                </span>
-                <button
-                  onClick={toggleListening}
-                  className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500 text-white shadow-lg"
-                >
-                  <MicOff className="h-4 w-4" />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <form onSubmit={handleSubmit} className="relative flex items-center gap-2">
             <div
               className={cn(
@@ -351,21 +215,6 @@ export function DashboardAIChat() {
                 isFocused ? 'border-primary/40 bg-background shadow-glow-sm' : 'hover:border-border'
               )}
             >
-              {/* This button is now for text input, not voice */}
-              {/* <button
-                type="button"
-                onClick={toggleListening}
-                disabled={!recognitionRef.current}
-                className={cn(
-                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all',
-                  'text-muted-foreground hover:bg-primary/10 hover:text-primary',
-                  !recognitionRef.current && 'cursor-not-allowed opacity-40'
-                )}
-                title="Voice input"
-              >
-                <Mic className="h-5 w-5" />
-              </button> */}
-
               <input
                 ref={inputRef}
                 type="text"
@@ -374,32 +223,13 @@ export function DashboardAIChat() {
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder="Message assistant..."
-                disabled={isStreaming || isListening || vapiCallState === 'connecting'}
+                disabled={isStreaming}
                 className={cn(
                   'h-11 flex-1 bg-transparent text-sm font-medium outline-none',
                   'placeholder:text-muted-foreground/50',
                   'disabled:cursor-not-allowed disabled:opacity-50'
                 )}
               />
-
-              <button
-                type="button" // Changed to type="button" for the mic button
-                onClick={toggleListening}
-                className={cn(
-                  'flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-300',
-                  isListening
-                    ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                {vapiCallState === 'connecting' ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : isListening ? (
-                  <MicOff className="h-5 w-5" />
-                ) : (
-                  <Mic className="h-5 w-5" />
-                )}
-              </button>
 
               <button
                 type="submit"

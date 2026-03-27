@@ -14,7 +14,7 @@ import {
   togglePinNote,
   type DashboardNote,
 } from '@/app/actions/dashboard-notes';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 interface AdminNotesWidgetProps {
   notes: DashboardNote[];
@@ -56,7 +56,7 @@ const NoteItem = React.memo(function NoteItem({
   const isAdmin = note.author?.role === 'admin';
 
   return (
-    <motion.div
+    <m.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -167,7 +167,7 @@ const NoteItem = React.memo(function NoteItem({
           </div>
         )}
       </div>
-    </motion.div>
+    </m.div>
   );
 });
 

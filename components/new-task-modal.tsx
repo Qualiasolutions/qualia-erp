@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 import {
   Plus,
   CalendarIcon,
@@ -194,37 +194,32 @@ export function NewTaskModal({
   const formContent = (
     <AnimatePresence mode="wait">
       {success ? (
-        <motion.div
+        <m.div
           key="success"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           className="flex flex-col items-center justify-center py-16"
         >
-          <motion.div
+          <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', damping: 15, stiffness: 300, delay: 0.1 }}
             className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10"
           >
             <Check className="h-7 w-7 text-emerald-500" />
-          </motion.div>
-          <motion.p
+          </m.div>
+          <m.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="text-base font-medium text-foreground"
           >
             Task created
-          </motion.p>
-        </motion.div>
+          </m.p>
+        </m.div>
       ) : (
-        <motion.div
-          key="form"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
+        <m.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           {/* Header */}
           <div className="flex items-center justify-between px-5 pb-0 pt-4">
             <div className="flex items-center gap-2.5">
@@ -458,14 +453,14 @@ export function NewTaskModal({
             {/* Error */}
             <AnimatePresence>
               {error && (
-                <motion.p
+                <m.p
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8 }}
                   className="mt-3 text-sm text-destructive"
                 >
                   {error}
-                </motion.p>
+                </m.p>
               )}
             </AnimatePresence>
 
@@ -486,7 +481,7 @@ export function NewTaskModal({
                 className="h-8 min-w-[90px] rounded-md text-[13px] font-medium"
               >
                 {loading ? (
-                  <motion.div
+                  <m.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                     className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white"
@@ -497,7 +492,7 @@ export function NewTaskModal({
               </Button>
             </div>
           </form>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

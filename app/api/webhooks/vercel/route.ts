@@ -82,14 +82,28 @@ export async function POST(request: NextRequest) {
     };
     const status = statusMap[payload.type] || 'building';
 
-    // Find our project by Vercel project ID
+    // Find our project by Vercel project ID (parameterized to prevent filter injection)
     const supabase = getSupabaseClient();
-    const { data: ourProject } = await supabase
+
+    // First try exact match on vercel_project_id
+    let { data: ourProject } = await supabase
       .from('projects')
       .select('id, name')
-      .or(`vercel_project_id.eq.${project.id},name.ilike.%${project.name}%`)
+      .eq('vercel_project_id', project.id)
       .limit(1)
       .single();
+
+    // Fallback: fuzzy match on name (only if ID match failed)
+    if (!ourProject) {
+      const sanitizedName = project.name.replace(/[%_]/g, '');
+      const { data: nameMatch } = await supabase
+        .from('projects')
+        .select('id, name')
+        .ilike('name', `%${sanitizedName}%`)
+        .limit(1)
+        .single();
+      ourProject = nameMatch;
+    }
 
     if (!ourProject) {
       console.log('[Vercel Webhook] Project not found:', project.name);

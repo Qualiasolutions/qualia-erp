@@ -1,46 +1,19 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { Command, Mic, MicOff, Send, X, Sparkles, Loader2 } from 'lucide-react';
+import { useRef, useEffect, useState } from 'react';
+import { Command, Send, X, Sparkles } from 'lucide-react';
 import { useAIAssistant } from '@/components/ai-assistant';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import Vapi from '@vapi-ai/web';
-
-const VAPI_ASSISTANT_ID = '67d7928b-e292-4f70-bca6-339f0b9eae50';
-const VAPI_PUBLIC_KEY = '58d3e7c2-5eb3-47dd-a304-5b6a55447ecc';
+import { m, AnimatePresence } from '@/lib/lazy-motion';
 
 export function AISpotlight() {
   const { messages, isStreaming, sendMessage, clearConversation } = useAIAssistant();
 
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [vapiCallState, setVapiCallState] = useState<'idle' | 'connecting' | 'connected'>('idle');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const vapiRef = useRef<Vapi | null>(null);
-
-  // Initialize VAPI
-  useEffect(() => {
-    const vapi = new Vapi(VAPI_PUBLIC_KEY);
-    vapiRef.current = vapi;
-
-    vapi.on('call-start', () => setVapiCallState('connected'));
-    vapi.on('call-end', () => {
-      setVapiCallState('idle');
-      setIsListening(false);
-      setIsSpeaking(false);
-    });
-    vapi.on('speech-start', () => setIsSpeaking(true));
-    vapi.on('speech-end', () => setIsSpeaking(false));
-
-    return () => {
-      vapi.stop();
-    };
-  }, []);
 
   // Keyboard shortcut: Cmd/Ctrl + K
   useEffect(() => {
@@ -70,36 +43,9 @@ export function AISpotlight() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const stopSpeaking = useCallback(() => {
-    if (vapiRef.current && vapiCallState === 'connected') {
-      vapiRef.current.stop();
-    }
-    setIsSpeaking(false);
-  }, [vapiCallState]);
-
-  const toggleListening = async () => {
-    if (!vapiRef.current) return;
-
-    if (vapiCallState === 'connected') {
-      vapiRef.current.stop();
-      setIsListening(false);
-    } else {
-      setIsListening(true);
-      setVapiCallState('connecting');
-      try {
-        await vapiRef.current.start(VAPI_ASSISTANT_ID);
-      } catch (error) {
-        console.error('Vapi connection failed:', error);
-        setVapiCallState('idle');
-        setIsListening(false);
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isStreaming) return;
-    stopSpeaking();
     const text = input.trim();
     setInput('');
     await sendMessage(text);
@@ -110,7 +56,7 @@ export function AISpotlight() {
   return (
     <>
       {/* Floating trigger button */}
-      <motion.button
+      <m.button
         onClick={() => setIsOpen(true)}
         className={cn(
           'fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full px-4 py-2.5',
@@ -126,14 +72,14 @@ export function AISpotlight() {
         <kbd className="ml-1 hidden rounded bg-background/20 px-1.5 py-0.5 text-[11px] font-medium sm:inline-block">
           <Command className="mr-0.5 inline h-2.5 w-2.5" />K
         </kbd>
-      </motion.button>
+      </m.button>
 
       {/* Spotlight overlay */}
       <AnimatePresence>
         {isOpen && (
           <>
             {/* Backdrop */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -142,7 +88,7 @@ export function AISpotlight() {
             />
 
             {/* Spotlight panel */}
-            <motion.div
+            <m.div
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -160,28 +106,10 @@ export function AISpotlight() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       placeholder="Ask anything about your projects, tasks, or team..."
-                      disabled={isStreaming || isListening}
+                      disabled={isStreaming}
                       className="h-14 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground/60"
                     />
                     <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={toggleListening}
-                        className={cn(
-                          'flex h-8 w-8 items-center justify-center rounded-lg transition-colors',
-                          isListening
-                            ? 'bg-red-500/10 text-red-500'
-                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        )}
-                      >
-                        {vapiCallState === 'connecting' ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : isListening ? (
-                          <MicOff className="h-4 w-4" />
-                        ) : (
-                          <Mic className="h-4 w-4" />
-                        )}
-                      </button>
                       {input.trim() && (
                         <button
                           type="submit"
@@ -207,7 +135,7 @@ export function AISpotlight() {
                   <div className="max-h-[50vh] overflow-y-auto p-4">
                     <div className="space-y-4">
                       {(messages || []).map((message) => (
-                        <motion.div
+                        <m.div
                           key={message.id}
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
@@ -226,19 +154,19 @@ export function AISpotlight() {
                           >
                             {message.content}
                           </div>
-                        </motion.div>
+                        </m.div>
                       ))}
 
                       {/* Typing indicator */}
-                      {(isStreaming || isListening || isSpeaking) && (
-                        <motion.div
+                      {isStreaming && (
+                        <m.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="flex items-center gap-2 text-sm text-muted-foreground"
                         >
                           <div className="flex gap-1">
                             {[0, 1, 2].map((i) => (
-                              <motion.span
+                              <m.span
                                 key={i}
                                 animate={{ opacity: [0.4, 1, 0.4] }}
                                 transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
@@ -246,14 +174,8 @@ export function AISpotlight() {
                               />
                             ))}
                           </div>
-                          <span className="text-xs">
-                            {isListening
-                              ? 'Listening...'
-                              : isSpeaking
-                                ? 'Speaking...'
-                                : 'Thinking...'}
-                          </span>
-                        </motion.div>
+                          <span className="text-xs">Thinking...</span>
+                        </m.div>
                       )}
                       <div ref={messagesEndRef} />
                     </div>
@@ -286,7 +208,7 @@ export function AISpotlight() {
                   )}
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           </>
         )}
       </AnimatePresence>

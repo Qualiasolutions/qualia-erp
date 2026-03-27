@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from '@/lib/lazy-motion';
 import { Target, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,7 +73,7 @@ export function ProjectMetricBar({ metrics, className }: ProjectMetricBarProps) 
   return (
     <div className={cn('grid grid-cols-1 gap-4 md:grid-cols-3', className)}>
       {dashboardMetrics.map((metric, idx) => (
-        <motion.div
+        <m.div
           key={metric.label}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -103,7 +103,7 @@ export function ProjectMetricBar({ metrics, className }: ProjectMetricBarProps) 
           {metric.progress !== undefined && (
             <div className="mt-4">
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/50">
-                <motion.div
+                <m.div
                   initial={{ width: 0 }}
                   animate={{ width: `${metric.progress}%` }}
                   transition={{ duration: 1, ease: 'easeOut' }}
@@ -117,7 +117,7 @@ export function ProjectMetricBar({ metrics, className }: ProjectMetricBarProps) 
           <div className="absolute -bottom-4 -right-4 opacity-[0.03] transition-opacity group-hover:opacity-[0.05]">
             <metric.icon className="h-24 w-24" />
           </div>
-        </motion.div>
+        </m.div>
       ))}
     </div>
   );

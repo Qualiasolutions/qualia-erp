@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { normalizeFKResponse, type FKResponse } from '@/lib/server-utils';
 
@@ -34,25 +35,31 @@ export type ProfileRef = {
 
 // ============ AUTHORIZATION HELPERS ============
 
-// Check if user is an admin (owner)
-export async function isUserAdmin(userId: string): Promise<boolean> {
+/**
+ * Cached per-request role lookup — calling this multiple times in one request
+ * only queries the DB once thanks to React's cache() deduplication.
+ */
+const getCachedUserRole = cache(async (userId: string): Promise<string | null> => {
   const supabase = await createClient();
   const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-  return data?.role === 'admin';
+  return data?.role || null;
+});
+
+// Check if user is an admin (owner)
+export async function isUserAdmin(userId: string): Promise<boolean> {
+  const role = await getCachedUserRole(userId);
+  return role === 'admin';
 }
 
 // Check if user is manager or above (manager + admin)
 export async function isUserManagerOrAbove(userId: string): Promise<boolean> {
-  const supabase = await createClient();
-  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-  return data?.role === 'admin' || data?.role === 'manager';
+  const role = await getCachedUserRole(userId);
+  return role === 'admin' || role === 'manager';
 }
 
 // Get user's role
 export async function getUserRole(userId: string): Promise<string | null> {
-  const supabase = await createClient();
-  const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-  return data?.role || null;
+  return getCachedUserRole(userId);
 }
 
 // Check if user can delete an issue (creator or admin)

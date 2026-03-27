@@ -18,12 +18,9 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    // Always require the secret in production
-    if (process.env.NODE_ENV === 'production') {
-      if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-        console.error('[cron/reminders] Unauthorized request');
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      console.error('[cron/reminders] Unauthorized request');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('[cron/reminders] Starting daily reminder job...');
@@ -74,6 +71,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('[cron/reminders] Unexpected error:', error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

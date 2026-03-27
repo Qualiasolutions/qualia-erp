@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 import bundleAnalyzer from '@next/bundle-analyzer';
 
 // Bundle analyzer for performance debugging (run with ANALYZE=true npm run build)
@@ -41,15 +42,12 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // Voice AI: VAPI, ElevenLabs, Telnyx need script/connect access
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://vercel.live https://cdn.vapi.ai https://elevenlabs.io",
+              "script-src 'self' 'unsafe-inline' blob: https://vercel.live",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              // Voice AI: WebSocket connections for real-time voice
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live https://api.vapi.ai wss://api.vapi.ai https://api.elevenlabs.io https://api.telnyx.com wss://*.telnyx.com",
-              // Voice AI: Media streams for audio/video calls
-              "media-src 'self' blob: https: mediastream:",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://openrouter.ai https://generativelanguage.googleapis.com https://vercel.live wss://vercel.live https://*.ingest.sentry.io",
+              "media-src 'self' blob:",
               "worker-src 'self' blob:",
               "frame-src 'self' https://vercel.live",
               "frame-ancestors 'none'",
@@ -94,6 +92,7 @@ const nextConfig: NextConfig = {
       '@dnd-kit/sortable',
       '@tanstack/react-virtual',
       'zod',
+      '@sentry/nextjs',
     ],
   },
 
@@ -107,4 +106,25 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+export default withSentryConfig(withBundleAnalyzer(nextConfig), {
+  // Sentry organization and project slugs (from env)
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+
+  // Suppress source map upload logs locally, verbose in CI
+  silent: !process.env.CI,
+
+  // Upload wider set of source maps for better stack traces
+  widenClientFileUpload: true,
+
+  // Proxy Sentry requests through /monitoring to bypass ad blockers
+  tunnelRoute: '/monitoring',
+
+  // Webpack-specific options
+  webpack: {
+    // Tree-shake Sentry debug logging in production
+    treeshake: { removeDebugLogging: true },
+    // Auto-instrument Vercel cron monitors
+    automaticVercelMonitors: true,
+  },
+});

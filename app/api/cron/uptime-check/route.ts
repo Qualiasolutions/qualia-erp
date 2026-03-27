@@ -20,10 +20,9 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    if (process.env.NODE_ENV === 'production') {
-      if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+      console.error('[cron/uptime-check] Unauthorized request');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const apiKey = process.env.UPTIMEROBOT_API_KEY;
@@ -156,9 +155,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     console.error('[uptime-check] Error:', err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
