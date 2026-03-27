@@ -199,6 +199,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('[cron/blog-tasks] Unexpected error:', error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

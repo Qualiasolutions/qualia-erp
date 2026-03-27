@@ -155,9 +155,6 @@ export async function GET(request: Request) {
     });
   } catch (err) {
     console.error('[uptime-check] Error:', err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Unknown error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

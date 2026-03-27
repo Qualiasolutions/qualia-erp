@@ -121,7 +121,7 @@ export async function GET(request: Request) {
         results.push({ email: profile.email, success: result.success, error: result.error });
       } catch (err) {
         console.error(`[cron/morning-email] Error processing ${profile.email}:`, err);
-        results.push({ email: profile.email, success: false, error: String(err) });
+        results.push({ email: profile.email, success: false, error: 'Send failed' });
       }
     }
 
@@ -141,6 +141,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('[cron/morning-email] Unexpected error:', error);
-    return NextResponse.json({ success: false, error: String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

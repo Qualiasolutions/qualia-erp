@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { DashboardMeetings } from '@/components/dashboard-meetings';
 import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
 
+// Mock lib/swr to avoid next/cache Web API globals issue in jsdom
+jest.mock('@/lib/swr', () => ({
+  invalidateMeetings: jest.fn(),
+  invalidateTodaysSchedule: jest.fn(),
+}));
+
 // Mock the server actions
 jest.mock('@/app/actions', () => ({
   createMeeting: jest.fn(),
@@ -75,7 +81,7 @@ describe('DashboardMeetings', () => {
     render(<DashboardMeetings meetings={[]} />);
 
     expect(screen.getByText('No meetings scheduled')).toBeInTheDocument();
-    expect(screen.getByText('Start Meet')).toBeInTheDocument();
+    expect(screen.getByText('Instant Meet')).toBeInTheDocument();
   });
 
   it('displays meeting titles', () => {
@@ -134,10 +140,10 @@ describe('DashboardMeetings', () => {
     });
   });
 
-  it('shows View schedule link', () => {
+  it('shows New Meeting button in empty state', () => {
     render(<DashboardMeetings meetings={[]} />);
 
-    expect(screen.getByText('View schedule')).toBeInTheDocument();
+    expect(screen.getByText('New Meeting')).toBeInTheDocument();
   });
 });
 
