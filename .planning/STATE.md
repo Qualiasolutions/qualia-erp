@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 30 (Live Status Dashboard) — COMPLETE (3/3 plans)
-Plans complete: 30-01, 30-02, 30-03, 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01
-Status: Phase 30 complete — Phase 31 (Clock-Out Enforcement) or Phase 38 (Design) next
-Last activity: 2026-03-27 — LiveStatusPanel + SessionHistoryPanel on admin dashboard
+Phase: 31 (Clock-Out Enforcement) — In Progress (1/2 plans)
+Plans complete: 30-01, 30-02, 30-03, 31-01, 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01
+Status: Phase 31 in progress — 31-02 (enforcement UI) remaining, then Phase 38 (Design)
+Last activity: 2026-03-27 — Idle detection hook, autoClockOut action, SessionGuard wired in layout
 
-Progress: [██████░░░░] 67% (v3.0 scope, 14/18 plans — 30x3, 33x2, 34x3, 35x2, 36x3, 37x1 done)
+Progress: [███████░░░] 72% (v3.0 scope, 15/18 plans — 30x3, 31x1, 33x2, 34x3, 35x2, 36x3, 37x1 done)
 
 ## Milestone Overview
 
@@ -57,6 +57,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Phase 30 complete — all 3 plans executed. LiveStatusPanel + SessionHistoryPanel live.
-Resume file: `.planning/phases/30-live-status-dashboard/30-03-SUMMARY.md`
-**Next action:** Execute Phase 31 (Clock-Out Enforcement) or Phase 38 (Design Polish).
+Stopped at: Phase 31, plan 01 complete — idle detection + autoClockOut + SessionGuard live.
+Resume file: `.planning/phases/31-clock-out-enforcement/31-01-SUMMARY.md`
+**Next action:** Execute Phase 31 plan 02 (enforcement UI — clock-out reminder banner / forced clock-out on login).
