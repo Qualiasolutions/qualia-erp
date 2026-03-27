@@ -23,7 +23,7 @@
     },
     {
       "path": "/api/cron/uptime-check",
-      "schedule": "0 */4 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/attendance-report",
