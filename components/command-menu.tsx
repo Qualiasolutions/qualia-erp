@@ -183,7 +183,7 @@ export function CommandMenu() {
 
   return (
     <div
-      className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-black/40 pt-[15vh] backdrop-blur-[12px]"
+      className="fixed inset-0 z-command flex animate-fade-in items-start justify-center bg-foreground/40 pt-[15vh] backdrop-blur-[12px]"
       onClick={handleClose}
     >
       <div

@@ -81,19 +81,19 @@
     /* Dark mode — V0 exact oklch colors converted to HSL via precise math.
        Near-black background, blue-tinted darks, vivid teal primary, violet accent. */
     --background: 240 13% 3%;
-    --foreground: 0 0% 93%;
+    --foreground: 185 8% 93%;
     --card: 228 17% 6%;
-    --card-foreground: 0 0% 93%;
+    --card-foreground: 185 8% 93%;
     --popover: 228 17% 6%;
-    --popover-foreground: 0 0% 93%;
+    --popover-foreground: 185 8% 93%;
     --primary: 175 100% 40%;
     --primary-foreground: 240 13% 3%;
     --secondary: 225 14% 11%;
-    --secondary-foreground: 0 0% 93%;
+    --secondary-foreground: 185 8% 93%;
     --muted: 225 14% 11%;
-    --muted-foreground: 0 0% 56%;
+    --muted-foreground: 185 5% 56%;
     --accent: 264 75% 68%;
-    --accent-foreground: 0 0% 93%;
+    --accent-foreground: 185 8% 93%;
     --destructive: 5 55% 40%;
     --destructive-foreground: 15 65% 55%;
     --border: 228 14% 14%;
