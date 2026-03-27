@@ -11,6 +11,7 @@ import { SidebarProvider } from '@/components/sidebar-provider';
 import { SWRProvider } from '@/components/swr-provider';
 import { AdminProvider } from '@/components/admin-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
+import { SessionGuard } from '@/components/session-guard';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
 import { LazyMotionProvider } from '@/lib/lazy-motion';
@@ -146,6 +147,9 @@ export default function RootLayout({
                         </Suspense>
                         <Suspense fallback={null}>
                           <AIAssistantWidget />
+                        </Suspense>
+                        <Suspense fallback={null}>
+                          <SessionGuard />
                         </Suspense>
                         <Suspense fallback={<SidebarSkeleton />}>
                           <Sidebar />
