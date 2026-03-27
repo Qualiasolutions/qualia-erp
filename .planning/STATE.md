@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 36 (Reliability & Testing) — COMPLETE (3/3 plans)
-Plans complete: 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03
-Status: Phase 36 complete — Phase 37 (Deployment Cleanup) next
-Last activity: 2026-03-27 — Coverage expanded: 576 tests, 39% statements / 34% branches across all action modules
+Phase: 37 (Deployment Cleanup) — COMPLETE (1/1 plans)
+Plans complete: 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01
+Status: Phase 37 complete — Phase 38 (Design Review & Polish) next
+Last activity: 2026-03-27 — Migration rename, force-dynamic /research, health endpoint optimized
 
 Progress: [█████░░░░░] 50% (v3.0 scope, 9/18 plans — 33x2, 34x3, 35x2, 36x3 done)
 

@@ -184,7 +184,7 @@ Plans:
 
 Plans:
 
-- [ ] 37-01: Rename duplicate migration + optimize health endpoint + force-dynamic on /research + deploy + verify
+- [x] 37-01: Rename duplicate migration + optimize health endpoint + force-dynamic on /research + deploy + verify
 
 #### Phase 38: Design Review & Polish
 
@@ -221,5 +221,5 @@ Plans:
 | 34. Performance Optimization | v3.0      | 3/3            | Complete    | 2026-03-27 |
 | 35. Observability            | v3.0      | 2/2            | Complete    | 2026-03-27 |
 | 36. Reliability & Testing    | v3.0      | 3/3            | Complete    | 2026-03-27 |
-| 37. Deployment Cleanup       | v3.0      | 0/1            | Not started | -          |
+| 37. Deployment Cleanup       | v3.0      | 1/1            | Complete    | 2026-03-27 |
 | 38. Design Review & Polish   | v3.0      | 0/2            | Not started | -          |
