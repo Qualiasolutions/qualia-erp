@@ -12,6 +12,7 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { HeaderOnlineIndicator } from '@/components/header-online-indicator';
 import { NotificationPanel } from '@/components/notification-panel';
 import { BuildingProjectsRow, type PipelineProject } from './building-projects-row';
+import { LiveStatusPanel } from './live-status-panel';
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
 import { ClockInModal } from './clock-in-modal';
@@ -243,9 +244,10 @@ export function TodayDashboard({
               isNonAdmin ? 'flex-col' : 'flex-col lg:flex-row'
             )}
           >
-            {/* Meetings sidebar — admin: left column / employee: hidden */}
+            {/* Left sidebar — admin: meetings + team status / employee: hidden */}
             {!isNonAdmin && (
-              <div className="flex min-h-0 w-full shrink-0 flex-col lg:w-72 xl:w-80">
+              <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72 xl:w-80">
+                {isRealAdmin && <LiveStatusPanel workspaceId={workspaceId} />}
                 <MeetingsSidebar meetings={meetings} />
               </div>
             )}
