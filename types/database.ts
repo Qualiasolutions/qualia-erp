@@ -2122,6 +2122,7 @@ export type Database = {
           location: string | null;
           longest_streak: number | null;
           mentor_id: string | null;
+          planned_logout_time: string | null;
           projects_completed: number | null;
           role: Database['public']['Enums']['user_role'] | null;
           skill_level: string | null;
@@ -2140,6 +2141,7 @@ export type Database = {
           location?: string | null;
           longest_streak?: number | null;
           mentor_id?: string | null;
+          planned_logout_time?: string | null;
           projects_completed?: number | null;
           role?: Database['public']['Enums']['user_role'] | null;
           skill_level?: string | null;
@@ -2158,6 +2160,7 @@ export type Database = {
           location?: string | null;
           longest_streak?: number | null;
           mentor_id?: string | null;
+          planned_logout_time?: string | null;
           projects_completed?: number | null;
           role?: Database['public']['Enums']['user_role'] | null;
           skill_level?: string | null;

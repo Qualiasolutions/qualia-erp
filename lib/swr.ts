@@ -80,6 +80,7 @@ export const cacheKeys = {
   teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
   taskAttachments: (taskId: string) => `task-attachments-${taskId}`,
   teamStatus: (wsId: string) => ['team-status', wsId] as const,
+  plannedLogout: (wsId: string) => ['planned-logout', wsId] as const,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1715,6 +1716,45 @@ export function useTaskAttachments(taskId: string | null) {
  */
 export function invalidateTaskAttachments(taskId: string, immediate = true) {
   const key = cacheKeys.taskAttachments(taskId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+// ============ PLANNED LOGOUT TIME ============
+
+/**
+ * Hook to fetch the current user's planned logout time.
+ * Returns a TIME string like "16:00:00" or null if not set.
+ */
+export function usePlannedLogoutTime(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.plannedLogout(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return null;
+      const { getPlannedLogoutTime } = await import('@/app/actions/work-sessions');
+      return getPlannedLogoutTime(workspaceId);
+    },
+    swrConfig
+  );
+
+  return {
+    plannedLogoutTime: data ?? null,
+    isLoading,
+    isError: !!error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate planned logout time cache
+ */
+export function invalidatePlannedLogoutTime(workspaceId: string, immediate = true) {
+  const key = cacheKeys.plannedLogout(workspaceId);
   if (immediate) mutate(key, undefined, { revalidate: true });
   else mutate(key);
 }

@@ -481,3 +481,75 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
 
   return statuses;
 }
+
+// ============ PLANNED LOGOUT TIME ============
+
+/**
+ * Get the current user's planned logout time from their profile.
+ * Returns a TIME string (e.g. "16:00:00") or null if not set.
+ */
+export async function getPlannedLogoutTime(workspaceId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('planned_logout_time')
+    .eq('id', user.id)
+    .eq('workspace_id', workspaceId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[getPlannedLogoutTime] Error:', error);
+    return null;
+  }
+
+  return data?.planned_logout_time ?? null;
+}
+
+/**
+ * Update the current user's planned logout time.
+ * Accepts "HH:MM" or "HH:MM:SS" format, or null/empty to clear.
+ */
+export async function updatePlannedLogoutTime(
+  workspaceId: string,
+  time: string | null
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Validate format: HH:MM or HH:MM:SS, or null/empty to clear
+  let normalizedTime: string | null = null;
+  if (time && time.trim() !== '') {
+    const trimmed = time.trim();
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/;
+    if (!timeRegex.test(trimmed)) {
+      return { success: false, error: 'Invalid time format. Use HH:MM (e.g. 16:00).' };
+    }
+    normalizedTime = trimmed;
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ planned_logout_time: normalizedTime })
+    .eq('id', user.id)
+    .eq('workspace_id', workspaceId);
+
+  if (error) {
+    console.error('[updatePlannedLogoutTime] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/settings');
+  return { success: true };
+}
