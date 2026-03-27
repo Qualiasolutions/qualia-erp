@@ -76,12 +76,12 @@ Based on the 2026-03-26 web production audit (`.planning/REVIEW.md`) + design re
 | ----------- | -------- | ------- |
 | V21-01      | Phase 30 | Pending |
 | V21-02      | Phase 31 | Pending |
-| SEC-01      | Phase 33 | Pending |
-| SEC-02      | Phase 33 | Pending |
-| SEC-03      | Phase 33 | Pending |
-| SEC-04      | Phase 33 | Pending |
-| SEC-05      | Phase 33 | Pending |
-| SEC-06      | Phase 33 | Pending |
+| SEC-01      | Phase 33 | Done    |
+| SEC-02      | Phase 33 | Done    |
+| SEC-03      | Phase 33 | Done    |
+| SEC-04      | Phase 33 | Done    |
+| SEC-05      | Phase 33 | Done    |
+| SEC-06      | Phase 33 | Done    |
 | PERF-01     | Phase 34 | Pending |
 | PERF-02     | Phase 34 | Pending |
 | PERF-03     | Phase 34 | Pending |

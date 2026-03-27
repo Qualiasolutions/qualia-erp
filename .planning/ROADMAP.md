@@ -95,8 +95,8 @@ Plans:
 
 Plans:
 
-- [ ] 33-01: Next.js upgrade + npm audit fix + cron auth hardening + CSP cleanup
-- [ ] 33-02: Fix Vercel webhook filter injection + claude API timing-safe + SVG upload removal
+- [x] 33-01: Next.js upgrade + npm audit fix + cron auth hardening + CSP cleanup
+- [x] 33-02: Fix Vercel webhook filter injection + claude API timing-safe + SVG upload removal
 
 #### Phase 34: Performance Optimization
 
@@ -217,7 +217,7 @@ Plans:
 | 1-29                         | v1.0–v2.1 | All            | Complete    | 2026-03-25 |
 | 30. Live Status Dashboard    | v2.1      | 0/3            | Not started | -          |
 | 31. Clock-Out Enforcement    | v2.1      | 0/2            | Not started | -          |
-| 33. Security Fixes           | v3.0      | 0/2            | Not started | -          |
+| 33. Security Fixes           | v3.0      | 2/2            | Complete    | 2026-03-27 |
 | 34. Performance Optimization | v3.0      | 0/3            | Not started | -          |
 | 35. Observability            | v3.0      | 0/2            | Not started | -          |
 | 36. Reliability & Testing    | v3.0      | 0/3            | Not started | -          |
