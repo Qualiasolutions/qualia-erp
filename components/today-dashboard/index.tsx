@@ -96,7 +96,7 @@ export function TodayDashboard({
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
       {/* ===== STICKY HEADER ===== */}
-      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl">
+      <header className="sticky top-0 z-sticky flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl">
         {/* Left */}
         <div className="flex items-center gap-3">
           <Button

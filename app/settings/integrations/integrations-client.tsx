@@ -150,7 +150,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
         title="GitHub"
         description="Create repositories from templates when projects are created"
         icon={Github}
-        iconColor="bg-gray-700"
+        iconColor="bg-secondary"
         isConnected={githubIntegration?.is_connected || false}
         lastVerified={githubIntegration?.last_verified_at || null}
         config={githubIntegration?.config as GitHubConfig | undefined}
@@ -165,7 +165,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
         title="Vercel"
         description="Deploy projects automatically with GitHub integration"
         icon={Globe}
-        iconColor="bg-black"
+        iconColor="bg-foreground"
         isConnected={vercelIntegration?.is_connected || false}
         lastVerified={vercelIntegration?.last_verified_at || null}
         config={vercelIntegration?.config as VercelConfig | undefined}

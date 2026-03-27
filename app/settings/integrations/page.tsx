@@ -107,7 +107,7 @@ export default function IntegrationsPage() {
                 auto-deploy
               </li>
               <li>
-                <strong>VAPI:</strong> Creates a voice assistant for Voice Agent projects
+                <strong>Zoho:</strong> Creates invoices and manages client contacts
               </li>
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">

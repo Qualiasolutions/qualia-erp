@@ -28,7 +28,7 @@ async function AccountInfoLoader() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-medium text-white">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-xl font-medium text-primary-foreground">
           {profile?.full_name
             ?.split(' ')
             .map((n: string) => n[0])
@@ -70,7 +70,7 @@ async function AccountInfoLoader() {
             </div>
             <div>
               <p className="font-medium text-foreground">Integrations</p>
-              <p className="text-sm text-muted-foreground">Connect GitHub, Vercel, and VAPI</p>
+              <p className="text-sm text-muted-foreground">Connect GitHub, Vercel, and Zoho</p>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
