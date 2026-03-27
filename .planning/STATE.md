@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 35 in progress (Observability) — plan 35-02 complete, 35-01 running in parallel
-Plan: 35-02 complete (Vercel Analytics + Uptime Cron)
-Status: Phase 35 partially complete — 35-02 done, 35-01 in progress
-Last activity: 2026-03-27 — Completed 35-02 (Vercel Analytics + Speed Insights + uptime cron)
+Phase: 34 + 35 in progress (parallel execution)
+Plans complete: 33-01, 33-02, 34-02, 34-03, 35-02
+Status: Phase 33 complete; 34-01, 35-01 still pending
+Last activity: 2026-03-27 — Completed 34-03 (lazy framer-motion via LazyMotion provider)
 
-Progress: [██░░░░░░░░] 17% (v3.0 scope, 3/18 plans)
+Progress: [████░░░░░░] 22% (v3.0 scope, 4/18 plans)
 
 ## Milestone Overview
 
@@ -43,6 +43,8 @@ Phases 30, 33, 34, 35, 36 can all run in parallel. Phase 37 needs 33 first. Phas
 | 2   | Role in JWT claims (not DB query)  | Eliminates 1-2 DB queries from every middleware run                         | 2026-03-26 |
 | 3   | 30% test coverage target (not 50%) | Pragmatic first step — 50% threshold exists but 0.75% → 30% is the real win | 2026-03-26 |
 | 4   | Sentry over custom logging         | Industry standard, zero-config with Next.js, already have MCP access        | 2026-03-26 |
+| 5   | React cache() for role dedup       | Native per-request dedup, no manual Map needed, eliminates N role queries   | 2026-03-27 |
+| 6   | Batch RPC SECURITY DEFINER         | Allows bypassing RLS for batch update but input is validated UUIDs only     | 2026-03-27 |
 
 ### Blockers/Concerns
 
