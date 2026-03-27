@@ -20,6 +20,9 @@ import {
 } from '@/app/actions/project-assignments';
 import { getTaskAttachments } from '@/app/actions/task-attachments';
 import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
+import type { TeamMemberStatus } from '@/app/actions/work-sessions';
+
+export type { TeamMemberStatus };
 
 // Type for meetings with all relations
 export type MeetingWithRelations = Awaited<ReturnType<typeof getMeetings>>[number];
@@ -76,6 +79,7 @@ export const cacheKeys = {
     `owner-updates-${workspaceId}-${unreadOnly ? 'unread' : 'all'}`,
   teamDashboard: (workspaceId: string) => `team-dashboard-${workspaceId}`,
   taskAttachments: (taskId: string) => `task-attachments-${taskId}`,
+  teamStatus: (wsId: string) => ['team-status', wsId] as const,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1564,21 +1568,27 @@ export function useTodaysSessions(workspaceId: string | null) {
 }
 
 /**
- * Invalidate active session cache
+ * Invalidate active session cache.
+ * Also cascades to team status (clock-in/out affects who is online).
  */
 export function invalidateActiveSession(workspaceId: string, immediate = true) {
   const key = cacheKeys.activeSession(workspaceId);
   if (immediate) mutate(key, undefined, { revalidate: true });
   else mutate(key);
+  // Cascade: team status reflects active sessions
+  invalidateTeamStatus(workspaceId, immediate);
 }
 
 /**
- * Invalidate today's sessions cache
+ * Invalidate today's sessions cache.
+ * Also cascades to team status (closed sessions update offline last-seen time).
  */
 export function invalidateTodaysSessions(workspaceId: string, immediate = true) {
   const key = cacheKeys.todaysSessions(workspaceId);
   if (immediate) mutate(key, undefined, { revalidate: true });
   else mutate(key);
+  // Cascade: team status reflects recent session end times
+  invalidateTeamStatus(workspaceId, immediate);
 }
 
 /**
@@ -1591,6 +1601,47 @@ export function invalidateSessionsAdmin(
   immediate = true
 ) {
   const key = cacheKeys.sessionsAdmin(workspaceId, profileId, date);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+/**
+ * Hook to fetch live status for all employees in the workspace.
+ * Polls every 15s when tab is visible for near-realtime team presence.
+ * Admin-only — returns empty array for non-admins.
+ */
+export function useTeamStatus(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    workspaceId ? cacheKeys.teamStatus(workspaceId) : null,
+    async () => {
+      if (!workspaceId) return [];
+      const { getTeamStatus } = await import('@/app/actions/work-sessions');
+      return getTeamStatus(workspaceId);
+    },
+    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 15_000 : 0 }
+  );
+
+  return {
+    members: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate team status cache
+ */
+export function invalidateTeamStatus(workspaceId: string, immediate = true) {
+  const key = cacheKeys.teamStatus(workspaceId);
   if (immediate) mutate(key, undefined, { revalidate: true });
   else mutate(key);
 }
