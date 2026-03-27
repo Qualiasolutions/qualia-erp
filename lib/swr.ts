@@ -1601,6 +1601,45 @@ export function invalidateTodaysSessions(workspaceId: string, immediate = true) 
 }
 
 /**
+ * Hook to fetch work sessions for a specific employee (admin view).
+ * Used by SessionHistoryPanel for drill-down view.
+ * Polls every 30s when tab is visible.
+ */
+export function useSessionsAdmin(
+  workspaceId: string | null,
+  profileId: string | null,
+  date: string | null
+) {
+  const key =
+    workspaceId && profileId && date ? cacheKeys.sessionsAdmin(workspaceId, profileId, date) : null;
+
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(
+    key,
+    async () => {
+      if (!workspaceId || !profileId || !date) return [];
+      const { getSessionsAdmin } = await import('@/app/actions/work-sessions');
+      return getSessionsAdmin(workspaceId, { profileId, date });
+    },
+    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
+  );
+
+  return {
+    sessions: data ?? [],
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
  * Invalidate sessions admin cache
  */
 export function invalidateSessionsAdmin(
