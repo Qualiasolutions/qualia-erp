@@ -44,9 +44,9 @@ Phase 28-29: v2.1 DB migration, session clock-in/clock-out — complete.
 
 Plans:
 
-- [ ] 30-01: Live status data action + SWR hook
-- [ ] 30-02: Live status panel UI on admin dashboard
-- [ ] 30-03: Session history view (per-employee, per-date)
+- [x] 30-01: Live status data action + SWR hook
+- [x] 30-02: Live status panel UI on admin dashboard
+- [x] 30-03: Session history view (per-employee, per-date)
 
 #### Phase 31: Clock-Out Enforcement
 
@@ -215,7 +215,7 @@ Plans:
 | Phase                        | Milestone | Plans Complete | Status      | Completed  |
 | ---------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-29                         | v1.0–v2.1 | All            | Complete    | 2026-03-25 |
-| 30. Live Status Dashboard    | v2.1      | 0/3            | Not started | -          |
+| 30. Live Status Dashboard    | v2.1      | 3/3            | Complete    | 2026-03-27 |
 | 31. Clock-Out Enforcement    | v2.1      | 0/2            | Not started | -          |
 | 33. Security Fixes           | v3.0      | 2/2            | Complete    | 2026-03-27 |
 | 34. Performance Optimization | v3.0      | 3/3            | Complete    | 2026-03-27 |
