@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 ## Current Position
 
-Phase: 34 + 35 in progress (parallel execution)
-Plans complete: 33-01, 33-02, 34-02, 34-03, 35-01, 35-02
-Status: Phase 33 complete; Phase 35 complete; 34-01 still pending
-Last activity: 2026-03-27 — Completed 35-01 (Sentry SDK setup)
+Phase: 34 (Performance Optimization) — all 3 plans complete
+Plans complete: 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02
+Status: Phase 33 complete; Phase 34 complete; Phase 35 complete
+Last activity: 2026-03-27 — Completed 34-01 (JWT custom claims hook + middleware rewrite)
 
-Progress: [████░░░░░░] 28% (v3.0 scope, 5/18 plans — 33x2, 34x2, 35x2 done, 34-01 pending)
+Progress: [████░░░░░░] 33% (v3.0 scope, 6/18 plans — 33x2, 34x3, 35x2 done)
 
 ## Milestone Overview
 
@@ -54,5 +54,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-27
-Stopped at: Phase 35 fully complete (both 35-01, 35-02 done)
-**Next action:** Complete 34-01, then continue with remaining phases (30, 36, 37).
+Stopped at: 34-01 complete (JWT hook + middleware). Phases 33, 34, 35 all done.
+**Next action:** Phases 30, 36, 37 remaining. Note: 34-01 requires manual step — enable hook in Supabase Dashboard (see 34-USER-SETUP.md).
