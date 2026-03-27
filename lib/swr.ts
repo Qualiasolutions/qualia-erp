@@ -1568,6 +1568,15 @@ export function useTodaysSessions(workspaceId: string | null) {
 }
 
 /**
+ * Invalidate team status cache (admin live status panel).
+ */
+export function invalidateTeamStatus(workspaceId: string, immediate = true) {
+  const key = cacheKeys.teamStatus(workspaceId);
+  if (immediate) mutate(key, undefined, { revalidate: true });
+  else mutate(key);
+}
+
+/**
  * Invalidate active session cache.
  * Also cascades to team status (clock-in/out affects who is online).
  */
@@ -1635,15 +1644,6 @@ export function useTeamStatus(workspaceId: string | null) {
     error,
     revalidate,
   };
-}
-
-/**
- * Invalidate team status cache
- */
-export function invalidateTeamStatus(workspaceId: string, immediate = true) {
-  const key = cacheKeys.teamStatus(workspaceId);
-  if (immediate) mutate(key, undefined, { revalidate: true });
-  else mutate(key);
 }
 
 // ============ TASK ATTACHMENTS ============
