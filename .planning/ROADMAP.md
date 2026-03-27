@@ -206,20 +206,20 @@ Plans:
 Plans:
 
 - [x] 38-01: Design audit all pages with `/critique` — document findings
-- [ ] 38-02: Implement design fixes across dashboard, projects, settings, schedule
+- [x] 38-02: Implement design fixes across dashboard, projects, settings, schedule
 
 ---
 
 ## Progress
 
-| Phase                        | Milestone | Plans Complete | Status      | Completed  |
-| ---------------------------- | --------- | -------------- | ----------- | ---------- |
-| 1-29                         | v1.0–v2.1 | All            | Complete    | 2026-03-25 |
-| 30. Live Status Dashboard    | v2.1      | 3/3            | Complete    | 2026-03-27 |
-| 31. Clock-Out Enforcement    | v2.1      | 2/2            | Complete    | 2026-03-27 |
-| 33. Security Fixes           | v3.0      | 2/2            | Complete    | 2026-03-27 |
-| 34. Performance Optimization | v3.0      | 3/3            | Complete    | 2026-03-27 |
-| 35. Observability            | v3.0      | 2/2            | Complete    | 2026-03-27 |
-| 36. Reliability & Testing    | v3.0      | 3/3            | Complete    | 2026-03-27 |
-| 37. Deployment Cleanup       | v3.0      | 1/1            | Complete    | 2026-03-27 |
-| 38. Design Review & Polish   | v3.0      | 0/2            | Not started | -          |
+| Phase                        | Milestone | Plans Complete | Status   | Completed  |
+| ---------------------------- | --------- | -------------- | -------- | ---------- |
+| 1-29                         | v1.0–v2.1 | All            | Complete | 2026-03-25 |
+| 30. Live Status Dashboard    | v2.1      | 3/3            | Complete | 2026-03-27 |
+| 31. Clock-Out Enforcement    | v2.1      | 2/2            | Complete | 2026-03-27 |
+| 33. Security Fixes           | v3.0      | 2/2            | Complete | 2026-03-27 |
+| 34. Performance Optimization | v3.0      | 3/3            | Complete | 2026-03-27 |
+| 35. Observability            | v3.0      | 2/2            | Complete | 2026-03-27 |
+| 36. Reliability & Testing    | v3.0      | 3/3            | Complete | 2026-03-27 |
+| 37. Deployment Cleanup       | v3.0      | 1/1            | Complete | 2026-03-27 |
+| 38. Design Review & Polish   | v3.0      | 2/2            | Complete | 2026-03-27 |
