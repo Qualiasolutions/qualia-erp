@@ -66,8 +66,8 @@ Plans:
 
 Plans:
 
-- [ ] 31-01: Idle detection hook + "still working?" prompt + auto clock-out
-- [ ] 31-02: Planned logout banner + beforeunload warning
+- [x] 31-01: Idle detection hook + "still working?" prompt + auto clock-out
+- [x] 31-02: Planned logout banner + beforeunload warning
 
 ---
 
@@ -216,7 +216,7 @@ Plans:
 | ---------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-29                         | v1.0–v2.1 | All            | Complete    | 2026-03-25 |
 | 30. Live Status Dashboard    | v2.1      | 3/3            | Complete    | 2026-03-27 |
-| 31. Clock-Out Enforcement    | v2.1      | 0/2            | Not started | -          |
+| 31. Clock-Out Enforcement    | v2.1      | 2/2            | Complete    | 2026-03-27 |
 | 33. Security Fixes           | v3.0      | 2/2            | Complete    | 2026-03-27 |
 | 34. Performance Optimization | v3.0      | 3/3            | Complete    | 2026-03-27 |
 | 35. Observability            | v3.0      | 2/2            | Complete    | 2026-03-27 |
