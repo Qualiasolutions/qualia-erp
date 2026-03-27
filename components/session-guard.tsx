@@ -38,7 +38,8 @@ const GRACE_PERIOD_SECONDS = 15 * 60; // 15 minutes (for countdown display)
 export function SessionGuard() {
   const { isAdmin, loading: adminLoading } = useAdminContext();
   const { workspaceId } = useCurrentWorkspaceId();
-  const { session } = useActiveSession(workspaceId ?? null);
+  const wsId = workspaceId ?? null;
+  const { session } = useActiveSession(wsId);
 
   // Idle dialog state
   const [idleDialogOpen, setIdleDialogOpen] = useState(false);
