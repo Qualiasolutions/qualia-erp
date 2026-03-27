@@ -14,6 +14,8 @@ import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistan
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
 import { Toaster } from 'sonner';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
 
@@ -163,6 +165,8 @@ export default function RootLayout({
           </SWRProvider>
         </ThemeProvider>
         <Toaster position="top-center" richColors closeButton />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
