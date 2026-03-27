@@ -12,6 +12,7 @@ import { SWRProvider } from '@/components/swr-provider';
 import { AdminProvider } from '@/components/admin-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { SessionGuard } from '@/components/session-guard';
+import { PlannedLogoutBanner } from '@/components/planned-logout-banner';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
 import { LazyMotionProvider } from '@/lib/lazy-motion';
@@ -150,6 +151,9 @@ export default function RootLayout({
                         </Suspense>
                         <Suspense fallback={null}>
                           <SessionGuard />
+                        </Suspense>
+                        <Suspense fallback={null}>
+                          <PlannedLogoutBanner />
                         </Suspense>
                         <Suspense fallback={<SidebarSkeleton />}>
                           <Sidebar />
