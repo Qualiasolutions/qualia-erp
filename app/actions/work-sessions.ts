@@ -176,6 +176,64 @@ export async function clockOut(
 }
 
 /**
+ * Auto clock out: close the active session without requiring user input.
+ * Used by idle detection when grace period expires.
+ * Validates that the session belongs to the current user and is still open.
+ */
+export async function autoClockOut(
+  workspaceId: string,
+  sessionId: string,
+  reason: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  // Fetch the open session (must belong to this user)
+  const { data: session, error: fetchError } = await supabase
+    .from('work_sessions')
+    .select('id, started_at')
+    .eq('id', sessionId)
+    .eq('profile_id', user.id)
+    .eq('workspace_id', workspaceId)
+    .is('ended_at', null)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('[autoClockOut] Fetch error:', fetchError);
+    return { success: false, error: fetchError.message };
+  }
+
+  if (!session) {
+    return { success: false, error: 'No active session found.' };
+  }
+
+  const { data, error } = await supabase
+    .from('work_sessions')
+    .update({
+      ended_at: new Date().toISOString(),
+      summary: reason,
+    })
+    .eq('id', sessionId)
+    .eq('profile_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[autoClockOut] Update error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/');
+  return { success: true, data };
+}
+
+/**
  * Get the current user's active (open) session, or null if none.
  */
 export async function getActiveSession(workspaceId: string): Promise<WorkSession | null> {
