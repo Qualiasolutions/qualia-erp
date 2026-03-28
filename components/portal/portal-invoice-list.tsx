@@ -27,7 +27,7 @@ interface PortalInvoiceListProps {
 function getInvoiceStatusColor(status: string) {
   switch (status) {
     case 'paid':
-      return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/20';
+      return 'bg-primary/15 text-qualia-700 dark:text-primary border-primary/20';
     case 'pending':
       return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
     case 'overdue':
@@ -72,7 +72,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
           key={invoice.id}
           style={index < 6 ? getStaggerDelay(index) : undefined}
           className={cn(
-            'rounded-xl border-border transition-all duration-200 hover:border-border hover:shadow-elevation-1',
+            'rounded-xl border-primary/[0.08] transition-all duration-200 hover:border-primary/20 hover:bg-primary/[0.03] hover:shadow-elevation-1',
             index < 6 && 'animate-fade-in-up fill-mode-both'
           )}
         >

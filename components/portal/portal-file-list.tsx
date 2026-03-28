@@ -17,7 +17,7 @@ import {
   Loader2,
   FolderOpen,
 } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
@@ -113,7 +113,10 @@ export function PortalFileList({ files }: PortalFileListProps) {
           <Card
             key={file.id}
             style={index < 6 ? getStaggerDelay(index) : undefined}
-            className={`shadow-elevation-1 transition-shadow duration-200 ease-premium hover:shadow-elevation-2 ${index < 6 ? 'animate-fade-in-up fill-mode-both' : ''}`}
+            className={cn(
+              'border-primary/[0.08] shadow-elevation-1 transition-shadow duration-200 ease-premium hover:border-primary/20 hover:shadow-elevation-2',
+              index < 6 && 'animate-fade-in-up fill-mode-both'
+            )}
           >
             <CardHeader className="pb-3">
               <div className="flex items-start gap-3">
@@ -150,7 +153,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
               <Button
                 onClick={() => handleDownload(file.id, f.original_name)}
                 disabled={downloadingFileId === file.id}
-                className="w-full"
+                className="min-h-[44px] w-full"
               >
                 {downloadingFileId === file.id ? (
                   <>

@@ -54,8 +54,10 @@ export default async function PortalProjectsPage() {
     return (
       <div className={`space-y-6 ${fadeInClasses}`}>
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
-          <p className="mt-1 text-[12px] text-muted-foreground/60">All active projects</p>
+          <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
+            Projects
+          </h1>
+          <p className="mt-1 text-[13px] text-muted-foreground/70">All active projects</p>
         </div>
         <PortalProjectsList projects={formatted} progressMap={progressMap} />
       </div>
@@ -115,8 +117,10 @@ export default async function PortalProjectsPage() {
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
-        <p className="mt-1 text-[12px] text-muted-foreground/60">
+        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
+          Your Projects
+        </h1>
+        <p className="mt-1 text-[13px] text-muted-foreground/70">
           Track the progress of your active projects
         </p>
       </div>

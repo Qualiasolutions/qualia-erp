@@ -53,8 +53,8 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
       <PortalTabs projectId={projectId} />
 
       {/* Info Banner */}
-      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-300">
+      <div className="rounded-lg border border-primary/20 bg-primary/[0.06] p-4">
+        <p className="text-sm text-qualia-800 dark:text-primary/80">
           Files shared by your team appear below. You can also upload files for your team to review.
         </p>
       </div>

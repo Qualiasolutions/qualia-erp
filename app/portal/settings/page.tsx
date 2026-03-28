@@ -196,7 +196,9 @@ export default function PortalSettingsPage() {
   return (
     <div className="mx-auto max-w-2xl space-y-10">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
+          Settings
+        </h1>
         <p className="mt-1 text-[13px] text-muted-foreground">
           Manage your account and notification preferences
         </p>
@@ -205,7 +207,7 @@ export default function PortalSettingsPage() {
       {/* Profile Settings */}
       <section className="space-y-5">
         <div className="flex items-center gap-2.5">
-          <div className="bg-primary/8 flex h-8 w-8 items-center justify-center rounded-lg dark:bg-primary/15">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
             <User className="h-4 w-4 text-primary dark:text-primary" />
           </div>
           <div>
@@ -216,7 +218,7 @@ export default function PortalSettingsPage() {
 
         <form
           onSubmit={handleProfileSubmit}
-          className="space-y-4 rounded-xl border border-border bg-card p-5"
+          className="space-y-4 rounded-xl border border-primary/[0.08] bg-card p-5 dark:border-primary/[0.12]"
         >
           <div className="space-y-1.5">
             <Label htmlFor="full_name" className="text-[13px]">
@@ -268,7 +270,7 @@ export default function PortalSettingsPage() {
               type="submit"
               disabled={profileSaving}
               size="sm"
-              className="bg-primary text-white hover:bg-qualia-700"
+              className="min-h-[44px] bg-primary text-white hover:bg-qualia-700"
             >
               {profileSaving ? (
                 <>
@@ -289,7 +291,7 @@ export default function PortalSettingsPage() {
       {/* Notification Preferences */}
       <section className="space-y-5">
         <div className="flex items-center gap-2.5">
-          <div className="bg-amber-500/8 flex h-8 w-8 items-center justify-center rounded-lg dark:bg-amber-500/15">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/[0.08] dark:bg-amber-500/15">
             <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
@@ -302,12 +304,15 @@ export default function PortalSettingsPage() {
 
         <form
           onSubmit={handleNotificationSubmit}
-          className="rounded-xl border border-border bg-card"
+          className="rounded-xl border border-primary/[0.08] bg-card dark:border-primary/[0.12]"
         >
           {/* Notification Toggles */}
-          <div className="divide-y divide-border/20">
+          <div className="divide-y divide-primary/[0.06]">
             {notificationItems.map((item) => (
-              <div key={item.id} className="flex items-center justify-between px-5 py-4">
+              <div
+                key={item.id}
+                className="flex min-h-[56px] items-center justify-between px-5 py-4"
+              >
                 <div className="space-y-0.5">
                   <Label htmlFor={item.id} className="text-[13px] font-medium">
                     {item.label}
@@ -368,7 +373,7 @@ export default function PortalSettingsPage() {
               type="submit"
               disabled={notificationsSaving}
               size="sm"
-              className="bg-primary text-white hover:bg-qualia-700"
+              className="min-h-[44px] bg-primary text-white hover:bg-qualia-700"
             >
               {notificationsSaving ? (
                 <>

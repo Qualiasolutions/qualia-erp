@@ -165,7 +165,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
                 className={cn(
-                  'rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200',
+                  'min-h-[40px] rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200',
                   statusFilter === tab.value
                     ? 'bg-primary/10 text-qualia-700 shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:text-primary'
                     : 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground'

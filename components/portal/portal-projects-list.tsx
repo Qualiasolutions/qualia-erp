@@ -63,14 +63,16 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             style={index < 10 ? getStaggerDelay(index) : undefined}
             className={cn(
               'group flex items-center gap-4 rounded-lg px-4 py-4 transition-all duration-150',
-              'hover:bg-muted/30',
+              'hover:bg-primary/[0.03]',
               index < 10 && 'animate-fade-in-up fill-mode-both'
             )}
           >
             {/* Project info */}
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2.5">
-                <h3 className="truncate text-[13px] font-medium text-foreground">{project.name}</h3>
+                <h3 className="min-w-0 truncate text-[13px] font-medium text-foreground">
+                  {project.name}
+                </h3>
                 <Badge
                   className={cn(
                     'shrink-0 border px-1.5 py-0 text-[10px] leading-4',
@@ -94,12 +96,12 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
 
             {/* Progress */}
             <div className="hidden w-28 items-center gap-2 md:flex">
-              <div className="h-1 flex-1 overflow-hidden rounded-full bg-border/40">
+              <div className="h-1 flex-1 overflow-hidden rounded-full bg-primary/10">
                 {progress > 0 && (
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-500',
-                      progress === 100 ? 'bg-emerald-500' : 'bg-primary'
+                      progress === 100 ? 'bg-primary' : 'bg-primary'
                     )}
                     style={{ width: `${progress}%` }}
                   />

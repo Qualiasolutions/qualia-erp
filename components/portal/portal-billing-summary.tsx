@@ -67,11 +67,11 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
   ];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
       {cards.map((card, index) => (
         <div
           key={card.label}
-          className="flex animate-fade-in-up items-center gap-4 rounded-xl border border-border bg-card px-5 py-5 transition-all duration-200 fill-mode-both hover:border-border hover:shadow-elevation-1"
+          className="flex animate-fade-in-up items-center gap-4 rounded-xl border border-primary/[0.08] bg-card px-5 py-5 transition-all duration-200 fill-mode-both hover:border-primary/20 hover:shadow-elevation-1"
           style={getStaggerDelay(index)}
         >
           <div

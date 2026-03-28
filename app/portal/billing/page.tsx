@@ -33,7 +33,9 @@ export default async function PortalBillingPage() {
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Billing</h1>
+        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
+          Billing
+        </h1>
         <p className="mt-1 text-[13px] text-muted-foreground">
           View and track your invoices and payment history
         </p>
