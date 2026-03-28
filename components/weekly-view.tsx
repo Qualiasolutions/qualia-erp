@@ -337,250 +337,254 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
           })}
         </div>
 
-        {/* ===== Time Grid — fills remaining height, no scroll ===== */}
-        <div className={cn('relative grid flex-1', gridCols)}>
-          {/* Hour labels */}
-          <div className="relative border-r border-border">
-            {HOURS.map((hour, i) => (
-              <div
-                key={hour}
-                className="absolute right-0 flex w-full items-start justify-end pr-2 sm:pr-3"
-                style={{
-                  top: `${(i / HOUR_COUNT) * 100}%`,
-                  height: `${(1 / HOUR_COUNT) * 100}%`,
-                }}
-              >
-                {i !== 0 && (
-                  <span className="relative -top-[7px] select-none text-[9px] font-medium tabular-nums text-muted-foreground/50 sm:text-[10px]">
-                    {format(new Date(2000, 0, 1, hour), 'h a')}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+        {/* ===== Time Grid — fills remaining height, scrolls as container ===== */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className={cn('relative grid', gridCols)} style={{ height: `${HOUR_COUNT * 4}rem` }}>
+            {/* Hour labels */}
+            <div className="relative border-r border-border">
+              {HOURS.map((hour, i) => (
+                <div
+                  key={hour}
+                  className="absolute right-0 flex w-full items-start justify-end pr-2 sm:pr-3"
+                  style={{
+                    top: `${(i / HOUR_COUNT) * 100}%`,
+                    height: `${(1 / HOUR_COUNT) * 100}%`,
+                  }}
+                >
+                  {i !== 0 && (
+                    <span className="relative -top-[7px] select-none text-[9px] font-medium tabular-nums text-muted-foreground/50 sm:text-[10px]">
+                      {format(new Date(2000, 0, 1, hour), 'h a')}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
 
-          {/* Day columns */}
-          {days.map((day) => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            const dayParsed = meetingsByDate.get(dateKey) || [];
-            const grouped = groupEvents(dayParsed);
-            const isToday = isTodayInTz(day);
+            {/* Day columns */}
+            {days.map((day) => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              const dayParsed = meetingsByDate.get(dateKey) || [];
+              const grouped = groupEvents(dayParsed);
+              const isToday = isTodayInTz(day);
 
-            return (
-              <div
-                key={day.toISOString()}
-                className={cn(
-                  'relative border-r border-border last:border-r-0',
-                  isToday && 'bg-primary/[0.02]'
-                )}
-              >
-                {/* Hour grid lines */}
-                {HOURS.map((hour, i) => (
-                  <div
-                    key={hour}
-                    className="absolute inset-x-0"
-                    style={{
-                      top: `${(i / HOUR_COUNT) * 100}%`,
-                      height: `${(1 / HOUR_COUNT) * 100}%`,
-                    }}
-                  >
-                    {i !== 0 && <div className="absolute inset-x-0 top-0 border-t border-border" />}
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={cn(
+                    'relative border-r border-border last:border-r-0',
+                    isToday && 'bg-primary/[0.02]'
+                  )}
+                >
+                  {/* Hour grid lines */}
+                  {HOURS.map((hour, i) => (
                     <div
-                      className="absolute inset-x-0 border-t border-dashed border-border/10"
-                      style={{ top: '50%' }}
-                    />
-                  </div>
-                ))}
-
-                {/* Current time indicator */}
-                {isToday && timelinePosition !== null && (
-                  <div
-                    className="pointer-events-none absolute inset-x-0 z-30"
-                    style={{ top: `${timelinePosition}%` }}
-                  >
-                    <div className="flex items-center">
-                      <div className="-ml-[5px] size-2.5 rounded-full bg-primary shadow-sm shadow-primary/40 ring-2 ring-card" />
-                      <div className="h-[2px] flex-1 bg-primary/60" />
-                    </div>
-                  </div>
-                )}
-
-                {/* Event blocks */}
-                {grouped.map((ev) => {
-                  // Clamp events to visible range
-                  const clampedStart = Math.max(
-                    ev.start.getHours() * 60 + ev.start.getMinutes(),
-                    FIXED_HOURS.from * 60
-                  );
-                  const clampedEnd = Math.min(
-                    ev.end.getHours() * 60 + ev.end.getMinutes(),
-                    FIXED_HOURS.to * 60
-                  );
-                  if (clampedStart >= FIXED_HOURS.to * 60 || clampedEnd <= FIXED_HOURS.from * 60)
-                    return null;
-
-                  const totalMinutes = HOUR_COUNT * 60;
-                  const topPct = ((clampedStart - FIXED_HOURS.from * 60) / totalMinutes) * 100;
-                  const heightPct = Math.max(
-                    1.5,
-                    ((clampedEnd - clampedStart) / totalMinutes) * 100
-                  );
-                  const colWidth = 100 / ev.totalCols;
-                  const left = ev.col * colWidth;
-                  const hasLink = !!ev.meeting.meeting_link;
-                  const isCompact = heightPct < 8;
-
-                  const isSelected = selectedMeeting?.meeting.id === ev.meeting.id;
-
-                  return (
-                    <Popover
-                      key={ev.meeting.id}
-                      open={isSelected}
-                      onOpenChange={(open) => {
-                        if (!open) setSelectedMeeting(null);
+                      key={hour}
+                      className="absolute inset-x-0"
+                      style={{
+                        top: `${(i / HOUR_COUNT) * 100}%`,
+                        height: `${(1 / HOUR_COUNT) * 100}%`,
                       }}
                     >
-                      <PopoverTrigger asChild>
-                        <div
-                          className="absolute z-10 cursor-pointer p-[1px] sm:p-[2px]"
-                          style={{
-                            top: `${topPct}%`,
-                            height: `${heightPct}%`,
-                            left: `calc(${left}% + 1px)`,
-                            width: `calc(${colWidth}% - 2px)`,
-                          }}
-                          onClick={() =>
-                            setSelectedMeeting(
-                              isSelected
-                                ? null
-                                : { meeting: ev.meeting, start: ev.start, end: ev.end }
-                            )
-                          }
-                        >
+                      {i !== 0 && (
+                        <div className="absolute inset-x-0 top-0 border-t border-border" />
+                      )}
+                      <div
+                        className="absolute inset-x-0 border-t border-dashed border-border/10"
+                        style={{ top: '50%' }}
+                      />
+                    </div>
+                  ))}
+
+                  {/* Current time indicator */}
+                  {isToday && timelinePosition !== null && (
+                    <div
+                      className="pointer-events-none absolute inset-x-0 z-30"
+                      style={{ top: `${timelinePosition}%` }}
+                    >
+                      <div className="flex items-center">
+                        <div className="-ml-[5px] size-2.5 rounded-full bg-primary shadow-sm shadow-primary/40 ring-2 ring-card" />
+                        <div className="h-[2px] flex-1 bg-primary/60" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Event blocks */}
+                  {grouped.map((ev) => {
+                    // Clamp events to visible range
+                    const clampedStart = Math.max(
+                      ev.start.getHours() * 60 + ev.start.getMinutes(),
+                      FIXED_HOURS.from * 60
+                    );
+                    const clampedEnd = Math.min(
+                      ev.end.getHours() * 60 + ev.end.getMinutes(),
+                      FIXED_HOURS.to * 60
+                    );
+                    if (clampedStart >= FIXED_HOURS.to * 60 || clampedEnd <= FIXED_HOURS.from * 60)
+                      return null;
+
+                    const totalMinutes = HOUR_COUNT * 60;
+                    const topPct = ((clampedStart - FIXED_HOURS.from * 60) / totalMinutes) * 100;
+                    const heightPct = Math.max(
+                      1.5,
+                      ((clampedEnd - clampedStart) / totalMinutes) * 100
+                    );
+                    const colWidth = 100 / ev.totalCols;
+                    const left = ev.col * colWidth;
+                    const hasLink = !!ev.meeting.meeting_link;
+                    const isCompact = heightPct < 8;
+
+                    const isSelected = selectedMeeting?.meeting.id === ev.meeting.id;
+
+                    return (
+                      <Popover
+                        key={ev.meeting.id}
+                        open={isSelected}
+                        onOpenChange={(open) => {
+                          if (!open) setSelectedMeeting(null);
+                        }}
+                      >
+                        <PopoverTrigger asChild>
                           <div
-                            className={cn(
-                              'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
-                              'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
-                              'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
-                              isSelected && 'bg-violet-500/[0.15] ring-1 ring-violet-500/40'
-                            )}
+                            className="absolute z-10 cursor-pointer p-[1px] sm:p-[2px]"
+                            style={{
+                              top: `${topPct}%`,
+                              height: `${heightPct}%`,
+                              left: `calc(${left}% + 1px)`,
+                              width: `calc(${colWidth}% - 2px)`,
+                            }}
+                            onClick={() =>
+                              setSelectedMeeting(
+                                isSelected
+                                  ? null
+                                  : { meeting: ev.meeting, start: ev.start, end: ev.end }
+                              )
+                            }
                           >
-                            <span
+                            <div
                               className={cn(
-                                'truncate font-semibold text-foreground/90',
-                                isCompact
-                                  ? 'text-[9px] sm:text-[10px]'
-                                  : 'text-[10px] sm:text-[11px]'
+                                'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
+                                'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
+                                'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
+                                isSelected && 'bg-violet-500/[0.15] ring-1 ring-violet-500/40'
                               )}
                             >
-                              {ev.meeting.title}
-                            </span>
+                              <span
+                                className={cn(
+                                  'truncate font-semibold text-foreground/90',
+                                  isCompact
+                                    ? 'text-[9px] sm:text-[10px]'
+                                    : 'text-[10px] sm:text-[11px]'
+                                )}
+                              >
+                                {ev.meeting.title}
+                              </span>
 
-                            {!isCompact && (
-                              <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/55 sm:text-[10px]">
-                                <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
-                                <span className="tabular-nums">
-                                  {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
-                                </span>
-                              </div>
-                            )}
+                              {!isCompact && (
+                                <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/55 sm:text-[10px]">
+                                  <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
+                                  <span className="tabular-nums">
+                                    {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
+                                  </span>
+                                </div>
+                              )}
 
-                            {!isCompact && ev.meeting.project && (
-                              <div className="mt-auto hidden truncate text-[10px] font-medium text-violet-500/50 sm:block">
-                                {ev.meeting.project.name}
-                              </div>
-                            )}
+                              {!isCompact && ev.meeting.project && (
+                                <div className="mt-auto hidden truncate text-[10px] font-medium text-violet-500/50 sm:block">
+                                  {ev.meeting.project.name}
+                                </div>
+                              )}
 
-                            {hasLink && (
-                              <Video className="absolute right-1.5 top-1.5 size-2.5 shrink-0 text-emerald-500/60" />
-                            )}
-                          </div>
-                        </div>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        side="right"
-                        align="start"
-                        sideOffset={8}
-                        className="w-72 p-0"
-                      >
-                        <div className="space-y-3 p-4">
-                          {/* Title */}
-                          <h3 className="text-sm font-semibold text-foreground">
-                            {ev.meeting.title}
-                          </h3>
-
-                          {/* Time */}
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Clock className="size-3.5 shrink-0" />
-                            <span>
-                              {format(ev.start, 'EEEE, MMM d')} &middot;{' '}
-                              {format(ev.start, 'h:mm a')} – {format(ev.end, 'h:mm a')}
-                            </span>
-                          </div>
-
-                          {/* Project */}
-                          {ev.meeting.project && (
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                              <Folder className="size-3.5 shrink-0" />
-                              <span>{ev.meeting.project.name}</span>
+                              {hasLink && (
+                                <Video className="absolute right-1.5 top-1.5 size-2.5 shrink-0 text-emerald-500/60" />
+                              )}
                             </div>
-                          )}
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="right"
+                          align="start"
+                          sideOffset={8}
+                          className="w-72 p-0"
+                        >
+                          <div className="space-y-3 p-4">
+                            {/* Title */}
+                            <h3 className="text-sm font-semibold text-foreground">
+                              {ev.meeting.title}
+                            </h3>
 
-                          {/* Description */}
-                          {ev.meeting.description && (
-                            <p className="text-xs leading-relaxed text-muted-foreground">
-                              {ev.meeting.description}
-                            </p>
-                          )}
+                            {/* Time */}
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Clock className="size-3.5 shrink-0" />
+                              <span>
+                                {format(ev.start, 'EEEE, MMM d')} &middot;{' '}
+                                {format(ev.start, 'h:mm a')} – {format(ev.end, 'h:mm a')}
+                              </span>
+                            </div>
 
-                          {/* Meeting link */}
-                          {hasLink && (
-                            <a
-                              href={ev.meeting.meeting_link!}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                            {/* Project */}
+                            {ev.meeting.project && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Folder className="size-3.5 shrink-0" />
+                                <span>{ev.meeting.project.name}</span>
+                              </div>
+                            )}
+
+                            {/* Description */}
+                            {ev.meeting.description && (
+                              <p className="text-xs leading-relaxed text-muted-foreground">
+                                {ev.meeting.description}
+                              </p>
+                            )}
+
+                            {/* Meeting link */}
+                            {hasLink && (
+                              <a
+                                href={ev.meeting.meeting_link!}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                              >
+                                <Video className="size-3.5" />
+                                Join Meeting
+                                <ExternalLink className="ml-auto size-3" />
+                              </a>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center gap-1 border-t border-border px-4 py-2.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedMeeting(null);
+                                handleEditMeeting(ev.meeting);
+                              }}
+                              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                             >
-                              <Video className="size-3.5" />
-                              Join Meeting
-                              <ExternalLink className="ml-auto size-3" />
-                            </a>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 border-t border-border px-4 py-2.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedMeeting(null);
-                              handleEditMeeting(ev.meeting);
-                            }}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                          >
-                            <Pencil className="size-3" />
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedMeeting(null);
-                              handleDeleteMeeting(ev.meeting.id);
-                            }}
-                            disabled={isPending}
-                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
-                          >
-                            <Trash2 className="size-3" />
-                            Delete
-                          </button>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  );
-                })}
-              </div>
-            );
-          })}
+                              <Pencil className="size-3" />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedMeeting(null);
+                                handleDeleteMeeting(ev.meeting.id);
+                              }}
+                              disabled={isPending}
+                              className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+                            >
+                              <Trash2 className="size-3" />
+                              Delete
+                            </button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
