@@ -314,13 +314,14 @@ export function ProjectDetailView({
                   </span>
                 )}
               </div>
-              <div className="mt-2">
-                <ProjectIntegrationsDisplay projectId={project.id} userRole={userRole} />
-              </div>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* Integration links */}
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <ProjectIntegrationsDisplay projectId={project.id} userRole={userRole} />
+            </div>
             {/* Panel toggle (below xl only) */}
             <Button
               variant="ghost"
