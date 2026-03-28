@@ -1,119 +1,110 @@
-# Requirements: Qualia ERP v3.0
+# Requirements: Qualia ERP v4.0
 
-**Defined:** 2026-03-26
-**Core Value:** Production-hardened internal suite — secure, performant, observable, with polished design
+**Defined:** 2026-03-28
+**Core Value:** One platform for all Qualia operations — internal team management, client-facing project delivery, and financial visibility.
 
-## v3.0 Requirements
+## v4.0 Requirements
 
-Based on the 2026-03-26 web production audit (`.planning/REVIEW.md`) + design review + finish remaining v2.1 phases.
+### Financial Dashboard
 
-### Security (SEC)
+- [ ] **FIN-01**: Admin can add, edit, and delete expense entries (amount, category, date, description)
+- [ ] **FIN-02**: Admin can view monthly expense breakdown by category
+- [ ] **FIN-03**: Admin can see net cash flow (revenue minus expenses) per month
+- [ ] **FIN-04**: Admin can view retainer/recurring clients with monthly totals (synced from Zoho)
 
-- [ ] **SEC-01**: Next.js upgraded to latest stable, resolving all 5 CVEs including Server Action CSRF bypass
-- [ ] **SEC-02**: Cron routes require CRON_SECRET auth in ALL environments (not just production)
-- [ ] **SEC-03**: Unparameterized `.or()` filter injection in Vercel webhook handler is fixed with parameterized queries
-- [ ] **SEC-04**: API key comparisons in `/api/claude/*` routes use `crypto.timingSafeEqual()`
-- [ ] **SEC-05**: SVG uploads either removed from allowed types or served with Content-Disposition: attachment only
-- [ ] **SEC-06**: CSP `unsafe-eval` confirmed removed (was for VAPI, now deleted)
+### Client Portal — File Uploads
 
-### Performance (PERF)
+- [ ] **UPLOAD-01**: Client can upload files to a project (drag-and-drop or file picker)
+- [ ] **UPLOAD-02**: Client uploads are stored in Supabase Storage with project association
+- [ ] **UPLOAD-03**: Admin/staff can view and download client-uploaded files in the ERP project view
+- [ ] **UPLOAD-04**: Admin gets notified (email) when a client uploads a file
 
-- [ ] **PERF-01**: Middleware role check eliminated — user role stored in JWT custom claims via Supabase hook
-- [ ] **PERF-02**: `reorderTasks` uses batch RPC or single upsert instead of N+1 writes
-- [ ] **PERF-03**: `canModifyTask` loop in reorder is parallelized or replaced with single batch query
-- [ ] **PERF-04**: `isUserAdmin` / `isUserManagerOrAbove` cached per-request using React `cache()`
-- [ ] **PERF-05**: framer-motion lazily loaded in non-critical components via `dynamic()`
-- [ ] **PERF-06**: Chat API caches enriched context per conversation (TTL 30-60s)
-- [ ] **PERF-07**: Sequential queries in `getProjectHealth` and `today-page.tsx` parallelized with `Promise.all`
-- [ ] **PERF-08**: `assigned_to` column reference in chat route fixed to correct `assignee_id`
+### Client Portal — Design Refresh
 
-### Observability (OBS)
+- [ ] **DESIGN-01**: Portal sidebar redesigned with modern look matching Impeccable v4.0
+- [ ] **DESIGN-02**: Portal dashboard redesigned with cleaner layout and better hierarchy
+- [ ] **DESIGN-03**: Portal project detail page simplified (less roadmap noise, clearer progress)
+- [ ] **DESIGN-04**: All portal pages consistent with updated design system (billing, requests, settings, files)
+- [ ] **DESIGN-05**: Portal responsive perfection (mobile-first, touch targets, fluid spacing)
 
-- [x] **OBS-01**: Sentry SDK installed and configured (`@sentry/nextjs` with client/server/edge configs)
-- [x] **OBS-02**: Vercel Analytics + Speed Insights added to `app/layout.tsx`
-- [x] **OBS-03**: Uptime cron frequency increased from daily to every 15 minutes, or removed in favor of UptimeRobot native alerting
+### Client Portal — Onboarding
 
-### Reliability (REL)
+- [ ] **ONBOARD-01**: New client sees a welcome flow on first login (what the portal offers, how to navigate)
+- [ ] **ONBOARD-02**: Empty states are helpful and guide the client to next actions
 
-- [ ] **REL-01**: Test coverage increased to 30%+ (from 0.75%) with focus on action modules
-- [ ] **REL-02**: Failing voice assistant tests fixed or removed (stale Arabic phrase assertions)
-- [ ] **REL-03**: Route-level `error.tsx` added for `/projects`, `/clients`, `/schedule`, `/payments`, `/inbox`, `/team`
-- [ ] **REL-04**: Cron routes sanitize error responses (no `String(error)` leaking internal paths)
-- [ ] **REL-05**: `tsc --noEmit` added to pre-commit or pre-push hook
+### Admin Portal — Management
 
-### Deployment (DEP)
+- [ ] **ADMIN-01**: Admin can post a client-visible update from the portal hub (per project)
+- [ ] **ADMIN-02**: Admin can share a file with a client directly from portal hub
+- [ ] **ADMIN-03**: Admin sees client health overview (last login, overdue invoices, stale projects, attention needed)
+- [ ] **ADMIN-04**: Admin can view portal as a specific client (full impersonation — exact client UI, no admin elements)
+- [ ] **ADMIN-05**: Admin can hide/archive inactive clients from the portal hub view
 
-- [ ] **DEP-01**: Duplicate migration timestamp `20260324000000` renamed
-- [ ] **DEP-02**: Health endpoint responds under 500ms (optimize or cache DB check)
-- [ ] **DEP-03**: `/research` route marked `force-dynamic` to fix build warning
+### Cleanup
 
-### Design (DES)
+- [ ] **CLEAN-01**: Remove /portal/messages route and all related components
+- [ ] **CLEAN-02**: Remove "Messages" from portal sidebar navigation
+- [ ] **CLEAN-03**: Update portal navigation to reflect new structure
 
-- [ ] **DES-01**: Full design audit of all pages against Impeccable v4.0 spec (tinted neutrals, fluid type, layered surfaces)
-- [ ] **DES-02**: Dashboard homepage polished — spacing, hierarchy, visual density
-- [ ] **DES-03**: Projects list and detail pages reviewed for consistency
-- [ ] **DES-04**: Settings pages cleaned up (VAPI card removed, layout tightened)
-- [ ] **DES-05**: Schedule page design consistency check
+## Future Requirements
 
-### Remaining v2.1 (V21)
+### Financial
 
-- [ ] **V21-01**: Phase 30 — Live Status Dashboard (admin sees who's clocked in, project, duration)
-- [ ] **V21-02**: Phase 31 — Clock-Out Enforcement (idle detection, planned logout, beforeunload)
+- **FIN-F01**: Automated Zoho sync via cron (no manual Claude trigger)
+- **FIN-F02**: Invoice creation from ERP (push to Zoho)
+- **FIN-F03**: Payment collection links for clients
+
+### Client Portal
+
+- **CP-F01**: Client approval workflows (approve designs, sign off milestones)
+- **CP-F02**: Client-to-team direct messaging threads
+- **CP-F03**: Push notifications for project updates
 
 ## Out of Scope
 
-| Feature                              | Reason                                                          |
-| ------------------------------------ | --------------------------------------------------------------- |
-| Redis rate limiting                  | P2 tech debt, in-memory sufficient for 3 users                  |
-| Test coverage to 50%                 | 30% is the pragmatic first target                               |
-| Structured logging (Axiom/Logtail)   | Sentry + Vercel Analytics covers most observability needs first |
-| Database N+1 fix in `getProjectById` | Existing tech debt, not triggered by audit                      |
-| Virtualization for TasksWidget       | Existing tech debt, not urgent                                  |
+| Feature                   | Reason                                         |
+| ------------------------- | ---------------------------------------------- |
+| Two-way chat/messaging    | Removed — clients use phase comments and email |
+| Online payment collection | Clients pay via bank/cash, not checkout        |
+| Client task visibility    | Read-only portal by design                     |
+| Real-time collaboration   | SWR polling sufficient for small team          |
+| Zoho expense sync         | Zoho expenses unused, manual entry in ERP      |
 
 ## Traceability
 
-| Requirement | Phase    | Status  |
-| ----------- | -------- | ------- |
-| V21-01      | Phase 30 | Pending |
-| V21-02      | Phase 31 | Pending |
-| SEC-01      | Phase 33 | Done    |
-| SEC-02      | Phase 33 | Done    |
-| SEC-03      | Phase 33 | Done    |
-| SEC-04      | Phase 33 | Done    |
-| SEC-05      | Phase 33 | Done    |
-| SEC-06      | Phase 33 | Done    |
-| PERF-01     | Phase 34 | Pending |
-| PERF-02     | Phase 34 | Pending |
-| PERF-03     | Phase 34 | Pending |
-| PERF-04     | Phase 34 | Pending |
-| PERF-05     | Phase 34 | Pending |
-| PERF-06     | Phase 34 | Pending |
-| PERF-07     | Phase 34 | Pending |
-| PERF-08     | Phase 34 | Pending |
-| OBS-01      | Phase 35 | Done    |
-| OBS-02      | Phase 35 | Done    |
-| OBS-03      | Phase 35 | Done    |
-| REL-01      | Phase 36 | Pending |
-| REL-02      | Phase 36 | Pending |
-| REL-03      | Phase 36 | Pending |
-| REL-04      | Phase 36 | Pending |
-| REL-05      | Phase 36 | Pending |
-| DEP-01      | Phase 37 | Pending |
-| DEP-02      | Phase 37 | Pending |
-| DEP-03      | Phase 37 | Pending |
-| DES-01      | Phase 38 | Pending |
-| DES-02      | Phase 38 | Pending |
-| DES-03      | Phase 38 | Pending |
-| DES-04      | Phase 38 | Pending |
-| DES-05      | Phase 38 | Pending |
+| Requirement | Phase | Status  |
+| ----------- | ----- | ------- |
+| FIN-01      | —     | Pending |
+| FIN-02      | —     | Pending |
+| FIN-03      | —     | Pending |
+| FIN-04      | —     | Pending |
+| UPLOAD-01   | —     | Pending |
+| UPLOAD-02   | —     | Pending |
+| UPLOAD-03   | —     | Pending |
+| UPLOAD-04   | —     | Pending |
+| DESIGN-01   | —     | Pending |
+| DESIGN-02   | —     | Pending |
+| DESIGN-03   | —     | Pending |
+| DESIGN-04   | —     | Pending |
+| DESIGN-05   | —     | Pending |
+| ONBOARD-01  | —     | Pending |
+| ONBOARD-02  | —     | Pending |
+| ADMIN-01    | —     | Pending |
+| ADMIN-02    | —     | Pending |
+| ADMIN-03    | —     | Pending |
+| ADMIN-04    | —     | Pending |
+| ADMIN-05    | —     | Pending |
+| CLEAN-01    | —     | Pending |
+| CLEAN-02    | —     | Pending |
+| CLEAN-03    | —     | Pending |
 
 **Coverage:**
 
-- v3.0 requirements: 30 total
-- Mapped to phases: 30
-- Unmapped: 0
+- v4.0 requirements: 23 total
+- Mapped to phases: 0
+- Unmapped: 23 ⚠️
 
 ---
 
-_Requirements defined: 2026-03-26_
-_Last updated: 2026-03-26 after production audit_
+_Requirements defined: 2026-03-28_
+_Last updated: 2026-03-28 after initial definition_
