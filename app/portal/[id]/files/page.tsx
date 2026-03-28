@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectFiles } from '@/app/actions/project-files';
 import { PortalFileList } from '@/components/portal/portal-file-list';
+import { PortalClientUpload } from '@/components/portal/portal-client-upload';
 import { PortalTabs } from '@/components/portal/portal-tabs';
 import { PortalPageHeader } from '@/components/portal/portal-page-header';
 import { fadeInClasses } from '@/lib/transitions';
@@ -54,8 +55,16 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
       {/* Info Banner */}
       <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
         <p className="text-sm text-blue-800 dark:text-blue-300">
-          These are files and deliverables shared by your project team. Click to download any file.
+          Files shared by your team appear below. You can also upload files for your team to review.
         </p>
+      </div>
+
+      {/* Upload Section */}
+      <div>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          Upload a File
+        </h2>
+        <PortalClientUpload projectId={projectId} />
       </div>
 
       {/* Files Grid */}
