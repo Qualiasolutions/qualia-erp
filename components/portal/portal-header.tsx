@@ -31,7 +31,6 @@ interface PortalHeaderProps {
 const routeLabels: Record<string, string> = {
   '/portal': 'Dashboard',
   '/portal/projects': 'Projects',
-  '/portal/messages': 'Messages',
   '/portal/requests': 'Requests',
   '/portal/billing': 'Billing',
 };

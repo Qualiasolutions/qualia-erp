@@ -8,7 +8,6 @@ import {
   Folder,
   Lightbulb,
   Receipt,
-  MessageSquare,
   LogOut,
   ChevronUp,
   Menu,
@@ -30,7 +29,6 @@ import { createClient } from '@/lib/supabase/client';
 const mainNav = [
   { name: 'Dashboard', href: '/portal', icon: LayoutDashboard, exact: true },
   { name: 'Projects', href: '/portal/projects', icon: Folder },
-  { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
 ];
 
 const manageNav = [
