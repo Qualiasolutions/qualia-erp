@@ -101,7 +101,7 @@ export default function SchedulePage({
       </PageHeader>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-hidden px-4 py-3 sm:px-6 sm:py-4">
         <Suspense fallback={<ScheduleSkeleton />}>
           <ScheduleLoader view={view} />
         </Suspense>

@@ -8,9 +8,10 @@ import {
   eachDayOfInterval,
   addWeeks,
   subWeeks,
+  addDays,
+  subDays,
   parseISO,
   isSameDay,
-  differenceInMinutes,
 } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import {
@@ -50,8 +51,9 @@ interface WeeklyViewProps {
 
 // ============ Constants ============
 
-const HOUR_HEIGHT = 96; // px per hour — generous for readability
-const VISIBLE_HOURS = { from: 7, to: 22 };
+const FIXED_HOURS = { from: 9, to: 18 }; // 9 AM – 6 PM
+const HOUR_COUNT = FIXED_HOURS.to - FIXED_HOURS.from; // 9 hours
+const HOURS = Array.from({ length: HOUR_COUNT }, (_, i) => i + FIXED_HOURS.from);
 
 // ============ Helpers ============
 
@@ -90,21 +92,24 @@ function groupEvents(
   }));
 }
 
-function getVisibleHours(events: { start: Date; end: Date }[]) {
-  let earliest = VISIBLE_HOURS.from;
-  let latest = VISIBLE_HOURS.to;
+// ============ Hooks ============
 
-  for (const ev of events) {
-    if (ev.start.getHours() < earliest) earliest = ev.start.getHours();
-    const endH = ev.end.getHours() + (ev.end.getMinutes() > 0 ? 1 : 0);
-    if (endH > latest) latest = Math.min(endH, 24);
-  }
+function useResponsiveDays() {
+  const [visibleDays, setVisibleDays] = useState(7);
 
-  return {
-    hours: Array.from({ length: latest - earliest }, (_, i) => i + earliest),
-    from: earliest,
-    to: latest,
-  };
+  useEffect(() => {
+    function update() {
+      const w = window.innerWidth;
+      if (w < 640) setVisibleDays(1);
+      else if (w < 1024) setVisibleDays(3);
+      else setVisibleDays(7);
+    }
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  return visibleDays;
 }
 
 // ============ Component ============
@@ -115,7 +120,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
   const [isPending, startTransition] = useTransition();
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const visibleDays = useResponsiveDays();
 
   // Update time every minute
   useEffect(() => {
@@ -125,16 +131,30 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
 
   const nowInTz = useMemo(() => toZonedTime(currentTime, timezone), [currentTime, timezone]);
 
-  const weekStart = startOfWeek(currentDate);
-  const weekEnd = endOfWeek(currentDate);
-  const days = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  // Compute visible days based on responsive breakpoint
+  const days = useMemo(() => {
+    if (visibleDays === 7) {
+      const weekStart = startOfWeek(currentDate);
+      const weekEnd = endOfWeek(currentDate);
+      return eachDayOfInterval({ start: weekStart, end: weekEnd });
+    }
+    if (visibleDays === 3) {
+      return eachDayOfInterval({
+        start: subDays(currentDate, 1),
+        end: addDays(currentDate, 1),
+      });
+    }
+    // 1 day
+    return [currentDate];
+  }, [currentDate, visibleDays]);
 
   const isCurrentWeek = useMemo(() => {
     const today = toZonedTime(new Date(), timezone);
-    return isSameDay(startOfWeek(today), weekStart);
-  }, [weekStart, timezone]);
+    if (visibleDays === 7) return isSameDay(startOfWeek(today), startOfWeek(currentDate));
+    return days.some((d) => isSameDay(d, today));
+  }, [currentDate, timezone, visibleDays, days]);
 
-  // Parse meetings into typed objects per day
+  // Parse meetings into typed objects
   const parsedMeetings = useMemo(() => {
     return meetings.map((m) => {
       const start = toZonedTime(parseISO(m.start_time), timezone);
@@ -142,13 +162,6 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
       return { meeting: m, start, end, id: m.id };
     });
   }, [meetings, timezone]);
-
-  // Compute visible hours range based on all events
-  const {
-    hours,
-    from: firstHour,
-    to: lastHour,
-  } = useMemo(() => getVisibleHours(parsedMeetings), [parsedMeetings]);
 
   // Group meetings by date key
   const meetingsByDate = useMemo(() => {
@@ -162,28 +175,30 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
     return map;
   }, [parsedMeetings]);
 
-  // Auto-scroll to current time on mount
-  useEffect(() => {
-    if (!scrollRef.current || !isCurrentWeek) return;
-    const nowMinutes = nowInTz.getHours() * 60 + nowInTz.getMinutes();
-    const offsetMinutes = nowMinutes - firstHour * 60;
-    const scrollTo = (offsetMinutes / 60) * HOUR_HEIGHT - 200;
-    scrollRef.current.scrollTop = Math.max(0, scrollTo);
-  }, [isCurrentWeek]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Navigation
-  const goToPreviousWeek = () => setCurrentDate(subWeeks(currentDate, 1));
-  const goToNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
+  const goToPrev = () => {
+    if (visibleDays === 7) setCurrentDate(subWeeks(currentDate, 1));
+    else if (visibleDays === 3) setCurrentDate(subDays(currentDate, 3));
+    else setCurrentDate(subDays(currentDate, 1));
+  };
+  const goToNext = () => {
+    if (visibleDays === 7) setCurrentDate(addWeeks(currentDate, 1));
+    else if (visibleDays === 3) setCurrentDate(addDays(currentDate, 3));
+    else setCurrentDate(addDays(currentDate, 1));
+  };
   const goToToday = () => setCurrentDate(toZonedTime(new Date(), timezone));
 
   const isTodayInTz = (day: Date) => format(nowInTz, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd');
 
-  const formatWeekRange = () => {
-    const sm = format(weekStart, 'MMMM');
-    const em = format(weekEnd, 'MMMM');
-    const sd = format(weekStart, 'd');
-    const ed = format(weekEnd, 'd');
-    const y = format(weekEnd, 'yyyy');
+  const formatRange = () => {
+    if (visibleDays === 1) return format(currentDate, 'EEEE, MMMM d, yyyy');
+    const first = days[0];
+    const last = days[days.length - 1];
+    const sm = format(first, 'MMMM');
+    const em = format(last, 'MMMM');
+    const sd = format(first, 'd');
+    const ed = format(last, 'd');
+    const y = format(last, 'yyyy');
     return sm === em ? `${sm} ${sd} – ${ed}, ${y}` : `${sm} ${sd} – ${em} ${ed}, ${y}`;
   };
 
@@ -201,25 +216,33 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
 
   const handleEditMeeting = useCallback((m: Meeting) => setEditingMeeting(m), []);
 
-  // Timeline position
+  // Timeline position as percentage of grid
   const timelinePosition = useMemo(() => {
     const minutes = nowInTz.getHours() * 60 + nowInTz.getMinutes();
-    const visibleStart = firstHour * 60;
-    const visibleEnd = lastHour * 60;
+    const visibleStart = FIXED_HOURS.from * 60;
+    const visibleEnd = FIXED_HOURS.to * 60;
     if (minutes < visibleStart || minutes > visibleEnd) return null;
     return ((minutes - visibleStart) / (visibleEnd - visibleStart)) * 100;
-  }, [nowInTz, firstHour, lastHour]);
+  }, [nowInTz]);
 
-  const totalGridHeight = hours.length * HOUR_HEIGHT;
+  const gridCols =
+    visibleDays === 1
+      ? 'grid-cols-[44px_1fr]'
+      : visibleDays === 3
+        ? 'grid-cols-[44px_repeat(3,1fr)]'
+        : 'grid-cols-[44px_repeat(7,1fr)]';
 
   return (
     <>
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div
+        ref={containerRef}
+        className="flex h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-xl border border-border bg-card"
+      >
         {/* ===== Header ===== */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-foreground">{formatWeekRange()}</h2>
-            <div className="flex items-center gap-1 rounded-full border border-border bg-secondary/50 px-3 py-1.5 text-xs text-muted-foreground">
+        <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5 sm:px-5 sm:py-3">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <h2 className="text-sm font-semibold text-foreground sm:text-lg">{formatRange()}</h2>
+            <div className="hidden items-center gap-1 rounded-full border border-border bg-secondary/50 px-2.5 py-1 text-xs text-muted-foreground sm:flex">
               <select
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
@@ -230,11 +253,11 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
               </select>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={goToToday}
               className={cn(
-                'rounded-lg px-4 py-1.5 text-sm font-medium transition-colors',
+                'rounded-lg px-3 py-1 text-xs font-medium transition-colors sm:px-4 sm:py-1.5 sm:text-sm',
                 isCurrentWeek
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
@@ -243,26 +266,22 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
               Today
             </button>
             <button
-              onClick={goToPreviousWeek}
-              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              onClick={goToPrev}
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:p-2"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
-              onClick={goToNextWeek}
-              className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              onClick={goToNext}
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:p-2"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
         </div>
 
-        {/* ===== Day Headers =====
-             scrollbar-gutter: stable keeps header aligned with the scrollable grid below */}
-        <div
-          className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border"
-          style={{ scrollbarGutter: 'stable', overflowY: 'hidden' }}
-        >
+        {/* ===== Day Headers ===== */}
+        <div className={cn('grid shrink-0 border-b border-border', gridCols)}>
           <div className="border-r border-border" />
           {days.map((day) => {
             const isToday = isTodayInTz(day);
@@ -271,22 +290,22 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
               <div
                 key={day.toISOString()}
                 className={cn(
-                  'border-r border-border py-3 text-center transition-colors last:border-r-0',
+                  'border-r border-border py-2 text-center transition-colors last:border-r-0 sm:py-3',
                   isToday && 'bg-primary/[0.04]'
                 )}
               >
                 <div
                   className={cn(
-                    'text-xs font-semibold uppercase tracking-wider',
+                    'text-[10px] font-semibold uppercase tracking-wider sm:text-xs',
                     isToday ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
-                  {format(day, 'EEE')}
+                  {visibleDays === 1 ? format(day, 'EEEE') : format(day, 'EEE')}
                 </div>
-                <div className="mt-1.5 flex items-center justify-center">
+                <div className="mt-1 flex items-center justify-center sm:mt-1.5">
                   <span
                     className={cn(
-                      'flex size-8 items-center justify-center rounded-full text-sm font-medium transition-all',
+                      'flex size-7 items-center justify-center rounded-full text-xs font-medium transition-all sm:size-8 sm:text-sm',
                       isToday ? 'bg-primary text-primary-foreground' : 'text-foreground/80'
                     )}
                   >
@@ -294,12 +313,12 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   </span>
                 </div>
                 {count > 0 && (
-                  <div className="mt-1 flex justify-center gap-0.5">
+                  <div className="mt-0.5 flex justify-center gap-0.5 sm:mt-1">
                     {Array.from({ length: Math.min(count, 4) }).map((_, i) => (
                       <span
                         key={i}
                         className={cn(
-                          'size-1.5 rounded-full',
+                          'size-1 rounded-full sm:size-1.5',
                           isToday ? 'bg-primary' : 'bg-violet-400/50'
                         )}
                       />
@@ -311,197 +330,200 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
           })}
         </div>
 
-        {/* ===== Time Grid ===== */}
-        <div
-          ref={scrollRef}
-          className="overflow-y-auto"
-          style={{ maxHeight: '720px', scrollbarGutter: 'stable' }}
-        >
-          <div
-            className="grid grid-cols-[60px_repeat(7,1fr)]"
-            style={{ height: `${totalGridHeight}px` }}
-          >
-            {/* Hour labels */}
-            <div className="relative border-r border-border">
-              {hours.map((hour, i) => (
-                <div
-                  key={hour}
-                  className="absolute right-0 flex w-full items-start justify-end pr-3"
-                  style={{ top: `${i * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
-                >
-                  {i !== 0 && (
-                    <span className="relative -top-[7px] select-none text-[10px] font-medium tabular-nums text-muted-foreground/50">
-                      {format(new Date(2000, 0, 1, hour), 'h a')}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
+        {/* ===== Time Grid — fills remaining height, no scroll ===== */}
+        <div className={cn('relative grid flex-1', gridCols)}>
+          {/* Hour labels */}
+          <div className="relative border-r border-border">
+            {HOURS.map((hour, i) => (
+              <div
+                key={hour}
+                className="absolute right-0 flex w-full items-start justify-end pr-2 sm:pr-3"
+                style={{
+                  top: `${(i / HOUR_COUNT) * 100}%`,
+                  height: `${(1 / HOUR_COUNT) * 100}%`,
+                }}
+              >
+                {i !== 0 && (
+                  <span className="relative -top-[7px] select-none text-[9px] font-medium tabular-nums text-muted-foreground/50 sm:text-[10px]">
+                    {format(new Date(2000, 0, 1, hour), 'h a')}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
 
-            {/* Day columns */}
-            {days.map((day) => {
-              const dateKey = format(day, 'yyyy-MM-dd');
-              const dayParsed = meetingsByDate.get(dateKey) || [];
-              const grouped = groupEvents(dayParsed);
-              const isToday = isTodayInTz(day);
+          {/* Day columns */}
+          {days.map((day) => {
+            const dateKey = format(day, 'yyyy-MM-dd');
+            const dayParsed = meetingsByDate.get(dateKey) || [];
+            const grouped = groupEvents(dayParsed);
+            const isToday = isTodayInTz(day);
 
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    'relative border-r border-border last:border-r-0',
-                    isToday && 'bg-primary/[0.02]'
-                  )}
-                >
-                  {/* Hour grid lines */}
-                  {hours.map((hour, i) => (
+            return (
+              <div
+                key={day.toISOString()}
+                className={cn(
+                  'relative border-r border-border last:border-r-0',
+                  isToday && 'bg-primary/[0.02]'
+                )}
+              >
+                {/* Hour grid lines */}
+                {HOURS.map((hour, i) => (
+                  <div
+                    key={hour}
+                    className="absolute inset-x-0"
+                    style={{
+                      top: `${(i / HOUR_COUNT) * 100}%`,
+                      height: `${(1 / HOUR_COUNT) * 100}%`,
+                    }}
+                  >
+                    {i !== 0 && <div className="absolute inset-x-0 top-0 border-t border-border" />}
                     <div
-                      key={hour}
-                      className="absolute inset-x-0"
-                      style={{ top: `${i * HOUR_HEIGHT}px`, height: `${HOUR_HEIGHT}px` }}
-                    >
-                      {i !== 0 && (
-                        <div className="absolute inset-x-0 top-0 border-t border-border" />
-                      )}
-                      {/* Half-hour dashed line */}
-                      <div
-                        className="absolute inset-x-0 border-t border-dashed border-border/10"
-                        style={{ top: `${HOUR_HEIGHT / 2}px` }}
-                      />
-                    </div>
-                  ))}
+                      className="absolute inset-x-0 border-t border-dashed border-border/10"
+                      style={{ top: '50%' }}
+                    />
+                  </div>
+                ))}
 
-                  {/* Current time indicator */}
-                  {isToday && timelinePosition !== null && (
+                {/* Current time indicator */}
+                {isToday && timelinePosition !== null && (
+                  <div
+                    className="pointer-events-none absolute inset-x-0 z-30"
+                    style={{ top: `${timelinePosition}%` }}
+                  >
+                    <div className="flex items-center">
+                      <div className="-ml-[5px] size-2.5 rounded-full bg-primary shadow-sm shadow-primary/40 ring-2 ring-card" />
+                      <div className="h-[2px] flex-1 bg-primary/60" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Event blocks */}
+                {grouped.map((ev) => {
+                  // Clamp events to visible range
+                  const clampedStart = Math.max(
+                    ev.start.getHours() * 60 + ev.start.getMinutes(),
+                    FIXED_HOURS.from * 60
+                  );
+                  const clampedEnd = Math.min(
+                    ev.end.getHours() * 60 + ev.end.getMinutes(),
+                    FIXED_HOURS.to * 60
+                  );
+                  if (clampedStart >= FIXED_HOURS.to * 60 || clampedEnd <= FIXED_HOURS.from * 60)
+                    return null;
+
+                  const totalMinutes = HOUR_COUNT * 60;
+                  const topPct = ((clampedStart - FIXED_HOURS.from * 60) / totalMinutes) * 100;
+                  const heightPct = Math.max(
+                    1.5,
+                    ((clampedEnd - clampedStart) / totalMinutes) * 100
+                  );
+                  const colWidth = 100 / ev.totalCols;
+                  const left = ev.col * colWidth;
+                  const hasLink = !!ev.meeting.meeting_link;
+                  const isCompact = heightPct < 8;
+
+                  return (
                     <div
-                      className="pointer-events-none absolute inset-x-0 z-30"
-                      style={{ top: `${timelinePosition}%` }}
+                      key={ev.meeting.id}
+                      className="absolute z-10 p-[1px] sm:p-[2px]"
+                      style={{
+                        top: `${topPct}%`,
+                        height: `${heightPct}%`,
+                        left: `calc(${left}% + 1px)`,
+                        width: `calc(${colWidth}% - 2px)`,
+                      }}
                     >
-                      <div className="flex items-center">
-                        <div className="-ml-[5px] size-2.5 rounded-full bg-primary shadow-sm shadow-primary/40 ring-2 ring-card" />
-                        <div className="h-[2px] flex-1 bg-primary/60" />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Event blocks */}
-                  {grouped.map((ev) => {
-                    const startMin =
-                      ev.start.getHours() * 60 + ev.start.getMinutes() - firstHour * 60;
-                    const duration = differenceInMinutes(ev.end, ev.start);
-                    const top = (startMin / 60) * HOUR_HEIGHT;
-                    const height = Math.max(28, (duration / 60) * HOUR_HEIGHT);
-                    const colWidth = 100 / ev.totalCols;
-                    const left = ev.col * colWidth;
-                    const hasLink = !!ev.meeting.meeting_link;
-                    const isCompact = height < 48;
-
-                    // Skip out-of-range events
-                    if (ev.start.getHours() >= lastHour || ev.end.getHours() < firstHour)
-                      return null;
-
-                    return (
                       <div
-                        key={ev.meeting.id}
-                        className="absolute z-10 p-[2px]"
-                        style={{
-                          top: `${Math.max(0, top)}px`,
-                          height: `${height}px`,
-                          left: `calc(${left}% + 1px)`,
-                          width: `calc(${colWidth}% - 2px)`,
-                        }}
+                        onClick={() => hasLink && window.open(ev.meeting.meeting_link!, '_blank')}
+                        className={cn(
+                          'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
+                          'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
+                          'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
+                          hasLink && 'cursor-pointer'
+                        )}
+                        title={`${ev.meeting.title}\n${format(ev.start, 'h:mm a')} – ${format(ev.end, 'h:mm a')}`}
                       >
-                        <div
-                          onClick={() => hasLink && window.open(ev.meeting.meeting_link!, '_blank')}
-                          className={cn(
-                            'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-2 py-1.5 transition-all duration-150',
-                            'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
-                            'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
-                            hasLink && 'cursor-pointer'
-                          )}
-                          title={`${ev.meeting.title}\n${format(ev.start, 'h:mm a')} – ${format(ev.end, 'h:mm a')}`}
-                        >
-                          {/* Title row */}
-                          <div className="flex items-start justify-between gap-1">
-                            <span
-                              className={cn(
-                                'truncate font-semibold text-foreground/90',
-                                isCompact ? 'text-[10px]' : 'text-[11px]'
-                              )}
-                            >
-                              {ev.meeting.title}
-                            </span>
-
-                            {/* Hover actions */}
-                            <div className="flex shrink-0 gap-px opacity-0 transition-opacity group-hover:opacity-100">
-                              {hasLink && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    window.open(ev.meeting.meeting_link!, '_blank');
-                                  }}
-                                  className="rounded p-0.5 text-emerald-500/70 hover:text-emerald-500"
-                                  title="Join"
-                                >
-                                  <ExternalLink className="size-2.5" />
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditMeeting(ev.meeting);
-                                }}
-                                className="rounded p-0.5 text-muted-foreground/60 hover:text-violet-500"
-                                title="Edit"
-                              >
-                                <Pencil className="size-2.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMeeting(ev.meeting.id);
-                                }}
-                                disabled={isPending}
-                                className="rounded p-0.5 text-muted-foreground/60 hover:text-red-500"
-                                title="Delete"
-                              >
-                                <Trash2 className="size-2.5" />
-                              </button>
-                            </div>
-
-                            {/* Video indicator (when not hovered) */}
-                            {hasLink && (
-                              <Video className="mt-0.5 size-2.5 shrink-0 text-emerald-500/60 group-hover:hidden" />
+                        {/* Title row */}
+                        <div className="flex items-start justify-between gap-1">
+                          <span
+                            className={cn(
+                              'truncate font-semibold text-foreground/90',
+                              isCompact ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-[11px]'
                             )}
+                          >
+                            {ev.meeting.title}
+                          </span>
+
+                          {/* Hover actions */}
+                          <div className="hidden shrink-0 gap-px opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
+                            {hasLink && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(ev.meeting.meeting_link!, '_blank');
+                                }}
+                                className="rounded p-0.5 text-emerald-500/70 hover:text-emerald-500"
+                                title="Join"
+                              >
+                                <ExternalLink className="size-2.5" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditMeeting(ev.meeting);
+                              }}
+                              className="rounded p-0.5 text-muted-foreground/60 hover:text-violet-500"
+                              title="Edit"
+                            >
+                              <Pencil className="size-2.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteMeeting(ev.meeting.id);
+                              }}
+                              disabled={isPending}
+                              className="rounded p-0.5 text-muted-foreground/60 hover:text-red-500"
+                              title="Delete"
+                            >
+                              <Trash2 className="size-2.5" />
+                            </button>
                           </div>
 
-                          {/* Time */}
-                          {!isCompact && (
-                            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-muted-foreground/55">
-                              <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
-                              <span className="tabular-nums">
-                                {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Project */}
-                          {!isCompact && ev.meeting.project && (
-                            <div className="mt-auto truncate text-[10px] font-medium text-violet-500/50">
-                              {ev.meeting.project.name}
-                            </div>
+                          {/* Video indicator (when not hovered) */}
+                          {hasLink && (
+                            <Video className="mt-0.5 size-2.5 shrink-0 text-emerald-500/60 sm:group-hover:hidden" />
                           )}
                         </div>
+
+                        {/* Time */}
+                        {!isCompact && (
+                          <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/55 sm:text-[10px]">
+                            <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
+                            <span className="tabular-nums">
+                              {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Project */}
+                        {!isCompact && ev.meeting.project && (
+                          <div className="mt-auto hidden truncate text-[10px] font-medium text-violet-500/50 sm:block">
+                            {ev.meeting.project.name}
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
-          </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
 
