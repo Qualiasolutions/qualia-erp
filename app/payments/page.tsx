@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getFinancialSummary } from '@/app/actions/financials';
+import { getFinancialSummary, getExpenses } from '@/app/actions/financials';
 import { FinancialDashboard } from './financial-dashboard';
 import { Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
@@ -21,7 +21,7 @@ async function DashboardLoader() {
     redirect('/');
   }
 
-  const summary = await getFinancialSummary();
+  const [summary, expenses] = await Promise.all([getFinancialSummary(), getExpenses()]);
 
   if (!summary) {
     return (
@@ -31,7 +31,7 @@ async function DashboardLoader() {
     );
   }
 
-  return <FinancialDashboard summary={summary} />;
+  return <FinancialDashboard summary={summary} expenses={expenses} />;
 }
 
 function DashboardSkeleton() {

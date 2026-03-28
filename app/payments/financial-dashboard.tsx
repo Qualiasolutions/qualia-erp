@@ -16,14 +16,21 @@ import {
   ChevronDown,
   ChevronUp,
   CalendarClock,
+  ShoppingCart,
+  Plus,
+  Pencil,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   hideInvoice,
   unhideInvoice,
   deleteInvoice,
+  createExpense,
+  updateExpense,
+  deleteExpense,
   type FinancialSummary,
   type FinancialInvoice,
+  type Expense,
 } from '@/app/actions/financials';
 import {
   DropdownMenu,
@@ -31,6 +38,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 function formatEUR(amount: number) {
   return new Intl.NumberFormat('en-CY', {
@@ -59,6 +67,218 @@ function paymentModeLabel(mode: string): string {
     CreditCard: 'Card',
   };
   return map[mode] || mode || 'Other';
+}
+
+const EXPENSE_CATEGORIES = [
+  'Software',
+  'Hosting',
+  'Office',
+  'Marketing',
+  'Travel',
+  'Freelancers',
+  'Equipment',
+  'Subscriptions',
+  'Salaries',
+  'Other',
+] as const;
+
+// ─── Expense Modal ────────────────────────────────────────
+function ExpenseModal({
+  open,
+  onClose,
+  expense,
+}: {
+  open: boolean;
+  onClose: () => void;
+  expense?: Expense | null;
+}) {
+  const isEdit = !!expense;
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const today = format(new Date(), 'yyyy-MM-dd');
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      amount: formData.get('amount'),
+      category: formData.get('category') as string,
+      date: formData.get('date') as string,
+      description: (formData.get('description') as string) || null,
+      ...(isEdit ? { id: expense!.id } : {}),
+    };
+
+    startTransition(async () => {
+      const result = isEdit ? await updateExpense(data) : await createExpense(data);
+      if (result.success) {
+        onClose();
+      } else {
+        setError(result.error ?? 'Something went wrong');
+      }
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Amount */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Amount</label>
+            <div className="relative">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground">
+                €
+              </span>
+              <input
+                name="amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                defaultValue={expense?.amount}
+                required
+                placeholder="0.00"
+                className="w-full rounded-lg border border-border bg-background py-2 pl-7 pr-3 text-sm placeholder:text-muted-foreground/50 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+              />
+            </div>
+          </div>
+
+          {/* Category */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Category</label>
+            <select
+              name="category"
+              defaultValue={expense?.category ?? ''}
+              required
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            >
+              <option value="" disabled>
+                Select category
+              </option>
+              {EXPENSE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Date</label>
+            <input
+              name="date"
+              type="date"
+              defaultValue={expense?.date ?? today}
+              required
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
+              Description <span className="font-normal text-muted-foreground">(optional)</span>
+            </label>
+            <textarea
+              name="description"
+              defaultValue={expense?.description ?? ''}
+              rows={2}
+              placeholder="What was this expense for?"
+              className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+            />
+          </div>
+
+          {error && (
+            <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500">{error}</p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isPending}
+              className="rounded-lg bg-qualia-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-qualia-600 disabled:opacity-60"
+            >
+              {isPending ? 'Saving…' : isEdit ? 'Save Changes' : 'Add Expense'}
+            </button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Expense Row ──────────────────────────────────────────
+function ExpenseRow({ expense, onEdit }: { expense: Expense; onEdit: (expense: Expense) => void }) {
+  const [isPending, startTransition] = useTransition();
+
+  function handleDelete() {
+    if (!window.confirm(`Delete this ${expense.category} expense of €${expense.amount}?`)) return;
+    startTransition(async () => {
+      await deleteExpense(expense.id);
+    });
+  }
+
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/30',
+        isPending && 'opacity-50'
+      )}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {format(parseISO(expense.date), 'MMM d, yyyy')}
+            </span>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              {expense.category}
+            </span>
+          </div>
+          {expense.description && (
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">{expense.description}</p>
+          )}
+        </div>
+      </div>
+      <div className="ml-4 flex items-center gap-2">
+        <span className="shrink-0 text-sm font-semibold tabular-nums text-red-500">
+          -{formatEURPrecise(Number(expense.amount))}
+        </span>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              'rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+              isPending && 'pointer-events-none opacity-50'
+            )}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-36">
+            <DropdownMenuItem onClick={() => onEdit(expense)}>
+              <Pencil className="mr-2 h-3.5 w-3.5" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-red-500 focus:text-red-500" onClick={handleDelete}>
+              <Trash2 className="mr-2 h-3.5 w-3.5" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
+  );
 }
 
 // ─── KPI Card ─────────────────────────────────────────────
@@ -241,8 +461,18 @@ function InvoiceRow({
 }
 
 // ─── Main Dashboard ───────────────────────────────────────
-export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
+export function FinancialDashboard({
+  summary,
+  expenses: initialExpenses,
+}: {
+  summary: FinancialSummary;
+  expenses: Expense[];
+}) {
   const [showHidden, setShowHidden] = useState(false);
+  const [expenseModal, setExpenseModal] = useState<{
+    open: boolean;
+    expense?: Expense | null;
+  }>({ open: false });
 
   const {
     totalInvoiced,
@@ -355,6 +585,44 @@ export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
           <RevenueBar data={monthlyRevenue} />
         </div>
       )}
+
+      {/* ── Expenses ── */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ShoppingCart className="h-3.5 w-3.5 text-red-500" />
+            Expenses
+          </h2>
+          <button
+            onClick={() => setExpenseModal({ open: true, expense: null })}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Expense
+          </button>
+        </div>
+        {initialExpenses.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+            No expenses recorded yet
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {initialExpenses.map((expense) => (
+              <ExpenseRow
+                key={expense.id}
+                expense={expense}
+                onEdit={(e) => setExpenseModal({ open: true, expense: e })}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      <ExpenseModal
+        open={expenseModal.open}
+        onClose={() => setExpenseModal({ open: false })}
+        expense={expenseModal.expense}
+      />
 
       {/* ── Upcoming Payments ── */}
       {upcomingInvoices.length > 0 && (
