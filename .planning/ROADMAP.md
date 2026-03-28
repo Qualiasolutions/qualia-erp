@@ -51,7 +51,7 @@ Phase highlights:
 
 Plans:
 
-- [ ] 39-01-PLAN.md — Remove Messages route, sidebar nav item, and header route label
+- [x] 39-01-PLAN.md — Remove Messages route, sidebar nav item, and header route label (2026-03-28)
 
 ---
 
@@ -146,7 +146,7 @@ Plans:
 | Phase                                  | Milestone | Plans Complete | Status      | Completed  |
 | -------------------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-38                                   | v1.0–v3.0 | All            | Complete    | 2026-03-27 |
-| 39. Portal Cleanup                     | v4.0      | 0/1            | Not started | -          |
+| 39. Portal Cleanup                     | v4.0      | 1/1            | Complete    | 2026-03-28 |
 | 40. Client File Uploads                | v4.0      | 0/2            | Not started | -          |
 | 41. Financial Dashboard Completion     | v4.0      | 0/2            | Not started | -          |
 | 42. Portal Design Refresh & Onboarding | v4.0      | 0/4            | Not started | -          |

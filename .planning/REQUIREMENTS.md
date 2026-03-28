@@ -72,31 +72,31 @@
 
 ## Traceability
 
-| Requirement | Phase    | Status  |
-| ----------- | -------- | ------- |
-| FIN-01      | Phase 41 | Pending |
-| FIN-02      | Phase 41 | Pending |
-| FIN-03      | Phase 41 | Pending |
-| FIN-04      | Phase 41 | Pending |
-| UPLOAD-01   | Phase 40 | Pending |
-| UPLOAD-02   | Phase 40 | Pending |
-| UPLOAD-03   | Phase 40 | Pending |
-| UPLOAD-04   | Phase 40 | Pending |
-| DESIGN-01   | Phase 42 | Pending |
-| DESIGN-02   | Phase 42 | Pending |
-| DESIGN-03   | Phase 42 | Pending |
-| DESIGN-04   | Phase 42 | Pending |
-| DESIGN-05   | Phase 42 | Pending |
-| ONBOARD-01  | Phase 42 | Pending |
-| ONBOARD-02  | Phase 42 | Pending |
-| ADMIN-01    | Phase 43 | Pending |
-| ADMIN-02    | Phase 43 | Pending |
-| ADMIN-03    | Phase 43 | Pending |
-| ADMIN-04    | Phase 43 | Pending |
-| ADMIN-05    | Phase 43 | Pending |
-| CLEAN-01    | Phase 39 | Pending |
-| CLEAN-02    | Phase 39 | Pending |
-| CLEAN-03    | Phase 39 | Pending |
+| Requirement | Phase    | Status   |
+| ----------- | -------- | -------- |
+| FIN-01      | Phase 41 | Pending  |
+| FIN-02      | Phase 41 | Pending  |
+| FIN-03      | Phase 41 | Pending  |
+| FIN-04      | Phase 41 | Pending  |
+| UPLOAD-01   | Phase 40 | Pending  |
+| UPLOAD-02   | Phase 40 | Pending  |
+| UPLOAD-03   | Phase 40 | Pending  |
+| UPLOAD-04   | Phase 40 | Pending  |
+| DESIGN-01   | Phase 42 | Pending  |
+| DESIGN-02   | Phase 42 | Pending  |
+| DESIGN-03   | Phase 42 | Pending  |
+| DESIGN-04   | Phase 42 | Pending  |
+| DESIGN-05   | Phase 42 | Pending  |
+| ONBOARD-01  | Phase 42 | Pending  |
+| ONBOARD-02  | Phase 42 | Pending  |
+| ADMIN-01    | Phase 43 | Pending  |
+| ADMIN-02    | Phase 43 | Pending  |
+| ADMIN-03    | Phase 43 | Pending  |
+| ADMIN-04    | Phase 43 | Pending  |
+| ADMIN-05    | Phase 43 | Pending  |
+| CLEAN-01    | Phase 39 | Complete |
+| CLEAN-02    | Phase 39 | Complete |
+| CLEAN-03    | Phase 39 | Complete |
 
 **Coverage:**
 
