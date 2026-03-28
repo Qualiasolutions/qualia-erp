@@ -2,54 +2,38 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-26)
+See: .planning/PROJECT.md (updated 2026-03-28)
 
-**Core value:** Production-hardened internal suite — secure, performant, observable, polished design.
-**Current focus:** v3.0 Production Hardening & Design (+ v2.1 carry-over phases 30-31)
+**Core value:** One platform for all Qualia operations — internal team management, client-facing project delivery, and financial visibility.
+**Current focus:** v4.0 Portal & Financials
 
 ## Current Position
 
-Phase: 38 (Design Review & Polish) — COMPLETE (2/2 plans)
-Plans complete: 30-01, 30-02, 30-03, 31-01, 31-02, 33-01, 33-02, 34-01, 34-02, 34-03, 35-01, 35-02, 36-01, 36-02, 36-03, 37-01, 38-01, 38-02
-Status: ALL PHASES COMPLETE — v3.0 milestone ready for completion
-Last activity: 2026-03-27 — Design fixes applied (VAPI removed, dark mode tinted, overlays fixed)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-28 — Milestone v4.0 started
 
-Progress: [██████████] 100% (v3.0 scope, 18/18 plans done)
-
-## Milestone Overview
-
-v3.0 has 8 phases (30-31 carry-over + 33-38 new):
-
-| Phase | Area                         | Plans | Can Parallel? |
-| ----- | ---------------------------- | ----- | ------------- |
-| 30    | Live Status Dashboard (v2.1) | 3     | Yes           |
-| 31    | Clock-Out Enforcement (v2.1) | 2     | After 30      |
-| 33    | Security Fixes               | 2     | Yes           |
-| 34    | Performance Optimization     | 3     | Yes           |
-| 35    | Observability                | 2     | Yes           |
-| 36    | Reliability & Testing        | 3     | Yes           |
-| 37    | Deployment Cleanup           | 1     | After 33      |
-| 38    | Design Review & Polish       | 2     | Last          |
-
-Phases 30, 33, 34, 35, 36 can all run in parallel. Phase 37 needs 33 first. Phase 38 is the final pass.
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
-### Key Decisions (v3.0)
+### Pre-work (already shipped before roadmap)
 
-| #   | Decision                                     | Rationale                                                                                                                          | Date       |
-| --- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| 1   | VAPI removed entirely                        | Unused, was ~9,500 lines of dead code + unsafe-eval in CSP                                                                         | 2026-03-26 |
-| 2   | Role in JWT claims (not DB query)            | Eliminates 1-2 DB queries from every middleware run                                                                                | 2026-03-26 |
-| 3   | 30% test coverage target (not 50%)           | Pragmatic first step — 50% threshold exists but 0.75% → 30% is the real win                                                        | 2026-03-26 |
-| 4   | Sentry over custom logging                   | Industry standard, zero-config with Next.js, already have MCP access                                                               | 2026-03-26 |
-| 5   | React cache() for role dedup                 | Native per-request dedup, no manual Map needed, eliminates N role queries                                                          | 2026-03-27 |
-| 6   | Batch RPC SECURITY DEFINER                   | Allows bypassing RLS for batch update but input is validated UUIDs only                                                            | 2026-03-27 |
-| 7   | Sentry 10% trace + error-only replay         | Low-volume internal app — minimal cost, full error coverage                                                                        | 2026-03-27 |
-| 8   | Inline buildChain() per test file            | Avoids cross-test state pollution vs shared factory; each file owns its mock                                                       | 2026-03-27 |
-| 9   | collectCoverageFrom scoped to tested modules | 18,219 lines of untested action modules + swr.ts/ai-tools would dilute global % to <10% — scope to in-scope tested files instead   | 2026-03-27 |
-| 10  | Supabase mock object mutation pattern        | `const supabase = { from: jest.fn() }` captured by factory closure — avoids jest.mock hoisting issues with variable initialization | 2026-03-27 |
-| 11  | text-white → text-primary-foreground (HIGH)  | text-white bypasses theme system; text-primary-foreground is the correct semantic token for on-primary text                        | 2026-03-27 |
+- Financial dashboard v1: Zoho-powered KPIs, revenue chart, hide/delete invoices, upcoming payments, client balances
+- Supabase tables: financial_invoices, financial_payments (synced from Zoho)
+- Sidebar renamed "Payments" → "Financials"
+- Old manual payment system deleted (-1,500 lines)
+
+### Key Decisions (v4.0)
+
+| #   | Decision                                      | Rationale                                       | Date       |
+| --- | --------------------------------------------- | ----------------------------------------------- | ---------- |
+| 1   | Zoho Invoice as financial source of truth     | Real invoicing software, MCP-synced to Supabase | 2026-03-28 |
+| 2   | Remove Messages page entirely                 | One-way feed adds no value                      | 2026-03-28 |
+| 3   | Full client impersonation (not admin preview) | Admin sees exactly what client sees             | 2026-03-28 |
+| 4   | Expense tracking in ERP, not Zoho             | Zoho expenses unused, manual entry is fine      | 2026-03-28 |
+| 5   | Financial tracking starts 2026-01-15          | Clean start date                                | 2026-03-28 |
 
 ### Blockers/Concerns
 
@@ -57,7 +41,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-03-27
-Stopped at: ALL PHASES COMPLETE. v3.0 milestone ready.
-Resume file: `.planning/phases/38-design-review-polish/38-02-SUMMARY.md`
-**Next action:** `/qualia:complete-milestone` to archive v3.0.
+Last session: 2026-03-28
+Stopped at: Milestone v4.0 initialized, defining requirements
+Resume file: —
+**Next action:** Finish requirements → create roadmap
