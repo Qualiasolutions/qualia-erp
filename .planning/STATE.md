@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 41 of 43 (Financial Dashboard Completion) — In progress
-Plan: 41-01 complete (1/? in phase)
-Status: In progress — expenses CRUD foundation shipped
-Last activity: 2026-03-28 — Completed 41-01-PLAN.md (expenses table + CRUD + ExpenseModal UI)
+Phase: 41 of 43 (Financial Dashboard Completion) — Phase complete
+Plan: 41-02 complete (2/2 in phase)
+Status: Phase 41 complete — full financial dashboard shipped (expenses CRUD + charts + cash flow + retainer clients)
+Last activity: 2026-03-28 — Completed 41-02-PLAN.md (expense breakdown chart, net cash flow, retainer clients)
 
-Progress: [##########] 40/43 phases complete | v4.0: 4/5 phases started
+Progress: [##########] 41/43 phases complete | v4.0: 5/5 phases started
 
 ## Performance Metrics
 
@@ -45,14 +45,16 @@ Progress: [##########] 40/43 phases complete | v4.0: 4/5 phases started
 
 ### Key Decisions (v4.0)
 
-| #   | Decision                                           | Rationale                                             | Date       |
-| --- | -------------------------------------------------- | ----------------------------------------------------- | ---------- |
-| 1   | Zoho Invoice as financial source of truth          | Real invoicing software, MCP-synced to Supabase       | 2026-03-28 |
-| 2   | Remove Messages page entirely                      | One-way feed adds no value                            | 2026-03-28 |
-| 3   | Full client impersonation (not admin preview)      | Admin sees exactly what client sees                   | 2026-03-28 |
-| 4   | Expense tracking in ERP, not Zoho                  | Zoho expenses unused, manual entry is fine            | 2026-03-28 |
-| 5   | Phase 41 (financials) can run parallel to 39-40    | Completely independent subsystem                      | 2026-03-28 |
-| 6   | Client uploads stored in client-uploads/ subfolder | Separates from admin uploads, enables future policies | 2026-03-28 |
+| #   | Decision                                           | Rationale                                              | Date       |
+| --- | -------------------------------------------------- | ------------------------------------------------------ | ---------- |
+| 1   | Zoho Invoice as financial source of truth          | Real invoicing software, MCP-synced to Supabase        | 2026-03-28 |
+| 2   | Remove Messages page entirely                      | One-way feed adds no value                             | 2026-03-28 |
+| 3   | Full client impersonation (not admin preview)      | Admin sees exactly what client sees                    | 2026-03-28 |
+| 4   | Expense tracking in ERP, not Zoho                  | Zoho expenses unused, manual entry is fine             | 2026-03-28 |
+| 5   | Phase 41 (financials) can run parallel to 39-40    | Completely independent subsystem                       | 2026-03-28 |
+| 6   | Client uploads stored in client-uploads/ subfolder | Separates from admin uploads, enables future policies  | 2026-03-28 |
+| 7   | CSS div-based stacked bars (no chart library)      | Consistent with existing RevenueBar pattern, simpler   | 2026-03-28 |
+| 8   | Recurring client detection uses invoice count (3+) | Zoho recurring_invoices table had only 1 stopped entry | 2026-03-28 |
 
 ### Blockers/Concerns
 
@@ -61,6 +63,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Phase 41 Plan 01 complete — expenses CRUD + ExpenseModal shipped
-Resume file: .planning/phases/41-financial-dashboard-completion/41-01-SUMMARY.md
-**Next action:** Continue Phase 41 (next plan if any)
+Stopped at: Phase 41 complete — all financial dashboard goals shipped (FIN-01 through FIN-04)
+Resume file: .planning/phases/41-financial-dashboard-completion/41-02-SUMMARY.md
+**Next action:** Phase 42 or 43 (remaining phases)
