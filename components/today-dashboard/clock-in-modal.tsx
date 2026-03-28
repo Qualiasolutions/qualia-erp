@@ -132,7 +132,7 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
                   placeholder={loadingProjects ? 'Loading projects...' : 'Select a project...'}
                 />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60]">
                 {projects.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
