@@ -71,6 +71,14 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
   // Fetch all files for this project (admin sees all)
   const files = await getProjectFiles(projectId, false);
 
+  // Split files into client uploads and internal files
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const clientFiles = files.filter((f) => (f as any).is_client_upload === true);
+  const internalFiles = files.filter(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (f) => !(f as any).is_client_upload
+  );
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -105,11 +113,29 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
         }}
       />
 
-      {/* Files List */}
+      {/* Client Uploads Section — shown only when client uploads exist */}
+      {clientFiles.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-neutral-900">Client Uploads</h2>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              {clientFiles.length}
+            </span>
+          </div>
+          <FileList
+            files={clientFiles}
+            onFileDeleted={() => {
+              window.location.reload();
+            }}
+          />
+        </div>
+      )}
+
+      {/* Internal Files List */}
       <div>
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">All Files</h2>
+        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Internal Files</h2>
         <FileList
-          files={files}
+          files={internalFiles}
           onFileDeleted={() => {
             // Trigger revalidation by forcing a refresh
             window.location.reload();
