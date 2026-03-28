@@ -67,10 +67,10 @@ export default async function PortalLayout({ children }: { children: React.React
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner — floating, not a full header */}
         {isAdminViewing && (
-          <div className="shrink-0 border-b border-primary/10 bg-qualia-950/5 px-6 py-1.5 dark:bg-primary/5">
+          <div className="shrink-0 border-b border-l-2 border-primary/[0.08] border-l-primary/30 bg-primary/[0.03] px-6 py-1.5 dark:border-primary/[0.12] dark:bg-primary/[0.06]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-xs">
-                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-qualia-700 dark:text-primary">
+                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-qualia-700 dark:text-primary">
                   {userRole === 'admin' ? 'Admin' : userRole === 'manager' ? 'Manager' : 'Team'}
                 </span>
                 <span className="text-muted-foreground">Viewing as client</span>
@@ -86,7 +86,7 @@ export default async function PortalLayout({ children }: { children: React.React
         )}
 
         <main className="flex-1 overflow-y-auto scroll-smooth">
-          <div className="px-6 py-8 md:px-10 lg:px-12">
+          <div className="px-[clamp(1.5rem,4vw,3rem)] py-[clamp(1.5rem,3vw,2.5rem)]">
             <PageTransition>{children}</PageTransition>
           </div>
         </main>
