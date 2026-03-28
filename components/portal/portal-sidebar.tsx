@@ -62,8 +62,8 @@ function NavLink({
       className={cn(
         'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-150',
         isActive
-          ? 'bg-primary/[0.08] text-foreground dark:bg-primary/[0.12]'
-          : 'text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground'
+          ? 'bg-primary/[0.06] text-foreground dark:bg-primary/[0.10]'
+          : 'text-muted-foreground hover:bg-primary/[0.04] hover:text-foreground'
       )}
     >
       <item.icon
@@ -109,17 +109,18 @@ function UserMenu({
         <button
           className={cn(
             'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
-            'hover:bg-foreground/[0.04]',
+            'hover:bg-primary/[0.04]',
             'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30'
           )}
         >
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary dark:text-primary">
+          <div className="to-primary/8 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/15 text-xs font-semibold text-primary ring-1 ring-primary/20 dark:text-primary">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
             <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
           </div>
+          <ThemeSwitcher />
           <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/25" />
         </button>
       </DropdownMenuTrigger>
@@ -170,9 +171,9 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex h-full flex-col bg-card/50">
+    <div className="flex h-full flex-col bg-[#EDF0F0] dark:bg-[#121819]">
       {/* Logo area */}
-      <div className="flex h-[60px] items-center px-5">
+      <div className="flex h-[60px] items-center border-b border-border/30 px-5">
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:scale-105">
             <Image
@@ -188,13 +189,15 @@ function SidebarContent({
         </Link>
       </div>
       {companyName && (
-        <div className="-mt-1 px-5 pb-4">
-          <p className="truncate text-[11px] font-medium text-muted-foreground/50">{companyName}</p>
+        <div className="-mt-1 px-5 pb-4 pt-3">
+          <p className="truncate text-[11px] font-medium tracking-[0.06em] text-muted-foreground/60">
+            {companyName}
+          </p>
         </div>
       )}
 
       {/* Navigation */}
-      <div className="flex-1 space-y-5 px-3 pt-1">
+      <div className="flex-1 space-y-5 px-3 pt-3">
         <nav className="space-y-0.5">
           {mainNav.map((item) => (
             <NavLink key={item.name} item={item} isActive={isActive(item)} onClick={onLinkClick} />
@@ -203,7 +206,7 @@ function SidebarContent({
 
         <div>
           <div className="mb-1.5 px-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/40">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/40">
               Manage
             </p>
           </div>
@@ -220,14 +223,8 @@ function SidebarContent({
         </div>
       </div>
 
-      {/* Theme + User */}
-      <div className="border-t border-border px-3 py-3">
-        <div className="mb-2 flex items-center justify-between px-3">
-          <span className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/50">
-            Theme
-          </span>
-          <ThemeSwitcher />
-        </div>
+      {/* User — glass-effect bottom bar with ThemeSwitcher integrated */}
+      <div className="border-t border-primary/10 bg-primary/[0.02] px-3 py-3 backdrop-blur-sm dark:border-primary/15">
         <UserMenu
           displayName={displayName}
           displayEmail={displayEmail}
@@ -248,11 +245,11 @@ export function PortalSidebar(props: PortalSidebarProps) {
 
   return (
     <>
-      {/* Mobile trigger */}
+      {/* Mobile trigger — 44px minimum touch target */}
       <div className="fixed left-0 top-0 z-40 flex h-14 items-center px-4 md:hidden">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
-            <button className="rounded-md p-1.5 text-muted-foreground hover:bg-muted/50">
+            <button className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md p-2.5 text-muted-foreground hover:bg-primary/[0.06]">
               <Menu className="h-5 w-5" />
             </button>
           </SheetTrigger>
