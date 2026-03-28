@@ -191,21 +191,9 @@ export { uploadProjectLogo, uploadClientLogo, deleteProjectLogo, deleteClientLog
 export type { DailyFlowData, DailyMeeting, FocusProject, TeamMember } from './daily-flow';
 export { getDailyFlowData } from './daily-flow';
 
-// ============ PAYMENTS ============
-export type { Payment, RecurringPayment } from './payments';
-export {
-  getPayments,
-  createPayment,
-  updatePayment,
-  deletePayment,
-  clearAllPayments,
-  getPaymentsSummary,
-  getRecurringPayments,
-  createRecurringPayment,
-  updateRecurringPayment,
-  deleteRecurringPayment,
-  getRecurringSummary,
-} from './payments';
+// ============ FINANCIALS ============
+export type { FinancialSummary } from './financials';
+export { getFinancialSummary } from './financials';
 
 // Learning system removed in v2.0 — see .planning/phases/26-team-sync-daily-structure/26-01-PLAN.md
 

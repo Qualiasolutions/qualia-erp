@@ -55,7 +55,7 @@ const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink 
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
-  { name: 'Payments', href: '/payments', icon: Wallet },
+  { name: 'Financials', href: '/payments', icon: Wallet },
 ];
 
 type NavItem = (typeof workspaceNav)[0];
