@@ -78,10 +78,10 @@
 | FIN-02      | Phase 41 | Pending  |
 | FIN-03      | Phase 41 | Pending  |
 | FIN-04      | Phase 41 | Pending  |
-| UPLOAD-01   | Phase 40 | Pending  |
-| UPLOAD-02   | Phase 40 | Pending  |
-| UPLOAD-03   | Phase 40 | Pending  |
-| UPLOAD-04   | Phase 40 | Pending  |
+| UPLOAD-01   | Phase 40 | Complete |
+| UPLOAD-02   | Phase 40 | Complete |
+| UPLOAD-03   | Phase 40 | Complete |
+| UPLOAD-04   | Phase 40 | Complete |
 | DESIGN-01   | Phase 42 | Pending  |
 | DESIGN-02   | Phase 42 | Pending  |
 | DESIGN-03   | Phase 42 | Pending  |

@@ -71,8 +71,8 @@ Plans:
 
 Plans:
 
-- [ ] 40-01-PLAN.md — DB migration (is_client_upload column + RLS), uploadClientFile server action, drag-and-drop portal upload UI
-- [ ] 40-02-PLAN.md — ERP admin Client Uploads section and FileList client badge
+- [x] 40-01-PLAN.md — DB migration (is_client_upload column + RLS), uploadClientFile server action, drag-and-drop portal upload UI (2026-03-28)
+- [x] 40-02-PLAN.md — ERP admin Client Uploads section and FileList client badge (2026-03-28)
 
 ---
 
@@ -148,7 +148,7 @@ Plans:
 | -------------------------------------- | --------- | -------------- | ----------- | ---------- |
 | 1-38                                   | v1.0–v3.0 | All            | Complete    | 2026-03-27 |
 | 39. Portal Cleanup                     | v4.0      | 1/1            | Complete    | 2026-03-28 |
-| 40. Client File Uploads                | v4.0      | 0/2            | Planned     | -          |
+| 40. Client File Uploads                | v4.0      | 2/2            | Complete    | 2026-03-28 |
 | 41. Financial Dashboard Completion     | v4.0      | 0/2            | Not started | -          |
 | 42. Portal Design Refresh & Onboarding | v4.0      | 0/4            | Not started | -          |
 | 43. Admin Management Tools             | v4.0      | 0/3            | Not started | -          |
