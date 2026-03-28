@@ -173,7 +173,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
                   setExpandedDay(isExpanded ? null : dateKey);
                 }}
                 className={cn(
-                  'group relative flex h-24 cursor-pointer flex-col bg-card p-2 transition-colors hover:bg-secondary/50',
+                  'ease-out-quart group relative flex h-24 cursor-pointer flex-col bg-card p-2 transition-colors hover:bg-secondary/50',
                   !isCurrentMonthDay && 'bg-card/50'
                 )}
               >

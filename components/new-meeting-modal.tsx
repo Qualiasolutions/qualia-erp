@@ -603,7 +603,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                 {loading ? (
                   <m.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    transition={{ duration: 1, repeat: Infinity, ease: [0.19, 1, 0.22, 1] }}
                     className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white"
                   />
                 ) : (

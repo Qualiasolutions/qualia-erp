@@ -106,7 +106,7 @@ const MemberRow = memo(function MemberRow({
           className={cn(
             'absolute -bottom-0.5 -right-0.5 block size-2.5 rounded-full ring-2 ring-card',
             isOnline
-              ? 'animate-[pulse_3s_ease-in-out_infinite] bg-emerald-500'
+              ? 'animate-[pulse_3s_cubic-bezier(0.19,1,0.22,1)_infinite] bg-emerald-500'
               : 'bg-muted-foreground/30'
           )}
         />
@@ -199,7 +199,7 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
                 </h2>
                 {onlineCount > 0 && (
                   <span className="flex items-center gap-1">
-                    <span className="block size-1.5 animate-[pulse_3s_ease-in-out_infinite] rounded-full bg-emerald-500" />
+                    <span className="block size-1.5 animate-[pulse_3s_cubic-bezier(0.19,1,0.22,1)_infinite] rounded-full bg-emerald-500" />
                     <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                       {onlineCount} online
                     </span>

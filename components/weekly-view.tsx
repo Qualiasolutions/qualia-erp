@@ -462,7 +462,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                           >
                             <div
                               className={cn(
-                                'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
+                                'ease-out-quart group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
                                 'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
                                 'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
                                 isSelected && 'bg-violet-500/[0.15] ring-1 ring-violet-500/40'
@@ -504,6 +504,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                           side="right"
                           align="start"
                           sideOffset={8}
+                          avoidCollisions
+                          collisionPadding={16}
                           className="w-72 p-0"
                         >
                           <div className="space-y-3 p-4">
