@@ -236,7 +236,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
     <>
       <div
         ref={containerRef}
-        className="flex h-[calc(100vh-10rem)] flex-col overflow-hidden rounded-xl border border-border bg-card"
+        className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card"
       >
         {/* ===== Header ===== */}
         <div className="flex shrink-0 items-center justify-between border-b border-border px-3 py-2.5 sm:px-5 sm:py-3">
