@@ -33,14 +33,20 @@ interface PortalProjectsListProps {
 export function PortalProjectsList({ projects, progressMap = {} }: PortalProjectsListProps) {
   if (!projects || projects.length === 0) {
     return (
-      <div className="flex flex-col items-center py-20 text-center">
-        <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted/40">
-          <Briefcase className="h-4 w-4 text-muted-foreground/40" />
+      <div className="flex min-h-[360px] flex-col items-center justify-center px-4">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/[0.08] to-primary/[0.03] ring-1 ring-primary/[0.12]">
+          <Briefcase className="h-10 w-10 text-primary" />
         </div>
-        <p className="text-[13px] font-medium text-foreground">No projects yet</p>
-        <p className="mt-1 text-[12px] text-muted-foreground/60">
-          Projects will appear here once you&apos;ve been granted access.
+        <h3 className="mb-2 text-xl font-bold tracking-tight text-foreground">No projects yet</h3>
+        <p className="max-w-xs text-center text-[13px] leading-relaxed text-muted-foreground/70">
+          Your active projects will appear here. Reach out to your Qualia team to get started.
         </p>
+        <a
+          href="mailto:support@qualiasolutions.net"
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.06] px-5 text-sm font-medium text-primary transition-all hover:bg-primary/[0.10]"
+        >
+          Get in touch
+        </a>
       </div>
     );
   }

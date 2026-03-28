@@ -8,6 +8,7 @@ import { RichText } from '@/components/ui/rich-text';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 import { Lightbulb, MessageSquare, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface FeatureRequest {
   id: string;
@@ -138,16 +139,21 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
 
   if (requests.length === 0) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center px-4">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-primary/20">
-          <Lightbulb className="h-10 w-10 text-primary dark:text-primary" />
+      <div className="flex min-h-[360px] flex-col items-center justify-center px-4">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/[0.08] to-primary/[0.03] ring-1 ring-primary/[0.12]">
+          <Lightbulb className="h-10 w-10 text-primary" />
         </div>
-        <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">
-          No requests yet
-        </h3>
-        <p className="max-w-sm text-center text-sm leading-relaxed text-muted-foreground/80">
-          Click &ldquo;New Request&rdquo; to submit your first feature request or change.
+        <h3 className="mb-2 text-xl font-bold tracking-tight text-foreground">No requests yet</h3>
+        <p className="max-w-xs text-center text-[13px] leading-relaxed text-muted-foreground/70">
+          Got an idea or need a change? Submit your first request and we&apos;ll get on it.
         </p>
+        <Link
+          href="/portal/requests"
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-md transition-all hover:opacity-90"
+        >
+          <Lightbulb className="h-4 w-4" />
+          Submit your first request
+        </Link>
       </div>
     );
   }

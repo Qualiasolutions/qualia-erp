@@ -51,16 +51,20 @@ function formatCurrency(amount: number, currency: string) {
 export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
   if (invoices.length === 0) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center px-4">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-qualia-100 to-qualia-50 ring-1 ring-qualia-200 dark:from-qualia-500/20 dark:to-qualia-500/10 dark:ring-primary/20">
-          <Receipt className="h-10 w-10 text-primary dark:text-primary" />
+      <div className="flex min-h-[360px] flex-col items-center justify-center px-4">
+        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/[0.08] to-primary/[0.03] ring-1 ring-primary/[0.12]">
+          <Receipt className="h-10 w-10 text-primary" />
         </div>
-        <h3 className="mb-3 text-xl font-semibold tracking-tight text-foreground">
-          No invoices yet
-        </h3>
-        <p className="max-w-sm text-center text-sm leading-relaxed text-muted-foreground/80">
-          Your invoices will appear here once they are issued.
+        <h3 className="mb-2 text-xl font-bold tracking-tight text-foreground">No invoices yet</h3>
+        <p className="max-w-xs text-center text-[13px] leading-relaxed text-muted-foreground/70">
+          Your invoices will appear here once your first project milestone is complete.
         </p>
+        <a
+          href="mailto:support@qualiasolutions.net"
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl border border-primary/20 bg-primary/[0.06] px-5 text-sm font-medium text-primary transition-all hover:bg-primary/[0.10]"
+        >
+          Contact support
+        </a>
       </div>
     );
   }

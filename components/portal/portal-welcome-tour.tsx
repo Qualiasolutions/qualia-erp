@@ -16,21 +16,21 @@ const tourSteps = [
   {
     title: 'Track your projects',
     description:
-      "See real-time progress on every project we're building for you — phases, milestones, and timelines all in one place.",
-  },
-  {
-    title: 'Message us directly',
-    description:
-      'No more email chains. Send messages, share files, and get quick responses from your dedicated team.',
+      'See real-time progress on every project — phases, milestones, and status updates as they happen.',
   },
   {
     title: 'Submit requests',
     description:
-      "Got an idea or need a change? Submit a request and we'll prioritize it in your project roadmap.",
+      "Got an idea or need a change? Submit a request and we'll prioritize it in your roadmap.",
   },
   {
-    title: 'Billing & invoices',
-    description: 'View all your invoices, track payments, and stay on top of your account balance.',
+    title: 'View invoices & billing',
+    description: 'Access all your invoices, check payment status, and download records anytime.',
+  },
+  {
+    title: 'Upload files & stay in sync',
+    description:
+      'Share files with us directly from your project page. No email attachments needed.',
   },
 ];
 
@@ -70,7 +70,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
     >
       <div
         className={cn(
-          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all duration-200',
+          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-primary/[0.12] bg-[#EDF0F0] shadow-2xl shadow-primary/[0.08] transition-all duration-200 dark:border-primary/[0.16] dark:bg-[#121819]',
           exiting ? 'scale-95 opacity-0' : 'duration-300 animate-in fade-in zoom-in-95'
         )}
       >
@@ -86,7 +86,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
         {step === 'welcome' ? (
           <div className="px-8 pb-8 pt-12 text-center">
             {/* Qualia logo mark */}
-            <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-qualia-500 to-qualia-600 shadow-lg shadow-primary/20">
+            <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 ring-4 ring-primary/[0.12]">
               <span className="text-xl font-bold text-white">Q</span>
             </div>
 
@@ -94,15 +94,15 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
               Welcome, {name}
             </h2>
 
-            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Your client portal is ready. Track projects, communicate with our team, and manage
-              everything in one place.
+            <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground/80">
+              Your client portal is ready. Track projects, submit requests, and manage everything in
+              one place.
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-3">
               <Button
                 onClick={() => setStep('tour')}
-                className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-md transition-all hover:bg-primary hover:shadow-lg"
+                className="h-10 w-full max-w-[200px] gap-2 rounded-xl bg-primary text-sm font-medium text-white shadow-[0_4px_12px_rgba(0,164,172,0.25)] transition-all hover:opacity-90"
               >
                 Show me around
                 <ArrowRight className="size-3.5" />
@@ -111,7 +111,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
               <button
                 type="button"
                 onClick={dismiss}
-                className="text-xs text-muted-foreground/50 transition-colors hover:text-muted-foreground"
+                className="text-xs text-muted-foreground/60 transition-colors hover:text-primary/70"
               >
                 I&apos;ll explore on my own
               </button>
@@ -126,7 +126,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                   key={i}
                   className={cn(
                     'h-1 flex-1 rounded-full transition-all duration-300',
-                    i <= currentStep ? 'bg-primary' : 'bg-muted-foreground/10'
+                    i <= currentStep ? 'bg-primary' : 'bg-primary/[0.08]'
                   )}
                 />
               ))}
@@ -141,10 +141,10 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                 <p className="text-xs font-medium uppercase tracking-wider text-primary">
                   Step {currentStep + 1} of {tourSteps.length}
                 </p>
-                <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                <h3 className="mt-2 text-xl font-bold tracking-tight text-foreground">
                   {tourSteps[currentStep].title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground/80">
                   {tourSteps[currentStep].description}
                 </p>
               </div>
@@ -156,7 +156,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                 type="button"
                 onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
                 className={cn(
-                  'flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground',
+                  'flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary/70',
                   currentStep === 0 && 'invisible'
                 )}
               >
@@ -172,7 +172,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                     dismiss();
                   }
                 }}
-                className="h-9 gap-1.5 rounded-xl bg-primary px-5 text-sm font-medium text-white transition-all hover:bg-primary"
+                className="h-9 gap-1.5 rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-[0_4px_12px_rgba(0,164,172,0.25)] transition-all hover:opacity-90"
               >
                 {currentStep < tourSteps.length - 1 ? (
                   <>
