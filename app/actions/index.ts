@@ -192,8 +192,8 @@ export type { DailyFlowData, DailyMeeting, FocusProject, TeamMember } from './da
 export { getDailyFlowData } from './daily-flow';
 
 // ============ FINANCIALS ============
-export type { FinancialSummary } from './financials';
-export { getFinancialSummary } from './financials';
+export type { FinancialSummary, FinancialInvoice, FinancialPayment } from './financials';
+export { getFinancialSummary, hideInvoice, unhideInvoice, deleteInvoice } from './financials';
 
 // Learning system removed in v2.0 — see .planning/phases/26-team-sync-daily-structure/26-01-PLAN.md
 

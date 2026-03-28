@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 
 const ADMIN_EMAIL = 'info@qualiasolutions.net';
@@ -24,6 +25,7 @@ export type FinancialInvoice = {
   balance: number;
   currency_code: string;
   last_payment_date: string | null;
+  is_hidden: boolean;
 };
 
 export type FinancialPayment = {
@@ -48,6 +50,7 @@ export type FinancialSummary = {
   recentPayments: FinancialPayment[];
   overdueInvoices: FinancialInvoice[];
   draftInvoices: FinancialInvoice[];
+  hiddenInvoices: FinancialInvoice[];
   clientBalances: {
     customer_name: string;
     total_invoiced: number;
@@ -75,8 +78,12 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
   const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
+  // Separate hidden invoices
+  const hiddenInvoices = invoices.filter((i) => i.is_hidden) as FinancialInvoice[];
+  const visibleInvoices = invoices.filter((i) => !i.is_hidden);
+
   // Only count invoices from tracking start date for totals
-  const trackedInvoices = invoices.filter((i) => i.date >= TRACKING_START_DATE);
+  const trackedInvoices = visibleInvoices.filter((i) => i.date >= TRACKING_START_DATE);
   const trackedPayments = payments.filter((p) => p.date >= TRACKING_START_DATE);
 
   // KPIs
@@ -86,13 +93,15 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
 
   const totalCollected = trackedPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // Outstanding includes ALL unpaid invoices (even pre-tracking — debt is debt)
-  const allUnpaid = invoices.filter(
+  // Outstanding includes ALL visible unpaid invoices (debt is debt)
+  const allUnpaid = visibleInvoices.filter(
     (i) => i.status !== 'paid' && i.status !== 'void' && Number(i.balance) > 0
   );
   const totalOutstanding = allUnpaid.reduce((sum, i) => sum + Number(i.balance), 0);
 
-  const overdueInvoices = invoices.filter((i) => i.status === 'overdue') as FinancialInvoice[];
+  const overdueInvoices = visibleInvoices.filter(
+    (i) => i.status === 'overdue'
+  ) as FinancialInvoice[];
   const totalOverdue = overdueInvoices.reduce((sum, i) => sum + Number(i.balance), 0);
 
   const draftInvoices = allUnpaid.filter((i) => i.status === 'draft') as FinancialInvoice[];
@@ -106,7 +115,7 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     .filter((p) => p.date.startsWith(lastMonth))
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // Client balances (from all unpaid invoices)
+  // Client balances (from all visible unpaid invoices)
   const clientMap = new Map<
     string,
     { total_invoiced: number; total_outstanding: number; invoice_count: number }
@@ -152,8 +161,50 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     draftInvoices: draftInvoices.sort(
       (a, b) => Number(b.balance) - Number(a.balance)
     ) as FinancialInvoice[],
+    hiddenInvoices,
     clientBalances,
     monthlyRevenue,
     lastSyncedAt: latestSync,
   };
+}
+
+// ─── Hide / Unhide / Delete invoices ──────────────────────
+
+export async function hideInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('financial_invoices')
+    .update({ is_hidden: true })
+    .eq('zoho_id', zohoId);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/payments');
+  return { success: true };
+}
+
+export async function unhideInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('financial_invoices')
+    .update({ is_hidden: false })
+    .eq('zoho_id', zohoId);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/payments');
+  return { success: true };
+}
+
+export async function deleteInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('financial_invoices').delete().eq('zoho_id', zohoId);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/payments');
+  return { success: true };
 }

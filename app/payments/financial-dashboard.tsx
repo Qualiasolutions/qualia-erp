@@ -1,10 +1,36 @@
 'use client';
 
-import { useMemo } from 'react';
-import { format, parseISO, differenceInDays, formatDistanceToNow } from 'date-fns';
-import { TrendingUp, AlertTriangle, Banknote, Receipt, CreditCard, Building2 } from 'lucide-react';
+import { useMemo, useState, useTransition } from 'react';
+import { format, parseISO, differenceInDays, formatDistanceToNow, addDays } from 'date-fns';
+import {
+  TrendingUp,
+  AlertTriangle,
+  Banknote,
+  Receipt,
+  CreditCard,
+  Building2,
+  EyeOff,
+  Eye,
+  Trash2,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
+  CalendarClock,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { FinancialSummary } from '@/app/actions/financials';
+import {
+  hideInvoice,
+  unhideInvoice,
+  deleteInvoice,
+  type FinancialSummary,
+  type FinancialInvoice,
+} from '@/app/actions/financials';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 function formatEUR(amount: number) {
   return new Intl.NumberFormat('en-CY', {
@@ -101,8 +127,123 @@ function RevenueBar({ data }: { data: { month: string; amount: number }[] }) {
   );
 }
 
+// ─── Invoice Action Menu ──────────────────────────────────
+function InvoiceActions({ invoice, isHidden }: { invoice: FinancialInvoice; isHidden?: boolean }) {
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        className={cn(
+          'rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+          isPending && 'pointer-events-none opacity-50'
+        )}
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        {isHidden ? (
+          <DropdownMenuItem
+            onClick={() =>
+              startTransition(async () => {
+                await unhideInvoice(invoice.zoho_id);
+              })
+            }
+          >
+            <Eye className="mr-2 h-3.5 w-3.5" />
+            Show
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem
+            onClick={() =>
+              startTransition(async () => {
+                await hideInvoice(invoice.zoho_id);
+              })
+            }
+          >
+            <EyeOff className="mr-2 h-3.5 w-3.5" />
+            Hide
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          className="text-red-500 focus:text-red-500"
+          onClick={() =>
+            startTransition(async () => {
+              await deleteInvoice(invoice.zoho_id);
+            })
+          }
+        >
+          <Trash2 className="mr-2 h-3.5 w-3.5" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ─── Invoice Row ──────────────────────────────────────────
+function InvoiceRow({
+  inv,
+  isHidden,
+}: {
+  inv: FinancialInvoice & { urgency?: 'overdue' | 'draft' | 'upcoming' };
+  isHidden?: boolean;
+}) {
+  const daysOverdue = inv.due_date ? differenceInDays(new Date(), parseISO(inv.due_date)) : 0;
+  const urgency = inv.urgency || (inv.status === 'overdue' ? 'overdue' : 'draft');
+
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/30',
+        isHidden && 'opacity-60'
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate text-sm font-medium text-foreground">{inv.customer_name}</span>
+          {urgency === 'overdue' ? (
+            <span className="shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-500">
+              {daysOverdue}d overdue
+            </span>
+          ) : urgency === 'upcoming' ? (
+            <span className="shrink-0 rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-500">
+              Due {daysOverdue <= 0 ? `in ${Math.abs(daysOverdue)}d` : 'today'}
+            </span>
+          ) : (
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              Draft
+            </span>
+          )}
+        </div>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {inv.invoice_number}
+          {inv.due_date && ` · Due ${format(parseISO(inv.due_date), 'MMM d, yyyy')}`}
+        </p>
+      </div>
+      <div className="ml-4 flex items-center gap-2">
+        <span
+          className={cn(
+            'shrink-0 text-sm font-semibold tabular-nums',
+            urgency === 'overdue'
+              ? 'text-red-500'
+              : urgency === 'upcoming'
+                ? 'text-blue-500'
+                : 'text-amber-500'
+          )}
+        >
+          {formatEURPrecise(Number(inv.balance))}
+        </span>
+        <InvoiceActions invoice={inv} isHidden={isHidden} />
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────
 export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
+  const [showHidden, setShowHidden] = useState(false);
+
   const {
     totalInvoiced,
     totalCollected,
@@ -114,6 +255,7 @@ export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
     recentPayments,
     overdueInvoices,
     draftInvoices,
+    hiddenInvoices,
     clientBalances,
     monthlyRevenue,
     lastSyncedAt,
@@ -128,14 +270,37 @@ export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
 
   const collectionRate = totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0;
 
-  // Combine overdue + draft for "needs attention"
+  // Split drafts into "upcoming" (due within 30 days) and remaining drafts
+  const now = new Date();
+  const thirtyDaysOut = addDays(now, 30);
+
+  const upcomingInvoices = useMemo(() => {
+    return draftInvoices
+      .filter((i) => {
+        if (!i.due_date) return false;
+        const due = parseISO(i.due_date);
+        return due <= thirtyDaysOut && due >= now;
+      })
+      .map((i) => ({ ...i, urgency: 'upcoming' as const }));
+  }, [draftInvoices, now, thirtyDaysOut]);
+
+  const upcomingIds = new Set(upcomingInvoices.map((i) => i.zoho_id));
+
+  const remainingDrafts = useMemo(() => {
+    return draftInvoices
+      .filter((i) => !upcomingIds.has(i.zoho_id))
+      .map((i) => ({ ...i, urgency: 'draft' as const }));
+  }, [draftInvoices, upcomingIds]);
+
   const needsAttention = useMemo(() => {
     const items = [
       ...overdueInvoices.map((i) => ({ ...i, urgency: 'overdue' as const })),
-      ...draftInvoices.map((i) => ({ ...i, urgency: 'draft' as const })),
+      ...remainingDrafts,
     ];
     return items.sort((a, b) => Number(b.balance) - Number(a.balance));
-  }, [overdueInvoices, draftInvoices]);
+  }, [overdueInvoices, remainingDrafts]);
+
+  const upcomingTotal = upcomingInvoices.reduce((s, i) => s + Number(i.balance), 0);
 
   return (
     <div className="space-y-6">
@@ -191,6 +356,26 @@ export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
         </div>
       )}
 
+      {/* ── Upcoming Payments ── */}
+      {upcomingInvoices.length > 0 && (
+        <div className="rounded-xl border border-blue-500/20 bg-card">
+          <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <CalendarClock className="h-3.5 w-3.5 text-blue-500" />
+              Upcoming (next 30 days)
+            </h2>
+            <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-500">
+              {formatEUR(upcomingTotal)}
+            </span>
+          </div>
+          <div className="divide-y divide-border">
+            {upcomingInvoices.map((inv) => (
+              <InvoiceRow key={inv.zoho_id} inv={inv} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Two Column: Needs Attention + Recent Payments ── */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Needs Attention */}
@@ -210,46 +395,9 @@ export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {needsAttention.map((inv) => {
-                const daysOverdue = inv.due_date
-                  ? differenceInDays(new Date(), parseISO(inv.due_date))
-                  : 0;
-                return (
-                  <div
-                    key={inv.zoho_id}
-                    className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/30"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {inv.customer_name}
-                        </span>
-                        {inv.urgency === 'overdue' ? (
-                          <span className="shrink-0 rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-500">
-                            {daysOverdue}d overdue
-                          </span>
-                        ) : (
-                          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            Draft
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {inv.invoice_number}
-                        {inv.due_date && ` · Due ${format(parseISO(inv.due_date), 'MMM d, yyyy')}`}
-                      </p>
-                    </div>
-                    <span
-                      className={cn(
-                        'ml-4 shrink-0 text-sm font-semibold tabular-nums',
-                        inv.urgency === 'overdue' ? 'text-red-500' : 'text-amber-500'
-                      )}
-                    >
-                      {formatEURPrecise(Number(inv.balance))}
-                    </span>
-                  </div>
-                );
-              })}
+              {needsAttention.map((inv) => (
+                <InvoiceRow key={inv.zoho_id} inv={inv} />
+              ))}
             </div>
           )}
         </div>
@@ -349,6 +497,37 @@ export function FinancialDashboard({ summary }: { summary: FinancialSummary }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ── Hidden Invoices (collapsible) ── */}
+      {hiddenInvoices.length > 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card/50">
+          <button
+            onClick={() => setShowHidden(!showHidden)}
+            className="flex w-full items-center justify-between px-5 py-3.5 text-left transition-colors hover:bg-muted/30"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <EyeOff className="h-3.5 w-3.5" />
+              Hidden invoices ({hiddenInvoices.length})
+            </span>
+            {showHidden ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+          {showHidden && (
+            <div className="divide-y divide-border border-t border-border">
+              {hiddenInvoices.map((inv) => (
+                <InvoiceRow
+                  key={inv.zoho_id}
+                  inv={{ ...inv, urgency: inv.status === 'overdue' ? 'overdue' : 'draft' }}
+                  isHidden
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
