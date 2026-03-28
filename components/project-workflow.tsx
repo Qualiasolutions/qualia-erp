@@ -2,23 +2,30 @@
 
 import { useState, useEffect, useTransition, useRef, useCallback, useMemo } from 'react';
 import {
-  ArrowLeft,
   Plus,
   Trash2,
   Pencil,
   Loader2,
   FolderPlus,
   Zap,
-  ClipboardList,
   ChevronRight,
+  ChevronDown,
   Circle,
   CheckCircle2,
   Clock,
   Eye,
+  RefreshCw,
+  GitBranch,
+  Gauge,
+  Layers,
+  Package,
+  Compass,
+  ArrowLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { TaskDetailDialog } from '@/components/task-detail-dialog';
 import type { Task as InboxTask } from '@/app/actions/inbox';
@@ -30,8 +37,11 @@ import {
   loadQualiaFrameworkPipeline,
 } from '@/app/actions/phases';
 import { getProjectTasks, createTask, updateTask, deleteTask } from '@/app/actions/inbox';
+import { syncPlanningFromGitHub } from '@/app/actions/github-planning-sync';
 import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { toast } from 'sonner';
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface Phase {
   id: string;
@@ -40,6 +50,12 @@ interface Phase {
   status: string;
   sort_order: number;
   is_locked: boolean;
+  milestone_number: number | null;
+  plan_count: number | null;
+  plans_completed: number | null;
+  started_at: string | null;
+  completed_at: string | null;
+  github_synced_at: string | null;
 }
 
 interface Task {
@@ -60,30 +76,444 @@ interface ProjectWorkflowProps {
   className?: string;
 }
 
-// Parse milestone groups from phase names like "0.1 — Name" → group "0", "1.5 — Name" → group "1"
-function parseMilestoneGroup(name: string): { group: string; label: string } {
-  const match = name.match(/^(\d+)\.(\d+)\s*[—–-]\s*/);
-  if (match) {
-    return { group: match[1], label: `Milestone ${match[1]}` };
-  }
-  return { group: '_ungrouped', label: 'Phases' };
+interface MilestoneGroup {
+  number: number;
+  name: string;
+  phases: Phase[];
+  status: 'completed' | 'in_progress' | 'not_started';
 }
 
-function getStatusIcon(status: string, progress: { completed: number; total: number }) {
-  if (progress.total > 0 && progress.completed === progress.total) {
-    return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+// ─── Status helpers ─────────────────────────────────────────────────────────
+
+function getPhaseStatusConfig(status: string) {
+  const s = (status || '').toLowerCase();
+  if (s.includes('complete') || s.includes('done')) {
+    return {
+      dot: 'bg-emerald-500',
+      ring: 'ring-emerald-500/20',
+      text: 'text-emerald-700 dark:text-emerald-400',
+      bg: 'bg-emerald-500/[0.04] dark:bg-emerald-500/[0.08]',
+      border: 'border-emerald-500/20',
+      label: 'Completed',
+      icon: CheckCircle2,
+    };
   }
-  if (status === 'in_progress' || progress.completed > 0) {
-    return <Clock className="h-4 w-4 text-primary" />;
+  if (s.includes('progress') || s.includes('active')) {
+    return {
+      dot: 'bg-amber-500',
+      ring: 'ring-amber-500/20',
+      text: 'text-amber-700 dark:text-amber-400',
+      bg: 'bg-amber-500/[0.04] dark:bg-amber-500/[0.08]',
+      border: 'border-amber-500/20',
+      label: 'In Progress',
+      icon: Clock,
+    };
   }
-  return <Circle className="h-4 w-4 text-muted-foreground/30" />;
+  if (s.includes('planned')) {
+    return {
+      dot: 'bg-sky-500',
+      ring: 'ring-sky-500/20',
+      text: 'text-sky-700 dark:text-sky-400',
+      bg: 'bg-card',
+      border: 'border-sky-500/20',
+      label: 'Planned',
+      icon: Circle,
+    };
+  }
+  if (s.includes('skip')) {
+    return {
+      dot: 'bg-muted-foreground/30',
+      ring: 'ring-muted-foreground/10',
+      text: 'text-muted-foreground',
+      bg: 'bg-muted/50',
+      border: 'border-border',
+      label: 'Skipped',
+      icon: Circle,
+    };
+  }
+  return {
+    dot: 'bg-muted-foreground/30',
+    ring: 'ring-muted-foreground/10',
+    text: 'text-muted-foreground',
+    bg: 'bg-card',
+    border: 'border-border',
+    label: 'Upcoming',
+    icon: Circle,
+  };
 }
+
+function getMilestoneStatus(phases: Phase[]): 'completed' | 'in_progress' | 'not_started' {
+  if (phases.length === 0) return 'not_started';
+  const allComplete = phases.every((p) => {
+    const s = (p.status || '').toLowerCase();
+    return s.includes('complete') || s.includes('done');
+  });
+  if (allComplete) return 'completed';
+  const anyActive = phases.some((p) => {
+    const s = (p.status || '').toLowerCase();
+    return s.includes('progress') || s.includes('complete') || s.includes('done');
+  });
+  if (anyActive) return 'in_progress';
+  return 'not_started';
+}
+
+function formatShortDate(dateStr: string | null): string {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  } catch {
+    return '';
+  }
+}
+
+// ─── Progress Summary ───────────────────────────────────────────────────────
+
+function ProgressSummary({ phases }: { phases: Phase[] }) {
+  const completedPhases = phases.filter((p) => {
+    const s = (p.status || '').toLowerCase();
+    return s.includes('complete') || s.includes('done');
+  }).length;
+
+  const activePhase = phases.find((p) => {
+    const s = (p.status || '').toLowerCase();
+    return s.includes('progress');
+  });
+
+  const totalPlans = phases.reduce((sum, p) => sum + (p.plan_count || 0), 0);
+
+  // For completed phases, all their plans are done — calculate from phase status
+  const completedPlans = phases.reduce((sum, p) => {
+    const s = (p.status || '').toLowerCase();
+    const isComplete = s.includes('complete') || s.includes('done');
+    if (isComplete) return sum + (p.plan_count || 0);
+    return sum + (p.plans_completed || 0);
+  }, 0);
+
+  // Overall progress: based on phases completed (most reliable metric)
+  const overallProgress =
+    phases.length > 0 ? Math.round((completedPhases / phases.length) * 100) : 0;
+
+  return (
+    <div className="flex gap-2 overflow-x-auto px-5 py-4">
+      {/* Overall progress */}
+      <div className="min-w-0 flex-1 rounded-lg border border-border bg-card/50 p-3">
+        <div className="flex items-center gap-1.5">
+          <Gauge className="size-3 text-muted-foreground/50" />
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Overall
+          </p>
+        </div>
+        <div className="mt-1.5 flex items-end gap-1">
+          <span className="text-xl font-bold tabular-nums text-foreground">{overallProgress}%</span>
+        </div>
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-muted/40">
+          <div
+            className={cn(
+              'h-full rounded-full transition-all duration-700',
+              overallProgress === 100
+                ? 'bg-emerald-500'
+                : overallProgress > 0
+                  ? 'bg-gradient-to-r from-primary to-primary/70'
+                  : 'bg-muted-foreground/20'
+            )}
+            style={{ width: `${overallProgress}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Phases */}
+      <div className="min-w-0 flex-1 rounded-lg border border-border bg-card/50 p-3">
+        <div className="flex items-center gap-1.5">
+          <Layers className="size-3 text-muted-foreground/50" />
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Phases
+          </p>
+        </div>
+        <div className="mt-1.5 flex items-end gap-1">
+          <span className="text-xl font-bold tabular-nums text-foreground">{completedPhases}</span>
+          <span className="mb-0.5 text-xs text-muted-foreground">/ {phases.length}</span>
+        </div>
+      </div>
+
+      {/* Plans */}
+      {totalPlans > 0 && (
+        <div className="min-w-0 flex-1 rounded-lg border border-border bg-card/50 p-3">
+          <div className="flex items-center gap-1.5">
+            <Package className="size-3 text-muted-foreground/50" />
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Plans
+            </p>
+          </div>
+          <div className="mt-1.5 flex items-end gap-1">
+            <span className="text-xl font-bold tabular-nums text-foreground">{completedPlans}</span>
+            <span className="mb-0.5 text-xs text-muted-foreground">/ {totalPlans}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Current phase */}
+      <div className="min-w-0 flex-1 rounded-lg border border-border bg-card/50 p-3">
+        <div className="flex items-center gap-1.5">
+          <Compass className="size-3 text-muted-foreground/50" />
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Current
+          </p>
+        </div>
+        <p className="mt-1.5 truncate text-xs font-semibold text-foreground">
+          {activePhase?.name?.replace(/^\d+\.\d+\s*[—–-]\s*/, '') || 'Not started'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Phase Row (in milestone list view) ─────────────────────────────────────
+
+function PhaseRow({
+  phase,
+  isLast,
+  taskProgress,
+  onDrillIn,
+  onEdit,
+  onDelete,
+  isPending,
+}: {
+  phase: Phase;
+  isLast: boolean;
+  taskProgress: { completed: number; total: number };
+  onDrillIn: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  isPending: boolean;
+}) {
+  const config = getPhaseStatusConfig(phase.status);
+  const StatusIcon = config.icon;
+
+  // Use plan counts if available, otherwise task progress
+  const hasPlans = (phase.plan_count || 0) > 0;
+  const total = hasPlans ? phase.plan_count! : taskProgress.total;
+  const completed = hasPlans ? phase.plans_completed || 0 : taskProgress.completed;
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  const isComplete = phase.status?.toLowerCase().includes('complete');
+
+  return (
+    <div className="group relative flex gap-3 sm:gap-4">
+      {/* Timeline spine */}
+      <div className="relative z-10 flex shrink-0 flex-col items-center">
+        <div
+          className={cn(
+            'flex size-7 items-center justify-center rounded-full shadow-sm ring-2 sm:size-8',
+            config.dot,
+            config.ring
+          )}
+        >
+          <StatusIcon className="size-3 text-white sm:size-3.5" strokeWidth={2.5} />
+        </div>
+        {!isLast && (
+          <div className="mt-0.5 w-0.5 flex-1 bg-gradient-to-b from-border/60 to-transparent" />
+        )}
+      </div>
+
+      {/* Phase card */}
+      <button
+        onClick={onDrillIn}
+        className={cn(
+          'flex flex-1 items-center gap-3 rounded-lg border p-3 text-left transition-all duration-200 sm:p-3.5',
+          config.border,
+          config.bg,
+          'hover:shadow-sm',
+          !isLast && 'mb-2'
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p
+              className={cn(
+                'truncate text-sm font-medium',
+                isComplete ? 'text-muted-foreground' : 'text-foreground'
+              )}
+            >
+              {phase.name}
+            </p>
+            {isComplete && (
+              <Badge
+                variant="outline"
+                className="shrink-0 rounded-full border-emerald-500/20 px-1.5 py-0 text-[9px] font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400"
+              >
+                Done
+              </Badge>
+            )}
+          </div>
+          {phase.description && (
+            <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">{phase.description}</p>
+          )}
+          {/* Dates */}
+          {(phase.started_at || phase.completed_at) && (
+            <div className="mt-1 flex gap-3 text-[10px] text-muted-foreground/60">
+              {phase.started_at && <span>Started {formatShortDate(phase.started_at)}</span>}
+              {phase.completed_at && <span>Done {formatShortDate(phase.completed_at)}</span>}
+            </div>
+          )}
+        </div>
+
+        {/* Progress */}
+        {total > 0 && (
+          <div className="flex shrink-0 items-center gap-2">
+            <div className="h-1 w-14 overflow-hidden rounded-full bg-muted/40 sm:w-20">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-500',
+                  percent === 100 ? 'bg-emerald-500' : percent > 0 ? 'bg-primary' : ''
+                )}
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+            <span className="w-8 text-right text-[10px] tabular-nums text-muted-foreground">
+              {completed}/{total}
+            </span>
+          </div>
+        )}
+
+        {total === 0 && <span className="text-[10px] text-muted-foreground/40">No tasks</span>}
+
+        {/* Hover actions */}
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+          >
+            <Pencil className="h-3 w-3" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            disabled={isPending}
+            className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </div>
+
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-colors group-hover:text-muted-foreground" />
+      </button>
+    </div>
+  );
+}
+
+// ─── Milestone Section ──────────────────────────────────────────────────────
+
+function MilestoneSection({
+  milestone,
+  tasksByPhase,
+  onDrillIn,
+  onEditPhase,
+  onDeletePhase,
+  isPending,
+  defaultExpanded,
+}: {
+  milestone: MilestoneGroup;
+  tasksByPhase: Map<string, Task[]>;
+  onDrillIn: (phaseId: string) => void;
+  onEditPhase: (phase: Phase) => void;
+  onDeletePhase: (phaseId: string) => void;
+  isPending: boolean;
+  defaultExpanded: boolean;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  const completedCount = milestone.phases.filter((p) => {
+    const s = (p.status || '').toLowerCase();
+    return s.includes('complete') || s.includes('done');
+  }).length;
+
+  const msConfig =
+    milestone.status === 'completed'
+      ? {
+          bg: 'bg-emerald-500/[0.06]',
+          border: 'border-emerald-500/20',
+          text: 'text-emerald-600 dark:text-emerald-400',
+        }
+      : milestone.status === 'in_progress'
+        ? {
+            bg: 'bg-amber-500/[0.04]',
+            border: 'border-amber-500/20',
+            text: 'text-amber-600 dark:text-amber-400',
+          }
+        : { bg: 'bg-card/50', border: 'border-border', text: 'text-muted-foreground' };
+
+  return (
+    <div className="mb-4 last:mb-0">
+      {/* Milestone header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-lg border px-4 py-2.5 text-left transition-all',
+          msConfig.bg,
+          msConfig.border,
+          'hover:shadow-sm'
+        )}
+      >
+        <ChevronDown
+          className={cn(
+            'size-4 shrink-0 text-muted-foreground transition-transform duration-200',
+            !expanded && '-rotate-90'
+          )}
+        />
+        {milestone.status === 'completed' ? (
+          <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+        ) : milestone.status === 'in_progress' ? (
+          <Clock className="size-4 shrink-0 text-amber-500" />
+        ) : (
+          <Circle className="size-4 shrink-0 text-muted-foreground/30" />
+        )}
+        <div className="min-w-0 flex-1">
+          <span className="text-sm font-semibold text-foreground">{milestone.name}</span>
+        </div>
+        <span className={cn('text-xs font-medium tabular-nums', msConfig.text)}>
+          {completedCount}/{milestone.phases.length} phases
+        </span>
+      </button>
+
+      {/* Phases inside milestone */}
+      {expanded && (
+        <div className="mt-2 pl-4 sm:pl-6">
+          {milestone.phases.map((phase, idx) => {
+            const phaseTasks = tasksByPhase.get(phase.name) || [];
+            const completed = phaseTasks.filter((t) => t.status === 'Done').length;
+
+            return (
+              <PhaseRow
+                key={phase.id}
+                phase={phase}
+                isLast={idx === milestone.phases.length - 1}
+                taskProgress={{ completed, total: phaseTasks.length }}
+                onDrillIn={() => onDrillIn(phase.id)}
+                onEdit={() => onEditPhase(phase)}
+                onDelete={() => onDeletePhase(phase.id)}
+                isPending={isPending}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ─────────────────────────────────────────────────────────
 
 export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWorkflowProps) {
   const [phases, setPhases] = useState<Phase[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activePhaseId, setActivePhaseId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   // New phase creation
@@ -126,6 +556,46 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     fetchData();
   }, [fetchData]);
 
+  // Check if this project has GitHub-synced phases
+  const isGitHubSynced = phases.some((p) => p.github_synced_at);
+
+  // Group phases by milestone
+  const milestones = useMemo((): MilestoneGroup[] => {
+    const groups = new Map<number, MilestoneGroup>();
+
+    for (const phase of phases) {
+      const msNum = phase.milestone_number ?? -1;
+      if (!groups.has(msNum)) {
+        groups.set(msNum, {
+          number: msNum,
+          name: msNum === 0 ? 'Phase 0: Demo' : msNum > 0 ? `Milestone ${msNum}` : 'Phases',
+          phases: [],
+          status: 'not_started',
+        });
+      }
+      groups.get(msNum)!.phases.push(phase);
+    }
+
+    // Calculate milestone statuses
+    const sorted = Array.from(groups.values()).sort((a, b) => a.number - b.number);
+    for (const ms of sorted) {
+      ms.status = getMilestoneStatus(ms.phases);
+    }
+    return sorted;
+  }, [phases]);
+
+  // Map tasks by phase name
+  const tasksByPhase = useMemo(() => {
+    const map = new Map<string, Task[]>();
+    for (const task of tasks) {
+      if (task.phase_name) {
+        if (!map.has(task.phase_name)) map.set(task.phase_name, []);
+        map.get(task.phase_name)!.push(task);
+      }
+    }
+    return map;
+  }, [tasks]);
+
   // Unphased tasks
   const unphasedTasks = tasks.filter(
     (t) => !t.phase_name || !phases.some((p) => p.name === t.phase_name)
@@ -145,35 +615,29 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
       ? tasks.filter((t) => t.phase_name === activePhase.name)
       : [];
 
-  // Progress helpers
-  const getPhaseProgress = useCallback(
-    (phase: Phase) => {
-      const phaseTaskList = tasks.filter((t) => t.phase_name === phase.name);
-      const completed = phaseTaskList.filter((t) => t.status === 'Done').length;
-      const total = phaseTaskList.length;
-      return { completed, total, percent: total > 0 ? Math.round((completed / total) * 100) : 0 };
-    },
-    [tasks]
-  );
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((t) => t.status === 'Done').length;
-  const overallPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-  // Group phases by milestone
-  const groupedPhases = useMemo(() => {
-    const groups = new Map<string, { label: string; phases: Phase[] }>();
-    for (const phase of phases) {
-      const { group, label } = parseMilestoneGroup(phase.name);
-      if (!groups.has(group)) {
-        groups.set(group, { label, phases: [] });
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncPlanningFromGitHub(projectId);
+      if (result.success && result.data) {
+        toast.success(
+          `Synced ${result.data.phasesUpserted} phases from ${result.data.repoFullName}`
+        );
+        await fetchData();
+        invalidateProjectPhases(projectId);
+      } else {
+        toast.error(result.error || 'Sync failed');
       }
-      groups.get(group)!.phases.push(phase);
+    } catch (err) {
+      toast.error('Failed to sync from GitHub');
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
     }
-    return Array.from(groups.entries());
-  }, [phases]);
+  };
 
-  // Phase CRUD
   const handleAddPhase = async () => {
     if (!newPhaseName.trim()) return;
     startTransition(async () => {
@@ -222,7 +686,6 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     });
   };
 
-  // Task CRUD
   const handleAddTask = async () => {
     if (!newTaskTitle.trim()) return;
     const formData = new FormData();
@@ -305,6 +768,8 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     return (a.sort_order || 0) - (b.sort_order || 0);
   });
 
+  // ─── Loading ──────────────────────────────────────────────────────────────
+
   if (isLoading) {
     return (
       <div className={cn('flex items-center justify-center', className)}>
@@ -313,7 +778,8 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     );
   }
 
-  // Empty state
+  // ─── Empty State ──────────────────────────────────────────────────────────
+
   if (phases.length === 0 && unphasedTasks.length === 0) {
     return (
       <div className={cn('flex flex-col items-center justify-center gap-6 px-6', className)}>
@@ -321,10 +787,25 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
           <FolderPlus className="mx-auto mb-3 h-10 w-10 text-muted-foreground/30" />
           <h3 className="mb-1 text-lg font-semibold text-foreground">No phases yet</h3>
           <p className="text-sm text-muted-foreground">
-            Load the Qualia Framework or create phases manually.
+            Sync from GitHub, load the Qualia Framework, or create phases manually.
           </p>
         </div>
         <div className="flex flex-col items-center gap-3">
+          {/* Sync from GitHub */}
+          <Button
+            onClick={handleSync}
+            disabled={isSyncing}
+            variant="outline"
+            className="gap-2"
+            size="sm"
+          >
+            {isSyncing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <GitBranch className="h-3.5 w-3.5" />
+            )}
+            Sync from GitHub
+          </Button>
           <Button onClick={handleLoadFramework} disabled={isPending} className="gap-2" size="sm">
             {isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -357,7 +838,8 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     );
   }
 
-  // ─── Phase Detail View (drilled in) ──────────────────────────────────────
+  // ─── Phase Detail View (drilled in) ────────────────────────────────────────
+
   if (isDrilledIn) {
     const phaseName = isGeneralView ? 'General Tasks' : activePhase?.name || '';
     const phaseDesc = activePhase?.description;
@@ -538,30 +1020,36 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
     );
   }
 
-  // ─── Phase Overview (grid) ────────────────────────────────────────────────
+  // ─── Milestone Overview ───────────────────────────────────────────────────
+
   return (
     <div className={cn('flex flex-col', className)}>
-      {/* Compact header */}
+      {/* Header */}
       <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-foreground">Workflow</h2>
-          <span className="rounded-md bg-muted/40 px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
-            {completedTasks}/{totalTasks} tasks
-          </span>
+          <h2 className="text-sm font-semibold text-foreground">Roadmap</h2>
+          {isGitHubSynced && (
+            <Badge variant="outline" className="gap-1 rounded-full px-2 py-0 text-[10px]">
+              <GitBranch className="size-2.5" />
+              Synced
+            </Badge>
+          )}
         </div>
-        <div className="flex items-center gap-3">
-          {/* Overall progress */}
-          <div className="flex items-center gap-2">
-            <div className="h-1.5 w-24 overflow-hidden rounded-full bg-muted/40">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${overallPercent}%` }}
-              />
-            </div>
-            <span className="text-xs font-medium tabular-nums text-muted-foreground">
-              {overallPercent}%
-            </span>
-          </div>
+        <div className="flex items-center gap-2">
+          {/* Sync button */}
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground disabled:opacity-50"
+            title="Sync from GitHub .planning"
+          >
+            {isSyncing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+            Sync
+          </button>
           {/* Add phase */}
           {showNewPhase ? (
             <div className="flex items-center gap-1.5">
@@ -605,21 +1093,21 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
         </div>
       </div>
 
-      {/* Phase grid — scrollable */}
+      {/* Progress summary cards */}
+      <ProgressSummary phases={phases} />
+
+      {/* Milestone sections — scrollable */}
       <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
-        <div className="px-5 py-4">
+        <div className="px-5 pb-4">
           {/* General tasks section */}
           {unphasedTasks.length > 0 && (
-            <div className="mb-5">
-              <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-                General
-              </p>
+            <div className="mb-4">
               <button
                 onClick={() => setActivePhaseId('__general')}
                 className="group flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left transition-all hover:border-primary/20 hover:bg-muted/20"
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/30">
-                  <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/30">
+                  <Package className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">Unphased Tasks</p>
@@ -633,111 +1121,54 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
             </div>
           )}
 
-          {/* Grouped phases */}
-          {groupedPhases.map(([groupKey, group]) => (
-            <div key={groupKey} className="mb-5 last:mb-0">
-              {groupedPhases.length > 1 && (
-                <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-                  {group.label}
-                </p>
-              )}
-              <div className="space-y-px">
-                {group.phases.map((phase) => {
-                  const progress = getPhaseProgress(phase);
-                  const isComplete = progress.total > 0 && progress.completed === progress.total;
-                  const isEditing = editingPhaseId === phase.id;
+          {/* Milestone groups */}
+          {milestones.map((ms) => (
+            <MilestoneSection
+              key={ms.number}
+              milestone={ms}
+              tasksByPhase={tasksByPhase}
+              onDrillIn={(phaseId) => setActivePhaseId(phaseId)}
+              onEditPhase={(phase) => {
+                setEditingPhaseId(phase.id);
+                setEditingPhaseName(phase.name);
+              }}
+              onDeletePhase={handleDeletePhase}
+              isPending={isPending}
+              defaultExpanded={ms.status === 'in_progress' || milestones.length === 1}
+            />
+          ))}
 
-                  return (
-                    <div key={phase.id} className="group relative">
-                      {isEditing ? (
-                        <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-muted/20 px-4 py-2.5">
-                          <Input
-                            value={editingPhaseName}
-                            onChange={(e) => setEditingPhaseName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') handleUpdatePhase(phase.id);
-                              if (e.key === 'Escape') setEditingPhaseId(null);
-                            }}
-                            onBlur={() => handleUpdatePhase(phase.id)}
-                            autoFocus
-                            className="h-7 text-sm"
-                            disabled={isPending}
-                          />
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setActivePhaseId(phase.id)}
-                          className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-left transition-colors hover:bg-muted/20"
-                        >
-                          {/* Status icon */}
-                          <div className="shrink-0">{getStatusIcon(phase.status, progress)}</div>
-
-                          {/* Name */}
-                          <div className="min-w-0 flex-1">
-                            <p
-                              className={cn(
-                                'truncate text-sm',
-                                isComplete ? 'text-muted-foreground' : 'font-medium text-foreground'
-                              )}
-                            >
-                              {phase.name}
-                            </p>
-                          </div>
-
-                          {/* Progress bar */}
-                          {progress.total > 0 && (
-                            <div className="flex shrink-0 items-center gap-2">
-                              <div className="h-1 w-16 overflow-hidden rounded-full bg-muted/40">
-                                <div
-                                  className={cn(
-                                    'h-full rounded-full transition-all duration-300',
-                                    isComplete ? 'bg-emerald-500' : 'bg-primary'
-                                  )}
-                                  style={{ width: `${progress.percent}%` }}
-                                />
-                              </div>
-                              <span className="w-8 text-right text-[11px] tabular-nums text-muted-foreground">
-                                {progress.completed}/{progress.total}
-                              </span>
-                            </div>
-                          )}
-
-                          {progress.total === 0 && (
-                            <span className="text-[11px] text-muted-foreground/40">No tasks</span>
-                          )}
-
-                          {/* Hover actions */}
-                          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingPhaseId(phase.id);
-                                setEditingPhaseName(phase.name);
-                              }}
-                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                            >
-                              <Pencil className="h-3 w-3" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeletePhase(phase.id);
-                              }}
-                              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          </div>
-
-                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground/20 transition-colors group-hover:text-muted-foreground" />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+          {/* Inline phase edit dialog */}
+          {editingPhaseId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+              <div className="w-80 rounded-lg border border-border bg-card p-4 shadow-lg">
+                <h3 className="mb-3 text-sm font-semibold">Edit Phase Name</h3>
+                <Input
+                  value={editingPhaseName}
+                  onChange={(e) => setEditingPhaseName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUpdatePhase(editingPhaseId);
+                    if (e.key === 'Escape') setEditingPhaseId(null);
+                  }}
+                  autoFocus
+                  className="mb-3"
+                  disabled={isPending}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditingPhaseId(null)}>
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleUpdatePhase(editingPhaseId)}
+                    disabled={isPending}
+                  >
+                    Save
+                  </Button>
+                </div>
               </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
