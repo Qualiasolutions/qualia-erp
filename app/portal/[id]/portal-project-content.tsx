@@ -26,21 +26,21 @@ export function PortalProjectContent({
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="animate-pulse space-y-3">
-          <div className="h-8 w-64 rounded bg-muted" />
-          <div className="h-4 w-96 rounded bg-muted" />
+          <div className="h-8 w-64 rounded-xl bg-primary/[0.04]" />
+          <div className="h-4 w-96 rounded-xl bg-primary/[0.04]" />
         </div>
 
         {/* Tabs skeleton */}
         <div className="flex gap-2">
-          <div className="h-9 w-24 animate-pulse rounded bg-muted" />
-          <div className="h-9 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-9 w-24 animate-pulse rounded-xl bg-primary/[0.04]" />
+          <div className="h-9 w-24 animate-pulse rounded-xl bg-primary/[0.04]" />
         </div>
 
         {/* Roadmap skeleton */}
         <div className="space-y-4">
-          <div className="h-32 animate-pulse rounded-lg bg-muted" />
-          <div className="h-32 animate-pulse rounded-lg bg-muted" />
-          <div className="h-32 animate-pulse rounded-lg bg-muted" />
+          <div className="h-28 animate-pulse rounded-xl bg-primary/[0.04]" />
+          <div className="h-28 animate-pulse rounded-xl bg-primary/[0.04]" />
+          <div className="h-28 animate-pulse rounded-xl bg-primary/[0.04]" />
         </div>
       </div>
     );
@@ -82,12 +82,14 @@ export function PortalProjectContent({
 
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
-      <PortalPageHeader
-        title={project.name}
-        description={project.description}
-        completedPhases={completedPhases}
-        totalPhases={totalPhases}
-      />
+      <div className="pb-4">
+        <PortalPageHeader
+          title={project.name}
+          description={project.description}
+          completedPhases={completedPhases}
+          totalPhases={totalPhases}
+        />
+      </div>
 
       <PortalTabs projectId={projectId} />
 

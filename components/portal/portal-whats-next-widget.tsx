@@ -30,7 +30,7 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
   return (
     <Link
       href={`/portal/${project.id}`}
-      className="group block rounded-xl border border-border bg-card px-5 py-5 transition-all duration-150 hover:border-border hover:shadow-sm"
+      className="group block rounded-xl border border-primary/[0.06] bg-card/80 px-5 py-5 transition-all duration-150 hover:border-primary/15 hover:shadow-sm"
     >
       {/* Project name */}
       <div className="flex items-center justify-between gap-3">
@@ -111,7 +111,7 @@ export function WhatsNextWidget({ projects, isLoading }: WhatsNextWidgetProps) {
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <div className="rounded-xl border border-border bg-card px-5 py-5">
+        <div className="rounded-xl border border-primary/[0.06] bg-card/80 px-5 py-5">
           <Skeleton className="h-3 w-24" />
           <Skeleton className="mt-3 h-6 w-12" />
           <Skeleton className="mt-3 h-1 w-full rounded-full" />
