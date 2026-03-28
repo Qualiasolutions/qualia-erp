@@ -74,10 +74,10 @@
 
 | Requirement | Phase    | Status   |
 | ----------- | -------- | -------- |
-| FIN-01      | Phase 41 | Pending  |
-| FIN-02      | Phase 41 | Pending  |
-| FIN-03      | Phase 41 | Pending  |
-| FIN-04      | Phase 41 | Pending  |
+| FIN-01      | Phase 41 | Complete |
+| FIN-02      | Phase 41 | Complete |
+| FIN-03      | Phase 41 | Complete |
+| FIN-04      | Phase 41 | Complete |
 | UPLOAD-01   | Phase 40 | Complete |
 | UPLOAD-02   | Phase 40 | Complete |
 | UPLOAD-03   | Phase 40 | Complete |
