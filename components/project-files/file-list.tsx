@@ -39,6 +39,7 @@ import {
   FileAudio,
   FileArchive,
   Loader2,
+  Upload,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -203,20 +204,33 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
 
                 {/* Visibility */}
                 <TableCell className="hidden sm:table-cell">
-                  {file.is_client_visible ? (
-                    <Badge
-                      variant="outline"
-                      className="border-green-200 bg-green-50 text-green-700"
-                    >
-                      <Eye className="mr-1 h-3 w-3" />
-                      Client visible
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="text-neutral-600">
-                      <EyeOff className="mr-1 h-3 w-3" />
-                      Internal only
-                    </Badge>
-                  )}
+                  <div className="flex flex-col gap-1">
+                    {file.is_client_visible ? (
+                      <Badge
+                        variant="outline"
+                        className="border-green-200 bg-green-50 text-green-700"
+                      >
+                        <Eye className="mr-1 h-3 w-3" />
+                        Client visible
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-neutral-600">
+                        <EyeOff className="mr-1 h-3 w-3" />
+                        Internal only
+                      </Badge>
+                    )}
+                    {/* Client Upload Badge */}
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    {(file as any).is_client_upload && (
+                      <Badge
+                        variant="outline"
+                        className="border-amber-200 bg-amber-50 text-amber-700"
+                      >
+                        <Upload className="mr-1 h-3 w-3" />
+                        Client upload
+                      </Badge>
+                    )}
+                  </div>
                 </TableCell>
 
                 {/* Upload Date */}
