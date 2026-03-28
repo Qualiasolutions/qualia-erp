@@ -101,6 +101,7 @@ export async function getProjectFiles(
       description,
       phase_name,
       is_client_visible,
+      is_client_upload,
       uploader:profiles!project_files_uploaded_by_fkey (
         id,
         full_name,
