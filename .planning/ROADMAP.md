@@ -110,14 +110,15 @@ Plans:
 4. Portal works flawlessly on mobile — 44px touch targets, no horizontal scroll, fluid type scale
 5. A first-time client sees a welcome flow on login that explains what the portal offers before reaching the dashboard
 6. All empty states on portal pages offer a clear next-action prompt rather than a blank screen
-   **Plans:** TBD
+
+**Plans:** 4 plans
 
 Plans:
 
-- [ ] 42-01: Sidebar and global portal layout refresh
-- [ ] 42-02: Dashboard and project detail page redesign
-- [ ] 42-03: Remaining portal pages (billing, requests, settings, files) + full responsive pass
-- [ ] 42-04: Welcome onboarding flow (first-login detection) and improved empty states
+- [ ] 42-01-PLAN.md — Sidebar and global portal layout refresh (tinted bg, fluid padding, refined admin banner)
+- [ ] 42-02-PLAN.md — Dashboard redesign (brand-tinted hero, quick actions) and project detail header with progress
+- [ ] 42-03-PLAN.md — Remaining portal pages (billing, requests, settings, projects) + full mobile responsive pass
+- [ ] 42-04-PLAN.md — Welcome tour content fix + Impeccable visual redesign, actionable empty states
 
 ---
 
