@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react';
 import { format, parseISO, differenceInDays, formatDistanceToNow, addDays } from 'date-fns';
 import {
   TrendingUp,
+  TrendingDown,
   AlertTriangle,
   Banknote,
   Receipt,
@@ -19,6 +20,7 @@ import {
   ShoppingCart,
   Plus,
   Pencil,
+  RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -31,6 +33,8 @@ import {
   type FinancialSummary,
   type FinancialInvoice,
   type Expense,
+  type MonthlyExpenseBreakdown,
+  type RecurringClient,
 } from '@/app/actions/financials';
 import {
   DropdownMenu,
@@ -347,6 +351,142 @@ function RevenueBar({ data }: { data: { month: string; amount: number }[] }) {
   );
 }
 
+// ─── Category Colors ──────────────────────────────────────
+const CATEGORY_COLORS: Record<string, string> = {
+  Software: 'bg-blue-500',
+  Hosting: 'bg-sky-500',
+  Office: 'bg-amber-500',
+  Marketing: 'bg-purple-500',
+  Travel: 'bg-orange-500',
+  Freelancers: 'bg-teal-500',
+  Equipment: 'bg-slate-500',
+  Subscriptions: 'bg-violet-500',
+  Salaries: 'bg-rose-500',
+  Other: 'bg-zinc-400',
+};
+
+// ─── Expense Breakdown Chart ──────────────────────────────
+function ExpenseBreakdownChart({ data }: { data: MonthlyExpenseBreakdown[] }) {
+  const recent = data.slice(-6);
+  const allCategories = Array.from(
+    new Set(recent.flatMap((m) => m.byCategory.map((c) => c.category)))
+  );
+
+  if (recent.length === 0) return null;
+
+  // If only 1 month: show single horizontal bars per category
+  if (recent.length === 1) {
+    const month = recent[0];
+    return (
+      <div className="space-y-2">
+        {month.byCategory.map((cat) => {
+          const pct = month.total > 0 ? (cat.amount / month.total) * 100 : 0;
+          const colorClass = CATEGORY_COLORS[cat.category] ?? 'bg-zinc-400';
+          return (
+            <div key={cat.category} className="flex items-center gap-3">
+              <span className="w-24 shrink-0 truncate text-[11px] text-muted-foreground">
+                {cat.category}
+              </span>
+              <div className="h-2 flex-1 rounded-full bg-muted">
+                <div
+                  className={cn('h-2 rounded-full transition-all', colorClass)}
+                  style={{ width: `${Math.max(pct, 1)}%` }}
+                />
+              </div>
+              <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                {formatEUR(cat.amount)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // Multi-month: stacked bar per month
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        {recent.map((m) => {
+          const monthLabel = format(parseISO(m.month + '-01'), 'MMM');
+          return (
+            <div key={m.month} className="flex items-center gap-3">
+              <span className="w-8 shrink-0 text-[10px] text-muted-foreground">{monthLabel}</span>
+              <div className="flex h-4 flex-1 overflow-hidden rounded-sm">
+                {m.byCategory.map((cat) => {
+                  const pct = m.total > 0 ? (cat.amount / m.total) * 100 : 0;
+                  const colorClass = CATEGORY_COLORS[cat.category] ?? 'bg-zinc-400';
+                  return (
+                    <div
+                      key={cat.category}
+                      title={`${cat.category}: ${formatEUR(cat.amount)}`}
+                      className={cn('h-full transition-all', colorClass)}
+                      style={{ width: `${pct}%` }}
+                    />
+                  );
+                })}
+              </div>
+              <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-muted-foreground">
+                {formatEUR(m.total)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+        {allCategories.map((cat) => {
+          const colorClass = CATEGORY_COLORS[cat] ?? 'bg-zinc-400';
+          return (
+            <div key={cat} className="flex items-center gap-1.5">
+              <div className={cn('h-2 w-2 rounded-full', colorClass)} />
+              <span className="text-[10px] text-muted-foreground">{cat}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Retainer Clients Section ─────────────────────────────
+function RetainerClientsSection({ clients }: { clients: RecurringClient[] }) {
+  if (clients.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-border bg-card">
+      <div className="border-b border-border px-5 py-3.5">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <RefreshCw className="h-3.5 w-3.5 text-qualia-500" />
+          Retainer Clients
+        </h2>
+      </div>
+      <div className="divide-y divide-border">
+        {clients.map((c) => (
+          <div
+            key={c.customer_name}
+            className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/30"
+          >
+            <div>
+              <p className="text-sm font-medium text-foreground">{c.customer_name}</p>
+              <p className="text-xs text-muted-foreground">
+                {c.frequency} · Last:{' '}
+                {c.last_invoice_date
+                  ? format(parseISO(c.last_invoice_date), 'MMM d, yyyy')
+                  : 'Unknown'}
+              </p>
+            </div>
+            <span className="text-sm font-semibold tabular-nums text-qualia-500">
+              {formatEUR(c.monthly_total)}/mo
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Invoice Action Menu ──────────────────────────────────
 function InvoiceActions({ invoice, isHidden }: { invoice: FinancialInvoice; isHidden?: boolean }) {
   const [isPending, startTransition] = useTransition();
@@ -489,6 +629,10 @@ export function FinancialDashboard({
     clientBalances,
     monthlyRevenue,
     lastSyncedAt,
+    monthlyExpenses,
+    totalExpensesThisMonth,
+    netCashFlowByMonth,
+    recurringClients,
   } = summary;
 
   const monthChange =
@@ -499,6 +643,9 @@ export function FinancialDashboard({
         : 0;
 
   const collectionRate = totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0;
+
+  const netThisMonth = thisMonthCollected - totalExpensesThisMonth;
+  const totalNetAllTime = netCashFlowByMonth.reduce((s, m) => s + m.net, 0);
 
   // Split drafts into "upcoming" (due within 30 days) and remaining drafts
   const now = new Date();
@@ -542,7 +689,7 @@ export function FinancialDashboard({
         </p>
       )}
 
-      {/* ── KPI Cards ── */}
+      {/* ── KPI Cards Row 1 ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
           label="Collected"
@@ -578,11 +725,88 @@ export function FinancialDashboard({
         />
       </div>
 
+      {/* ── KPI Cards Row 2 (Expenses + Net) ── */}
+      <div className="grid grid-cols-2 gap-4">
+        <KpiCard
+          label="Expenses This Month"
+          value={formatEUR(totalExpensesThisMonth)}
+          subtext="Total outgoing this month"
+          icon={ShoppingCart}
+          accent="red"
+        />
+        <KpiCard
+          label="Net This Month"
+          value={formatEUR(netThisMonth)}
+          subtext={netThisMonth >= 0 ? 'Positive cash flow' : 'Negative cash flow'}
+          icon={netThisMonth >= 0 ? TrendingUp : TrendingDown}
+          accent={netThisMonth >= 0 ? 'emerald' : 'red'}
+        />
+      </div>
+
       {/* ── Monthly Revenue ── */}
       {monthlyRevenue.length > 1 && (
         <div className="rounded-xl border border-border bg-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-foreground">Monthly Revenue</h2>
           <RevenueBar data={monthlyRevenue} />
+        </div>
+      )}
+
+      {/* ── Net Cash Flow ── */}
+      {netCashFlowByMonth.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Net Cash Flow</h2>
+          <div className="flex items-end gap-2" style={{ height: 120 }}>
+            {(() => {
+              const maxAbs = Math.max(...netCashFlowByMonth.map((m) => Math.abs(m.net)), 1);
+              return netCashFlowByMonth.map((m) => {
+                const heightPct = Math.max((Math.abs(m.net) / maxAbs) * 100, 4);
+                const isPositive = m.net >= 0;
+                const monthLabel = format(parseISO(m.month + '-01'), 'MMM');
+                return (
+                  <div key={m.month} className="flex flex-1 flex-col items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'text-[10px] font-medium',
+                        isPositive ? 'text-emerald-500' : 'text-red-500'
+                      )}
+                    >
+                      {isPositive ? '+' : ''}
+                      {formatEUR(m.net)}
+                    </span>
+                    <div
+                      className={cn(
+                        'w-full rounded-t-md transition-all',
+                        isPositive ? 'bg-emerald-500/80' : 'bg-red-500/80'
+                      )}
+                      style={{ height: `${heightPct}%` }}
+                    />
+                    <span className="text-[10px] text-muted-foreground">{monthLabel}</span>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-6 border-t border-border pt-4 text-xs text-muted-foreground">
+            <span>
+              Revenue:{' '}
+              <strong className="text-foreground">
+                {formatEUR(netCashFlowByMonth.reduce((s, m) => s + m.revenue, 0))}
+              </strong>
+            </span>
+            <span>
+              Expenses:{' '}
+              <strong className="text-red-500">
+                {formatEUR(netCashFlowByMonth.reduce((s, m) => s + m.expenses, 0))}
+              </strong>
+            </span>
+            <span>
+              Net:{' '}
+              <strong className={totalNetAllTime >= 0 ? 'text-emerald-500' : 'text-red-500'}>
+                {totalNetAllTime >= 0 ? '+' : ''}
+                {formatEUR(totalNetAllTime)}
+              </strong>
+            </span>
+          </div>
         </div>
       )}
 
@@ -623,6 +847,14 @@ export function FinancialDashboard({
         onClose={() => setExpenseModal({ open: false })}
         expense={expenseModal.expense}
       />
+
+      {/* ── Expense Breakdown Chart ── */}
+      {monthlyExpenses.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Expense Breakdown</h2>
+          <ExpenseBreakdownChart data={monthlyExpenses} />
+        </div>
+      )}
 
       {/* ── Upcoming Payments ── */}
       {upcomingInvoices.length > 0 && (
@@ -767,6 +999,9 @@ export function FinancialDashboard({
           </div>
         </div>
       )}
+
+      {/* ── Retainer Clients ── */}
+      <RetainerClientsSection clients={recurringClients} />
 
       {/* ── Hidden Invoices (collapsible) ── */}
       {hiddenInvoices.length > 0 && (
