@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** One platform for all Qualia operations — internal team management, client-facing project delivery, and financial visibility.
-**Current focus:** v4.0 Portal & Financials — Phase 40: Client File Uploads
+**Current focus:** v4.0 Portal & Financials — Phase 41: Financial Dashboard Completion
 
 ## Current Position
 
-Phase: 40 of 43 (Client File Uploads) — Complete
-Plan: 40-02 complete (2/2)
-Status: Phase 40 complete — all UPLOAD requirements satisfied (portal UI, storage, admin view, email)
-Last activity: 2026-03-28 — Completed 40-02-PLAN.md (ERP admin client uploads view)
+Phase: 41 of 43 (Financial Dashboard Completion) — In progress
+Plan: 41-01 complete (1/? in phase)
+Status: In progress — expenses CRUD foundation shipped
+Last activity: 2026-03-28 — Completed 41-01-PLAN.md (expenses table + CRUD + ExpenseModal UI)
 
-Progress: [##########] 40/43 phases complete | v4.0: 3/5 phases done
+Progress: [##########] 40/43 phases complete | v4.0: 4/5 phases started
 
 ## Performance Metrics
 
@@ -61,6 +61,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Phase 40 Plan 02 complete — ERP admin client uploads view shipped
-Resume file: .planning/phases/40-client-file-uploads/40-02-SUMMARY.md
-**Next action:** Start Phase 41 (financials)
+Stopped at: Phase 41 Plan 01 complete — expenses CRUD + ExpenseModal shipped
+Resume file: .planning/phases/41-financial-dashboard-completion/41-01-SUMMARY.md
+**Next action:** Continue Phase 41 (next plan if any)
