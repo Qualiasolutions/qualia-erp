@@ -210,7 +210,29 @@ export async function POST(request: NextRequest) {
       for (const f of commit.modified) allChangedFiles.add(f);
     }
 
-    // ── Detect .planning phase changes ───────────────────────────────────
+    // ── Check if ROADMAP.md or STATE.md changed → full sync ─────────
+    const planningMetaChanged = [...allChangedFiles].some(
+      (f) => f === '.planning/ROADMAP.md' || f === '.planning/STATE.md'
+    );
+
+    if (planningMetaChanged) {
+      const { syncPlanningFromGitHubWithServiceRole } = await import('@/lib/planning-sync-core');
+      const syncResult = await syncPlanningFromGitHubWithServiceRole(
+        supabase,
+        projectId,
+        project.workspace_id
+      );
+
+      return NextResponse.json({
+        ok: true,
+        project: project.name,
+        commits: payload.commits.length,
+        sync_mode: 'full_roadmap',
+        phases_synced: syncResult.success ? syncResult.phasesUpserted : 0,
+      });
+    }
+
+    // ── Detect incremental .planning phase changes ────────────────────
     const phaseUpdates = parsePlanningFiles([...allChangedFiles]);
 
     // ── Resolve actor for client-visible activity_log ────────────────
