@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 40 of 43 (Client File Uploads) — In progress
-Plan: 40-01 complete (1/1)
-Status: Phase 40 Plan 01 complete — client upload feature shipped
-Last activity: 2026-03-28 — Completed 40-01-PLAN.md (client file uploads)
+Phase: 40 of 43 (Client File Uploads) — Complete
+Plan: 40-02 complete (2/2)
+Status: Phase 40 complete — all UPLOAD requirements satisfied (portal UI, storage, admin view, email)
+Last activity: 2026-03-28 — Completed 40-02-PLAN.md (ERP admin client uploads view)
 
-Progress: [##########] 40/43 phases complete | v4.0: 2/5 phases done
+Progress: [##########] 40/43 phases complete | v4.0: 3/5 phases done
 
 ## Performance Metrics
 
@@ -61,6 +61,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Phase 40 Plan 01 complete — client file uploads shipped
-Resume file: .planning/phases/40-client-file-uploads/40-01-SUMMARY.md
-**Next action:** Continue Phase 40 or start Phase 41 (financials)
+Stopped at: Phase 40 Plan 02 complete — ERP admin client uploads view shipped
+Resume file: .planning/phases/40-client-file-uploads/40-02-SUMMARY.md
+**Next action:** Start Phase 41 (financials)
