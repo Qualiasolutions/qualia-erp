@@ -22,12 +22,14 @@ import {
   Pencil,
   Video,
   ExternalLink,
+  Folder,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
 import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
 import { useTimezone, TIMEZONE_CYPRUS } from '@/lib/schedule-utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // ============ Types ============
 
@@ -120,6 +122,11 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
   const [currentDate, setCurrentDate] = useState(() => toZonedTime(new Date(), TIMEZONE_CYPRUS));
   const [isPending, startTransition] = useTransition();
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
+  const [selectedMeeting, setSelectedMeeting] = useState<{
+    meeting: Meeting;
+    start: Date;
+    end: Date;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const visibleDays = useResponsiveDays();
 
@@ -423,102 +430,152 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                   const hasLink = !!ev.meeting.meeting_link;
                   const isCompact = heightPct < 8;
 
+                  const isSelected = selectedMeeting?.meeting.id === ev.meeting.id;
+
                   return (
-                    <div
+                    <Popover
                       key={ev.meeting.id}
-                      className="absolute z-10 p-[1px] sm:p-[2px]"
-                      style={{
-                        top: `${topPct}%`,
-                        height: `${heightPct}%`,
-                        left: `calc(${left}% + 1px)`,
-                        width: `calc(${colWidth}% - 2px)`,
+                      open={isSelected}
+                      onOpenChange={(open) => {
+                        if (!open) setSelectedMeeting(null);
                       }}
                     >
-                      <div
-                        onClick={() => hasLink && window.open(ev.meeting.meeting_link!, '_blank')}
-                        className={cn(
-                          'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
-                          'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
-                          'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
-                          hasLink && 'cursor-pointer'
-                        )}
-                        title={`${ev.meeting.title}\n${format(ev.start, 'h:mm a')} – ${format(ev.end, 'h:mm a')}`}
-                      >
-                        {/* Title row */}
-                        <div className="flex items-start justify-between gap-1">
-                          <span
+                      <PopoverTrigger asChild>
+                        <div
+                          className="absolute z-10 cursor-pointer p-[1px] sm:p-[2px]"
+                          style={{
+                            top: `${topPct}%`,
+                            height: `${heightPct}%`,
+                            left: `calc(${left}% + 1px)`,
+                            width: `calc(${colWidth}% - 2px)`,
+                          }}
+                          onClick={() =>
+                            setSelectedMeeting(
+                              isSelected
+                                ? null
+                                : { meeting: ev.meeting, start: ev.start, end: ev.end }
+                            )
+                          }
+                        >
+                          <div
                             className={cn(
-                              'truncate font-semibold text-foreground/90',
-                              isCompact ? 'text-[9px] sm:text-[10px]' : 'text-[10px] sm:text-[11px]'
+                              'group relative flex h-full flex-col overflow-hidden rounded-md border-l-[3px] px-1.5 py-1 transition-all duration-150 sm:px-2 sm:py-1.5',
+                              'border-l-violet-500/80 bg-violet-500/[0.07] hover:bg-violet-500/[0.13]',
+                              'dark:bg-violet-500/[0.10] dark:hover:bg-violet-500/[0.16]',
+                              isSelected && 'bg-violet-500/[0.15] ring-1 ring-violet-500/40'
                             )}
                           >
-                            {ev.meeting.title}
-                          </span>
+                            <span
+                              className={cn(
+                                'truncate font-semibold text-foreground/90',
+                                isCompact
+                                  ? 'text-[9px] sm:text-[10px]'
+                                  : 'text-[10px] sm:text-[11px]'
+                              )}
+                            >
+                              {ev.meeting.title}
+                            </span>
 
-                          {/* Hover actions */}
-                          <div className="hidden shrink-0 gap-px opacity-0 transition-opacity group-hover:opacity-100 sm:flex">
-                            {hasLink && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  window.open(ev.meeting.meeting_link!, '_blank');
-                                }}
-                                className="rounded p-0.5 text-emerald-500/70 hover:text-emerald-500"
-                                title="Join"
-                              >
-                                <ExternalLink className="size-2.5" />
-                              </button>
+                            {!isCompact && (
+                              <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/55 sm:text-[10px]">
+                                <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
+                                <span className="tabular-nums">
+                                  {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
+                                </span>
+                              </div>
                             )}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditMeeting(ev.meeting);
-                              }}
-                              className="rounded p-0.5 text-muted-foreground/60 hover:text-violet-500"
-                              title="Edit"
-                            >
-                              <Pencil className="size-2.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteMeeting(ev.meeting.id);
-                              }}
-                              disabled={isPending}
-                              className="rounded p-0.5 text-muted-foreground/60 hover:text-red-500"
-                              title="Delete"
-                            >
-                              <Trash2 className="size-2.5" />
-                            </button>
+
+                            {!isCompact && ev.meeting.project && (
+                              <div className="mt-auto hidden truncate text-[10px] font-medium text-violet-500/50 sm:block">
+                                {ev.meeting.project.name}
+                              </div>
+                            )}
+
+                            {hasLink && (
+                              <Video className="absolute right-1.5 top-1.5 size-2.5 shrink-0 text-emerald-500/60" />
+                            )}
+                          </div>
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="right"
+                        align="start"
+                        sideOffset={8}
+                        className="w-72 p-0"
+                      >
+                        <div className="space-y-3 p-4">
+                          {/* Title */}
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {ev.meeting.title}
+                          </h3>
+
+                          {/* Time */}
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Clock className="size-3.5 shrink-0" />
+                            <span>
+                              {format(ev.start, 'EEEE, MMM d')} &middot;{' '}
+                              {format(ev.start, 'h:mm a')} – {format(ev.end, 'h:mm a')}
+                            </span>
                           </div>
 
-                          {/* Video indicator (when not hovered) */}
+                          {/* Project */}
+                          {ev.meeting.project && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Folder className="size-3.5 shrink-0" />
+                              <span>{ev.meeting.project.name}</span>
+                            </div>
+                          )}
+
+                          {/* Description */}
+                          {ev.meeting.description && (
+                            <p className="text-xs leading-relaxed text-muted-foreground">
+                              {ev.meeting.description}
+                            </p>
+                          )}
+
+                          {/* Meeting link */}
                           {hasLink && (
-                            <Video className="mt-0.5 size-2.5 shrink-0 text-emerald-500/60 sm:group-hover:hidden" />
+                            <a
+                              href={ev.meeting.meeting_link!}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/20 dark:text-emerald-400"
+                            >
+                              <Video className="size-3.5" />
+                              Join Meeting
+                              <ExternalLink className="ml-auto size-3" />
+                            </a>
                           )}
                         </div>
 
-                        {/* Time */}
-                        {!isCompact && (
-                          <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/55 sm:text-[10px]">
-                            <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
-                            <span className="tabular-nums">
-                              {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Project */}
-                        {!isCompact && ev.meeting.project && (
-                          <div className="mt-auto hidden truncate text-[10px] font-medium text-violet-500/50 sm:block">
-                            {ev.meeting.project.name}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 border-t border-border px-4 py-2.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMeeting(null);
+                              handleEditMeeting(ev.meeting);
+                            }}
+                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                          >
+                            <Pencil className="size-3" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedMeeting(null);
+                              handleDeleteMeeting(ev.meeting.id);
+                            }}
+                            disabled={isPending}
+                            className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+                          >
+                            <Trash2 className="size-3" />
+                            Delete
+                          </button>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   );
                 })}
               </div>
