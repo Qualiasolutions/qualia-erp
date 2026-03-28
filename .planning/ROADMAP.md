@@ -46,11 +46,12 @@ Phase highlights:
 1. `/portal/messages` route returns 404 — no page exists, no dead link
 2. Portal sidebar shows no Messages item in navigation
 3. Portal navigation links match all available routes with no broken or orphaned entries
-   **Plans:** TBD
+
+**Plans:** 1 plan
 
 Plans:
 
-- [ ] 39-01: Remove Messages route, sidebar link, and update portal navigation
+- [ ] 39-01-PLAN.md — Remove Messages route, sidebar nav item, and header route label
 
 ---
 
