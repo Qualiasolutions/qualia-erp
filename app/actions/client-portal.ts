@@ -1443,6 +1443,21 @@ export async function setupPortalForClient(
     revalidatePath('/clients');
     revalidatePath('/projects');
 
+    // Send invitation email to the client (new accounts only)
+    if (!alreadyExisted && tempPassword) {
+      try {
+        await sendClientInvitationEmail(
+          normalizedEmail,
+          crmClient.name,
+          tempPassword,
+          projectsLinked
+        );
+      } catch (emailErr) {
+        // Non-blocking — workspace was created, just log the failure
+        console.error('[setupPortalForClient] Failed to send invitation email:', emailErr);
+      }
+    }
+
     return {
       success: true,
       data: {
@@ -1461,6 +1476,55 @@ export async function setupPortalForClient(
       error: error instanceof Error ? error.message : 'Failed to setup portal for client',
     };
   }
+}
+
+/**
+ * Send a portal invitation email to a newly created client.
+ */
+async function sendClientInvitationEmail(
+  email: string,
+  clientName: string,
+  tempPassword: string,
+  projectCount: number
+) {
+  const { Resend } = await import('resend');
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('[sendClientInvitationEmail] RESEND_API_KEY not set, skipping email');
+    return;
+  }
+
+  const resend = new Resend(apiKey);
+  const portalUrl = APP_URL;
+  const firstName = clientName.split(' ')[0];
+
+  await resend.emails.send({
+    from: 'Qualia Solutions <notifications@qualiasolutions.net>',
+    to: email,
+    subject: `Your Qualia client portal is ready`,
+    html: `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div style="display: inline-block; background: #00A4AC; color: white; font-weight: bold; font-size: 20px; width: 48px; height: 48px; line-height: 48px; border-radius: 12px;">Q</div>
+        </div>
+        <h1 style="font-size: 22px; font-weight: 600; color: #1a1a1a; margin: 0 0 12px;">Welcome to your portal, ${firstName}</h1>
+        <p style="font-size: 15px; color: #555; line-height: 1.6; margin: 0 0 24px;">
+          Your client portal is set up with ${projectCount} project${projectCount !== 1 ? 's' : ''}. Track progress, submit requests, view invoices, and share files — all in one place.
+        </p>
+        <div style="background: #f5f7f7; border: 1px solid #e0e5e5; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+          <p style="font-size: 13px; color: #888; margin: 0 0 8px;">Your login credentials</p>
+          <p style="font-size: 15px; color: #1a1a1a; margin: 0 0 6px;"><strong>Email:</strong> ${email}</p>
+          <p style="font-size: 15px; color: #1a1a1a; margin: 0;"><strong>Password:</strong> ${tempPassword}</p>
+        </div>
+        <div style="text-align: center; margin-bottom: 24px;">
+          <a href="${portalUrl}/auth/login" style="display: inline-block; background: #00A4AC; color: white; font-size: 15px; font-weight: 500; text-decoration: none; padding: 12px 32px; border-radius: 10px;">Sign in to your portal</a>
+        </div>
+        <p style="font-size: 13px; color: #999; line-height: 1.5; margin: 0;">
+          We recommend changing your password after your first login. If you have any questions, reply to this email or contact <a href="mailto:support@qualiasolutions.net" style="color: #00A4AC;">support@qualiasolutions.net</a>.
+        </p>
+      </div>
+    `,
+  });
 }
 
 /**
