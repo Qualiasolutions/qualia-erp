@@ -87,12 +87,13 @@ Plans:
 2. Admin sees a monthly expense breakdown chart grouped by category
 3. Admin sees net cash flow (revenue minus expenses) per month on the financials dashboard
 4. Admin sees a retainer/recurring clients view with each client's monthly total, synced from Zoho
-   **Plans:** TBD
+
+**Plans:** 2 plans
 
 Plans:
 
-- [ ] 41-01: Expenses DB table, CRUD server actions, expense entry UI on financials page
-- [ ] 41-02: Monthly expense chart by category, net cash flow row, and retainer clients view
+- [ ] 41-01-PLAN.md — expenses table + RLS, CRUD server actions, expense entry UI with modal on financials page
+- [ ] 41-02-PLAN.md — monthly expense breakdown chart, net cash flow section, retainer/recurring clients view
 
 ---
 
