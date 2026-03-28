@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** One platform for all Qualia operations — internal team management, client-facing project delivery, and financial visibility.
-**Current focus:** v4.0 Portal & Financials — Phase 41: Financial Dashboard Completion
+**Current focus:** v4.0 Portal & Financials — Phase 42: Portal Design Refresh
 
 ## Current Position
 
-Phase: 41 of 43 (Financial Dashboard Completion) — Phase complete
-Plan: 41-02 complete (2/2 in phase)
-Status: Phase 41 complete — full financial dashboard shipped (expenses CRUD + charts + cash flow + retainer clients)
-Last activity: 2026-03-28 — Completed 41-02-PLAN.md (expense breakdown chart, net cash flow, retainer clients)
+Phase: 42 of 43 (Portal Design Refresh) — In progress
+Plan: 42-01 complete (1/? in phase)
+Status: In progress — portal sidebar and layout upgraded to Impeccable v4.0
+Last activity: 2026-03-28 — Completed 42-01-PLAN.md (portal sidebar redesign + fluid layout)
 
-Progress: [##########] 41/43 phases complete | v4.0: 5/5 phases started
+Progress: [##########] 42/43 phases started | v4.0: Phase 42 in progress
 
 ## Performance Metrics
 
@@ -63,6 +63,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-28
-Stopped at: Phase 41 complete — all financial dashboard goals shipped (FIN-01 through FIN-04)
-Resume file: .planning/phases/41-financial-dashboard-completion/41-02-SUMMARY.md
-**Next action:** Phase 42 or 43 (remaining phases)
+Stopped at: Phase 42 Plan 01 complete — portal sidebar + layout Impeccable v4.0
+Resume file: .planning/phases/42-portal-design-refresh/42-01-SUMMARY.md
+**Next action:** Continue Phase 42 — next plan in portal design refresh
