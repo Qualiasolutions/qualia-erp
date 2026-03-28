@@ -463,6 +463,23 @@ export type ClientProfileInput = z.infer<typeof clientProfileSchema>;
 export type NotificationPreferencesInput = z.infer<typeof notificationPreferencesSchema>;
 
 // =====================
+// Expense Schemas
+// =====================
+export const createExpenseSchema = z.object({
+  amount: z.coerce.number().positive('Amount must be positive'),
+  category: z.string().min(1, 'Category is required').max(100),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
+  description: z.string().max(500).optional().nullable(),
+});
+
+export const updateExpenseSchema = createExpenseSchema.extend({
+  id: z.string().uuid('Invalid expense ID'),
+});
+
+export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
+export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
+
+// =====================
 // Client Invitation Schemas
 // =====================
 export const invitationSchema = z.object({

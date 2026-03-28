@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { createExpenseSchema, updateExpenseSchema } from '@/lib/validation';
 
 const ADMIN_EMAIL = 'info@qualiasolutions.net';
 const TRACKING_START_DATE = '2026-01-15';
@@ -203,6 +204,73 @@ export async function deleteInvoice(zohoId: string): Promise<{ success: boolean;
 
   const supabase = await createClient();
   const { error } = await supabase.from('financial_invoices').delete().eq('zoho_id', zohoId);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/payments');
+  return { success: true };
+}
+
+// ─── Expenses CRUD ────────────────────────────────────────
+
+export type Expense = {
+  id: string;
+  amount: number;
+  category: string;
+  date: string;
+  description: string | null;
+  created_at: string;
+};
+
+export async function getExpenses(): Promise<Expense[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('expenses')
+    .select('id, amount, category, date, description, created_at')
+    .order('date', { ascending: false });
+  return (data as Expense[]) ?? [];
+}
+
+export async function createExpense(data: unknown): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+
+  const parsed = createExpenseSchema.safeParse(data);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('expenses').insert(parsed.data);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/payments');
+  return { success: true };
+}
+
+export async function updateExpense(data: unknown): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+
+  const parsed = updateExpenseSchema.safeParse(data);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message || 'Validation failed' };
+  }
+
+  const { id, ...fields } = parsed.data;
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from('expenses')
+    .update({ ...fields, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) return { success: false, error: error.message };
+  revalidatePath('/payments');
+  return { success: true };
+}
+
+export async function deleteExpense(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('expenses').delete().eq('id', id);
 
   if (error) return { success: false, error: error.message };
   revalidatePath('/payments');
