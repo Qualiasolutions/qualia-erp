@@ -49,7 +49,7 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
         const assignments =
           (result.data as Array<{ project: { id: string; name: string; status: string } }>) ?? [];
         const activeProjects = assignments
-          .filter((a) => a.project?.status === 'Active')
+          .filter((a) => a.project?.status === 'Active' || a.project?.status === 'Launched')
           .map((a) => ({ id: a.project.id, name: a.project.name }))
           .sort((a, b) => a.name.localeCompare(b.name));
         setProjects(activeProjects);
