@@ -268,6 +268,138 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
 }
 
 /**
+ * Upload a file from a portal client to a project
+ */
+export async function uploadClientFile(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  const file = formData.get('file') as File | null;
+  const projectId = formData.get('project_id') as string | null;
+  const description = formData.get('description') as string | null;
+
+  if (!file) {
+    return { success: false, error: 'No file provided' };
+  }
+
+  if (!projectId) {
+    return { success: false, error: 'Project ID is required' };
+  }
+
+  // Validate file size
+  if (file.size > MAX_FILE_SIZE) {
+    return { success: false, error: 'File size exceeds 50MB limit' };
+  }
+
+  // Validate MIME type
+  if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+    return { success: false, error: `File type ${file.type} is not allowed` };
+  }
+
+  // Verify client has access to this project
+  const clientAccess = await canClientAccessProject(user.id, projectId);
+  if (!clientAccess) {
+    return { success: false, error: 'You do not have access to this project' };
+  }
+
+  // Get project to retrieve workspace_id
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('id, workspace_id')
+    .eq('id', projectId)
+    .single();
+
+  if (projectError || !project) {
+    return { success: false, error: 'Project not found' };
+  }
+
+  // Generate storage path in client-uploads subfolder
+  const timestamp = Date.now();
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+  const storagePath = `${projectId}/client-uploads/${timestamp}_${sanitizedName}`;
+
+  // Upload to storage
+  const { error: uploadError } = await supabase.storage
+    .from('project-files')
+    .upload(storagePath, file, {
+      cacheControl: '3600',
+      upsert: false,
+    });
+
+  if (uploadError) {
+    console.error('[uploadClientFile] Storage error:', uploadError);
+    return { success: false, error: 'Failed to upload file to storage' };
+  }
+
+  // Create database record with is_client_upload=true
+  const { data: fileRecord, error: dbError } = await supabase
+    .from('project_files')
+    .insert({
+      project_id: projectId,
+      workspace_id: project.workspace_id,
+      name: sanitizedName,
+      original_name: file.name,
+      storage_path: storagePath,
+      file_size: file.size,
+      mime_type: file.type,
+      uploaded_by: user.id,
+      description: description || null,
+      is_client_upload: true,
+      is_client_visible: true,
+    })
+    .select()
+    .single();
+
+  if (dbError) {
+    console.error('[uploadClientFile] DB error:', dbError);
+    // Try to clean up the uploaded file
+    await supabase.storage.from('project-files').remove([storagePath]);
+    return { success: false, error: 'Failed to save file record' };
+  }
+
+  // Fetch uploader name for notification
+  const { data: uploader } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('id', user.id)
+    .single();
+
+  const uploaderName = uploader?.full_name || 'A client';
+
+  // Log activity
+  await createActivityLogEntry({
+    projectId,
+    actionType: 'client_file_uploaded',
+    actionData: {
+      file_name: file.name,
+      description: description || undefined,
+      is_client_upload: true,
+    },
+    isClientVisible: true,
+  });
+
+  // Notify team members of the client upload
+  await notifyEmployeesOfClientFileUpload(
+    projectId,
+    uploaderName,
+    file.name,
+    description || undefined
+  );
+
+  revalidatePath(`/portal/${projectId}/files`);
+  revalidatePath(`/projects/${projectId}/files`);
+
+  return { success: true, data: fileRecord };
+}
+
+/**
  * Delete a file from a project
  */
 export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
