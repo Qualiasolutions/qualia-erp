@@ -40,6 +40,19 @@ export type FinancialPayment = {
   invoice_numbers: string;
 };
 
+export type MonthlyExpenseBreakdown = {
+  month: string; // YYYY-MM
+  total: number;
+  byCategory: { category: string; amount: number }[];
+};
+
+export type RecurringClient = {
+  customer_name: string;
+  monthly_total: number;
+  frequency: string; // e.g. "Monthly"
+  last_invoice_date: string;
+};
+
 export type FinancialSummary = {
   totalInvoiced: number;
   totalCollected: number;
@@ -60,6 +73,10 @@ export type FinancialSummary = {
   }[];
   monthlyRevenue: { month: string; amount: number }[];
   lastSyncedAt: string | null;
+  monthlyExpenses: MonthlyExpenseBreakdown[];
+  totalExpensesThisMonth: number;
+  netCashFlowByMonth: { month: string; revenue: number; expenses: number; net: number }[];
+  recurringClients: RecurringClient[];
 };
 
 export async function getFinancialSummary(): Promise<FinancialSummary | null> {
@@ -67,12 +84,14 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
 
   const supabase = await createClient();
 
-  const [{ data: invoices }, { data: payments }] = await Promise.all([
+  const [{ data: invoices }, { data: payments }, { data: expensesRaw }] = await Promise.all([
     supabase.from('financial_invoices').select('*').order('date', { ascending: false }),
     supabase.from('financial_payments').select('*').order('date', { ascending: false }),
+    supabase.from('expenses').select('*').order('date', { ascending: false }),
   ]);
 
   if (!invoices || !payments) return null;
+  const expenses = expensesRaw ?? [];
 
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -146,6 +165,77 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     .map(([month, amount]) => ({ month, amount }))
     .sort((a, b) => a.month.localeCompare(b.month));
 
+  // Monthly expense breakdown by category
+  const expenseMonthMap = new Map<string, Map<string, number>>();
+  for (const e of expenses) {
+    const m = (e.date as string).substring(0, 7);
+    if (!expenseMonthMap.has(m)) expenseMonthMap.set(m, new Map());
+    const catMap = expenseMonthMap.get(m)!;
+    catMap.set(e.category, (catMap.get(e.category) || 0) + Number(e.amount));
+  }
+  const monthlyExpenses: MonthlyExpenseBreakdown[] = Array.from(expenseMonthMap.entries())
+    .map(([month, catMap]) => {
+      const byCategory = Array.from(catMap.entries())
+        .map(([category, amount]) => ({ category, amount }))
+        .sort((a, b) => b.amount - a.amount);
+      const total = byCategory.reduce((s, c) => s + c.amount, 0);
+      return { month, total, byCategory };
+    })
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  // Total expenses this month
+  const totalExpensesThisMonth = expenses
+    .filter((e) => (e.date as string).startsWith(thisMonth))
+    .reduce((sum, e) => sum + Number(e.amount), 0);
+
+  // Net cash flow by month (merge revenue + expenses)
+  const allMonths = new Set([
+    ...monthlyRevenue.map((r) => r.month),
+    ...monthlyExpenses.map((e) => e.month),
+  ]);
+  const netCashFlowByMonth = Array.from(allMonths)
+    .sort()
+    .map((month) => {
+      const revenue = monthlyRevenue.find((r) => r.month === month)?.amount ?? 0;
+      const expensesAmt = monthlyExpenses.find((e) => e.month === month)?.total ?? 0;
+      return { month, revenue, expenses: expensesAmt, net: revenue - expensesAmt };
+    });
+
+  // Recurring clients — same customer_name in 3+ invoices
+  const invoiceCustomerMap = new Map<
+    string,
+    { total: number; months: Set<string>; lastDate: string }
+  >();
+  for (const inv of invoices) {
+    const existing = invoiceCustomerMap.get(inv.customer_name) || {
+      total: 0,
+      months: new Set<string>(),
+      lastDate: inv.date,
+    };
+    existing.total += Number(inv.total);
+    existing.months.add((inv.date as string).substring(0, 7));
+    if (inv.date > existing.lastDate) existing.lastDate = inv.date;
+    invoiceCustomerMap.set(inv.customer_name, existing);
+  }
+  // Count raw invoice occurrences per customer
+  const invoiceCountMap = new Map<string, number>();
+  for (const inv of invoices) {
+    invoiceCountMap.set(inv.customer_name, (invoiceCountMap.get(inv.customer_name) || 0) + 1);
+  }
+  const recurringClients: RecurringClient[] = Array.from(invoiceCustomerMap.entries())
+    .filter(([name]) => (invoiceCountMap.get(name) || 0) >= 3)
+    .map(([customer_name, data]) => {
+      const monthCount = Math.max(data.months.size, 1);
+      const monthly_total = Math.round(data.total / monthCount);
+      return {
+        customer_name,
+        monthly_total,
+        frequency: 'Monthly',
+        last_invoice_date: data.lastDate,
+      };
+    })
+    .sort((a, b) => b.monthly_total - a.monthly_total);
+
   // Last synced
   const latestSync = invoices[0]?.synced_at || payments[0]?.synced_at || null;
 
@@ -166,6 +256,10 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     clientBalances,
     monthlyRevenue,
     lastSyncedAt: latestSync,
+    monthlyExpenses,
+    totalExpensesThisMonth,
+    netCashFlowByMonth,
+    recurringClients,
   };
 }
 
