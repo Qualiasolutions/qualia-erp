@@ -72,39 +72,39 @@
 
 ## Traceability
 
-| Requirement | Phase | Status  |
-| ----------- | ----- | ------- |
-| FIN-01      | —     | Pending |
-| FIN-02      | —     | Pending |
-| FIN-03      | —     | Pending |
-| FIN-04      | —     | Pending |
-| UPLOAD-01   | —     | Pending |
-| UPLOAD-02   | —     | Pending |
-| UPLOAD-03   | —     | Pending |
-| UPLOAD-04   | —     | Pending |
-| DESIGN-01   | —     | Pending |
-| DESIGN-02   | —     | Pending |
-| DESIGN-03   | —     | Pending |
-| DESIGN-04   | —     | Pending |
-| DESIGN-05   | —     | Pending |
-| ONBOARD-01  | —     | Pending |
-| ONBOARD-02  | —     | Pending |
-| ADMIN-01    | —     | Pending |
-| ADMIN-02    | —     | Pending |
-| ADMIN-03    | —     | Pending |
-| ADMIN-04    | —     | Pending |
-| ADMIN-05    | —     | Pending |
-| CLEAN-01    | —     | Pending |
-| CLEAN-02    | —     | Pending |
-| CLEAN-03    | —     | Pending |
+| Requirement | Phase    | Status  |
+| ----------- | -------- | ------- |
+| FIN-01      | Phase 41 | Pending |
+| FIN-02      | Phase 41 | Pending |
+| FIN-03      | Phase 41 | Pending |
+| FIN-04      | Phase 41 | Pending |
+| UPLOAD-01   | Phase 40 | Pending |
+| UPLOAD-02   | Phase 40 | Pending |
+| UPLOAD-03   | Phase 40 | Pending |
+| UPLOAD-04   | Phase 40 | Pending |
+| DESIGN-01   | Phase 42 | Pending |
+| DESIGN-02   | Phase 42 | Pending |
+| DESIGN-03   | Phase 42 | Pending |
+| DESIGN-04   | Phase 42 | Pending |
+| DESIGN-05   | Phase 42 | Pending |
+| ONBOARD-01  | Phase 42 | Pending |
+| ONBOARD-02  | Phase 42 | Pending |
+| ADMIN-01    | Phase 43 | Pending |
+| ADMIN-02    | Phase 43 | Pending |
+| ADMIN-03    | Phase 43 | Pending |
+| ADMIN-04    | Phase 43 | Pending |
+| ADMIN-05    | Phase 43 | Pending |
+| CLEAN-01    | Phase 39 | Pending |
+| CLEAN-02    | Phase 39 | Pending |
+| CLEAN-03    | Phase 39 | Pending |
 
 **Coverage:**
 
 - v4.0 requirements: 23 total
-- Mapped to phases: 0
-- Unmapped: 23 ⚠️
+- Mapped to phases: 23
+- Unmapped: 0 ✓
 
 ---
 
 _Requirements defined: 2026-03-28_
-_Last updated: 2026-03-28 after initial definition_
+_Last updated: 2026-03-28 — traceability complete, all 23 requirements mapped to phases 39-43_

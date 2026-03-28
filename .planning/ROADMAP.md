@@ -9,217 +9,144 @@
 - ✅ **v1.4 Admin Portal Onboarding** - Phases 17-19 (shipped 2026-03-09)
 - ✅ **v1.5.1 Security Hardening** - Phase 25 (shipped 2026-03-10)
 - ✅ **v2.0 Team Efficiency & Owner Oversight** - Phase 26 (shipped 2026-03-15)
-- 🚧 **v2.1 Attendance & Live Oversight** - Phases 28-31 (carry-over: 30-31)
-- 🚧 **v3.0 Production Hardening & Design** - Phases 33-38 (new)
+- ✅ **v2.1 Attendance & Live Oversight** - Phases 28-31 (shipped 2026-03-27)
+- ✅ **v3.0 Production Hardening & Design** - Phases 33-38 (shipped 2026-03-27)
+- 🚧 **v4.0 Portal & Financials** - Phases 39-43 (in progress)
 
 ## Phases
 
 <details>
-<summary>✅ v1.0–v2.0 (Phases 1-29) — SHIPPED</summary>
+<summary>✅ v1.0–v3.0 (Phases 1-38) — SHIPPED</summary>
 
-Phases 1-29 complete. See MILESTONES.md for full history.
+Phases 1-38 complete. See `.planning/milestones/` for archived roadmaps and state files.
 
-Phase 28-29: v2.1 DB migration, session clock-in/clock-out — complete.
+Phase highlights:
+
+- v1.0–v1.5.1: Client portal, animations, ERP-portal sync, onboarding, security (phases 1-25)
+- v2.0–v2.1: Team efficiency, session-based attendance, live status dashboard (phases 26-31)
+- v3.0: Security audit fixes, perf optimization, observability, testing, design polish (phases 33-38)
 
 </details>
 
 ---
 
-### 🚧 v2.1 Carry-Over (In Progress)
+### 🚧 v4.0 Portal & Financials (In Progress)
 
-#### Phase 30: Live Status Dashboard
-
-**Goal:** Fawzi can see at a glance who is currently working, on which project, for how long — and can drill into session history for any employee.
-
-**Depends on:** Phase 29 (complete)
-**Requirements:** V21-01
-
-**Success Criteria:**
-
-1. Admin dashboard shows each employee's current status: clocked in (green, project name, duration ticking) or offline (grey, time since last session)
-2. Status indicators refresh automatically via SWR polling
-3. Admin can select any employee and date to view their session history
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 30-01: Live status data action + SWR hook
-- [x] 30-02: Live status panel UI on admin dashboard
-- [x] 30-03: Session history view (per-employee, per-date)
-
-#### Phase 31: Clock-Out Enforcement
-
-**Goal:** Employees who forget to clock out are caught — idle detection, planned logout reminders, browser exit warnings.
-
-**Depends on:** Phase 29 (complete)
-**Requirements:** V21-02
-
-**Success Criteria:**
-
-1. After configurable idle period, "Are you still working?" prompt appears
-2. If planned logout time passes while clocked in, banner reminder appears
-3. Closing browser tab while clocked in shows native beforeunload warning
-4. Extended idle auto-closes session with inactivity note
-
-**Plans:** 2 plans
-
-Plans:
-
-- [x] 31-01: Idle detection hook + "still working?" prompt + auto clock-out
-- [x] 31-02: Planned logout banner + beforeunload warning
+**Milestone Goal:** Overhaul the client portal experience (design, file uploads, onboarding), give admins powerful management tools (health dashboard, impersonation, quick actions), and complete the financial dashboard with expenses and retainers.
 
 ---
 
-### 🚧 v3.0 Production Hardening & Design (New)
+#### Phase 39: Portal Cleanup
 
-**Milestone Goal:** Close all CRITICAL and HIGH findings from the 2026-03-26 production audit, add observability, increase test coverage, and polish the design to match Impeccable v4.0 spec.
+**Goal:** Dead code is removed and portal navigation reflects the current feature set.
+**Depends on:** Phase 38
+**Requirements:** CLEAN-01, CLEAN-02, CLEAN-03
+**Success Criteria** (what must be TRUE):
 
-#### Phase 33: Security Fixes
-
-**Goal:** All security vulnerabilities from the audit are resolved — CVEs patched, injection vectors closed, auth hardened.
-
-**Depends on:** None (can start immediately)
-**Requirements:** SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06
-
-**Success Criteria:**
-
-1. `npm audit --omit=dev` shows zero high/critical vulnerabilities
-2. All cron endpoints require auth in every environment (no `NODE_ENV` guard)
-3. Vercel webhook `.or()` uses parameterized filters — no string interpolation of user input
-4. `/api/claude/*` routes use `crypto.timingSafeEqual()` for API key comparison
-5. SVG removed from allowed MIME types in `project-files.ts`
-6. CSP has no `unsafe-eval` directive
-
-**Plans:** 2 plans
+1. `/portal/messages` route returns 404 — no page exists, no dead link
+2. Portal sidebar shows no Messages item in navigation
+3. Portal navigation links match all available routes with no broken or orphaned entries
+   **Plans:** TBD
 
 Plans:
 
-- [x] 33-01: Next.js upgrade + npm audit fix + cron auth hardening + CSP cleanup
-- [x] 33-02: Fix Vercel webhook filter injection + claude API timing-safe + SVG upload removal
+- [ ] 39-01: Remove Messages route, sidebar link, and update portal navigation
 
-#### Phase 34: Performance Optimization
+---
 
-**Goal:** Middleware is fast (no DB query for role), reorder is efficient, and AI chat doesn't rebuild context on every message.
+#### Phase 40: Client File Uploads
 
-**Depends on:** None (can run parallel to Phase 33)
-**Requirements:** PERF-01 through PERF-08
+**Goal:** Clients can upload files to their projects and admins see and receive notification of those uploads.
+**Depends on:** Phase 39
+**Requirements:** UPLOAD-01, UPLOAD-02, UPLOAD-03, UPLOAD-04
+**Success Criteria** (what must be TRUE):
 
-**Success Criteria:**
-
-1. Middleware makes zero DB queries for authenticated users (role in JWT claims)
-2. `reorderTasks` sends at most 2 DB queries regardless of task count (1 auth check, 1 batch update)
-3. `isUserAdmin()` uses React `cache()` — verified by checking only 1 profiles query per request
-4. `framer-motion` not in initial page bundle (lazy loaded)
-5. Chat route uses `assignee_id` (not `assigned_to`) and caches context per conversation
-6. `getProjectHealth` and `today-page.tsx` use `Promise.all` for parallel queries
-
-**Plans:** 3 plans
+1. Client can drag-and-drop or browse to upload files on a project page and sees them listed immediately after
+2. Uploaded files are stored in Supabase Storage with the correct project association
+3. Admin/staff can view client-uploaded files in the ERP project view and download them
+4. Admin receives an email notification when a client uploads a file
+   **Plans:** TBD
 
 Plans:
 
-- [x] 34-01: JWT custom claims for role in middleware (Supabase auth hook + middleware rewrite)
-- [x] 34-02: Batch reorder RPC + React cache() for auth helpers + Promise.all for parallel queries + fix assignee_id
-- [x] 34-03: Lazy-load framer-motion + chat context caching
+- [ ] 40-01: Supabase Storage setup, upload server action, client upload UI with drag-and-drop
+- [ ] 40-02: ERP admin view for client uploads and email notification on upload
 
-#### Phase 35: Observability
+---
 
-**Goal:** Production errors are tracked, page performance is measured, and uptime monitoring actually alerts.
+#### Phase 41: Financial Dashboard Completion
 
-**Depends on:** None (can run parallel)
-**Requirements:** OBS-01, OBS-02, OBS-03
+**Goal:** Admin has full financial picture — expenses tracked, net cash flow calculated, recurring revenue visible.
+**Depends on:** Phase 38 (independent of phases 39-40, can run in parallel)
+**Requirements:** FIN-01, FIN-02, FIN-03, FIN-04
+**Success Criteria** (what must be TRUE):
 
-**Success Criteria:**
-
-1. Sentry captures unhandled exceptions in production (client + server + edge)
-2. Vercel Analytics dashboard shows page views and Core Web Vitals
-3. Speed Insights active in production
-4. Uptime monitoring fires alerts within 15 minutes of downtime (either via cron or UptimeRobot native)
-
-**Plans:** 2 plans
+1. Admin can add, edit, and delete an expense entry (amount, category, date, description) from the financials page
+2. Admin sees a monthly expense breakdown chart grouped by category
+3. Admin sees net cash flow (revenue minus expenses) per month on the financials dashboard
+4. Admin sees a retainer/recurring clients view with each client's monthly total, synced from Zoho
+   **Plans:** TBD
 
 Plans:
 
-- [x] 35-01: Install @sentry/nextjs, configure client/server/edge, create Sentry project
-- [x] 35-02: Add @vercel/analytics + @vercel/speed-insights to layout + fix uptime cron frequency
+- [ ] 41-01: Expenses DB table, CRUD server actions, expense entry UI on financials page
+- [ ] 41-02: Monthly expense chart by category, net cash flow row, and retainer clients view
 
-#### Phase 36: Reliability & Testing
+---
 
-**Goal:** Test coverage reaches 30%+, error boundaries cover all routes, and build pipeline catches type errors.
+#### Phase 42: Portal Design Refresh & Onboarding
 
-**Depends on:** None (can run parallel)
-**Requirements:** REL-01 through REL-05
+**Goal:** Every client portal page is premium and consistent with Impeccable v4.0, and new clients are guided from their first login.
+**Depends on:** Phases 39-40 (clean nav and file uploads in place before redesign)
+**Requirements:** DESIGN-01, DESIGN-02, DESIGN-03, DESIGN-04, DESIGN-05, ONBOARD-01, ONBOARD-02
+**Success Criteria** (what must be TRUE):
 
-**Success Criteria:**
-
-1. `npm test -- --coverage` shows 30%+ statement coverage
-2. Every top-level route under `app/` has an `error.tsx`
-3. Cron route error responses are sanitized (no internal paths)
-4. Pre-commit or pre-push hook runs `tsc --noEmit`
-5. All existing tests pass (`npm test` exits 0)
-
-**Plans:** 3 plans
-
-Plans:
-
-- [x] 36-01: Fix/remove failing tests + add error.tsx to all routes + tsc hook + sanitize cron errors
-- [x] 36-02: Write tests for core action modules (inbox, projects, phases, daily-flow)
-- [x] 36-03: Write tests for auth helpers, integrations, server-utils + expand to 576 tests / 39% coverage
-
-#### Phase 37: Deployment Cleanup
-
-**Goal:** Build is clean, migrations are ordered correctly, and health endpoint is fast.
-
-**Depends on:** Phase 33 (needs Next.js upgrade first)
-**Requirements:** DEP-01, DEP-02, DEP-03
-
-**Success Criteria:**
-
-1. No duplicate migration timestamps — all migration files have unique timestamps
-2. `/api/health` responds under 500ms consistently
-3. `npm run build` produces zero warnings
-4. Full deploy to Vercel + post-deploy verification passes
-
-**Plans:** 1 plan
+1. Portal sidebar uses tinted neutrals, brand accent, and fluid spacing matching Impeccable v4.0
+2. Portal dashboard has clear visual hierarchy and portal project detail page shows clean progress with no roadmap noise
+3. All remaining portal pages (billing, requests, settings, files) are visually consistent with the updated design
+4. Portal works flawlessly on mobile — 44px touch targets, no horizontal scroll, fluid type scale
+5. A first-time client sees a welcome flow on login that explains what the portal offers before reaching the dashboard
+6. All empty states on portal pages offer a clear next-action prompt rather than a blank screen
+   **Plans:** TBD
 
 Plans:
 
-- [x] 37-01: Rename duplicate migration + optimize health endpoint + force-dynamic on /research + deploy + verify
+- [ ] 42-01: Sidebar and global portal layout refresh
+- [ ] 42-02: Dashboard and project detail page redesign
+- [ ] 42-03: Remaining portal pages (billing, requests, settings, files) + full responsive pass
+- [ ] 42-04: Welcome onboarding flow (first-login detection) and improved empty states
 
-#### Phase 38: Design Review & Polish
+---
 
-**Goal:** Every page matches the Impeccable v4.0 design spec — tinted neutrals, fluid type, layered surfaces, consistent spacing.
+#### Phase 43: Admin Management Tools
 
-**Depends on:** All other phases (final pass)
-**Requirements:** DES-01 through DES-05
+**Goal:** Admins can manage client relationships from the portal hub — post updates, share files, monitor health, impersonate clients, hide inactive accounts.
+**Depends on:** Phase 42 (builds on refreshed portal UI)
+**Requirements:** ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05
+**Success Criteria** (what must be TRUE):
 
-**Success Criteria:**
-
-1. Dashboard homepage has clear visual hierarchy, consistent spacing, no orphan elements
-2. Projects list/detail pages use tinted neutrals (no pure gray) and consistent surface layers
-3. Settings pages are clean (no VAPI remnants, tight layout)
-4. Schedule page matches dashboard design language
-5. `/critique` audit on 3 key pages shows no CRITICAL or HIGH design issues
-
-**Plans:** 2 plans
+1. Admin can post a client-visible project update directly from the portal hub without opening the ERP project view
+2. Admin can share a file with a client directly from the portal hub
+3. Admin sees a client health overview listing last login date, overdue invoice count, stale project flags, and attention-needed indicators per client
+4. Admin can switch into "view as client" mode that renders the exact client portal UI with zero admin elements visible
+5. Admin can hide or archive an inactive client from the portal hub, removing them from the default client list
+   **Plans:** TBD
 
 Plans:
 
-- [x] 38-01: Design audit all pages with `/critique` — document findings
-- [x] 38-02: Implement design fixes across dashboard, projects, settings, schedule
+- [ ] 43-01: Quick actions panel — post update and share file per project from portal hub
+- [ ] 43-02: Client health overview — last login, overdue invoices, stale projects, attention flags
+- [ ] 43-03: View-as-client impersonation mode and hide/archive inactive clients
 
 ---
 
 ## Progress
 
-| Phase                        | Milestone | Plans Complete | Status   | Completed  |
-| ---------------------------- | --------- | -------------- | -------- | ---------- |
-| 1-29                         | v1.0–v2.1 | All            | Complete | 2026-03-25 |
-| 30. Live Status Dashboard    | v2.1      | 3/3            | Complete | 2026-03-27 |
-| 31. Clock-Out Enforcement    | v2.1      | 2/2            | Complete | 2026-03-27 |
-| 33. Security Fixes           | v3.0      | 2/2            | Complete | 2026-03-27 |
-| 34. Performance Optimization | v3.0      | 3/3            | Complete | 2026-03-27 |
-| 35. Observability            | v3.0      | 2/2            | Complete | 2026-03-27 |
-| 36. Reliability & Testing    | v3.0      | 3/3            | Complete | 2026-03-27 |
-| 37. Deployment Cleanup       | v3.0      | 1/1            | Complete | 2026-03-27 |
-| 38. Design Review & Polish   | v3.0      | 2/2            | Complete | 2026-03-27 |
+| Phase                                  | Milestone | Plans Complete | Status      | Completed  |
+| -------------------------------------- | --------- | -------------- | ----------- | ---------- |
+| 1-38                                   | v1.0–v3.0 | All            | Complete    | 2026-03-27 |
+| 39. Portal Cleanup                     | v4.0      | 0/1            | Not started | -          |
+| 40. Client File Uploads                | v4.0      | 0/2            | Not started | -          |
+| 41. Financial Dashboard Completion     | v4.0      | 0/2            | Not started | -          |
+| 42. Portal Design Refresh & Onboarding | v4.0      | 0/4            | Not started | -          |
+| 43. Admin Management Tools             | v4.0      | 0/3            | Not started | -          |
