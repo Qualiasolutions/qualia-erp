@@ -2368,6 +2368,7 @@ export type Database = {
           description: string | null;
           file_size: number;
           id: string;
+          is_client_upload: boolean;
           is_client_visible: boolean | null;
           mime_type: string | null;
           name: string;
@@ -2384,6 +2385,7 @@ export type Database = {
           description?: string | null;
           file_size: number;
           id?: string;
+          is_client_upload?: boolean;
           is_client_visible?: boolean | null;
           mime_type?: string | null;
           name: string;
@@ -2400,6 +2402,7 @@ export type Database = {
           description?: string | null;
           file_size?: number;
           id?: string;
+          is_client_upload?: boolean;
           is_client_visible?: boolean | null;
           mime_type?: string | null;
           name?: string;
