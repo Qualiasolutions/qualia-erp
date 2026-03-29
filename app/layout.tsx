@@ -20,7 +20,7 @@ import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.qualiasolutions.net';
 
 export const viewport: Viewport = {
   themeColor: [
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     'AI assistant',
     'Qualia Solutions',
   ],
-  authors: [{ name: 'Qualia Solutions', url: 'https://qualiasolutions.io' }],
+  authors: [{ name: 'Qualia Solutions', url: 'https://qualiasolutions.net' }],
   creator: 'Qualia Solutions',
   publisher: 'Qualia Solutions',
   metadataBase: new URL(siteUrl),

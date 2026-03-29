@@ -194,7 +194,7 @@ No data export, no account self-deletion, no consent tracking.
 
 ### M14. `NEXT_PUBLIC_SITE_URL` Not Set → Wrong robots/sitemap Domain
 
-Falls back to `app.qualiasolutions.io` instead of `qualia-erp.vercel.app`.
+Falls back to `portal.qualiasolutions.net` (fixed).
 
 ### M15. PWA Manifest Icon Mismatch
 

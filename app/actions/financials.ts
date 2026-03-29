@@ -7,6 +7,26 @@ import { createExpenseSchema, updateExpenseSchema } from '@/lib/validation';
 const ADMIN_EMAIL = 'info@qualiasolutions.net';
 const TRACKING_START_DATE = '2026-01-15';
 
+// Zoho Invoice customer names → portal project names
+// Only customers in this map appear in financials
+const ZOHO_CUSTOMER_TO_PROJECT: Record<string, string> = {
+  'CSC Zyprus Property Group Ltd': 'Sophia - Zyprus',
+  'GSC UNDERDOG SALES LTD': 'Underdog',
+  'K.T.E CAR COLOURING LTD': 'LuxCars',
+  'Mr. Marco Pellizzeri': 'Doctor Marco',
+  'PETA TRADING LTD': 'Peta',
+  'Sakani (Smart IT Buildings L.L.C.)': 'Sakani',
+  'Sofian & Shehadeh (sslaw)': 'SS Law',
+  "Urban's & Melon's & Kids Festive": 'Urban',
+  Woodlocation: 'Wood Location',
+};
+
+const ALLOWED_CUSTOMERS = new Set(Object.keys(ZOHO_CUSTOMER_TO_PROJECT));
+
+function mapCustomerName(zohoName: string): string {
+  return ZOHO_CUSTOMER_TO_PROJECT[zohoName] ?? zohoName;
+}
+
 async function isAdminUser(): Promise<boolean> {
   const supabase = await createClient();
   const {
@@ -93,18 +113,26 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
   if (!invoices || !payments) return null;
   const expenses = expensesRaw ?? [];
 
+  // Filter to only Zoho customers that match portal projects and map names
+  const filteredInvoices = invoices
+    .filter((i) => ALLOWED_CUSTOMERS.has(i.customer_name))
+    .map((i) => ({ ...i, customer_name: mapCustomerName(i.customer_name) }));
+  const filteredPayments = payments
+    .filter((p) => ALLOWED_CUSTOMERS.has(p.customer_name))
+    .map((p) => ({ ...p, customer_name: mapCustomerName(p.customer_name) }));
+
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const lastMonth = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
   // Separate hidden invoices
-  const hiddenInvoices = invoices.filter((i) => i.is_hidden) as FinancialInvoice[];
-  const visibleInvoices = invoices.filter((i) => !i.is_hidden);
+  const hiddenInvoices = filteredInvoices.filter((i) => i.is_hidden) as FinancialInvoice[];
+  const visibleInvoices = filteredInvoices.filter((i) => !i.is_hidden);
 
   // Only count invoices from tracking start date for totals
   const trackedInvoices = visibleInvoices.filter((i) => i.date >= TRACKING_START_DATE);
-  const trackedPayments = payments.filter((p) => p.date >= TRACKING_START_DATE);
+  const trackedPayments = filteredPayments.filter((p) => p.date >= TRACKING_START_DATE);
 
   // KPIs
   const totalInvoiced = trackedInvoices
@@ -206,7 +234,7 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     string,
     { total: number; months: Set<string>; lastDate: string }
   >();
-  for (const inv of invoices) {
+  for (const inv of filteredInvoices) {
     const existing = invoiceCustomerMap.get(inv.customer_name) || {
       total: 0,
       months: new Set<string>(),
@@ -219,7 +247,7 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
   }
   // Count raw invoice occurrences per customer
   const invoiceCountMap = new Map<string, number>();
-  for (const inv of invoices) {
+  for (const inv of filteredInvoices) {
     invoiceCountMap.set(inv.customer_name, (invoiceCountMap.get(inv.customer_name) || 0) + 1);
   }
   const recurringClients: RecurringClient[] = Array.from(invoiceCustomerMap.entries())
@@ -237,7 +265,7 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     .sort((a, b) => b.monthly_total - a.monthly_total);
 
   // Last synced
-  const latestSync = invoices[0]?.synced_at || payments[0]?.synced_at || null;
+  const latestSync = filteredInvoices[0]?.synced_at || filteredPayments[0]?.synced_at || null;
 
   return {
     totalInvoiced,

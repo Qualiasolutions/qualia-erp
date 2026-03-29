@@ -1,21 +1,14 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://app.qualiasolutions.io';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://portal.qualiasolutions.net';
 
   return {
     rules: [
       {
         userAgent: '*',
         allow: ['/', '/auth/login'],
-        disallow: [
-          '/api/',
-          '/protected/',
-          '/projects/',
-          '/clients/',
-          '/schedule/',
-          '/settings/',
-        ],
+        disallow: ['/api/', '/protected/', '/projects/', '/clients/', '/schedule/', '/settings/'],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,
