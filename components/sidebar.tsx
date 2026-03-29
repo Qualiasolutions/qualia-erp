@@ -167,12 +167,13 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
   const isEmployee = userRole === 'employee';
+  const canTrackTime = userRole === 'employee' || userRole === 'manager';
   const [showClockOut, setShowClockOut] = useState(false);
 
-  // Session clock-out (employees only)
+  // Session clock-out (employees and managers)
   const { workspaceId } = useCurrentWorkspaceId();
   const { session: activeSession } = useActiveSession(
-    isEmployee && workspaceId ? workspaceId : null
+    canTrackTime && workspaceId ? workspaceId : null
   );
 
   const isActive = (href: string) =>
@@ -276,8 +277,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         )}
       </nav>
 
-      {/* Clock-out button — employees with active session only */}
-      {isEmployee && activeSession && workspaceId && (
+      {/* Clock-out button — employees and managers with active session */}
+      {canTrackTime && activeSession && workspaceId && (
         <div className="px-3 pb-2">
           <div className="mb-2 h-px bg-border/40" />
           <button
