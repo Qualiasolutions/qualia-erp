@@ -242,25 +242,39 @@ export async function syncPlanningFromGitHubWithServiceRole(
       // Match existing by phase number prefix
       const { data: existingList } = await supabase
         .from('project_phases')
-        .select('id')
+        .select('id, status, started_at, completed_at')
         .eq('project_id', projectId)
         .ilike('name', `${phase.phaseNumber} %`);
 
       const existing = existingList?.[0] || null;
+
+      // Never downgrade a completed phase — DB is source of truth for status
+      const shouldPreserveStatus = existing?.status === 'completed' && phase.status !== 'completed';
+      const finalStatus = shouldPreserveStatus ? existing.status : phase.status;
+      const finalStartedAt = shouldPreserveStatus
+        ? existing.started_at
+        : phase.startedAt
+          ? new Date(phase.startedAt).toISOString()
+          : null;
+      const finalCompletedAt = shouldPreserveStatus
+        ? existing.completed_at
+        : phase.completedAt
+          ? new Date(phase.completedAt).toISOString()
+          : null;
 
       const phaseData = {
         project_id: projectId,
         workspace_id: workspaceId,
         name: `${phase.phaseNumber} — ${phase.name}`,
         description: phase.description,
-        status: phase.status,
+        status: finalStatus,
         sort_order: sortOrder,
         milestone_number: phase.milestoneNumber,
         plan_count: phase.planCount,
         plans_completed: phase.plansCompleted,
-        is_locked: phase.status === 'not_started',
-        completed_at: phase.completedAt ? new Date(phase.completedAt).toISOString() : null,
-        started_at: phase.startedAt ? new Date(phase.startedAt).toISOString() : null,
+        is_locked: finalStatus === 'not_started',
+        completed_at: finalCompletedAt,
+        started_at: finalStartedAt,
         github_synced_at: new Date().toISOString(),
       };
 

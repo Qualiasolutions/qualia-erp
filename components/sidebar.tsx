@@ -27,7 +27,15 @@ import { useAdminContext } from '@/components/admin-provider';
 import { useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
 import { ClockOutModal } from '@/components/clock-out-modal';
 
-const employeeAllowedHrefs = ['/', '/schedule', '/knowledge', '/projects', '/status'];
+const employeeAllowedHrefs = [
+  '/',
+  '/schedule',
+  '/knowledge',
+  '/projects',
+  '/status',
+  '/portal',
+  '/settings',
+];
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   DropdownMenu,
