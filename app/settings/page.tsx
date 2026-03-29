@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { SettingsLayout } from './settings-layout';
 import { connection } from 'next/server';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
 import { NotificationSection } from '@/components/settings/notification-section';
@@ -216,8 +217,12 @@ const allSections = [
 ];
 
 export default async function SettingsPage() {
-  const role = await getUserRoleForSettings();
-  const isAdmin = role === 'admin';
+  const dbRole = await getUserRoleForSettings();
+  // Check for view-as cookie (admin viewing as another role)
+  const cookieStore = await cookies();
+  const viewAsRole = cookieStore.get('qualia_view_as_role')?.value;
+  const effectiveRole = dbRole === 'admin' && viewAsRole ? viewAsRole : dbRole;
+  const isAdmin = effectiveRole === 'admin';
   const sections = allSections
     .filter((s) => isAdmin || !s.adminOnly)
     .map((s) => ({ id: s.id, label: s.label, content: s.content, danger: s.danger }));

@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { OwnerUpdatesBanner } from './owner-updates-banner';
+import { useAdminContext } from '@/components/admin-provider';
 
 interface TodayDashboardProps {
   meetings: MeetingWithRelations[];
@@ -36,6 +37,7 @@ interface TodayDashboardProps {
     full_name: string | null;
     email: string | null;
     avatar_url: string | null;
+    role?: string | null;
   }[];
   currentUserId: string | null;
   userRole: string | null;
@@ -61,14 +63,15 @@ export function TodayDashboard({
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [justClockedIn, setJustClockedIn] = useState(false);
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
-  const isRealAdmin = userRole === 'admin';
+  const { isViewingAs, startViewAs, stopViewAs, realRole } = useAdminContext();
+  const isRealAdmin = realRole === 'admin';
   const now = new Date();
 
-  // "View as" — admin can preview employee's task list, but keeps admin layout
+  // "View as" — admin can preview the platform as another user's role
   const effectiveUserId = viewAsUserId || currentUserId;
-  const effectiveRole = userRole; // Admin keeps admin layout
+  const effectiveRole = isViewingAs ? 'manager' : userRole;
   const isNonAdmin = effectiveRole !== 'admin';
-  const viewingAsEmployee = isRealAdmin && viewAsUserId !== null;
+  const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
 
   // Session gate for employees — poll only when relevant (requires daily clock-in)
   const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
@@ -77,7 +80,7 @@ export function TodayDashboard({
 
   // Show clock-in modal when employee has no active TODAY session
   const showClockIn =
-    isNonAdmin && !viewingAsEmployee && !justClockedIn && !sessionLoading && activeSession === null;
+    isNonAdmin && !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
 
   // SWR hooks for live data (auto-refresh after task creation)
   const { meetings } = useMeetings(initialMeetings);
@@ -125,7 +128,19 @@ export function TodayDashboard({
               <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" />
               <Select
                 value={viewAsUserId || '__admin__'}
-                onValueChange={(v) => setViewAsUserId(v === '__admin__' ? null : v)}
+                onValueChange={(v) => {
+                  if (v === '__admin__') {
+                    setViewAsUserId(null);
+                    if (isViewingAs) stopViewAs();
+                  } else {
+                    setViewAsUserId(v);
+                    const selectedProfile = profiles.find((p) => p.id === v);
+                    const selectedRole = selectedProfile?.role;
+                    if (selectedRole && selectedRole !== 'admin') {
+                      startViewAs(selectedRole);
+                    }
+                  }
+                }}
               >
                 <SelectTrigger
                   className={cn(
@@ -213,7 +228,7 @@ export function TodayDashboard({
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
           {/* "Viewing as" indicator */}
-          {viewingAsEmployee && (
+          {viewingAsOther && (
             <div className="bg-amber-500/6 mb-3 flex shrink-0 animate-slide-up items-center gap-2.5 rounded-lg border border-amber-500/25 px-4 py-2 backdrop-blur-sm">
               <div className="flex size-6 items-center justify-center rounded-md bg-amber-500/15">
                 <Eye className="size-3 text-amber-600 dark:text-amber-400" />
@@ -221,13 +236,16 @@ export function TodayDashboard({
               <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
                 Viewing as{' '}
                 <span className="font-semibold">
-                  {profiles.find((p) => p.id === viewAsUserId)?.full_name || 'employee'}
+                  {profiles.find((p) => p.id === viewAsUserId)?.full_name || 'team member'}
                 </span>
               </span>
               <button
                 type="button"
                 className="ml-auto rounded-md px-2 py-0.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10 dark:text-amber-400"
-                onClick={() => setViewAsUserId(null)}
+                onClick={() => {
+                  setViewAsUserId(null);
+                  if (isViewingAs) stopViewAs();
+                }}
               >
                 Exit
               </button>
@@ -258,7 +276,7 @@ export function TodayDashboard({
                 workspaceId={workspaceId}
                 userRole={effectiveRole}
                 currentUserId={effectiveUserId}
-                viewingAs={viewingAsEmployee}
+                viewingAs={viewingAsOther}
               />
             </div>
           </div>
@@ -279,7 +297,7 @@ export function TodayDashboard({
       />
 
       {/* Session clock-in gate (employees only, not in "view as" mode) */}
-      {isNonAdmin && !viewingAsEmployee && (
+      {isNonAdmin && !viewingAsOther && (
         <ClockInModal
           open={showClockIn}
           workspaceId={workspaceId}
