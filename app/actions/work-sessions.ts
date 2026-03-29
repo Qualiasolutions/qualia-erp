@@ -367,6 +367,47 @@ export async function getSessionsAdmin(
 }
 
 /**
+ * Get the current user's own work sessions (last 30 days).
+ * Any authenticated user can call this.
+ */
+export async function getMySessions(
+  workspaceId: string,
+  options: { limit?: number } = {}
+): Promise<WorkSession[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return [];
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from('work_sessions')
+    .select(
+      `*,
+      project:projects!work_sessions_project_id_fkey (id, name)`
+    )
+    .eq('profile_id', user.id)
+    .eq('workspace_id', workspaceId)
+    .gte('started_at', thirtyDaysAgo.toISOString())
+    .order('started_at', { ascending: false })
+    .limit(options.limit || 100);
+
+  if (error) {
+    console.error('[getMySessions] Error:', error);
+    return [];
+  }
+
+  return (data || []).map((row) => ({
+    ...row,
+    project: Array.isArray(row.project) ? row.project[0] || null : row.project,
+  })) as WorkSession[];
+}
+
+/**
  * Get live status for all employees in the workspace.
  * Returns each employee as online (clocked in) or offline (last session time).
  * Admin only. Results are sorted: online first, then offline; alphabetically within each group.

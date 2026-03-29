@@ -6,6 +6,7 @@ import { LogoutButton } from '@/components/logout-button';
 import { NotificationSection } from '@/components/settings/notification-section';
 import { AdminNotesSection } from '@/components/ai-assistant/admin-notes-section';
 import { WorkScheduleSection } from '@/components/settings/work-schedule-section';
+import { MyHoursSection } from '@/components/settings/my-hours-section';
 import { ChevronRight, Plug, MessageSquarePlus } from 'lucide-react';
 import Link from 'next/link';
 
@@ -180,6 +181,7 @@ function NotificationsSection() {
 
 const sections = [
   { id: 'account', label: 'Account', content: <AccountSection /> },
+  { id: 'my-hours', label: 'My Hours', content: <MyHoursSection /> },
   { id: 'appearance', label: 'Appearance', content: <AppearanceSection /> },
   { id: 'notifications', label: 'Notifications', content: <NotificationsSection /> },
   { id: 'work-schedule', label: 'Work Schedule', content: <WorkScheduleSection /> },
