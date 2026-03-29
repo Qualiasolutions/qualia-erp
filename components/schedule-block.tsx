@@ -40,7 +40,7 @@ interface ScheduleBlockProps {
   meetingsSidebar?: React.ReactNode;
 }
 
-const DEFAULT_SLOT_HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const DEFAULT_SLOT_HOURS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 const HASAN_SLOT_HOURS = [18, 19, 20, 21, 22, 23];
 const SLOT_HEIGHT = 72; // must match min-h-[72px] on grid cells
 
