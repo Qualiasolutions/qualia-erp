@@ -233,8 +233,8 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           </div>
         )}
 
-        {/* Portal section */}
-        {!isEmployee && (
+        {/* Portal section — visible to all internal roles */}
+        {
           <div className="space-y-1">
             <SectionLabel>External</SectionLabel>
             <div className="space-y-0.5">
@@ -248,7 +248,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
               ))}
             </div>
           </div>
-        )}
+        }
 
         {/* Admin section — admins only */}
         {isAdmin && (
