@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   BookOpen,
-  Zap,
-  Flame,
-  Terminal,
+  Layers,
+  GitBranch,
+  Wrench,
+  FileText,
+  ListChecks,
   Check,
   Search,
   X,
@@ -15,7 +17,8 @@ import {
   CheckCheck,
   ClipboardList,
   ArrowRight,
-  ListChecks,
+  Terminal,
+  Code2,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
@@ -24,9 +27,11 @@ import { cn } from '@/lib/utils';
 import type { Guide, GuideStep } from '@/lib/guides-data';
 
 interface KnowledgeData {
-  greenfieldGuides: Guide[];
-  brownfieldGuides: Guide[];
-  workflowGuides: Guide[];
+  foundationsGuides: Guide[];
+  lifecycleGuides: Guide[];
+  operationsGuides: Guide[];
+  referenceGuides: Guide[];
+  checklistGuides: Guide[];
   allGuides: Guide[];
 }
 
@@ -35,43 +40,60 @@ interface KnowledgePageClientProps {
 }
 
 const categoryIcons: Record<string, React.ElementType> = {
-  greenfield: Zap,
-  brownfield: Flame,
-  workflow: Terminal,
+  foundations: Layers,
+  lifecycle: GitBranch,
+  operations: Wrench,
+  reference: FileText,
   checklist: ListChecks,
 };
 
 const categoryLabels: Record<string, string> = {
-  greenfield: 'New Projects',
-  brownfield: 'Existing Projects',
-  workflow: 'Workflows & Tools',
+  foundations: 'Foundations',
+  lifecycle: 'Build Lifecycle',
+  operations: 'Daily Operations',
+  reference: 'Reference',
   checklist: 'Shipping Checklists',
+};
+
+const categoryDescriptions: Record<string, string> = {
+  foundations: 'Understand the system before using it',
+  lifecycle: 'The full build cycle — step by step',
+  operations: 'Quick tasks, debugging, design polish',
+  reference: 'Commands, infrastructure, troubleshooting',
+  checklist: 'Verify before shipping',
 };
 
 const categoryColors: Record<
   string,
   { bg: string; text: string; border: string; accent: string; gradient: string }
 > = {
-  greenfield: {
-    bg: 'bg-emerald-500/8',
-    text: 'text-emerald-600 dark:text-emerald-400',
-    border: 'border-emerald-500/20',
-    accent: 'bg-emerald-500',
-    gradient: 'from-emerald-500/10 via-transparent to-transparent',
+  foundations: {
+    bg: 'bg-teal-500/8',
+    text: 'text-teal-600 dark:text-teal-400',
+    border: 'border-teal-500/20',
+    accent: 'bg-teal-500',
+    gradient: 'from-teal-500/10 via-transparent to-transparent',
   },
-  brownfield: {
+  lifecycle: {
+    bg: 'bg-violet-500/8',
+    text: 'text-violet-600 dark:text-violet-400',
+    border: 'border-violet-500/20',
+    accent: 'bg-violet-500',
+    gradient: 'from-violet-500/10 via-transparent to-transparent',
+  },
+  operations: {
     bg: 'bg-amber-500/8',
     text: 'text-amber-600 dark:text-amber-400',
     border: 'border-amber-500/20',
     accent: 'bg-amber-500',
     gradient: 'from-amber-500/10 via-transparent to-transparent',
   },
-  workflow: {
-    bg: 'bg-blue-500/8',
-    text: 'text-blue-600 dark:text-blue-400',
-    border: 'border-blue-500/20',
-    accent: 'bg-blue-500',
-    gradient: 'from-blue-500/10 via-transparent to-transparent',
+  reference: {
+    bg: 'bg-sky-500/8',
+    text: 'text-sky-600 dark:text-sky-400',
+    border: 'border-sky-500/20',
+    accent: 'bg-sky-500',
+    gradient: 'from-sky-500/10 via-transparent to-transparent',
   },
   checklist: {
     bg: 'bg-rose-500/8',
@@ -82,12 +104,54 @@ const categoryColors: Record<
   },
 };
 
+// Lifecycle pipeline visualization
+function LifecyclePipeline({ onStepClick }: { onStepClick?: (slug: string) => void }) {
+  const steps = [
+    { label: 'New', slug: 'new-project', icon: '1' },
+    { label: 'Discuss', slug: 'discuss-phase', icon: '2' },
+    { label: 'Plan', slug: 'plan-phase', icon: '3' },
+    { label: 'Execute', slug: 'execute-phase', icon: '4' },
+    { label: 'Verify', slug: 'verify-work', icon: '5' },
+    { label: 'Ship', slug: 'ship-project', icon: '6' },
+  ];
+
+  return (
+    <div className="mb-6 rounded-xl border border-violet-500/15 bg-violet-500/[0.03] p-4">
+      <div className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-widest text-violet-500/60">
+        Build Lifecycle
+      </div>
+      <div className="flex items-center justify-center gap-1 sm:gap-2">
+        {steps.map((step, i) => (
+          <div key={step.slug} className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={() => onStepClick?.(step.slug)}
+              className="group flex flex-col items-center gap-1 transition-all hover:scale-105"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/10 text-[11px] font-bold text-violet-500 transition-colors group-hover:bg-violet-500/20 sm:h-9 sm:w-9 sm:text-xs">
+                {step.icon}
+              </div>
+              <span className="text-[10px] font-medium text-muted-foreground/70 transition-colors group-hover:text-violet-500 sm:text-[11px]">
+                {step.label}
+              </span>
+            </button>
+            {i < steps.length - 1 && (
+              <div className="mt-[-14px] h-px w-3 bg-violet-500/20 sm:w-6" />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Copyable command block
 function CommandBlock({ command }: { command: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(command);
+    // Strip "— comment" suffixes for clipboard
+    const cleanCmd = command.split(' — ')[0].trim();
+    navigator.clipboard.writeText(cleanCmd);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -107,6 +171,43 @@ function CommandBlock({ command }: { command: string }) {
         )}
       </span>
     </button>
+  );
+}
+
+// Example block — shows file content, diagrams, or output
+function ExampleBlock({ title, content }: { title?: string; content: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-lg border border-slate-800/60 bg-slate-950">
+      {title && (
+        <div className="flex items-center justify-between border-b border-slate-800/40 px-3.5 py-2">
+          <span className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+            <Code2 className="h-3 w-3" />
+            {title}
+          </span>
+          <button
+            onClick={handleCopy}
+            className="text-slate-600 transition-colors hover:text-slate-400"
+          >
+            {copied ? (
+              <CheckCheck className="h-3 w-3 text-emerald-400" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
+      )}
+      <pre className="overflow-x-auto px-3.5 py-3 font-mono text-[12px] leading-relaxed text-slate-300">
+        {content}
+      </pre>
+    </div>
   );
 }
 
@@ -138,7 +239,7 @@ function StepCard({
             'relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
             step.isMilestone
               ? 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
-              : `${accentColor}/15 ${accentColor === 'bg-emerald-500' ? 'text-emerald-600 dark:text-emerald-400' : accentColor === 'bg-amber-500' ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`
+              : `${accentColor}/15 ${accentColor === 'bg-teal-500' ? 'text-teal-600 dark:text-teal-400' : accentColor === 'bg-violet-500' ? 'text-violet-600 dark:text-violet-400' : accentColor === 'bg-amber-500' ? 'text-amber-600 dark:text-amber-400' : accentColor === 'bg-sky-500' ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'}`
           )}
         >
           {index + 1}
@@ -175,6 +276,9 @@ function StepCard({
           </p>
         )}
 
+        {/* Example block */}
+        {step.example && <ExampleBlock title={step.exampleTitle} content={step.example} />}
+
         {/* Commands */}
         {step.commands && step.commands.length > 0 && (
           <div className="mt-3 space-y-1.5">
@@ -209,7 +313,6 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
   const colors = categoryColors[guide.category];
   const Icon = categoryIcons[guide.category];
 
-  // Close on escape
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -218,14 +321,12 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
     return () => document.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  // Scroll to top when guide changes
   useEffect(() => {
     panelRef.current?.scrollTo(0, 0);
   }, [guide.slug]);
 
   return (
     <>
-      {/* Backdrop */}
       <m.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -234,8 +335,6 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-
-      {/* Panel */}
       <m.div
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
@@ -243,16 +342,13 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
         className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl"
       >
-        {/* Panel header */}
         <div className="relative shrink-0 border-b border-border px-6 pb-5 pt-6">
-          {/* Category gradient */}
           <div
             className={cn(
               'pointer-events-none absolute inset-0 bg-gradient-to-b opacity-60',
               colors.gradient
             )}
           />
-
           <div className="relative flex items-start justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div
@@ -272,7 +368,7 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
                       colors.text
                     )}
                   >
-                    {guide.category}
+                    {categoryLabels[guide.category]}
                   </span>
                   <span className="text-xs text-muted-foreground/60">
                     {guide.steps.length} steps
@@ -284,7 +380,6 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
                 <p className="mt-0.5 text-sm text-muted-foreground">{guide.subtitle}</p>
               </div>
             </div>
-
             <button
               onClick={onClose}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
@@ -294,10 +389,8 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
           </div>
         </div>
 
-        {/* Panel body — scrollable */}
         <div ref={panelRef} className="flex-1 overflow-y-auto">
           <div className="px-6 py-6">
-            {/* Steps */}
             <div className="space-y-0">
               {guide.steps.map((step, index) => (
                 <StepCard
@@ -310,7 +403,6 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
               ))}
             </div>
 
-            {/* Checklist */}
             <div className="mt-8">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                 <ClipboardList className="h-4 w-4 text-primary" />
@@ -357,6 +449,7 @@ function GuideCard({
   const Icon = categoryIcons[guide.category];
   const milestoneCount = guide.steps.filter((s) => s.isMilestone).length;
   const commandCount = guide.steps.reduce((sum, s) => sum + (s.commands?.length || 0), 0);
+  const exampleCount = guide.steps.filter((s) => s.example).length;
 
   return (
     <m.button
@@ -370,7 +463,6 @@ function GuideCard({
         'active:scale-[0.98]'
       )}
     >
-      {/* Category accent line */}
       <div className={cn('absolute left-0 top-4 h-8 w-[3px] rounded-r-full', colors.accent)} />
 
       <div className="flex items-start justify-between gap-3">
@@ -393,7 +485,6 @@ function GuideCard({
         <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground/40 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
       </div>
 
-      {/* Stats */}
       <div className="mt-3.5 flex items-center gap-3 pl-9">
         <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
           <span className="font-medium text-muted-foreground">{guide.steps.length}</span> steps
@@ -404,9 +495,14 @@ function GuideCard({
             <span className="font-medium text-muted-foreground">{commandCount}</span> commands
           </span>
         )}
+        {exampleCount > 0 && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
+            <Code2 className="h-3 w-3" />
+            <span className="font-medium text-muted-foreground">{exampleCount}</span> examples
+          </span>
+        )}
         {milestoneCount > 0 && (
           <span className="flex items-center gap-1 text-xs text-amber-500/60">
-            <Zap className="h-3 w-3" />
             <span className="font-medium text-amber-500">{milestoneCount}</span> milestones
           </span>
         )}
@@ -420,7 +516,6 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Filter guides
   const filteredGuides = initialData.allGuides.filter((guide) => {
     const matchesSearch =
       guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -428,6 +523,11 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
     const matchesCategory = selectedCategory === 'all' || guide.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  const handleLifecycleStepClick = (slug: string) => {
+    const guide = initialData.allGuides.find((g) => g.slug === slug);
+    if (guide) setSelectedGuide(guide);
+  };
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
@@ -442,9 +542,11 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
         </span>
       </PageHeader>
 
-      {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+          {/* Lifecycle Pipeline */}
+          <LifecyclePipeline onStepClick={handleLifecycleStepClick} />
+
           {/* Search + Filters */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="relative flex-1">
@@ -456,12 +558,13 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
                 className="pl-9"
               />
             </div>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {[
                 { key: 'all', label: 'All' },
-                { key: 'greenfield', label: 'New', icon: Zap },
-                { key: 'brownfield', label: 'Existing', icon: Flame },
-                { key: 'workflow', label: 'Workflow', icon: Terminal },
+                { key: 'foundations', label: 'Foundations', icon: Layers },
+                { key: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
+                { key: 'operations', label: 'Operations', icon: Wrench },
+                { key: 'reference', label: 'Reference', icon: FileText },
                 { key: 'checklist', label: 'Checklists', icon: ListChecks },
               ].map((cat) => (
                 <button
@@ -486,7 +589,7 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
           {/* Guides by category */}
           <div className="space-y-8">
             {(selectedCategory === 'all'
-              ? ['greenfield', 'brownfield', 'workflow', 'checklist']
+              ? ['foundations', 'lifecycle', 'operations', 'reference', 'checklist']
               : [selectedCategory]
             ).map((category) => {
               const categoryGuides = filteredGuides.filter((g) => g.category === category);
@@ -498,10 +601,15 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
                 <div key={category}>
                   <div className="mb-3 flex items-center gap-2">
                     <div className={cn('h-px flex-1', colors.accent, 'opacity-15')} />
-                    <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-                      <Icon className={cn('h-3.5 w-3.5', colors.text)} />
-                      {categoryLabels[category]}
-                    </h2>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                        <Icon className={cn('h-3.5 w-3.5', colors.text)} />
+                        {categoryLabels[category]}
+                      </h2>
+                      <span className="text-[10px] text-muted-foreground/40">
+                        {categoryDescriptions[category]}
+                      </span>
+                    </div>
                     <div className={cn('h-px flex-1', colors.accent, 'opacity-15')} />
                   </div>
 
@@ -530,7 +638,6 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
         </div>
       </div>
 
-      {/* Guide Detail Panel (Slide-over) */}
       <AnimatePresence>
         {selectedGuide && (
           <GuidePanel guide={selectedGuide} onClose={() => setSelectedGuide(null)} />

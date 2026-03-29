@@ -2,16 +2,20 @@ import { KnowledgePageClient } from './knowledge-page-client';
 import { guides, getGuidesByCategory } from '@/lib/guides-data';
 
 export default async function KnowledgePage() {
-  const greenfieldGuides = getGuidesByCategory('greenfield');
-  const brownfieldGuides = getGuidesByCategory('brownfield');
-  const workflowGuides = getGuidesByCategory('workflow');
+  const foundationsGuides = getGuidesByCategory('foundations');
+  const lifecycleGuides = getGuidesByCategory('lifecycle');
+  const operationsGuides = getGuidesByCategory('operations');
+  const referenceGuides = getGuidesByCategory('reference');
+  const checklistGuides = getGuidesByCategory('checklist');
 
   return (
     <KnowledgePageClient
       initialData={{
-        greenfieldGuides,
-        brownfieldGuides,
-        workflowGuides,
+        foundationsGuides,
+        lifecycleGuides,
+        operationsGuides,
+        referenceGuides,
+        checklistGuides,
         allGuides: guides,
       }}
     />
