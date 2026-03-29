@@ -8,7 +8,7 @@ import { fadeInClasses } from '@/lib/transitions';
 
 interface PortalProjectContentProps {
   projectId: string;
-  userRole: 'client' | 'admin' | 'manager' | 'employee';
+  userRole: 'client' | 'admin' | 'manager';
   currentUserId: string;
 }
 

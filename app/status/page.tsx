@@ -136,7 +136,7 @@ export default async function StatusPage() {
     .eq('id', user.id)
     .single();
 
-  const isAdmin = profile?.role === 'admin';
+  const canSeeAllMonitors = profile?.role === 'admin' || profile?.role === 'manager';
 
   let monitors: Monitor[] = [];
   let error: string | null = null;
@@ -150,8 +150,8 @@ export default async function StatusPage() {
   // Filter out hidden monitors
   monitors = monitors.filter((m) => !shouldHideMonitor(m));
 
-  // Filter monitors for non-admins
-  if (!isAdmin && monitors.length > 0) {
+  // Filter monitors for non-admins/non-managers
+  if (!canSeeAllMonitors && monitors.length > 0) {
     const assignedUrls = await getAssignedProjectUrls(user.id);
     if (assignedUrls.length > 0) {
       monitors = monitors.filter((m) => monitorMatchesUrls(m, assignedUrls));

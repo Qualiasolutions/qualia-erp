@@ -24,12 +24,9 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow clients, admins, managers, and employees
+  // Allow clients, admins, and managers
   const userRole = await getUserRole(user.id);
-  if (
-    !userRole ||
-    (userRole !== 'client' && userRole !== 'employee' && !isPortalAdminRole(userRole))
-  ) {
+  if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
     redirect('/');
   }
 
@@ -40,7 +37,7 @@ export default async function PortalLayout({ children }: { children: React.React
     .eq('id', user.id)
     .single();
 
-  const isAdminViewing = isPortalAdminRole(userRole) || userRole === 'employee';
+  const isAdminViewing = isPortalAdminRole(userRole);
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 
@@ -71,7 +68,7 @@ export default async function PortalLayout({ children }: { children: React.React
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-xs">
                 <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-qualia-700 dark:text-primary">
-                  {userRole === 'admin' ? 'Admin' : userRole === 'manager' ? 'Manager' : 'Team'}
+                  {userRole === 'admin' ? 'Admin' : 'Manager'}
                 </span>
                 <span className="text-muted-foreground">Viewing as client</span>
               </div>

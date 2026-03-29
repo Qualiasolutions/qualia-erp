@@ -53,7 +53,7 @@ export default async function NotificationSettingsPage() {
       {preferences && (
         <NotificationPreferencesForm
           initialPreferences={preferences}
-          userRole={profile.role as 'admin' | 'employee' | 'client'}
+          userRole={profile.role as 'admin' | 'manager' | 'client'}
         />
       )}
     </div>

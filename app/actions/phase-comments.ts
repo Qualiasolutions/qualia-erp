@@ -53,8 +53,8 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
     .eq('id', user.id)
     .single();
 
-  // If user is client (not admin or employee), force is_internal = false
-  const isClient = profile?.role !== 'admin' && profile?.role !== 'employee';
+  // If user is client (not admin/manager), force is_internal = false
+  const isClient = profile?.role !== 'admin' && profile?.role !== 'manager';
   const finalIsInternal = isClient ? false : (isInternal ?? false);
 
   // Insert comment

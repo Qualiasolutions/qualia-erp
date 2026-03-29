@@ -47,11 +47,7 @@ export async function inviteClientByEmail(
 
     if (existingProfile) {
       // Profile exists — check role
-      if (
-        existingProfile.role === 'admin' ||
-        existingProfile.role === 'manager' ||
-        existingProfile.role === 'employee'
-      ) {
+      if (existingProfile.role === 'admin' || existingProfile.role === 'manager') {
         return {
           success: false,
           error: 'This email belongs to a team member, not a client',
@@ -1339,11 +1335,7 @@ export async function setupPortalForClient(
 
     if (existingProfile) {
       // Profile exists — check role
-      if (
-        existingProfile.role === 'admin' ||
-        existingProfile.role === 'manager' ||
-        existingProfile.role === 'employee'
-      ) {
+      if (existingProfile.role === 'admin' || existingProfile.role === 'manager') {
         return { success: false, error: 'This email belongs to a team member' };
       }
 
@@ -2457,9 +2449,7 @@ export async function createClientWorkspace(
 
     if (
       existingProfile &&
-      (existingProfile.role === 'admin' ||
-        existingProfile.role === 'manager' ||
-        existingProfile.role === 'employee')
+      (existingProfile.role === 'admin' || existingProfile.role === 'manager')
     ) {
       return {
         success: false,

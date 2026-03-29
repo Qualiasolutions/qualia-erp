@@ -106,11 +106,22 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Employee route restrictions: only dashboard, schedule, knowledge
-    if (userRole === 'employee') {
-      const employeeAllowed = ['/', '/schedule', '/knowledge', '/projects'];
+    // Manager route restrictions
+    if (userRole === 'manager') {
+      const managerAllowed = [
+        '/',
+        '/projects',
+        '/clients',
+        '/schedule',
+        '/status',
+        '/knowledge',
+        '/research',
+        '/portal',
+        '/settings',
+        '/admin',
+      ];
       const isAllowed =
-        employeeAllowed.some((route) =>
+        managerAllowed.some((route) =>
           route === '/' ? pathname === '/' : pathname.startsWith(route)
         ) ||
         pathname.startsWith('/auth') ||
@@ -120,27 +131,6 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.pathname = '/';
         return NextResponse.redirect(url);
-      }
-
-      // Enforce daily clock-in: redirect to dashboard if no today session.
-      // (dashboard shows the clock-in modal). Skip for API and the root itself.
-      // NOTE: This is the ONLY remaining DB query in middleware — intentionally kept
-      // because clock-in state changes throughout the day and cannot be stored in JWT.
-      if (pathname !== '/' && !pathname.startsWith('/api') && !pathname.startsWith('/auth')) {
-        const today = new Date().toISOString().split('T')[0];
-        const { data: todaySession } = await supabase
-          .from('work_sessions')
-          .select('id')
-          .eq('profile_id', user.sub)
-          .gte('started_at', `${today}T00:00:00.000Z`)
-          .limit(1)
-          .maybeSingle();
-
-        if (!todaySession) {
-          const url = request.nextUrl.clone();
-          url.pathname = '/';
-          return NextResponse.redirect(url);
-        }
       }
     }
 

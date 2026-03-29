@@ -53,10 +53,6 @@ async function AccountInfoLoader() {
           <label className="text-sm text-muted-foreground">Role</label>
           <p className="mt-1 text-sm capitalize text-foreground">{profile?.role || 'N/A'}</p>
         </div>
-        <div>
-          <label className="text-sm text-muted-foreground">User ID</label>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">{user?.id || 'N/A'}</p>
-        </div>
       </div>
 
       {/* Integrations Link (Admin Only) */}
@@ -79,6 +75,20 @@ async function AccountInfoLoader() {
       )}
     </div>
   );
+}
+
+async function getUserRoleForSettings(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  return profile?.role || null;
 }
 
 async function AdminNotesLoader() {
@@ -179,16 +189,37 @@ function NotificationsSection() {
   return <NotificationSection />;
 }
 
-const sections = [
-  { id: 'account', label: 'Account', content: <AccountSection /> },
-  { id: 'my-hours', label: 'My Hours', content: <MyHoursSection /> },
-  { id: 'appearance', label: 'Appearance', content: <AppearanceSection /> },
-  { id: 'notifications', label: 'Notifications', content: <NotificationsSection /> },
-  { id: 'work-schedule', label: 'Work Schedule', content: <WorkScheduleSection /> },
-  { id: 'ai-notes', label: 'AI Notes', content: <AINotesSection /> },
-  { id: 'danger', label: 'Danger Zone', content: <DangerZoneSection />, danger: true },
+const allSections = [
+  { id: 'account', label: 'Account', content: <AccountSection />, adminOnly: false },
+  { id: 'my-hours', label: 'My Hours', content: <MyHoursSection />, adminOnly: false },
+  { id: 'appearance', label: 'Appearance', content: <AppearanceSection />, adminOnly: false },
+  {
+    id: 'notifications',
+    label: 'Notifications',
+    content: <NotificationsSection />,
+    adminOnly: true,
+  },
+  {
+    id: 'work-schedule',
+    label: 'Work Schedule',
+    content: <WorkScheduleSection />,
+    adminOnly: true,
+  },
+  { id: 'ai-notes', label: 'AI Notes', content: <AINotesSection />, adminOnly: true },
+  {
+    id: 'danger',
+    label: 'Danger Zone',
+    content: <DangerZoneSection />,
+    danger: true,
+    adminOnly: false,
+  },
 ];
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const role = await getUserRoleForSettings();
+  const isAdmin = role === 'admin';
+  const sections = allSections
+    .filter((s) => isAdmin || !s.adminOnly)
+    .map((s) => ({ id: s.id, label: s.label, content: s.content, danger: s.danger }));
   return <SettingsLayout sections={sections} />;
 }

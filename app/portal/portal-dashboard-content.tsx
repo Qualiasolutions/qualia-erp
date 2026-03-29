@@ -5,7 +5,7 @@ import { PortalDashboardStats } from '@/components/portal/portal-dashboard-stats
 import { PortalRecentActivity } from '@/components/portal/portal-recent-activity';
 import { WhatsNextWidget } from '@/components/portal/portal-whats-next-widget';
 import { PortalActionItems } from '@/components/portal/portal-action-items';
-import { ArrowRight, Lightbulb, Receipt, Headphones } from 'lucide-react';
+import { ArrowRight, Headphones } from 'lucide-react';
 import Link from 'next/link';
 import { PortalWelcomeTour } from '@/components/portal/portal-welcome-tour';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
@@ -45,24 +45,6 @@ interface ProjectWithPhases {
 }
 
 const quickActions = [
-  {
-    label: 'Submit a request',
-    description: 'Feature idea or change',
-    href: '/portal/requests',
-    icon: Lightbulb,
-    gradient: 'from-primary/[0.06] to-primary/[0.02]',
-    iconColor: 'text-primary',
-    iconBg: 'bg-primary/10',
-  },
-  {
-    label: 'View billing',
-    description: 'Invoices & payments',
-    href: '/portal/billing',
-    icon: Receipt,
-    gradient: 'from-primary/[0.08] to-primary/[0.03]',
-    iconColor: 'text-primary',
-    iconBg: 'bg-primary/12',
-  },
   {
     label: 'Contact support',
     description: 'Get help from our team',

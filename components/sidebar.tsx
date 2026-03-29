@@ -27,15 +27,6 @@ import { useAdminContext } from '@/components/admin-provider';
 import { useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
 import { ClockOutModal } from '@/components/clock-out-modal';
 
-const employeeAllowedHrefs = [
-  '/',
-  '/schedule',
-  '/knowledge',
-  '/projects',
-  '/status',
-  '/portal',
-  '/settings',
-];
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
   DropdownMenu,
@@ -166,8 +157,7 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
-  const isEmployee = userRole === 'employee';
-  const canTrackTime = userRole === 'employee' || userRole === 'manager';
+  const canTrackTime = userRole === 'manager';
   const [showClockOut, setShowClockOut] = useState(false);
 
   // Session clock-out (employees and managers)
@@ -210,37 +200,31 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
         <div className="space-y-1">
           <SectionLabel>Workspace</SectionLabel>
           <div className="space-y-0.5">
-            {workspaceNav
-              .filter((item) => !isEmployee || employeeAllowedHrefs.includes(item.href))
-              .map((item) => (
-                <NavLink
-                  key={item.name}
-                  item={item}
-                  isActive={isActive(item.href)}
-                  onClick={onLinkClick}
-                />
-              ))}
+            {workspaceNav.map((item) => (
+              <NavLink
+                key={item.name}
+                item={item}
+                isActive={isActive(item.href)}
+                onClick={onLinkClick}
+              />
+            ))}
           </div>
         </div>
 
         {/* Resources section */}
-        {(!isEmployee || resourcesNav.some((item) => employeeAllowedHrefs.includes(item.href))) && (
-          <div className="space-y-1">
-            <SectionLabel>Resources</SectionLabel>
-            <div className="space-y-0.5">
-              {resourcesNav
-                .filter((item) => !isEmployee || employeeAllowedHrefs.includes(item.href))
-                .map((item) => (
-                  <NavLink
-                    key={item.name}
-                    item={item}
-                    isActive={isActive(item.href)}
-                    onClick={onLinkClick}
-                  />
-                ))}
-            </div>
+        <div className="space-y-1">
+          <SectionLabel>Resources</SectionLabel>
+          <div className="space-y-0.5">
+            {resourcesNav.map((item) => (
+              <NavLink
+                key={item.name}
+                item={item}
+                isActive={isActive(item.href)}
+                onClick={onLinkClick}
+              />
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Portal section — visible to all internal roles */}
         {
