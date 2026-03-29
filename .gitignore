@@ -55,3 +55,15 @@ vapi
 # Build logs
 build.log
 tsc_output.txt
+
+# Claude Code (local config)
+.claude/
+
+# Planning workflow (local state)
+.planning/
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# SWC cache
+.swc/

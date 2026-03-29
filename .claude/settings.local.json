@@ -1,4 +1,0 @@
-{
-  "enabledMcpjsonServers": ["firecrawl", "sentry", "supabase"],
-  "enableAllProjectMcpServers": true
-}
