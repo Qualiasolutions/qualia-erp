@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 import type { ActionResult } from './shared';
@@ -35,9 +35,11 @@ export async function syncPlanningFromGitHub(
 
   if (!project) return { success: false, error: 'Project not found' };
 
-  // Delegate to shared sync core
+  // Use admin client for sync — workspace_integrations token is RLS-restricted
+  // but sync should work for any authenticated team member
+  const adminClient = createAdminClient();
   const result = await syncPlanningFromGitHubWithServiceRole(
-    supabase,
+    adminClient,
     projectId,
     project.workspace_id
   );
