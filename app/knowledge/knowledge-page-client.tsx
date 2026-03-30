@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   BookOpen,
   Layers,
@@ -19,12 +19,22 @@ import {
   ArrowRight,
   Terminal,
   Code2,
+  Pencil,
+  Save,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Database,
 } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { Guide, GuideStep } from '@/lib/guides-data';
+import { updateKnowledgeGuide, seedKnowledgeGuides } from '@/app/actions/knowledge';
 
 interface KnowledgeData {
   foundationsGuides: Guide[];
@@ -37,6 +47,7 @@ interface KnowledgeData {
 
 interface KnowledgePageClientProps {
   initialData: KnowledgeData;
+  isAdmin?: boolean;
 }
 
 const categoryIcons: Record<string, React.ElementType> = {
@@ -307,22 +318,307 @@ function StepCard({
   );
 }
 
+// Step editor — expandable form for a single step
+function StepEditor({
+  step,
+  index,
+  onChange,
+  onRemove,
+}: {
+  step: GuideStep;
+  index: number;
+  onChange: (updated: GuideStep) => void;
+  onRemove: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const update = (field: string, value: unknown) => {
+    onChange({ ...step, [field]: value });
+  };
+
+  return (
+    <div className="rounded-lg border border-border bg-muted/20">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm"
+      >
+        {expanded ? (
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        )}
+        <span className="mr-1.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+          {index + 1}
+        </span>
+        <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+          {step.title || 'Untitled step'}
+        </span>
+        {step.isMilestone && (
+          <span className="shrink-0 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 dark:text-amber-400">
+            Milestone
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="shrink-0 rounded p-1 text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </button>
+
+      {expanded && (
+        <div className="space-y-3 border-t border-border px-3 pb-3 pt-3">
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Title
+            </label>
+            <Input
+              value={step.title}
+              onChange={(e) => update('title', e.target.value)}
+              placeholder="Step title"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Description
+            </label>
+            <Textarea
+              value={step.description || ''}
+              onChange={(e) => update('description', e.target.value || undefined)}
+              placeholder="Step description"
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Warning
+            </label>
+            <Input
+              value={step.warning || ''}
+              onChange={(e) => update('warning', e.target.value || undefined)}
+              placeholder="Optional warning message"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Commands (one per line)
+            </label>
+            <Textarea
+              value={(step.commands || []).join('\n')}
+              onChange={(e) => {
+                const cmds = e.target.value.split('\n').filter((c) => c.trim());
+                update('commands', cmds.length > 0 ? cmds : undefined);
+              }}
+              placeholder="/qualia-new-project"
+              rows={3}
+              className="font-mono text-xs"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Tips (one per line)
+            </label>
+            <Textarea
+              value={(step.tips || []).join('\n')}
+              onChange={(e) => {
+                const tips = e.target.value.split('\n').filter((t) => t.trim());
+                update('tips', tips.length > 0 ? tips : undefined);
+              }}
+              placeholder="Helpful tips for this step"
+              rows={3}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Example Title
+            </label>
+            <Input
+              value={step.exampleTitle || ''}
+              onChange={(e) => update('exampleTitle', e.target.value || undefined)}
+              placeholder="Example: STATE.md"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Example Content
+            </label>
+            <Textarea
+              value={step.example || ''}
+              onChange={(e) => update('example', e.target.value || undefined)}
+              placeholder="Code or file example"
+              rows={4}
+              className="font-mono text-xs"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={step.isMilestone || false}
+              onChange={(e) => update('isMilestone', e.target.checked || undefined)}
+              className="h-4 w-4 rounded border-border accent-primary"
+            />
+            Mark as milestone
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Checklist editor
+function ChecklistEditor({
+  checklist,
+  onChange,
+}: {
+  checklist: Guide['checklist'];
+  onChange: (updated: Guide['checklist']) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          Checklist Title
+        </label>
+        <Input
+          value={checklist.title}
+          onChange={(e) => onChange({ ...checklist, title: e.target.value })}
+          placeholder="Checklist title"
+        />
+      </div>
+      <div>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          Items (one per line)
+        </label>
+        <Textarea
+          value={checklist.items.join('\n')}
+          onChange={(e) =>
+            onChange({
+              ...checklist,
+              items: e.target.value.split('\n').filter((i) => i.trim()),
+            })
+          }
+          rows={5}
+          placeholder="One checklist item per line"
+        />
+      </div>
+    </div>
+  );
+}
+
 // Slide-over panel for guide detail
-function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
+function GuidePanel({
+  guide,
+  onClose,
+  isAdmin,
+  onGuideUpdated,
+}: {
+  guide: Guide;
+  onClose: () => void;
+  isAdmin?: boolean;
+  onGuideUpdated?: (updated: Guide) => void;
+}) {
   const panelRef = useRef<HTMLDivElement>(null);
   const colors = categoryColors[guide.category];
   const Icon = categoryIcons[guide.category];
 
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState(guide.title);
+  const [editSubtitle, setEditSubtitle] = useState(guide.subtitle);
+  const [editSteps, setEditSteps] = useState<GuideStep[]>(guide.steps);
+  const [editChecklist, setEditChecklist] = useState(guide.checklist);
+
+  const startEditing = useCallback(() => {
+    setEditTitle(guide.title);
+    setEditSubtitle(guide.subtitle);
+    setEditSteps(guide.steps.map((s) => ({ ...s })));
+    setEditChecklist({ ...guide.checklist, items: [...guide.checklist.items] });
+    setSaveError(null);
+    setEditing(true);
+  }, [guide]);
+
+  const cancelEditing = () => {
+    setEditing(false);
+    setSaveError(null);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const result = await updateKnowledgeGuide({
+        slug: guide.slug,
+        title: editTitle,
+        subtitle: editSubtitle,
+        category: guide.category,
+        projectType: guide.projectType,
+        steps: editSteps,
+        checklist: editChecklist,
+      });
+
+      if (!result.success) {
+        setSaveError(result.error || 'Failed to save');
+        return;
+      }
+
+      // Notify parent of update
+      onGuideUpdated?.({
+        ...guide,
+        title: editTitle,
+        subtitle: editSubtitle,
+        steps: editSteps,
+        checklist: editChecklist,
+      });
+      setEditing(false);
+    } catch {
+      setSaveError('An unexpected error occurred');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateStep = (index: number, updated: GuideStep) => {
+    setEditSteps((prev) => prev.map((s, i) => (i === index ? updated : s)));
+  };
+
+  const removeStep = (index: number) => {
+    setEditSteps((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const addStep = () => {
+    setEditSteps((prev) => [
+      ...prev,
+      {
+        id: `step-${Date.now()}`,
+        title: '',
+        description: '',
+      },
+    ]);
+  };
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (editing) {
+          cancelEditing();
+        } else {
+          onClose();
+        }
+      }
     };
     document.addEventListener('keydown', handleEsc);
     return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+  }, [onClose, editing]);
 
   useEffect(() => {
     panelRef.current?.scrollTo(0, 0);
+    setEditing(false);
   }, [guide.slug]);
 
   return (
@@ -371,62 +667,156 @@ function GuidePanel({ guide, onClose }: { guide: Guide; onClose: () => void }) {
                     {categoryLabels[guide.category]}
                   </span>
                   <span className="text-xs text-muted-foreground/60">
-                    {guide.steps.length} steps
+                    {editing ? editSteps.length : guide.steps.length} steps
                   </span>
                 </div>
-                <h2 className="mt-1.5 text-xl font-bold tracking-tight text-foreground">
-                  {guide.title}
-                </h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">{guide.subtitle}</p>
+                {editing ? (
+                  <div className="mt-1.5 space-y-2">
+                    <Input
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="text-lg font-bold"
+                      placeholder="Guide title"
+                    />
+                    <Input
+                      value={editSubtitle}
+                      onChange={(e) => setEditSubtitle(e.target.value)}
+                      placeholder="Guide subtitle"
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <h2 className="mt-1.5 text-xl font-bold tracking-tight text-foreground">
+                      {guide.title}
+                    </h2>
+                    <p className="mt-0.5 text-sm text-muted-foreground">{guide.subtitle}</p>
+                  </>
+                )}
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              {isAdmin && !editing && (
+                <button
+                  onClick={startEditing}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                  title="Edit guide"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
+              {editing && (
+                <>
+                  <button
+                    onClick={cancelEditing}
+                    className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Save className="h-3.5 w-3.5" />
+                    )}
+                    Save
+                  </button>
+                </>
+              )}
+              <button
+                onClick={editing ? cancelEditing : onClose}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+          {saveError && (
+            <div className="relative mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+              {saveError}
+            </div>
+          )}
         </div>
 
         <div ref={panelRef} className="flex-1 overflow-y-auto">
           <div className="px-6 py-6">
-            <div className="space-y-0">
-              {guide.steps.map((step, index) => (
-                <StepCard
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  total={guide.steps.length}
-                  accentColor={colors.accent}
-                />
-              ))}
-            </div>
-
-            <div className="mt-8">
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <ClipboardList className="h-4 w-4 text-primary" />
-                {guide.checklist.title}
-              </div>
-              <div className="mt-3 rounded-xl border border-border bg-muted/20 p-4">
-                <ul className="space-y-2.5">
-                  {guide.checklist.items.map((item, i) => (
-                    <m.li
-                      key={i}
-                      initial={{ opacity: 0, x: 8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.3 + i * 0.04 }}
-                      className="flex items-start gap-3 text-[13px]"
+            {editing ? (
+              /* ─── Edit Mode ─── */
+              <div className="space-y-6">
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-foreground">Steps</h3>
+                    <button
+                      type="button"
+                      onClick={addStep}
+                      className="flex items-center gap-1 rounded-lg border border-dashed border-primary/30 px-2.5 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/5"
                     >
-                      <div className="bg-primary/8 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border border-primary/20">
-                        <Check className="h-3 w-3 text-primary" />
-                      </div>
-                      <span className="text-muted-foreground">{item}</span>
-                    </m.li>
-                  ))}
-                </ul>
+                      <Plus className="h-3 w-3" />
+                      Add Step
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {editSteps.map((step, index) => (
+                      <StepEditor
+                        key={step.id}
+                        step={step}
+                        index={index}
+                        onChange={(updated) => updateStep(index, updated)}
+                        onRemove={() => removeStep(index)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-4">
+                  <h3 className="mb-3 text-sm font-semibold text-foreground">Checklist</h3>
+                  <ChecklistEditor checklist={editChecklist} onChange={setEditChecklist} />
+                </div>
               </div>
-            </div>
+            ) : (
+              /* ─── Read Mode ─── */
+              <>
+                <div className="space-y-0">
+                  {guide.steps.map((step, index) => (
+                    <StepCard
+                      key={step.id}
+                      step={step}
+                      index={index}
+                      total={guide.steps.length}
+                      accentColor={colors.accent}
+                    />
+                  ))}
+                </div>
+
+                <div className="mt-8">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <ClipboardList className="h-4 w-4 text-primary" />
+                    {guide.checklist.title}
+                  </div>
+                  <div className="mt-3 rounded-xl border border-border bg-muted/20 p-4">
+                    <ul className="space-y-2.5">
+                      {guide.checklist.items.map((item, i) => (
+                        <m.li
+                          key={i}
+                          initial={{ opacity: 0, x: 8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.3 + i * 0.04 }}
+                          className="flex items-start gap-3 text-[13px]"
+                        >
+                          <div className="bg-primary/8 mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-md border border-primary/20">
+                            <Check className="h-3 w-3 text-primary" />
+                          </div>
+                          <span className="text-muted-foreground">{item}</span>
+                        </m.li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </m.div>
@@ -511,12 +901,14 @@ function GuideCard({
   );
 }
 
-export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
+export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClientProps) {
   const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [guides, setGuides] = useState(initialData.allGuides);
+  const [seeding, setSeeding] = useState(false);
 
-  const filteredGuides = initialData.allGuides.filter((guide) => {
+  const filteredGuides = guides.filter((guide) => {
     const matchesSearch =
       guide.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       guide.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
@@ -525,8 +917,26 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
   });
 
   const handleLifecycleStepClick = (slug: string) => {
-    const guide = initialData.allGuides.find((g) => g.slug === slug);
+    const guide = guides.find((g) => g.slug === slug);
     if (guide) setSelectedGuide(guide);
+  };
+
+  const handleGuideUpdated = (updated: Guide) => {
+    setGuides((prev) => prev.map((g) => (g.slug === updated.slug ? updated : g)));
+    setSelectedGuide(updated);
+  };
+
+  const handleSeed = async () => {
+    setSeeding(true);
+    try {
+      const result = await seedKnowledgeGuides();
+      if (result.success) {
+        // Reload page to fetch from DB
+        window.location.reload();
+      }
+    } finally {
+      setSeeding(false);
+    }
   };
 
   return (
@@ -537,9 +947,24 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
         title="Knowledge Base"
         className="shrink-0"
       >
-        <span className="text-xs text-muted-foreground/50">
-          {initialData.allGuides.length} guides
-        </span>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <button
+              onClick={handleSeed}
+              disabled={seeding}
+              className="flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground disabled:opacity-50"
+              title="Sync guides to database for editing"
+            >
+              {seeding ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Database className="h-3 w-3" />
+              )}
+              Sync to DB
+            </button>
+          )}
+          <span className="text-xs text-muted-foreground/50">{guides.length} guides</span>
+        </div>
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto">
@@ -640,7 +1065,12 @@ export function KnowledgePageClient({ initialData }: KnowledgePageClientProps) {
 
       <AnimatePresence>
         {selectedGuide && (
-          <GuidePanel guide={selectedGuide} onClose={() => setSelectedGuide(null)} />
+          <GuidePanel
+            guide={selectedGuide}
+            onClose={() => setSelectedGuide(null)}
+            isAdmin={isAdmin}
+            onGuideUpdated={handleGuideUpdated}
+          />
         )}
       </AnimatePresence>
     </div>
