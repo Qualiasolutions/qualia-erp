@@ -299,13 +299,33 @@ export const guides: Guide[] = [
         id: 'bw-1',
         title: 'Start the Project',
         description:
-          'Create the project directory, launch Claude, and run the new project command. Answer the questions thoroughly — your answers shape the entire project.',
-        commands: ['cd ~/Projects/new-client && claude', '/qualia-new-project'],
+          'Create the project directory, launch Claude, and run the new project command. If you have design files, logos, or documents from the client — upload them or put them in the project folder first. Answer the questions thoroughly — your answers shape the entire project.',
+        commands: [
+          'mkdir ~/Projects/new-client && cd ~/Projects/new-client',
+          '# Option 1: Upload client files (logos, brand guide, content doc) into the folder',
+          '# Option 2: Just describe everything when Claude asks',
+          'claude',
+          '/qualia-new-project',
+        ],
         tips: [
           'Be specific: "Landing page for Dr. Ahmad\'s dental clinic in Amman. Hero with clinic photos, 6 services with icons, 3 dentist profiles, testimonials carousel, contact form saving to Supabase, Google Maps embed. Arabic RTL. Blue/white palette. Mobile-first."',
           'Mention reference sites: "Similar layout to stripe.com but for healthcare"',
+          'If you have client docs: drop them in the project folder — Claude can read PDFs, images, Word docs.',
           'If you do not have a preference, say "Claude\'s discretion" — Claude picks the best default.',
         ],
+        example:
+          'Example for a landing page:\n\n' +
+          '  /qualia-new-project\n\n' +
+          '  Claude: "What do you want to build?"\n\n' +
+          '  You: "A landing page for Aquador — a water delivery company in\n' +
+          '  Cyprus. They need a hero section with their truck photo, a\n' +
+          '  pricing table (3 plans: basic, family, office), a coverage\n' +
+          '  map showing delivery zones, customer testimonials, and a\n' +
+          '  contact/order form that saves to Supabase. Colors: deep\n' +
+          '  blue and white with cyan accents. Modern, clean, trust-\n' +
+          '  building design. Mobile-first. I uploaded their logo and\n' +
+          '  brand guide to the project folder."',
+        exampleTitle: 'How to describe a landing page project',
       },
       {
         id: 'bw-2',
