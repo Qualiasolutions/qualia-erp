@@ -48,8 +48,13 @@ export function SessionGuard() {
 
   const [, startTransition] = useTransition();
 
-  // Idle detection is only enabled for non-admin employees with an active session
-  const idleEnabled = !adminLoading && !isAdmin && !!session && !!workspaceId;
+  // Idle detection disabled — sessions persist until explicit clock-out.
+  // Users are responsible for ending their own sessions.
+  const idleEnabled = false;
+  void adminLoading;
+  void isAdmin;
+  void session;
+  void workspaceId;
 
   const handleIdle = useCallback(() => {
     setIdleDialogOpen(true);

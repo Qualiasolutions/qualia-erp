@@ -34,8 +34,8 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
     profileName: string;
   } | null>(null);
 
-  const onlineMembers = members.filter((m) => m.status === 'online');
-  const offlineMembers = members.filter((m) => m.status === 'offline');
+  const clockedIn = members.filter((m) => m.status === 'online');
+  const clockedOut = members.filter((m) => m.status === 'offline');
 
   if (selectedMember) {
     return (
@@ -64,8 +64,8 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
         <>
           {/* Compact avatar row */}
           <div className="flex items-center -space-x-1.5">
-            {[...onlineMembers, ...offlineMembers].map((member) => {
-              const isOnline = member.status === 'online';
+            {[...clockedIn, ...clockedOut].map((member) => {
+              const isClockedIn = member.status === 'online';
               return (
                 <button
                   key={member.profileId}
@@ -77,7 +77,7 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
                     })
                   }
                   className="group relative transition-transform duration-150 hover:z-10 hover:scale-110"
-                  title={`${member.fullName ?? 'Unknown'}${isOnline ? ` — ${member.projectName || 'Working'}` : ' — Offline'}`}
+                  title={`${member.fullName ?? 'Unknown'}${isClockedIn ? ` — Clocked in${member.projectName ? ` (${member.projectName})` : ''}` : ' — Not clocked in'}`}
                 >
                   <Avatar className="size-7 ring-2 ring-card">
                     {member.avatarUrl && (
@@ -86,7 +86,7 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
                     <AvatarFallback
                       className={cn(
                         'text-[10px] font-semibold',
-                        isOnline
+                        isClockedIn
                           ? 'bg-primary/15 text-primary'
                           : 'bg-muted/60 text-muted-foreground/50'
                       )}
@@ -94,13 +94,11 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
                       {getInitials(member.fullName)}
                     </AvatarFallback>
                   </Avatar>
-                  {/* Status dot */}
+                  {/* Clocked-in indicator — steady dot, no pulse */}
                   <span
                     className={cn(
                       'absolute -bottom-0.5 -right-0.5 block size-2.5 rounded-full ring-2 ring-card',
-                      isOnline
-                        ? 'animate-[pulse_3s_cubic-bezier(0.19,1,0.22,1)_infinite] bg-primary'
-                        : 'bg-muted-foreground/25'
+                      isClockedIn ? 'bg-primary' : 'bg-muted-foreground/25'
                     )}
                   />
                 </button>
@@ -110,15 +108,15 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
 
           {/* Summary text */}
           <div className="min-w-0 flex-1">
-            {onlineMembers.length > 0 ? (
+            {clockedIn.length > 0 ? (
               <p className="truncate text-xs text-muted-foreground">
                 <span className="font-medium text-primary">
-                  {onlineMembers.map((m) => m.fullName?.split(' ')[0]).join(', ')}
+                  {clockedIn.map((m) => m.fullName?.split(' ')[0]).join(', ')}
                 </span>{' '}
-                online
+                clocked in
               </p>
             ) : (
-              <p className="text-xs text-muted-foreground/50">Everyone offline</p>
+              <p className="text-xs text-muted-foreground/50">No one clocked in</p>
             )}
           </div>
         </>
