@@ -6,8 +6,9 @@ import { createClient } from '@/lib/supabase/client';
 // The super admin email address
 const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
 
-// Cookie name for "view as" role override
+// Cookie names for "view as" role override
 const VIEW_AS_COOKIE = 'qualia_view_as_role';
+const VIEW_AS_USER_COOKIE = 'qualia_view_as_user';
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -22,8 +23,10 @@ interface AdminContextType {
   isViewingAs: boolean;
   /** The real role before any view-as override */
   realRole: string | null;
+  /** The user ID being viewed as */
+  viewAsUserId: string | null;
   /** Start viewing as a different role (admin only) */
-  startViewAs: (role: string) => void;
+  startViewAs: (role: string, userId?: string) => void;
   /** Stop viewing as another role */
   stopViewAs: () => void;
 }
@@ -39,6 +42,7 @@ const AdminContext = createContext<AdminContextType>({
   loading: true,
   isViewingAs: false,
   realRole: null,
+  viewAsUserId: null,
   startViewAs: () => {},
   stopViewAs: () => {},
 });
@@ -67,6 +71,7 @@ interface AdminProviderProps {
 export function AdminProvider({ children }: AdminProviderProps) {
   const [realRole, setRealRole] = useState<string | null>(null);
   const [viewAsRole, setViewAsRole] = useState<string | null>(null);
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
   const [baseState, setBaseState] = useState<{
     isSuperAdmin: boolean;
     userEmail: string | null;
@@ -74,22 +79,29 @@ export function AdminProvider({ children }: AdminProviderProps) {
     loading: boolean;
   }>({ isSuperAdmin: false, userEmail: null, userId: null, loading: true });
 
-  // Read cookie on mount for view-as persistence across navigation
+  // Read cookies on mount for view-as persistence across navigation
   useEffect(() => {
     const cookieRole = getCookie(VIEW_AS_COOKIE);
+    const cookieUser = getCookie(VIEW_AS_USER_COOKIE);
     if (cookieRole) setViewAsRole(cookieRole);
+    if (cookieUser) setViewAsUserId(cookieUser);
   }, []);
 
-  const startViewAs = useCallback((role: string) => {
+  const startViewAs = useCallback((role: string, userId?: string) => {
     setViewAsRole(role);
     setCookie(VIEW_AS_COOKIE, role);
-    // Force page refresh so server components also pick up the cookie
+    if (userId) {
+      setViewAsUserId(userId);
+      setCookie(VIEW_AS_USER_COOKIE, userId);
+    }
     window.location.reload();
   }, []);
 
   const stopViewAs = useCallback(() => {
     setViewAsRole(null);
+    setViewAsUserId(null);
     deleteCookie(VIEW_AS_COOKIE);
+    deleteCookie(VIEW_AS_USER_COOKIE);
     window.location.reload();
   }, []);
 
@@ -163,6 +175,7 @@ export function AdminProvider({ children }: AdminProviderProps) {
     loading: baseState.loading,
     isViewingAs,
     realRole,
+    viewAsUserId,
     startViewAs,
     stopViewAs,
   };

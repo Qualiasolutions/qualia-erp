@@ -62,8 +62,14 @@ export function TodayDashboard({
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
   const [justClockedIn, setJustClockedIn] = useState(false);
-  const [viewAsUserId, setViewAsUserId] = useState<string | null>(null);
-  const { isViewingAs, startViewAs, stopViewAs, realRole } = useAdminContext();
+  const {
+    isViewingAs,
+    startViewAs,
+    stopViewAs,
+    realRole,
+    viewAsUserId: contextViewAsUserId,
+  } = useAdminContext();
+  const [viewAsUserId, setViewAsUserId] = useState<string | null>(contextViewAsUserId);
   const isRealAdmin = realRole === 'admin';
   const now = new Date();
 
@@ -137,7 +143,7 @@ export function TodayDashboard({
                     const selectedProfile = profiles.find((p) => p.id === v);
                     const selectedRole = selectedProfile?.role;
                     if (selectedRole && selectedRole !== 'admin') {
-                      startViewAs(selectedRole);
+                      startViewAs(selectedRole, v);
                     }
                   }
                 }}
