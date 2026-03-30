@@ -33,8 +33,14 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
   let currentMilestone: ParsedMilestone | null = null;
   let currentPhase: ParsedPhase | null = null;
 
+  // Extract milestone name from metadata (e.g., "**Milestone:** v5" or "**Milestone**: v5")
+  let metadataMilestoneName: string | null = null;
+  const metaMsMatch = content.match(/\*\*Milestone:?\*\*:?\s*(.+)/);
+  if (metaMsMatch) metadataMilestoneName = metaMsMatch[1].trim();
+
   for (const line of lines) {
     // ── Milestone headers ──
+
     // "## Phase 0: Central Bank Demo (Weeks 1-3)"
     const milestonePhase0 = line.match(/^## Phase 0:\s*(.+?)(?:\s*\(.*\))?\s*$/);
     if (milestonePhase0) {
@@ -50,9 +56,10 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
     }
 
     // "## Milestone 1: Core Identity & Auth — complete (2026-03-19 to 2026-03-23)"
-    const milestoneMatch = line.match(
-      /^## Milestone (\d+):\s*(.+?)(?:\s*—\s*(complete|in.progress|planned|pending))?/i
-    );
+    const milestoneMatch =
+      line.match(
+        /^## Milestone (\d+):\s*(.+?)(?:\s*[—–-]\s*(complete|in.progress|planned|pending))/i
+      ) || line.match(/^## Milestone (\d+):\s*(.+?)\s*$/i);
     if (milestoneMatch) {
       currentMilestone = {
         number: parseInt(milestoneMatch[1]),
@@ -65,17 +72,55 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
       continue;
     }
 
+    // "## Current Milestone — v1.6 Design Unification & Polish"
+    const currentMsMatch = line.match(
+      /^## (?:Current\s+)?Milestone\s*[—–-]\s*(.+?)(?:\s*[—–-]\s*(complete|in.progress|planned|pending))?\s*$/i
+    );
+    if (currentMsMatch) {
+      currentMilestone = {
+        number: milestones.length + 1,
+        name: currentMsMatch[1].trim(),
+        status: currentMsMatch[2]?.toLowerCase().replace(/\s+/g, '_') || 'in_progress',
+        phases: [],
+      };
+      milestones.push(currentMilestone);
+      currentPhase = null;
+      continue;
+    }
+
+    // "## Completed Milestones" — skip this header
+    if (/^## Completed Milestones/i.test(line)) continue;
+
     // ── Phase headers ──
-    // "### Phase 0.1: Monorepo Scaffolding & Infrastructure"
-    const phaseMatch = line.match(/^### Phase (\d+\.\d+):\s*(.+)/);
-    if (phaseMatch && currentMilestone) {
-      const phaseNum = phaseMatch[1];
-      const msNum = parseInt(phaseNum.split('.')[0]);
+    // "### Phase 0.1: Monorepo Scaffolding & Infrastructure" (dot notation)
+    // "### Phase 25: Design System Enforcement" (plain number, H3)
+    // "## Phase 14: Stripe Payment Safety" (plain number, H2)
+    const phaseMatch = line.match(/^#{2,3} Phase (\d+(?:\.\d+)?):\s*(.+)/);
+    if (phaseMatch) {
+      const rawNum = phaseMatch[1];
+      const phaseName = phaseMatch[2].trim();
+
+      // Skip "## Phase Dependencies" or other non-phase headings
+      if (/dependencies|summary|progress/i.test(phaseName)) continue;
+
+      // If no milestone exists yet, create a default one
+      if (!currentMilestone) {
+        currentMilestone = {
+          number: 1,
+          name: metadataMilestoneName || 'Default',
+          status: 'in_progress',
+          phases: [],
+        };
+        milestones.push(currentMilestone);
+      }
+
+      const hasDot = rawNum.includes('.');
+      const msNum = hasDot ? parseInt(rawNum.split('.')[0]) : currentMilestone.number;
 
       currentPhase = {
         milestoneNumber: msNum,
-        phaseNumber: phaseNum,
-        name: phaseMatch[2].trim(),
+        phaseNumber: rawNum,
+        name: phaseName,
         description: null,
         status: 'not_started',
         planCount: 0,
@@ -87,11 +132,11 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
       continue;
     }
 
-    // ── Phase metadata lines ──
+    // ── Phase metadata lines (support both "- **Key**:" and "**Key:**" formats) ──
     if (currentPhase) {
-      // Status: "- **Status**: complete (2026-03-19)"
+      // Status: "- **Status**: complete" or "**Status:** complete"
       const statusMatch = line.match(
-        /^- \*\*Status\*\*:\s*(complete|completed|in.progress|planned|pending|not.started)/i
+        /^-?\s*\*\*Status:?\*\*:?\s*(complete|completed|in.progress|planned|pending|not.started)/i
       );
       if (statusMatch) {
         const rawStatus = statusMatch[1].toLowerCase().replace(/\s+/g, '_');
@@ -109,22 +154,22 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
         continue;
       }
 
-      // Plans: "- **Plans**: 5 plans"
-      const plansMatch = line.match(/^- \*\*Plans\*\*:\s*(\d+)/);
+      // Plans: "- **Plans**: 5 plans" or "**Plans:** 2 plans"
+      const plansMatch = line.match(/^-?\s*\*\*Plans:?\*\*:?\s*(\d+)/);
       if (plansMatch) {
         currentPhase.planCount = parseInt(plansMatch[1]);
         continue;
       }
 
-      // Description: "- **Description**: ..."
-      const descMatch = line.match(/^- \*\*Description\*\*:\s*(.+)/);
+      // Description: "- **Description**: ..." or "**Description:** ..."
+      const descMatch = line.match(/^-?\s*\*\*Description:?\*\*:?\s*(.+)/);
       if (descMatch) {
         currentPhase.description = descMatch[1].trim();
         continue;
       }
 
-      // Goal (description fallback)
-      const goalMatch = line.match(/^- \*\*Goal\*\*:\s*(.+)/);
+      // Goal (description fallback): "- **Goal**: ..." or "**Goal:** ..."
+      const goalMatch = line.match(/^-?\s*\*\*Goal:?\*\*:?\s*(.+)/);
       if (goalMatch) {
         if (!currentPhase.description) {
           currentPhase.description = goalMatch[1].trim();
@@ -139,6 +184,28 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
           currentPhase.plansCompleted++;
         }
         continue;
+      }
+    }
+
+    // ── Progress table: "| 14 | Stripe Payment Safety | ... | Complete (2026-03-25) |"
+    // Extracts status for flat-numbered phases from trailing progress tables
+    if (milestones.length > 0) {
+      const progressRow = line.match(
+        /^\|\s*(\d+)\s*\|\s*.+?\s*\|\s*.+?\s*\|\s*(Complete|In Progress|Planned|Not Started)(?:\s*\((\d{4}-\d{2}-\d{2})\))?\s*\|/i
+      );
+      if (progressRow) {
+        const phaseNum = progressRow[1];
+        const status = normalizeStatus(progressRow[2]);
+        const completedAt = progressRow[3] || null;
+        // Find the matching phase and update its status
+        for (const ms of milestones) {
+          const phase = ms.phases.find((p) => p.phaseNumber === phaseNum);
+          if (phase) {
+            phase.status = status;
+            if (completedAt) phase.completedAt = completedAt;
+            break;
+          }
+        }
       }
     }
   }
