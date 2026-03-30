@@ -594,24 +594,7 @@ export function TeamTaskContainer({
       : members[0];
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col space-y-3 overflow-hidden">
-      {/* Section header — compact */}
-      <div className="flex shrink-0 items-center gap-2 pb-1">
-        <h2 className="text-sm font-semibold tracking-tight text-foreground">
-          {viewingAs ? 'My Tasks' : isAdmin ? 'Team Tasks' : 'Tasks'}
-        </h2>
-        {!isLoading && !isError && (
-          <span className="rounded-full bg-muted/60 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-            {isAdmin
-              ? members.reduce(
-                  (sum, m) => sum + m.tasks.filter((t) => t.status !== 'Done').length,
-                  0
-                )
-              : (viewedMember?.tasks.filter((t) => t.status !== 'Done').length ?? 0)}
-          </span>
-        )}
-      </div>
-
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Loading */}
       {isLoading && <TeamTaskSkeleton />}
 

@@ -45,8 +45,10 @@ function OnlineIndicatorContent({
           <div className="flex items-center gap-1.5 rounded-lg px-2 py-1.5">
             <span
               className={cn(
-                'h-2 w-2 rounded-full',
-                othersOnline > 0 ? 'bg-emerald-500' : 'bg-zinc-500'
+                'h-2 w-2 rounded-full transition-colors duration-300',
+                othersOnline > 0
+                  ? 'animate-[pulse_3s_cubic-bezier(0.19,1,0.22,1)_infinite] bg-primary'
+                  : 'bg-muted-foreground/30'
               )}
             />
             <span className="text-xs text-muted-foreground">
