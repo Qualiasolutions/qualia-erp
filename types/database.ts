@@ -6,6 +6,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5';
   };
+  graphql_public: {
+    Tables: {
+      [_ in never]: never;
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json;
+          operationName?: string;
+          query?: string;
+          variables?: Json;
+        };
+        Returns: Json;
+      };
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
   public: {
     Tables: {
       activities: {
@@ -1093,6 +1118,126 @@ export type Database = {
           },
         ];
       };
+      expenses: {
+        Row: {
+          amount: number;
+          category: string;
+          created_at: string | null;
+          date: string;
+          description: string | null;
+          id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          amount: number;
+          category: string;
+          created_at?: string | null;
+          date: string;
+          description?: string | null;
+          id?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          amount?: number;
+          category?: string;
+          created_at?: string | null;
+          date?: string;
+          description?: string | null;
+          id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      financial_invoices: {
+        Row: {
+          balance: number;
+          currency_code: string | null;
+          customer_id: string | null;
+          customer_name: string;
+          date: string;
+          due_date: string | null;
+          invoice_number: string;
+          is_hidden: boolean;
+          last_payment_date: string | null;
+          status: string;
+          synced_at: string;
+          total: number;
+          zoho_id: string;
+        };
+        Insert: {
+          balance?: number;
+          currency_code?: string | null;
+          customer_id?: string | null;
+          customer_name: string;
+          date: string;
+          due_date?: string | null;
+          invoice_number: string;
+          is_hidden?: boolean;
+          last_payment_date?: string | null;
+          status: string;
+          synced_at?: string;
+          total?: number;
+          zoho_id: string;
+        };
+        Update: {
+          balance?: number;
+          currency_code?: string | null;
+          customer_id?: string | null;
+          customer_name?: string;
+          date?: string;
+          due_date?: string | null;
+          invoice_number?: string;
+          is_hidden?: boolean;
+          last_payment_date?: string | null;
+          status?: string;
+          synced_at?: string;
+          total?: number;
+          zoho_id?: string;
+        };
+        Relationships: [];
+      };
+      financial_payments: {
+        Row: {
+          amount: number;
+          currency_code: string | null;
+          customer_id: string | null;
+          customer_name: string;
+          date: string;
+          description: string | null;
+          invoice_numbers: string | null;
+          payment_mode: string | null;
+          payment_number: string | null;
+          synced_at: string;
+          zoho_id: string;
+        };
+        Insert: {
+          amount?: number;
+          currency_code?: string | null;
+          customer_id?: string | null;
+          customer_name: string;
+          date: string;
+          description?: string | null;
+          invoice_numbers?: string | null;
+          payment_mode?: string | null;
+          payment_number?: string | null;
+          synced_at?: string;
+          zoho_id: string;
+        };
+        Update: {
+          amount?: number;
+          currency_code?: string | null;
+          customer_id?: string | null;
+          customer_name?: string;
+          date?: string;
+          description?: string | null;
+          invoice_numbers?: string | null;
+          payment_mode?: string | null;
+          payment_number?: string | null;
+          synced_at?: string;
+          zoho_id?: string;
+        };
+        Relationships: [];
+      };
       issue_assignees: {
         Row: {
           assigned_at: string | null;
@@ -1310,6 +1455,51 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      knowledge_guides: {
+        Row: {
+          category: string;
+          checklist: Json;
+          created_at: string;
+          id: string;
+          project_type: string;
+          slug: string;
+          sort_order: number;
+          steps: Json;
+          subtitle: string;
+          title: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          category: string;
+          checklist?: Json;
+          created_at?: string;
+          id?: string;
+          project_type: string;
+          slug: string;
+          sort_order?: number;
+          steps?: Json;
+          subtitle: string;
+          title: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          category?: string;
+          checklist?: Json;
+          created_at?: string;
+          id?: string;
+          project_type?: string;
+          slug?: string;
+          sort_order?: number;
+          steps?: Json;
+          subtitle?: string;
+          title?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [];
       };
       lead_follow_ups: {
         Row: {
@@ -2541,6 +2731,7 @@ export type Database = {
           is_locked: boolean | null;
           milestone_number: number | null;
           name: string;
+          phase_type: string | null;
           plan_count: number | null;
           plans_completed: number | null;
           prerequisite_phase_id: string | null;
@@ -2566,6 +2757,7 @@ export type Database = {
           is_locked?: boolean | null;
           milestone_number?: number | null;
           name: string;
+          phase_type?: string | null;
           plan_count?: number | null;
           plans_completed?: number | null;
           prerequisite_phase_id?: string | null;
@@ -2591,6 +2783,7 @@ export type Database = {
           is_locked?: boolean | null;
           milestone_number?: number | null;
           name?: string;
+          phase_type?: string | null;
           plan_count?: number | null;
           plans_completed?: number | null;
           prerequisite_phase_id?: string | null;
@@ -3040,6 +3233,64 @@ export type Database = {
           },
         ];
       };
+      task_attachments: {
+        Row: {
+          created_at: string | null;
+          file_name: string;
+          file_size: number;
+          id: string;
+          mime_type: string;
+          storage_path: string;
+          task_id: string;
+          uploader_id: string;
+          workspace_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          file_name: string;
+          file_size: number;
+          id?: string;
+          mime_type: string;
+          storage_path: string;
+          task_id: string;
+          uploader_id: string;
+          workspace_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          file_name?: string;
+          file_size?: number;
+          id?: string;
+          mime_type?: string;
+          storage_path?: string;
+          task_id?: string;
+          uploader_id?: string;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_attachments_task_id_fkey';
+            columns: ['task_id'];
+            isOneToOne: false;
+            referencedRelation: 'tasks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_attachments_uploader_id_fkey';
+            columns: ['uploader_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_attachments_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       task_time_logs: {
         Row: {
           created_at: string;
@@ -3111,6 +3362,7 @@ export type Database = {
       tasks: {
         Row: {
           assignee_id: string | null;
+          auto_assign_trigger: string | null;
           completed_at: string | null;
           created_at: string;
           creator_id: string | null;
@@ -3126,10 +3378,12 @@ export type Database = {
           phase_name: string | null;
           priority: Database['public']['Enums']['task_priority'];
           project_id: string | null;
+          requires_attachment: string | null;
           scheduled_end_time: string | null;
           scheduled_start_time: string | null;
           show_in_inbox: boolean;
           sort_order: number;
+          source_phase_item_id: string | null;
           status: Database['public']['Enums']['task_status'];
           title: string;
           updated_at: string;
@@ -3137,6 +3391,7 @@ export type Database = {
         };
         Insert: {
           assignee_id?: string | null;
+          auto_assign_trigger?: string | null;
           completed_at?: string | null;
           created_at?: string;
           creator_id?: string | null;
@@ -3152,10 +3407,12 @@ export type Database = {
           phase_name?: string | null;
           priority?: Database['public']['Enums']['task_priority'];
           project_id?: string | null;
+          requires_attachment?: string | null;
           scheduled_end_time?: string | null;
           scheduled_start_time?: string | null;
           show_in_inbox?: boolean;
           sort_order?: number;
+          source_phase_item_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
           title: string;
           updated_at?: string;
@@ -3163,6 +3420,7 @@ export type Database = {
         };
         Update: {
           assignee_id?: string | null;
+          auto_assign_trigger?: string | null;
           completed_at?: string | null;
           created_at?: string;
           creator_id?: string | null;
@@ -3178,10 +3436,12 @@ export type Database = {
           phase_name?: string | null;
           priority?: Database['public']['Enums']['task_priority'];
           project_id?: string | null;
+          requires_attachment?: string | null;
           scheduled_end_time?: string | null;
           scheduled_start_time?: string | null;
           show_in_inbox?: boolean;
           sort_order?: number;
+          source_phase_item_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
           title?: string;
           updated_at?: string;
@@ -3214,6 +3474,13 @@ export type Database = {
             columns: ['project_id'];
             isOneToOne: false;
             referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tasks_source_phase_item_id_fkey';
+            columns: ['source_phase_item_id'];
+            isOneToOne: false;
+            referencedRelation: 'phase_items';
             referencedColumns: ['id'];
           },
           {
@@ -3768,6 +4035,7 @@ export type Database = {
       };
     };
     Functions: {
+      batch_update_task_orders: { Args: { updates: Json }; Returns: undefined };
       calculate_phase_progress: {
         Args: { p_phase_id: string };
         Returns: number;
@@ -3787,6 +4055,7 @@ export type Database = {
           xp_reward: number;
         }[];
       };
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json };
       get_my_workspace_ids: { Args: never; Returns: string[] };
       get_project_pipeline_stats: {
         Args: { p_workspace_id?: string };
@@ -4069,6 +4338,9 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       activity_type: [

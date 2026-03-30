@@ -97,6 +97,8 @@ export type FinancialSummary = {
   totalExpensesThisMonth: number;
   netCashFlowByMonth: { month: string; revenue: number; expenses: number; net: number }[];
   recurringClients: RecurringClient[];
+  allInvoices: FinancialInvoice[];
+  allPayments: FinancialPayment[];
 };
 
 export async function getFinancialSummary(): Promise<FinancialSummary | null> {
@@ -288,6 +290,8 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
     totalExpensesThisMonth,
     netCashFlowByMonth,
     recurringClients,
+    allInvoices: visibleInvoices as FinancialInvoice[],
+    allPayments: filteredPayments as FinancialPayment[],
   };
 }
 

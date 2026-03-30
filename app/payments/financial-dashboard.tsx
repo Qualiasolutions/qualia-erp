@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, useTransition } from 'react';
-import { format, parseISO, differenceInDays, formatDistanceToNow, addDays } from 'date-fns';
+import { format, parseISO, differenceInDays, formatDistanceToNow } from 'date-fns';
 import {
   TrendingUp,
   TrendingDown,
@@ -9,14 +9,14 @@ import {
   Banknote,
   Receipt,
   CreditCard,
-  Building2,
   EyeOff,
   Eye,
   Trash2,
   MoreHorizontal,
   ChevronDown,
   ChevronUp,
-  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   ShoppingCart,
   Plus,
   Pencil,
@@ -325,32 +325,6 @@ function KpiCard({
   );
 }
 
-// ─── Revenue Bar ──────────────────────────────────────────
-function RevenueBar({ data }: { data: { month: string; amount: number }[] }) {
-  const maxAmount = Math.max(...data.map((d) => d.amount), 1);
-
-  return (
-    <div className="flex items-end gap-2" style={{ height: 120 }}>
-      {data.map((d) => {
-        const height = Math.max((d.amount / maxAmount) * 100, 4);
-        const monthLabel = format(parseISO(d.month + '-01'), 'MMM');
-        return (
-          <div key={d.month} className="flex flex-1 flex-col items-center gap-1.5">
-            <span className="text-[10px] font-medium text-muted-foreground">
-              {formatEUR(d.amount)}
-            </span>
-            <div
-              className="w-full rounded-t-md bg-emerald-500/80 transition-all"
-              style={{ height: `${height}%` }}
-            />
-            <span className="text-[10px] text-muted-foreground">{monthLabel}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── Category Colors ──────────────────────────────────────
 const CATEGORY_COLORS: Record<string, string> = {
   Software: 'bg-blue-500',
@@ -374,7 +348,6 @@ function ExpenseBreakdownChart({ data }: { data: MonthlyExpenseBreakdown[] }) {
 
   if (recent.length === 0) return null;
 
-  // If only 1 month: show single horizontal bars per category
   if (recent.length === 1) {
     const month = recent[0];
     return (
@@ -403,7 +376,6 @@ function ExpenseBreakdownChart({ data }: { data: MonthlyExpenseBreakdown[] }) {
     );
   }
 
-  // Multi-month: stacked bar per month
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -434,7 +406,6 @@ function ExpenseBreakdownChart({ data }: { data: MonthlyExpenseBreakdown[] }) {
         })}
       </div>
 
-      {/* Legend */}
       <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         {allCategories.map((cat) => {
           const colorClass = CATEGORY_COLORS[cat] ?? 'bg-zinc-400';
@@ -600,6 +571,147 @@ function InvoiceRow({
   );
 }
 
+// ─── Date Range Filter ────────────────────────────────────
+
+type DateFilterState = {
+  type: 'all' | 'monthly' | 'yearly' | 'custom';
+  year: number;
+  month: number;
+  customStart: string;
+  customEnd: string;
+};
+
+function getDateRange(filter: DateFilterState): { start: string; end: string } | null {
+  if (filter.type === 'all') return null;
+  if (filter.type === 'monthly') {
+    const y = filter.year;
+    const m = filter.month;
+    const start = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    const end = `${y}-${String(m + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    return { start, end };
+  }
+  if (filter.type === 'yearly') {
+    return { start: `${filter.year}-01-01`, end: `${filter.year}-12-31` };
+  }
+  if (filter.type === 'custom' && filter.customStart && filter.customEnd) {
+    return { start: filter.customStart, end: filter.customEnd };
+  }
+  return null;
+}
+
+function isInRange(date: string | null, range: { start: string; end: string } | null): boolean {
+  if (!range) return true;
+  if (!date) return false;
+  return date >= range.start && date <= range.end;
+}
+
+function DateRangeFilter({
+  value,
+  onChange,
+}: {
+  value: DateFilterState;
+  onChange: (v: DateFilterState) => void;
+}) {
+  const types = [
+    { key: 'all' as const, label: 'All Time' },
+    { key: 'monthly' as const, label: 'Monthly' },
+    { key: 'yearly' as const, label: 'Yearly' },
+    { key: 'custom' as const, label: 'Custom' },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex rounded-lg border border-border bg-card p-0.5">
+        {types.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => onChange({ ...value, type: key })}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              value.type === key
+                ? 'bg-qualia-500 text-white'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {value.type === 'monthly' && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              const prev =
+                value.month === 0
+                  ? { year: value.year - 1, month: 11 }
+                  : { year: value.year, month: value.month - 1 };
+              onChange({ ...value, ...prev });
+            }}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="min-w-[120px] text-center text-sm font-medium text-foreground">
+            {format(new Date(value.year, value.month), 'MMMM yyyy')}
+          </span>
+          <button
+            onClick={() => {
+              const next =
+                value.month === 11
+                  ? { year: value.year + 1, month: 0 }
+                  : { year: value.year, month: value.month + 1 };
+              onChange({ ...value, ...next });
+            }}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {value.type === 'yearly' && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onChange({ ...value, year: value.year - 1 })}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </button>
+          <span className="min-w-[60px] text-center text-sm font-medium text-foreground">
+            {value.year}
+          </span>
+          <button
+            onClick={() => onChange({ ...value, year: value.year + 1 })}
+            className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
+      {value.type === 'custom' && (
+        <div className="flex items-center gap-2">
+          <input
+            type="date"
+            value={value.customStart}
+            onChange={(e) => onChange({ ...value, customStart: e.target.value })}
+            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          />
+          <span className="text-xs text-muted-foreground">to</span>
+          <input
+            type="date"
+            value={value.customEnd}
+            onChange={(e) => onChange({ ...value, customEnd: e.target.value })}
+            className="rounded-lg border border-border bg-background px-2.5 py-1.5 text-xs focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────
 export function FinancialDashboard({
   summary,
@@ -614,312 +726,239 @@ export function FinancialDashboard({
     expense?: Expense | null;
   }>({ open: false });
 
-  const {
-    totalInvoiced,
-    totalCollected,
-    totalOutstanding,
-    totalOverdue,
-    overdueCount,
-    thisMonthCollected,
-    lastMonthCollected,
-    recentPayments,
-    overdueInvoices,
-    draftInvoices,
-    hiddenInvoices,
-    clientBalances,
-    monthlyRevenue,
-    lastSyncedAt,
-    monthlyExpenses,
-    totalExpensesThisMonth,
-    netCashFlowByMonth,
-    recurringClients,
-  } = summary;
-
-  const monthChange =
-    lastMonthCollected > 0
-      ? ((thisMonthCollected - lastMonthCollected) / lastMonthCollected) * 100
-      : thisMonthCollected > 0
-        ? 100
-        : 0;
-
-  const collectionRate = totalInvoiced > 0 ? Math.round((totalCollected / totalInvoiced) * 100) : 0;
-
-  const netThisMonth = thisMonthCollected - totalExpensesThisMonth;
-  const totalNetAllTime = netCashFlowByMonth.reduce((s, m) => s + m.net, 0);
-
-  // Split drafts into "upcoming" (due within 30 days) and remaining drafts
   const now = new Date();
-  const thirtyDaysOut = addDays(now, 30);
+  const [filter, setFilter] = useState<DateFilterState>({
+    type: 'all',
+    year: now.getFullYear(),
+    month: now.getMonth(),
+    customStart: '',
+    customEnd: '',
+  });
 
-  const upcomingInvoices = useMemo(() => {
-    return draftInvoices
-      .filter((i) => {
-        if (!i.due_date) return false;
-        const due = parseISO(i.due_date);
-        return due <= thirtyDaysOut && due >= now;
-      })
-      .map((i) => ({ ...i, urgency: 'upcoming' as const }));
-  }, [draftInvoices, now, thirtyDaysOut]);
+  const dateRange = useMemo(() => getDateRange(filter), [filter]);
 
-  const upcomingIds = new Set(upcomingInvoices.map((i) => i.zoho_id));
+  const filtered = useMemo(() => {
+    const invoices = summary.allInvoices.filter((i) => isInRange(i.date, dateRange));
+    const payments = summary.allPayments.filter((p) => isInRange(p.date, dateRange));
+    const expenses = initialExpenses.filter((e) => isInRange(e.date, dateRange));
 
-  const remainingDrafts = useMemo(() => {
-    return draftInvoices
-      .filter((i) => !upcomingIds.has(i.zoho_id))
-      .map((i) => ({ ...i, urgency: 'draft' as const }));
-  }, [draftInvoices, upcomingIds]);
+    const totalInvoiced = invoices
+      .filter((i) => i.status !== 'void')
+      .reduce((s, i) => s + Number(i.total), 0);
+    const totalCollected = payments.reduce((s, p) => s + Number(p.amount), 0);
 
-  const needsAttention = useMemo(() => {
-    const items = [
-      ...overdueInvoices.map((i) => ({ ...i, urgency: 'overdue' as const })),
-      ...remainingDrafts,
-    ];
-    return items.sort((a, b) => Number(b.balance) - Number(a.balance));
-  }, [overdueInvoices, remainingDrafts]);
+    const unpaidInvoices = invoices.filter(
+      (i) => i.status !== 'paid' && i.status !== 'void' && Number(i.balance) > 0
+    );
+    const totalOutstanding = unpaidInvoices.reduce((s, i) => s + Number(i.balance), 0);
+    const overdueInvoices = unpaidInvoices.filter((i) => i.status === 'overdue');
+    const totalOverdue = overdueInvoices.reduce((s, i) => s + Number(i.balance), 0);
 
-  const upcomingTotal = upcomingInvoices.reduce((s, i) => s + Number(i.balance), 0);
+    const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const net = totalCollected - totalExpenses;
+
+    // Client balances from unpaid invoices
+    const clientMap = new Map<string, { total_outstanding: number; invoice_count: number }>();
+    for (const inv of unpaidInvoices) {
+      const existing = clientMap.get(inv.customer_name) || {
+        total_outstanding: 0,
+        invoice_count: 0,
+      };
+      existing.total_outstanding += Number(inv.balance);
+      existing.invoice_count += 1;
+      clientMap.set(inv.customer_name, existing);
+    }
+    const clientBalances = Array.from(clientMap.entries())
+      .map(([customer_name, data]) => ({ customer_name, ...data }))
+      .sort((a, b) => b.total_outstanding - a.total_outstanding);
+
+    return {
+      invoices,
+      payments,
+      expenses,
+      unpaidInvoices: [...unpaidInvoices].sort((a, b) => {
+        const aOverdue = a.status === 'overdue' ? 1 : 0;
+        const bOverdue = b.status === 'overdue' ? 1 : 0;
+        if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+        return Number(b.balance) - Number(a.balance);
+      }),
+      totalInvoiced,
+      totalCollected,
+      totalOutstanding,
+      totalOverdue,
+      overdueCount: overdueInvoices.length,
+      totalExpenses,
+      net,
+      clientBalances,
+    };
+  }, [summary.allInvoices, summary.allPayments, initialExpenses, dateRange]);
+
+  // Filter monthly expense breakdowns for chart
+  const filteredMonthlyExpenses = useMemo(() => {
+    if (!dateRange) return summary.monthlyExpenses;
+    const startMonth = dateRange.start.substring(0, 7);
+    const endMonth = dateRange.end.substring(0, 7);
+    return summary.monthlyExpenses.filter((m) => m.month >= startMonth && m.month <= endMonth);
+  }, [summary.monthlyExpenses, dateRange]);
+
+  const collectionRate =
+    filtered.totalInvoiced > 0
+      ? Math.round((filtered.totalCollected / filtered.totalInvoiced) * 100)
+      : 0;
 
   return (
     <div className="space-y-6">
       {/* Sync indicator */}
-      {lastSyncedAt && (
+      {summary.lastSyncedAt && (
         <p className="text-[11px] text-muted-foreground/60">
-          Data synced {formatDistanceToNow(parseISO(lastSyncedAt), { addSuffix: true })} via Zoho
-          Invoice
+          Data synced {formatDistanceToNow(parseISO(summary.lastSyncedAt), { addSuffix: true })} via
+          Zoho Invoice
         </p>
       )}
 
-      {/* ── KPI Cards Row 1 ── */}
+      {/* Date Range Filter */}
+      <DateRangeFilter value={filter} onChange={setFilter} />
+
+      {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard
+          label="Invoiced"
+          value={formatEUR(filtered.totalInvoiced)}
+          subtext={`${collectionRate}% collected`}
+          icon={Receipt}
+          accent="blue"
+        />
+        <KpiCard
           label="Collected"
-          value={formatEUR(totalCollected)}
-          subtext={`${collectionRate}% collection rate`}
+          value={formatEUR(filtered.totalCollected)}
+          subtext={`${filtered.payments.length} payment${filtered.payments.length !== 1 ? 's' : ''}`}
           icon={Banknote}
           accent="emerald"
         />
         <KpiCard
-          label="This Month"
-          value={formatEUR(thisMonthCollected)}
-          subtext={
-            monthChange !== 0
-              ? `${monthChange > 0 ? '+' : ''}${Math.round(monthChange)}% vs last month`
-              : 'No comparison data'
-          }
-          icon={TrendingUp}
-          accent="blue"
-        />
-        <KpiCard
           label="Outstanding"
-          value={formatEUR(totalOutstanding)}
-          subtext={`Across ${clientBalances.length} clients`}
-          icon={Receipt}
+          value={formatEUR(filtered.totalOutstanding)}
+          subtext={`${filtered.clientBalances.length} client${filtered.clientBalances.length !== 1 ? 's' : ''}`}
+          icon={AlertTriangle}
           accent="amber"
         />
         <KpiCard
           label="Overdue"
-          value={formatEUR(totalOverdue)}
-          subtext={`${overdueCount} invoice${overdueCount !== 1 ? 's' : ''} past due`}
+          value={formatEUR(filtered.totalOverdue)}
+          subtext={`${filtered.overdueCount} invoice${filtered.overdueCount !== 1 ? 's' : ''}`}
           icon={AlertTriangle}
           accent="red"
         />
       </div>
 
-      {/* ── KPI Cards Row 2 (Expenses + Net) ── */}
       <div className="grid grid-cols-2 gap-4">
         <KpiCard
-          label="Expenses This Month"
-          value={formatEUR(totalExpensesThisMonth)}
-          subtext="Total outgoing this month"
+          label="Expenses"
+          value={formatEUR(filtered.totalExpenses)}
+          subtext={`${filtered.expenses.length} expense${filtered.expenses.length !== 1 ? 's' : ''}`}
           icon={ShoppingCart}
           accent="red"
         />
         <KpiCard
-          label="Net This Month"
-          value={formatEUR(netThisMonth)}
-          subtext={netThisMonth >= 0 ? 'Positive cash flow' : 'Negative cash flow'}
-          icon={netThisMonth >= 0 ? TrendingUp : TrendingDown}
-          accent={netThisMonth >= 0 ? 'emerald' : 'red'}
+          label="Net"
+          value={formatEUR(filtered.net)}
+          subtext={filtered.net >= 0 ? 'Positive cash flow' : 'Negative cash flow'}
+          icon={filtered.net >= 0 ? TrendingUp : TrendingDown}
+          accent={filtered.net >= 0 ? 'emerald' : 'red'}
         />
       </div>
 
-      {/* ── Monthly Revenue ── */}
-      {monthlyRevenue.length > 1 && (
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-foreground">Monthly Revenue</h2>
-          <RevenueBar data={monthlyRevenue} />
-        </div>
-      )}
-
-      {/* ── Net Cash Flow ── */}
-      {netCashFlowByMonth.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-foreground">Net Cash Flow</h2>
-          <div className="flex items-end gap-2" style={{ height: 120 }}>
-            {(() => {
-              const maxAbs = Math.max(...netCashFlowByMonth.map((m) => Math.abs(m.net)), 1);
-              return netCashFlowByMonth.map((m) => {
-                const heightPct = Math.max((Math.abs(m.net) / maxAbs) * 100, 4);
-                const isPositive = m.net >= 0;
-                const monthLabel = format(parseISO(m.month + '-01'), 'MMM');
-                return (
-                  <div key={m.month} className="flex flex-1 flex-col items-center gap-1.5">
-                    <span
-                      className={cn(
-                        'text-[10px] font-medium',
-                        isPositive ? 'text-emerald-500' : 'text-red-500'
-                      )}
-                    >
-                      {isPositive ? '+' : ''}
-                      {formatEUR(m.net)}
-                    </span>
-                    <div
-                      className={cn(
-                        'w-full rounded-t-md transition-all',
-                        isPositive ? 'bg-emerald-500/80' : 'bg-red-500/80'
-                      )}
-                      style={{ height: `${heightPct}%` }}
-                    />
-                    <span className="text-[10px] text-muted-foreground">{monthLabel}</span>
-                  </div>
-                );
-              });
-            })()}
-          </div>
-          <div className="mt-4 flex flex-wrap items-center gap-6 border-t border-border pt-4 text-xs text-muted-foreground">
-            <span>
-              Revenue:{' '}
-              <strong className="text-foreground">
-                {formatEUR(netCashFlowByMonth.reduce((s, m) => s + m.revenue, 0))}
-              </strong>
-            </span>
-            <span>
-              Expenses:{' '}
-              <strong className="text-red-500">
-                {formatEUR(netCashFlowByMonth.reduce((s, m) => s + m.expenses, 0))}
-              </strong>
-            </span>
-            <span>
-              Net:{' '}
-              <strong className={totalNetAllTime >= 0 ? 'text-emerald-500' : 'text-red-500'}>
-                {totalNetAllTime >= 0 ? '+' : ''}
-                {formatEUR(totalNetAllTime)}
-              </strong>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* ── Expenses ── */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <ShoppingCart className="h-3.5 w-3.5 text-red-500" />
-            Expenses
-          </h2>
-          <button
-            onClick={() => setExpenseModal({ open: true, expense: null })}
-            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Add Expense
-          </button>
-        </div>
-        {initialExpenses.length === 0 ? (
-          <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-            No expenses recorded yet
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {initialExpenses.map((expense) => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                onEdit={(e) => setExpenseModal({ open: true, expense: e })}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <ExpenseModal
-        open={expenseModal.open}
-        onClose={() => setExpenseModal({ open: false })}
-        expense={expenseModal.expense}
-      />
-
-      {/* ── Expense Breakdown Chart ── */}
-      {monthlyExpenses.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-foreground">Expense Breakdown</h2>
-          <ExpenseBreakdownChart data={monthlyExpenses} />
-        </div>
-      )}
-
-      {/* ── Upcoming Payments ── */}
-      {upcomingInvoices.length > 0 && (
-        <div className="rounded-xl border border-blue-500/20 bg-card">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <CalendarClock className="h-3.5 w-3.5 text-blue-500" />
-              Upcoming (next 30 days)
-            </h2>
-            <span className="rounded-full bg-blue-500/10 px-2.5 py-0.5 text-xs font-medium text-blue-500">
-              {formatEUR(upcomingTotal)}
-            </span>
-          </div>
-          <div className="divide-y divide-border">
-            {upcomingInvoices.map((inv) => (
-              <InvoiceRow key={inv.zoho_id} inv={inv} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Two Column: Needs Attention + Recent Payments ── */}
+      {/* ── Outstanding + Payments (two columns) ── */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Needs Attention */}
+        {/* Outstanding (merged overdue + unpaid + client breakdown) */}
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-              Needs Attention
+              <Receipt className="h-3.5 w-3.5 text-amber-500" />
+              Outstanding
             </h2>
             <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500">
-              {needsAttention.length}
+              {formatEUR(filtered.totalOutstanding)}
             </span>
           </div>
-          {needsAttention.length === 0 ? (
+          {filtered.unpaidInvoices.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-              All clear — no outstanding invoices
+              {filter.type === 'all'
+                ? 'All clear — no outstanding invoices'
+                : 'No outstanding invoices in this period'}
             </div>
           ) : (
-            <div className="divide-y divide-border">
-              {needsAttention.map((inv) => (
-                <InvoiceRow key={inv.zoho_id} inv={inv} />
-              ))}
-            </div>
+            <>
+              <div className="divide-y divide-border">
+                {filtered.unpaidInvoices.map((inv) => (
+                  <InvoiceRow
+                    key={inv.zoho_id}
+                    inv={{
+                      ...inv,
+                      urgency:
+                        inv.status === 'overdue'
+                          ? 'overdue'
+                          : inv.due_date &&
+                              differenceInDays(parseISO(inv.due_date), new Date()) <= 30
+                            ? 'upcoming'
+                            : 'draft',
+                    }}
+                  />
+                ))}
+              </div>
+              {filtered.clientBalances.length > 1 && (
+                <div className="border-t border-border px-5 py-4">
+                  <p className="mb-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                    By Client
+                  </p>
+                  <div className="space-y-2">
+                    {filtered.clientBalances.map((c) => {
+                      const pct =
+                        filtered.totalOutstanding > 0
+                          ? (c.total_outstanding / filtered.totalOutstanding) * 100
+                          : 0;
+                      return (
+                        <div key={c.customer_name} className="flex items-center gap-3">
+                          <span className="w-28 shrink-0 truncate text-xs text-foreground">
+                            {c.customer_name}
+                          </span>
+                          <div className="h-1.5 flex-1 rounded-full bg-muted">
+                            <div
+                              className="h-1.5 rounded-full bg-amber-500/70"
+                              style={{ width: `${Math.min(pct, 100)}%` }}
+                            />
+                          </div>
+                          <span className="w-16 shrink-0 text-right text-xs tabular-nums text-foreground">
+                            {formatEUR(c.total_outstanding)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Recent Payments */}
+        {/* Payments */}
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
               <Banknote className="h-3.5 w-3.5 text-emerald-500" />
-              Recent Payments
+              Payments
             </h2>
             <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-500">
-              {recentPayments.length}
+              {filtered.payments.length}
             </span>
           </div>
-          {recentPayments.length === 0 ? (
+          {filtered.payments.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-              No payments recorded yet
+              {filter.type === 'all' ? 'No payments recorded yet' : 'No payments in this period'}
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {recentPayments.map((p) => (
+              {filtered.payments.slice(0, 15).map((p) => (
                 <div
                   key={p.zoho_id}
                   className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-muted/30"
@@ -953,58 +992,57 @@ export function FinancialDashboard({
         </div>
       </div>
 
-      {/* ── Client Balances ── */}
-      {clientBalances.length > 0 && (
-        <div className="rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
-            <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-              Client Balances
-            </h2>
-            <span className="text-xs text-muted-foreground">
-              {formatEUR(totalOutstanding)} total outstanding
-            </span>
+      {/* ── Expenses ── */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <ShoppingCart className="h-3.5 w-3.5 text-red-500" />
+            Expenses
+          </h2>
+          <button
+            onClick={() => setExpenseModal({ open: true, expense: null })}
+            className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Expense
+          </button>
+        </div>
+        {filtered.expenses.length === 0 ? (
+          <div className="px-5 py-8 text-center text-sm text-muted-foreground">
+            {filter.type === 'all' ? 'No expenses recorded yet' : 'No expenses in this period'}
           </div>
+        ) : (
           <div className="divide-y divide-border">
-            {clientBalances.map((c) => {
-              const pct = totalOutstanding > 0 ? (c.total_outstanding / totalOutstanding) * 100 : 0;
-              return (
-                <div
-                  key={c.customer_name}
-                  className="flex items-center gap-4 px-5 py-3 transition-colors hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {c.customer_name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {c.invoice_count} invoice{c.invoice_count !== 1 ? 's' : ''}
-                    </p>
-                  </div>
-                  {/* Mini bar */}
-                  <div className="hidden w-24 sm:block">
-                    <div className="h-1.5 rounded-full bg-muted">
-                      <div
-                        className="h-1.5 rounded-full bg-amber-500/70"
-                        style={{ width: `${Math.min(pct, 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                  <span className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
-                    {formatEURPrecise(c.total_outstanding)}
-                  </span>
-                </div>
-              );
-            })}
+            {filtered.expenses.map((expense) => (
+              <ExpenseRow
+                key={expense.id}
+                expense={expense}
+                onEdit={(e) => setExpenseModal({ open: true, expense: e })}
+              />
+            ))}
           </div>
+        )}
+      </div>
+
+      <ExpenseModal
+        open={expenseModal.open}
+        onClose={() => setExpenseModal({ open: false })}
+        expense={expenseModal.expense}
+      />
+
+      {/* ── Expense Breakdown Chart ── */}
+      {filteredMonthlyExpenses.length > 0 && (
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Expense Breakdown</h2>
+          <ExpenseBreakdownChart data={filteredMonthlyExpenses} />
         </div>
       )}
 
       {/* ── Retainer Clients ── */}
-      <RetainerClientsSection clients={recurringClients} />
+      <RetainerClientsSection clients={summary.recurringClients} />
 
       {/* ── Hidden Invoices (collapsible) ── */}
-      {hiddenInvoices.length > 0 && (
+      {summary.hiddenInvoices.length > 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card/50">
           <button
             onClick={() => setShowHidden(!showHidden)}
@@ -1012,7 +1050,7 @@ export function FinancialDashboard({
           >
             <span className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <EyeOff className="h-3.5 w-3.5" />
-              Hidden invoices ({hiddenInvoices.length})
+              Hidden invoices ({summary.hiddenInvoices.length})
             </span>
             {showHidden ? (
               <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -1022,7 +1060,7 @@ export function FinancialDashboard({
           </button>
           {showHidden && (
             <div className="divide-y divide-border border-t border-border">
-              {hiddenInvoices.map((inv) => (
+              {summary.hiddenInvoices.map((inv) => (
                 <InvoiceRow
                   key={inv.zoho_id}
                   inv={{ ...inv, urgency: inv.status === 'overdue' ? 'overdue' : 'draft' }}

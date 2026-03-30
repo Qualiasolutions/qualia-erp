@@ -10,6 +10,7 @@ import {
   type ActivityType,
 } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
+import { getActiveMilestone, createTasksFromMilestone } from './auto-assign';
 
 // ============ PROJECT ASSIGNMENT ACTIONS ============
 
@@ -119,6 +120,40 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
       project_name: project.name,
     }
   );
+
+  // Auto-task: transfer existing undone auto-tasks or create from active milestone
+  try {
+    const { data: undoneTasks } = await supabase
+      .from('tasks')
+      .select('id')
+      .eq('project_id', project_id)
+      .neq('status', 'Done')
+      .not('source_phase_item_id', 'is', null);
+
+    if (undoneTasks && undoneTasks.length > 0) {
+      // Transfer existing auto-created tasks to the new assignee
+      await supabase
+        .from('tasks')
+        .update({ assignee_id: employee_id })
+        .eq('project_id', project_id)
+        .neq('status', 'Done')
+        .not('source_phase_item_id', 'is', null);
+    } else {
+      // No existing auto-tasks — create from active milestone
+      const milestone = await getActiveMilestone(project_id);
+      if (milestone) {
+        await createTasksFromMilestone(
+          project_id,
+          milestone.milestoneNumber,
+          employee_id,
+          'assignment'
+        );
+      }
+    }
+  } catch (autoTaskError) {
+    // Auto-task creation is best-effort — never fail the assignment
+    console.error('[assignEmployeeToProject] Auto-task error (non-blocking):', autoTaskError);
+  }
 
   // Revalidate paths
   revalidatePath(`/projects/${project_id}`);
@@ -258,6 +293,21 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     },
     { action: 'employee_assigned', project_name: newProject.name }
   );
+
+  // Auto-task: create tasks from new project's active milestone
+  try {
+    const milestone = await getActiveMilestone(new_project_id);
+    if (milestone) {
+      await createTasksFromMilestone(
+        new_project_id,
+        milestone.milestoneNumber,
+        currentAssignment.employee_id,
+        'assignment'
+      );
+    }
+  } catch (autoTaskError) {
+    console.error('[reassignEmployee] Auto-task error (non-blocking):', autoTaskError);
+  }
 
   // Revalidate paths for both projects
   revalidatePath(`/projects/${currentAssignment.project_id}`);
