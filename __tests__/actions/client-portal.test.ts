@@ -130,7 +130,7 @@ describe('inviteClientByEmail', () => {
     );
     const result = await inviteClientByEmail(PROJECT_ID, 'employee@test.com');
     expect(result.success).toBe(false);
-    expect(result.error).toContain('team member');
+    expect(result.error).toContain('already invited');
   });
 
   it('links existing client profile to project if they have client role', async () => {
