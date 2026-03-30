@@ -546,7 +546,8 @@ export const guides: Guide[] = [
   {
     slug: 'build-web-app',
     title: 'Building a Web App',
-    subtitle: 'Auth, dashboards, subscriptions, and Supabase-heavy platforms',
+    subtitle:
+      'Platforms with auth, dashboards, and subscriptions — built through the normal Qualia phase workflow',
     category: 'lifecycle',
     projectType: 'ai-platform',
     steps: [
@@ -554,108 +555,88 @@ export const guides: Guide[] = [
         id: 'bwa-1',
         title: 'Start the Project',
         description:
-          'Describe the platform: what users do, what data they manage, what roles exist, what the business model is.',
+          'Same flow as any project. Describe what users do, what data they manage, roles, business model. The framework handles the rest — research, requirements, roadmap.',
         commands: ['cd ~/Projects/new-platform && claude', '/qualia-new-project'],
+        tips: [
+          'Be specific about user roles (admin, customer, manager, etc.) — this shapes the auth and RLS design.',
+          'Mention if there are paid plans — the framework will include subscription phases in the roadmap.',
+          'Supabase is managed via MCP — you never need to run CLI commands manually.',
+        ],
       },
       {
         id: 'bwa-2',
-        title: 'Auth Setup',
+        title: 'Plan the First Milestone',
         description:
-          'Supabase Auth handles authentication. Support email/password at minimum, add magic links or OAuth if needed. Critical rule: check auth server-side on every mutation.',
+          'The roadmap breaks your app into phases. A typical web app might look like: Phase 1 Foundation (auth + database), Phase 2 Core Features, Phase 3 Dashboard, Phase 4 Subscriptions, Phase 5 Polish.',
+        commands: ['/qualia-discuss-phase 1', '/qualia-plan-phase 1'],
         tips: [
-          'Email/password is the default. Add magic links for frictionless login.',
-          'OAuth (Google, GitHub) only if the client requests it.',
-          'ALWAYS check auth server-side. Never trust client-side auth state for mutations.',
-          'Add both production/** and localhost:3000/** to Supabase redirect URLs — the #1 thing people forget.',
+          'Phase 1 usually handles auth and database schema — the planner knows this.',
+          'Each phase builds on the previous one. Dependencies are tracked automatically.',
+          'The plan checker verifies your plans will actually achieve the phase goal before you start building.',
         ],
-        example:
-          '// lib/supabase/server.ts\n' +
-          'import { createServerClient } from "@supabase/ssr";\n' +
-          'import { cookies } from "next/headers";\n\n' +
-          'export async function getAuthUser() {\n' +
-          '  const supabase = createServerClient(/* ... */);\n' +
-          '  const { data: { user } } = await supabase.auth.getUser();\n' +
-          '  if (!user) throw new Error("Unauthorized");\n' +
-          '  return user;\n' +
-          '}',
-        exampleTitle: 'Server-Side Auth Check',
       },
       {
         id: 'bwa-3',
-        title: 'Database Design',
+        title: 'Build Phase by Phase',
         description:
-          'Schema-first design. Create tables, write migrations, enable RLS on every table, then generate TypeScript types.',
+          'Execute each phase. The executor agents handle auth setup, database migrations, server actions, RLS policies, dashboard components — all through the normal build cycle. Supabase operations go through the MCP, not manual CLI.',
         commands: [
-          'supabase migration new create_initial_schema',
-          'supabase db push',
-          'supabase gen types typescript --linked > lib/database.types.ts',
+          '/qualia-execute-phase 1',
+          '/qualia-verify-work 1',
+          '/qualia-plan-phase 2',
+          '/qualia-execute-phase 2',
         ],
         tips: [
-          'Design the schema before writing any application code.',
-          'RLS on EVERY table. Write policies that check auth.uid().',
-          'Generate TypeScript types after every schema change — this catches type mismatches at build time.',
-          'Use foreign keys and indexes from the start. Retrofitting is painful.',
+          'Auth, database, RLS — these are built as tasks within phases, not separate setup steps.',
+          'The executor auto-applies security rules: server-side auth checks, Zod validation, RLS policies.',
+          'Supabase MCP handles schema changes, type generation, and queries — no manual supabase CLI needed.',
+          'After each phase: verify → fix gaps → move to next phase.',
         ],
       },
       {
         id: 'bwa-4',
-        title: 'Server Actions for Mutations',
+        title: 'Subscriptions and Payments',
         description:
-          'All data mutations use Next.js server actions with "use server" directive. Check auth first, validate input with Zod, then mutate. Never use lib/supabase/client.ts for writes.',
-        example:
-          '"use server";\n\n' +
-          'import { getAuthUser } from "@/lib/supabase/server";\n' +
-          'import { z } from "zod";\n' +
-          'import { revalidatePath } from "next/cache";\n\n' +
-          'const schema = z.object({ name: z.string().min(1), email: z.string().email() });\n\n' +
-          'export async function createContact(formData: FormData) {\n' +
-          '  const user = await getAuthUser(); // Auth check\n' +
-          '  const data = schema.parse(Object.fromEntries(formData)); // Validate\n' +
-          '  await supabase.from("contacts").insert({ ...data, user_id: user.id });\n' +
-          '  revalidatePath("/contacts");\n' +
-          '}',
-        exampleTitle: 'Server Action Pattern',
+          'If the app has paid plans, this becomes a phase in your roadmap. Stripe Checkout for payments, webhooks for lifecycle events, tier enforcement in your RLS policies and server actions.',
+        tips: [
+          'Stripe Checkout — never build a custom payment form.',
+          'Webhook handler for: checkout.session.completed, subscription.updated, subscription.deleted.',
+          'Store subscription status in Supabase. Check tier server-side before allowing premium features.',
+          'This is just another phase — the planner creates the plans, executor builds it, verifier checks it.',
+        ],
+        warning:
+          'Payment logic is high-risk. The executor will ask for approval (Rule 4) before making architectural changes to billing.',
       },
       {
         id: 'bwa-5',
-        title: 'Dashboard Building',
+        title: 'Design Polish',
         description:
-          'Admin panels, data tables, charts, stat cards. Use /qualia-design after building the functional version to transform it into something polished.',
+          'After features work, make them look professional. One command transforms the entire frontend.',
         commands: ['/qualia-design'],
         tips: [
-          'Build the functional version first — data loading, CRUD operations, filtering.',
-          'Then run /qualia-design to apply typography, color, spacing, and interaction polish.',
-          'Add loading skeletons for every data-fetching component.',
-          'Add empty states for every list/table that could have zero items.',
+          'Build functional first, polish after. Do not spend time on design while features are incomplete.',
+          '/qualia-design reads your DESIGN.md for brand decisions and applies them everywhere.',
+          'For surgical control: /critique (find issues), /polish (spacing), /bolder (amplify), /harden (edge cases).',
         ],
       },
       {
         id: 'bwa-6',
-        title: 'Subscriptions (if needed)',
+        title: 'Add More Milestones',
         description:
-          'Stripe integration for paid plans. Handle webhooks for subscription lifecycle events.',
+          'v1.0 ships the core. v2.0 adds advanced features (analytics dashboard, admin panel, notifications, integrations). Each milestone follows the same cycle: discuss → plan → execute → verify → ship.',
+        commands: ['/qualia-new-milestone'],
         tips: [
-          'Stripe Checkout for the payment flow — do not build a custom payment form.',
-          'Webhook handler for: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted.',
-          'Store subscription status in Supabase. Check it server-side before allowing premium features.',
-          'Test with Stripe test mode and the Stripe CLI: stripe listen --forward-to localhost:3000/api/stripe/webhook.',
+          'When all phases in v1.0 are done: /qualia-audit-milestone → /qualia-complete-milestone.',
+          'Then /qualia-new-milestone to start v2.0 with new requirements and phases.',
+          'Previous milestone is archived — your .planning/ stays clean for the current work.',
         ],
       },
       {
         id: 'bwa-7',
-        title: 'Real-Time Updates (if needed)',
-        description:
-          'Supabase real-time subscriptions for live updates — dashboards, notifications, collaborative features.',
-        tips: [
-          'Use Supabase real-time only where it adds clear value (live dashboards, chat, notifications).',
-          'Do not use real-time for everything — it adds complexity and connection overhead.',
-          'Always handle the disconnection case gracefully.',
-        ],
-      },
-      {
-        id: 'bwa-8',
         title: 'Production Check and Ship',
-        commands: ['/qualia-production-check', '/qualia-review --web', '/ship'],
+        description:
+          'Final audit before handing to the client. 5 agents check everything, then deploy.',
+        commands: ['/qualia-production-check', '/review --web', '/ship'],
         isMilestone: true,
       },
     ],
@@ -663,12 +644,12 @@ export const guides: Guide[] = [
       title: 'Web App Ship Checklist',
       items: [
         'RLS enabled on all Supabase tables with proper policies',
-        'No service_role key in any client component (grep to verify)',
+        'No service_role key in any client component',
         'All mutations use server actions with auth check',
         'Input validated with Zod on every form',
         'Error boundaries on all pages',
         'Loading and empty states on all data-fetching components',
-        'TypeScript types generated from Supabase schema',
+        'Subscription tier enforcement is server-side (not client-only)',
         'Environment variables set in Vercel for production',
       ],
     },
