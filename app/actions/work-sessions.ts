@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { isUserAdmin } from './shared';
+import { isUserAdmin, isUserManagerOrAbove } from './shared';
 import type { ActionResult } from './shared';
 
 // ============ TYPES ============
@@ -420,9 +420,8 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
 
   if (!user) return [];
 
-  const admin = await isUserAdmin(user.id);
-  if (!admin) {
-    console.warn('[getTeamStatus] Non-admin attempted to access team status');
+  const allowed = await isUserManagerOrAbove(user.id);
+  if (!allowed) {
     return [];
   }
 
