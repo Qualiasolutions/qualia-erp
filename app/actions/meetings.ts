@@ -297,13 +297,19 @@ export async function updateMeeting(data: {
   }
 
   // Build update object, only including defined fields
+  // Convert empty strings to null for nullable/timestamp columns
   const updates: Record<string, unknown> = {};
   if (updateData.title !== undefined) updates.title = updateData.title;
-  if (updateData.description !== undefined) updates.description = updateData.description;
-  if (updateData.start_time !== undefined) updates.start_time = updateData.start_time;
-  if (updateData.end_time !== undefined) updates.end_time = updateData.end_time;
-  if (updateData.project_id !== undefined) updates.project_id = updateData.project_id;
-  if (updateData.client_id !== undefined) updates.client_id = updateData.client_id;
+  if (updateData.description !== undefined)
+    updates.description = updateData.description === '' ? null : updateData.description;
+  if (updateData.start_time !== undefined)
+    updates.start_time = updateData.start_time === '' ? null : updateData.start_time;
+  if (updateData.end_time !== undefined)
+    updates.end_time = updateData.end_time === '' ? null : updateData.end_time;
+  if (updateData.project_id !== undefined)
+    updates.project_id = updateData.project_id === '' ? null : updateData.project_id;
+  if (updateData.client_id !== undefined)
+    updates.client_id = updateData.client_id === '' ? null : updateData.client_id;
   if (updateData.meeting_link !== undefined)
     updates.meeting_link = updateData.meeting_link === '' ? null : updateData.meeting_link;
   updates.updated_at = new Date().toISOString();
