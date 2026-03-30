@@ -5,7 +5,7 @@ import { PortalDashboardStats } from '@/components/portal/portal-dashboard-stats
 import { PortalRecentActivity } from '@/components/portal/portal-recent-activity';
 import { WhatsNextWidget } from '@/components/portal/portal-whats-next-widget';
 import { PortalActionItems } from '@/components/portal/portal-action-items';
-import { ArrowRight, Lightbulb, Receipt, Headphones } from 'lucide-react';
+import { ArrowRight, Folder, Headphones } from 'lucide-react';
 import Link from 'next/link';
 import { PortalWelcomeTour } from '@/components/portal/portal-welcome-tour';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
@@ -46,22 +46,13 @@ interface ProjectWithPhases {
 
 const quickActions = [
   {
-    label: 'Submit a request',
-    description: 'Feature idea or change',
-    href: '/portal/requests',
-    icon: Lightbulb,
+    label: 'View projects',
+    description: 'See all your projects',
+    href: '/portal/projects',
+    icon: Folder,
     gradient: 'from-primary/[0.06] to-primary/[0.02]',
     iconColor: 'text-primary',
     iconBg: 'bg-primary/10',
-  },
-  {
-    label: 'View billing',
-    description: 'Invoices & payments',
-    href: '/portal/billing',
-    icon: Receipt,
-    gradient: 'from-primary/[0.08] to-primary/[0.03]',
-    iconColor: 'text-primary',
-    iconBg: 'bg-primary/12',
   },
   {
     label: 'Contact support',
@@ -158,7 +149,7 @@ export function PortalDashboardContent({
       </div>
 
       {/* Quick actions — card style */}
-      <div className={cn('grid gap-3 sm:grid-cols-3', fadeInClasses)} style={getStaggerDelay(4)}>
+      <div className={cn('grid gap-3 sm:grid-cols-2', fadeInClasses)} style={getStaggerDelay(4)}>
         {quickActions.map((action) => {
           const Wrapper = action.external ? 'a' : Link;
           const Icon = action.icon;

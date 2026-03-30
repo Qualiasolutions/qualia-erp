@@ -13,6 +13,7 @@ import { AdminProvider } from '@/components/admin-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { SessionGuard } from '@/components/session-guard';
 import { PlannedLogoutBanner } from '@/components/planned-logout-banner';
+import { ViewAsBanner } from '@/components/view-as-banner';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
 import { LazyMotionProvider } from '@/lib/lazy-motion';
@@ -152,6 +153,7 @@ export default function RootLayout({
                         <Suspense fallback={null}>
                           <SessionGuard />
                         </Suspense>
+                        <ViewAsBanner />
                         <Suspense fallback={null}>
                           <PlannedLogoutBanner />
                         </Suspense>

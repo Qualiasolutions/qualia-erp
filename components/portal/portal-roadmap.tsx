@@ -71,7 +71,7 @@ interface CommentWithProfile {
 interface PortalRoadmapProps {
   project: Project;
   phases: Phase[];
-  userRole: 'client' | 'admin' | 'manager' | 'employee';
+  userRole: 'client' | 'admin' | 'manager';
   currentUserId: string;
   isLoading?: boolean;
   isValidating?: boolean;
@@ -182,7 +182,7 @@ function PhaseWithComments({
   phase: Phase;
   isLast: boolean;
   project: Project;
-  userRole: 'client' | 'admin' | 'manager' | 'employee';
+  userRole: 'client' | 'admin' | 'manager';
   currentUserId: string;
 }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
@@ -194,7 +194,7 @@ function PhaseWithComments({
   const config = getPhaseStatusConfig(phase.status);
   const StatusIcon = config.icon;
 
-  const canSeeInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const canSeeInternal = userRole === 'admin' || userRole === 'manager';
 
   const items = phase.items || [];
   const completedItems = items.filter(

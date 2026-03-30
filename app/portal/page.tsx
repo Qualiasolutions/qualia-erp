@@ -24,8 +24,8 @@ export default async function PortalDashboard() {
   const userRole = profile?.role || null;
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'there';
 
-  // Admin/Employee: show portal hub with all CRM clients
-  if (isPortalAdminRole(userRole) || userRole === 'employee') {
+  // Admin/Manager: show portal hub with all CRM clients
+  if (isPortalAdminRole(userRole)) {
     // Fetch all data directly in server component (has proper RLS/session context)
     const [
       crmClientsResult,

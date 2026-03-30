@@ -13,7 +13,7 @@ import { Mail, Bell, CheckCircle2 } from 'lucide-react';
 
 type NotificationPreferencesFormProps = {
   initialPreferences: NotificationPreferencesInput;
-  userRole: 'admin' | 'employee' | 'client';
+  userRole: 'admin' | 'manager' | 'client';
 };
 
 export function NotificationPreferencesForm({
