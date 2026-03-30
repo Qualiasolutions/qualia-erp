@@ -267,9 +267,9 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     sort_order: sortMap.get(p.id as string) ?? 0,
   }));
 
-  // Filter for employees: only show assigned projects
+  // Filter for employees: show assigned projects + all demo projects
   const visibleProjects = assignedProjectIds
-    ? allProjects.filter((p) => assignedProjectIds!.has(p.id))
+    ? allProjects.filter((p) => assignedProjectIds!.has(p.id) || p.status === 'Demos')
     : allProjects;
 
   const sortByOrder = (a: ProjectStatsData, b: ProjectStatsData) => a.sort_order - b.sort_order;
