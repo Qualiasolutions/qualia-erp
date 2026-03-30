@@ -51,6 +51,7 @@ interface Phase {
   sort_order: number;
   is_locked: boolean;
   milestone_number: number | null;
+  phase_type: string | null;
   plan_count: number | null;
   plans_completed: number | null;
   started_at: string | null;
@@ -169,7 +170,9 @@ function formatShortDate(dateStr: string | null): string {
 
 // ─── Progress Summary ───────────────────────────────────────────────────────
 
-function ProgressSummary({ phases }: { phases: Phase[] }) {
+function ProgressSummary({ phases: allPhases }: { phases: Phase[] }) {
+  // Only count actual phases (not milestone headers) in progress
+  const phases = allPhases.filter((p) => p.phase_type !== 'milestone');
   const completedPhases = phases.filter((p) => {
     const s = (p.status || '').toLowerCase();
     return s.includes('complete') || s.includes('done');
@@ -559,30 +562,41 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
   // Check if this project has GitHub-synced phases
   const isGitHubSynced = phases.some((p) => p.github_synced_at);
 
+  // Separate milestone records from phase records
+  const milestoneRecords = useMemo(
+    () => phases.filter((p) => p.phase_type === 'milestone'),
+    [phases]
+  );
+  const phaseRecords = useMemo(() => phases.filter((p) => p.phase_type !== 'milestone'), [phases]);
+
   // Group phases by milestone
   const milestones = useMemo((): MilestoneGroup[] => {
     const groups = new Map<number, MilestoneGroup>();
 
-    for (const phase of phases) {
+    for (const phase of phaseRecords) {
       const msNum = phase.milestone_number ?? -1;
       if (!groups.has(msNum)) {
+        // Look for a milestone record with this number for the real name
+        const msRecord = milestoneRecords.find((m) => m.milestone_number === msNum);
         groups.set(msNum, {
           number: msNum,
-          name: msNum === 0 ? 'Phase 0: Demo' : msNum > 0 ? `Milestone ${msNum}` : 'Phases',
+          name:
+            msRecord?.name ||
+            (msNum === 0 ? 'Phase 0' : msNum > 0 ? `Milestone ${msNum}` : 'Phases'),
           phases: [],
-          status: 'not_started',
+          status: (msRecord?.status as MilestoneGroup['status']) || 'not_started',
         });
       }
       groups.get(msNum)!.phases.push(phase);
     }
 
-    // Calculate milestone statuses
+    // Recalculate milestone statuses from child phases
     const sorted = Array.from(groups.values()).sort((a, b) => a.number - b.number);
     for (const ms of sorted) {
       ms.status = getMilestoneStatus(ms.phases);
     }
     return sorted;
-  }, [phases]);
+  }, [phaseRecords, milestoneRecords]);
 
   // Map tasks by phase name
   const tasksByPhase = useMemo(() => {

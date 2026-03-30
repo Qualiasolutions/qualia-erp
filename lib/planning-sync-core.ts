@@ -231,11 +231,47 @@ export async function syncPlanningFromGitHubWithServiceRole(
     }
   }
 
-  // 8. Upsert phases
+  // 8. Upsert milestones and phases
   let phasesUpserted = 0;
   let sortOrder = 0;
 
   for (const ms of milestones) {
+    sortOrder++;
+
+    // 8a. Upsert milestone record (phase_type = 'milestone')
+    const msName = ms.number === 0 ? `Phase 0: ${ms.name}` : `Milestone ${ms.number}: ${ms.name}`;
+    const msStatus = getMilestoneStatusFromPhases(ms.phases, ms.status);
+
+    const { data: existingMs } = await supabase
+      .from('project_phases')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('phase_type', 'milestone')
+      .eq('milestone_number', ms.number);
+
+    const msData = {
+      project_id: projectId,
+      workspace_id: workspaceId,
+      name: msName,
+      description: null,
+      status: msStatus,
+      sort_order: sortOrder,
+      milestone_number: ms.number,
+      phase_type: 'milestone',
+      plan_count: 0,
+      plans_completed: 0,
+      is_locked: false,
+      github_synced_at: new Date().toISOString(),
+    };
+
+    if (existingMs?.[0]) {
+      await supabase.from('project_phases').update(msData).eq('id', existingMs[0].id);
+    } else {
+      await supabase.from('project_phases').insert(msData);
+    }
+    phasesUpserted++;
+
+    // 8b. Upsert phase records within this milestone
     for (const phase of ms.phases) {
       sortOrder++;
 
@@ -244,6 +280,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
         .from('project_phases')
         .select('id, status, started_at, completed_at')
         .eq('project_id', projectId)
+        .eq('phase_type', 'phase')
         .ilike('name', `${phase.phaseNumber} %`);
 
       const existing = existingList?.[0] || null;
@@ -270,6 +307,7 @@ export async function syncPlanningFromGitHubWithServiceRole(
         status: finalStatus,
         sort_order: sortOrder,
         milestone_number: phase.milestoneNumber,
+        phase_type: 'phase',
         plan_count: phase.planCount,
         plans_completed: phase.plansCompleted,
         is_locked: finalStatus === 'not_started',
@@ -288,4 +326,17 @@ export async function syncPlanningFromGitHubWithServiceRole(
   }
 
   return { success: true, phasesUpserted };
+}
+
+/** Derive milestone status from its child phases */
+function getMilestoneStatusFromPhases(
+  phases: { status: string }[],
+  fallbackStatus: string
+): string {
+  if (phases.length === 0) return fallbackStatus;
+  const allDone = phases.every((p) => p.status === 'completed');
+  if (allDone) return 'completed';
+  const anyInProgress = phases.some((p) => p.status === 'in_progress' || p.status === 'completed');
+  if (anyInProgress) return 'in_progress';
+  return 'not_started';
 }
