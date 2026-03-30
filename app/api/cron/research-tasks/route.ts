@@ -13,14 +13,18 @@ export const maxDuration = 60;
  */
 
 const RESEARCH_TOPICS = [
-  'Lead generation opportunities in healthcare',
-  'Competitor analysis for AI automation agencies',
-  'New AI tools and platforms for business automation',
-  'Market trends in voice AI and conversational AI',
-  'Potential partnership opportunities for Qualia',
-  'Client industry deep dive: e-commerce automation',
-  'SEO and content marketing strategies for AI agencies',
-  'Pricing strategies for AI services',
+  'Latest Claude Code updates, new features, and workflow tips',
+  'New GitHub repos and open-source tools for AI-assisted development',
+  'Supabase updates: new features, edge functions, RLS patterns',
+  'Next.js and Vercel updates: new releases, performance improvements',
+  'AI coding assistants: Cursor, Windsurf, Claude Code comparisons',
+  'Voice AI platforms: VAPI, Retell, ElevenLabs latest updates',
+  'Tailwind CSS and UI libraries: shadcn/ui, Radix updates',
+  'TypeScript ecosystem: new tools, libraries, best practices',
+  'MCP servers and AI tool integrations: new protocols and servers',
+  'React 19 and Server Components: patterns and real-world usage',
+  'Vercel AI SDK and LLM orchestration: new patterns and tools',
+  'Cloudflare Workers and edge computing: latest capabilities',
 ];
 
 function getSupabaseClient() {
@@ -56,29 +60,24 @@ export async function GET(request: Request) {
     const dayOfWeek = new Date(today + 'T12:00:00+03:00').getDay(); // 0=Sun, 6=Sat
     const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
 
-    // Find employee profiles
+    // Only create research tasks for Moayad (weekdays, 8:00-8:40 AM Cyprus)
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, email')
-      .in('role', ['employee', 'manager']);
+      .ilike('email', '%moayad%');
 
     if (profilesError || !profiles || profiles.length === 0) {
-      console.error('[cron/research-tasks] No employee profiles found:', profilesError);
-      return NextResponse.json({ success: false, error: 'No employees found' }, { status: 500 });
+      console.error('[cron/research-tasks] Moayad profile not found:', profilesError);
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 500 });
     }
 
-    // Build employee config with schedules
-    const employees: Employee[] = profiles.map((p) => {
-      const name = (p.full_name || '').toLowerCase();
-      const isHasan = name.includes('hasan');
-      return {
-        id: p.id,
-        full_name: p.full_name || 'Employee',
-        scheduleStart: isHasan ? '18:00+03:00' : '09:00+03:00',
-        scheduleEnd: isHasan ? '19:00+03:00' : '10:00+03:00',
-        weekdaysOnly: isHasan,
-      };
-    });
+    const employees: Employee[] = profiles.map((p) => ({
+      id: p.id,
+      full_name: p.full_name || 'Employee',
+      scheduleStart: '08:00+03:00',
+      scheduleEnd: '08:40+03:00',
+      weekdaysOnly: true,
+    }));
 
     // Get workspace from first employee
     const { data: membership } = await supabase
@@ -139,7 +138,7 @@ export async function GET(request: Request) {
 
       const { error: createError } = await supabase.from('tasks').insert({
         title: `Daily Research: ${topic}`,
-        description: `Research topic: ${topic}\n\nWorkflow:\n1. Use Gemini Deep Research to explore this topic\n2. Paste output into NotebookLM for summarization\n3. Add useful snippets to /knowledge\n4. Mark this task Done`,
+        description: `Research topic: ${topic}\n\nWorkflow:\n1. Use Gemini Deep Research or Perplexity to explore this topic\n2. Summarize key findings, new tools, and actionable insights\n3. Share a brief summary in the Qualia WhatsApp group\n4. Mark this task Done`,
         status: 'Todo',
         priority: 'Medium',
         item_type: 'task',

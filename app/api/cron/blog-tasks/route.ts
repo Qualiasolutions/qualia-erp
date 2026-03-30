@@ -5,11 +5,11 @@ export const maxDuration = 60;
 
 /**
  * Daily blog task creator cron job
- * Runs daily at 3 AM UTC (6 AM Cyprus) - configured in vercel.json
+ * Runs daily at 5:05 AM UTC (8:05 AM Cyprus) - configured in vercel.json
  *
- * Creates a blog-writing task for each employee, rotating through SEO projects:
- * - Moayad: scheduled 10-11 AM (morning shift)
- * - Hasan: scheduled 7-8 PM (evening shift), weekdays only
+ * Creates a blog-writing task for Moayad, rotating through:
+ * Aquador, Qualia Solutions, ZNSO
+ * Scheduled 8:40-9:20 AM Cyprus, weekdays only
  */
 
 function getSupabaseClient() {
@@ -45,29 +45,24 @@ export async function GET(request: Request) {
     const dayOfWeek = new Date(today + 'T12:00:00+03:00').getDay();
     const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
 
-    // Find employee profiles
+    // Only create blog tasks for Moayad (weekdays, 8:40-9:20 AM Cyprus)
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
       .select('id, full_name, email')
-      .in('role', ['employee', 'manager']);
+      .ilike('email', '%moayad%');
 
     if (profilesError || !profiles || profiles.length === 0) {
-      console.error('[cron/blog-tasks] No employee profiles found:', profilesError);
-      return NextResponse.json({ success: false, error: 'No employees found' }, { status: 500 });
+      console.error('[cron/blog-tasks] Moayad profile not found:', profilesError);
+      return NextResponse.json({ success: false, error: 'Employee not found' }, { status: 500 });
     }
 
-    // Build employee config with schedules
-    const employees: Employee[] = profiles.map((p) => {
-      const name = (p.full_name || '').toLowerCase();
-      const isHasan = name.includes('hasan');
-      return {
-        id: p.id,
-        full_name: p.full_name || 'Employee',
-        scheduleStart: isHasan ? '19:00+03:00' : '10:00+03:00',
-        scheduleEnd: isHasan ? '20:00+03:00' : '11:00+03:00',
-        weekdaysOnly: isHasan,
-      };
-    });
+    const employees: Employee[] = profiles.map((p) => ({
+      id: p.id,
+      full_name: p.full_name || 'Employee',
+      scheduleStart: '08:40+03:00',
+      scheduleEnd: '09:20+03:00',
+      weekdaysOnly: true,
+    }));
 
     // Get workspace
     const { data: membership } = await supabase
@@ -84,14 +79,12 @@ export async function GET(request: Request) {
 
     const workspaceId = membership.workspace_id;
 
-    // Get SEO projects
+    // Get blog target projects: Aquador, Qualia Solutions, ZNSO only
     const { data: seoProjects, error: projectsError } = await supabase
       .from('projects')
       .select('id, name, project_type')
       .eq('workspace_id', workspaceId)
-      .or(
-        'project_type.eq.seo,name.ilike.%Qualia Solutions%,name.ilike.%Aquador%,name.ilike.%ZNSO%'
-      )
+      .or('name.ilike.%Aquador%,name.ilike.%Qualia Solutions%,name.ilike.%ZNSO%')
       .order('name');
 
     if (projectsError || !seoProjects || seoProjects.length === 0) {
