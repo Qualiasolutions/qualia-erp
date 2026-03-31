@@ -40,6 +40,7 @@ import { getProjectTasks, createTask, updateTask, deleteTask } from '@/app/actio
 import { syncPlanningFromGitHub } from '@/app/actions/github-planning-sync';
 import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { toast } from 'sonner';
+import { PhaseComments } from '@/components/phase-comments';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -74,6 +75,7 @@ interface ProjectWorkflowProps {
   projectId: string;
   projectType: string | null;
   workspaceId: string;
+  userRole?: string;
   className?: string;
 }
 
@@ -511,7 +513,12 @@ function MilestoneSection({
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
-export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWorkflowProps) {
+export function ProjectWorkflow({
+  projectId,
+  workspaceId,
+  userRole,
+  className,
+}: ProjectWorkflowProps) {
   const [phases, setPhases] = useState<Phase[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activePhaseId, setActivePhaseId] = useState<string | null>(null);
@@ -1010,6 +1017,15 @@ export function ProjectWorkflow({ projectId, workspaceId, className }: ProjectWo
             )}
           </div>
         </div>
+
+        {/* Phase Comments */}
+        {activePhase && (
+          <PhaseComments
+            projectId={projectId}
+            phaseName={activePhase.name}
+            isAdmin={userRole === 'admin' || userRole === 'manager'}
+          />
+        )}
 
         {/* Task view dialog */}
         <TaskDetailDialog

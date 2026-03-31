@@ -354,6 +354,7 @@ export function ProjectDetailView({
               projectId={project.id}
               projectType={project.project_type}
               workspaceId={project.workspace_id}
+              userRole={userRole}
               className="h-full"
             />
           </div>
