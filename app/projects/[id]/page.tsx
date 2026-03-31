@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { getProjectById, getProfiles, getCurrentUserProfile, getClients } from '@/app/actions';
 import { getProjectIntegrationStatus } from '@/lib/integration-utils';
+import { getGitHubSyncStatus } from '@/app/actions/github-planning-sync';
 import { createClient } from '@/lib/supabase/server';
 import { ProjectDetailView } from './project-detail-view';
 
@@ -30,13 +31,15 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
   await connection();
 
   // Fetch all data in parallel on the server
-  const [project, profiles, userProfile, integrationStatus, clientsRaw] = await Promise.all([
-    getProjectById(id),
-    getProfiles(),
-    getCurrentUserProfile(),
-    getProjectIntegrationStatus(id),
-    getClients(),
-  ]);
+  const [project, profiles, userProfile, integrationStatus, clientsRaw, syncStatus] =
+    await Promise.all([
+      getProjectById(id),
+      getProfiles(),
+      getCurrentUserProfile(),
+      getProjectIntegrationStatus(id),
+      getClients(),
+      getGitHubSyncStatus(id),
+    ]);
 
   const clients = (clientsRaw || []).map((c) => ({
     id: c.id,
@@ -74,6 +77,7 @@ async function ProjectLoader({ id }: ProjectLoaderProps) {
       clients={clients}
       userRole={userProfile?.role || 'employee'}
       integrationStatus={integrationStatus}
+      syncStatus={syncStatus}
     />
   );
 }

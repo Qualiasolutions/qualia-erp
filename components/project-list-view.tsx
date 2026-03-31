@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   ClipboardCheck,
   Smartphone,
+  Github,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
@@ -231,10 +232,37 @@ function ProjectRow({
 
         {/* Name + client */}
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium leading-snug text-foreground">{project.name}</span>
-            {isPartnership && <span className="text-xs">🤝</span>}
-          </div>
+          <TooltipProvider delayDuration={200}>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium leading-snug text-foreground">
+                {project.name}
+              </span>
+              {isPartnership && <span className="text-xs">🤝</span>}
+              {project.has_github && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Github className="h-3 w-3 flex-shrink-0 text-muted-foreground/60" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    GitHub linked
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {project.has_github && ['Active', 'Delayed'].includes(project.status) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="relative flex h-2 w-2 flex-shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    Auto-assignment active
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </TooltipProvider>
           {project.client_name && (
             <span className="block truncate text-xs text-muted-foreground">
               {project.client_name}

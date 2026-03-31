@@ -11,6 +11,7 @@ import {
 } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { getActiveMilestone, createTasksFromMilestone } from './auto-assign';
+import { createNotification } from './notifications';
 
 // ============ PROJECT ASSIGNMENT ACTIONS ============
 
@@ -142,12 +143,23 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
       // No existing auto-tasks — create from active milestone
       const milestone = await getActiveMilestone(project_id);
       if (milestone) {
-        await createTasksFromMilestone(
+        const autoResult = await createTasksFromMilestone(
           project_id,
           milestone.milestoneNumber,
           employee_id,
           'assignment'
         );
+
+        if (autoResult.created > 0) {
+          await createNotification(
+            employee_id,
+            project.workspace_id,
+            'task_assigned',
+            'Tasks auto-assigned',
+            `${autoResult.created} tasks from Milestone ${milestone.milestoneNumber} on ${project.name}`,
+            `/projects/${project_id}/roadmap`
+          );
+        }
       }
     }
   } catch (autoTaskError) {
@@ -298,12 +310,23 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   try {
     const milestone = await getActiveMilestone(new_project_id);
     if (milestone) {
-      await createTasksFromMilestone(
+      const autoResult = await createTasksFromMilestone(
         new_project_id,
         milestone.milestoneNumber,
         currentAssignment.employee_id,
         'assignment'
       );
+
+      if (autoResult.created > 0) {
+        await createNotification(
+          currentAssignment.employee_id,
+          currentAssignment.workspace_id,
+          'task_assigned',
+          'Tasks auto-assigned',
+          `${autoResult.created} tasks from Milestone ${milestone.milestoneNumber} on ${newProject.name}`,
+          `/projects/${new_project_id}/roadmap`
+        );
+      }
     }
   } catch (autoTaskError) {
     console.error('[reassignEmployee] Auto-task error (non-blocking):', autoTaskError);

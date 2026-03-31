@@ -40,6 +40,7 @@ export interface ProjectData {
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
   sort_order: number;
   team?: ProjectTeamMember[];
+  has_github: boolean;
 }
 
 async function ProjectListLoader() {
@@ -76,6 +77,14 @@ async function ProjectListLoader() {
     )
     .eq('workspace_id', workspaceId)
     .is('removed_at', null);
+
+  // Fetch GitHub integrations to identify linked projects
+  const { data: githubIntegrations } = await supabase
+    .from('project_integrations')
+    .select('project_id')
+    .eq('service_type', 'github');
+
+  const githubProjectIds = new Set((githubIntegrations || []).map((i) => i.project_id));
 
   // Build a map of project_id -> team members
   const teamByProject = new Map<string, ProjectTeamMember[]>();
@@ -129,6 +138,7 @@ async function ProjectListLoader() {
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
     sort_order: (p.sort_order as number) || 0,
     team: teamByProject.get(p.id as string) || [],
+    has_github: githubProjectIds.has(p.id as string),
   }));
 
   // Filter for employees: only assigned projects
