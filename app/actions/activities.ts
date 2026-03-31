@@ -29,17 +29,20 @@ export type Activity = {
 /**
  * Get recent activities
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getRecentActivities(
   limit: number = 20,
-  workspaceId?: string | null
+  _workspaceId?: string | null
 ): Promise<Activity[]> {
   const supabase = await createClient();
 
-  // Get workspace ID from parameter or user's default
-  let wsId = workspaceId;
-  if (!wsId) {
-    wsId = await getCurrentWorkspaceId();
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Always derive workspaceId from authenticated user (never trust client)
+  const wsId = await getCurrentWorkspaceId();
 
   let query = supabase
     .from('activities')

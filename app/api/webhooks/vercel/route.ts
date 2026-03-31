@@ -40,10 +40,6 @@ interface VercelDeploymentPayload {
 
 function verifyWebhookSignature(body: string, signature: string | null): boolean {
   if (!signature || !process.env.VERCEL_WEBHOOK_SECRET) {
-    // In development, allow unsigned webhooks
-    if (process.env.NODE_ENV === 'development') {
-      return true;
-    }
     return false;
   }
 
@@ -52,7 +48,10 @@ function verifyWebhookSignature(body: string, signature: string | null): boolean
     .update(body)
     .digest('hex');
 
-  return `sha1=${hash}` === signature;
+  const expected = Buffer.from(`sha1=${hash}`);
+  const actual = Buffer.from(signature);
+  if (expected.length !== actual.length) return false;
+  return crypto.timingSafeEqual(expected, actual);
 }
 
 export async function POST(request: NextRequest) {

@@ -70,21 +70,21 @@ export async function getGitHubSyncStatus(
 ): Promise<{ lastSynced: string | null; phaseCount: number }> {
   const supabase = await createClient();
 
+  // Single query — compute both lastSynced and phaseCount from one result
   const { data } = await supabase
     .from('project_phases')
-    .select('github_synced_at')
-    .eq('project_id', projectId)
-    .not('github_synced_at', 'is', null)
-    .order('github_synced_at', { ascending: false })
-    .limit(1);
-
-  const { count } = await supabase
-    .from('project_phases')
-    .select('id', { count: 'exact', head: true })
+    .select('id, github_synced_at')
     .eq('project_id', projectId);
 
+  const phases = data || [];
+  const synced = phases
+    .map((p) => p.github_synced_at)
+    .filter((d): d is string => !!d)
+    .sort()
+    .reverse();
+
   return {
-    lastSynced: data?.[0]?.github_synced_at || null,
-    phaseCount: count || 0,
+    lastSynced: synced[0] || null,
+    phaseCount: phases.length,
   };
 }

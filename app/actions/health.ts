@@ -67,6 +67,11 @@ export async function getWorkspaceHealthDashboard(workspaceId?: string): Promise
   try {
     const supabase = await createClient();
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
+
     const wsId = workspaceId || (await getCurrentWorkspaceId());
     if (!wsId) {
       return { success: false, error: 'No workspace selected' };
@@ -95,6 +100,11 @@ export async function getWorkspaceHealthDashboard(workspaceId?: string): Promise
 export async function getProjectHealthDetails(projectId: string): Promise<ActionResult> {
   try {
     const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not authenticated' };
 
     // Run all 3 queries in parallel
     const [healthResult, insightsResult, historyResult] = await Promise.all([

@@ -28,29 +28,30 @@ export async function POST(req: Request) {
       return new Response('No text provided', { status: 400 });
     }
 
+    // Validate voiceId to prevent SSRF
+    const safeVoiceId =
+      voiceId && /^[a-zA-Z0-9]{10,30}$/.test(voiceId) ? voiceId : DEFAULT_VOICE_ID;
+
     // Limit text length to control costs
     const trimmedText = text.slice(0, 1000);
 
-    const response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId || DEFAULT_VOICE_ID}`,
-      {
-        method: 'POST',
-        headers: {
-          'xi-api-key': apiKey,
-          'Content-Type': 'application/json',
-          Accept: 'audio/mpeg',
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${safeVoiceId}`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg',
+      },
+      body: JSON.stringify({
+        text: trimmedText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.8,
+          style: 0.2,
         },
-        body: JSON.stringify({
-          text: trimmedText,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.8,
-            style: 0.2,
-          },
-        }),
-      }
-    );
+      }),
+    });
 
     if (!response.ok) {
       const errorText = await response.text();

@@ -82,15 +82,14 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
       )
       .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
 
-    // Parallel fetch tasks for all employees
-    const memberTasksList = await Promise.all(
-      profiles.map(async (profile) => {
-        const tasks = await fetchTasksForProfile(supabase, profile.id, workspaceId);
-        return { profile, tasks };
-      })
-    );
+    // Single batch query for all team members' tasks (eliminates N+1)
+    const memberIds = profiles.map((p) => p.id);
+    const allTasks = await fetchTasksForProfiles(supabase, memberIds, workspaceId);
 
-    return memberTasksList;
+    return profiles.map((profile) => ({
+      profile,
+      tasks: allTasks.get(profile.id) || [],
+    }));
   } else {
     // Employee: only own tasks
     const { data: profile, error: profileError } = await supabase
@@ -104,6 +103,85 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
     const tasks = await fetchTasksForProfile(supabase, user.id, workspaceId);
     return [{ profile, tasks }];
   }
+}
+
+/**
+ * Batch-fetch active tasks for multiple profiles in a single query.
+ * Returns a Map of profileId -> sorted tasks.
+ */
+async function fetchTasksForProfiles(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  profileIds: string[],
+  workspaceId: string
+): Promise<Map<string, TeamMemberTask[]>> {
+  if (profileIds.length === 0) return new Map();
+
+  const { data: rawTasks, error } = await supabase
+    .from('tasks')
+    .select(
+      `id, title, status, priority, due_date, completed_at, assignee_id, scheduled_start_time, project:projects(id, name, project_type)`
+    )
+    .eq('workspace_id', workspaceId)
+    .in('assignee_id', profileIds)
+    .or(
+      `status.in.(Todo,In Progress),and(status.eq.Done,completed_at.gte.${new Date().toISOString().split('T')[0]})`
+    );
+
+  if (error || !rawTasks) return new Map();
+
+  const result = new Map<string, TeamMemberTask[]>();
+  for (const t of rawTasks as Array<{
+    id: string;
+    title: string;
+    status: string;
+    priority: string;
+    due_date: string | null;
+    completed_at: string | null;
+    assignee_id: string | null;
+    scheduled_start_time: string | null;
+    project:
+      | { id: string; name: string; project_type: string | null }
+      | { id: string; name: string; project_type: string | null }[]
+      | null;
+  }>) {
+    const project = Array.isArray(t.project) ? (t.project[0] ?? null) : t.project;
+    const task: TeamMemberTask = {
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      due_date: t.due_date,
+      completed_at: t.completed_at,
+      assignee_id: t.assignee_id,
+      scheduled_start_time: t.scheduled_start_time,
+      project,
+    };
+    const key = t.assignee_id || '';
+    if (!result.has(key)) result.set(key, []);
+    result.get(key)!.push(task);
+  }
+
+  // Sort each member's tasks
+  for (const tasks of result.values()) {
+    tasks.sort((a, b) => {
+      const aScheduled = !!a.scheduled_start_time;
+      const bScheduled = !!b.scheduled_start_time;
+      if (aScheduled && bScheduled)
+        return a.scheduled_start_time!.localeCompare(b.scheduled_start_time!);
+      if (aScheduled && !bScheduled) return -1;
+      if (!aScheduled && bScheduled) return 1;
+      const pA = PRIORITY_ORDER[a.priority] ?? 4;
+      const pB = PRIORITY_ORDER[b.priority] ?? 4;
+      if (pA !== pB) return pA - pB;
+      if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
+      if (a.due_date) return -1;
+      if (b.due_date) return 1;
+      return 0;
+    });
+  }
+
+  return result;
 }
 
 /**

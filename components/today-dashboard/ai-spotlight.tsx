@@ -92,7 +92,7 @@ export function AISpotlight() {
               initial={{ opacity: 0, scale: 0.95, y: -20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
-              transition={{ type: 'spring', duration: 0.3 }}
+              transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
               className="fixed left-1/2 top-[15%] z-50 w-full max-w-2xl -translate-x-1/2"
             >
               <div className="mx-4 overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">

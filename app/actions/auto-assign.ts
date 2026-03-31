@@ -2,15 +2,13 @@
 
 import { createClient } from '@/lib/supabase/server';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isUserManagerOrAbove } from './shared';
 
 // ============ AUTO-ASSIGNMENT ENGINE ============
-// Internal engine functions for creating tasks from project phase items
-// when someone gets assigned to a project. NO auth checks here --
-// callers (Phase 2/3 integration points) handle authorization.
-//
-// All engine functions accept an optional `supabaseClient` parameter.
-// When omitted, they use the cookie-based server client (for server actions).
-// When provided, they use the given client (for webhook handler with service-role).
+// Engine functions for creating tasks from project phase items.
+// When called without an externalClient (i.e. as a server action),
+// auth is enforced. When called with an externalClient (webhook),
+// the caller is responsible for auth.
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnySupabaseClient = SupabaseClient<any, any, any>;
@@ -18,6 +16,17 @@ type AnySupabaseClient = SupabaseClient<any, any, any>;
 async function getClient(externalClient?: AnySupabaseClient) {
   if (externalClient) return externalClient;
   return createClient();
+}
+
+/** Verify auth when called as a server action (no external client). */
+async function requireAuthIfServerAction(externalClient?: AnySupabaseClient): Promise<boolean> {
+  if (externalClient) return true; // Webhook path — caller handles auth
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  return isUserManagerOrAbove(user.id);
 }
 
 /**
@@ -30,6 +39,7 @@ async function getClient(externalClient?: AnySupabaseClient) {
  * @returns The active milestone data, or null if no milestones exist or all are complete
  */
 export async function getActiveMilestone(projectId: string, supabaseClient?: AnySupabaseClient) {
+  if (!(await requireAuthIfServerAction(supabaseClient))) return null;
   const supabase = await getClient(supabaseClient);
 
   // Fetch all phases with milestone numbers, ordered by milestone_number
@@ -118,6 +128,8 @@ export async function createTasksFromMilestone(
   trigger: 'assignment' | 'milestone_cascade',
   supabaseClient?: AnySupabaseClient
 ): Promise<{ created: number; skipped: number; total: number }> {
+  if (!(await requireAuthIfServerAction(supabaseClient)))
+    return { created: 0, skipped: 0, total: 0 };
   const supabase = await getClient(supabaseClient);
 
   // 1. Fetch project to get workspace_id
@@ -242,6 +254,7 @@ export async function handleReassignment(
   fromUserId: string,
   toUserId: string
 ): Promise<{ transferred: number; created: number }> {
+  if (!(await requireAuthIfServerAction())) return { transferred: 0, created: 0 };
   const supabase = await createClient();
 
   // 1. Find undone auto-created tasks assigned to the old user
@@ -304,6 +317,7 @@ export async function markMilestoneTasksDone(
   milestoneNumber: number,
   supabaseClient?: AnySupabaseClient
 ): Promise<number> {
+  if (!(await requireAuthIfServerAction(supabaseClient))) return 0;
   const supabase = await getClient(supabaseClient);
 
   // 1. Get all phase IDs for this milestone_number

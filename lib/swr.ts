@@ -19,7 +19,7 @@ import {
   getAssignmentHistory,
 } from '@/app/actions/project-assignments';
 import { getTaskAttachments } from '@/app/actions/task-attachments';
-import { filterTodaysTasks, filterTodaysMeetings } from '@/lib/schedule-utils';
+import { filterTodaysTasks } from '@/lib/schedule-utils';
 import type { TeamMemberStatus } from '@/app/actions/work-sessions';
 
 export type { TeamMemberStatus };
@@ -529,8 +529,8 @@ export function useTodaysMeetings() {
   } = useSWR(
     cacheKeys.todaysMeetings,
     async () => {
-      const allMeetings = await getMeetings();
-      return filterTodaysMeetings(allMeetings);
+      const { getTodaysMeetings } = await import('@/app/actions/meetings');
+      return getTodaysMeetings();
     },
     autoRefreshConfig
   );
@@ -1674,7 +1674,7 @@ export function useTeamStatus(workspaceId: string | null) {
       const { getTeamStatus } = await import('@/app/actions/work-sessions');
       return getTeamStatus(workspaceId);
     },
-    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 15_000 : 0 }
+    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
   );
 
   return {

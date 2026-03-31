@@ -232,7 +232,8 @@ export async function getMeetings(workspaceId?: string | null) {
             )
         `
     )
-    .order('start_time', { ascending: true });
+    .order('start_time', { ascending: true })
+    .limit(200);
 
   if (wsId) {
     query = query.eq('workspace_id', wsId);
@@ -242,6 +243,54 @@ export async function getMeetings(workspaceId?: string | null) {
 
   if (error) {
     console.error('Error fetching meetings:', error);
+    return [];
+  }
+
+  return (meetings || []).map((meeting) => {
+    const m = meeting as unknown as MeetingResponse;
+    return {
+      ...meeting,
+      project: Array.isArray(m.project) ? m.project[0] || null : m.project,
+      client: Array.isArray(m.client) ? m.client[0] || null : m.client,
+      creator: Array.isArray(m.creator) ? m.creator[0] || null : m.creator,
+      attendees: (m.attendees || []).map((a) => ({
+        ...a,
+        profile: Array.isArray(a.profile) ? a.profile[0] || null : a.profile,
+      })),
+    };
+  });
+}
+
+/**
+ * Get meetings for today only (server-side date filtering).
+ */
+export async function getTodaysMeetings(workspaceId?: string | null) {
+  const supabase = await createClient();
+  let wsId = workspaceId;
+  if (!wsId) wsId = await getCurrentWorkspaceId();
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+  let query = supabase
+    .from('meetings')
+    .select(
+      `id, title, description, start_time, end_time, meeting_link, created_at,
+       project:projects (id, name),
+       client:clients (id, display_name, lead_status),
+       creator:profiles!meetings_created_by_fkey (id, full_name, email),
+       attendees:meeting_attendees (id, profile:profiles (id, full_name, email, avatar_url))`
+    )
+    .gte('start_time', todayStart)
+    .lt('start_time', todayEnd)
+    .order('start_time', { ascending: true });
+
+  if (wsId) query = query.eq('workspace_id', wsId);
+
+  const { data: meetings, error } = await query;
+  if (error) {
+    console.error('Error fetching today meetings:', error);
     return [];
   }
 

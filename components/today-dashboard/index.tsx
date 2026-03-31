@@ -232,7 +232,7 @@ export function TodayDashboard({
 
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col px-5 py-3 sm:px-6">
+        <div className="flex min-h-0 w-full flex-1 flex-col px-5 py-3 sm:px-6 lg:px-8">
           {/* "Viewing as" indicator */}
           {viewingAsOther && (
             <div className="bg-amber-500/6 mb-3 flex shrink-0 animate-slide-up items-center gap-2.5 rounded-lg border border-amber-500/25 px-4 py-2 backdrop-blur-sm">

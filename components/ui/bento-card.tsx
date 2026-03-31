@@ -53,7 +53,7 @@ const BentoCard = React.forwardRef<HTMLDivElement, BentoCardProps>(
         )}
         whileHover={interactive ? { y: -2, scale: 1.01 } : undefined}
         whileTap={interactive ? { scale: 0.99 } : undefined}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.2 }}
         {...props}
       >
         {/* Hover gradient overlay */}

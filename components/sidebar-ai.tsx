@@ -227,7 +227,7 @@ export function SidebarAI() {
             initial={{ opacity: 0, y: 20, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
-            transition={{ type: 'spring' as const, stiffness: 400, damping: 30 }}
+            transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
             className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 sm:w-full"
           >
             <div className="overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl shadow-black/20 backdrop-blur-xl dark:shadow-black/40">
@@ -274,7 +274,7 @@ export function SidebarAI() {
                           key={message.id}
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ type: 'spring' as const, stiffness: 500, damping: 30 }}
+                          transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.25 }}
                           className={cn(
                             'rounded-xl px-3 py-2 text-sm leading-relaxed',
                             message.role === 'user'

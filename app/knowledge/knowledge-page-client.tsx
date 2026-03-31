@@ -635,7 +635,7 @@ function GuidePanel({
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.3 }}
         className="fixed bottom-0 right-0 top-0 z-50 flex w-full max-w-2xl flex-col border-l border-border bg-background shadow-2xl"
       >
         <div className="relative shrink-0 border-b border-border px-6 pb-5 pt-6">

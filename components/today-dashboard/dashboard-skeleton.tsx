@@ -222,7 +222,7 @@ export function DashboardSkeleton() {
 
       {/* Content */}
       <main className="min-h-0 flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1600px] px-4 py-5 sm:px-6">
+        <div className="px-5 py-5 sm:px-6 lg:px-8">
           {/* Stats Row */}
           <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (

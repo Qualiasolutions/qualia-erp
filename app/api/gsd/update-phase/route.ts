@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 /**
  * POST /api/gsd/update-phase
@@ -34,7 +35,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Webhook not configured' }, { status: 500 });
     }
 
-    if (!apiKey || apiKey !== secret) {
+    if (
+      !apiKey ||
+      apiKey.length !== secret.length ||
+      !crypto.timingSafeEqual(Buffer.from(apiKey), Buffer.from(secret))
+    ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -240,7 +240,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
           <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 300, delay: 0.1 }}
+            transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.3, delay: 0.1 }}
             className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10"
           >
             <Check className="h-8 w-8 text-emerald-500" />
@@ -286,7 +286,7 @@ export function NewMeetingModal({ open: controlledOpen, onOpenChange }: NewMeeti
                     left: meetingType === 'internal' ? '4px' : 'calc(50% + 2px)',
                     right: meetingType === 'internal' ? 'calc(50% + 2px)' : '4px',
                   }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.2 }}
                 />
                 <button
                   type="button"

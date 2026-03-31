@@ -204,7 +204,7 @@ export function NewTaskModal({
           <m.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', damping: 15, stiffness: 300, delay: 0.1 }}
+            transition={{ type: 'tween', ease: [0.16, 1, 0.3, 1], duration: 0.3, delay: 0.1 }}
             className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500/10"
           >
             <Check className="h-7 w-7 text-emerald-500" />

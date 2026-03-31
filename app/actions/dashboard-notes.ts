@@ -22,6 +22,11 @@ export type DashboardNote = {
 export async function getDashboardNotes(): Promise<DashboardNote[]> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('dashboard_notes')
     .select('*, author:profiles!author_id(id, full_name, avatar_url, role)')

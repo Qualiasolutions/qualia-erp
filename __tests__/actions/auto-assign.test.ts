@@ -28,6 +28,10 @@ jest.mock('@/lib/supabase/server', () => ({
   createClient: jest.fn(),
 }));
 
+jest.mock('@/app/actions/shared', () => ({
+  isUserManagerOrAbove: jest.fn().mockResolvedValue(true),
+}));
+
 // ---- Mock setup ----
 
 type ChainMethods = Record<string, jest.Mock>;
@@ -71,6 +75,7 @@ const mockSupabase = {
 function setupClient() {
   const { createClient } = jest.requireMock('@/lib/supabase/server');
   (createClient as jest.Mock).mockResolvedValue(mockSupabase);
+  mockSupabase.auth.getUser.mockResolvedValue({ data: { user: { id: USER_A } } });
 }
 
 function mockTable(table: string, data: unknown, error: unknown = null) {

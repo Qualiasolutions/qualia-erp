@@ -177,12 +177,12 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
     return (
       <div className="space-y-6">
         {/* Hero empty state */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent p-8 text-center">
-          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl" />
-          <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-qualia-500/10 via-qualia-500/5 to-transparent p-8 text-center">
+          <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-qualia-500/10 blur-3xl" />
+          <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-qualia-500/10 blur-3xl" />
           <div className="relative">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/10">
-              <CalendarDays className="h-8 w-8 text-violet-500" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-qualia-500/10">
+              <CalendarDays className="h-8 w-8 text-qualia-500" />
             </div>
             <h2 className="text-xl font-semibold text-foreground">Your day is clear</h2>
             <p className="mt-2 text-sm text-muted-foreground">
@@ -200,9 +200,9 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
   return (
     <div className="space-y-8">
       {/* Today's Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent p-6">
-        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-violet-500/10 blur-3xl" />
-        <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-purple-500/10 blur-3xl" />
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-qualia-500/10 via-qualia-500/5 to-transparent p-6">
+        <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-qualia-500/10 blur-3xl" />
+        <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-qualia-500/10 blur-3xl" />
 
         <div className="relative">
           {/* Date and timezone */}
@@ -297,7 +297,7 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
                   <div
                     key={meeting.id}
                     className={cn(
-                      'group rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-violet-500/30 hover:bg-secondary/50',
+                      'group rounded-xl border border-border bg-card p-4 transition-all duration-200 hover:border-qualia-500/30 hover:bg-secondary/50',
                       isPast && 'opacity-50'
                     )}
                     style={{ animationDelay: `${index * 30}ms` }}
@@ -308,13 +308,13 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
                         <div className="mb-2 flex items-center gap-2">
                           {isToday ? (
                             <>
-                              <Clock className="h-3.5 w-3.5 text-violet-500" />
-                              <span className="text-xs font-medium text-violet-500">Today</span>
+                              <Clock className="h-3.5 w-3.5 text-qualia-500" />
+                              <span className="text-xs font-medium text-qualia-500">Today</span>
                             </>
                           ) : (
                             <>
-                              <CalendarDays className="h-3.5 w-3.5 text-violet-500" />
-                              <span className="text-xs font-medium text-violet-500">
+                              <CalendarDays className="h-3.5 w-3.5 text-qualia-500" />
+                              <span className="text-xs font-medium text-qualia-500">
                                 {format(startDate, 'EEE, MMM d')}
                               </span>
                             </>
@@ -330,7 +330,7 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
                         </div>
 
                         {/* Title */}
-                        <h4 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-violet-500">
+                        <h4 className="line-clamp-1 text-sm font-semibold text-foreground transition-colors group-hover:text-qualia-500">
                           {meeting.title}
                         </h4>
 
@@ -406,15 +406,15 @@ const CurrentMeetingCard = React.memo(function CurrentMeetingCard({
   const progress = Math.min(100, Math.max(0, (elapsed / duration) * 100));
 
   return (
-    <div className="rounded-xl border border-violet-500/50 bg-violet-500/10 p-4 shadow-lg shadow-violet-500/10">
+    <div className="rounded-xl border border-qualia-500/50 bg-qualia-500/10 p-4 shadow-lg shadow-qualia-500/10">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-qualia-500">
             <Video className="h-5 w-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="animate-pulse rounded-full bg-violet-500 px-2 py-0.5 text-[11px] font-bold uppercase text-white">
+              <span className="animate-pulse rounded-full bg-qualia-500 px-2 py-0.5 text-[11px] font-bold uppercase text-white">
                 In Progress
               </span>
               <span className="text-xs text-muted-foreground">
@@ -451,9 +451,9 @@ const CurrentMeetingCard = React.memo(function CurrentMeetingCard({
       </div>
 
       {/* Progress bar */}
-      <div className="mt-3 h-1.5 rounded-full bg-violet-500/20">
+      <div className="mt-3 h-1.5 rounded-full bg-qualia-500/20">
         <div
-          className="h-full rounded-full bg-violet-500 transition-all duration-1000"
+          className="h-full rounded-full bg-qualia-500 transition-all duration-1000"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -485,11 +485,11 @@ const NextMeetingCard = React.memo(function NextMeetingCard({
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-            <Clock className="h-5 w-5 text-violet-500" />
+            <Clock className="h-5 w-5 text-qualia-500" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-violet-500">Up Next</span>
+              <span className="text-xs font-semibold text-qualia-500">Up Next</span>
               <span className="text-xs text-muted-foreground">{timeUntil}</span>
             </div>
             <h3 className="mt-1 text-base font-semibold text-foreground">{meeting.title}</h3>
