@@ -29,9 +29,10 @@ export type Activity = {
 /**
  * Get recent activities
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function getRecentActivities(
   limit: number = 20,
+  // kept for backwards compat — workspaceId is always derived from auth
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _workspaceId?: string | null
 ): Promise<Activity[]> {
   const supabase = await createClient();
