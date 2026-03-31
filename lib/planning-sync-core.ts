@@ -288,16 +288,15 @@ export async function syncPlanningFromGitHubWithServiceRole(
       // Never downgrade a completed phase — DB is source of truth for status
       const shouldPreserveStatus = existing?.status === 'completed' && phase.status !== 'completed';
       const finalStatus = shouldPreserveStatus ? existing.status : phase.status;
-      const finalStartedAt = shouldPreserveStatus
-        ? existing.started_at
-        : phase.startedAt
-          ? new Date(phase.startedAt).toISOString()
-          : null;
+      const safeDate = (v: string | null): string | null => {
+        if (!v) return null;
+        const d = new Date(v);
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      };
+      const finalStartedAt = shouldPreserveStatus ? existing.started_at : safeDate(phase.startedAt);
       const finalCompletedAt = shouldPreserveStatus
         ? existing.completed_at
-        : phase.completedAt
-          ? new Date(phase.completedAt).toISOString()
-          : null;
+        : safeDate(phase.completedAt);
 
       const phaseData = {
         project_id: projectId,
