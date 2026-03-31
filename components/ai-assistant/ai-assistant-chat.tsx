@@ -166,6 +166,7 @@ export function AIAssistantChat() {
 
     lastSpokenIdRef.current = lastMessage.id;
     speakText(lastMessage.content);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMessages, isStreaming, ttsEnabled]);
 
   const speakText = useCallback(async (text: string) => {

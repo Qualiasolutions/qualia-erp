@@ -77,6 +77,7 @@ export function EnvironmentCards({ projectId, className }: EnvironmentCardsProps
 
   useEffect(() => {
     loadEnvironments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const handleHealthCheck = async (envId: string) => {

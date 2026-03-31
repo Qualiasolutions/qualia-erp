@@ -76,6 +76,7 @@ export function DeploymentList({ projectId, className }: DeploymentListProps) {
     // Poll for updates every 30s
     const interval = setInterval(loadDeployments, 30000);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   if (isLoading && deployments.length === 0) {

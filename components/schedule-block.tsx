@@ -568,6 +568,7 @@ export function ScheduleBlock({
       for (const h of hours) hourSet.add(h);
     }
     return Array.from(hourSet).sort((a, b) => a - b);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unified, filteredMembers, getMemberSlotHours]);
 
   // Which hours each member is active (for dimming out-of-range cells)

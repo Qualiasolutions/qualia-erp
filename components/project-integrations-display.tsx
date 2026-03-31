@@ -41,6 +41,7 @@ export function ProjectIntegrationsDisplay({
   // Load integrations on mount
   useEffect(() => {
     loadIntegrations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   async function loadIntegrations() {

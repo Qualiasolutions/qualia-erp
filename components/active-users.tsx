@@ -29,7 +29,7 @@ function UserAvatar({ user, size = 'md' }: { user: PresenceUser; size?: 'sm' | '
   return (
     <div className="relative" title={`${user.name} (${user.status})`}>
       {user.avatarUrl ? (
-        <img
+        <img // eslint-disable-line @next/next/no-img-element
           src={user.avatarUrl}
           alt={user.name}
           className={cn(sizeClasses, 'rounded-full object-cover ring-2 ring-background')}

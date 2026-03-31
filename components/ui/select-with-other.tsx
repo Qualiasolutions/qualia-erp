@@ -70,6 +70,7 @@ export function SelectWithOther({
       setCustomValue(value);
       setIsCustomMode(true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Focus search input when popover opens
