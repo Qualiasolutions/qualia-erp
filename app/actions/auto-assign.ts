@@ -1,11 +1,24 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 // ============ AUTO-ASSIGNMENT ENGINE ============
 // Internal engine functions for creating tasks from project phase items
 // when someone gets assigned to a project. NO auth checks here --
 // callers (Phase 2/3 integration points) handle authorization.
+//
+// All engine functions accept an optional `supabaseClient` parameter.
+// When omitted, they use the cookie-based server client (for server actions).
+// When provided, they use the given client (for webhook handler with service-role).
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnySupabaseClient = SupabaseClient<any, any, any>;
+
+async function getClient(externalClient?: AnySupabaseClient) {
+  if (externalClient) return externalClient;
+  return createClient();
+}
 
 /**
  * Get the current active milestone for a project.
@@ -16,8 +29,8 @@ import { createClient } from '@/lib/supabase/server';
  * @param projectId - The project UUID
  * @returns The active milestone data, or null if no milestones exist or all are complete
  */
-export async function getActiveMilestone(projectId: string) {
-  const supabase = await createClient();
+export async function getActiveMilestone(projectId: string, supabaseClient?: AnySupabaseClient) {
+  const supabase = await getClient(supabaseClient);
 
   // Fetch all phases with milestone numbers, ordered by milestone_number
   const { data: phases, error } = await supabase
@@ -102,9 +115,10 @@ export async function createTasksFromMilestone(
   projectId: string,
   milestoneNumber: number,
   assigneeId: string,
-  trigger: 'assignment' | 'milestone_cascade'
+  trigger: 'assignment' | 'milestone_cascade',
+  supabaseClient?: AnySupabaseClient
 ): Promise<{ created: number; skipped: number; total: number }> {
-  const supabase = await createClient();
+  const supabase = await getClient(supabaseClient);
 
   // 1. Fetch project to get workspace_id
   const { data: project, error: projectError } = await supabase
@@ -287,9 +301,10 @@ export async function handleReassignment(
  */
 export async function markMilestoneTasksDone(
   projectId: string,
-  milestoneNumber: number
+  milestoneNumber: number,
+  supabaseClient?: AnySupabaseClient
 ): Promise<number> {
-  const supabase = await createClient();
+  const supabase = await getClient(supabaseClient);
 
   // 1. Get all phase IDs for this milestone_number
   const { data: phases, error: phasesError } = await supabase

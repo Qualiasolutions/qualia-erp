@@ -382,6 +382,109 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // ── Milestone cascade: detect completion → auto-assign next ────────
+    const cascadeResults: {
+      milestone: number;
+      tasksDone: number;
+      tasksCreated: number;
+      assignees: string[];
+    }[] = [];
+
+    // Collect milestone_numbers of phases that just became completed
+    const newlyCompletedMilestones = new Set<number>();
+    for (const update of phaseUpdates) {
+      if (!update.hasVerification) continue;
+      // Find this phase in the map to get its milestone_number
+      const phaseRecord = existingPhaseMap.get(update.phaseName.toLowerCase());
+      if (!phaseRecord) continue;
+
+      // Fetch milestone_number for this phase (not in the original select)
+      const { data: phaseWithMilestone } = await supabase
+        .from('project_phases')
+        .select('milestone_number')
+        .eq('id', phaseRecord.id)
+        .single();
+
+      if (phaseWithMilestone?.milestone_number != null) {
+        newlyCompletedMilestones.add(phaseWithMilestone.milestone_number);
+      }
+    }
+
+    // For each candidate milestone, check if ALL its phases are now completed
+    for (const milestoneNum of newlyCompletedMilestones) {
+      const { data: milestonePhases } = await supabase
+        .from('project_phases')
+        .select('id, status')
+        .eq('project_id', projectId)
+        .eq('milestone_number', milestoneNum);
+
+      if (!milestonePhases || milestonePhases.length === 0) continue;
+
+      const allCompleted = milestonePhases.every((p) => p.status === 'completed');
+      if (!allCompleted) continue;
+
+      // Milestone is fully completed — run cascade
+      const { markMilestoneTasksDone, getActiveMilestone, createTasksFromMilestone } =
+        await import('@/app/actions/auto-assign');
+
+      // 1. Mark completed milestone's auto-created tasks as Done
+      const tasksDone = await markMilestoneTasksDone(projectId, milestoneNum, supabase);
+
+      // 2. Find active assignees for this project
+      const { data: activeAssignments } = await supabase
+        .from('project_assignments')
+        .select('employee_id')
+        .eq('project_id', projectId)
+        .is('removed_at', null);
+
+      const assigneeIds = (activeAssignments || []).map((a) => a.employee_id);
+      let totalCreated = 0;
+
+      if (assigneeIds.length > 0) {
+        // 3. Get the next active milestone (now that this one is complete)
+        const nextMilestone = await getActiveMilestone(projectId, supabase);
+
+        if (nextMilestone) {
+          // 4. Create tasks for each assignee
+          for (const assigneeId of assigneeIds) {
+            const result = await createTasksFromMilestone(
+              projectId,
+              nextMilestone.milestoneNumber,
+              assigneeId,
+              'milestone_cascade',
+              supabase
+            );
+            totalCreated += result.created;
+
+            // 5. Send notification to assignee
+            if (result.created > 0) {
+              await supabase.from('notifications').insert({
+                title: `New milestone tasks assigned`,
+                message: `${result.created} tasks from Milestone ${nextMilestone.milestoneNumber} on ${project.name}`,
+                type: 'auto_assignment',
+                user_id: assigneeId,
+                workspace_id: project.workspace_id,
+                link: `/projects/${projectId}/roadmap`,
+                metadata: {
+                  source: 'milestone_cascade',
+                  milestone_number: nextMilestone.milestoneNumber,
+                  task_count: result.created,
+                  project_name: project.name,
+                },
+              });
+            }
+          }
+        }
+      }
+
+      cascadeResults.push({
+        milestone: milestoneNum,
+        tasksDone,
+        tasksCreated: totalCreated,
+        assignees: assigneeIds,
+      });
+    }
+
     // ── Log activity (internal) ──────────────────────────────────────────
     const commitCount = payload.commits.length;
 
@@ -397,6 +500,7 @@ export async function POST(request: NextRequest) {
         head_sha: payload.head_commit?.id?.slice(0, 7),
         commit_messages: payload.commits.slice(0, 5).map((c) => c.message.split('\n')[0]),
         phase_updates: results,
+        ...(cascadeResults.length > 0 && { milestone_cascades: cascadeResults }),
       },
     });
 
@@ -448,6 +552,7 @@ export async function POST(request: NextRequest) {
       commits: commitCount,
       phases_updated: results.length,
       details: results,
+      ...(cascadeResults.length > 0 && { milestone_cascades: cascadeResults }),
     });
   } catch (error) {
     console.error('[/api/github/webhook] Error:', error);
