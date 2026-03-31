@@ -319,6 +319,7 @@ export interface ProjectStatsData {
   metadata: { is_partnership?: boolean; partner_name?: string } | null;
   sort_order: number;
   team?: { id: string; full_name: string | null; avatar_url: string | null }[];
+  has_github?: boolean;
 }
 
 /**

@@ -23,9 +23,7 @@ import {
   UserPlus,
   X,
   Smartphone,
-  RefreshCw,
 } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
 import { useProjectAssignments, invalidateProjectAssignments } from '@/lib/swr';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDate } from '@/lib/utils';
@@ -51,7 +49,6 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
-import { syncPlanningFromGitHub } from '@/app/actions/github-planning-sync';
 import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -142,7 +139,6 @@ interface ProjectDetailViewProps {
   clients: ClientOption[];
   userRole?: 'admin' | 'manager' | 'employee';
   integrationStatus?: IntegrationStatus;
-  syncStatus?: { lastSynced: string | null; phaseCount: number };
 }
 
 export function ProjectDetailView({
@@ -151,7 +147,6 @@ export function ProjectDetailView({
   clients,
   userRole = 'employee',
   integrationStatus,
-  syncStatus,
 }: ProjectDetailViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -163,8 +158,6 @@ export function ProjectDetailView({
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
-
   // Form state
   const [name, setName] = useState(initialProject.name);
   const [description, setDescription] = useState(initialProject.description || '');
@@ -235,23 +228,6 @@ export function ProjectDetailView({
       }
     });
   };
-
-  const handleSync = useCallback(async () => {
-    setIsSyncing(true);
-    try {
-      const result = await syncPlanningFromGitHub(project.id);
-      if (result.success) {
-        toast.success(`Synced ${result.data?.phasesUpserted ?? 0} phases from GitHub`);
-        router.refresh();
-      } else {
-        toast.error(result.error || 'Sync failed');
-      }
-    } catch {
-      toast.error('Sync failed unexpectedly');
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [project.id, router]);
 
   const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
   const ProjectTypeIcon = selectedProjectType?.icon || Folder;
@@ -345,31 +321,6 @@ export function ProjectDetailView({
             <div className="hidden items-center gap-1.5 sm:flex">
               <ProjectIntegrationsDisplay projectId={project.id} userRole={userRole} />
             </div>
-
-            {/* Sync status */}
-            {syncStatus && syncStatus.phaseCount > 0 && (
-              <div className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
-                <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
-                <span>
-                  {syncStatus.lastSynced
-                    ? formatDistanceToNow(new Date(syncStatus.lastSynced), { addSuffix: true })
-                    : 'Never synced'}
-                </span>
-                <span className="text-muted-foreground/40">&middot;</span>
-                <span>
-                  {syncStatus.phaseCount} {syncStatus.phaseCount === 1 ? 'phase' : 'phases'}
-                </span>
-                {(userRole === 'admin' || userRole === 'manager') && (
-                  <button
-                    onClick={handleSync}
-                    disabled={isSyncing}
-                    className="ml-0.5 rounded px-1.5 py-0.5 text-[11px] font-medium text-qualia-500 transition-colors hover:bg-qualia-500/10 disabled:opacity-50"
-                  >
-                    {isSyncing ? 'Syncing...' : 'Sync now'}
-                  </button>
-                )}
-              </div>
-            )}
 
             {/* Panel toggle (below xl only) */}
             <Button

@@ -101,10 +101,8 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
     );
   }
 
-  // Revalidate portal and roadmap paths
+  // Only revalidate portal — internal views refresh via client-side state
   revalidatePath(`/portal/${projectId}`);
-  revalidatePath(`/projects/${projectId}/roadmap`);
-  revalidatePath(`/projects/${projectId}`);
 
   return { success: true, data: comment };
 }
@@ -211,10 +209,8 @@ export async function deletePhaseComment(
     return { success: false, error: error.message };
   }
 
-  // Revalidate paths
+  // Only revalidate portal — internal views refresh via client-side state
   revalidatePath(`/portal/${projectId}`);
-  revalidatePath(`/projects/${projectId}/roadmap`);
-  revalidatePath(`/projects/${projectId}`);
 
   return { success: true };
 }

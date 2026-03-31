@@ -206,16 +206,39 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     return { demos: [], building: [], preProduction: [], live: [], done: [], archived: [] };
   }
 
-  // Fetch sort_order separately (not in RPC)
+  // Fetch sort_order, team assignments, and GitHub integrations (not in RPC)
   const projectIds = (rawProjects || []).map((p: Record<string, unknown>) => p.id as string);
-  const { data: sortData } = await supabase
-    .from('projects')
-    .select('id, sort_order')
-    .in('id', projectIds);
+  const [{ data: sortData }, { data: assignmentData }, { data: githubData }] = await Promise.all([
+    supabase.from('projects').select('id, sort_order').in('id', projectIds),
+    supabase
+      .from('project_assignments')
+      .select(
+        'project_id, employee:profiles!project_assignments_employee_id_fkey(id, full_name, avatar_url)'
+      )
+      .in('project_id', projectIds)
+      .is('removed_at', null),
+    supabase
+      .from('project_integrations')
+      .select('project_id')
+      .eq('service_type', 'github')
+      .in('project_id', projectIds),
+  ]);
   const sortMap = new Map<string, number>();
   for (const s of sortData || []) {
     sortMap.set(s.id, s.sort_order ?? 0);
   }
+  const teamByProject = new Map<
+    string,
+    { id: string; full_name: string | null; avatar_url: string | null }[]
+  >();
+  for (const a of assignmentData || []) {
+    const emp = Array.isArray(a.employee) ? a.employee[0] : a.employee;
+    if (!emp?.id) continue;
+    const existing = teamByProject.get(a.project_id) || [];
+    existing.push({ id: emp.id, full_name: emp.full_name, avatar_url: emp.avatar_url });
+    teamByProject.set(a.project_id, existing);
+  }
+  const githubProjectIds = new Set((githubData || []).map((i) => i.project_id));
 
   // Check if current user is an employee (filter to assigned projects only)
   const {
@@ -265,6 +288,8 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     is_pre_production: (p.is_pre_production as boolean) || false,
     metadata: p.metadata as { is_partnership?: boolean; partner_name?: string } | null,
     sort_order: sortMap.get(p.id as string) ?? 0,
+    team: teamByProject.get(p.id as string) || [],
+    has_github: githubProjectIds.has(p.id as string),
   }));
 
   // Filter for employees: show assigned projects + all demo projects

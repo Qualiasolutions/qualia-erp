@@ -425,18 +425,22 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     return [];
   }
 
-  // Query 1: All profiles in the workspace
-  const { data: profiles, error: profilesError } = await supabase
-    .from('profiles')
-    .select('id, full_name, avatar_url')
+  // Query 1: All profiles in the workspace (via workspace_members — profiles has no workspace_id)
+  const { data: members, error: membersError } = await supabase
+    .from('workspace_members')
+    .select('profile:profiles!workspace_members_profile_id_fkey(id, full_name, avatar_url)')
     .eq('workspace_id', workspaceId);
 
-  if (profilesError) {
-    console.error('[getTeamStatus] Profiles error:', profilesError);
+  if (membersError) {
+    console.error('[getTeamStatus] Profiles error:', membersError);
     return [];
   }
 
-  if (!profiles || profiles.length === 0) return [];
+  const profiles = (members || [])
+    .map((m) => (Array.isArray(m.profile) ? m.profile[0] : m.profile))
+    .filter((p): p is { id: string; full_name: string | null; avatar_url: string | null } => !!p);
+
+  if (profiles.length === 0) return [];
 
   // Query 2: All open sessions (ended_at IS NULL) for this workspace
   const { data: openSessions, error: openError } = await supabase
@@ -528,7 +532,8 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
  * Get the current user's planned logout time from their profile.
  * Returns a TIME string (e.g. "16:00:00") or null if not set.
  */
-export async function getPlannedLogoutTime(workspaceId: string): Promise<string | null> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getPlannedLogoutTime(_workspaceId: string): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -536,11 +541,11 @@ export async function getPlannedLogoutTime(workspaceId: string): Promise<string 
 
   if (!user) return null;
 
+  // Filter by user ID only (profiles has no workspace_id column)
   const { data, error } = await supabase
     .from('profiles')
     .select('planned_logout_time')
     .eq('id', user.id)
-    .eq('workspace_id', workspaceId)
     .maybeSingle();
 
   if (error) {
@@ -582,8 +587,7 @@ export async function updatePlannedLogoutTime(
   const { error } = await supabase
     .from('profiles')
     .update({ planned_logout_time: normalizedTime })
-    .eq('id', user.id)
-    .eq('workspace_id', workspaceId);
+    .eq('id', user.id);
 
   if (error) {
     console.error('[updatePlannedLogoutTime] Error:', error);

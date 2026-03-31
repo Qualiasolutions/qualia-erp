@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useTransition, useRef } from 'react';
-import { MessageSquare, Send, Trash2, Lock } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MessageSquare, Send, Trash2, Lock, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -10,6 +10,7 @@ import {
   deletePhaseComment,
 } from '@/app/actions/phase-comments';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
 interface Comment {
   id: string;
@@ -35,22 +36,27 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
   const [text, setText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPending, startTransition] = useTransition();
+  const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const loadComments = useCallback(async () => {
+    const result = await getPhaseComments(projectId, phaseName, isAdmin);
+    if (result.success) {
+      setComments(result.data as Comment[]);
+    }
+    return result;
+  }, [projectId, phaseName, isAdmin]);
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
-    getPhaseComments(projectId, phaseName, isAdmin).then((result) => {
-      if (!cancelled && result.success) {
-        setComments(result.data as Comment[]);
-      }
+    loadComments().then(() => {
       if (!cancelled) setIsLoading(false);
     });
     return () => {
       cancelled = true;
     };
-  }, [projectId, phaseName, isAdmin]);
+  }, [loadComments]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -58,35 +64,44 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
     }
   }, [comments.length]);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const trimmed = text.trim();
-    if (!trimmed) return;
+    if (!trimmed || isSending) return;
 
-    startTransition(async () => {
+    setIsSending(true);
+    try {
       const result = await createPhaseComment({
         projectId,
         phaseName,
         commentText: trimmed,
         isInternal,
       });
+
       if (result.success) {
         setText('');
-        // Refresh comments
-        const refreshed = await getPhaseComments(projectId, phaseName, isAdmin);
-        if (refreshed.success) {
-          setComments(refreshed.data as Comment[]);
-        }
+        await loadComments();
+      } else {
+        toast.error(result.error || 'Failed to save comment');
       }
-    });
+    } catch {
+      toast.error('Failed to save comment');
+    } finally {
+      setIsSending(false);
+    }
   }
 
-  function handleDelete(commentId: string) {
-    startTransition(async () => {
+  async function handleDelete(commentId: string) {
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    try {
       const result = await deletePhaseComment(commentId, projectId);
-      if (result.success) {
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
+      if (!result.success) {
+        toast.error(result.error || 'Failed to delete comment');
+        await loadComments();
       }
-    });
+    } catch {
+      toast.error('Failed to delete comment');
+      await loadComments();
+    }
   }
 
   return (
@@ -150,7 +165,7 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
                       </span>
                       <button
                         onClick={() => handleDelete(comment.id)}
-                        disabled={isPending}
+                        disabled={isSending}
                         className="ml-auto hidden h-5 w-5 items-center justify-center rounded text-muted-foreground/40 transition-colors hover:bg-red-500/10 hover:text-red-500 group-hover:flex"
                       >
                         <Trash2 className="h-2.5 w-2.5" />
@@ -182,7 +197,7 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
               }}
               placeholder="Write a comment... (Enter to send)"
               rows={1}
-              disabled={isPending}
+              disabled={isSending}
               className="w-full resize-none rounded-lg border border-border bg-muted/10 px-3 py-2 text-xs placeholder:text-muted-foreground/40 focus:border-qualia-500 focus:outline-none focus:ring-1 focus:ring-qualia-500"
             />
             {isAdmin && (
@@ -199,15 +214,19 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
           </div>
           <button
             onClick={handleSubmit}
-            disabled={isPending || !text.trim()}
+            disabled={isSending || !text.trim()}
             className={cn(
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
-              text.trim()
+              text.trim() && !isSending
                 ? 'bg-qualia-500 text-white hover:bg-qualia-600'
                 : 'bg-muted text-muted-foreground/30'
             )}
           >
-            <Send className="h-3.5 w-3.5" />
+            {isSending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
           </button>
         </div>
       </div>
