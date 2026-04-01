@@ -26,16 +26,21 @@ import {
   LayoutDashboard,
   type LucideIcon,
   MessagesSquare,
+  Monitor,
+  Moon,
+  Palette,
   Receipt,
   Settings,
   Shield,
   Sparkles,
+  Sun,
   Upload,
   Users,
   Wallet,
   Workflow,
   X,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
@@ -207,6 +212,38 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
           description:
             'Admins see everything. Team members see their projects and tasks. Clients see their portal. Clean and focused.',
           tag: 'Roles',
+        },
+      ],
+    },
+    {
+      id: 'theme',
+      icon: Palette,
+      eyebrow: 'Appearance',
+      title: 'Pick your vibe.',
+      description:
+        'Qualia looks great in both light and dark mode. Choose what feels right — you can always change it later in settings.',
+      tone: 'violet',
+      routes: ['/settings'],
+      metrics: ['Light mode', 'Dark mode', 'Match your system'],
+      note: 'Your choice is saved instantly. No need to confirm — just click and it applies.',
+      highlights: [
+        {
+          icon: Sun,
+          title: 'Light',
+          description: 'Clean and bright. Teal-tinted warm neutrals.',
+          tag: 'light',
+        },
+        {
+          icon: Moon,
+          title: 'Dark',
+          description: 'Easy on the eyes. Deep teal-tinted surfaces.',
+          tag: 'dark',
+        },
+        {
+          icon: Monitor,
+          title: 'System',
+          description: 'Follows your OS preference automatically.',
+          tag: 'system',
         },
       ],
     },
@@ -559,6 +596,7 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
 
 export function InternalAppWalkthrough() {
   const { userId, userRole, loading, isViewingAs } = useAdminContext();
+  const { theme, setTheme } = useTheme();
   const [displayName, setDisplayName] = useState('');
   const [visible, setVisible] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -985,55 +1023,140 @@ export function InternalAppWalkthrough() {
                           currentTone.glow
                         )}
                       />
-                      <div className="relative grid gap-4 sm:grid-cols-2">
-                        {currentStep.highlights.map((highlight, index) => {
-                          const Icon = highlight.icon;
 
-                          return (
-                            <m.div
-                              key={highlight.title}
-                              initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{
-                                duration: shouldReduceMotion ? 0.16 : 0.2,
-                                delay: shouldReduceMotion ? 0 : index * 0.04,
-                                ease: 'easeOut',
-                              }}
-                              className={cn(
-                                'group relative overflow-hidden rounded-[24px] border bg-white/[0.04] p-5 shadow-[0_24px_50px_rgba(0,0,0,0.18)] transition-transform duration-200',
-                                'hover:-translate-y-1 hover:bg-white/[0.06]',
-                                currentTone.border
-                              )}
-                            >
-                              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_42%)] opacity-80" />
-                              <div className="relative flex h-full flex-col">
-                                <div className="flex items-start justify-between gap-3">
+                      {currentStep.id === 'theme' ? (
+                        <div className="relative grid gap-4 sm:grid-cols-3">
+                          {(
+                            [
+                              {
+                                value: 'light',
+                                icon: Sun,
+                                label: 'Light',
+                                desc: 'Clean and bright with warm teal-tinted neutrals.',
+                              },
+                              {
+                                value: 'dark',
+                                icon: Moon,
+                                label: 'Dark',
+                                desc: 'Easy on the eyes with deep teal-tinted surfaces.',
+                              },
+                              {
+                                value: 'system',
+                                icon: Monitor,
+                                label: 'System',
+                                desc: 'Follows your OS preference automatically.',
+                              },
+                            ] as const
+                          ).map((option, index) => {
+                            const Icon = option.icon;
+                            const isSelected = theme === option.value;
+
+                            return (
+                              <m.button
+                                key={option.value}
+                                type="button"
+                                onClick={() => setTheme(option.value)}
+                                initial={
+                                  shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 }
+                                }
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{
+                                  duration: shouldReduceMotion ? 0.16 : 0.2,
+                                  delay: shouldReduceMotion ? 0 : index * 0.06,
+                                  ease: 'easeOut',
+                                }}
+                                className={cn(
+                                  'group relative flex flex-col items-center overflow-hidden rounded-[24px] border p-6 text-center shadow-[0_24px_50px_rgba(0,0,0,0.18)] transition-all duration-200',
+                                  isSelected
+                                    ? 'border-primary/40 bg-primary/[0.12] ring-2 ring-primary/30'
+                                    : 'border-white/10 bg-white/[0.04] hover:-translate-y-1 hover:bg-white/[0.07]'
+                                )}
+                              >
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_42%)] opacity-80" />
+                                <div className="relative flex flex-col items-center gap-4">
                                   <div
                                     className={cn(
-                                      'border-white/8 flex size-11 items-center justify-center rounded-2xl border',
-                                      currentTone.iconWrap
+                                      'flex size-14 items-center justify-center rounded-2xl border transition-colors',
+                                      isSelected
+                                        ? 'border-primary/30 bg-primary/20 text-primary'
+                                        : 'border-white/10 bg-white/[0.06] text-white/60'
                                     )}
                                   >
-                                    <Icon className="size-4" />
+                                    <Icon className="size-6" />
                                   </div>
-                                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
-                                    {highlight.tag}
-                                  </span>
+                                  <div className="space-y-2">
+                                    <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">
+                                      {option.label}
+                                    </h3>
+                                    <p className="text-sm leading-6 text-white/55">{option.desc}</p>
+                                  </div>
+                                  {isSelected && (
+                                    <m.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      className="flex size-6 items-center justify-center rounded-full bg-primary text-white"
+                                    >
+                                      <CheckCircle2 className="size-4" />
+                                    </m.div>
+                                  )}
                                 </div>
+                              </m.button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="relative grid gap-4 sm:grid-cols-2">
+                          {currentStep.highlights.map((highlight, index) => {
+                            const Icon = highlight.icon;
 
-                                <div className="mt-6 space-y-2">
-                                  <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">
-                                    {highlight.title}
-                                  </h3>
-                                  <p className="text-white/66 text-sm leading-6">
-                                    {highlight.description}
-                                  </p>
+                            return (
+                              <m.div
+                                key={highlight.title}
+                                initial={
+                                  shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 18 }
+                                }
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{
+                                  duration: shouldReduceMotion ? 0.16 : 0.2,
+                                  delay: shouldReduceMotion ? 0 : index * 0.04,
+                                  ease: 'easeOut',
+                                }}
+                                className={cn(
+                                  'group relative overflow-hidden rounded-[24px] border bg-white/[0.04] p-5 shadow-[0_24px_50px_rgba(0,0,0,0.18)] transition-transform duration-200',
+                                  'hover:-translate-y-1 hover:bg-white/[0.06]',
+                                  currentTone.border
+                                )}
+                              >
+                                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.12),transparent_42%)] opacity-80" />
+                                <div className="relative flex h-full flex-col">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div
+                                      className={cn(
+                                        'border-white/8 flex size-11 items-center justify-center rounded-2xl border',
+                                        currentTone.iconWrap
+                                      )}
+                                    >
+                                      <Icon className="size-4" />
+                                    </div>
+                                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/50">
+                                      {highlight.tag}
+                                    </span>
+                                  </div>
+
+                                  <div className="mt-6 space-y-2">
+                                    <h3 className="text-lg font-semibold tracking-[-0.02em] text-white">
+                                      {highlight.title}
+                                    </h3>
+                                    <p className="text-white/66 text-sm leading-6">
+                                      {highlight.description}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            </m.div>
-                          );
-                        })}
-                      </div>
+                              </m.div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </m.div>
                 </AnimatePresence>
