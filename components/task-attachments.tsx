@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { format, parseISO } from 'date-fns';
 import {
@@ -63,6 +64,7 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
 
         const result = await uploadTaskAttachment(formData);
         if (result.success) {
+          toast.success('File uploaded');
           invalidateTaskAttachments(taskId);
           if (markAsDone) {
             invalidateInboxTasks(true);
@@ -70,7 +72,7 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
           }
           revalidate();
         } else {
-          alert(result.error || 'Upload failed');
+          toast.error(result.error || 'Upload failed');
         }
       } finally {
         setUploading(false);

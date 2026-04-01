@@ -42,8 +42,11 @@ import { createClient } from '@/lib/supabase/client';
 const workspaceNav = [
   { name: 'Dashboard', href: '/', icon: Sun },
   { name: 'Projects', href: '/projects', icon: Folder },
-  { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Schedule', href: '/schedule', icon: Calendar },
+];
+
+const adminWorkspaceNav = [
+  { name: 'Clients', href: '/clients', icon: Building2 },
   { name: 'Status', href: '/status', icon: Activity },
 ];
 
@@ -212,6 +215,15 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
                 onClick={onLinkClick}
               />
             ))}
+            {isAdmin &&
+              adminWorkspaceNav.map((item) => (
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item.href)}
+                  onClick={onLinkClick}
+                />
+              ))}
           </div>
         </div>
 

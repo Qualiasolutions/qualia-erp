@@ -16,7 +16,8 @@ import { PlannedLogoutBanner } from '@/components/planned-logout-banner';
 import { ViewAsBanner } from '@/components/view-as-banner';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
 import { PageTransition } from '@/components/page-transition';
-import { InternalAppWalkthrough } from '@/components/onboarding/internal-app-walkthrough';
+// Onboarding walkthrough disabled — too heavy for a small team
+// import { InternalAppWalkthrough } from '@/components/onboarding/internal-app-walkthrough';
 import { LazyMotionProvider } from '@/lib/lazy-motion';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/next';
@@ -158,9 +159,7 @@ export default function RootLayout({
                         <Suspense fallback={null}>
                           <PlannedLogoutBanner />
                         </Suspense>
-                        <Suspense fallback={null}>
-                          <InternalAppWalkthrough />
-                        </Suspense>
+                        {/* Onboarding walkthrough disabled */}
                         <Suspense fallback={<SidebarSkeleton />}>
                           <Sidebar />
                         </Suspense>

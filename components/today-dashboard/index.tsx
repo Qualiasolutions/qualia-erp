@@ -267,19 +267,12 @@ export function TodayDashboard({
           {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
           {/* ── TOP ROW: Meetings + Tasks side by side (fills available height) ── */}
-          <div
-            className={cn(
-              'flex min-h-0 flex-1 gap-4',
-              isNonAdmin ? 'flex-col' : 'flex-col lg:flex-row'
-            )}
-          >
-            {/* Left sidebar — admin: meetings + team status / employee: hidden */}
-            {!isNonAdmin && (
-              <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72 xl:w-80">
-                {isRealAdmin && <LiveStatusPanel workspaceId={workspaceId} />}
-                <MeetingsSidebar meetings={meetings} />
-              </div>
-            )}
+          <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+            {/* Left sidebar — meetings for everyone, status panel for admins */}
+            <div className="flex min-h-0 w-full shrink-0 flex-col gap-3 lg:w-72 xl:w-80">
+              {isRealAdmin && <LiveStatusPanel workspaceId={workspaceId} />}
+              <MeetingsSidebar meetings={meetings} />
+            </div>
 
             {/* Tasks — fills remaining space */}
             <div className="min-h-0 min-w-0 flex-1 overflow-hidden">

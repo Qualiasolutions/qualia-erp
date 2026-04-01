@@ -101,8 +101,9 @@ export async function getProfiles(workspaceId?: string) {
 
     return (members || [])
       .map((m) => (Array.isArray(m.profile) ? m.profile[0] : m.profile))
-      .filter(Boolean)
-      .sort((a, b) => (a?.full_name || '').localeCompare(b?.full_name || ''));
+      .filter((p): p is NonNullable<typeof p> => p !== null && p !== undefined)
+      .filter((p) => p.role !== 'client')
+      .sort((a, b) => (a.full_name || 'zzz').localeCompare(b.full_name || 'zzz'));
   }
 
   // Fallback: return all profiles (legacy behavior)

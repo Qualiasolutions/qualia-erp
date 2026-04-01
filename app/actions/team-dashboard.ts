@@ -80,7 +80,7 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
         ): p is { id: string; full_name: string | null; avatar_url: string | null; role: string } =>
           p !== null && ['admin', 'employee'].includes(p.role)
       )
-      .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
+      .sort((a, b) => (a.full_name || 'zzz').localeCompare(b.full_name || 'zzz'));
 
     // Single batch query for all team members' tasks (eliminates N+1)
     const memberIds = profiles.map((p) => p.id);
