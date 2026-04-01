@@ -44,6 +44,7 @@ import {
 import { useAdminContext } from '@/components/admin-provider';
 import { deleteProject } from '@/app/actions';
 import { EntityAvatar } from '@/components/entity-avatar';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { ProjectData } from '@/app/projects/page';
 import type { ProjectType } from '@/types/database';
 
@@ -204,6 +205,7 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
   const router = useRouter();
   const { isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleRowClick = () => {
     router.push(`/projects/${project.id}`);
@@ -212,15 +214,11 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
 
-    if (
-      !confirm(
-        'Are you sure you want to delete this project? This will also delete all tasks. This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const result = await deleteProject(project.id);
       if (result.success) {
@@ -340,6 +338,14 @@ const ProjectTableRow = React.memo(function ProjectTableRow({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Delete project?"
+          description="This will also delete all tasks. This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+        />
       </td>
     </tr>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Video,
   Clock,
@@ -46,6 +47,7 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   const [showNewMeetingModal, setShowNewMeetingModal] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const now = new Date();
 
   // Handle new meeting creation - adds meeting to local state instantly
@@ -62,8 +64,14 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
   };
 
   // Handle meeting delete
-  const handleDeleteMeeting = async (meetingId: string) => {
-    if (!confirm('Delete this meeting?')) return;
+  const handleDeleteMeeting = (meetingId: string) => {
+    setShowDeleteConfirm(meetingId);
+  };
+
+  const confirmDeleteMeeting = async () => {
+    const meetingId = showDeleteConfirm;
+    if (!meetingId) return;
+    setShowDeleteConfirm(null);
     setDeletingId(meetingId);
     const result = await deleteMeeting(meetingId);
     if (result.success) {
@@ -591,6 +599,16 @@ export function DashboardMeetings({ meetings: initialMeetings }: DashboardMeetin
         open={showNewMeetingModal}
         onOpenChange={setShowNewMeetingModal}
         onMeetingCreated={handleMeetingCreated}
+      />
+
+      {/* Delete Meeting Confirm */}
+      <ConfirmDialog
+        open={!!showDeleteConfirm}
+        onOpenChange={(open) => !open && setShowDeleteConfirm(null)}
+        title="Delete this meeting?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteMeeting}
       />
 
       {/* Edit Meeting Modal */}

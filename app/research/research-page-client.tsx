@@ -38,6 +38,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
 import { RESEARCH_CATEGORIES, CATEGORY_COLORS, getCategoryLabel } from '@/lib/research-constants';
 import {
@@ -494,6 +495,7 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedEntry, setSelectedEntry] = useState<ResearchEntry | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [confirmState, setConfirmState] = useState<{ action: () => void } | null>(null);
 
   // Filter entries
   const filteredEntries = entries.filter((entry) => {
@@ -509,16 +511,18 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
     setEntries((prev) => [entry, ...prev]);
   }, []);
 
-  const handleDelete = useCallback(async (entry: ResearchEntry) => {
-    if (!confirm(`Delete "${entry.title}"? This cannot be undone.`)) return;
-
-    const result = await deleteResearchEntry(entry.id);
-    if (result.success) {
-      setEntries((prev) => prev.filter((e) => e.id !== entry.id));
-      toast.success('Research entry deleted');
-    } else {
-      toast.error(result.error || 'Failed to delete entry');
-    }
+  const handleDelete = useCallback((entry: ResearchEntry) => {
+    setConfirmState({
+      action: async () => {
+        const result = await deleteResearchEntry(entry.id);
+        if (result.success) {
+          setEntries((prev) => prev.filter((e) => e.id !== entry.id));
+          toast.success('Research entry deleted');
+        } else {
+          toast.error(result.error || 'Failed to delete entry');
+        }
+      },
+    });
   }, []);
 
   return (
@@ -639,6 +643,18 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
         open={showNewModal}
         onClose={() => setShowNewModal(false)}
         onSuccess={handleNewEntry}
+      />
+
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(open) => !open && setConfirmState(null)}
+        title="Delete Research Entry"
+        description="Are you sure? This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => {
+          confirmState?.action();
+          setConfirmState(null);
+        }}
       />
     </div>
   );

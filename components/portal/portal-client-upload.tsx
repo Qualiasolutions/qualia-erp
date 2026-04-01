@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { uploadClientFile } from '@/app/actions/project-files';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Upload, X, Loader2, FileText } from 'lucide-react';
 
 interface PortalClientUploadProps {
@@ -23,7 +23,6 @@ function formatBytes(bytes: number): string {
 
 export function PortalClientUpload({ projectId, onUploadComplete }: PortalClientUploadProps) {
   const router = useRouter();
-  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -98,8 +97,7 @@ export function PortalClientUpload({ projectId, onUploadComplete }: PortalClient
     setIsUploading(false);
 
     if (result.success) {
-      toast({
-        title: 'File uploaded',
+      toast.success('File uploaded', {
         description: `${selectedFile.name} has been shared with your team.`,
       });
       // Reset form
@@ -112,10 +110,8 @@ export function PortalClientUpload({ projectId, onUploadComplete }: PortalClient
       onUploadComplete?.();
       router.refresh();
     } else {
-      toast({
-        title: 'Upload failed',
+      toast.error('Upload failed', {
         description: result.error || 'Something went wrong. Please try again.',
-        variant: 'destructive',
       });
     }
   };

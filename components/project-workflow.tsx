@@ -27,6 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TaskDetailDialog } from '@/components/task-detail-dialog';
 import type { Task as InboxTask } from '@/app/actions/inbox';
 import {
@@ -40,6 +41,7 @@ import { getProjectTasks, createTask, updateTask, deleteTask } from '@/app/actio
 import { syncPlanningFromGitHub } from '@/app/actions/github-planning-sync';
 import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks } from '@/lib/swr';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PhaseComments } from '@/components/phase-comments';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -546,6 +548,14 @@ export function ProjectWorkflow({
   // Task view dialog
   const [viewingTask, setViewingTask] = useState<Task | null>(null);
 
+  // Confirm dialog (shared)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
+
   const fetchData = useCallback(async () => {
     try {
       const [phasesData, tasksData] = await Promise.all([
@@ -692,18 +702,24 @@ export function ProjectWorkflow({
     });
   };
 
-  const handleDeletePhase = async (phaseId: string) => {
-    if (!confirm('Delete this phase and all its tasks?')) return;
-    startTransition(async () => {
-      const result = await deleteProjectPhase(phaseId, projectId);
-      if (result.success) {
-        await fetchData();
-        invalidateProjectPhases(projectId);
-        if (activePhaseId === phaseId) setActivePhaseId(null);
-        toast.success('Phase deleted');
-      } else {
-        toast.error(result.error || 'Failed to delete phase');
-      }
+  const handleDeletePhase = (phaseId: string) => {
+    setConfirmDialog({
+      title: 'Delete phase?',
+      description: 'This will delete this phase and all its tasks. This action cannot be undone.',
+      confirmLabel: 'Delete',
+      action: () => {
+        startTransition(async () => {
+          const result = await deleteProjectPhase(phaseId, projectId);
+          if (result.success) {
+            await fetchData();
+            invalidateProjectPhases(projectId);
+            if (activePhaseId === phaseId) setActivePhaseId(null);
+            toast.success('Phase deleted');
+          } else {
+            toast.error(result.error || 'Failed to delete phase');
+          }
+        });
+      },
     });
   };
 
@@ -760,16 +776,22 @@ export function ProjectWorkflow({
     });
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    if (!confirm('Delete this task? This cannot be undone.')) return;
-    startTransition(async () => {
-      const result = await deleteTask(taskId);
-      if (!result.success) {
-        toast.error(result.error ?? 'Failed to delete task');
-        return;
-      }
-      await fetchData();
-      invalidateProjectTasks(projectId, true);
+  const handleDeleteTask = (taskId: string) => {
+    setConfirmDialog({
+      title: 'Delete task?',
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      action: () => {
+        startTransition(async () => {
+          const result = await deleteTask(taskId);
+          if (!result.success) {
+            toast.error(result.error ?? 'Failed to delete task');
+            return;
+          }
+          await fetchData();
+          invalidateProjectTasks(projectId, true);
+        });
+      },
     });
   };
 
@@ -1051,6 +1073,18 @@ export function ProjectWorkflow({
             setViewingTask(null);
           }}
         />
+
+        <ConfirmDialog
+          open={!!confirmDialog}
+          onOpenChange={(open) => !open && setConfirmDialog(null)}
+          title={confirmDialog?.title ?? ''}
+          description={confirmDialog?.description ?? ''}
+          confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
+          onConfirm={() => {
+            confirmDialog?.action();
+            setConfirmDialog(null);
+          }}
+        />
       </div>
     );
   }
@@ -1173,37 +1207,48 @@ export function ProjectWorkflow({
             />
           ))}
 
-          {/* Inline phase edit dialog */}
-          {editingPhaseId && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-              <div className="w-80 rounded-lg border border-border bg-card p-4 shadow-lg">
-                <h3 className="mb-3 text-sm font-semibold">Edit Phase Name</h3>
-                <Input
-                  value={editingPhaseName}
-                  onChange={(e) => setEditingPhaseName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleUpdatePhase(editingPhaseId);
-                    if (e.key === 'Escape') setEditingPhaseId(null);
-                  }}
-                  autoFocus
-                  className="mb-3"
+          {/* Phase name edit dialog */}
+          <Dialog open={!!editingPhaseId} onOpenChange={(open) => !open && setEditingPhaseId(null)}>
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Edit Phase Name</DialogTitle>
+              </DialogHeader>
+              <Input
+                value={editingPhaseName}
+                onChange={(e) => setEditingPhaseName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && editingPhaseId) handleUpdatePhase(editingPhaseId);
+                }}
+                autoFocus
+                className="mb-3"
+                disabled={isPending}
+              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditingPhaseId(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => editingPhaseId && handleUpdatePhase(editingPhaseId)}
                   disabled={isPending}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setEditingPhaseId(null)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleUpdatePhase(editingPhaseId)}
-                    disabled={isPending}
-                  >
-                    Save
-                  </Button>
-                </div>
+                >
+                  Save
+                </Button>
               </div>
-            </div>
-          )}
+            </DialogContent>
+          </Dialog>
+
+          <ConfirmDialog
+            open={!!confirmDialog}
+            onOpenChange={(open) => !open && setConfirmDialog(null)}
+            title={confirmDialog?.title ?? ''}
+            description={confirmDialog?.description ?? ''}
+            confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
+            onConfirm={() => {
+              confirmDialog?.action();
+              setConfirmDialog(null);
+            }}
+          />
         </div>
       </div>
     </div>

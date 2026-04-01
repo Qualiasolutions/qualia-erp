@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Bell, Check, Plus, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useWorkspace } from '@/components/workspace-provider';
 
 interface Reminder {
@@ -29,7 +29,6 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
   const [newReminderText, setNewReminderText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
   const supabase = createClient();
 
   const fetchReminders = useCallback(async () => {
@@ -81,9 +80,7 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
       );
     } catch (error: unknown) {
       console.error('Error toggling reminder:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to update reminder',
+      toast.error('Failed to update reminder', {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {
@@ -119,15 +116,10 @@ export function DashboardReminders({ workspaceId: propWorkspaceId }: { workspace
       setNewReminderText('');
       setIsAdding(false);
 
-      toast({
-        title: 'Reminder added',
-        description: 'Your reminder has been saved.',
-      });
+      toast.success('Reminder added');
     } catch (error: unknown) {
       console.error('Error adding reminder:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to add reminder',
+      toast.error('Failed to add reminder', {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Folder,
@@ -39,6 +39,7 @@ import {
 import { EntityAvatar } from '@/components/entity-avatar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { ProjectData } from '@/app/projects/page';
 import type { ProjectType } from '@/types/database';
 
@@ -116,6 +117,7 @@ function ProjectRow({
 }) {
   const { isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const router = useRouter();
 
   const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
@@ -135,15 +137,11 @@ function ProjectRow({
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
 
-    if (
-      !confirm(
-        'Are you sure you want to delete this project? This will also delete all tasks. This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const result = await deleteProject(project.id);
       if (result.success) {
@@ -370,6 +368,15 @@ function ProjectRow({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Delete project?"
+          description="This will also delete all tasks. This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+        />
       </div>
     );
   }
@@ -478,6 +485,15 @@ function ProjectRow({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete project?"
+        description="This will also delete all tasks. This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

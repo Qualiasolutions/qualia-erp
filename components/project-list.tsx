@@ -41,6 +41,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ProjectWizard } from '@/components/project-wizard';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useWorkspace } from '@/components/workspace-provider';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
@@ -189,6 +190,7 @@ function ProjectCard({
 }) {
   const { isSuperAdmin } = useAdminContext();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const router = useRouter();
 
   // Get type config
@@ -204,18 +206,14 @@ function ProjectCard({
         ? Math.round((project.issue_stats.done / project.issue_stats.total) * 100)
         : 0;
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
 
-    if (
-      !confirm(
-        'Are you sure you want to delete this project? This will also delete all issues in this project. This action cannot be undone.'
-      )
-    ) {
-      return;
-    }
-
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const result = await deleteProject(project.id);
       if (result.success) {
@@ -421,6 +419,15 @@ function ProjectCard({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Delete project?"
+          description="This will also delete all issues in this project. This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={confirmDelete}
+        />
       </div>
     </div>
   );

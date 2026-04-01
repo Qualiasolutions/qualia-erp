@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   File,
   FileText,
@@ -62,6 +63,7 @@ export function ProjectFiles({ projectId }: ProjectFilesProps) {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ProjectFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch files with SWR
@@ -128,22 +130,24 @@ export function ProjectFiles({ projectId }: ProjectFilesProps) {
     }
   }, []);
 
-  const handleDelete = useCallback(
-    async (file: ProjectFile) => {
-      if (!confirm(`Delete "${file.original_name}"?`)) return;
+  const handleDelete = useCallback((file: ProjectFile) => {
+    setDeleteTarget(file);
+  }, []);
 
-      setDeletingId(file.id);
-      try {
-        const result = await deleteProjectFile(file.id);
-        if (result.success) {
-          mutate(`project-files-${projectId}`);
-        }
-      } finally {
-        setDeletingId(null);
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    const fileId = deleteTarget.id;
+    setDeleteTarget(null);
+    setDeletingId(fileId);
+    try {
+      const result = await deleteProjectFile(fileId);
+      if (result.success) {
+        mutate(`project-files-${projectId}`);
       }
-    },
-    [projectId]
-  );
+    } finally {
+      setDeletingId(null);
+    }
+  }, [deleteTarget, projectId]);
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -306,6 +310,15 @@ export function ProjectFiles({ projectId }: ProjectFilesProps) {
         Max 50MB per file. Supported: images, PDFs, documents, spreadsheets, videos, audio,
         archives.
       </p>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={`Delete "${deleteTarget?.original_name}"?`}
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

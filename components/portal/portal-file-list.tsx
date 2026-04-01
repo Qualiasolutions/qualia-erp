@@ -18,7 +18,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { cn, formatRelativeTime } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 
 interface PortalFileListProps {
@@ -26,7 +26,6 @@ interface PortalFileListProps {
 }
 
 export function PortalFileList({ files }: PortalFileListProps) {
-  const { toast } = useToast();
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   const getFileIcon = (mimeType: string | null) => {
@@ -59,24 +58,13 @@ export function PortalFileList({ files }: PortalFileListProps) {
       if (result.success && result.data) {
         const { url } = result.data as { url: string; filename: string };
         window.open(url, '_blank');
-        toast({
-          title: 'Download Started',
-          description: `Downloading ${fileName}`,
-        });
+        toast.success(`Downloading ${fileName}`);
       } else {
-        toast({
-          title: 'Download Failed',
-          description: result.error || 'Failed to download file',
-          variant: 'destructive',
-        });
+        toast.error('Download Failed', { description: result.error || 'Failed to download file' });
       }
     } catch (error) {
       console.error('Download error:', error);
-      toast({
-        title: 'Download Failed',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      toast.error('Download Failed', { description: 'An unexpected error occurred' });
     } finally {
       setDownloadingFileId(null);
     }

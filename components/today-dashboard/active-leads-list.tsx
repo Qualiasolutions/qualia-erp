@@ -43,6 +43,7 @@ import {
 import { cn } from '@/lib/utils';
 import { createClientRecord, deleteClientRecord, toggleClientStatus } from '@/app/actions';
 import { EmptyState } from '@/components/ui/empty-state';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { LeadStatus } from '@/types/database';
 
 interface Lead {
@@ -234,13 +235,19 @@ const LeadRow = React.memo(function LeadRow({
     },
   });
 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const handleStatusChange = (newStatus: LeadStatus) => {
     if (lead.lead_status === newStatus) return;
     updateStatus(lead.id, newStatus);
   };
 
   const handleDelete = () => {
-    if (!confirm('Delete this lead? This cannot be undone.')) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
     deleteLead(lead.id);
   };
 
@@ -319,6 +326,15 @@ const LeadRow = React.memo(function LeadRow({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete lead?"
+        description="This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 });

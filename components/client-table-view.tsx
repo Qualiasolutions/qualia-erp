@@ -44,6 +44,7 @@ import { deleteClientRecord, toggleClientStatus } from '@/app/actions';
 import { ClientDetailModal } from '@/components/client-detail-modal';
 import { EditClientModal } from '@/components/edit-client-modal';
 import { ClientCardView } from '@/components/client-card-view';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 type SortField = 'name' | 'status' | 'projects' | 'assigned' | 'last_contact' | 'created';
 type SortDirection = 'asc' | 'desc';
@@ -104,6 +105,7 @@ const ClientTableRow = React.memo(function ClientTableRow({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleRowClick = () => {
     onOpenDetail(client);
@@ -112,11 +114,11 @@ const ClientTableRow = React.memo(function ClientTableRow({
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
 
-    if (!confirm('Are you sure you want to delete this client? This action cannot be undone.')) {
-      return;
-    }
-
+  const confirmDelete = () => {
+    setShowDeleteConfirm(false);
     startTransition(async () => {
       const result = await deleteClientRecord(client.id);
       if (result.success) {
@@ -141,174 +143,186 @@ const ClientTableRow = React.memo(function ClientTableRow({
   const projectCount = client.projects?.length || 0;
 
   return (
-    <tr
-      onClick={handleRowClick}
-      className={cn(
-        'group cursor-pointer border-b border-border transition-colors',
-        'hover:bg-secondary/40',
-        isPending && 'pointer-events-none opacity-50'
-      )}
-    >
-      {/* ID Column */}
-      <td className="px-4 py-3 text-sm text-muted-foreground">#{rowIndex + 1}</td>
+    <>
+      <tr
+        onClick={handleRowClick}
+        className={cn(
+          'group cursor-pointer border-b border-border transition-colors',
+          'hover:bg-secondary/40',
+          isPending && 'pointer-events-none opacity-50'
+        )}
+      >
+        {/* ID Column */}
+        <td className="px-4 py-3 text-sm text-muted-foreground">#{rowIndex + 1}</td>
 
-      {/* Client Name */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-emerald-500/10 text-xs text-emerald-500">
-              {getInitials(client.display_name || 'C')}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <span className="block truncate font-medium text-foreground transition-colors group-hover:text-primary">
-              {client.display_name || 'Unnamed Client'}
-            </span>
-            {client.billing_address && (
-              <span className="block truncate text-xs text-muted-foreground">
-                {client.billing_address}
-              </span>
-            )}
-          </div>
-        </div>
-      </td>
-
-      {/* Status Badge */}
-      <td className="px-4 py-3">
-        <span
-          className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
-            statusConfig.bg,
-            statusConfig.color
-          )}
-        >
-          <statusConfig.icon className="h-3 w-3" />
-          {statusConfig.label}
-        </span>
-      </td>
-
-      {/* Projects Count */}
-      <td className="px-4 py-3">
-        <span
-          className={cn(
-            'text-sm tabular-nums',
-            projectCount > 0 ? 'font-medium text-foreground' : 'text-muted-foreground/50'
-          )}
-        >
-          {projectCount}
-        </span>
-      </td>
-
-      {/* Assigned To */}
-      <td className="px-4 py-3">
-        {client.assigned ? (
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                {getInitials(client.assigned.full_name || 'U')}
+        {/* Client Name */}
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback className="bg-emerald-500/10 text-xs text-emerald-500">
+                {getInitials(client.display_name || 'C')}
               </AvatarFallback>
             </Avatar>
-            <span className="max-w-[80px] truncate text-sm text-muted-foreground">
-              {client.assigned.full_name?.split(' ')[0]}
-            </span>
+            <div className="min-w-0">
+              <span className="block truncate font-medium text-foreground transition-colors group-hover:text-primary">
+                {client.display_name || 'Unnamed Client'}
+              </span>
+              {client.billing_address && (
+                <span className="block truncate text-xs text-muted-foreground">
+                  {client.billing_address}
+                </span>
+              )}
+            </div>
           </div>
-        ) : (
-          <span className="text-sm text-muted-foreground/50">-</span>
-        )}
-      </td>
+        </td>
 
-      {/* Last Contact */}
-      <td className="px-4 py-3">
-        {client.last_contacted_at ? (
+        {/* Status Badge */}
+        <td className="px-4 py-3">
           <span
-            className="text-sm text-muted-foreground"
-            title={format(new Date(client.last_contacted_at), 'PPP')}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium',
+              statusConfig.bg,
+              statusConfig.color
+            )}
           >
-            {formatDistanceToNow(new Date(client.last_contacted_at), { addSuffix: true })}
+            <statusConfig.icon className="h-3 w-3" />
+            {statusConfig.label}
           </span>
-        ) : (
-          <span className="text-sm text-muted-foreground/50">Never</span>
-        )}
-      </td>
+        </td>
 
-      {/* Website */}
-      <td className="px-4 py-3">
-        {client.website ? (
-          <a
-            href={client.website.startsWith('http') ? client.website : `https://${client.website}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+        {/* Projects Count */}
+        <td className="px-4 py-3">
+          <span
+            className={cn(
+              'text-sm tabular-nums',
+              projectCount > 0 ? 'font-medium text-foreground' : 'text-muted-foreground/50'
+            )}
           >
-            <Globe className="h-3.5 w-3.5" />
-            <span className="max-w-[100px] truncate">
-              {client.website.replace(/^https?:\/\//, '')}
+            {projectCount}
+          </span>
+        </td>
+
+        {/* Assigned To */}
+        <td className="px-4 py-3">
+          {client.assigned ? (
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                  {getInitials(client.assigned.full_name || 'U')}
+                </AvatarFallback>
+              </Avatar>
+              <span className="max-w-[80px] truncate text-sm text-muted-foreground">
+                {client.assigned.full_name?.split(' ')[0]}
+              </span>
+            </div>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">-</span>
+          )}
+        </td>
+
+        {/* Last Contact */}
+        <td className="px-4 py-3">
+          {client.last_contacted_at ? (
+            <span
+              className="text-sm text-muted-foreground"
+              title={format(new Date(client.last_contacted_at), 'PPP')}
+            >
+              {formatDistanceToNow(new Date(client.last_contacted_at), { addSuffix: true })}
             </span>
-          </a>
-        ) : (
-          <span className="text-sm text-muted-foreground/50">-</span>
-        )}
-      </td>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">Never</span>
+          )}
+        </td>
 
-      {/* Phone */}
-      <td className="px-4 py-3">
-        {client.phone ? (
-          <a
-            href={`tel:${client.phone}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
-          >
-            <Phone className="h-3.5 w-3.5" />
-            <span>{client.phone}</span>
-          </a>
-        ) : (
-          <span className="text-sm text-muted-foreground/50">-</span>
-        )}
-      </td>
-
-      {/* Actions */}
-      <td className="px-2 py-3">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground md:h-7 md:w-7 md:opacity-0 md:group-hover:opacity-100"
+        {/* Website */}
+        <td className="px-4 py-3">
+          {client.website ? (
+            <a
+              href={
+                client.website.startsWith('http') ? client.website : `https://${client.website}`
+              }
+              target="_blank"
+              rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
             >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => onOpenEdit(client)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edit client
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleStatusChange('active_client')}>
-              <UserCheck className="mr-2 h-4 w-4 text-emerald-500" />
-              Mark Active
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleStatusChange('inactive_client')}>
-              <UserMinus className="mr-2 h-4 w-4 text-amber-500" />
-              Mark Inactive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleStatusChange('dead_lead')}>
-              <Skull className="mr-2 h-4 w-4 text-red-500" />
-              Mark Dead Lead
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
-              onClick={handleDelete}
+              <Globe className="h-3.5 w-3.5" />
+              <span className="max-w-[100px] truncate">
+                {client.website.replace(/^https?:\/\//, '')}
+              </span>
+            </a>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">-</span>
+          )}
+        </td>
+
+        {/* Phone */}
+        <td className="px-4 py-3">
+          {client.phone ? (
+            <a
+              href={`tel:${client.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete client
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </td>
-    </tr>
+              <Phone className="h-3.5 w-3.5" />
+              <span>{client.phone}</span>
+            </a>
+          ) : (
+            <span className="text-sm text-muted-foreground/50">-</span>
+          )}
+        </td>
+
+        {/* Actions */}
+        <td className="px-2 py-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground md:h-7 md:w-7 md:opacity-0 md:group-hover:opacity-100"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => onOpenEdit(client)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit client
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleStatusChange('active_client')}>
+                <UserCheck className="mr-2 h-4 w-4 text-emerald-500" />
+                Mark Active
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange('inactive_client')}>
+                <UserMinus className="mr-2 h-4 w-4 text-amber-500" />
+                Mark Inactive
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleStatusChange('dead_lead')}>
+                <Skull className="mr-2 h-4 w-4 text-red-500" />
+                Mark Dead Lead
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                onClick={handleDelete}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete client
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
+      </tr>
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete client?"
+        description="Are you sure you want to delete this client? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
+    </>
   );
 });
 

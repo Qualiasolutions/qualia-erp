@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, Send, Trash2, Edit2, Check, X, MessageSquare } from 'lucide-react';
 import { formatTimeAgo, getInitials } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useWorkspace } from '@/components/workspace-provider';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
@@ -38,7 +39,7 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [currentUser, setCurrentUser] = useState<string | null>(null);
-  const { toast } = useToast();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const supabase = createClient();
 
   const fetchNotes = useCallback(async () => {
@@ -78,16 +79,14 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
       setNotes(transformedNotes);
     } catch (error: unknown) {
       console.error('Error fetching notes:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Error loading notes',
+      toast.error('Error loading notes', {
         description: error instanceof Error ? error.message : 'Failed to load team notes.',
       });
       setNotes([]);
     } finally {
       setLoading(false);
     }
-  }, [workspaceId, supabase, toast]);
+  }, [workspaceId, supabase]);
 
   const getUser = useCallback(async () => {
     const {
@@ -124,29 +123,17 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
 
   async function handleSubmit() {
     if (!newNote.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Note is empty',
-        description: 'Please type something before sending.',
-      });
+      toast.error('Note is empty');
       return;
     }
 
     if (!workspaceId) {
-      toast({
-        variant: 'destructive',
-        title: 'Workspace not found',
-        description: 'Please refresh the page and try again.',
-      });
+      toast.error('Workspace not found');
       return;
     }
 
     if (!currentUser) {
-      toast({
-        variant: 'destructive',
-        title: 'Not authenticated',
-        description: 'Please log in to post notes.',
-      });
+      toast.error('Not authenticated');
       return;
     }
 
@@ -168,10 +155,7 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
       }
 
       setNewNote('');
-      toast({
-        title: 'Note added',
-        description: 'Your note has been posted to the team board.',
-      });
+      toast.success('Note added');
 
       // Optimistic update - add to local state immediately
       if (data) {
@@ -196,9 +180,7 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
     } catch (error: unknown) {
       console.error('Error adding note:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        variant: 'destructive',
-        title: 'Failed to add note',
+      toast.error('Failed to add note', {
         description: errorMessage.includes('permission')
           ? "You don't have permission to post notes in this workspace."
           : errorMessage.includes('relation') || errorMessage.includes('does not exist')
@@ -210,24 +192,25 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this note?')) return;
+  function handleDelete(id: string) {
+    setShowDeleteConfirm(id);
+  }
+
+  async function confirmDelete() {
+    const id = showDeleteConfirm;
+    if (!id) return;
+    setShowDeleteConfirm(null);
 
     try {
       const { error } = await supabase.from('workspace_notes').delete().eq('id', id);
 
       if (error) throw error;
 
-      toast({
-        title: 'Note deleted',
-      });
+      toast.success('Note deleted');
       fetchNotes();
     } catch (error) {
       console.error('Error deleting note:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to delete note',
-      });
+      toast.error('Failed to delete note');
     }
   }
 
@@ -243,16 +226,11 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
       if (error) throw error;
 
       setEditingId(null);
-      toast({
-        title: 'Note updated',
-      });
+      toast.success('Note updated');
       fetchNotes();
     } catch (error) {
       console.error('Error updating note:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to update note',
-      });
+      toast.error('Failed to update note');
     }
   }
 
@@ -442,6 +420,15 @@ export function DashboardNotes({ workspaceId: propWorkspaceId }: { workspaceId?:
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!showDeleteConfirm}
+        onOpenChange={(open) => !open && setShowDeleteConfirm(null)}
+        title="Delete this note?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </Card>
   );
 }

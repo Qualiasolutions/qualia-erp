@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo, useRef } from 'react';
+import { useState, useTransition, useMemo, useRef, useCallback } from 'react';
 import {
   format,
   parseISO,
@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import {
   type BlogPost,
@@ -97,6 +98,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
   const [isPending, startTransition] = useTransition();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+  const [confirmState, setConfirmState] = useState<{ action: () => void } | null>(null);
 
   const todayRef = useRef(new Date());
   const today = useMemo(() => {
@@ -192,13 +194,19 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
     });
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this blog post?')) return;
-    startTransition(async () => {
-      await deleteBlogPost(id);
-      router.refresh();
-    });
-  };
+  const handleDelete = useCallback(
+    (id: string) => {
+      setConfirmState({
+        action: () => {
+          startTransition(async () => {
+            await deleteBlogPost(id);
+            router.refresh();
+          });
+        },
+      });
+    },
+    [router]
+  );
 
   const handleRefresh = () => {
     startTransition(() => router.refresh());
@@ -608,6 +616,18 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(open) => !open && setConfirmState(null)}
+        title="Delete Blog Post"
+        description="Delete this blog post? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => {
+          confirmState?.action();
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }

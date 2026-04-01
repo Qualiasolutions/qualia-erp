@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useTransition } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Search,
   Plus,
@@ -49,6 +50,7 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Filter clients by search
   const searchFiltered = useMemo(() => {
@@ -125,8 +127,14 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
   const activeCount = groupedClients.active.length;
   const inactiveCount = groupedClients.inactive.length;
 
-  async function handleDelete(id: string) {
-    if (!confirm('Are you sure you want to delete this client?')) return;
+  function handleDelete(id: string) {
+    setDeleteConfirmId(id);
+  }
+
+  function confirmDelete() {
+    const id = deleteConfirmId;
+    if (!id) return;
+    setDeleteConfirmId(null);
     setPendingId(id);
     startTransition(async () => {
       const result = await deleteClientRecord(id);
@@ -390,6 +398,15 @@ export function ClientList({ clients: initialClients }: ClientListProps) {
         client={selectedClient}
         open={isDetailModalOpen}
         onOpenChange={setIsDetailModalOpen}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete this client?"
+        description="Are you sure you want to delete this client? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );

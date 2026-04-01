@@ -28,7 +28,7 @@ import type { IntegrationSelections } from '@/lib/integrations/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useWorkspace } from '@/components/workspace-provider';
 import { invalidateProjectStats, invalidateDailyFlow } from '@/lib/swr';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { SelectWithOther } from '@/components/ui/select-with-other';
 import type { ProjectType, DeploymentPlatform } from '@/types/database';
 
@@ -239,19 +239,15 @@ export function ProjectWizard({
           // Provisioning is already running on the server from the same request
           setCreatedProjectId(projectData.id);
           setShowProvisioning(true);
-          toast({ title: `Creating ${wizardData.name}...` });
+          toast.success(`Creating ${wizardData.name}...`);
         } else {
           const label = mode === 'demo' ? 'Demo' : 'Project';
-          toast({ title: `${label} "${wizardData.name}" created` });
+          toast.success(`${label} "${wizardData.name}" created`);
           handleFinish(projectData?.id);
         }
       } else {
         setError(result.error || 'Failed to create project');
-        toast({
-          title: 'Failed to create project',
-          description: result.error,
-          variant: 'destructive',
-        });
+        toast.error('Failed to create project', { description: result.error });
       }
     } catch (err) {
       console.error('Error creating project:', err);

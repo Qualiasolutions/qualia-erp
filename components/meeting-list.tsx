@@ -6,6 +6,7 @@ import { Clock, Trash2, Globe, CalendarDays, Video, ChevronRight } from 'lucide-
 import { cn } from '@/lib/utils';
 import { deleteMeeting } from '@/app/actions';
 import React, { useTransition, useMemo, useState, useEffect } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // Cyprus timezone (for Fawzi) - UTC+2 (EET) / UTC+3 (EEST in summer)
 const TIMEZONE_CYPRUS = 'Europe/Nicosia';
@@ -93,6 +94,7 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
   const [isPending, startTransition] = useTransition();
   const { timezone, setTimezone } = useTimezone();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Update current time every minute to keep "today" accurate
   useEffect(() => {
@@ -103,11 +105,16 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
   }, []);
 
   const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this meeting?')) {
-      startTransition(async () => {
-        await deleteMeeting(id);
-      });
-    }
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
+    startTransition(async () => {
+      await deleteMeeting(id);
+    });
   };
 
   // Get "today" in the selected timezone
@@ -199,6 +206,14 @@ export function MeetingList({ meetings }: { meetings: Meeting[] }) {
 
   return (
     <div className="space-y-8">
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete meeting?"
+        description="Are you sure you want to delete this meeting? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
       {/* Today's Hero Section */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-qualia-500/10 via-qualia-500/5 to-transparent p-6">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-qualia-500/10 blur-3xl" />

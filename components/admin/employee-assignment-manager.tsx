@@ -41,6 +41,7 @@ import {
 import { toast } from 'sonner';
 import { formatDate } from '@/lib/utils';
 import { Trash2, UserPlus, Pencil } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface AssignmentRow {
   id: string;
@@ -56,6 +57,9 @@ export function EmployeeAssignmentManager() {
   const [selectedProject, setSelectedProject] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [notes, setNotes] = useState('');
+
+  // Remove confirmation state
+  const [removeConfirmId, setRemoveConfirmId] = useState<string | null>(null);
 
   // Reassignment state
   const [reassignDialogOpen, setReassignDialogOpen] = useState(false);
@@ -128,9 +132,15 @@ export function EmployeeAssignmentManager() {
     await assign(formData);
   };
 
-  const handleRemove = async (assignmentId: string) => {
-    if (!confirm('Remove this assignment?')) return;
-    await remove(assignmentId);
+  const handleRemove = (assignmentId: string) => {
+    setRemoveConfirmId(assignmentId);
+  };
+
+  const confirmRemove = async () => {
+    if (!removeConfirmId) return;
+    const id = removeConfirmId;
+    setRemoveConfirmId(null);
+    await remove(id);
   };
 
   const handleReassign = async () => {
@@ -304,6 +314,15 @@ export function EmployeeAssignmentManager() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={!!removeConfirmId}
+        onOpenChange={(open) => !open && setRemoveConfirmId(null)}
+        title="Remove assignment?"
+        description="This will remove the employee from this project."
+        confirmLabel="Remove"
+        onConfirm={confirmRemove}
+      />
 
       {/* Reassignment Dialog */}
       <Dialog open={reassignDialogOpen} onOpenChange={setReassignDialogOpen}>

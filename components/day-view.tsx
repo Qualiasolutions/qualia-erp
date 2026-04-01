@@ -49,6 +49,7 @@ import {
   invalidateInboxTasks,
   invalidateDailyFlow,
 } from '@/lib/swr';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EditMeetingModal } from './edit-meeting-modal';
 import { EditTaskModal } from './edit-task-modal';
 import { NewTaskModal } from './new-task-modal';
@@ -320,6 +321,12 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [newTaskTime, setNewTaskTime] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
   // Future: allow collapsing meetings to right-only column
   // const [collapsedMeetings, setCollapsedMeetings] = useState<Set<string>>(new Set());
 
@@ -401,21 +408,26 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
   );
 
   const handleDelete = useCallback((id: string, type: ScheduleItemType) => {
-    if (confirm(`Are you sure you want to remove this ${type}?`)) {
-      startTransition(async () => {
-        if (type === 'meeting') {
-          await deleteMeeting(id);
-          invalidateMeetings(true);
-          invalidateTodaysSchedule(true);
-        } else if (type === 'task') {
-          await unscheduleTask(id);
-          invalidateInboxTasks(true);
-          invalidateDailyFlow(true);
-        } else {
-          await unscheduleIssue(id);
-        }
-      });
-    }
+    setConfirmDialog({
+      title: `Remove ${type}?`,
+      description: `Are you sure you want to remove this ${type}? This action cannot be undone.`,
+      confirmLabel: 'Remove',
+      action: () => {
+        startTransition(async () => {
+          if (type === 'meeting') {
+            await deleteMeeting(id);
+            invalidateMeetings(true);
+            invalidateTodaysSchedule(true);
+          } else if (type === 'task') {
+            await unscheduleTask(id);
+            invalidateInboxTasks(true);
+            invalidateDailyFlow(true);
+          } else {
+            await unscheduleIssue(id);
+          }
+        });
+      },
+    });
   }, []);
 
   const handleEdit = useCallback(
@@ -892,6 +904,18 @@ export function DayView({ meetings, issues = [], tasks = [], embedded = false }:
         open={isTaskModalOpen}
         onOpenChange={setIsTaskModalOpen}
         defaultScheduledTime={newTaskTime}
+      />
+
+      <ConfirmDialog
+        open={!!confirmDialog}
+        onOpenChange={(open) => !open && setConfirmDialog(null)}
+        title={confirmDialog?.title ?? ''}
+        description={confirmDialog?.description ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
+        onConfirm={() => {
+          confirmDialog?.action();
+          setConfirmDialog(null);
+        }}
       />
     </>
   );

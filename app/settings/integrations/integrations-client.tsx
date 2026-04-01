@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Github, Globe, FileText } from 'lucide-react';
 import { IntegrationCard } from '@/components/settings/integration-card';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import {
   saveIntegrationToken,
   removeIntegration,
@@ -45,7 +45,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
       const result = await saveIntegrationToken(workspaceId, provider, token, config);
 
       if (result.success) {
-        toast({ title: `${provider} connected successfully` });
+        toast.success(`${provider} connected successfully`);
         // Update local state
         setIntegrations((prev) => {
           const existing = prev.find((i) => i.provider === provider);
@@ -67,11 +67,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
           ];
         });
       } else {
-        toast({
-          title: `Failed to connect ${provider}`,
-          description: result.error,
-          variant: 'destructive',
-        });
+        toast.error(`Failed to connect ${provider}`, { description: result.error });
       }
     },
     [workspaceId]
@@ -82,14 +78,10 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
       const result = await removeIntegration(workspaceId, provider);
 
       if (result.success) {
-        toast({ title: `${provider} disconnected` });
+        toast.success(`${provider} disconnected`);
         setIntegrations((prev) => prev.filter((i) => i.provider !== provider));
       } else {
-        toast({
-          title: `Failed to disconnect ${provider}`,
-          description: result.error,
-          variant: 'destructive',
-        });
+        toast.error(`Failed to disconnect ${provider}`, { description: result.error });
       }
     },
     [workspaceId]
@@ -120,7 +112,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
       const result = await updateGitHubTemplates(workspaceId, templates);
 
       if (result.success) {
-        toast({ title: 'Templates updated successfully' });
+        toast.success('Templates updated successfully');
         setIntegrations((prev) =>
           prev.map((i) =>
             i.provider === 'github'
@@ -129,11 +121,7 @@ export function IntegrationsClient({ workspaceId, initialIntegrations }: Integra
           )
         );
       } else {
-        toast({
-          title: 'Failed to update templates',
-          description: result.error,
-          variant: 'destructive',
-        });
+        toast.error('Failed to update templates', { description: result.error });
       }
     },
     [workspaceId]

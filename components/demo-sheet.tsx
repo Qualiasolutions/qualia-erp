@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { getProjectById, updateProject, deleteProject, updateProjectStatus } from '@/app/actions';
 import { invalidateProjectStats } from '@/lib/swr';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import type { ProjectData } from '@/app/projects/page';
 import type { ProjectType } from '@/types/database';
@@ -105,11 +105,11 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
     const result = await updateProject(formData);
 
     if (result.success) {
-      toast({ title: 'Demo updated' });
+      toast.success('Demo updated');
       invalidateProjectStats(true);
       setEditOpen(false);
     } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast.error('Error', { description: result.error });
     }
 
     setIsEditing(false);
@@ -122,12 +122,12 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
     const result = await deleteProject(demo.id);
 
     if (result.success) {
-      toast({ title: 'Demo deleted' });
+      toast.success('Demo deleted');
       invalidateProjectStats(true);
       setDeleteOpen(false);
       onOpenChange(false);
     } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast.error('Error', { description: result.error });
     }
 
     setIsDeleting(false);
@@ -145,7 +145,7 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
     const typeResult = await updateProject(formData);
 
     if (!typeResult.success) {
-      toast({ title: 'Error', description: typeResult.error, variant: 'destructive' });
+      toast.error('Error', { description: typeResult.error });
       setIsConverting(false);
       return;
     }
@@ -154,8 +154,7 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
     const result = await updateProjectStatus(demo.id, 'Active');
 
     if (result.success) {
-      toast({
-        title: 'Project activated!',
+      toast.success('Project activated!', {
         description: `"${demo.name}" is now in Currently Building.`,
       });
       invalidateProjectStats(true);
@@ -165,7 +164,7 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
       // Navigate to the project page
       router.push(`/projects/${demo.id}`);
     } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast.error('Error', { description: result.error });
     }
 
     setIsConverting(false);

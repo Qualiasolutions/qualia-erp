@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { updateNotificationPreferences } from '@/app/actions/notification-preferences';
 import { type NotificationPreferencesInput } from '@/lib/validation';
 import { Mail, Bell, CheckCircle2 } from 'lucide-react';
@@ -38,16 +38,9 @@ export function NotificationPreferencesForm({
       const result = await updateNotificationPreferences(preferences);
 
       if (result.success) {
-        toast({
-          title: 'Preferences saved',
-          description: 'Your notification preferences have been updated.',
-        });
+        toast.success('Preferences saved');
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to save preferences',
-          variant: 'destructive',
-        });
+        toast.error(result.error || 'Failed to save preferences');
       }
     });
   };

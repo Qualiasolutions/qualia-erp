@@ -10,6 +10,7 @@ import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { NewMeetingModalInline } from '@/components/new-meeting-modal-inline';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Meeting {
   id: string;
@@ -76,9 +77,16 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
   const [showModal, setShowModal] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const handleDeleteMeeting = async (meetingId: string) => {
-    if (!confirm('Delete this meeting?')) return;
+  const handleDeleteMeeting = (meetingId: string) => {
+    setDeleteConfirmId(meetingId);
+  };
+
+  const confirmDeleteMeeting = async () => {
+    if (!deleteConfirmId) return;
+    const meetingId = deleteConfirmId;
+    setDeleteConfirmId(null);
     setDeletingId(meetingId);
     const result = await deleteMeeting(meetingId);
     if (result.success) {
@@ -330,6 +338,15 @@ export function MeetingsTimeline({ meetings, onMeetingCreated }: MeetingsTimelin
         open={showModal}
         onOpenChange={setShowModal}
         onMeetingCreated={handleMeetingCreated}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete meeting?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteMeeting}
       />
 
       <EditMeetingModal

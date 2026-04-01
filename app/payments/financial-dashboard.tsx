@@ -45,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 function formatEUR(amount: number) {
   return new Intl.NumberFormat('en-CY', {
@@ -228,11 +229,15 @@ function ExpenseModal({
 // ─── Expense Row ──────────────────────────────────────────
 function ExpenseRow({ expense, onEdit }: { expense: Expense; onEdit: (expense: Expense) => void }) {
   const [isPending, startTransition] = useTransition();
+  const [confirmState, setConfirmState] = useState<{ action: () => void } | null>(null);
 
   function handleDelete() {
-    if (!window.confirm(`Delete this ${expense.category} expense of €${expense.amount}?`)) return;
-    startTransition(async () => {
-      await deleteExpense(expense.id);
+    setConfirmState({
+      action: () => {
+        startTransition(async () => {
+          await deleteExpense(expense.id);
+        });
+      },
     });
   }
 
@@ -283,6 +288,18 @@ function ExpenseRow({ expense, onEdit }: { expense: Expense; onEdit: (expense: E
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(open) => !open && setConfirmState(null)}
+        title="Delete Expense"
+        description={`Delete this ${expense.category} expense of €${expense.amount}?`}
+        confirmLabel="Delete"
+        onConfirm={() => {
+          confirmState?.action();
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Target, Check, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useWorkspace } from '@/components/workspace-provider';
 import Link from 'next/link';
 
@@ -23,7 +23,6 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [completingId, setCompletingId] = useState<string | null>(null);
-  const { toast } = useToast();
   const supabase = createClient();
 
   const fetchProjects = useCallback(async () => {
@@ -77,15 +76,10 @@ export function DashboardObjectives({ workspaceId: propWorkspaceId }: { workspac
       // Animate out and remove from list
       setProjects((prev) => prev.filter((p) => p.id !== projectId));
 
-      toast({
-        title: 'Project completed!',
-        description: 'Great work on completing this objective.',
-      });
+      toast.success('Project completed!');
     } catch (error: unknown) {
       console.error('Error completing project:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Failed to complete project',
+      toast.error('Failed to complete project', {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     } finally {

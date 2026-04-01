@@ -30,6 +30,7 @@ import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
 import { useTimezone, TIMEZONE_CYPRUS } from '@/lib/schedule-utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 // ============ Types ============
 
@@ -127,6 +128,7 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
     start: Date;
     end: Date;
   } | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const visibleDays = useResponsiveDays();
 
@@ -210,16 +212,21 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
   };
 
   const handleDeleteMeeting = useCallback((id: string) => {
-    if (confirm('Delete this meeting?')) {
-      startTransition(async () => {
-        const result = await deleteMeeting(id);
-        if (result.success) {
-          invalidateMeetings(true);
-          invalidateTodaysSchedule(true);
-        }
-      });
-    }
+    setDeleteConfirmId(id);
   }, []);
+
+  const confirmDeleteMeeting = useCallback(() => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
+    startTransition(async () => {
+      const result = await deleteMeeting(id);
+      if (result.success) {
+        invalidateMeetings(true);
+        invalidateTodaysSchedule(true);
+      }
+    });
+  }, [deleteConfirmId]);
 
   const handleEditMeeting = useCallback((m: Meeting) => setEditingMeeting(m), []);
 
@@ -595,6 +602,15 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
         meeting={editingMeeting}
         open={editingMeeting !== null}
         onOpenChange={(open) => !open && setEditingMeeting(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete meeting?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteMeeting}
       />
     </>
   );

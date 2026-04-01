@@ -20,6 +20,7 @@ import { deleteMeeting } from '@/app/actions';
 import { invalidateMeetings, invalidateTodaysSchedule } from '@/lib/swr';
 import { EditMeetingModal } from './edit-meeting-modal';
 import { useTimezone, TIMEZONE_CYPRUS } from '@/lib/schedule-utils';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Meeting {
   id: string;
@@ -49,22 +50,28 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
   const [isPending, startTransition] = useTransition();
   const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const handleEdit = useCallback((meeting: Meeting) => {
     setEditingMeeting(meeting);
   }, []);
 
   const handleDelete = useCallback((id: string) => {
-    if (confirm('Are you sure you want to delete this meeting?')) {
-      startTransition(async () => {
-        const result = await deleteMeeting(id);
-        if (result.success) {
-          invalidateMeetings(true);
-          invalidateTodaysSchedule(true);
-        }
-      });
-    }
+    setDeleteConfirmId(id);
   }, []);
+
+  const confirmDelete = useCallback(() => {
+    if (!deleteConfirmId) return;
+    const id = deleteConfirmId;
+    setDeleteConfirmId(null);
+    startTransition(async () => {
+      const result = await deleteMeeting(id);
+      if (result.success) {
+        invalidateMeetings(true);
+        invalidateTodaysSchedule(true);
+      }
+    });
+  }, [deleteConfirmId]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -278,6 +285,15 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
         meeting={editingMeeting}
         open={editingMeeting !== null}
         onOpenChange={(open) => !open && setEditingMeeting(null)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete meeting?"
+        description="Are you sure you want to delete this meeting? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </>
   );

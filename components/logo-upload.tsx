@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import Image from 'next/image';
 import { Camera, Loader2, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -45,6 +46,7 @@ export function LogoUpload({
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
   const [localLogoUrl, setLocalLogoUrl] = useState(currentLogoUrl);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -90,9 +92,12 @@ export function LogoUpload({
     [entityType, entityId, onLogoChange, router]
   );
 
-  const handleDelete = useCallback(async () => {
-    if (!confirm('Remove this logo?')) return;
+  const handleDelete = useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
 
+  const confirmDelete = useCallback(async () => {
+    setShowDeleteConfirm(false);
     setDeleting(true);
     setError(null);
 
@@ -223,6 +228,15 @@ export function LogoUpload({
 
       {/* Error message */}
       {error && <p className="text-xs text-destructive">{error}</p>}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Remove this logo?"
+        description="This action cannot be undone."
+        confirmLabel="Remove"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

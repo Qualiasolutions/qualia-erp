@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,7 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -83,8 +85,13 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
   };
 
   const handleDelete = (noteId: string) => {
-    if (!confirm('Delete this note?')) return;
+    setShowDeleteConfirm(noteId);
+  };
 
+  const confirmDelete = () => {
+    const noteId = showDeleteConfirm;
+    if (!noteId) return;
+    setShowDeleteConfirm(null);
     startTransition(async () => {
       const result = await deleteProjectNote(noteId);
       if (result.success) {
@@ -257,6 +264,15 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={!!showDeleteConfirm}
+        onOpenChange={(open) => !open && setShowDeleteConfirm(null)}
+        title="Delete this note?"
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

@@ -198,13 +198,13 @@ const allSections = [
     id: 'notifications',
     label: 'Notifications',
     content: <NotificationsSection />,
-    adminOnly: true,
+    adminOnly: false,
   },
   {
     id: 'work-schedule',
     label: 'Work Schedule',
     content: <WorkScheduleSection />,
-    adminOnly: true,
+    adminOnly: false,
   },
   { id: 'ai-notes', label: 'AI Notes', content: <AINotesSection />, adminOnly: true },
   {

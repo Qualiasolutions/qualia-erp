@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Upload, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface FileUploadFormProps {
   projectId: string;
@@ -27,7 +27,6 @@ interface FileUploadFormProps {
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUploadFormProps) {
-  const { toast } = useToast();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
@@ -49,20 +48,12 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
     e.preventDefault();
 
     if (!selectedFile) {
-      toast({
-        title: 'Error',
-        description: 'Please select a file to upload',
-        variant: 'destructive',
-      });
+      toast.error('Please select a file to upload');
       return;
     }
 
     if (fileSizeError) {
-      toast({
-        title: 'Error',
-        description: fileSizeError,
-        variant: 'destructive',
-      });
+      toast.error(fileSizeError);
       return;
     }
 
@@ -79,10 +70,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
       const result = await uploadProjectFile(formData);
 
       if (result.success) {
-        toast({
-          title: 'Success',
-          description: `${selectedFile.name} uploaded successfully`,
-        });
+        toast.success(`${selectedFile.name} uploaded successfully`);
 
         // Reset form
         setSelectedFile(null);
@@ -100,19 +88,11 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
           onUploadComplete();
         }
       } else {
-        toast({
-          title: 'Upload Failed',
-          description: result.error || 'Failed to upload file',
-          variant: 'destructive',
-        });
+        toast.error('Upload Failed', { description: result.error || 'Failed to upload file' });
       }
     } catch (error) {
       console.error('Upload error:', error);
-      toast({
-        title: 'Upload Failed',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      toast.error('Upload Failed', { description: 'An unexpected error occurred' });
     } finally {
       setIsUploading(false);
     }

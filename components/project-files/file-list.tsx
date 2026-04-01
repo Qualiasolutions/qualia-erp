@@ -42,7 +42,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface FileListProps {
   files: ProjectFileWithUploader[];
@@ -50,7 +50,6 @@ interface FileListProps {
 }
 
 export function FileList({ files, onFileDeleted }: FileListProps) {
-  const { toast } = useToast();
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
@@ -86,19 +85,13 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
         const { url } = result.data as { url: string; filename: string };
         window.open(url, '_blank');
       } else {
-        toast({
-          title: 'Download Failed',
+        toast.error('Download Failed', {
           description: result.error || 'Failed to generate download URL',
-          variant: 'destructive',
         });
       }
     } catch (error) {
       console.error('Download error:', error);
-      toast({
-        title: 'Download Failed',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      toast.error('Download Failed', { description: 'An unexpected error occurred' });
     } finally {
       setDownloadingFileId(null);
     }
@@ -112,28 +105,17 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
       const result = await deleteProjectFile(fileToDelete.id);
 
       if (result.success) {
-        toast({
-          title: 'File Deleted',
-          description: `${fileToDelete.original_name} has been deleted`,
-        });
+        toast.success(`${fileToDelete.original_name} has been deleted`);
 
         if (onFileDeleted) {
           onFileDeleted();
         }
       } else {
-        toast({
-          title: 'Delete Failed',
-          description: result.error || 'Failed to delete file',
-          variant: 'destructive',
-        });
+        toast.error('Delete Failed', { description: result.error || 'Failed to delete file' });
       }
     } catch (error) {
       console.error('Delete error:', error);
-      toast({
-        title: 'Delete Failed',
-        description: 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      toast.error('Delete Failed', { description: 'An unexpected error occurred' });
     } finally {
       setDeletingFileId(null);
       setFileToDelete(null);

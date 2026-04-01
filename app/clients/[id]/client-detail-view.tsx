@@ -25,12 +25,24 @@ import { updateProject } from '@/app/actions';
 import { toast } from 'sonner';
 
 const statusConfig = {
-  dropped: { label: 'Dropped', bg: 'bg-gray-100', color: 'text-gray-600' },
-  cold: { label: 'Cold', bg: 'bg-blue-100', color: 'text-blue-600' },
-  hot: { label: 'Hot', bg: 'bg-red-100', color: 'text-red-600' },
-  active_client: { label: 'Active Client', bg: 'bg-green-100', color: 'text-green-600' },
-  inactive_client: { label: 'Inactive', bg: 'bg-yellow-100', color: 'text-yellow-600' },
-  dead_lead: { label: 'Dead Lead', bg: 'bg-gray-100', color: 'text-gray-600' },
+  dropped: { label: 'Dropped', bg: 'bg-gray-500/10', color: 'text-gray-600 dark:text-gray-400' },
+  cold: { label: 'Cold', bg: 'bg-blue-500/10', color: 'text-blue-600 dark:text-blue-400' },
+  hot: { label: 'Hot', bg: 'bg-red-500/10', color: 'text-red-600 dark:text-red-400' },
+  active_client: {
+    label: 'Active Client',
+    bg: 'bg-green-500/10',
+    color: 'text-green-600 dark:text-green-400',
+  },
+  inactive_client: {
+    label: 'Inactive',
+    bg: 'bg-yellow-500/10',
+    color: 'text-yellow-600 dark:text-yellow-400',
+  },
+  dead_lead: {
+    label: 'Dead Lead',
+    bg: 'bg-gray-500/10',
+    color: 'text-gray-600 dark:text-gray-400',
+  },
 } as const;
 
 interface ExtendedClient extends Client {

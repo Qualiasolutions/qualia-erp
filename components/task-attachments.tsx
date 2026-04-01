@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { format, parseISO } from 'date-fns';
 import {
   Paperclip,
@@ -48,6 +49,7 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
   const [uploading, setUploading] = useState(false);
   const [markAsDone, setMarkAsDone] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<TaskAttachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = useCallback(
@@ -106,17 +108,20 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
     }
   }, []);
 
-  const handleDelete = useCallback(
-    async (attachment: TaskAttachment) => {
-      if (!confirm(`Delete "${attachment.file_name}"?`)) return;
-      const result = await deleteTaskAttachment(attachment.id);
-      if (result.success) {
-        invalidateTaskAttachments(taskId);
-        revalidate();
-      }
-    },
-    [taskId, revalidate]
-  );
+  const handleDelete = useCallback((attachment: TaskAttachment) => {
+    setDeleteTarget(attachment);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    const id = deleteTarget.id;
+    setDeleteTarget(null);
+    const result = await deleteTaskAttachment(id);
+    if (result.success) {
+      invalidateTaskAttachments(taskId);
+      revalidate();
+    }
+  }, [deleteTarget, taskId, revalidate]);
 
   const isNotDone = taskStatus !== 'Done';
 
@@ -235,6 +240,15 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
           })}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={`Delete "${deleteTarget?.file_name}"?`}
+        description="This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

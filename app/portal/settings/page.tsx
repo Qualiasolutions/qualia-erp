@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import {
   updateClientProfile,
   getNotificationPreferences,
@@ -85,11 +85,7 @@ export default function PortalSettingsPage() {
         } = await supabase.auth.getUser();
 
         if (!user) {
-          toast({
-            title: 'Error',
-            description: 'Not authenticated',
-            variant: 'destructive',
-          });
+          toast.error('Not authenticated');
           return;
         }
 
@@ -113,11 +109,7 @@ export default function PortalSettingsPage() {
         }
       } catch (error) {
         console.error('Failed to load settings:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load settings',
-          variant: 'destructive',
-        });
+        toast.error('Failed to load settings');
       } finally {
         setLoading(false);
       }
@@ -137,21 +129,13 @@ export default function PortalSettingsPage() {
       });
 
       if (result.success) {
-        toast({ title: 'Success', description: 'Profile updated successfully' });
+        toast.success('Profile updated successfully');
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update profile',
-          variant: 'destructive',
-        });
+        toast.error(result.error || 'Failed to update profile');
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update profile',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update profile');
     } finally {
       setProfileSaving(false);
     }
@@ -165,21 +149,13 @@ export default function PortalSettingsPage() {
       const result = await updateNotificationPreferences(notificationPrefs);
 
       if (result.success) {
-        toast({ title: 'Success', description: 'Notification preferences updated' });
+        toast.success('Notification preferences updated');
       } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to update preferences',
-          variant: 'destructive',
-        });
+        toast.error(result.error || 'Failed to update preferences');
       }
     } catch (error) {
       console.error('Failed to update preferences:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update preferences',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update preferences');
     } finally {
       setNotificationsSaving(false);
     }

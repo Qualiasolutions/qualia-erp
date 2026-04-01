@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useOptimistic } from 'react';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,7 @@ export function PhaseCommentThread({
 
   const [commentText, setCommentText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const isAdmin = userRole === 'admin' || userRole === 'manager';
   const canCreateInternal = isAdmin;
@@ -121,8 +123,14 @@ export function PhaseCommentThread({
     });
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+  const handleDelete = (commentId: string) => {
+    setDeleteConfirmId(commentId);
+  };
+
+  const confirmDeleteComment = async () => {
+    const commentId = deleteConfirmId;
+    if (!commentId) return;
+    setDeleteConfirmId(null);
 
     // Optimistically remove from state
     setComments((prev) => prev.filter((c) => c.id !== commentId));
@@ -267,6 +275,15 @@ export function PhaseCommentThread({
           {isPending ? 'Posting...' : 'Post Comment'}
         </Button>
       </form>
+
+      <ConfirmDialog
+        open={!!deleteConfirmId}
+        onOpenChange={(open) => !open && setDeleteConfirmId(null)}
+        title="Delete this comment?"
+        description="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteComment}
+      />
     </div>
   );
 }
