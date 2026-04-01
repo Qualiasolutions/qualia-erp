@@ -745,62 +745,6 @@ export type Database = {
           },
         ];
       };
-      client_invoices: {
-        Row: {
-          amount: number;
-          client_id: string;
-          created_at: string | null;
-          currency: string | null;
-          description: string | null;
-          due_date: string | null;
-          file_url: string | null;
-          id: string;
-          invoice_number: string;
-          issued_date: string;
-          paid_date: string | null;
-          project_id: string | null;
-          status: string | null;
-        };
-        Insert: {
-          amount: number;
-          client_id: string;
-          created_at?: string | null;
-          currency?: string | null;
-          description?: string | null;
-          due_date?: string | null;
-          file_url?: string | null;
-          id?: string;
-          invoice_number: string;
-          issued_date: string;
-          paid_date?: string | null;
-          project_id?: string | null;
-          status?: string | null;
-        };
-        Update: {
-          amount?: number;
-          client_id?: string;
-          created_at?: string | null;
-          currency?: string | null;
-          description?: string | null;
-          due_date?: string | null;
-          file_url?: string | null;
-          id?: string;
-          invoice_number?: string;
-          issued_date?: string;
-          paid_date?: string | null;
-          project_id?: string | null;
-          status?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'client_invoices_project_id_fkey';
-            columns: ['project_id'];
-            isOneToOne: false;
-            referencedRelation: 'projects';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       client_projects: {
         Row: {
           access_level: string | null;
@@ -1151,6 +1095,7 @@ export type Database = {
       financial_invoices: {
         Row: {
           balance: number;
+          client_id: string | null;
           currency_code: string | null;
           customer_id: string | null;
           customer_name: string;
@@ -1166,6 +1111,7 @@ export type Database = {
         };
         Insert: {
           balance?: number;
+          client_id?: string | null;
           currency_code?: string | null;
           customer_id?: string | null;
           customer_name: string;
@@ -1181,6 +1127,7 @@ export type Database = {
         };
         Update: {
           balance?: number;
+          client_id?: string | null;
           currency_code?: string | null;
           customer_id?: string | null;
           customer_name?: string;
@@ -1194,7 +1141,15 @@ export type Database = {
           total?: number;
           zoho_id?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'financial_invoices_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'clients';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       financial_payments: {
         Row: {
@@ -1946,89 +1901,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'owner_updates_workspace_id_fkey';
-            columns: ['workspace_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      payments: {
-        Row: {
-          amount: number;
-          category: string | null;
-          client_id: string | null;
-          created_at: string;
-          created_by: string | null;
-          currency: string;
-          description: string;
-          id: string;
-          notes: string | null;
-          payment_date: string;
-          project_id: string | null;
-          status: string;
-          type: string;
-          updated_at: string;
-          workspace_id: string | null;
-        };
-        Insert: {
-          amount: number;
-          category?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          currency?: string;
-          description: string;
-          id?: string;
-          notes?: string | null;
-          payment_date?: string;
-          project_id?: string | null;
-          status?: string;
-          type: string;
-          updated_at?: string;
-          workspace_id?: string | null;
-        };
-        Update: {
-          amount?: number;
-          category?: string | null;
-          client_id?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          currency?: string;
-          description?: string;
-          id?: string;
-          notes?: string | null;
-          payment_date?: string;
-          project_id?: string | null;
-          status?: string;
-          type?: string;
-          updated_at?: string;
-          workspace_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'payments_client_id_fkey';
-            columns: ['client_id'];
-            isOneToOne: false;
-            referencedRelation: 'clients';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payments_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'profiles';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payments_project_id_fkey';
-            columns: ['project_id'];
-            isOneToOne: false;
-            referencedRelation: 'projects';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'payments_workspace_id_fkey';
             columns: ['workspace_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';

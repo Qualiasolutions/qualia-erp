@@ -346,6 +346,23 @@ export async function syncZohoFinancials(): Promise<{
     ALLOWED_CUSTOMERS.has(p.customer_name)
   );
 
+  // Build customer_name -> client_id map from projects table
+  const projectNames = Object.values(ZOHO_CUSTOMER_TO_PROJECT);
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('name, client_id')
+    .in('name', projectNames)
+    .not('client_id', 'is', null);
+
+  const customerToClientId = new Map<string, string>();
+  if (projects) {
+    const projectNameToClientId = new Map(projects.map((p) => [p.name, p.client_id as string]));
+    for (const [zohoName, projectName] of Object.entries(ZOHO_CUSTOMER_TO_PROJECT)) {
+      const clientId = projectNameToClientId.get(projectName);
+      if (clientId) customerToClientId.set(zohoName, clientId);
+    }
+  }
+
   // Upsert invoices
   if (zohoInvoices.length > 0) {
     const invoiceRows = zohoInvoices.map((inv) => ({
@@ -361,6 +378,7 @@ export async function syncZohoFinancials(): Promise<{
       currency_code: inv.currency_code,
       last_payment_date: inv.last_payment_date || null,
       synced_at: syncedAt,
+      client_id: customerToClientId.get(inv.customer_name) ?? null,
     }));
 
     const { error } = await supabase

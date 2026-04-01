@@ -172,9 +172,6 @@ ${personalization}
 - **updateProjectProgress**: Set project progress 0-100% (can search by name!)
   - Example: user says "set Anastasia to 100%" → call updateProjectProgress with project_name="Anastasia", progress=100
 - **updateProjectStatus**: Change project status (Demo/Active/Launched/Delayed/Archived/Canceled)
-- **logPayment**: Record incoming/outgoing payments (admin only)
-  - Example: "log $5000 from Tasos for the website project"
-  - Resolves client and project names automatically
 - **bulkUpdateTasks**: Batch update multiple tasks by filter
   - Example: "mark all Done tasks in Aquador as Canceled", "set all Urgent tasks to High"
   - Safety-capped at 20 tasks per operation
@@ -191,7 +188,6 @@ ${personalization}
    - User: "Show my urgent tasks" → searchTasks(priority="Urgent")
    - User: "What's on my plate?" → searchTasks(show_inbox_only=true)
    - User: "Assign the logo task to Tarek" → assignTask(task_name="logo", assignee_name="Tarek")
-   - User: "Log $3000 from Tasos" → logPayment(type="incoming", amount=3000, client_name="Tasos")
    - User: "Brief me" → getDailyBriefing()
    - User: "How much money do we have coming in?" → getFinancialSummary()
 ${modeInstructions}

@@ -814,7 +814,25 @@ export async function getClientInvoices(): Promise<ActionResult> {
       .order('date', { ascending: false });
 
     if (!isAdmin) {
-      query = query.eq('client_id', user.id);
+      // Resolve CRM client_id: auth.uid() → client_projects → projects.client_id
+      const { data: linkedProjects } = await supabase
+        .from('client_projects')
+        .select('project_id')
+        .eq('client_id', user.id);
+
+      const projectIds = (linkedProjects || []).map((lp) => lp.project_id);
+      if (projectIds.length === 0) return { success: true, data: [] };
+
+      const { data: projects } = await supabase
+        .from('projects')
+        .select('client_id')
+        .in('id', projectIds)
+        .not('client_id', 'is', null);
+
+      const crmClientIds = [...new Set((projects || []).map((p) => p.client_id).filter(Boolean))];
+      if (crmClientIds.length === 0) return { success: true, data: [] };
+
+      query = query.in('client_id', crmClientIds as string[]);
     }
 
     const { data, error } = await query;
@@ -884,12 +902,22 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
         .select('id', { count: 'exact', head: true })
         .eq('client_id', clientId)
         .in('status', ['pending', 'in_review']),
-      supabase
-        .from('financial_invoices')
-        .select('balance')
-        .eq('client_id', clientId)
-        .eq('is_hidden', false)
-        .in('status', ['pending', 'overdue']),
+      // Resolve CRM client_id from portal user's project links
+      (async () => {
+        const { data: prjs } = await supabase
+          .from('projects')
+          .select('client_id')
+          .in('id', clientProjectIds.length > 0 ? clientProjectIds : ['__none__'])
+          .not('client_id', 'is', null);
+        const crmIds = [...new Set((prjs || []).map((p) => p.client_id).filter(Boolean))];
+        if (crmIds.length === 0) return { data: [] };
+        return supabase
+          .from('financial_invoices')
+          .select('balance')
+          .in('client_id', crmIds as string[])
+          .eq('is_hidden', false)
+          .in('status', ['pending', 'overdue']);
+      })(),
       clientProjectIds.length > 0
         ? supabase
             .from('activity_log')

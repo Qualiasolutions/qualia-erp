@@ -23,7 +23,6 @@ export interface UserInfo {
  */
 const ADMIN_ONLY_TOOLS = new Set([
   // Internal ERP tools
-  'logPayment',
   'createProject',
   'bulkUpdateTasks',
   'createInvoice',
