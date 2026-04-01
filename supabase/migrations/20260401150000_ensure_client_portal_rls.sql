@@ -36,7 +36,13 @@ CREATE POLICY "Clients view phase items" ON public.phase_items
 DROP POLICY IF EXISTS "Clients view own activities" ON public.client_activities;
 CREATE POLICY "Clients view own activities" ON public.client_activities
   FOR SELECT USING (
-    project_id IN (SELECT project_id FROM public.client_projects WHERE client_id = auth.uid())
+    client_id IN (
+      SELECT c.id FROM public.clients c
+      JOIN public.projects p ON p.client_id = c.id
+      JOIN public.client_projects cp ON cp.project_id = p.id
+      WHERE cp.client_id = auth.uid()
+    )
+    OR client_id::text = auth.uid()::text
   );
 
 -- 6. client_feature_requests: clients can manage their own requests
