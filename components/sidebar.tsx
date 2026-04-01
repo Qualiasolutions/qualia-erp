@@ -21,6 +21,7 @@ import {
   Activity,
   Timer,
   UserPlus,
+  BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -56,6 +57,7 @@ const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Assignments', href: '/admin/assignments', icon: UserPlus },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
+  { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
   { name: 'Financials', href: '/payments', icon: Wallet },
 ];
 

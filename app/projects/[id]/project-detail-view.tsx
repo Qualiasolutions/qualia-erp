@@ -48,6 +48,7 @@ import {
 } from '@/components/ui/dialog';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { getProjectById, updateProject, deleteProject } from '@/app/actions';
 import { assignEmployeeToProject, removeAssignment } from '@/app/actions/project-assignments';
 import { toast } from 'sonner';
@@ -157,6 +158,7 @@ export function ProjectDetailView({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{ action: () => void } | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   // Form state
   const [name, setName] = useState(initialProject.name);
@@ -211,23 +213,20 @@ export function ProjectDetailView({
     setSaving(false);
   }, [hasChanges, project.id, name, description, projectType, leadId, clientId, targetDate]);
 
-  const handleDelete = async () => {
-    if (
-      !confirm(
-        'Are you sure you want to delete this project? This will also delete all items in this project.'
-      )
-    )
-      return;
-
-    startTransition(async () => {
-      const result = await deleteProject(project.id);
-      if (result.success) {
-        router.push('/projects');
-      } else {
-        setError(result.error || 'Failed to delete project');
-      }
+  const handleDelete = useCallback(() => {
+    setConfirmState({
+      action: () => {
+        startTransition(async () => {
+          const result = await deleteProject(project.id);
+          if (result.success) {
+            router.push('/projects');
+          } else {
+            setError(result.error || 'Failed to delete project');
+          }
+        });
+      },
     });
-  };
+  }, [project.id, router]);
 
   const selectedProjectType = PROJECT_TYPES.find((t) => t.value === projectType);
   const ProjectTypeIcon = selectedProjectType?.icon || Folder;
@@ -618,6 +617,18 @@ export function ProjectDetailView({
           </Tabs>
         </SheetContent>
       </Sheet>
+
+      <ConfirmDialog
+        open={!!confirmState}
+        onOpenChange={(open) => !open && setConfirmState(null)}
+        title="Delete Project"
+        description="Are you sure you want to delete this project? This will also delete all items in this project."
+        confirmLabel="Delete"
+        onConfirm={() => {
+          confirmState?.action();
+          setConfirmState(null);
+        }}
+      />
     </div>
   );
 }

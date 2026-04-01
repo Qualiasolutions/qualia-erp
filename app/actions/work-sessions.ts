@@ -319,7 +319,13 @@ export async function getTodaysSessions(workspaceId: string): Promise<WorkSessio
  */
 export async function getSessionsAdmin(
   workspaceId: string,
-  options: { profileId?: string; date?: string; limit?: number } = {}
+  options: {
+    profileId?: string;
+    date?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  } = {}
 ): Promise<WorkSession[]> {
   const supabase = await createClient();
   const {
@@ -350,7 +356,11 @@ export async function getSessionsAdmin(
     query = query.eq('profile_id', options.profileId);
   }
 
-  if (options.date) {
+  if (options.startDate && options.endDate) {
+    query = query
+      .gte('started_at', `${options.startDate}T00:00:00Z`)
+      .lt('started_at', `${options.endDate}T23:59:59Z`);
+  } else if (options.date) {
     const nextDay = new Date(options.date);
     nextDay.setDate(nextDay.getDate() + 1);
     const nextDayStr = nextDay.toISOString().split('T')[0];
