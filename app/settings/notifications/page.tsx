@@ -19,7 +19,7 @@ export default async function NotificationSettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('workspace_id, role, full_name')
+    .select('role, full_name')
     .eq('id', user.id)
     .single();
 
@@ -27,13 +27,23 @@ export default async function NotificationSettingsPage() {
     redirect('/auth/login');
   }
 
+  // Get workspace_id from workspace_members (not on profiles table)
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('profile_id', user.id)
+    .eq('is_default', true)
+    .single();
+
+  const workspaceId = membership?.workspace_id;
+
   // Get notification preferences
   const result = await getNotificationPreferences();
   let preferences = result.data as NotificationPreferencesInput | undefined;
 
   // Create default preferences if none exist
-  if (!preferences) {
-    const defaultResult = await createDefaultPreferences(user.id, profile.workspace_id);
+  if (!preferences && workspaceId) {
+    const defaultResult = await createDefaultPreferences(user.id, workspaceId);
     if (defaultResult.success) {
       // Fetch again after creating defaults
       const refreshResult = await getNotificationPreferences();

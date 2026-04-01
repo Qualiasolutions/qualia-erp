@@ -20,6 +20,7 @@ import {
   ClipboardList,
   Activity,
   Timer,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -53,6 +54,7 @@ const resourcesNav = [
 const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
+  { name: 'Assignments', href: '/admin/assignments', icon: UserPlus },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Financials', href: '/payments', icon: Wallet },
 ];
@@ -157,7 +159,7 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
-  const canTrackTime = userRole === 'manager';
+  const canTrackTime = userRole === 'manager' || userRole === 'employee';
   const [showClockOut, setShowClockOut] = useState(false);
 
   // Session clock-out (employees and managers)

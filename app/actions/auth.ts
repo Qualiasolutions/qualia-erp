@@ -192,7 +192,6 @@ export async function signupWithInvitationAction(
     const { error: clientProjectError } = await adminClient.from('client_projects').insert({
       client_id: userId,
       project_id: invitation.project_id,
-      workspace_id: invitation.workspace_id,
       access_level: 'comment',
       invited_by: invitation.invited_by,
     });
