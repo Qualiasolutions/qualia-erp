@@ -2,6 +2,17 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { migrateAllProjectsToGSD } from '@/app/actions/pipeline';
 
 export default function MigratePage() {
@@ -58,9 +69,30 @@ export default function MigratePage() {
             ⚠️ This will DELETE all existing phases and tasks, then recreate them using
             type-specific templates (web_design, ai_agent, voice_agent, seo, ads).
           </p>
-          <Button onClick={runGSDMigration} disabled={loading}>
-            {loading ? 'Migrating...' : 'Run GSD Migration'}
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button disabled={loading}>{loading ? 'Migrating...' : 'Run GSD Migration'}</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will <strong>permanently delete all existing phases and tasks</strong> for
+                  every project, then recreate them using GSD templates. This action cannot be
+                  undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={runGSDMigration}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Yes, delete and migrate
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 

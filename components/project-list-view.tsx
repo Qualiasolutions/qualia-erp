@@ -330,7 +330,7 @@ function ProjectRow({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+              className="flex h-6 w-6 items-center justify-center rounded text-muted-foreground transition-all hover:bg-secondary hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100"
               onClick={(e) => e.stopPropagation()}
             >
               <MoreVertical className="h-3.5 w-3.5" />
@@ -438,7 +438,7 @@ function ProjectRow({
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-all hover:bg-secondary hover:text-foreground group-hover:opacity-100"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100"
             onClick={(e) => e.stopPropagation()}
           >
             <MoreVertical className="h-4 w-4" />

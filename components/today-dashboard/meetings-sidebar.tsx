@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { format, parseISO, isToday, isTomorrow, addDays } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { Video, ExternalLink, Clock, CalendarX } from 'lucide-react';
@@ -60,7 +60,12 @@ export function MeetingsSidebar({ meetings }: MeetingsSidebarProps) {
 
   const tomorrow = addDays(new Date(), 1);
 
-  const now = new Date();
+  // Live clock for countdown — updates every 30s
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">

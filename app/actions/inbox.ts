@@ -394,6 +394,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     title,
     description,
     status,
+    priority,
     due_date,
     sort_order,
     assignee_id,
@@ -420,6 +421,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   if (title !== undefined) updateData.title = title.trim();
   if (description !== undefined) updateData.description = description?.trim() || null;
   if (status !== undefined) updateData.status = status;
+  if (priority !== undefined) updateData.priority = priority;
   if (due_date !== undefined) updateData.due_date = due_date || null;
   if (sort_order !== undefined) updateData.sort_order = sort_order;
   if (assignee_id !== undefined) updateData.assignee_id = assignee_id || null;

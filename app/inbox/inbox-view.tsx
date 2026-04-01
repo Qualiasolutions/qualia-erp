@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
-import { invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
+import { invalidateInboxTasks, invalidateDailyFlow, useInboxTasks } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import Link from 'next/link';
@@ -195,7 +195,7 @@ const TaskRow = React.memo(function TaskRow({
       </div>
 
       {/* Actions */}
-      <div className="flex w-20 shrink-0 items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <div className="flex w-20 shrink-0 items-center justify-end gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -233,7 +233,10 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   const router = useRouter();
   const { toggleMobile } = useSidebar();
   const [isPending, startTransition] = useTransition();
-  const [optimisticTasks, dispatchOptimistic] = useOptimistic(initialTasks, tasksReducer);
+  // SWR keeps data fresh across tabs/background refetch (45s interval)
+  const { tasks: liveTasks } = useInboxTasks();
+  const baseTasks = liveTasks.length > 0 ? liveTasks : initialTasks;
+  const [optimisticTasks, dispatchOptimistic] = useOptimistic(baseTasks, tasksReducer);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [quickAddValue, setQuickAddValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');

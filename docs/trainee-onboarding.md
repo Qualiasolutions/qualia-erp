@@ -17,19 +17,76 @@ Key principles:
 
 ---
 
-## Workflow Guides (Read These First)
+## Reading Order
 
-Before diving into project phases, read these practical guides:
+Read these in this order — don't skip ahead:
+
+1. **[Employee Lifecycle Guide](./employee-lifecycle.md)** — How projects flow from start to client handoff. **Read this first.**
+2. **This guide** (you're here) — Phase-by-phase technical steps and code patterns.
+3. **[Qualia Commands](./guides/qualia-commands.md)** — The commands you'll use daily.
+4. **[Git Workflow](./guides/git-workflow.md)** — Branches, commits, PRs — the Qualia way.
+5. **[Walkthroughs](./walkthroughs.md)** — Real project examples for reference (read as needed).
+6. **[Completion Checklists](./completion-checklists.md)** — What "done" looks like for each project type.
+
+Read #1-4 on your first day. The rest when you need them.
+
+---
+
+## Reference Guides
 
 | Guide                                               | What it covers                                   |
 | --------------------------------------------------- | ------------------------------------------------ |
 | [Vercel Basics](./guides/vercel-basics.md)          | Deployments, env vars, domains, rollbacks        |
 | [Supabase Basics](./guides/supabase-basics.md)      | Dashboard, API keys, auth setup, storage         |
 | [Environment Variables](./guides/env-vars-guide.md) | Where keys come from, how to set them everywhere |
-| [Qualia Commands](./guides/qualia-commands.md)      | Claude Code slash commands and daily workflows   |
-| [Git Workflow](./guides/git-workflow.md)            | Branches, commits, PRs — the Qualia way          |
 | [Troubleshooting](./guides/troubleshooting.md)      | When things break, check this first              |
-| [Walkthroughs](./walkthroughs.md)                   | Real-world project scenarios step by step        |
+
+---
+
+## Day 1 Setup
+
+Before starting any project, make sure you have everything:
+
+### Accounts (ask Fawzi for invites)
+
+- [ ] **GitHub** — qualiasolutions org access
+- [ ] **Vercel** — Qualia Solutions team access
+- [ ] **Supabase** — Qualia Solutions org access
+- [ ] **Claude Code** — installed and working (`claude` runs in terminal)
+
+### Machine Setup
+
+- [ ] Node.js v22+ installed (`node -v`)
+- [ ] Git configured (`git config user.name` and `git config user.email`)
+- [ ] SSH key added to GitHub
+- [ ] `~/.claude/CLAUDE.md` says `Role: DEVELOPER`
+- [ ] `~/.claude/settings.json` has the employee hooks config
+- [ ] Run `claude` in any directory — you should see the Qualia teal dashboard
+
+### Communication
+
+- Update your project's `PROGRESS.md` daily
+- Use `/qualia-idk` before escalating — it often unblocks you
+- If stuck for 30+ minutes after trying `/qualia-idk` → message Fawzi
+- For project questions, check the project's `CLAUDE.md` and `.planning/STATE.md` first
+
+---
+
+## The .planning/ System
+
+Every Qualia project has a `.planning/` directory that tracks the project lifecycle. You don't manage these files manually — the Qualia commands handle them. But here's what they are:
+
+| File          | What it tracks                                                        |
+| ------------- | --------------------------------------------------------------------- |
+| `STATE.md`    | Where the project is right now — current phase, status, last activity |
+| `ROADMAP.md`  | All phases and their status (planned, executed, verified)             |
+| `PROJECT.md`  | Project description, requirements, key decisions                      |
+| `config.json` | Workflow preferences (parallel vs sequential, quality level)          |
+| `phases/`     | Detailed plans and summaries for each phase                           |
+
+When you run `/qualia-plan-phase 3`, it creates `phases/3/PLAN.md`. When you run `/qualia-execute-phase 3`, it updates `STATE.md` and creates `phases/3/SUMMARY.md`. The system tracks everything automatically.
+
+For the full explanation, see [Employee Lifecycle Guide](./employee-lifecycle.md).
 
 ---
 
@@ -66,7 +123,7 @@ Before diving into project phases, read these practical guides:
 | **AI Agents** | Next.js 16+ + OpenRouter + Supabase + TypeScript | `templates/ai-agent-starter/` | Chat agents, AI personas   |
 | **Platforms** | Next.js 16+ + Server Actions + Supabase          | `templates/platform-starter/` | Internal tools, dashboards |
 | **Voice**     | Retell AI + ElevenLabs + Supabase Edge Functions | `templates/voice-starter/`    | Voice assistants           |
-| **Websites**  | Next.js 16+ + Tailwind v4 + Supabase + Vercel    | `templates/website-starter/`  | Marketing sites            |
+| **Websites**  | Next.js 16+ or Vite + Tailwind + Vercel          | `templates/website-starter/`  | Marketing sites            |
 
 ---
 
@@ -81,10 +138,10 @@ Before diving into project phases, read these practical guides:
 
 ### 0.2 Gather Brand Assets
 
-```bash
-# Create Knowledge Base folder for client assets
-mkdir -p "Knowledge Base/[client-name]"
-```
+Brand assets go in the project directory once it's created:
+
+- Logos, images → `public/` directory
+- PDFs, design files → project root `docs/` or `.planning/`
 
 **Required assets:**
 
@@ -131,7 +188,7 @@ mkdir -p "Knowledge Base/[client-name]"
 - ...
 ```
 
-Save to: `Knowledge Base/[client-name]/PROJECT_BRIEF.md`
+Save to: `.planning/PROJECT.md` in the project root (or share with Fawzi before the repo exists)
 
 ---
 
@@ -161,7 +218,7 @@ cd [project-name]
 
 ```bash
 # Copy the appropriate template
-cp -r ~/Projects/platforms/qualia/templates/[category]-starter/* .
+cp -r ~/Projects/qualia-erp/templates/[category]-starter/* .
 
 # Install dependencies
 npm install
@@ -601,7 +658,7 @@ Just tell Claude to ship it. In practice, you say "and ship" or use `/ship` — 
 After learning new patterns or fixing issues:
 
 ```bash
-cd ~/Projects/platforms/qualia
+cd ~/Projects/qualia-erp
 
 # Update relevant files
 # - docs/ for documentation

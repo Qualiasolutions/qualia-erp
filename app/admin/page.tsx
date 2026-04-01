@@ -21,6 +21,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   getTeamMembers,
   updateUserRole,
   inviteTeamMember,
@@ -170,6 +180,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [pendingRoleChange, setPendingRoleChange] = useState<{
+    userId: string;
+    name: string;
+    newRole: UserRole;
+  } | null>(null);
 
   const fetchMembers = useCallback(async () => {
     const result = await getTeamMembers();
@@ -183,14 +198,20 @@ export default function AdminDashboard() {
     fetchMembers();
   }, [fetchMembers]);
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+  const handleRoleChangeRequest = (userId: string, name: string, newRole: UserRole) => {
+    setPendingRoleChange({ userId, name, newRole });
+  };
+
+  const confirmRoleChange = async () => {
+    if (!pendingRoleChange) return;
     setActionError(null);
-    const result = await updateUserRole(userId, newRole);
+    const result = await updateUserRole(pendingRoleChange.userId, pendingRoleChange.newRole);
     if (result.success) {
       fetchMembers();
     } else {
       setActionError(result.error || 'Failed to update role');
     }
+    setPendingRoleChange(null);
   };
 
   const handleInvite = async (email: string, name: string, role: UserRole, password: string) => {
@@ -308,7 +329,13 @@ export default function AdminDashboard() {
                   <TableCell>
                     <Select
                       value={member.role || 'employee'}
-                      onValueChange={(v) => handleRoleChange(member.id, v as UserRole)}
+                      onValueChange={(v) =>
+                        handleRoleChangeRequest(
+                          member.id,
+                          member.full_name || member.email || 'this user',
+                          v as UserRole
+                        )
+                      }
                     >
                       <SelectTrigger className="h-8 w-[130px] border-none bg-transparent px-0 shadow-none focus:ring-0">
                         <RoleBadge role={member.role} />
@@ -343,6 +370,30 @@ export default function AdminDashboard() {
           onClose={() => setShowInvite(false)}
           onInvite={handleInvite}
         />
+
+        {/* Role change confirmation */}
+        <AlertDialog
+          open={!!pendingRoleChange}
+          onOpenChange={(open) => !open && setPendingRoleChange(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Change role?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Change <strong>{pendingRoleChange?.name}</strong>&apos;s role to{' '}
+                <strong>
+                  {ROLE_CONFIG[pendingRoleChange?.newRole || 'employee']?.label ||
+                    pendingRoleChange?.newRole}
+                </strong>
+                ? This will immediately update their permissions.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmRoleChange}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

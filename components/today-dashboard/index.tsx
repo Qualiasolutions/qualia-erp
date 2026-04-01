@@ -71,7 +71,12 @@ export function TodayDashboard({
   } = useAdminContext();
   const [viewAsUserId, setViewAsUserId] = useState<string | null>(contextViewAsUserId);
   const isRealAdmin = realRole === 'admin';
-  const now = new Date();
+  const [now, setNow] = useState(() => new Date());
+
+  // Sync `now` on client mount to avoid hydration mismatch from server-rendered date
+  useEffect(() => {
+    setNow(new Date());
+  }, []);
 
   // "View as" — admin can preview the platform as another user's role
   const effectiveUserId = viewAsUserId || currentUserId;

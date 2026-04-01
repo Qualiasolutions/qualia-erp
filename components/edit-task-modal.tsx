@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
 import { updateTask, type Task } from '@/app/actions/inbox';
+import { Circle } from 'lucide-react';
 import {
   useProfiles,
   useProjects,
@@ -120,6 +121,7 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         title: title.trim(),
         description: (formData.get('description') as string) || null,
         status: (formData.get('status') as Task['status']) || task.status,
+        priority: (formData.get('priority') as Task['priority']) || task.priority,
         assignee_id: (formData.get('assignee_id') as string) || null,
         due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
         project_id: selectedProjectId !== 'no-project' ? selectedProjectId : null,
@@ -226,6 +228,44 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="edit-priority">Priority</Label>
+              <Select name="priority" defaultValue={optimisticTask.priority || 'No Priority'}>
+                <SelectTrigger id="edit-priority" className="border-border bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="border-border bg-card">
+                  <SelectItem value="No Priority">No Priority</SelectItem>
+                  <SelectItem value="Urgent">
+                    <span className="flex items-center gap-1.5">
+                      <Circle className="h-2 w-2 fill-red-500 text-red-500" />
+                      Urgent
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="High">
+                    <span className="flex items-center gap-1.5">
+                      <Circle className="h-2 w-2 fill-orange-500 text-orange-500" />
+                      High
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="Medium">
+                    <span className="flex items-center gap-1.5">
+                      <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
+                      Medium
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="Low">
+                    <span className="flex items-center gap-1.5">
+                      <Circle className="h-2 w-2 fill-blue-500 text-blue-500" />
+                      Low
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="edit-assignee">Assignee</Label>
               <Select name="assignee_id" defaultValue={optimisticTask.assignee_id || 'unassigned'}>

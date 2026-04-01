@@ -22,14 +22,23 @@ export default async function TodayPage() {
   } = await supabase.auth.getUser();
 
   // Run profile query in parallel with other fetches
-  const [meetingsRaw, projectsRaw, profiles, profileResult] = await Promise.all([
-    getMeetings(workspaceId),
-    supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
-    getProfiles(workspaceId),
-    user
-      ? supabase.from('profiles').select('id, role').eq('id', user.id).single()
-      : Promise.resolve({ data: null }),
-  ]);
+  let meetingsRaw: Awaited<ReturnType<typeof getMeetings>> = [];
+  let projectsRaw: { data: Record<string, unknown>[] | null } = { data: null };
+  let profiles: Awaited<ReturnType<typeof getProfiles>> = [];
+  let profileResult: { data: { id: string; role: string } | null } = { data: null };
+
+  try {
+    [meetingsRaw, projectsRaw, profiles, profileResult] = await Promise.all([
+      getMeetings(workspaceId),
+      supabase.rpc('get_project_stats', { p_workspace_id: workspaceId }),
+      getProfiles(workspaceId),
+      user
+        ? supabase.from('profiles').select('id, role').eq('id', user.id).single()
+        : Promise.resolve({ data: null }),
+    ]);
+  } catch {
+    // If any fetch fails, continue with defaults rather than crashing the page
+  }
   const currentProfile = profileResult.data;
 
   const meetings = meetingsRaw;

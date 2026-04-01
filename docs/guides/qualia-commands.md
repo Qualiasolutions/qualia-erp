@@ -109,20 +109,21 @@ When something feels slow. Analyzes and optimizes performance.
 
 The `/qualia` namespace has more subcommands for project workflow management:
 
-| Command                      | What it does                                 |
-| ---------------------------- | -------------------------------------------- |
-| `/qualia-progress`           | Show current project progress                |
-| `/qualia-new-project`        | Initialize a new project with workflow files |
-| `/qualia-verify-work`        | Verify completed work                        |
-| `/qualia-new-milestone`      | Create a new milestone                       |
-| `/qualia-complete-milestone` | Mark a milestone as complete                 |
-| `/qualia-add-todo`           | Add a todo item                              |
-| `/qualia-check-todos`        | Check todo status                            |
-| `/qualia-pause-work`         | Pause current work and save state            |
-| `/qualia-resume-work`        | Resume paused work                           |
-| `/qualia-idk`                | When you're stuck and don't know what to do  |
-| `/qualia-help`               | See all available commands                   |
-| `/client-handoff`            | Generate client delivery document            |
+| Command                      | What it does                                    |
+| ---------------------------- | ----------------------------------------------- |
+| `/qualia-progress`           | Show current project progress                   |
+| `/qualia-new-project`        | Initialize a new project with workflow files    |
+| `/qualia-verify-work`        | Verify completed work                           |
+| `/qualia-new-milestone`      | Create a new milestone                          |
+| `/qualia-complete-milestone` | Mark a milestone as complete                    |
+| `/qualia-add-todo`           | Add a todo item                                 |
+| `/qualia-check-todos`        | Check todo status                               |
+| `/qualia-pause-work`         | Pause current work and save state               |
+| `/qualia-resume-work`        | Resume paused work                              |
+| `/qualia-idk`                | When you're stuck and don't know what to do     |
+| `/qualia-report`             | Generate work report (what was done vs planned) |
+| `/qualia-help`               | See all available commands                      |
+| `/client-handoff`            | Generate client delivery document               |
 
 ---
 

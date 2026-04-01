@@ -13,7 +13,7 @@
 - [ ] All features from the project brief are implemented
 - [ ] Client has reviewed and approved the work
 - [ ] No outstanding client feedback unaddressed
-- [ ] Project brief saved in `Knowledge Base/[client]/PROJECT_BRIEF.md`
+- [ ] Project brief saved in `.planning/PROJECT.md`
 
 ### 2. Code Quality
 

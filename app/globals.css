@@ -208,6 +208,15 @@
    Subtle • Spacious • Warm
    ============================================ */
 @layer utilities {
+  /* Hide scrollbars but allow scrolling */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Surface layers for depth */
   .surface-1 {
     background: hsl(var(--surface-1));

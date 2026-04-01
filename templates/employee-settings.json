@@ -1,0 +1,144 @@
+{
+  "env": {
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "0",
+    "CLAUDE_CODE_SUBAGENT_MODEL": "claude-opus-4-6",
+    "ENABLE_TOOL_SEARCH": "auto:5",
+    "MAX_MCP_OUTPUT_TOKENS": "25000",
+    "SUDO_ASKPASS": "/home/qualia/.claude/askpass.sh",
+    "CLAUDE_ENV_FILE": "/home/qualia/.claude/.env.claude",
+    "ENABLE_CLAUDEAI_MCP_SERVERS": "false"
+  },
+  "permissions": {
+    "allow": ["Bash(npx tsx:*)", "Bash(find:*)"],
+    "deny": ["Read(./secrets/**)", "Read(./.credentials.json)"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-env-edit.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/block-env-edit.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-commit.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/branch-guard.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/confirm-delete.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/migration-validate.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-deploy-gate.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/auto-format.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/migration-validate.sh"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/pre-compact.sh"
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-context-loader.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/session-context-loader.sh"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/save-session-state.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true
+  },
+  "effortLevel": "high",
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/qualia"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@context7/mcp-server"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
+    }
+  }
+}

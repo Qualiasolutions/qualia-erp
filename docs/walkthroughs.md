@@ -52,7 +52,7 @@ Before touching code, nail down exactly what the agent needs to do.
 - WhatsApp notifications (optional, phase 2)
 ```
 
-Save this to `Knowledge Base/bloom-clinic/PROJECT_BRIEF.md`.
+Save this to `.planning/PROJECT.md` in the project root.
 
 ### Step 2: Scaffold the project
 
@@ -66,7 +66,7 @@ git clone git@github.com:qualiasolutions/bloom-clinic.git
 cd bloom-clinic
 
 # Copy our AI agent starter template
-cp -r ~/Projects/platforms/qualia/templates/ai-agent-starter/* .
+cp -r ~/Projects/qualia-erp/templates/ai-agent-starter/* .
 
 # Install dependencies
 npm install
@@ -806,7 +806,7 @@ cd ~/Projects/websites/
 git clone git@github.com:qualiasolutions/kypros-legal.git
 cd kypros-legal
 
-cp -r ~/Projects/platforms/qualia/templates/website-starter/* .
+cp -r ~/Projects/qualia-erp/templates/website-starter/* .
 npm install
 
 # Add animation library
@@ -1085,10 +1085,10 @@ curl -s -o /dev/null -w "%{http_code}" https://site.com  # HTTP 200
 
 | Situation                        | Command                 |
 | -------------------------------- | ----------------------- |
-| Most tasks (build, fix, improve) | `/qualia:quick`         |
+| Most tasks (build, fix, improve) | `/qualia-quick`         |
 | Premium UI work                  | `/frontend-master`      |
-| Plan a project phase             | `/qualia:plan-phase`    |
-| Execute a project phase          | `/qualia:execute-phase` |
+| Plan a project phase             | `/qualia-plan-phase`    |
+| Execute a project phase          | `/qualia-execute-phase` |
 | Deploy to production             | `/ship`                 |
 | Code review                      | `/review`               |
 | Check project health             | `/status`               |

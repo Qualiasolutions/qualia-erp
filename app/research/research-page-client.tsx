@@ -38,6 +38,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
+import { PageHeader } from '@/components/page-header';
 import { RESEARCH_CATEGORIES, CATEGORY_COLORS, getCategoryLabel } from '@/lib/research-constants';
 import {
   createResearchEntry,
@@ -103,7 +104,7 @@ function ResearchCard({
           )}
         </div>
 
-        <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="relative z-10 flex shrink-0 items-center gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onView}>
             <Eye className="h-4 w-4" />
           </Button>
@@ -120,7 +121,7 @@ function ResearchCard({
 
       <button
         onClick={onView}
-        className="absolute inset-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
+        className="absolute inset-0 z-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20"
         aria-label={`View ${entry.title}`}
       />
     </m.div>
@@ -523,25 +524,12 @@ export function ResearchPageClient({ initialEntries }: ResearchPageClientProps) 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="flex shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <m.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10"
-          >
-            <FlaskConical className="h-3.5 w-3.5 text-primary" />
-          </m.div>
-          <div>
-            <h1 className="text-sm font-semibold text-foreground">Research</h1>
-          </div>
-        </div>
-
+      <PageHeader icon={<FlaskConical className="h-3.5 w-3.5 text-primary" />} title="Research">
         <Button onClick={() => setShowNewModal(true)}>
           <Plus className="mr-2 h-4 w-4" />
           Log Research
         </Button>
-      </header>
+      </PageHeader>
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
