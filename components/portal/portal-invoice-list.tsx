@@ -15,8 +15,8 @@ interface Invoice {
   issued_date: string;
   due_date: string | null;
   paid_date: string | null;
-  description: string | null;
-  file_url: string | null;
+  description?: string | null;
+  file_url?: string | null;
   project: { id: string; name: string } | null;
 }
 

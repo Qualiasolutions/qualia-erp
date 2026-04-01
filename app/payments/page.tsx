@@ -3,11 +3,10 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getFinancialSummary, getExpenses } from '@/app/actions/financials';
+import { isUserAdmin } from '@/app/actions';
 import { FinancialDashboard } from './financial-dashboard';
 import { Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
-
-const ADMIN_EMAIL = 'info@qualiasolutions.net';
 
 async function DashboardLoader() {
   await connection();
@@ -17,7 +16,7 @@ async function DashboardLoader() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user?.email !== ADMIN_EMAIL) {
+  if (!user || !(await isUserAdmin(user.id))) {
     redirect('/');
   }
 

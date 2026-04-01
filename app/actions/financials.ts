@@ -2,9 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createExpenseSchema, updateExpenseSchema } from '@/lib/validation';
+import { isUserAdmin } from '@/app/actions';
+import { getZohoAllInvoices, getZohoPayments } from '@/lib/integrations/zoho';
 
-const ADMIN_EMAIL = 'info@qualiasolutions.net';
 const TRACKING_START_DATE = '2026-01-15';
 
 // Zoho Invoice customer names → portal project names
@@ -27,12 +29,14 @@ function mapCustomerName(zohoName: string): string {
   return ZOHO_CUSTOMER_TO_PROJECT[zohoName] ?? zohoName;
 }
 
-async function isAdminUser(): Promise<boolean> {
+/** Check if the current session user is an admin via role-based lookup */
+async function checkAdmin(): Promise<boolean> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user?.email === ADMIN_EMAIL;
+  if (!user) return false;
+  return isUserAdmin(user.id);
 }
 
 export type FinancialInvoice = {
@@ -102,7 +106,7 @@ export type FinancialSummary = {
 };
 
 export async function getFinancialSummary(): Promise<FinancialSummary | null> {
-  if (!(await isAdminUser())) return null;
+  if (!(await checkAdmin())) return null;
 
   const supabase = await createClient();
 
@@ -295,10 +299,122 @@ export async function getFinancialSummary(): Promise<FinancialSummary | null> {
   };
 }
 
+// ─── Zoho Sync ──────────────────────────────────────────
+
+/**
+ * Sync all invoices + payments from Zoho Books into financial_invoices / financial_payments.
+ * Uses service role client so it works from cron (no user session).
+ * Filters to ALLOWED_CUSTOMERS only.
+ */
+export async function syncZohoFinancials(): Promise<{
+  success: boolean;
+  invoiceCount?: number;
+  paymentCount?: number;
+  error?: string;
+}> {
+  const workspaceId = process.env.DEFAULT_WORKSPACE_ID;
+  if (!workspaceId) {
+    return { success: false, error: 'DEFAULT_WORKSPACE_ID env var not set' };
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    return { success: false, error: 'Missing Supabase credentials' };
+  }
+
+  const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey);
+  const syncedAt = new Date().toISOString();
+
+  // Fetch from Zoho
+  const [invoicesResult, paymentsResult] = await Promise.all([
+    getZohoAllInvoices(workspaceId),
+    getZohoPayments(workspaceId),
+  ]);
+
+  if (!invoicesResult.success) {
+    return { success: false, error: `Invoices fetch failed: ${invoicesResult.error}` };
+  }
+  if (!paymentsResult.success) {
+    return { success: false, error: `Payments fetch failed: ${paymentsResult.error}` };
+  }
+
+  const zohoInvoices = (invoicesResult.data ?? []).filter((inv) =>
+    ALLOWED_CUSTOMERS.has(inv.customer_name)
+  );
+  const zohoPayments = (paymentsResult.data ?? []).filter((p) =>
+    ALLOWED_CUSTOMERS.has(p.customer_name)
+  );
+
+  // Upsert invoices
+  if (zohoInvoices.length > 0) {
+    const invoiceRows = zohoInvoices.map((inv) => ({
+      zoho_id: inv.invoice_id,
+      invoice_number: inv.invoice_number,
+      customer_name: inv.customer_name,
+      customer_id: inv.customer_id,
+      status: inv.status,
+      date: inv.date,
+      due_date: inv.due_date || null,
+      total: inv.total,
+      balance: inv.balance,
+      currency_code: inv.currency_code,
+      last_payment_date: inv.last_payment_date || null,
+      synced_at: syncedAt,
+    }));
+
+    const { error } = await supabase
+      .from('financial_invoices')
+      .upsert(invoiceRows, { onConflict: 'zoho_id' });
+
+    if (error) {
+      console.error('[zoho-sync] Invoice upsert error:', error);
+      return { success: false, error: `Invoice upsert failed: ${error.message}` };
+    }
+  }
+
+  // Upsert payments
+  if (zohoPayments.length > 0) {
+    const paymentRows = zohoPayments.map((p) => ({
+      zoho_id: p.payment_id,
+      payment_number: p.payment_number,
+      customer_name: p.customer_name,
+      customer_id: p.customer_id,
+      date: p.date,
+      amount: p.amount,
+      currency_code: p.currency_code,
+      payment_mode: p.payment_mode || null,
+      description: p.description || null,
+      invoice_numbers: (p.invoices ?? []).map((i) => i.invoice_number).join(', ') || null,
+      synced_at: syncedAt,
+    }));
+
+    const { error } = await supabase
+      .from('financial_payments')
+      .upsert(paymentRows, { onConflict: 'zoho_id' });
+
+    if (error) {
+      console.error('[zoho-sync] Payment upsert error:', error);
+      return { success: false, error: `Payment upsert failed: ${error.message}` };
+    }
+  }
+
+  console.log(
+    `[zoho-sync] Synced ${zohoInvoices.length} invoices, ${zohoPayments.length} payments`
+  );
+
+  revalidatePath('/payments');
+  return {
+    success: true,
+    invoiceCount: zohoInvoices.length,
+    paymentCount: zohoPayments.length,
+  };
+}
+
 // ─── Hide / Unhide / Delete invoices ──────────────────────
 
 export async function hideInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
-  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -312,7 +428,7 @@ export async function hideInvoice(zohoId: string): Promise<{ success: boolean; e
 }
 
 export async function unhideInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
-  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -326,7 +442,7 @@ export async function unhideInvoice(zohoId: string): Promise<{ success: boolean;
 }
 
 export async function deleteInvoice(zohoId: string): Promise<{ success: boolean; error?: string }> {
-  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();
   const { error } = await supabase.from('financial_invoices').delete().eq('zoho_id', zohoId);
@@ -357,7 +473,7 @@ export async function getExpenses(): Promise<Expense[]> {
 }
 
 export async function createExpense(data: unknown): Promise<{ success: boolean; error?: string }> {
-  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const parsed = createExpenseSchema.safeParse(data);
   if (!parsed.success) {
@@ -373,7 +489,7 @@ export async function createExpense(data: unknown): Promise<{ success: boolean; 
 }
 
 export async function updateExpense(data: unknown): Promise<{ success: boolean; error?: string }> {
-  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const parsed = updateExpenseSchema.safeParse(data);
   if (!parsed.success) {
@@ -393,7 +509,7 @@ export async function updateExpense(data: unknown): Promise<{ success: boolean; 
 }
 
 export async function deleteExpense(id: string): Promise<{ success: boolean; error?: string }> {
-  if (!(await isAdminUser())) return { success: false, error: 'Unauthorized' };
+  if (!(await checkAdmin())) return { success: false, error: 'Unauthorized' };
 
   const supabase = await createClient();
   const { error } = await supabase.from('expenses').delete().eq('id', id);

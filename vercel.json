@@ -32,6 +32,10 @@
     {
       "path": "/api/cron/attendance-report",
       "schedule": "30 21 * * 0-5"
+    },
+    {
+      "path": "/api/cron/zoho-sync",
+      "schedule": "0 */6 * * *"
     }
   ]
 }

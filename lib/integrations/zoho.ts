@@ -179,6 +179,103 @@ async function zohoRequest<T>(
   }
 }
 
+// ============ ZOHO RESPONSE TYPES ============
+
+export type ZohoPayment = {
+  payment_id: string;
+  payment_number: string;
+  customer_name: string;
+  customer_id: string;
+  date: string;
+  amount: number;
+  currency_code: string;
+  payment_mode: string;
+  description: string;
+  invoices: { invoice_number: string }[];
+};
+
+export type ZohoInvoiceDetail = {
+  invoice_id: string;
+  invoice_number: string;
+  customer_name: string;
+  customer_id: string;
+  status: string;
+  date: string;
+  due_date: string;
+  total: number;
+  balance: number;
+  currency_code: string;
+  last_payment_date: string;
+};
+
+// ============ PAGINATED FETCHERS ============
+
+/**
+ * Fetch ALL invoices from Zoho Books (paginated, all statuses)
+ */
+export async function getZohoAllInvoices(
+  workspaceId: string
+): Promise<{ success: boolean; data?: ZohoInvoiceDetail[]; error?: string }> {
+  const allInvoices: ZohoInvoiceDetail[] = [];
+  let page = 1;
+  const perPage = 200;
+
+  while (true) {
+    const result = await zohoRequest<{
+      invoices: ZohoInvoiceDetail[];
+      page_context: { has_more_page: boolean };
+    }>(workspaceId, `/books/v3/invoices?page=${page}&per_page=${perPage}`);
+
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    const invoices = result.data?.invoices ?? [];
+    allInvoices.push(...invoices);
+
+    if (!result.data?.page_context?.has_more_page || invoices.length === 0) {
+      break;
+    }
+
+    page++;
+  }
+
+  return { success: true, data: allInvoices };
+}
+
+/**
+ * Fetch ALL customer payments from Zoho Books (paginated)
+ */
+export async function getZohoPayments(
+  workspaceId: string
+): Promise<{ success: boolean; data?: ZohoPayment[]; error?: string }> {
+  const allPayments: ZohoPayment[] = [];
+  let page = 1;
+  const perPage = 200;
+
+  while (true) {
+    const result = await zohoRequest<{
+      customerpayments: ZohoPayment[];
+      page_context: { has_more_page: boolean };
+    }>(workspaceId, `/books/v3/customerpayments?page=${page}&per_page=${perPage}`);
+
+    if (!result.success) {
+      return { success: false, error: result.error };
+    }
+
+    const payments = result.data?.customerpayments ?? [];
+    allPayments.push(...payments);
+
+    if (!result.data?.page_context?.has_more_page || payments.length === 0) {
+      break;
+    }
+
+    page++;
+  }
+
+  return { success: true, data: allPayments };
+}
+
 // ============ INVOICES ============
 
 /**

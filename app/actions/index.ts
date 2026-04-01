@@ -22,7 +22,6 @@
  * - project-files.ts: Project file storage
  * - health.ts: Health monitoring
  * - logos.ts: Logo upload
- * - payments.ts: Payment tracking
  */
 
 // ============ SHARED TYPES & HELPERS ============

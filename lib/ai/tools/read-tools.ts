@@ -522,103 +522,78 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
 
     getFinancialSummary: tool({
       description:
-        'Get financial overview: total income, expenses, pending payments, client balances, monthly recurring. Use when user asks "how much are we owed", "financial summary", "money", "payments", "revenue", "expenses", "burn rate".',
+        'Get financial overview: total payments collected, this month vs last month, per-customer breakdown. Use when user asks "how much are we owed", "financial summary", "money", "payments", "revenue", "expenses", "burn rate".',
       inputSchema: z.object({
         include_client_balances: z
           .boolean()
           .optional()
-          .describe('Include per-client balance breakdown (default: true)'),
+          .describe('Include per-customer payment breakdown (default: true)'),
       }),
       execute: async ({
         include_client_balances = true,
       }: {
         include_client_balances?: boolean;
       }) => {
-        // Get all payments
+        // Get all payments from the unified financial_payments table
         const { data: payments } = await supabase
-          .from('payments')
-          .select('type, amount, status, payment_date, client_id')
-          .eq('workspace_id', workspaceId);
+          .from('financial_payments')
+          .select('amount, date, customer_name');
 
-        // Get recurring payments
-        const { data: recurring } = await supabase
-          .from('recurring_payments')
-          .select('type, amount')
-          .eq('workspace_id', workspaceId)
-          .eq('is_active', true);
+        const now = new Date();
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+          .toISOString()
+          .split('T')[0];
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+          .toISOString()
+          .split('T')[0];
 
         // Calculate payment totals
-        const summary = (payments || []).reduce(
-          (acc, p) => {
-            const amount = Number(p.amount);
-            if (p.type === 'incoming') {
-              acc.totalIncoming += amount;
-              if (p.status === 'pending') acc.pendingIncoming += amount;
-              if (p.status === 'completed') acc.completedIncoming += amount;
-            } else {
-              acc.totalOutgoing += amount;
-              if (p.status === 'pending') acc.pendingOutgoing += amount;
-              if (p.status === 'completed') acc.completedOutgoing += amount;
-            }
-            return acc;
-          },
-          {
-            totalIncoming: 0,
-            totalOutgoing: 0,
-            pendingIncoming: 0,
-            pendingOutgoing: 0,
-            completedIncoming: 0,
-            completedOutgoing: 0,
-          }
-        );
+        const allPayments = payments || [];
+        const totalCollected = allPayments.reduce((s, p) => s + Number(p.amount), 0);
+        const thisMonthCollected = allPayments
+          .filter((p) => p.date >= thisMonthStart)
+          .reduce((s, p) => s + Number(p.amount), 0);
+        const lastMonthCollected = allPayments
+          .filter((p) => p.date >= lastMonthStart && p.date < thisMonthStart)
+          .reduce((s, p) => s + Number(p.amount), 0);
 
-        // Calculate recurring totals
-        const recurringSummary = (recurring || []).reduce(
-          (acc, r) => {
-            const amount = Number(r.amount);
-            if (r.type === 'incoming') acc.monthlyIncome += amount;
-            else acc.monthlyExpenses += amount;
-            return acc;
-          },
-          { monthlyIncome: 0, monthlyExpenses: 0 }
+        // Get outstanding invoices from financial_invoices
+        const { data: unpaidInvoices } = await supabase
+          .from('financial_invoices')
+          .select('balance, status, customer_name')
+          .in('status', ['pending', 'overdue', 'sent'])
+          .eq('is_hidden', false);
+
+        const totalOutstanding = (unpaidInvoices || []).reduce(
+          (s, inv) => s + Number(inv.balance),
+          0
         );
+        const totalOverdue = (unpaidInvoices || [])
+          .filter((inv) => inv.status === 'overdue')
+          .reduce((s, inv) => s + Number(inv.balance), 0);
 
         const result: Record<string, unknown> = {
           payments: {
-            ...summary,
-            netProfit: summary.completedIncoming - summary.completedOutgoing,
-          },
-          recurring: {
-            ...recurringSummary,
-            netMonthly: recurringSummary.monthlyIncome - recurringSummary.monthlyExpenses,
+            totalCollected,
+            thisMonthCollected,
+            lastMonthCollected,
+            totalOutstanding,
+            totalOverdue,
+            paymentCount: allPayments.length,
           },
         };
 
-        // Client balances
+        // Per-customer payment breakdown
         if (include_client_balances) {
-          const { data: clients } = await supabase
-            .from('clients')
-            .select('id, display_name')
-            .eq('workspace_id', workspaceId);
+          const customerMap = new Map<string, number>();
+          allPayments.forEach((p) => {
+            const name = p.customer_name || 'Unknown';
+            customerMap.set(name, (customerMap.get(name) || 0) + Number(p.amount));
+          });
 
-          const clientBalances = (clients || [])
-            .map((client) => {
-              const clientPayments = (payments || []).filter((p) => p.client_id === client.id);
-              const paid = clientPayments
-                .filter((p) => p.type === 'incoming' && p.status === 'completed')
-                .reduce((s, p) => s + Number(p.amount), 0);
-              const pending = clientPayments
-                .filter((p) => p.type === 'incoming' && p.status === 'pending')
-                .reduce((s, p) => s + Number(p.amount), 0);
-              return {
-                name: client.display_name,
-                paid,
-                pending,
-                total: paid + pending,
-              };
-            })
-            .filter((c) => c.total > 0)
-            .sort((a, b) => b.pending - a.pending);
+          const clientBalances = Array.from(customerMap.entries())
+            .map(([name, total]) => ({ name, total }))
+            .sort((a, b) => b.total - a.total);
 
           result.clientBalances = clientBalances;
         }
@@ -702,16 +677,18 @@ export function createReadTools(supabase: SupabaseClient, workspaceId: string | 
             .eq('workspace_id', workspaceId)
             .eq('status', 'Active')
             .order('target_date', { ascending: true }),
-          // Pending incoming payments
+          // Pending/outstanding invoices (unpaid)
           supabase
-            .from('payments')
-            .select('amount, description, client:clients(display_name)')
-            .eq('workspace_id', workspaceId)
-            .eq('type', 'incoming')
-            .eq('status', 'pending'),
+            .from('financial_invoices')
+            .select('balance, customer_name, status')
+            .in('status', ['pending', 'overdue', 'sent'])
+            .eq('is_hidden', false),
         ]);
 
-        const totalPending = (pendingPayments.data || []).reduce((s, p) => s + Number(p.amount), 0);
+        const totalPending = (pendingPayments.data || []).reduce(
+          (s, inv) => s + Number(inv.balance),
+          0
+        );
 
         return {
           date: now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),

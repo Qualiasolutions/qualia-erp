@@ -23,6 +23,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
   hideInvoice,
   unhideInvoice,
@@ -30,6 +31,7 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
+  syncZohoFinancials,
   type FinancialSummary,
   type FinancialInvoice,
   type Expense,
@@ -712,6 +714,44 @@ function DateRangeFilter({
   );
 }
 
+// ─── Sync Bar ────────────────────────────────────────────
+function SyncBar({ lastSyncedAt }: { lastSyncedAt: string | null }) {
+  const [isSyncing, startSync] = useTransition();
+
+  function handleSync() {
+    startSync(async () => {
+      const result = await syncZohoFinancials();
+      if (result.success) {
+        toast.success(`Synced ${result.invoiceCount} invoices and ${result.paymentCount} payments`);
+      } else {
+        toast.error(result.error ?? 'Sync failed');
+      }
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-3">
+      {lastSyncedAt && (
+        <p className="text-[11px] text-muted-foreground/60">
+          Data synced {formatDistanceToNow(parseISO(lastSyncedAt), { addSuffix: true })} via Zoho
+          Invoice
+        </p>
+      )}
+      <button
+        onClick={handleSync}
+        disabled={isSyncing}
+        className={cn(
+          'flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
+          isSyncing && 'pointer-events-none opacity-60'
+        )}
+      >
+        <RefreshCw className={cn('h-3 w-3', isSyncing && 'animate-spin')} />
+        {isSyncing ? 'Syncing...' : 'Sync Now'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───────────────────────────────────────
 export function FinancialDashboard({
   summary,
@@ -808,13 +848,8 @@ export function FinancialDashboard({
 
   return (
     <div className="space-y-6">
-      {/* Sync indicator */}
-      {summary.lastSyncedAt && (
-        <p className="text-[11px] text-muted-foreground/60">
-          Data synced {formatDistanceToNow(parseISO(summary.lastSyncedAt), { addSuffix: true })} via
-          Zoho Invoice
-        </p>
-      )}
+      {/* Sync indicator + manual sync */}
+      <SyncBar lastSyncedAt={summary.lastSyncedAt} />
 
       {/* Date Range Filter */}
       <DateRangeFilter value={filter} onChange={setFilter} />

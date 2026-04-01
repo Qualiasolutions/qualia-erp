@@ -792,7 +792,8 @@ export async function createProjectFromPortal(input: {
 }
 
 /**
- * Get invoices for the current client user
+ * Get invoices for the current client user.
+ * Reads from `financial_invoices` (Zoho-synced) and maps fields to the portal shape.
  */
 export async function getClientInvoices(): Promise<ActionResult> {
   try {
@@ -805,26 +806,12 @@ export async function getClientInvoices(): Promise<ActionResult> {
     const isAdmin = await isUserManagerOrAbove(user.id);
 
     let query = supabase
-      .from('client_invoices')
+      .from('financial_invoices')
       .select(
-        `
-        id,
-        client_id,
-        project_id,
-        invoice_number,
-        amount,
-        currency,
-        status,
-        issued_date,
-        due_date,
-        paid_date,
-        description,
-        file_url,
-        created_at,
-        project:projects(id, name)
-      `
+        'zoho_id, invoice_number, total, currency_code, status, date, due_date, last_payment_date, client_id, is_hidden'
       )
-      .order('issued_date', { ascending: false });
+      .eq('is_hidden', false)
+      .order('date', { ascending: false });
 
     if (!isAdmin) {
       query = query.eq('client_id', user.id);
@@ -833,12 +820,22 @@ export async function getClientInvoices(): Promise<ActionResult> {
     const { data, error } = await query;
     if (error) throw error;
 
-    const normalized = (data || []).map((inv) => ({
-      ...inv,
-      project: Array.isArray(inv.project) ? inv.project[0] || null : inv.project,
+    // Map financial_invoices fields to the portal invoice shape
+    const mapped = (data || []).map((inv) => ({
+      id: inv.zoho_id,
+      invoice_number: inv.invoice_number,
+      amount: inv.total,
+      currency: inv.currency_code || 'EUR',
+      status: inv.status,
+      issued_date: inv.date,
+      due_date: inv.due_date,
+      paid_date: inv.last_payment_date,
+      description: null,
+      file_url: null,
+      project: null,
     }));
 
-    return { success: true, data: normalized };
+    return { success: true, data: mapped };
   } catch (error) {
     console.error('[getClientInvoices] Error:', error);
     return {
@@ -888,9 +885,10 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
         .eq('client_id', clientId)
         .in('status', ['pending', 'in_review']),
       supabase
-        .from('client_invoices')
-        .select('amount')
+        .from('financial_invoices')
+        .select('balance')
         .eq('client_id', clientId)
+        .eq('is_hidden', false)
         .in('status', ['pending', 'overdue']),
       clientProjectIds.length > 0
         ? supabase
@@ -903,7 +901,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
         : Promise.resolve({ data: [] }),
     ]);
 
-    const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.amount), 0);
+    const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.balance), 0);
 
     const normalizedActivity = (recentActivity || []).map((a) => ({
       ...a,
