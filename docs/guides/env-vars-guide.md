@@ -48,16 +48,17 @@ Add each variable there. Select which environments it applies to:
 
 ## Where to Find Each Key
 
-| Variable                               | Service    | Where to get it                                                  |
-| -------------------------------------- | ---------- | ---------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase   | Dashboard → Settings → API → Project URL                         |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase   | Dashboard → Settings → API → anon/public key                     |
-| `SUPABASE_SERVICE_ROLE_KEY`            | Supabase   | Dashboard → Settings → API → service_role key                    |
-| `GOOGLE_GENERATIVE_AI_API_KEY`         | Google     | [aistudio.google.com](https://aistudio.google.com) → Get API Key |
-| `RESEND_API_KEY`                       | Resend     | [resend.com/api-keys](https://resend.com/api-keys)               |
-| `NEXT_PUBLIC_VAPI_PUBLIC_KEY`          | VAPI       | [vapi.ai/dashboard](https://vapi.ai/dashboard) → Settings        |
-| `VAPI_WEBHOOK_SECRET`                  | VAPI       | Set when configuring assistant webhook                           |
-| `OPENROUTER_API_KEY`                   | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys)                 |
+| Variable                               | Service    | Where to get it                                                     |
+| -------------------------------------- | ---------- | ------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase   | Dashboard → Settings → API → Project URL                            |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase   | Dashboard → Settings → API → anon/public key                        |
+| `SUPABASE_SERVICE_ROLE_KEY`            | Supabase   | Dashboard → Settings → API → service_role key                       |
+| `GOOGLE_GENERATIVE_AI_API_KEY`         | Google     | [aistudio.google.com](https://aistudio.google.com) → Get API Key    |
+| `RESEND_API_KEY`                       | Resend     | [resend.com/api-keys](https://resend.com/api-keys)                  |
+| `RETELL_API_KEY`                       | Retell AI  | [dashboard.retellai.com](https://dashboard.retellai.com) → API Keys |
+| `RETELL_WEBHOOK_SECRET`                | Retell AI  | Set when configuring agent webhook                                  |
+| `ELEVENLABS_API_KEY`                   | ElevenLabs | [elevenlabs.io/app](https://elevenlabs.io/app) → Profile → API Key  |
+| `OPENROUTER_API_KEY`                   | OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys)                    |
 
 ---
 

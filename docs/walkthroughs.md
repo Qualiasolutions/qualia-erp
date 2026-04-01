@@ -8,7 +8,7 @@
 ## Table of Contents
 
 1. [Building an AI Chat Agent End-to-End](#1-building-an-ai-chat-agent-end-to-end)
-2. [Shipping a Voice Agent with VAPI](#2-shipping-a-voice-agent-with-vapi)
+2. [Shipping a Voice Agent with Retell AI](#2-shipping-a-voice-agent-with-retell-ai)
 3. [Adding a Feature to an Existing Project](#3-adding-a-feature-to-an-existing-project)
 4. [Debugging a Production Bug](#4-debugging-a-production-bug)
 5. [Database Migration & Schema Change](#5-database-migration--schema-change)
@@ -211,7 +211,7 @@ curl -s -o /dev/null -w "%{http_code}" https://bloom-clinic.vercel.app
 
 ---
 
-## 2. Shipping a Voice Agent with VAPI
+## 2. Shipping a Voice Agent with Retell AI
 
 **Scenario**: A restaurant chain ("Tasos Grill") needs a phone-based AI that takes reservations, answers menu questions, and handles both Greek and English callers.
 
@@ -245,61 +245,58 @@ git clone git@github.com:qualiasolutions/tasos-voice.git
 cd tasos-voice
 
 # Copy voice starter
-cp -r ~/Projects/platforms/qualia/templates/voice-starter/* .
+cp -r ~/Projects/qualia-erp/templates/voice-starter/* .
 npm install
+
+# Initialize Supabase for call logging
+supabase init
 ```
 
-### Step 3: Configure VAPI
+### Step 3: Configure Retell AI
 
-In the VAPI dashboard:
+In the [Retell AI dashboard](https://dashboard.retellai.com):
 
-1. Create a new assistant
-2. Set STT: Gladia Solaria (good multilingual support)
-3. Set LLM: Gemini 2.0 Flash (fast, cheap, multilingual)
-4. Set TTS: Cartesia (natural-sounding voice)
-5. Write the system prompt with the persona above
-6. Set the first message
+1. Create a new agent
+2. Select an ElevenLabs voice (or clone a custom voice)
+3. Set the LLM: use OpenRouter for model flexibility
+4. Write the system prompt with the persona above
+5. Set the first message / greeting
+6. Configure language settings (Greek + English)
 
-Save the assistant config locally in `vapi-config/assistant.json` for version control.
+Save the agent ID and API key to your `.env.local`.
 
 ### Step 4: Define tools
 
-Tools are what the voice agent can DO. Define them in `vapi-config/tools.json`:
+Tools are what the voice agent can DO. Define them in your Retell agent's tool configuration:
 
 ```json
 [
   {
-    "type": "function",
-    "function": {
-      "name": "create_reservation",
-      "description": "Create a restaurant reservation",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "customer_name": { "type": "string" },
-          "date": { "type": "string", "description": "YYYY-MM-DD" },
-          "time": { "type": "string", "description": "HH:MM" },
-          "party_size": { "type": "integer" },
-          "special_requests": { "type": "string" }
-        },
-        "required": ["customer_name", "date", "time", "party_size"]
-      }
+    "name": "create_reservation",
+    "description": "Create a restaurant reservation",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "customer_name": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "time": { "type": "string", "description": "HH:MM" },
+        "party_size": { "type": "integer" },
+        "special_requests": { "type": "string" }
+      },
+      "required": ["customer_name", "date", "time", "party_size"]
     }
   },
   {
-    "type": "function",
-    "function": {
-      "name": "check_availability",
-      "description": "Check table availability for a given date and time",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "date": { "type": "string" },
-          "time": { "type": "string" },
-          "party_size": { "type": "integer" }
-        },
-        "required": ["date", "time", "party_size"]
-      }
+    "name": "check_availability",
+    "description": "Check table availability for a given date and time",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "party_size": { "type": "integer" }
+      },
+      "required": ["date", "time", "party_size"]
     }
   }
 ]
@@ -307,67 +304,80 @@ Tools are what the voice agent can DO. Define them in `vapi-config/tools.json`:
 
 ### Step 5: Build the webhook handler
 
-In `src/index.ts` (Cloudflare Worker):
+In `supabase/functions/voice-webhook/index.ts` (Supabase Edge Function):
 
 ```typescript
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
-    }
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-    const body = await request.json();
-    const { message } = body;
+serve(async (req: Request) => {
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
 
-    // Verify webhook secret
-    const secret = request.headers.get('x-vapi-secret');
-    if (secret !== env.VAPI_WEBHOOK_SECRET) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+  // Verify Retell webhook secret
+  const signature = req.headers.get('x-retell-signature');
+  if (!signature || signature !== Deno.env.get('RETELL_WEBHOOK_SECRET')) {
+    return new Response('Unauthorized', { status: 401 });
+  }
 
-    // Route by message type
-    switch (message.type) {
-      case 'function-call':
-        return handleToolCall(message, env);
-      case 'end-of-call-report':
-        return handleCallEnd(message, env);
-      default:
-        return new Response(JSON.stringify({ ok: true }));
-    }
-  },
-};
+  const body = await req.json();
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
 
-async function handleToolCall(message: any, env: Env) {
-  const { functionCall } = message;
-  const { name, parameters } = functionCall;
+  // Route by event type
+  switch (body.event) {
+    case 'call_started':
+      await supabase.from('calls').insert({ retell_call_id: body.call.call_id, status: 'started' });
+      return new Response(JSON.stringify({ ok: true }));
 
-  switch (name) {
-    case 'create_reservation':
-      // Call restaurant's booking API or save to Supabase
-      const result = await createReservation(parameters, env);
+    case 'call_ended':
+      await supabase
+        .from('calls')
+        .update({
+          status: 'ended',
+          transcript: body.call.transcript,
+          duration: body.call.end_timestamp - body.call.start_timestamp,
+        })
+        .eq('retell_call_id', body.call.call_id);
+      return new Response(JSON.stringify({ ok: true }));
+
+    case 'tool_call':
+      const { name, arguments: args } = body.tool_call;
+      let result;
+      switch (name) {
+        case 'create_reservation':
+          result = await createReservation(args, supabase);
+          break;
+        case 'check_availability':
+          result = await checkAvailability(args, supabase);
+          break;
+        default:
+          result = { error: 'Unknown tool' };
+      }
       return new Response(JSON.stringify({ result }));
 
-    case 'check_availability':
-      const available = await checkAvailability(parameters, env);
-      return new Response(JSON.stringify({ result: available }));
-
     default:
-      return new Response(JSON.stringify({ error: 'Unknown function' }));
+      return new Response(JSON.stringify({ ok: true }));
   }
-}
+});
 ```
 
 ### Step 6: Test the agent
 
 ```bash
-# Deploy to Cloudflare (staging)
-npm run deploy
+# Deploy edge function
+supabase functions deploy voice-webhook
 
-# Test webhook locally
-npm run test
+# Set secrets
+supabase secrets set RETELL_WEBHOOK_SECRET=your_secret
+supabase secrets set RETELL_API_KEY=your_key
 
-# Make a test call from VAPI dashboard
-# Test scenarios:
+# Configure Retell webhook URL to: https://[project-ref].supabase.co/functions/v1/voice-webhook
+
+# Test from Retell dashboard:
 # 1. Simple reservation in English
 # 2. Reservation in Greek
 # 3. Menu question
@@ -377,17 +387,14 @@ npm run test
 ### Step 7: Go live
 
 ```bash
+# Deploy edge function to production
+supabase functions deploy voice-webhook --project-ref [prod-ref]
+
 # Set production secrets
-wrangler secret put VAPI_WEBHOOK_SECRET
-wrangler secret put VAPI_API_KEY
+supabase secrets set RETELL_WEBHOOK_SECRET=prod_secret --project-ref [prod-ref]
 
-# Deploy production
-npm run deploy
-
-# Update VAPI assistant with production webhook URL
-npm run deploy:vapi
-
-# Connect phone number in VAPI dashboard
+# Update Retell agent with production webhook URL
+# Connect phone number in Retell dashboard
 # Make a real phone call to test
 ```
 

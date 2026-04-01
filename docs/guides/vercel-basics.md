@@ -89,14 +89,14 @@ This creates your `.env.local` from whatever is already in the Vercel dashboard.
 
 ### Common env vars in every project
 
-| Variable                                  | What it is                            | Where to get it                     |
-| ----------------------------------------- | ------------------------------------- | ----------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`                | Supabase project URL                  | Supabase Dashboard → Settings → API |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`    | Public API key (safe for frontend)    | Same place                          |
-| `SUPABASE_SERVICE_ROLE_KEY`               | Admin key (server-only, NEVER expose) | Same place                          |
-| `GOOGLE_GENERATIVE_AI_API_KEY`            | Gemini AI key                         | Google AI Studio                    |
-| `RESEND_API_KEY`                          | Email sending                         | Resend dashboard                    |
-| `VAPI_PUBLIC_KEY` / `VAPI_WEBHOOK_SECRET` | Voice AI                              | VAPI dashboard                      |
+| Variable                                   | What it is                            | Where to get it                     |
+| ------------------------------------------ | ------------------------------------- | ----------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`                 | Supabase project URL                  | Supabase Dashboard → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`     | Public API key (safe for frontend)    | Same place                          |
+| `SUPABASE_SERVICE_ROLE_KEY`                | Admin key (server-only, NEVER expose) | Same place                          |
+| `GOOGLE_GENERATIVE_AI_API_KEY`             | Gemini AI key                         | Google AI Studio                    |
+| `RESEND_API_KEY`                           | Email sending                         | Resend dashboard                    |
+| `RETELL_API_KEY` / `RETELL_WEBHOOK_SECRET` | Voice AI                              | Retell AI dashboard                 |
 
 ### Rules
 
