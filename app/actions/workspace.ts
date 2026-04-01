@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
 
@@ -158,6 +158,7 @@ export async function createWorkspace(formData: FormData): Promise<ActionResult>
     return { success: false, error: 'Workspace slug is required' };
   }
 
+  // 1. Create workspace (uses authenticated client)
   const { data, error } = await supabase
     .from('workspaces')
     .insert({
@@ -174,13 +175,37 @@ export async function createWorkspace(formData: FormData): Promise<ActionResult>
     return { success: false, error: error.message };
   }
 
-  // Add the creator as the workspace owner
-  await supabase.from('workspace_members').insert({
+  // 2. Use admin client for membership insert to bypass RLS
+  const adminClient = createAdminClient();
+
+  // 3. Check if user already has a default workspace
+  const { data: existingDefaults } = await adminClient
+    .from('workspace_members')
+    .select('id')
+    .eq('profile_id', user.id)
+    .eq('is_default', true)
+    .limit(1);
+
+  const isFirstWorkspace = !existingDefaults || existingDefaults.length === 0;
+
+  // 4. Insert membership — set is_default if this is user's first workspace
+  const { error: memberError } = await adminClient.from('workspace_members').insert({
     workspace_id: data.id,
     profile_id: user.id,
     role: 'owner',
-    is_default: false,
+    is_default: isFirstWorkspace,
   });
+
+  // 5. If membership insert fails, rollback workspace and return error
+  if (memberError) {
+    console.error('Error adding workspace membership:', memberError);
+    // Rollback: delete the workspace we just created
+    await adminClient.from('workspaces').delete().eq('id', data.id);
+    return {
+      success: false,
+      error: 'Failed to create workspace membership. Workspace has been rolled back.',
+    };
+  }
 
   revalidatePath('/');
   return { success: true, data };

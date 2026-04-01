@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
 import type { Database } from '@/types/database';
 
@@ -92,8 +92,9 @@ export async function inviteTeamMember(
     return { success: false, error: 'Invalid role' };
   }
 
-  // Create auth user via admin API (needs service role — done server-side)
-  const { data: newUser, error: authError } = await supabase.auth.admin.createUser({
+  // Create auth user via admin API (needs service role key)
+  const adminClient = createAdminClient();
+  const { data: newUser, error: authError } = await adminClient.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
@@ -129,8 +130,9 @@ export async function removeTeamMember(targetUserId: string): Promise<ActionResu
     return { success: false, error: 'Cannot remove yourself' };
   }
 
-  // Ban user from auth (soft disable)
-  const { error } = await supabase.auth.admin.updateUserById(targetUserId, {
+  // Ban user from auth (soft disable — needs service role key)
+  const adminClient = createAdminClient();
+  const { error } = await adminClient.auth.admin.updateUserById(targetUserId, {
     ban_duration: '876000h', // ~100 years
   });
 
