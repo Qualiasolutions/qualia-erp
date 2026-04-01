@@ -86,7 +86,7 @@
 ## Website-Specific Checklist
 
 > Applies to: Marketing websites, landing pages, portfolio sites
-> Stack: React + Vite + Tailwind OR Next.js
+> Stack: Next.js 16+ + React 19 + TypeScript + Tailwind v4 + Supabase + Vercel
 
 ### SEO
 
@@ -215,11 +215,11 @@
 ## Voice Agent Checklist
 
 > Applies to: Phone bots, voice assistants, IVR systems
-> Stack: VAPI/Retell + Cloudflare Workers/Vercel + Supabase
+> Stack: Retell AI + ElevenLabs + Supabase Edge Functions
 
 ### Voice Configuration
 
-- [ ] VAPI assistant created and configured
+- [ ] Retell AI agent created and configured
 - [ ] Voice provider selected and tested (Cartesia/ElevenLabs)
 - [ ] STT provider configured (Gladia/Deepgram)
 - [ ] LLM provider configured (Gemini/Claude/OpenAI)
@@ -239,7 +239,7 @@
 ### Webhook & Tools
 
 - [ ] Webhook endpoint deployed and accessible
-- [ ] Webhook signature verification implemented (`x-vapi-signature` check)
+- [ ] Webhook signature verification implemented (Retell webhook secret check)
 - [ ] All tools defined, implemented, and tested
 - [ ] Tool input validation with Zod
 - [ ] Error handling for each tool (graceful degradation)
@@ -247,7 +247,7 @@
 
 ### Testing
 
-- [ ] Test call from VAPI dashboard successful
+- [ ] Test call from Retell AI dashboard successful
 - [ ] Real phone call tested (if phone number configured)
 - [ ] Edge cases tested (invalid dates, unavailable slots, etc.)
 - [ ] Error scenarios tested (tool fails, API timeout)
@@ -263,7 +263,7 @@
 ### Deployment
 
 - [ ] Cloudflare Worker deployed to production (or Vercel/Supabase)
-- [ ] VAPI assistant updated with production webhook URL
+- [ ] Retell AI agent updated with production webhook URL
 - [ ] Phone number connected (if applicable)
 - [ ] Webhook secrets set in production environment
 - [ ] Final production test call successful

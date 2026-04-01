@@ -21,12 +21,12 @@ That's it. You're now talking to an AI that can read your codebase, write code, 
 
 These are the commands we use every day. They live in `~/.claude/commands/`.
 
-### `/qualia:quick` — The Go-To Command
+### `/qualia-quick` — The Go-To Command
 
 This is the most-used command at Qualia. It's a fast, all-purpose workflow for making changes and shipping them. When you want to build something, fix something, or improve something — this is what you reach for.
 
 ```
-/qualia:quick
+/qualia-quick
 ```
 
 Use it when:
@@ -38,13 +38,13 @@ Use it when:
 
 In practice, most of the time you'll just describe what you want in plain English and say "and ship" at the end. Claude handles the rest.
 
-### `/qualia:plan-phase` and `/qualia:execute-phase` — For Bigger Work
+### `/qualia-plan-phase` and `/qualia-execute-phase` — For Bigger Work
 
 When a project has a structured roadmap with phases (stored in `.planning/`), these commands let you plan and execute them one by one.
 
 ```
-/qualia:plan-phase 5       # Plan phase 5
-/qualia:execute-phase 5    # Execute phase 5
+/qualia-plan-phase 5       # Plan phase 5
+/qualia-execute-phase 5    # Execute phase 5
 ```
 
 Each phase has milestones, and each milestone gets planned, executed, and verified before moving on. This is how we handle larger projects like Aquad'or, Alkemy, etc.
@@ -57,7 +57,7 @@ When you need premium, distinctive UI. Not generic Bootstrap-looking stuff — s
 /frontend-master
 ```
 
-We often combine this with `/qualia:quick` like: "use qualia:quick and frontend master to remake this section..."
+We often combine this with `/qualia-quick` like: "use qualia-quick and frontend master to remake this section..."
 
 ### `/ship` — Deploy Pipeline
 
@@ -67,18 +67,14 @@ Full quality gates → git → deploy → verify. Use when you're done and ready
 /ship
 ```
 
-There are also project-type-specific variants:
+`/ship` auto-detects the project type and runs the right checks (SEO for websites, safety for AI agents, webhook verification for voice agents).
 
-- `/ship-website` — adds SEO + responsive checks
-- `/ship-agent` — adds AI safety checks (keys, rate limits)
-- `/ship-voice` — adds webhook + latency verification
-
-### `/review` — Code Review
+### `/qualia-review` — Code Review
 
 Run before shipping something important. Checks security, quality, and consistency.
 
 ```
-/review
+/qualia-review
 ```
 
 ### `/status` — Project Health Check
@@ -103,7 +99,7 @@ To see what Claude has learned:
 /memory
 ```
 
-### `/performance-optimization` — Speed Up
+### `/qualia-optimize` — Speed Up
 
 When something feels slow. Analyzes and optimizes performance.
 
@@ -115,15 +111,18 @@ The `/qualia` namespace has more subcommands for project workflow management:
 
 | Command                      | What it does                                 |
 | ---------------------------- | -------------------------------------------- |
-| `/qualia progress`           | Show current project progress                |
-| `/qualia new-project`        | Initialize a new project with workflow files |
-| `/qualia verify-work`        | Verify completed work                        |
-| `/qualia new-milestone`      | Create a new milestone                       |
-| `/qualia complete-milestone` | Mark a milestone as complete                 |
-| `/qualia add-todo`           | Add a todo item                              |
-| `/qualia check-todos`        | Check todo status                            |
-| `/qualia pause-work`         | Pause current work and save state            |
-| `/qualia resume-work`        | Resume paused work                           |
+| `/qualia-progress`           | Show current project progress                |
+| `/qualia-new-project`        | Initialize a new project with workflow files |
+| `/qualia-verify-work`        | Verify completed work                        |
+| `/qualia-new-milestone`      | Create a new milestone                       |
+| `/qualia-complete-milestone` | Mark a milestone as complete                 |
+| `/qualia-add-todo`           | Add a todo item                              |
+| `/qualia-check-todos`        | Check todo status                            |
+| `/qualia-pause-work`         | Pause current work and save state            |
+| `/qualia-resume-work`        | Resume paused work                           |
+| `/qualia-idk`                | When you're stuck and don't know what to do  |
+| `/qualia-help`               | See all available commands                   |
+| `/client-handoff`            | Generate client delivery document            |
 
 ---
 
@@ -187,6 +186,6 @@ If you're creating a new project, make sure to set up `CLAUDE.md` — it saves e
 
 To see everything available:
 
-```bash
-ls ~/.claude/commands/
+```
+/qualia-help
 ```

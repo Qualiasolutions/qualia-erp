@@ -61,12 +61,12 @@ Before diving into project phases, read these practical guides:
 
 ## Project Categories
 
-| Category      | Stack                                                  | Template                      | Use Case                   |
-| ------------- | ------------------------------------------------------ | ----------------------------- | -------------------------- |
-| **AI Agents** | Next.js 15+ + OpenRouter/Gemini + Supabase + shadcn/ui | `templates/ai-agent-starter/` | Chat agents, AI personas   |
-| **Platforms** | Next.js 16+ + Server Actions + SWR + VAPI              | `templates/platform-starter/` | Internal tools, dashboards |
-| **Voice**     | VAPI + Cloudflare Workers (Deno)                       | `templates/voice-starter/`    | Voice assistants           |
-| **Websites**  | React + Vite + Tailwind                                | `templates/website-starter/`  | Marketing sites            |
+| Category      | Stack                                            | Template                      | Use Case                   |
+| ------------- | ------------------------------------------------ | ----------------------------- | -------------------------- |
+| **AI Agents** | Next.js 16+ + OpenRouter + Supabase + TypeScript | `templates/ai-agent-starter/` | Chat agents, AI personas   |
+| **Platforms** | Next.js 16+ + Server Actions + Supabase          | `templates/platform-starter/` | Internal tools, dashboards |
+| **Voice**     | Retell AI + ElevenLabs + Supabase Edge Functions | `templates/voice-starter/`    | Voice assistants           |
+| **Websites**  | Next.js 16+ + Tailwind v4 + Supabase + Vercel    | `templates/website-starter/`  | Marketing sites            |
 
 ---
 
@@ -425,10 +425,10 @@ components/
 
 | Task                 | Command                 | What it does                              |
 | -------------------- | ----------------------- | ----------------------------------------- |
-| Build + ship fast    | `/qualia:quick`         | The go-to command for most tasks          |
+| Build + ship fast    | `/qualia-quick`         | The go-to command for most tasks          |
 | Build distinctive UI | `/frontend-master`      | React components with animations, styling |
-| Plan a phase         | `/qualia:plan-phase`    | Plan a project phase with milestones      |
-| Execute a phase      | `/qualia:execute-phase` | Execute the planned phase                 |
+| Plan a phase         | `/qualia-plan-phase`    | Plan a project phase with milestones      |
+| Execute a phase      | `/qualia-execute-phase` | Execute the planned phase                 |
 
 Most of the time, just describe what you want and say "and ship" — Claude handles the rest.
 
@@ -626,28 +626,28 @@ npm audit fix
 
 These are the commands we actually use day to day:
 
-| Task                    | Command                     | Description                                   |
-| ----------------------- | --------------------------- | --------------------------------------------- |
-| Build + ship (go-to)    | `/qualia:quick`             | Fast all-purpose workflow — the most used one |
-| Plan a project phase    | `/qualia:plan-phase`        | Plan phase milestones for bigger projects     |
-| Execute a project phase | `/qualia:execute-phase`     | Execute the planned phase                     |
-| Build premium UI        | `/frontend-master`          | Distinctive, animated, professional UI        |
-| Deploy (full pipeline)  | `/ship`                     | Quality gates → git → deploy → verify         |
-| Deploy website          | `/ship-website`             | Website-specific deploy with SEO checks       |
-| Deploy AI agent         | `/ship-agent`               | AI agent deploy with safety checks            |
-| Deploy voice agent      | `/ship-voice`               | Voice agent deploy with webhook verification  |
-| Code review             | `/review`                   | Security + quality audit                      |
-| Project status          | `/status`                   | HTTP status, SSL, Supabase, response times    |
-| Optimize performance    | `/performance-optimization` | Analyze and fix performance issues            |
-| Learn from mistake      | `/learn`                    | Save a note for future sessions               |
-| View saved notes        | `/memory`                   | See what Claude remembers                     |
+| Task                    | Command                 | Description                                                       |
+| ----------------------- | ----------------------- | ----------------------------------------------------------------- |
+| Build + ship (go-to)    | `/qualia-quick`         | Fast all-purpose workflow — the most used one                     |
+| Plan a project phase    | `/qualia-plan-phase`    | Plan phase milestones for bigger projects                         |
+| Execute a project phase | `/qualia-execute-phase` | Execute the planned phase                                         |
+| Build premium UI        | `/frontend-master`      | Distinctive, animated, professional UI                            |
+| Deploy (full pipeline)  | `/ship`                 | Quality gates → git → deploy → verify (auto-detects project type) |
+| Code review             | `/qualia-review`        | Security + quality audit                                          |
+| Project status          | `/status`               | HTTP status, SSL, Supabase, response times                        |
+| Optimize performance    | `/qualia-optimize`      | Analyze and fix performance issues                                |
+| I'm stuck               | `/qualia-idk`           | When you don't know what to do next                               |
+| See all commands        | `/qualia-help`          | Full list of available commands                                   |
+| Client delivery         | `/client-handoff`       | Generate handoff document for client                              |
+| Learn from mistake      | `/learn`                | Save a note for future sessions                                   |
+| View saved notes        | `/memory`               | See what Claude remembers                                         |
 
 Most of the time you don't need a specific command — just describe what you want and say "and ship".
 
 **List all available commands:**
 
-```bash
-ls ~/.claude/commands/
+```
+/qualia-help
 ```
 
 ---
@@ -662,9 +662,9 @@ ls ~/.claude/commands/
 
 ### Build Failures
 
-1. Run `npm run lint` for errors
-2. Run `npx tsc --noEmit` for type errors
-3. Check for missing environment variables
+1. Tell Claude: "fix the build errors" — it will run the checks and fix them
+2. If it keeps failing, type `/qualia-debug` to get a structured diagnosis
+3. If still stuck after 15 minutes, type `/qualia-idk`
 
 ### Deployment Failures
 
@@ -674,8 +674,9 @@ ls ~/.claude/commands/
 
 ### Need Help?
 
-- Read project CLAUDE.md first
-- Check similar projects in `~/Projects/`
+- Type `/qualia-idk` — the framework will analyze your situation and suggest what to do
+- Type `/qualia-help` — see all available commands organized by situation
+- Type `/qualia-progress` — see where the project stands and what's next
 - Just paste the error to Claude Code — it'll figure it out
 - Escalate to Fawzi after 30 minutes of being stuck
 
@@ -686,11 +687,11 @@ ls ~/.claude/commands/
 All starter templates are at:
 
 ```
-~/Projects/platforms/qualia/templates/
+~/Projects/qualia-erp/templates/
 ├── ai-agent-starter/
 ├── platform-starter/
 ├── voice-starter/
 └── website-starter/
 ```
 
-Copy the appropriate one when starting a new project.
+Copy the appropriate one when starting a new project, or use `/qualia-new-project` which auto-detects the project type.
