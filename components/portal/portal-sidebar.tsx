@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Folder,
   Lightbulb,
+  CreditCard,
   LogOut,
   ChevronUp,
   Menu,
@@ -32,6 +33,7 @@ const mainNav = [
 
 const manageNav = [
   { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
+  { name: 'Billing', href: '/portal/billing', icon: CreditCard },
   { name: 'Settings', href: '/portal/settings', icon: Settings },
 ];
 

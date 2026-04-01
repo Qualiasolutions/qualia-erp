@@ -1244,7 +1244,19 @@ export async function updateNotificationPreferences(preferences: {
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not authenticated' };
 
-    const workspaceId = await getCurrentWorkspaceId();
+    let workspaceId = await getCurrentWorkspaceId();
+
+    // Fallback: find any workspace the user belongs to (handles client users)
+    if (!workspaceId) {
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('profile_id', user.id)
+        .limit(1)
+        .maybeSingle();
+      workspaceId = membership?.workspace_id ?? null;
+    }
+
     if (!workspaceId) return { success: false, error: 'No workspace found' };
 
     // Upsert preferences (create if doesn't exist, update if it does)

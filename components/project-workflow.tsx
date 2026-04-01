@@ -761,8 +761,13 @@ export function ProjectWorkflow({
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Delete this task? This cannot be undone.')) return;
     startTransition(async () => {
-      await deleteTask(taskId);
+      const result = await deleteTask(taskId);
+      if (!result.success) {
+        toast.error(result.error ?? 'Failed to delete task');
+        return;
+      }
       await fetchData();
       invalidateProjectTasks(projectId, true);
     });

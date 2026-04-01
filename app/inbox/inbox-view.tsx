@@ -9,6 +9,7 @@ import React, {
   useMemo,
   useEffect,
 } from 'react';
+import { toast } from 'sonner';
 import { useSidebar } from '@/components/sidebar-provider';
 import { useRouter } from 'next/navigation';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -326,7 +327,8 @@ export function InboxView({ initialTasks }: InboxViewProps) {
       formData.set('status', 'Todo');
       formData.set('show_in_inbox', 'true');
 
-      await createTask(formData);
+      const result = await createTask(formData);
+      if (!result.success) toast.error(result.error ?? 'Failed to create task');
       invalidateInboxTasks(true);
       invalidateDailyFlow(true);
       router.refresh();
@@ -337,7 +339,8 @@ export function InboxView({ initialTasks }: InboxViewProps) {
     (taskId: string, completed: boolean) => {
       startTransition(async () => {
         dispatchOptimistic({ type: 'toggle', taskId, completed });
-        await quickUpdateTask(taskId, { status: completed ? 'Done' : 'Todo' });
+        const result = await quickUpdateTask(taskId, { status: completed ? 'Done' : 'Todo' });
+        if (!result.success) toast.error(result.error ?? 'Failed to update task');
         invalidateInboxTasks(true);
         invalidateDailyFlow(true);
         router.refresh();
@@ -350,7 +353,8 @@ export function InboxView({ initialTasks }: InboxViewProps) {
     (taskId: string) => {
       startTransition(async () => {
         dispatchOptimistic({ type: 'hide', taskId });
-        await toggleTaskInbox(taskId, false);
+        const result = await toggleTaskInbox(taskId, false);
+        if (!result.success) toast.error(result.error ?? 'Failed to hide task');
         invalidateInboxTasks(true);
         invalidateDailyFlow(true);
         router.refresh();
