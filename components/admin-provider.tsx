@@ -13,7 +13,7 @@ const VIEW_AS_USER_COOKIE = 'qualia_view_as_user';
 interface AdminContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
-  isManager: boolean;
+  /** @deprecated Manager role removed — use isAdmin instead */
   isManagerOrAbove: boolean;
   userRole: string | null;
   userEmail: string | null;
@@ -34,7 +34,6 @@ interface AdminContextType {
 const AdminContext = createContext<AdminContextType>({
   isAdmin: false,
   isSuperAdmin: false,
-  isManager: false,
   isManagerOrAbove: false,
   userRole: null,
   userEmail: null,
@@ -161,13 +160,11 @@ export function AdminProvider({ children }: AdminProviderProps) {
   const effectiveRole = isViewingAs ? viewAsRole : realRole;
 
   const isAdmin = effectiveRole === 'admin' || (baseState.isSuperAdmin && !isViewingAs);
-  const isManager = effectiveRole === 'manager';
-  const isManagerOrAbove = isAdmin || isManager;
+  const isManagerOrAbove = isAdmin;
 
   const contextValue: AdminContextType = {
     isAdmin,
     isSuperAdmin: baseState.isSuperAdmin && !isViewingAs,
-    isManager,
     isManagerOrAbove,
     userRole: effectiveRole,
     userEmail: baseState.userEmail,

@@ -101,42 +101,10 @@ export async function middleware(request: NextRequest) {
 
     // Admin-only routes
     const adminOnlyRoutes = ['/admin'];
-    if (
-      userRole !== 'admin' &&
-      userRole !== 'manager' &&
-      adminOnlyRoutes.some((route) => pathname.startsWith(route))
-    ) {
+    if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);
-    }
-
-    // Manager route restrictions
-    if (userRole === 'manager') {
-      const managerAllowed = [
-        '/',
-        '/projects',
-        '/clients',
-        '/schedule',
-        '/status',
-        '/knowledge',
-        '/research',
-        '/portal',
-        '/settings',
-        '/admin',
-      ];
-      const isAllowed =
-        managerAllowed.some((route) =>
-          route === '/' ? pathname === '/' : pathname.startsWith(route)
-        ) ||
-        pathname.startsWith('/auth') ||
-        pathname.startsWith('/api');
-
-      if (!isAllowed) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/';
-        return NextResponse.redirect(url);
-      }
     }
 
     // If user is authenticated and trying to access /auth/login or /auth/signup, redirect based on role

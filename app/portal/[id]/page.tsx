@@ -32,8 +32,7 @@ export default async function PortalProjectPage({ params }: PortalProjectPagePro
     .eq('id', user.id)
     .single();
 
-  const userRole =
-    profile?.role === 'admin' || profile?.role === 'manager' ? profile.role : 'client';
+  const userRole = profile?.role === 'admin' ? 'admin' : 'client';
 
   return <PortalProjectContent projectId={projectId} userRole={userRole} currentUserId={user.id} />;
 }

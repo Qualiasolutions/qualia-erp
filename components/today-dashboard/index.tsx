@@ -80,7 +80,7 @@ export function TodayDashboard({
 
   // "View as" — admin can preview the platform as another user's role
   const effectiveUserId = viewAsUserId || currentUserId;
-  const effectiveRole = isViewingAs ? 'manager' : userRole;
+  const effectiveRole = isViewingAs ? 'employee' : userRole;
   const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
 

@@ -250,8 +250,8 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
       .eq('id', user.id)
       .single();
 
-    // Only notify if uploader is a client (not admin/manager)
-    if (uploader && uploader.role !== 'admin' && uploader.role !== 'manager') {
+    // Only notify if uploader is a client (not admin/employee)
+    if (uploader && uploader.role !== 'admin' && uploader.role !== 'employee') {
       await notifyEmployeesOfClientFileUpload(
         projectId,
         uploader.full_name || 'A client',

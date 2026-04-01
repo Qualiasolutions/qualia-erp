@@ -31,10 +31,10 @@ export async function isAdminRole(userId: string): Promise<boolean> {
 }
 
 /**
- * Check if a user has portal admin privileges (admin or manager)
+ * Check if a user has portal admin privileges (admin only)
  */
 export function isPortalAdminRole(role: string | null): boolean {
-  return role === 'admin' || role === 'manager';
+  return role === 'admin';
 }
 
 /**
@@ -68,7 +68,7 @@ export async function canAccessProject(userId: string, projectId: string): Promi
       .eq('id', userId)
       .single();
 
-    if (profile?.role === 'admin' || profile?.role === 'manager') {
+    if (profile?.role === 'admin') {
       return true;
     }
 

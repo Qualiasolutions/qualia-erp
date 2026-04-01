@@ -138,7 +138,7 @@ interface ProjectDetailViewProps {
   project: Project;
   profiles: Profile[];
   clients: ClientOption[];
-  userRole?: 'admin' | 'manager' | 'employee';
+  userRole?: 'admin' | 'employee';
   integrationStatus?: IntegrationStatus;
 }
 
@@ -640,14 +640,14 @@ function AssignedEmployeesList({
   profiles = [],
 }: {
   projectId: string;
-  userRole?: 'admin' | 'manager' | 'employee';
+  userRole?: 'admin' | 'employee';
   profiles?: Profile[];
 }) {
   const { data: assignments, isLoading } = useProjectAssignments(projectId);
   const [showAssignSelect, setShowAssignSelect] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
-  const canManage = userRole === 'admin' || userRole === 'manager';
+  const canManage = userRole === 'admin';
 
   const activeAssignments = Array.isArray(assignments)
     ? assignments.filter((a) => !a.removed_at)

@@ -33,7 +33,7 @@ interface PhaseCommentThreadProps {
   projectId: string;
   phaseName: string;
   initialComments: CommentWithProfile[];
-  userRole: 'client' | 'admin' | 'manager';
+  userRole: 'client' | 'admin';
   currentUserId: string;
 }
 
@@ -54,7 +54,7 @@ export function PhaseCommentThread({
   const [isInternal, setIsInternal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const isAdmin = userRole === 'admin' || userRole === 'manager';
+  const isAdmin = userRole === 'admin';
   const canCreateInternal = isAdmin;
 
   const {

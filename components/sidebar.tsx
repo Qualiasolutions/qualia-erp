@@ -161,7 +161,7 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
 function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
-  const canTrackTime = userRole === 'manager' || userRole === 'employee';
+  const canTrackTime = userRole === 'employee';
   const [showClockOut, setShowClockOut] = useState(false);
 
   // Session clock-out (employees and managers)

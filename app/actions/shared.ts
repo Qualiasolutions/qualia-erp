@@ -51,10 +51,9 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
   return role === 'admin';
 }
 
-// Check if user is manager or above (manager + admin)
+// Check if user is admin (manager role removed — all elevated perms are admin-only now)
 export async function isUserManagerOrAbove(userId: string): Promise<boolean> {
-  const role = await getCachedUserRole(userId);
-  return role === 'admin' || role === 'manager';
+  return isUserAdmin(userId);
 }
 
 // Get user's role

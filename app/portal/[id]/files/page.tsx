@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectFiles } from '@/app/actions/project-files';
 import { PortalFileList } from '@/components/portal/portal-file-list';
+import { PortalClientUpload } from '@/components/portal/portal-client-upload';
 import { PortalTabs } from '@/components/portal/portal-tabs';
 import { PortalPageHeader } from '@/components/portal/portal-page-header';
 import { fadeInClasses } from '@/lib/transitions';
@@ -50,6 +51,12 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
       <PortalPageHeader title={project.name} description={project.description} />
 
       <PortalTabs projectId={projectId} />
+
+      {/* Upload section */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-foreground">Share a file with your team</h3>
+        <PortalClientUpload projectId={projectId} />
+      </div>
 
       {/* Info Banner */}
       <div className="rounded-lg border border-primary/20 bg-primary/[0.06] p-4">

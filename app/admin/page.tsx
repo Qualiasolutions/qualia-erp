@@ -156,7 +156,6 @@ function InviteDialog({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="employee">Employee</SelectItem>
-                <SelectItem value="manager">Manager</SelectItem>
                 <SelectItem value="admin">Owner / Admin</SelectItem>
               </SelectContent>
             </Select>
@@ -295,10 +294,6 @@ export default function AdminDashboard() {
             <span className="text-muted-foreground">Full access, manage roles</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <RoleBadge role="manager" />
-            <span className="text-muted-foreground">View admin, manage team</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm">
             <RoleBadge role="employee" />
             <span className="text-muted-foreground">Standard access</span>
           </div>
@@ -352,7 +347,6 @@ export default function AdminDashboard() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="admin">Owner / Admin</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
                         <SelectItem value="employee">Employee</SelectItem>
                       </SelectContent>
                     </Select>

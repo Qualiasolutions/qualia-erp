@@ -90,11 +90,6 @@ const NoteItem = React.memo(function NoteItem({
                 Owner
               </span>
             )}
-            {note.author?.role === 'manager' && (
-              <span className="rounded-full bg-blue-500/10 px-1.5 py-px text-[10px] font-medium text-blue-600 dark:text-blue-400">
-                Manager
-              </span>
-            )}
             <span className="text-[11px] text-muted-foreground/50">
               {formatDistanceToNow(new Date(note.created_at), { addSuffix: true })}
             </span>

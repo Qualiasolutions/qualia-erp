@@ -78,7 +78,7 @@ export async function getTeamTaskDashboard(workspaceId: string): Promise<TeamMem
         (
           p
         ): p is { id: string; full_name: string | null; avatar_url: string | null; role: string } =>
-          p !== null && ['admin', 'employee', 'manager'].includes(p.role)
+          p !== null && ['admin', 'employee'].includes(p.role)
       )
       .sort((a, b) => (a.full_name || '').localeCompare(b.full_name || ''));
 

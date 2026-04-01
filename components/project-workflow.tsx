@@ -1050,7 +1050,7 @@ export function ProjectWorkflow({
           <PhaseComments
             projectId={projectId}
             phaseName={activePhase.name}
-            isAdmin={userRole === 'admin' || userRole === 'manager'}
+            isAdmin={userRole === 'admin'}
           />
         )}
 

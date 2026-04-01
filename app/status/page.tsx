@@ -136,7 +136,7 @@ export default async function StatusPage() {
     .eq('id', user.id)
     .single();
 
-  const canSeeAllMonitors = profile?.role === 'admin' || profile?.role === 'manager';
+  const canSeeAllMonitors = profile?.role === 'admin';
 
   let monitors: Monitor[] = [];
   let error: string | null = null;

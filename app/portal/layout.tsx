@@ -24,7 +24,7 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow clients, admins, and managers
+  // Allow clients and admins
   const userRole = await getUserRole(user.id);
   if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
     redirect('/');

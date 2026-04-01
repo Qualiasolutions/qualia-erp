@@ -29,10 +29,7 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
     .eq('id', user.id)
     .single();
 
-  if (
-    !profile ||
-    (profile.role !== 'admin' && profile.role !== 'employee' && profile.role !== 'manager')
-  ) {
+  if (!profile || (profile.role !== 'admin' && profile.role !== 'employee')) {
     redirect(`/projects/${projectId}`);
   }
 

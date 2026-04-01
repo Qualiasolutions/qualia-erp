@@ -188,7 +188,7 @@ export async function getDailyFlowData(): Promise<DailyFlowData> {
     })
     .filter(
       (p): p is { id: string; email: string | null; full_name: string | null; role: string } =>
-        p !== null && ['admin', 'employee', 'manager'].includes(p.role)
+        p !== null && ['admin', 'employee'].includes(p.role)
     );
   const teamMembers: TeamMember[] = teamProfiles.map((profile) => ({
     id: profile.id,

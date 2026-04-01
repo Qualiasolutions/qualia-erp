@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, User, Bell, Save } from 'lucide-react';
+import { Loader2, User, Bell, Save, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,31 +32,130 @@ interface NotificationPreferences {
 
 const notificationItems = [
   {
-    id: 'task_assigned',
-    label: 'Task Assignments',
-    description: 'Notify me when a task is assigned to me',
-  },
-  {
-    id: 'task_due_soon',
-    label: 'Task Due Soon',
-    description: 'Notify me when tasks are approaching their due date',
-  },
-  {
     id: 'project_update',
     label: 'Project Updates',
     description: 'Notify me about important project milestones and updates',
-  },
-  {
-    id: 'meeting_reminder',
-    label: 'Meeting Reminders',
-    description: 'Notify me before scheduled meetings',
   },
   {
     id: 'client_activity',
     label: 'Activity Updates',
     description: 'Notify me about team activity on my projects',
   },
+  {
+    id: 'meeting_reminder',
+    label: 'Meeting Reminders',
+    description: 'Notify me before scheduled meetings',
+  },
 ] as const;
+
+function PasswordChangeSection() {
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Password updated successfully');
+        setNewPassword('');
+        setConfirmPassword('');
+      }
+    } catch {
+      toast.error('Failed to update password');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <section className="space-y-5">
+      <div className="flex items-center gap-2.5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/[0.08] dark:bg-emerald-500/15">
+          <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <div>
+          <h2 className="text-sm font-medium text-foreground">Change Password</h2>
+          <p className="text-[12px] text-muted-foreground">Update your account password</p>
+        </div>
+      </div>
+
+      <form
+        onSubmit={handlePasswordChange}
+        className="space-y-4 rounded-xl border border-primary/[0.08] bg-card p-5 dark:border-primary/[0.12]"
+      >
+        <div className="space-y-1.5">
+          <Label htmlFor="new_password" className="text-[13px]">
+            New Password
+          </Label>
+          <Input
+            id="new_password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Minimum 8 characters"
+            required
+            minLength={8}
+            className="h-9"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm_password" className="text-[13px]">
+            Confirm New Password
+          </Label>
+          <Input
+            id="confirm_password"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Repeat new password"
+            required
+            minLength={8}
+            className="h-9"
+          />
+        </div>
+
+        <div className="pt-1">
+          <Button
+            type="submit"
+            disabled={saving || !newPassword || !confirmPassword}
+            size="sm"
+            className="min-h-[44px] bg-primary text-white hover:bg-qualia-700"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <Lock className="mr-1.5 h-3.5 w-3.5" />
+                Update Password
+              </>
+            )}
+          </Button>
+        </div>
+      </form>
+    </section>
+  );
+}
 
 export default function PortalSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -263,6 +362,9 @@ export default function PortalSettingsPage() {
           </div>
         </form>
       </section>
+
+      {/* Password Change */}
+      <PasswordChangeSection />
 
       {/* Notification Preferences */}
       <section className="space-y-5">
