@@ -36,9 +36,13 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh session if needed — getClaims() also refreshes the session
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  // Validate session and refresh token if expired — getUser() makes a server
+  // call that guarantees the token is valid and triggers cookie refresh via setAll.
+  // getClaims() can return stale claims from an expired JWT when refresh fails,
+  // which lets unauthenticated users past the middleware.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Protect all routes except /auth/* and /api/*
   if (
@@ -55,15 +59,16 @@ export async function middleware(request: NextRequest) {
   // Zero DB queries for role when the hook is active in Supabase Dashboard.
   if (user) {
     // Primary: read role from JWT custom claims set by custom_access_token_hook
+    const { data: claimsData } = await supabase.auth.getClaims();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let userRole: string | undefined = (user as any).user_role as string | undefined;
+    let userRole: string | undefined = (claimsData?.claims as any)?.user_role as string | undefined;
 
     // Fallback: query DB if hook is not yet enabled (remove once hook is confirmed working)
     if (!userRole) {
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', user.sub)
+        .eq('id', user.id)
         .single();
       userRole = profile?.role ?? undefined;
     }
