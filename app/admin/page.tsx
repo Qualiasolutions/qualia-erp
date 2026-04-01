@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   getTeamMembers,
   updateUserRole,
@@ -185,6 +186,10 @@ export default function AdminDashboard() {
     name: string;
     newRole: UserRole;
   } | null>(null);
+  const [pendingRemoval, setPendingRemoval] = useState<{
+    userId: string;
+    name: string;
+  } | null>(null);
 
   const fetchMembers = useCallback(async () => {
     const result = await getTeamMembers();
@@ -224,15 +229,20 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleRemove = async (userId: string, name: string) => {
-    if (!confirm(`Remove ${name} from the team? They will no longer be able to log in.`)) return;
+  const handleRemove = (userId: string, name: string) => {
+    setPendingRemoval({ userId, name });
+  };
+
+  const confirmRemoval = async () => {
+    if (!pendingRemoval) return;
     setActionError(null);
-    const result = await removeTeamMember(userId);
+    const result = await removeTeamMember(pendingRemoval.userId);
     if (result.success) {
       fetchMembers();
     } else {
       setActionError(result.error || 'Failed to remove member');
     }
+    setPendingRemoval(null);
   };
 
   if (loading) {
@@ -394,6 +404,16 @@ export default function AdminDashboard() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Member removal confirmation */}
+        <ConfirmDialog
+          open={!!pendingRemoval}
+          onOpenChange={(open) => !open && setPendingRemoval(null)}
+          title="Remove team member?"
+          description={`Remove ${pendingRemoval?.name ?? 'this member'} from the team? They will no longer be able to log in.`}
+          confirmLabel="Remove"
+          onConfirm={confirmRemoval}
+        />
       </div>
     </div>
   );

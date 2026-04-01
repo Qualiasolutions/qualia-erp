@@ -26,6 +26,7 @@ import {
 } from '@/lib/swr';
 import { useRouter } from 'next/navigation';
 
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { EditMeetingModal } from '@/components/edit-meeting-modal';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
@@ -334,6 +335,12 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   const [backlogOpen, setBacklogOpen] = useState(false);
   const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    description: string;
+    confirmLabel: string;
+    action: () => void;
+  } | null>(null);
 
   // Backlog: unscheduled, not done/canceled
   const backlogTasks = useMemo(
@@ -412,21 +419,33 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
   }, []);
 
   const handleDeleteTask = useCallback((taskId: string) => {
-    if (!confirm('Delete this task?')) return;
-    startTransition(async () => {
-      await deleteTask(taskId);
-      invalidateInboxTasks(true);
-      invalidateDailyFlow(true);
+    setConfirmDialog({
+      title: 'Delete task?',
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      action: () => {
+        startTransition(async () => {
+          await deleteTask(taskId);
+          invalidateInboxTasks(true);
+          invalidateDailyFlow(true);
+        });
+      },
     });
   }, []);
 
   const handleDeleteMeeting = useCallback((meetingId: string) => {
-    if (!confirm('Delete this meeting?')) return;
-    startTransition(async () => {
-      await deleteMeeting(meetingId);
-      invalidateMeetings(true);
-      invalidateTodaysSchedule(true);
-      invalidateDailyFlow(true);
+    setConfirmDialog({
+      title: 'Delete meeting?',
+      description: 'This action cannot be undone.',
+      confirmLabel: 'Delete',
+      action: () => {
+        startTransition(async () => {
+          await deleteMeeting(meetingId);
+          invalidateMeetings(true);
+          invalidateTodaysSchedule(true);
+          invalidateDailyFlow(true);
+        });
+      },
     });
   }, []);
 
@@ -816,6 +835,17 @@ export function DailyScheduleGrid({ tasks, meetings }: DailyScheduleGridProps) {
           invalidateMeetings(true);
           invalidateTodaysSchedule(true);
           invalidateDailyFlow(true);
+        }}
+      />
+      <ConfirmDialog
+        open={!!confirmDialog}
+        onOpenChange={(open) => !open && setConfirmDialog(null)}
+        title={confirmDialog?.title ?? ''}
+        description={confirmDialog?.description ?? ''}
+        confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
+        onConfirm={() => {
+          confirmDialog?.action();
+          setConfirmDialog(null);
         }}
       />
     </div>

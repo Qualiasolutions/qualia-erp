@@ -27,6 +27,7 @@ import {
   revokePortalAccess,
   updateClientPortalProjects,
 } from '@/app/actions/client-portal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { PortalHubClient } from '@/app/actions/client-portal';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -115,6 +116,13 @@ export function PortalHub({
   } | null>(null);
   const [managedProjectIds, setManagedProjectIds] = useState<string[]>([]);
   const [isSavingProjects, setIsSavingProjects] = useState(false);
+
+  // Revoke confirm dialog
+  const [revokeConfirm, setRevokeConfirm] = useState<{
+    portalUserId: string;
+    clientId: string;
+    clientName: string;
+  } | null>(null);
 
   const filtered = useMemo(() => {
     let result = clients;
@@ -580,27 +588,13 @@ export function PortalHub({
                       size="sm"
                       variant="ghost"
                       className="h-7 gap-1.5 text-xs text-destructive/70 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={async () => {
-                        if (
-                          !client.portalUserId ||
-                          !confirm(
-                            `Revoke portal access for ${client.name}? This deletes their account and all project links.`
-                          )
-                        )
-                          return;
-                        const result = await revokePortalAccess(client.portalUserId);
-                        if (result.success) {
-                          toast.success(`Portal access revoked for ${client.name}`);
-                          setClients((prev) =>
-                            prev.map((c) =>
-                              c.id === client.id
-                                ? { ...c, hasPortalAccess: false, portalUserId: null }
-                                : c
-                            )
-                          );
-                        } else {
-                          toast.error(result.error || 'Failed to revoke access');
-                        }
+                      onClick={() => {
+                        if (!client.portalUserId) return;
+                        setRevokeConfirm({
+                          portalUserId: client.portalUserId,
+                          clientId: client.id,
+                          clientName: client.name,
+                        });
                       }}
                     >
                       <Trash2 className="h-3 w-3" />
@@ -1173,6 +1167,31 @@ export function PortalHub({
           )}
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!revokeConfirm}
+        onOpenChange={(open) => !open && setRevokeConfirm(null)}
+        title="Revoke portal access?"
+        description={`This deletes ${revokeConfirm?.clientName ?? 'this client'}'s account and all project links.`}
+        confirmLabel="Revoke"
+        onConfirm={async () => {
+          if (!revokeConfirm) return;
+          const result = await revokePortalAccess(revokeConfirm.portalUserId);
+          if (result.success) {
+            toast.success(`Portal access revoked for ${revokeConfirm.clientName}`);
+            setClients((prev) =>
+              prev.map((c) =>
+                c.id === revokeConfirm.clientId
+                  ? { ...c, hasPortalAccess: false, portalUserId: null }
+                  : c
+              )
+            );
+          } else {
+            toast.error(result.error || 'Failed to revoke access');
+          }
+          setRevokeConfirm(null);
+        }}
+      />
     </div>
   );
 }

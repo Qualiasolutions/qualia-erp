@@ -22,6 +22,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Input } from '@/components/ui/input';
 import {
   DndContext,
@@ -675,6 +676,7 @@ const PhaseGroup = memo(function PhaseGroup({
   const totalCount = tasks.length;
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(phase.name);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Determine phase status
   const status =
@@ -792,9 +794,7 @@ const PhaseGroup = memo(function PhaseGroup({
                     className="text-red-400 focus:bg-red-500/10 focus:text-red-400"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (confirm('Are you sure you want to delete this phase?')) {
-                        onDeletePhase();
-                      }
+                      setShowDeleteConfirm(true);
                     }}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -855,6 +855,20 @@ const PhaseGroup = memo(function PhaseGroup({
             </button>
           )}
         </div>
+      )}
+
+      {onDeletePhase && (
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Delete phase?"
+          description="Are you sure you want to delete this phase? This action cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            onDeletePhase();
+          }}
+        />
       )}
     </div>
   );
