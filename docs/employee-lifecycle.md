@@ -137,6 +137,7 @@ You don't need to know 70+ commands. These are the ones you'll actually use:
 | When                          | Command            | What it does                                         |
 | ----------------------------- | ------------------ | ---------------------------------------------------- |
 | What should I do next?        | `/qualia`          | Reads your project state, tells you the next command |
+| How does this all work?       | `/qualia-guide`    | The full developer guide — 10 commands, clear flow   |
 | I'm completely stuck          | `/qualia-idk`      | Senior advisor — analyzes everything, gives options  |
 | Where does the project stand? | `/qualia-progress` | Phase-by-phase status overview                       |
 | See all commands              | `/qualia-help`     | Full reference list                                  |
@@ -210,21 +211,17 @@ Then harden edge cases:
 
 Security audit, quality checks, consistency review.
 
-**6. Ship it**
+**6. Create a pull request**
 
 ```
-/ship
+/pr
 ```
 
-Quality gates, git commit, deploy to production, post-deploy verification.
+Pushes your branch to GitHub and creates a PR for Fawzi to review. You do NOT deploy to production — Fawzi handles that after reviewing your PR.
 
-**7. Verify deployment**
+**7. Fawzi reviews + deploys**
 
-```
-/deploy-verify
-```
-
-4 checks: HTTP 200, auth flow works, no console errors, API latency < 500ms.
+After your PR is created, Fawzi reviews it and deploys to production. You'll be notified when it's live.
 
 **8. Client handoff**
 
@@ -232,17 +229,9 @@ Quality gates, git commit, deploy to production, post-deploy verification.
 /client-handoff
 ```
 
-Generates the delivery document for the client.
+Generates the delivery document for the client. (Fawzi may run this himself, or ask you to.)
 
-**9. Final production check (optional but recommended)**
-
-```
-/qualia-production-check
-```
-
-Deep 5-agent audit: security, performance, accessibility, SEO, code quality.
-
-**Don't skip steps 4-8.** This is the difference between "it works on my machine" and "the client is happy."
+**Important:** The framework now guides you through these steps automatically. After `/qualia-complete-milestone`, just keep typing `/qualia` — it tells you exactly what to do next until the PR is created. You don't need to memorize this list.
 
 ---
 

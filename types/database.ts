@@ -2178,6 +2178,8 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           id: string;
+          internal_onboarding_completed_at: string | null;
+          internal_onboarding_version: number;
           is_trainee: boolean | null;
           job_title: string | null;
           last_activity_date: string | null;
@@ -2197,6 +2199,8 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           id: string;
+          internal_onboarding_completed_at?: string | null;
+          internal_onboarding_version?: number;
           is_trainee?: boolean | null;
           job_title?: string | null;
           last_activity_date?: string | null;
@@ -2216,6 +2220,8 @@ export type Database = {
           email?: string | null;
           full_name?: string | null;
           id?: string;
+          internal_onboarding_completed_at?: string | null;
+          internal_onboarding_version?: number;
           is_trainee?: boolean | null;
           job_title?: string | null;
           last_activity_date?: string | null;
