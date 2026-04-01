@@ -77,7 +77,7 @@ export function LiveStatusPanel({ workspaceId }: LiveStatusPanelProps) {
                     })
                   }
                   className="group relative transition-transform duration-150 hover:z-10 hover:scale-110"
-                  title={`${member.fullName ?? 'Unknown'}${isClockedIn ? ` — Clocked in${member.projectName ? ` (${member.projectName})` : ''}` : ' — Not clocked in'}`}
+                  title={`${member.fullName ?? 'Unknown'}${isClockedIn ? ` — Clocked in${member.projectName ? ` (${member.projectName})` : member.clockInNote ? ` (${member.clockInNote})` : ''}` : ' — Not clocked in'}`}
                 >
                   <Avatar className="size-7 ring-2 ring-card">
                     {member.avatarUrl && (

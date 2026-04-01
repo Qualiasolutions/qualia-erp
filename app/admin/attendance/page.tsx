@@ -139,7 +139,9 @@ export default function AttendancePage() {
                   <TableCell>
                     <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                       <Briefcase className="size-3.5 shrink-0" />
-                      <span className="truncate">{session.project?.name ?? '—'}</span>
+                      <span className="truncate">
+                        {session.project?.name ?? session.clock_in_note ?? '—'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm tabular-nums text-muted-foreground">

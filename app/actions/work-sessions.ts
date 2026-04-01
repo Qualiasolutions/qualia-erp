@@ -14,6 +14,7 @@ export interface TeamMemberStatus {
   status: 'online' | 'offline';
   // When online:
   projectName: string | null;
+  clockInNote: string | null;
   sessionStartedAt: string | null;
   // When offline:
   lastSessionEndedAt: string | null;
@@ -28,6 +29,7 @@ export interface WorkSession {
   ended_at: string | null;
   duration_minutes: number | null;
   summary: string | null;
+  clock_in_note: string | null;
   created_at: string;
   project?: { id: string; name: string } | null;
   profile?: { id: string; full_name: string | null; avatar_url: string | null } | null;
@@ -47,7 +49,11 @@ function todayUTC(): string {
  * Rejects if user already has an open session TODAY.
  * Stale sessions from previous days are auto-closed before creating a new one.
  */
-export async function clockIn(workspaceId: string, projectId: string): Promise<ActionResult> {
+export async function clockIn(
+  workspaceId: string,
+  projectId: string | null,
+  clockInNote?: string
+): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -94,6 +100,10 @@ export async function clockIn(workspaceId: string, projectId: string): Promise<A
     return { success: false, error: 'You already have an active session. Clock out first.' };
   }
 
+  if (!projectId && !clockInNote?.trim()) {
+    return { success: false, error: 'Please describe what you will be working on.' };
+  }
+
   const { data, error } = await supabase
     .from('work_sessions')
     .insert({
@@ -101,6 +111,7 @@ export async function clockIn(workspaceId: string, projectId: string): Promise<A
       profile_id: user.id,
       project_id: projectId,
       started_at: new Date().toISOString(),
+      clock_in_note: clockInNote?.trim() || null,
     })
     .select()
     .single();
@@ -445,7 +456,9 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
   // Query 2: All open sessions (ended_at IS NULL) for this workspace
   const { data: openSessions, error: openError } = await supabase
     .from('work_sessions')
-    .select('profile_id, started_at, project:projects!work_sessions_project_id_fkey (id, name)')
+    .select(
+      'profile_id, started_at, clock_in_note, project:projects!work_sessions_project_id_fkey (id, name)'
+    )
     .eq('workspace_id', workspaceId)
     .is('ended_at', null);
 
@@ -455,12 +468,16 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
   }
 
   // Build a map of profileId -> open session
-  const openSessionMap = new Map<string, { started_at: string; projectName: string | null }>();
+  const openSessionMap = new Map<
+    string,
+    { started_at: string; projectName: string | null; clockInNote: string | null }
+  >();
   for (const session of openSessions || []) {
     const project = Array.isArray(session.project) ? session.project[0] || null : session.project;
     openSessionMap.set(session.profile_id, {
       started_at: session.started_at,
       projectName: (project as { name: string } | null)?.name ?? null,
+      clockInNote: session.clock_in_note ?? null,
     });
   }
 
@@ -499,6 +516,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
         avatarUrl: profile.avatar_url,
         status: 'online',
         projectName: openSession.projectName,
+        clockInNote: openSession.clockInNote,
         sessionStartedAt: openSession.started_at,
         lastSessionEndedAt: null,
       };
@@ -509,6 +527,7 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
         avatarUrl: profile.avatar_url,
         status: 'offline',
         projectName: null,
+        clockInNote: null,
         sessionStartedAt: null,
         lastSessionEndedAt: lastSessionMap.get(profile.id) ?? null,
       };

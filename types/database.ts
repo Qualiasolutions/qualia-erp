@@ -3641,6 +3641,7 @@ export type Database = {
       };
       work_sessions: {
         Row: {
+          clock_in_note: string | null;
           created_at: string;
           duration_minutes: number | null;
           ended_at: string | null;
@@ -3652,6 +3653,7 @@ export type Database = {
           workspace_id: string;
         };
         Insert: {
+          clock_in_note?: string | null;
           created_at?: string;
           duration_minutes?: number | null;
           ended_at?: string | null;
@@ -3663,6 +3665,7 @@ export type Database = {
           workspace_id: string;
         };
         Update: {
+          clock_in_note?: string | null;
           created_at?: string;
           duration_minutes?: number | null;
           ended_at?: string | null;

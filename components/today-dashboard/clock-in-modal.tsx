@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { LogIn, Clock, AlertCircle, Loader2, FolderOpen } from 'lucide-react';
+import {
+  LogIn,
+  Clock,
+  AlertCircle,
+  Loader2,
+  FolderOpen,
+  MoreHorizontal,
+  ArrowLeft,
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +18,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { clockIn } from '@/app/actions/work-sessions';
 import { invalidateActiveSession } from '@/lib/swr';
 import { getEmployeeAssignments } from '@/app/actions/project-assignments';
@@ -27,6 +36,8 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [clockingProjectId, setClockingProjectId] = useState<string | null>(null);
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherNote, setOtherNote] = useState('');
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -35,6 +46,8 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
     setLoadingProjects(true);
     setError(null);
     setClockingProjectId(null);
+    setShowOtherInput(false);
+    setOtherNote('');
 
     getEmployeeAssignments(currentUserId)
       .then((result) => {
@@ -54,13 +67,13 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
       });
   }, [open, currentUserId]);
 
-  function handleClockIn(projectId: string) {
+  function handleClockIn(projectId: string | null, note?: string) {
     setError(null);
-    setClockingProjectId(projectId);
+    setClockingProjectId(projectId ?? '__other__');
 
     startTransition(async () => {
       try {
-        const result = await clockIn(workspaceId, projectId);
+        const result = await clockIn(workspaceId, projectId, note);
 
         if (!result.success) {
           setError(result.error ?? 'Failed to clock in. Please try again.');
@@ -105,42 +118,93 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
             </span>
           </div>
 
-          {/* Project buttons */}
-          <div className="space-y-2">
-            {loadingProjects && (
-              <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                <span className="text-sm">Loading projects...</span>
-              </div>
-            )}
+          {/* Project buttons or Other input */}
+          {showOtherInput ? (
+            <div className="space-y-3">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => {
+                  setShowOtherInput(false);
+                  setOtherNote('');
+                  setError(null);
+                }}
+                disabled={isPending}
+              >
+                <ArrowLeft className="size-3" />
+                Back to projects
+              </button>
+              <Textarea
+                placeholder="What will you be working on?"
+                value={otherNote}
+                onChange={(e) => setOtherNote(e.target.value)}
+                className="min-h-[80px] resize-none text-sm"
+                autoFocus
+                disabled={isPending}
+              />
+              <Button
+                className="w-full"
+                disabled={isPending || !otherNote.trim()}
+                onClick={() => handleClockIn(null, otherNote)}
+              >
+                {clockingProjectId === '__other__' ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <LogIn className="mr-2 size-4" />
+                )}
+                Start Session
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {loadingProjects && (
+                <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  <span className="text-sm">Loading projects...</span>
+                </div>
+              )}
 
-            {!loadingProjects && projects.length === 0 && (
-              <div className="flex flex-col items-center gap-2 py-6 text-center">
-                <FolderOpen className="size-8 text-muted-foreground/50" />
-                <p className="text-sm text-muted-foreground">
-                  No projects assigned — contact your admin.
-                </p>
-              </div>
-            )}
+              {!loadingProjects && projects.length === 0 && (
+                <div className="flex flex-col items-center gap-2 py-6 text-center">
+                  <FolderOpen className="size-8 text-muted-foreground/50" />
+                  <p className="text-sm text-muted-foreground">
+                    No projects assigned — contact your admin.
+                  </p>
+                </div>
+              )}
 
-            {!loadingProjects &&
-              projects.map((p) => (
+              {!loadingProjects &&
+                projects.map((p) => (
+                  <Button
+                    key={p.id}
+                    variant="outline"
+                    className="h-auto w-full justify-start px-4 py-3 text-left text-sm font-medium hover:border-primary/40 hover:bg-primary/5"
+                    disabled={isPending}
+                    onClick={() => handleClockIn(p.id)}
+                  >
+                    {clockingProjectId === p.id ? (
+                      <Loader2 className="mr-2 size-4 animate-spin text-primary" />
+                    ) : (
+                      <FolderOpen className="mr-2 size-4 text-muted-foreground" />
+                    )}
+                    {p.name}
+                  </Button>
+                ))}
+
+              {/* Other option */}
+              {!loadingProjects && (
                 <Button
-                  key={p.id}
                   variant="outline"
-                  className="h-auto w-full justify-start px-4 py-3 text-left text-sm font-medium hover:border-primary/40 hover:bg-primary/5"
+                  className="h-auto w-full justify-start border-dashed px-4 py-3 text-left text-sm font-medium text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
                   disabled={isPending}
-                  onClick={() => handleClockIn(p.id)}
+                  onClick={() => setShowOtherInput(true)}
                 >
-                  {clockingProjectId === p.id ? (
-                    <Loader2 className="mr-2 size-4 animate-spin text-primary" />
-                  ) : (
-                    <FolderOpen className="mr-2 size-4 text-muted-foreground" />
-                  )}
-                  {p.name}
+                  <MoreHorizontal className="mr-2 size-4" />
+                  Other
                 </Button>
-              ))}
-          </div>
+              )}
+            </div>
+          )}
 
           {/* Error message */}
           {error && (

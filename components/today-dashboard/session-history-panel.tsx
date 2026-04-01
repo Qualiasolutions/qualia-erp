@@ -109,14 +109,16 @@ const SessionRow = memo(function SessionRow({ session, index }: SessionRowProps)
         </span>
       </div>
 
-      {/* Project */}
+      {/* Project or clock-in note */}
       <p
         className={cn(
           'mt-0.5 truncate text-[10px]',
-          projectName ? 'text-muted-foreground/70' : 'italic text-muted-foreground/40'
+          projectName || session.clock_in_note
+            ? 'text-muted-foreground/70'
+            : 'italic text-muted-foreground/40'
         )}
       >
-        {projectName ?? 'No project'}
+        {projectName ?? session.clock_in_note ?? 'No project'}
       </p>
 
       {/* Summary */}
