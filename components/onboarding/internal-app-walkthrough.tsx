@@ -171,42 +171,42 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
     {
       id: 'welcome',
       icon: Sparkles,
-      eyebrow: 'Internal Suite',
-      title: `Welcome to Qualia, ${firstName}.`,
+      eyebrow: 'Welcome',
+      title: `Hey ${firstName} — let\u2019s get you set up.`,
       description:
-        'This workspace is the operational layer for delivery, communication, and client visibility. The walkthrough maps the pages your team uses most so new people get context fast and existing people see the same system clearly.',
+        'Qualia is where we manage everything: projects, clients, tasks, and team coordination. This quick walkthrough shows you the key areas so you can hit the ground running.',
       tone: 'teal',
-      routes: ['/', '/projects', '/portal'],
-      metrics: ['One shared system', 'Role-aware navigation', 'Shown once per account'],
-      note: 'The shell stays consistent across the suite: sidebar on the left, live utilities in the header, deep work in the center.',
+      routes: ['/', '/projects', '/clients'],
+      metrics: ['Everything in one place', 'Built for our workflow', 'Takes 2 minutes'],
+      note: 'Sidebar on the left for navigation, your work in the center, quick actions in the header. Simple layout, same everywhere.',
       highlights: [
         {
           icon: Workflow,
-          title: 'Navigation stays structured',
+          title: 'Sidebar is your map',
           description:
-            'Sidebar sections separate workspace views, resources, and external-facing portal access so the suite is easy to scan.',
-          tag: 'Sidebar',
+            'Projects, clients, schedule, knowledge — everything is one click away in the sidebar. No digging.',
+          tag: 'Navigation',
         },
         {
           icon: Command,
-          title: 'Fast jumps are built in',
+          title: 'Cmd+K to jump anywhere',
           description:
-            'Use the command menu when you want to move between pages and actions without hunting through navigation.',
-          tag: 'Command menu',
+            'The command menu lets you search and navigate instantly. Once you get used to it, you won\u2019t use anything else.',
+          tag: 'Shortcut',
         },
         {
           icon: Bell,
-          title: 'Signals stay visible',
+          title: 'Notifications keep you in the loop',
           description:
-            'Notifications, live assistant entry points, and session-aware controls remain close while you work.',
-          tag: 'Global shell',
+            'Task assignments, project updates, and mentions — you\u2019ll see them in the bell icon, no need to check Slack.',
+          tag: 'Alerts',
         },
         {
           icon: Shield,
-          title: 'Access is role-aware',
+          title: 'You see what\u2019s relevant to you',
           description:
-            'Admins, managers, employees, and clients each see a different slice of the product, but the mental model stays consistent.',
-          tag: 'Permissions',
+            'Admins see everything. Team members see their projects and tasks. Clients see their portal. Clean and focused.',
+          tag: 'Roles',
         },
       ],
     },
@@ -214,41 +214,41 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
       id: 'dashboard',
       icon: LayoutDashboard,
       eyebrow: 'Dashboard',
-      title: 'Start with the current day, not the whole backlog.',
+      title: 'Your day starts here.',
       description:
-        'Dashboard is the operational starting point. It pulls meetings, active work, live project movement, updates, and today-level signals into one focused surface.',
+        'The dashboard shows what matters today: your tasks, upcoming meetings, active projects, and team updates. Open this first thing — it\u2019s your morning briefing.',
       tone: 'sky',
       routes: ['/'],
-      metrics: ['Today view', 'Meetings + task pulse', 'Clock-in aware flow'],
-      note: 'If you only open one page to orient yourself each day, make it Dashboard.',
+      metrics: ['Today\u2019s tasks', 'Meetings at a glance', 'Team pulse'],
+      note: 'You can clock in, check your tasks, and see what the team is working on — all without leaving this page.',
       highlights: [
         {
           icon: ClipboardList,
-          title: 'Daily focus stays visible',
+          title: 'Your tasks for today',
           description:
-            'Today-level task work is surfaced so people can prioritize what matters now instead of searching through everything.',
-          tag: 'Tasks',
+            'Tasks due today and overdue items surface at the top. Pick what to work on and update progress as you go.',
+          tag: 'Focus',
         },
         {
           icon: FolderKanban,
-          title: 'Project movement is visible',
+          title: 'Active project movement',
           description:
-            'The dashboard keeps active delivery work in view so you can spot what is building, blocked, or drifting.',
-          tag: 'Pipeline pulse',
+            'See which projects are moving, which need attention, and where things stand across the pipeline.',
+          tag: 'Projects',
         },
         {
           icon: CalendarRange,
-          title: 'Meetings stay anchored',
+          title: 'Meetings right there',
           description:
-            'Upcoming meetings and day structure are part of the operational view, not buried in a separate calendar tab.',
+            'Today\u2019s meetings show up on the dashboard so you\u2019re never caught off guard by a call.',
           tag: 'Schedule',
         },
         {
           icon: MessagesSquare,
-          title: 'Updates stay close to execution',
+          title: 'Team updates and notes',
           description:
-            'Owner updates, notes, and team context sit near the work instead of living in disconnected side channels.',
-          tag: 'Context',
+            'Announcements, owner updates, and shared notes live here — no need to hunt through chat threads.',
+          tag: 'Updates',
         },
       ],
     },
@@ -256,82 +256,82 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
       id: 'projects',
       icon: FolderKanban,
       eyebrow: 'Projects',
-      title: 'Projects is where delivery actually gets controlled.',
+      title: 'This is where the real work happens.',
       description:
-        'Pipeline stages, individual project detail views, tasks, notes, files, and integrations all converge here. This is the main system for moving work from demo to live.',
+        'Every client project lives here — organized by stage (demos, active, launched). Click into a project to see its roadmap, tasks, files, team, and deployment status.',
       tone: 'amber',
       routes: ['/projects', '/projects/[id]'],
-      metrics: ['Pipeline stages', 'Project detail views', 'Roadmaps, files, deployments'],
-      note: 'Think of Projects as the delivery engine: broad stage visibility first, then depth inside each project.',
+      metrics: ['Pipeline by stage', 'Roadmap phases', 'Files and deployments'],
+      note: 'Projects page gives you the bird\u2019s eye view. Project detail page is where you actually execute.',
       highlights: [
         {
           icon: GitBranch,
-          title: 'Stage lanes show portfolio state',
+          title: 'Pipeline shows everything',
           description:
-            'Projects are organized by delivery stage so the team can understand what is in demo, building, pre-production, and live.',
+            'Projects are grouped by stage: Demos, Active, Launched, Done. You can see the full portfolio at a glance.',
           tag: 'Pipeline',
         },
         {
           icon: LayoutDashboard,
-          title: 'Project detail views go deep',
+          title: 'Deep project detail',
           description:
-            'Inside each project you can work through phases, task flow, health, notes, assignments, and supporting context.',
-          tag: 'Project page',
+            'Each project has phases, tasks, notes, health metrics, and team assignments. Everything you need is inside.',
+          tag: 'Detail',
         },
         {
           icon: Files,
-          title: 'Files and integrations stay attached',
+          title: 'Files stay with the project',
           description:
-            'Project assets, delivery files, deployments, and connected tools stay with the project instead of scattering across chats and drives.',
-          tag: 'Delivery assets',
+            'Designs, documents, assets — upload them to the project directly. No more digging through Google Drive.',
+          tag: 'Files',
         },
         {
           icon: Users,
-          title: 'Ownership is explicit',
+          title: 'Clear ownership',
           description:
-            'Assignments, assignees, and execution responsibility stay visible so the team knows who is moving each project forward.',
-          tag: 'Coordination',
+            'Every project shows who\u2019s assigned and responsible. No ambiguity about who\u2019s doing what.',
+          tag: 'Team',
         },
       ],
     },
     {
       id: 'client-experience',
       icon: Building2,
-      eyebrow: 'Clients And Portal',
-      title: 'Internal CRM and external portal live in one operating model.',
+      eyebrow: 'Clients & Portal',
+      title: 'Manage the relationship and what the client sees.',
       description:
-        'Use the Clients surface to manage the relationship internally, then switch to the Client Portal whenever you need the customer-facing view of progress, requests, files, and billing.',
+        'The Clients page is our internal CRM — track leads, contacts, and account status. The Portal is what clients actually see: their project progress, invoices, and feature requests.',
       tone: 'violet',
       routes: ['/clients', '/portal'],
-      metrics: ['Clients CRM', 'Portal visibility', 'Requests, files, invoices'],
-      note: 'The Portal is not a separate universe. It is the client-facing expression of work already tracked inside the ERP.',
+      metrics: ['CRM for leads', 'Client-facing portal', 'Invoices and requests'],
+      note: 'When you update a project internally, the client sees it reflected in their portal automatically. One source of truth.',
       highlights: [
         {
           icon: Building2,
-          title: 'Clients keeps the relationship organized',
+          title: 'Client CRM',
           description:
-            'Use the internal client directory for account-level context, status, contacts, and relationship management.',
+            'Track every client: their status, contacts, projects, and last interaction. This is the relationship hub.',
           tag: 'CRM',
         },
         {
           icon: ExternalLink,
-          title: 'Portal shows the client lens',
+          title: 'Client portal',
           description:
-            'Open the portal to see what a client sees: project progress, action items, requests, updates, and next steps.',
-          tag: 'Portal dashboard',
+            'Clients log in here to check progress, submit requests, download files, and view invoices. Professional and clean.',
+          tag: 'Portal',
         },
         {
           icon: Upload,
-          title: 'Requests and uploads stay structured',
+          title: 'Feature requests',
           description:
-            'Feature requests, file submissions, and portal exchanges stay tied to the project instead of getting lost in email threads.',
-          tag: 'Collaboration',
+            'Clients can submit requests through the portal. They stay organized and tied to the project — not lost in email.',
+          tag: 'Requests',
         },
         {
           icon: Receipt,
-          title: 'Billing remains attached to the account',
+          title: 'Billing in context',
           description:
-            'Invoices and billing visibility sit beside delivery context so financial follow-through is easy to track.',
+            'Invoices and payments are attached to the client account. Financial tracking next to the delivery work.',
           tag: 'Billing',
         },
       ],
@@ -339,83 +339,83 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
     {
       id: 'operations',
       icon: CalendarRange,
-      eyebrow: 'Operations',
-      title: 'Schedule and status handle the coordination layer.',
+      eyebrow: 'Schedule & Status',
+      title: 'Keep the team coordinated without the chaos.',
       description:
-        'Schedule keeps meetings and calendar structure clean, while Status keeps live-system confidence visible. Together they cover time, readiness, and operational awareness.',
+        'Schedule manages meetings and team availability. Status monitors our live systems and deployments. Together, they keep things running smoothly.',
       tone: 'rose',
       routes: ['/schedule', '/status'],
-      metrics: ['Schedule discipline', 'System status', 'Operational visibility'],
-      note: 'When delivery is strong, operations usually stay boring. These pages help keep it that way.',
+      metrics: ['Team calendar', 'System monitoring', 'Uptime tracking'],
+      note: 'Good operations are boring operations. These pages help keep it that way.',
       highlights: [
         {
           icon: CalendarRange,
-          title: 'Meetings stay organized',
+          title: 'Team schedule',
           description:
-            'Use the schedule views to manage team availability, meeting placement, and calendar context without guesswork.',
+            'See who\u2019s available, when meetings are, and plan your week without back-and-forth messages.',
           tag: 'Calendar',
         },
         {
           icon: Activity,
-          title: 'Live service health stays visible',
+          title: 'Live system status',
           description:
-            'Status gives the team a direct view into monitored production systems so issues are visible before they become surprises.',
+            'Monitor all our production systems in one place. If something\u2019s down, you\u2019ll know before the client does.',
           tag: 'Monitoring',
         },
         {
           icon: Bell,
-          title: 'Refresh loops are intentional',
+          title: 'Real-time updates',
           description:
-            'Live indicators, notification flows, and operational surfaces help the team stay synchronized without constant manual checking.',
-          tag: 'Realtime',
+            'The suite auto-refreshes. Task changes, project updates, and notifications come through live — no manual refresh needed.',
+          tag: 'Live',
         },
         {
           icon: ClipboardList,
-          title: 'Day structure is operationalized',
+          title: 'Daily check-ins',
           description:
-            'The platform supports structured workdays, session awareness, and a clean operating rhythm across the team.',
-          tag: 'Daily flow',
+            'Quick daily updates keep the team aligned. What you did, what you\u2019re doing, anything blocking you.',
+          tag: 'Check-ins',
         },
       ],
     },
     {
       id: 'intelligence',
       icon: BookOpen,
-      eyebrow: 'Research, Knowledge, AI',
-      title: 'When context is thin, use the system to refill it.',
+      eyebrow: 'Knowledge & AI',
+      title: 'Don\u2019t start from scratch — the answers are already here.',
       description:
-        'Research and Knowledge hold reusable context, and the assistant helps you move faster inside the workflow. These surfaces are for precedent, clarification, and sharper execution.',
+        'Research tracks investigations and findings. Knowledge stores guides and how-tos. And the AI assistant can help you find information, create tasks, and move faster.',
       tone: 'emerald',
-      routes: ['/research', '/knowledge', '/settings'],
-      metrics: ['Research workspace', 'Knowledge base', 'AI-assisted context'],
-      note: 'The goal is to make context durable. If something matters twice, it should probably live in the system.',
+      routes: ['/research', '/knowledge', '/agent'],
+      metrics: ['Research library', 'Team knowledge base', 'AI assistant'],
+      note: 'If you solved a problem, write it down in Knowledge. If you\u2019re investigating something new, use Research. Future you will thank you.',
       highlights: [
         {
           icon: FlaskConical,
-          title: 'Research captures new findings',
+          title: 'Research workspace',
           description:
-            'Use Research when work needs fresh investigation, discovery, or decision support that the team may need to revisit later.',
+            'Running a technical investigation or market research? Track your findings here so the team can reference them later.',
           tag: 'Research',
         },
         {
           icon: BookOpen,
-          title: 'Knowledge keeps repeatable answers',
+          title: 'Knowledge base',
           description:
-            'The knowledge area stores guides, patterns, and internal references so the same questions do not have to be solved from zero.',
+            'Guides, processes, and internal documentation. If someone asks the same question twice, it should live here.',
           tag: 'Knowledge',
         },
         {
           icon: Bot,
-          title: 'Assistant is embedded in the workflow',
+          title: 'AI assistant',
           description:
-            'The assistant is available inside the shell so team members can ask, retrieve, and move without leaving the operating environment.',
-          tag: 'AI assistant',
+            'Ask questions about projects, create tasks, or get help — the assistant knows the context of your workspace.',
+          tag: 'AI',
         },
         {
           icon: Settings,
-          title: 'Settings control the edges',
+          title: 'Your settings',
           description:
-            'Notification preferences, integrations, schedules, and personal controls live here when you need to tune how the system behaves.',
+            'Notification preferences, integrations, and personal config. Make the suite work the way you want.',
           tag: 'Settings',
         },
       ],
@@ -426,41 +426,41 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
     ? {
         id: 'admin',
         icon: Shield,
-        eyebrow: 'Admin Controls',
-        title: 'Admins get the operational control layer on top of delivery.',
+        eyebrow: 'Admin Panel',
+        title: 'You have the controls. Here\u2019s where they live.',
         description:
-          'Assignments, attendance, reporting, and financial visibility sit behind the admin section. It is the control plane for staffing, oversight, and business health.',
+          'As an admin, you manage assignments, attendance, reports, and financials. These tools are separate from everyday work so they don\u2019t clutter the team\u2019s view.',
         tone: 'rose',
         routes: ['/admin', '/admin/assignments', '/payments'],
-        metrics: ['Assignments', 'Reports', 'Financial control'],
-        note: 'Admin-only tools are grouped separately so the operational control layer does not clutter everyday execution for the whole team.',
+        metrics: ['Team assignments', 'Attendance tracking', 'Financial overview'],
+        note: 'Only admins see the /admin section. Everyone else gets a cleaner, focused experience.',
         highlights: [
           {
             icon: Users,
-            title: 'Assignments stay explicit',
+            title: 'Assign people to projects',
             description:
-              'Manage who is attached to which project so ownership and staffing stay visible across the workspace.',
+              'Control who\u2019s working on what. Assignments auto-create tasks from the project roadmap.',
             tag: 'Assignments',
           },
           {
             icon: ClipboardList,
-            title: 'Attendance is trackable',
+            title: 'Track attendance',
             description:
-              'Attendance and work-session visibility provide a direct operational record for daily oversight.',
+              'See who\u2019s clocked in, review work sessions, and keep the team accountable.',
             tag: 'Attendance',
           },
           {
             icon: BarChart3,
-            title: 'Reports stay close to the system',
+            title: 'Reports and analytics',
             description:
-              'Reporting surfaces give leaders a clearer view of operational performance without pulling data into a second tool first.',
+              'Check-in stats, task completion rates, and team performance — all generated from real data.',
             tag: 'Reports',
           },
           {
             icon: Wallet,
-            title: 'Financial visibility is integrated',
+            title: 'Payments and invoices',
             description:
-              'Payment and finance surfaces sit beside delivery context so revenue and execution can be read together.',
+              'Track what\u2019s been invoiced, what\u2019s paid, and what\u2019s outstanding — right next to the project work.',
             tag: 'Financials',
           },
         ],
@@ -468,42 +468,42 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
     : {
         id: 'team-rhythm',
         icon: ClipboardList,
-        eyebrow: 'Execution Rhythm',
-        title: 'For daily operators, the loop is intentionally simple.',
+        eyebrow: 'Your Daily Loop',
+        title: 'The rhythm is simple once you know it.',
         description:
-          'Orient on Dashboard, execute inside Projects, keep Schedule clean, and open the Portal whenever client-facing visibility matters. The system works best when updates happen in the system itself.',
+          'Open Dashboard to see your day. Work inside Projects. Check Schedule for meetings. Update your progress so the team stays in sync. That\u2019s it.',
         tone: 'teal',
-        routes: ['/', '/projects', '/portal', '/settings'],
-        metrics: ['Dashboard first', 'Projects for execution', 'Portal for client view'],
-        note: 'The fastest teams keep one shared source of truth and avoid recreating the project state in private side channels.',
+        routes: ['/', '/projects', '/schedule'],
+        metrics: ['Dashboard first', 'Execute in projects', 'Stay in sync'],
+        note: 'The best thing you can do is keep your tasks and check-ins up to date. Everything else follows from that.',
         highlights: [
           {
             icon: LayoutDashboard,
-            title: 'Orient before you dive',
+            title: 'Start with Dashboard',
             description:
-              'Use Dashboard to decide what matters today before you move into detailed execution screens.',
-            tag: 'Start here',
+              'Check what\u2019s on your plate today before diving into project work. 30 seconds, every morning.',
+            tag: 'Morning',
           },
           {
             icon: FolderKanban,
-            title: 'Update the delivery system directly',
+            title: 'Do the work in Projects',
             description:
-              'Move tasks, notes, files, and progress where the rest of the team can see the real project state.',
-            tag: 'Execution',
+              'Update tasks, upload files, move phases forward. Keep the project state real — not in your head.',
+            tag: 'Execute',
           },
           {
             icon: ExternalLink,
-            title: 'Use the portal when you need the client lens',
+            title: 'Check the client view',
             description:
-              'If you want to verify what a client can see, the portal gives you the external-facing version of the truth.',
-            tag: 'Client visibility',
+              'Curious what a client sees? Open the portal. It mirrors the real project state automatically.',
+            tag: 'Portal',
           },
           {
             icon: Settings,
-            title: 'Tune your own operating edge',
+            title: 'Set up your preferences',
             description:
-              'Keep preferences, notifications, and personal controls aligned with how you actually work.',
-            tag: 'Personal setup',
+              'Notification settings, integrations, and personal config. Tweak once, forget about it.',
+            tag: 'Settings',
           },
         ],
       };
@@ -514,43 +514,43 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
     {
       id: 'finish',
       icon: CheckCircle2,
-      eyebrow: 'Ready To Move',
-      title: 'That is the map.',
+      eyebrow: 'You\u2019re Ready',
+      title: 'That\u2019s the whole picture. Go build something.',
       description:
-        'Dashboard is for today. Projects is for delivery. Clients and Portal are for relationship visibility. Research, Knowledge, and the assistant fill context gaps. Everything else supports those flows.',
+        'Dashboard for your day. Projects for the work. Clients and Portal for the relationship. Knowledge and AI when you need context. You\u2019ve got this.',
       tone: 'sky',
-      routes: ['/', '/projects', '/portal', '/settings'],
+      routes: ['/', '/projects', '/clients', '/agent'],
       metrics: [
-        'Today -> Delivery -> Client visibility',
-        'One shared source of truth',
-        'No second walkthrough',
+        'Dashboard \u2192 Projects \u2192 Clients',
+        'One source of truth',
+        'Won\u2019t show again',
       ],
-      note: 'This walkthrough is stored per account. Once you continue, it will not reopen automatically for this user.',
+      note: 'This walkthrough is saved to your account. It won\u2019t appear again. If you need a refresher, the sidebar has everything.',
       highlights: [
         {
           icon: LayoutDashboard,
           title: 'Dashboard',
-          description: 'Open this first when you need the fastest read on what matters now.',
+          description: 'Your starting point every day. Tasks, meetings, and team pulse.',
           tag: '/',
         },
         {
           icon: FolderKanban,
           title: 'Projects',
-          description: 'Use this when the work needs to move, be clarified, or be delivered.',
+          description: 'Where delivery happens. Phases, tasks, files, and team.',
           tag: '/projects',
         },
         {
-          icon: ExternalLink,
-          title: 'Client Portal',
-          description: 'Switch here when you need the client-facing lens on progress and requests.',
-          tag: '/portal',
+          icon: Building2,
+          title: 'Clients',
+          description: 'CRM and portal. The full client relationship in one place.',
+          tag: '/clients',
         },
         {
-          icon: Settings,
-          title: 'Settings',
+          icon: Bot,
+          title: 'AI Assistant',
           description:
-            'Adjust integrations, notifications, and personal controls when your edge needs tuning.',
-          tag: '/settings',
+            'Ask anything about your workspace. Create tasks, find answers, move faster.',
+          tag: '/agent',
         },
       ],
     },
@@ -750,14 +750,12 @@ export function InternalAppWalkthrough() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-2">
                     <div className="border-white/12 inline-flex items-center rounded-full border bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/65">
-                      Qualia Walkthrough
+                      Quick Tour
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white/90">
-                        Internal onboarding for the suite
-                      </p>
+                      <p className="text-sm font-medium text-white/90">Get to know Qualia</p>
                       <p className="mt-1 text-sm leading-6 text-white/55">
-                        Comprehensive, account-level, and shown once per user.
+                        A quick overview of the key areas. Shown once.
                       </p>
                     </div>
                   </div>
@@ -853,10 +851,10 @@ export function InternalAppWalkthrough() {
                         Step {currentStepIndex + 1} of {steps.length}
                       </span>
                       <span className="inline-block h-1 w-1 rounded-full bg-white/25" />
-                      <span>Stored once per user</span>
+                      <span>Shown once</span>
                     </div>
                     <p className="mt-1 text-sm text-white/55">
-                      Use the arrow keys or the controls below to move through the product map.
+                      Arrow keys or the buttons below to navigate. Esc to skip.
                     </p>
                   </div>
 
@@ -925,9 +923,7 @@ export function InternalAppWalkthrough() {
                               >
                                 {currentStep.eyebrow}
                               </div>
-                              <p className="mt-2 text-sm text-white/55">
-                                Qualia internal suite walkthrough
-                              </p>
+                              <p className="mt-2 text-sm text-white/55">Qualia Suite</p>
                             </div>
                           </div>
 
@@ -1047,8 +1043,8 @@ export function InternalAppWalkthrough() {
                 <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                   <div className="text-sm text-white/50">
                     {currentStepIndex === steps.length - 1
-                      ? 'This will be stored for your account after you continue.'
-                      : 'Move through the rest of the walkthrough now, or close it and continue into the suite.'}
+                      ? 'This won\u2019t show again after you continue.'
+                      : 'Take a minute to go through this, or skip and jump straight in.'}
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -1073,7 +1069,7 @@ export function InternalAppWalkthrough() {
                       disabled={isSaving}
                       className="bg-white text-[#0B1415] shadow-[0_20px_40px_rgba(255,255,255,0.12)] hover:bg-white/90"
                     >
-                      {currentStepIndex === steps.length - 1 ? 'Enter workspace' : 'Next'}
+                      {currentStepIndex === steps.length - 1 ? 'Let\u2019s go' : 'Next'}
                       <ArrowRight className="size-4" />
                     </Button>
                   </div>

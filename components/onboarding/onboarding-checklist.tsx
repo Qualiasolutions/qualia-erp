@@ -100,40 +100,44 @@ export function OnboardingChecklist({ steps, onComplete, className }: Onboarding
   );
 }
 
-// Default onboarding steps for Moayad
 export function getDefaultOnboardingSteps(
   completed: Record<string, boolean> = {}
 ): OnboardingStep[] {
   return [
     {
       id: 'profile',
-      title: 'Complete your profile',
-      description: 'Add your photo and bio to personalize your workspace',
+      title: 'Set up your profile',
+      description: 'Add your name and photo so the team knows who you are',
       completed: completed.profile ?? false,
+      actionLabel: 'Go to settings',
     },
     {
-      id: 'tour',
-      title: 'Take the platform tour',
-      description: 'Learn how to navigate projects, tasks, and clients',
-      completed: completed.tour ?? false,
+      id: 'check_inbox',
+      title: 'Check your inbox',
+      description: 'Your tasks land here — this is where your daily work starts',
+      completed: completed.check_inbox ?? false,
+      actionLabel: 'Open inbox',
     },
     {
-      id: 'first_task',
-      title: 'Complete your first task',
-      description: 'Pick a starter task and submit it for review',
-      completed: completed.first_task ?? false,
+      id: 'explore_project',
+      title: 'Open a project',
+      description: 'See how phases, tasks, and files are organized for delivery',
+      completed: completed.explore_project ?? false,
+      actionLabel: 'View projects',
     },
     {
-      id: 'voice_assistant',
-      title: 'Try the voice assistant',
-      description: 'Ask Qualia a question using voice commands',
-      completed: completed.voice_assistant ?? false,
+      id: 'daily_checkin',
+      title: 'Submit your first check-in',
+      description: 'Daily check-ins keep the team in sync — takes 30 seconds',
+      completed: completed.daily_checkin ?? false,
+      actionLabel: 'Check in',
     },
     {
-      id: 'learn_skills',
-      title: 'Explore the skills dashboard',
-      description: 'See which skills you can develop on projects',
-      completed: completed.learn_skills ?? false,
+      id: 'command_menu',
+      title: 'Try the command menu',
+      description: 'Press Cmd+K (or Ctrl+K) to jump anywhere in the suite instantly',
+      completed: completed.command_menu ?? false,
+      actionLabel: 'Try it',
     },
   ];
 }
