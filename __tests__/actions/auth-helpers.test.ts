@@ -89,9 +89,9 @@ describe('isUserAdmin', () => {
 });
 
 describe('isUserManagerOrAbove', () => {
-  it('returns true for manager', async () => {
+  it('returns false for manager (manager deprecated)', async () => {
     supabase.from.mockReturnValue(buildChain({ data: { role: 'manager' }, error: null }));
-    expect(await isUserManagerOrAbove('user-1')).toBe(true);
+    expect(await isUserManagerOrAbove('user-1')).toBe(false);
   });
 
   it('returns true for admin', async () => {
@@ -198,9 +198,9 @@ describe('canDeleteMeeting', () => {
     expect(await canDeleteMeeting('admin-user', 'meeting-1')).toBe(true);
   });
 
-  it('returns true when user is manager (via isUserManagerOrAbove)', async () => {
+  it('returns false when user is manager (manager deprecated, via isUserManagerOrAbove)', async () => {
     supabase.from.mockReturnValue(buildChain({ data: { role: 'manager' }, error: null }));
-    expect(await canDeleteMeeting('manager-user', 'meeting-1')).toBe(true);
+    expect(await canDeleteMeeting('manager-user', 'meeting-1')).toBe(false);
   });
 
   it('returns true when user created the meeting', async () => {

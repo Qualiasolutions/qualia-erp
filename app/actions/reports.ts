@@ -338,3 +338,353 @@ export async function getAssignedVsDone(
   result.sort((a, b) => a.fullName.localeCompare(b.fullName));
   return result;
 }
+
+// ============ CHECKIN ANALYTICS ============
+
+export interface CheckinAnalytics {
+  byEmployee: {
+    profileId: string;
+    fullName: string;
+    checkinDays: number;
+    avgEnergy: number | null;
+    avgMood: number | null;
+    blockerCount: number;
+  }[];
+  topBlockers: string[];
+  totalCheckins: number;
+  avgEnergyOverall: number | null;
+  avgMoodOverall: number | null;
+}
+
+/**
+ * Get check-in analytics for a date range.
+ * Admin only.
+ */
+export async function getCheckinAnalytics(
+  workspaceId: string,
+  startDate: string,
+  endDate: string
+): Promise<CheckinAnalytics | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+  if (!(await isUserAdmin(user.id))) return null;
+
+  const { data: checkins, error } = await supabase
+    .from('daily_checkins')
+    .select(
+      `
+      id,
+      profile_id,
+      checkin_date,
+      checkin_type,
+      energy_level,
+      mood,
+      blockers,
+      profile:profiles!daily_checkins_profile_id_fkey (id, full_name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .gte('checkin_date', startDate)
+    .lte('checkin_date', endDate)
+    .order('checkin_date', { ascending: false });
+
+  if (error) {
+    console.error('[getCheckinAnalytics] Error:', error);
+    return null;
+  }
+
+  if (!checkins || checkins.length === 0) {
+    return {
+      byEmployee: [],
+      topBlockers: [],
+      totalCheckins: 0,
+      avgEnergyOverall: null,
+      avgMoodOverall: null,
+    };
+  }
+
+  // Normalize FK
+  const normalized = checkins.map((c) => {
+    const profile = Array.isArray(c.profile) ? c.profile[0] : c.profile;
+    return {
+      ...c,
+      profile: profile as { id: string; full_name: string | null } | null,
+    };
+  });
+
+  // Aggregate by employee
+  const empMap = new Map<
+    string,
+    {
+      fullName: string;
+      checkinDates: Set<string>;
+      energyValues: number[];
+      moodValues: number[];
+      blockerCount: number;
+    }
+  >();
+
+  const allBlockers: string[] = [];
+  const allEnergy: number[] = [];
+  const allMood: number[] = [];
+
+  for (const c of normalized) {
+    const pid = c.profile_id;
+    const name = c.profile?.full_name ?? 'Unknown';
+
+    if (!empMap.has(pid)) {
+      empMap.set(pid, {
+        fullName: name,
+        checkinDates: new Set(),
+        energyValues: [],
+        moodValues: [],
+        blockerCount: 0,
+      });
+    }
+    const entry = empMap.get(pid)!;
+    entry.checkinDates.add(c.checkin_date);
+
+    if (c.checkin_type === 'morning' && c.energy_level != null) {
+      entry.energyValues.push(c.energy_level);
+      allEnergy.push(c.energy_level);
+    }
+
+    if (c.checkin_type === 'evening' && c.mood != null) {
+      entry.moodValues.push(c.mood);
+      allMood.push(c.mood);
+    }
+
+    if (c.checkin_type === 'morning' && c.blockers && c.blockers.trim().length > 0) {
+      entry.blockerCount += 1;
+      allBlockers.push(c.blockers.trim());
+    }
+  }
+
+  const byEmployee = Array.from(empMap.entries())
+    .map(([profileId, e]) => ({
+      profileId,
+      fullName: e.fullName,
+      checkinDays: e.checkinDates.size,
+      avgEnergy:
+        e.energyValues.length > 0
+          ? Math.round((e.energyValues.reduce((a, b) => a + b, 0) / e.energyValues.length) * 10) /
+            10
+          : null,
+      avgMood:
+        e.moodValues.length > 0
+          ? Math.round((e.moodValues.reduce((a, b) => a + b, 0) / e.moodValues.length) * 10) / 10
+          : null,
+      blockerCount: e.blockerCount,
+    }))
+    .sort((a, b) => b.checkinDays - a.checkinDays);
+
+  // Top blockers: count frequency of each blocker string, return top 5
+  const blockerFreq = new Map<string, number>();
+  for (const b of allBlockers) {
+    const key = b.toLowerCase();
+    blockerFreq.set(key, (blockerFreq.get(key) ?? 0) + 1);
+  }
+  const topBlockers = Array.from(blockerFreq.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([text]) => text);
+
+  return {
+    byEmployee,
+    topBlockers,
+    totalCheckins: normalized.length,
+    avgEnergyOverall:
+      allEnergy.length > 0
+        ? Math.round((allEnergy.reduce((a, b) => a + b, 0) / allEnergy.length) * 10) / 10
+        : null,
+    avgMoodOverall:
+      allMood.length > 0
+        ? Math.round((allMood.reduce((a, b) => a + b, 0) / allMood.length) * 10) / 10
+        : null,
+  };
+}
+
+// ============ TASK STATS ============
+
+export interface TaskStats {
+  created: number;
+  completed: number;
+  overdue: number;
+  avgCompletionDays: number | null;
+  byEmployee: {
+    profileId: string;
+    fullName: string;
+    created: number;
+    completed: number;
+    overdue: number;
+  }[];
+}
+
+/**
+ * Get task statistics for a date range.
+ * Admin only.
+ */
+export async function getTaskStats(
+  workspaceId: string,
+  startDate: string,
+  endDate: string
+): Promise<TaskStats | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+  if (!(await isUserAdmin(user.id))) return null;
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Fetch created tasks in the range
+  const { data: createdTasks, error: createdErr } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      assignee_id,
+      status,
+      due_date,
+      created_at,
+      updated_at,
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .gte('created_at', `${startDate}T00:00:00Z`)
+    .lte('created_at', `${endDate}T23:59:59Z`);
+
+  if (createdErr) {
+    console.error('[getTaskStats] Created tasks error:', createdErr);
+    return null;
+  }
+
+  // Fetch completed tasks in the range (status=Done, updated_at in range)
+  const { data: completedTasks, error: completedErr } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      assignee_id,
+      status,
+      due_date,
+      created_at,
+      updated_at,
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .eq('status', 'Done')
+    .gte('updated_at', `${startDate}T00:00:00Z`)
+    .lte('updated_at', `${endDate}T23:59:59Z`);
+
+  if (completedErr) {
+    console.error('[getTaskStats] Completed tasks error:', completedErr);
+    return null;
+  }
+
+  // Fetch overdue tasks (due_date < today, not Done/Canceled)
+  const { data: overdueTasks, error: overdueErr } = await supabase
+    .from('tasks')
+    .select(
+      `
+      id,
+      assignee_id,
+      status,
+      due_date,
+      assignee:profiles!tasks_assignee_id_fkey (id, full_name)
+    `
+    )
+    .eq('workspace_id', workspaceId)
+    .lt('due_date', today)
+    .not('status', 'in', '("Done","Canceled")');
+
+  if (overdueErr) {
+    console.error('[getTaskStats] Overdue tasks error:', overdueErr);
+    return null;
+  }
+
+  // Normalize FKs
+  const normalizeAssignee = (task: { assignee: unknown }) => {
+    const a = Array.isArray(task.assignee) ? task.assignee[0] : task.assignee;
+    return a as { id: string; full_name: string | null } | null;
+  };
+
+  // Calculate avg completion days
+  let totalCompletionDays = 0;
+  let completionCount = 0;
+  for (const t of completedTasks ?? []) {
+    const createdMs = new Date(t.created_at).getTime();
+    const updatedMs = new Date(t.updated_at).getTime();
+    const days = (updatedMs - createdMs) / (1000 * 60 * 60 * 24);
+    if (days >= 0) {
+      totalCompletionDays += days;
+      completionCount += 1;
+    }
+  }
+
+  // Aggregate by employee
+  const empMap = new Map<
+    string,
+    { fullName: string; created: number; completed: number; overdue: number }
+  >();
+
+  const ensureEmployee = (
+    profileId: string | null,
+    assignee: { id: string; full_name: string | null } | null
+  ) => {
+    if (!profileId) return;
+    if (!empMap.has(profileId)) {
+      empMap.set(profileId, {
+        fullName: assignee?.full_name ?? 'Unknown',
+        created: 0,
+        completed: 0,
+        overdue: 0,
+      });
+    }
+  };
+
+  for (const t of createdTasks ?? []) {
+    const assignee = normalizeAssignee(t);
+    ensureEmployee(t.assignee_id, assignee);
+    if (t.assignee_id) empMap.get(t.assignee_id)!.created += 1;
+  }
+
+  for (const t of completedTasks ?? []) {
+    const assignee = normalizeAssignee(t);
+    ensureEmployee(t.assignee_id, assignee);
+    if (t.assignee_id) empMap.get(t.assignee_id)!.completed += 1;
+  }
+
+  for (const t of overdueTasks ?? []) {
+    const assignee = normalizeAssignee(t);
+    ensureEmployee(t.assignee_id, assignee);
+    if (t.assignee_id) empMap.get(t.assignee_id)!.overdue += 1;
+  }
+
+  const byEmployee = Array.from(empMap.entries())
+    .map(([profileId, e]) => ({
+      profileId,
+      fullName: e.fullName,
+      created: e.created,
+      completed: e.completed,
+      overdue: e.overdue,
+    }))
+    .sort((a, b) => b.completed - a.completed);
+
+  return {
+    created: (createdTasks ?? []).length,
+    completed: (completedTasks ?? []).length,
+    overdue: (overdueTasks ?? []).length,
+    avgCompletionDays:
+      completionCount > 0 ? Math.round((totalCompletionDays / completionCount) * 10) / 10 : null,
+    byEmployee,
+  };
+}

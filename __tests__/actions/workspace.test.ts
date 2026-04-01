@@ -16,8 +16,13 @@ const supabase = {
   auth: { getUser: jest.fn() as jest.Mock },
 };
 
+const adminSupabase = {
+  from: jest.fn() as jest.Mock,
+};
+
 jest.mock('@/lib/supabase/server', () => ({
   createClient: () => Promise.resolve(supabase),
+  createAdminClient: () => adminSupabase,
 }));
 
 // ---- Imports ----
@@ -72,6 +77,7 @@ function mockAuth(user: typeof AUTH_USER | null = AUTH_USER) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuth();
+  adminSupabase.from.mockReset();
 });
 
 // ---- Tests ----
@@ -218,9 +224,12 @@ describe('createWorkspace', () => {
 
   it('returns success on valid workspace creation', async () => {
     const newWorkspace = { id: WS_ID, name: 'Test WS', slug: 'test-ws' };
-    supabase.from
-      .mockReturnValueOnce(buildChain({ data: newWorkspace, error: null }))
-      .mockReturnValue(buildChain({ data: null, error: null }));
+    // Regular client: workspace insert
+    supabase.from.mockReturnValue(buildChain({ data: newWorkspace, error: null }));
+    // Admin client: check existing defaults + insert membership
+    adminSupabase.from
+      .mockReturnValueOnce(buildChain({ data: [], error: null })) // existing defaults check
+      .mockReturnValue(buildChain({ data: null, error: null })); // membership insert
 
     const formData = new FormData();
     formData.set('name', 'Test WS');

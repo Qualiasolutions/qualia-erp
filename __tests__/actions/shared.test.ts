@@ -134,10 +134,10 @@ describe('shared action helpers', () => {
       expect(result).toBe(true);
     });
 
-    it('returns true for manager role', async () => {
+    it('returns false for manager role (manager deprecated)', async () => {
       setupSupabaseMock({ role: 'manager' });
       const result = await isUserManagerOrAbove('user-1');
-      expect(result).toBe(true);
+      expect(result).toBe(false);
     });
 
     it('returns false for employee role', async () => {

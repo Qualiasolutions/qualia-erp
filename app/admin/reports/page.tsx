@@ -10,6 +10,11 @@ import {
   TrendingUp,
   Download,
   AlertTriangle,
+  Zap,
+  Heart,
+  CheckCircle2,
+  AlertCircle,
+  ListTodo,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -29,8 +34,12 @@ import { getCurrentWorkspaceId } from '@/app/actions';
 import {
   getReportData,
   getAssignedVsDone,
+  getCheckinAnalytics,
+  getTaskStats,
   type ReportSummary,
   type AssignedVsDone,
+  type CheckinAnalytics,
+  type TaskStats,
 } from '@/app/actions/reports';
 import type { DateRange } from 'react-day-picker';
 
@@ -88,6 +97,8 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<ReportSummary | null>(null);
   const [avd, setAvd] = useState<AssignedVsDone[]>([]);
+  const [checkinData, setCheckinData] = useState<CheckinAnalytics | null>(null);
+  const [taskData, setTaskData] = useState<TaskStats | null>(null);
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: startOfMonth(new Date()),
     to: new Date(),
@@ -102,12 +113,16 @@ export default function ReportsPage() {
     setLoading(true);
     const start = format(dateRange.from, 'yyyy-MM-dd');
     const end = format(dateRange.to, 'yyyy-MM-dd');
-    const [reportData, avdData] = await Promise.all([
+    const [reportData, avdData, checkinRes, taskRes] = await Promise.all([
       getReportData(workspaceId, start, end),
       getAssignedVsDone(workspaceId, start, end),
+      getCheckinAnalytics(workspaceId, start, end),
+      getTaskStats(workspaceId, start, end),
     ]);
     setReport(reportData);
     setAvd(avdData);
+    setCheckinData(checkinRes);
+    setTaskData(taskRes);
     setLoading(false);
   }, [workspaceId, dateRange]);
 
@@ -254,6 +269,8 @@ export default function ReportsPage() {
               <TabsTrigger value="employees">By Employee</TabsTrigger>
               <TabsTrigger value="projects">By Project</TabsTrigger>
               <TabsTrigger value="assigned">Assigned vs Done</TabsTrigger>
+              <TabsTrigger value="checkins">Check-ins</TabsTrigger>
+              <TabsTrigger value="tasks">Tasks</TabsTrigger>
             </TabsList>
 
             {/* By Employee */}
@@ -472,6 +489,296 @@ export default function ReportsPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Check-in Insights */}
+            <TabsContent value="checkins">
+              {!checkinData || checkinData.totalCheckins === 0 ? (
+                <EmptyState message="No check-in data for this period." />
+              ) : (
+                <div className="space-y-6">
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Total Check-ins
+                        </CardTitle>
+                        <CheckCircle2 className="size-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums">
+                          {checkinData.totalCheckins}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Avg Energy
+                        </CardTitle>
+                        <Zap className="size-4 text-amber-500" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums">
+                          {checkinData.avgEnergyOverall != null
+                            ? `${checkinData.avgEnergyOverall}/5`
+                            : '—'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Avg Mood
+                        </CardTitle>
+                        <Heart className="size-4 text-rose-500" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums">
+                          {checkinData.avgMoodOverall != null
+                            ? `${checkinData.avgMoodOverall}/5`
+                            : '—'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Per-employee table */}
+                  <div className="rounded-xl border border-border bg-card">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                          <TableHead className="w-[200px]">Employee</TableHead>
+                          <TableHead className="w-[90px]">Days</TableHead>
+                          <TableHead className="w-[100px]">Avg Energy</TableHead>
+                          <TableHead className="w-[100px]">Avg Mood</TableHead>
+                          <TableHead className="w-[90px]">Blockers</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {checkinData.byEmployee.map((emp) => (
+                          <TableRow key={emp.profileId}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                                  <span className="text-[10px] font-semibold text-primary">
+                                    {emp.fullName[0]?.toUpperCase() ?? '?'}
+                                  </span>
+                                </div>
+                                <span className="text-sm font-medium">{emp.fullName}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm tabular-nums">
+                              {emp.checkinDays}
+                            </TableCell>
+                            <TableCell>
+                              {emp.avgEnergy != null ? (
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className="h-1.5 rounded-full bg-amber-500"
+                                    style={{ width: `${(emp.avgEnergy / 5) * 60}px` }}
+                                  />
+                                  <span className="text-sm tabular-nums">{emp.avgEnergy}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {emp.avgMood != null ? (
+                                <div className="flex items-center gap-1.5">
+                                  <div
+                                    className="h-1.5 rounded-full bg-rose-500"
+                                    style={{ width: `${(emp.avgMood / 5) * 60}px` }}
+                                  />
+                                  <span className="text-sm tabular-nums">{emp.avgMood}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50">—</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {emp.blockerCount > 0 ? (
+                                <Badge
+                                  variant="outline"
+                                  className="border-amber-500/30 text-[10px] text-amber-600"
+                                >
+                                  {emp.blockerCount}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50">0</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  {/* Top Blockers */}
+                  {checkinData.topBlockers.length > 0 && (
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-foreground">
+                        Most Reported Blockers
+                      </h3>
+                      <div className="space-y-2">
+                        {checkinData.topBlockers.map((blocker, i) => (
+                          <div
+                            key={i}
+                            className="flex items-start gap-2 rounded-lg border border-border bg-card px-4 py-3"
+                          >
+                            <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+                            <span className="text-sm text-foreground">{blocker}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Task Stats */}
+            <TabsContent value="tasks">
+              {!taskData ? (
+                <EmptyState message="No task data for this period." />
+              ) : (
+                <div className="space-y-6">
+                  {/* Summary cards */}
+                  <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Created
+                        </CardTitle>
+                        <ListTodo className="size-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums">{taskData.created}</div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Completed
+                        </CardTitle>
+                        <CheckCircle2 className="size-4 text-green-600" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums">{taskData.completed}</div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Overdue
+                        </CardTitle>
+                        <AlertTriangle className="size-4 text-destructive" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums text-destructive">
+                          {taskData.overdue}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                          Avg Completion
+                        </CardTitle>
+                        <TrendingUp className="size-4 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold tabular-nums">
+                          {taskData.avgCompletionDays != null
+                            ? `${taskData.avgCompletionDays}d`
+                            : '—'}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Per-employee breakdown */}
+                  {taskData.byEmployee.length === 0 ? (
+                    <EmptyState message="No assigned tasks for this period." />
+                  ) : (
+                    <div className="rounded-xl border border-border bg-card">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="w-[200px]">Employee</TableHead>
+                            <TableHead className="w-[100px]">Created</TableHead>
+                            <TableHead className="w-[100px]">Completed</TableHead>
+                            <TableHead className="w-[100px]">Overdue</TableHead>
+                            <TableHead className="w-[120px]">Completion %</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {taskData.byEmployee.map((emp) => {
+                            const rate =
+                              emp.created > 0
+                                ? Math.round((emp.completed / emp.created) * 100)
+                                : null;
+                            return (
+                              <TableRow key={emp.profileId}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                                      <span className="text-[10px] font-semibold text-primary">
+                                        {emp.fullName[0]?.toUpperCase() ?? '?'}
+                                      </span>
+                                    </div>
+                                    <span className="text-sm font-medium">{emp.fullName}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-sm tabular-nums">
+                                  {emp.created}
+                                </TableCell>
+                                <TableCell className="text-sm tabular-nums text-green-600">
+                                  {emp.completed}
+                                </TableCell>
+                                <TableCell>
+                                  {emp.overdue > 0 ? (
+                                    <span className="text-sm font-medium tabular-nums text-destructive">
+                                      {emp.overdue}
+                                    </span>
+                                  ) : (
+                                    <span className="text-sm tabular-nums text-muted-foreground/50">
+                                      0
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  {rate != null ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                                        <div
+                                          className={`h-full rounded-full transition-all ${
+                                            rate >= 80
+                                              ? 'bg-green-500'
+                                              : rate >= 50
+                                                ? 'bg-amber-500'
+                                                : 'bg-destructive'
+                                          }`}
+                                          style={{ width: `${Math.min(rate, 100)}%` }}
+                                        />
+                                      </div>
+                                      <span className="text-sm tabular-nums">{rate}%</span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground/50">—</span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </div>
               )}
             </TabsContent>
