@@ -212,6 +212,10 @@ export async function getMeetings(workspaceId?: string | null) {
     wsId = await getCurrentWorkspaceId();
   }
 
+  // Only fetch meetings from the last 30 days forward (avoids hitting limit with old data)
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
   let query = supabase
     .from('meetings')
     .select(
@@ -232,8 +236,9 @@ export async function getMeetings(workspaceId?: string | null) {
             )
         `
     )
+    .gte('start_time', cutoff.toISOString())
     .order('start_time', { ascending: true })
-    .limit(200);
+    .limit(500);
 
   if (wsId) {
     query = query.eq('workspace_id', wsId);
