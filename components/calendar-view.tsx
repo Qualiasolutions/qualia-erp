@@ -41,7 +41,7 @@ interface CalendarViewProps {
   onDateSelect?: (date: Date) => void;
 }
 
-const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
   const { timezone } = useTimezone();
@@ -83,8 +83,8 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 

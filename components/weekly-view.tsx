@@ -54,7 +54,7 @@ interface WeeklyViewProps {
 
 // ============ Constants ============
 
-const FIXED_HOURS = { from: 9, to: 18 }; // 9 AM – 6 PM
+const FIXED_HOURS = { from: 8, to: 20 }; // 8 AM – 8 PM
 const HOUR_COUNT = FIXED_HOURS.to - FIXED_HOURS.from; // 9 hours
 const HOURS = Array.from({ length: HOUR_COUNT }, (_, i) => i + FIXED_HOURS.from);
 
@@ -143,8 +143,8 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
   // Compute visible days based on responsive breakpoint
   const days = useMemo(() => {
     if (visibleDays === 7) {
-      const weekStart = startOfWeek(currentDate);
-      const weekEnd = endOfWeek(currentDate);
+      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
       return eachDayOfInterval({ start: weekStart, end: weekEnd });
     }
     if (visibleDays === 3) {
@@ -159,7 +159,11 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
 
   const isCurrentWeek = useMemo(() => {
     const today = toZonedTime(new Date(), timezone);
-    if (visibleDays === 7) return isSameDay(startOfWeek(today), startOfWeek(currentDate));
+    if (visibleDays === 7)
+      return isSameDay(
+        startOfWeek(today, { weekStartsOn: 1 }),
+        startOfWeek(currentDate, { weekStartsOn: 1 })
+      );
     return days.some((d) => isSameDay(d, today));
   }, [currentDate, timezone, visibleDays, days]);
 
