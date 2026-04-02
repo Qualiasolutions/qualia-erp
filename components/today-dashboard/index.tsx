@@ -238,30 +238,7 @@ export function TodayDashboard({
       {/* ===== MAIN CONTENT ===== */}
       <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex min-h-0 w-full flex-1 flex-col px-5 py-3 sm:px-6 lg:px-8">
-          {/* "Viewing as" indicator */}
-          {viewingAsOther && (
-            <div className="bg-amber-500/6 mb-3 flex shrink-0 animate-slide-up items-center gap-2.5 rounded-lg border border-amber-500/25 px-4 py-2 backdrop-blur-sm">
-              <div className="flex size-6 items-center justify-center rounded-md bg-amber-500/15">
-                <Eye className="size-3 text-amber-600 dark:text-amber-400" />
-              </div>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                Viewing as{' '}
-                <span className="font-semibold">
-                  {profiles.find((p) => p.id === viewAsUserId)?.full_name || 'team member'}
-                </span>
-              </span>
-              <button
-                type="button"
-                className="ml-auto rounded-md px-2 py-0.5 text-xs font-medium text-amber-600 transition-colors hover:bg-amber-500/10 dark:text-amber-400"
-                onClick={() => {
-                  setViewAsUserId(null);
-                  if (isViewingAs) stopViewAs();
-                }}
-              >
-                Exit
-              </button>
-            </div>
-          )}
+          {/* "Viewing as" indicator removed — the header dropdown is sufficient */}
 
           {/* Owner updates banner — real employees only (not admin viewing as) */}
           {isNonAdmin && !viewingAsOther && <OwnerUpdatesBanner workspaceId={workspaceId} />}
