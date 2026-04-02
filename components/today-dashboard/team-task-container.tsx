@@ -33,28 +33,56 @@ import { TeamTaskCard } from './team-task-card';
 import type { TeamMemberTasks } from '@/app/actions/team-dashboard';
 import type { DailyCheckin } from '@/app/actions/checkins';
 
+// ─── Accent Colors ───────────────────────────────────────────────────────────
+
+const MEMBER_ACCENTS = [
+  {
+    bar: 'bg-violet-500',
+    light: 'bg-violet-100 dark:bg-violet-500/15',
+    text: 'text-violet-600 dark:text-violet-400',
+  },
+  {
+    bar: 'bg-sky-500',
+    light: 'bg-sky-100 dark:bg-sky-500/15',
+    text: 'text-sky-600 dark:text-sky-400',
+  },
+  {
+    bar: 'bg-amber-500',
+    light: 'bg-amber-100 dark:bg-amber-500/15',
+    text: 'text-amber-600 dark:text-amber-400',
+  },
+  {
+    bar: 'bg-rose-500',
+    light: 'bg-rose-100 dark:bg-rose-500/15',
+    text: 'text-rose-600 dark:text-rose-400',
+  },
+];
+
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 function TeamTaskSkeleton() {
   return (
-    <div className="animate-pulse space-y-4">
-      {[0, 1].map((i) => (
-        <div key={i} className="rounded-lg border border-border bg-card">
-          <div className="flex items-center gap-3 border-b border-border px-4 py-3">
-            <div className="size-7 rounded-full bg-muted" />
-            <div className="h-4 w-28 rounded bg-muted" />
-            <div className="ml-auto h-5 w-8 rounded-full bg-muted" />
+    <div className="grid animate-pulse grid-cols-1 gap-4 md:grid-cols-2">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="h-1 w-full bg-muted" />
+          <div className="flex items-center gap-3 px-4 py-3">
+            <div className="size-9 rounded-full bg-muted" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-4 w-28 rounded bg-muted" />
+              <div className="h-3 w-20 rounded bg-muted" />
+            </div>
           </div>
-          <div className="divide-y divide-border/30">
+          <div className="mx-4 mb-2 h-1 rounded-full bg-muted" />
+          <div className="divide-y divide-border/30 border-t border-border/30">
             {[0, 1, 2].map((j) => (
-              <div key={j} className="flex items-center gap-3 px-4 py-3">
-                <div className="size-2 rounded-full bg-muted" />
+              <div key={j} className="flex items-center gap-3 px-4 py-2.5">
+                <div className="size-1.5 rounded-full bg-muted" />
                 <div className="size-3.5 rounded-full bg-muted" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-3.5 w-3/4 rounded bg-muted" />
                   <div className="h-3 w-1/3 rounded bg-muted" />
                 </div>
-                <div className="h-5 w-14 rounded bg-muted" />
               </div>
             ))}
           </div>
@@ -99,7 +127,6 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
       invalidateDailyFlow(true);
       invalidateTeamDashboard(workspaceId);
       onCreated?.();
-      // Keep input focused for rapid entry
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   };
@@ -152,30 +179,34 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
   );
 }
 
-// ─── Member Group (Admin view) ────────────────────────────────────────────────
+// ─── Member Group (2×2 Grid Card) ────────────────────────────────────────────
 
 interface MemberGroupProps {
   member: TeamMemberTasks;
   workspaceId: string;
-  defaultOpen?: boolean;
+  accentIndex?: number;
+  canInteract?: boolean;
+  isOwner?: boolean;
   currentUserId?: string | null;
   onTaskUpdate?: () => void;
-  isAdmin?: boolean;
 }
 
 function MemberGroup({
   member,
   workspaceId,
-  defaultOpen = true,
+  accentIndex = 0,
+  canInteract = false,
+  isOwner = false,
   currentUserId,
   onTaskUpdate,
-  isAdmin,
 }: MemberGroupProps) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
   const { profile, tasks: allTasks } = member;
   const activeTasks = allTasks.filter((t) => t.status !== 'Done');
   const completedTasks = allTasks.filter((t) => t.status === 'Done');
+  const inProgressCount = activeTasks.filter((t) => t.status === 'In Progress').length;
+  const accent = MEMBER_ACCENTS[accentIndex % MEMBER_ACCENTS.length];
 
   const initials = profile.full_name
     ? profile.full_name
@@ -187,26 +218,59 @@ function MemberGroup({
     : '?';
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow duration-300 hover:shadow-md">
+    <div
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:shadow-md',
+        isOwner ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
+      )}
+    >
+      {/* Accent bar */}
+      <div className={cn('h-1 w-full', accent.bar)} />
+
       {/* Header */}
       <button
         type="button"
-        className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
+        className="flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
         onClick={() => setOpen((v) => !v)}
       >
-        <Avatar className="size-7 shrink-0 ring-1 ring-border/20">
+        <Avatar
+          className={cn('size-9 shrink-0 ring-2', isOwner ? 'ring-primary/30' : 'ring-border/20')}
+        >
           <AvatarImage
             src={profile.avatar_url ?? undefined}
             alt={profile.full_name ?? 'Team member'}
           />
-          <AvatarFallback className="text-[10px] font-semibold">{initials}</AvatarFallback>
+          <AvatarFallback className={cn('text-xs font-semibold', accent.light, accent.text)}>
+            {initials}
+          </AvatarFallback>
         </Avatar>
-        <span className="flex-1 text-[13px] font-semibold tracking-tight text-foreground">
-          {profile.full_name ?? 'Unknown'}
-        </span>
-        <span className="shrink-0 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground">
-          {activeTasks.length}
-        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-semibold tracking-tight text-foreground">
+              {profile.full_name ?? 'Unknown'}
+            </span>
+            {isOwner && (
+              <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                You
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span>{activeTasks.length} active</span>
+            {inProgressCount > 0 && (
+              <>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-blue-500">{inProgressCount} in progress</span>
+              </>
+            )}
+            {completedTasks.length > 0 && (
+              <>
+                <span className="text-muted-foreground/30">·</span>
+                <span className="text-emerald-500">{completedTasks.length} done</span>
+              </>
+            )}
+          </div>
+        </div>
         <ChevronDown
           className={cn(
             'size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
@@ -215,9 +279,21 @@ function MemberGroup({
         />
       </button>
 
-      {/* Tasks + inline add */}
+      {/* Progress bar */}
+      {allTasks.length > 0 && (
+        <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-muted/50">
+          <div
+            className="h-full rounded-full bg-emerald-500/70 transition-all duration-500"
+            style={{
+              width: `${(completedTasks.length / allTasks.length) * 100}%`,
+            }}
+          />
+        </div>
+      )}
+
+      {/* Tasks */}
       {open && (
-        <div className="divide-y divide-border/20">
+        <div className="flex-1 divide-y divide-border/20 border-t border-border/30">
           {activeTasks.length === 0 && completedTasks.length === 0 ? (
             <p className="px-4 py-4 text-center text-xs text-muted-foreground/60">
               No active tasks
@@ -231,7 +307,7 @@ function MemberGroup({
                   currentUserId={currentUserId}
                   onTaskUpdate={onTaskUpdate}
                   workspaceId={workspaceId}
-                  isAdmin={isAdmin}
+                  canInteract={canInteract}
                 />
               ))}
 
@@ -262,18 +338,20 @@ function MemberGroup({
                         currentUserId={currentUserId}
                         onTaskUpdate={onTaskUpdate}
                         workspaceId={workspaceId}
-                        isAdmin={isAdmin}
+                        canInteract={canInteract}
                       />
                     ))}
                 </div>
               )}
             </>
           )}
-          <InlineTaskAdd
-            assigneeId={profile.id}
-            workspaceId={workspaceId}
-            onCreated={onTaskUpdate}
-          />
+          {canInteract && (
+            <InlineTaskAdd
+              assigneeId={profile.id}
+              workspaceId={workspaceId}
+              onCreated={onTaskUpdate}
+            />
+          )}
         </div>
       )}
     </div>
@@ -484,80 +562,7 @@ function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
   );
 }
 
-// ─── Employee Task List (with completed section) ─────────────────────────────
-
-function EmployeeTaskList({
-  member,
-  currentUserId,
-  onTaskUpdate,
-  workspaceId,
-}: {
-  member: TeamMemberTasks | null;
-  currentUserId?: string | null;
-  onTaskUpdate?: () => void;
-  workspaceId: string;
-}) {
-  const [showCompleted, setShowCompleted] = useState(false);
-  const activeTasks = member?.tasks.filter((t) => t.status !== 'Done') ?? [];
-  const completedTasks = member?.tasks.filter((t) => t.status === 'Done') ?? [];
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      {!member || (activeTasks.length === 0 && completedTasks.length === 0) ? (
-        <div className="flex flex-col items-center justify-center py-10 text-center">
-          <ClipboardList className="mb-2 size-8 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground/70">No active tasks</p>
-          <p className="mt-1 text-xs text-muted-foreground/50">All caught up — great work!</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-border/20">
-          {activeTasks.map((task) => (
-            <TeamTaskCard
-              key={task.id}
-              task={task}
-              currentUserId={currentUserId}
-              onTaskUpdate={onTaskUpdate}
-              workspaceId={workspaceId}
-            />
-          ))}
-
-          {completedTasks.length > 0 && (
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowCompleted((v) => !v)}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors hover:bg-muted/20"
-              >
-                <CheckCircle2 className="size-3 text-emerald-500" />
-                <span className="font-medium text-emerald-500/80">
-                  {completedTasks.length} done today
-                </span>
-                <ChevronDown
-                  className={cn(
-                    'ml-auto size-3 text-muted-foreground/40 transition-transform duration-200',
-                    !showCompleted && '-rotate-90'
-                  )}
-                />
-              </button>
-              {showCompleted &&
-                completedTasks.map((task) => (
-                  <TeamTaskCard
-                    key={task.id}
-                    task={task}
-                    currentUserId={currentUserId}
-                    onTaskUpdate={onTaskUpdate}
-                    workspaceId={workspaceId}
-                  />
-                ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Main Container ────────────────────────────────────────────────────────────
+// ─── Main Container ──────────────────────────────────────────────────────────
 
 interface TeamTaskContainerProps {
   workspaceId: string;
@@ -579,19 +584,10 @@ export function TeamTaskContainer({
     revalidate();
   }, [revalidate]);
 
-  // Build flat profile list for check-in filter
   const profiles = members.map((m) => ({
     id: m.profile.id,
     full_name: m.profile.full_name,
   }));
-
-  // For employee view (or admin "view as"), find the specific member
-  // When viewing as someone, only match that specific person — don't fall back to members[0]
-  const viewedMember = viewingAs
-    ? (members.find((m) => m.profile.id === currentUserId) ?? null)
-    : currentUserId
-      ? (members.find((m) => m.profile.id === currentUserId) ?? members[0])
-      : members[0];
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -603,48 +599,38 @@ export function TeamTaskContainer({
         <p className="text-xs text-destructive">Failed to load team tasks.</p>
       )}
 
-      {/* Content */}
+      {/* Content — 2×2 grid for all roles */}
       {!isLoading && !isError && (
-        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-0.5">
-          {isAdmin ? (
-            <>
-              {/* Admin: grouped by person */}
-              {members.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-10 text-center">
-                  <Users className="mb-2 size-8 text-muted-foreground/30" />
-                  <p className="text-sm text-muted-foreground/70">No team members found</p>
-                </div>
-              ) : (
-                members.map((member, i) => (
-                  <div
-                    key={member.profile.id}
-                    className="animate-stagger-in"
-                    style={{ animationDelay: `${i * 40}ms` }}
-                  >
-                    <MemberGroup
-                      member={member}
-                      workspaceId={workspaceId}
-                      defaultOpen
-                      currentUserId={currentUserId}
-                      onTaskUpdate={handleTaskUpdate}
-                      isAdmin={isAdmin}
-                    />
-                  </div>
-                ))
-              )}
-
-              {/* Admin check-ins collapsible */}
-              <AdminCheckinsSection workspaceId={workspaceId} profiles={profiles} />
-            </>
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
+          {members.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-10 text-center">
+              <Users className="mb-2 size-8 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground/70">No team members found</p>
+            </div>
           ) : (
-            /* Employee: flat list of own tasks (or admin "view as" filtered) */
-            <EmployeeTaskList
-              member={viewedMember}
-              currentUserId={currentUserId}
-              onTaskUpdate={handleTaskUpdate}
-              workspaceId={workspaceId}
-            />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {members.map((member, i) => (
+                <div
+                  key={member.profile.id}
+                  className="animate-stagger-in"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <MemberGroup
+                    member={member}
+                    workspaceId={workspaceId}
+                    accentIndex={i}
+                    canInteract={member.profile.id === currentUserId || isAdmin}
+                    isOwner={member.profile.id === currentUserId}
+                    currentUserId={currentUserId}
+                    onTaskUpdate={handleTaskUpdate}
+                  />
+                </div>
+              ))}
+            </div>
           )}
+
+          {/* Admin check-ins — below the grid */}
+          {isAdmin && <AdminCheckinsSection workspaceId={workspaceId} profiles={profiles} />}
         </div>
       )}
     </div>

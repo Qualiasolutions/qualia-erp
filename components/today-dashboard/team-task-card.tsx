@@ -84,12 +84,14 @@ interface TeamTaskCardProps {
   onTaskUpdate?: () => void;
   workspaceId?: string;
   isAdmin?: boolean;
+  canInteract?: boolean;
 }
 
 export const TeamTaskCard = memo(function TeamTaskCard({
   task,
   onTaskUpdate,
   workspaceId,
+  canInteract = true,
 }: TeamTaskCardProps) {
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -151,30 +153,46 @@ export const TeamTaskCard = memo(function TeamTaskCard({
           title={task.priority}
         />
 
-        {/* Status circle — opens task detail to mark done from there */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleView();
-          }}
-          className={cn(
-            'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
-            statusColors
-              ? `${statusColors.border} ${task.status === 'In Progress' ? 'border-blue-500' : ''}`
-              : 'border-muted-foreground/30',
-            task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
-            task.status === 'In Progress' && 'border-blue-500',
-            task.status === 'Todo' &&
-              'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50'
-          )}
-          title={task.status === 'Done' ? 'Mark as todo' : 'Mark as done'}
-        >
-          {task.status === 'Done' && <Check className="size-2 text-white" />}
-          {task.status === 'In Progress' && (
-            <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
-          )}
-        </button>
+        {/* Status circle */}
+        {canInteract ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleView();
+            }}
+            className={cn(
+              'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200',
+              statusColors
+                ? `${statusColors.border} ${task.status === 'In Progress' ? 'border-blue-500' : ''}`
+                : 'border-muted-foreground/30',
+              task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
+              task.status === 'In Progress' && 'border-blue-500',
+              task.status === 'Todo' &&
+                'border-muted-foreground/30 hover:border-emerald-500 hover:bg-emerald-500/10 group-hover:border-muted-foreground/50'
+            )}
+            title={task.status === 'Done' ? 'Mark as todo' : 'Mark as done'}
+          >
+            {task.status === 'Done' && <Check className="size-2 text-white" />}
+            {task.status === 'In Progress' && (
+              <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
+            )}
+          </button>
+        ) : (
+          <div
+            className={cn(
+              'flex size-3.5 shrink-0 items-center justify-center rounded-full border-2',
+              task.status === 'Done' && 'border-emerald-500 bg-emerald-500',
+              task.status === 'In Progress' && 'border-blue-500',
+              task.status === 'Todo' && 'border-muted-foreground/30'
+            )}
+          >
+            {task.status === 'Done' && <Check className="size-2 text-white" />}
+            {task.status === 'In Progress' && (
+              <span className="block size-full scale-[0.4] rounded-full bg-blue-500" />
+            )}
+          </div>
+        )}
 
         {/* Title + project badge */}
         <div className="min-w-0 flex-1">
@@ -220,18 +238,20 @@ export const TeamTaskCard = memo(function TeamTaskCard({
             </span>
           )}
 
-          {/* View button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleView();
-            }}
-            className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition-all duration-200 hover:bg-primary/20 dark:text-primary"
-          >
-            <Eye className="size-3" />
-            View
-          </button>
+          {/* View button — only for task owner or admin */}
+          {canInteract && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView();
+              }}
+              className="flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition-all duration-200 hover:bg-primary/20 dark:text-primary"
+            >
+              <Eye className="size-3" />
+              View
+            </button>
+          )}
         </div>
       </div>
 
