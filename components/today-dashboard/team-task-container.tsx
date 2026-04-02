@@ -10,6 +10,14 @@ import {
   Plus,
   Loader2,
   CheckCircle2,
+  Globe,
+  Bot,
+  Phone,
+  Sparkles,
+  TrendingUp,
+  Smartphone,
+  Megaphone,
+  Folder,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -30,47 +38,118 @@ import {
 } from '@/lib/swr';
 import { createTask } from '@/app/actions/inbox';
 import { TeamTaskCard } from './team-task-card';
-import type { TeamMemberTasks } from '@/app/actions/team-dashboard';
+import type { TeamMemberTasks, TeamMemberTask } from '@/app/actions/team-dashboard';
 import type { DailyCheckin } from '@/app/actions/checkins';
 
-// ─── Brand Accent ────────────────────────────────────────────────────────────
+// ─── Project Type Styles (shared with team-task-card) ────────────────────────
 
-const MEMBER_ACCENT = {
-  bar: 'bg-primary',
-  light: 'bg-primary/10',
-  text: 'text-primary',
+const PROJECT_TYPE_STYLES: Record<
+  string,
+  { icon: typeof Globe; color: string; bg: string; border: string }
+> = {
+  ai_agent: {
+    icon: Bot,
+    color: 'text-violet-500',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/20',
+  },
+  voice_agent: {
+    icon: Phone,
+    color: 'text-pink-500',
+    bg: 'bg-pink-500/10',
+    border: 'border-pink-500/20',
+  },
+  ai_platform: {
+    icon: Sparkles,
+    color: 'text-indigo-500',
+    bg: 'bg-indigo-500/10',
+    border: 'border-indigo-500/20',
+  },
+  web_design: {
+    icon: Globe,
+    color: 'text-sky-500',
+    bg: 'bg-sky-500/10',
+    border: 'border-sky-500/20',
+  },
+  seo: {
+    icon: TrendingUp,
+    color: 'text-emerald-500',
+    bg: 'bg-emerald-500/10',
+    border: 'border-emerald-500/20',
+  },
+  app: {
+    icon: Smartphone,
+    color: 'text-teal-500',
+    bg: 'bg-teal-500/10',
+    border: 'border-teal-500/20',
+  },
+  ads: {
+    icon: Megaphone,
+    color: 'text-amber-500',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
+  },
 };
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function getInitials(name: string | null) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function getUniqueProjects(tasks: TeamMemberTask[]) {
+  const map = new Map<string, { id: string; name: string; project_type: string | null }>();
+  for (const t of tasks) {
+    if (t.project && !map.has(t.project.id)) {
+      map.set(t.project.id, t.project);
+    }
+  }
+  return [...map.values()];
+}
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
 function TeamTaskSkeleton() {
   return (
-    <div className="grid animate-pulse grid-cols-1 gap-4 md:grid-cols-2">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="overflow-hidden rounded-xl border border-border bg-card">
-          <div className="h-1 w-full bg-muted" />
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="size-9 rounded-full bg-muted" />
-            <div className="flex-1 space-y-1.5">
-              <div className="h-4 w-28 rounded bg-muted" />
+    <div className="animate-pulse space-y-4">
+      {/* My tasks skeleton */}
+      <div className="rounded-xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3">
+          <div className="h-4 w-24 rounded bg-muted" />
+        </div>
+        <div className="divide-y divide-border/30">
+          {[0, 1, 2].map((j) => (
+            <div key={j} className="flex items-center gap-3 px-4 py-2.5">
+              <div className="size-1.5 rounded-full bg-muted" />
+              <div className="size-3.5 rounded-full bg-muted" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-3/4 rounded bg-muted" />
+                <div className="h-3 w-1/3 rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Team overview skeleton */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="rounded-lg border border-border bg-card px-3 py-3">
+            <div className="flex items-center gap-2">
+              <div className="size-7 rounded-full bg-muted" />
+              <div className="h-3.5 w-16 rounded bg-muted" />
+            </div>
+            <div className="mt-2 space-y-1">
               <div className="h-3 w-20 rounded bg-muted" />
             </div>
           </div>
-          <div className="mx-4 mb-2 h-1 rounded-full bg-muted" />
-          <div className="divide-y divide-border/30 border-t border-border/30">
-            {[0, 1, 2].map((j) => (
-              <div key={j} className="flex items-center gap-3 px-4 py-2.5">
-                <div className="size-1.5 rounded-full bg-muted" />
-                <div className="size-3.5 rounded-full bg-muted" />
-                <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 w-3/4 rounded bg-muted" />
-                  <div className="h-3 w-1/3 rounded bg-muted" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
@@ -162,178 +241,140 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
   );
 }
 
-// ─── Member Group (2×2 Grid Card) ────────────────────────────────────────────
+// ─── My Tasks (full interactive task list) ───────────────────────────────────
 
-interface MemberGroupProps {
-  member: TeamMemberTasks;
-  workspaceId: string;
-  canInteract?: boolean;
-  isOwner?: boolean;
-  currentUserId?: string | null;
-  onTaskUpdate?: () => void;
-}
-
-function MemberGroup({
+function MyTaskList({
   member,
-  workspaceId,
-  canInteract = false,
-  isOwner = false,
   currentUserId,
   onTaskUpdate,
-}: MemberGroupProps) {
-  const [open, setOpen] = useState(true);
+  workspaceId,
+}: {
+  member: TeamMemberTasks;
+  currentUserId?: string | null;
+  onTaskUpdate?: () => void;
+  workspaceId: string;
+}) {
   const [showCompleted, setShowCompleted] = useState(false);
-  const { profile, tasks: allTasks } = member;
-  const activeTasks = allTasks.filter((t) => t.status !== 'Done');
-  const completedTasks = allTasks.filter((t) => t.status === 'Done');
-  const inProgressCount = activeTasks.filter((t) => t.status === 'In Progress').length;
-  const accent = MEMBER_ACCENT;
-
-  const initials = profile.full_name
-    ? profile.full_name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : '?';
+  const activeTasks = member.tasks.filter((t) => t.status !== 'Done');
+  const completedTasks = member.tasks.filter((t) => t.status === 'Done');
 
   return (
-    <div
-      className={cn(
-        'flex h-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all duration-300 hover:shadow-md',
-        isOwner ? 'border-primary/30 ring-1 ring-primary/10' : 'border-border'
-      )}
-    >
-      {/* Accent bar */}
-      <div className={cn('h-1 w-full', accent.bar)} />
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      {activeTasks.length === 0 && completedTasks.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <CheckCircle2 className="mb-2 size-6 text-emerald-500/40" />
+          <p className="text-sm text-muted-foreground/70">All caught up</p>
+        </div>
+      ) : (
+        <div className="divide-y divide-border/20">
+          {activeTasks.map((task) => (
+            <TeamTaskCard
+              key={task.id}
+              task={task}
+              currentUserId={currentUserId}
+              onTaskUpdate={onTaskUpdate}
+              workspaceId={workspaceId}
+              canInteract
+            />
+          ))}
 
-      {/* Header */}
-      <button
-        type="button"
-        className="flex items-center gap-3 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
-        onClick={() => setOpen((v) => !v)}
-      >
-        <Avatar
-          className={cn('size-9 shrink-0 ring-2', isOwner ? 'ring-primary/30' : 'ring-border/20')}
-        >
-          <AvatarImage
-            src={profile.avatar_url ?? undefined}
-            alt={profile.full_name ?? 'Team member'}
-          />
-          <AvatarFallback className={cn('text-xs font-semibold', accent.light, accent.text)}>
-            {initials}
+          {completedTasks.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowCompleted((v) => !v)}
+                className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors hover:bg-muted/20"
+              >
+                <CheckCircle2 className="size-3 text-emerald-500" />
+                <span className="font-medium text-emerald-500/80">
+                  {completedTasks.length} done today
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'ml-auto size-3 text-muted-foreground/40 transition-transform duration-200',
+                    !showCompleted && '-rotate-90'
+                  )}
+                />
+              </button>
+              {showCompleted &&
+                completedTasks.map((task) => (
+                  <TeamTaskCard
+                    key={task.id}
+                    task={task}
+                    currentUserId={currentUserId}
+                    onTaskUpdate={onTaskUpdate}
+                    workspaceId={workspaceId}
+                    canInteract
+                  />
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+      <InlineTaskAdd
+        assigneeId={member.profile.id}
+        workspaceId={workspaceId}
+        onCreated={onTaskUpdate}
+      />
+    </div>
+  );
+}
+
+// ─── Team Overview Card (compact — projects + task count) ────────────────────
+
+function TeamOverviewCard({ member }: { member: TeamMemberTasks }) {
+  const { profile, tasks } = member;
+  const activeTasks = tasks.filter((t) => t.status !== 'Done');
+  const inProgress = activeTasks.filter((t) => t.status === 'In Progress').length;
+  const projects = getUniqueProjects(activeTasks);
+
+  return (
+    <div className="rounded-lg border border-border bg-card px-3 py-3 transition-colors hover:bg-muted/20">
+      {/* Name row */}
+      <div className="flex items-center gap-2">
+        <Avatar className="size-7 shrink-0 ring-1 ring-border/20">
+          <AvatarImage src={profile.avatar_url ?? undefined} alt={profile.full_name ?? ''} />
+          <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
+            {getInitials(profile.full_name)}
           </AvatarFallback>
         </Avatar>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="truncate text-sm font-semibold tracking-tight text-foreground">
-              {profile.full_name ?? 'Unknown'}
-            </span>
-            {isOwner && (
-              <span className="shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                You
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span>{activeTasks.length} active</span>
-            {inProgressCount > 0 && (
-              <>
-                <span className="text-muted-foreground/30">·</span>
-                <span className="text-blue-500">{inProgressCount} in progress</span>
-              </>
-            )}
-            {completedTasks.length > 0 && (
-              <>
-                <span className="text-muted-foreground/30">·</span>
-                <span className="text-emerald-500">{completedTasks.length} done</span>
-              </>
-            )}
-          </div>
+          <p className="truncate text-xs font-semibold text-foreground">
+            {profile.full_name ?? 'Unknown'}
+          </p>
+          <p className="text-[10px] text-muted-foreground">
+            {activeTasks.length} task{activeTasks.length !== 1 ? 's' : ''}
+            {inProgress > 0 && <span className="text-blue-500"> · {inProgress} active</span>}
+          </p>
         </div>
-        <ChevronDown
-          className={cn(
-            'size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
-            !open && '-rotate-90'
-          )}
-        />
-      </button>
+      </div>
 
-      {/* Progress bar */}
-      {allTasks.length > 0 && (
-        <div className="mx-4 mb-2 h-1 overflow-hidden rounded-full bg-muted/50">
-          <div
-            className="h-full rounded-full bg-emerald-500/70 transition-all duration-500"
-            style={{
-              width: `${(completedTasks.length / allTasks.length) * 100}%`,
-            }}
-          />
+      {/* Projects */}
+      {projects.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {projects.map((p) => {
+            const style = p.project_type ? PROJECT_TYPE_STYLES[p.project_type] : null;
+            const Icon = style?.icon || Folder;
+            return (
+              <span
+                key={p.id}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium',
+                  style
+                    ? `${style.bg} ${style.border} ${style.color}`
+                    : 'border-border bg-muted/30 text-muted-foreground/70'
+                )}
+              >
+                <Icon className="size-2.5" />
+                {p.name}
+              </span>
+            );
+          })}
         </div>
       )}
 
-      {/* Tasks */}
-      {open && (
-        <div className="flex-1 divide-y divide-border/20 border-t border-border/30">
-          {activeTasks.length === 0 && completedTasks.length === 0 ? (
-            <p className="px-4 py-4 text-center text-xs text-muted-foreground/60">
-              No active tasks
-            </p>
-          ) : (
-            <>
-              {activeTasks.map((task) => (
-                <TeamTaskCard
-                  key={task.id}
-                  task={task}
-                  currentUserId={currentUserId}
-                  onTaskUpdate={onTaskUpdate}
-                  workspaceId={workspaceId}
-                  canInteract={canInteract}
-                />
-              ))}
-
-              {/* Completed today section */}
-              {completedTasks.length > 0 && (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setShowCompleted((v) => !v)}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors hover:bg-muted/20"
-                  >
-                    <CheckCircle2 className="size-3 text-emerald-500" />
-                    <span className="font-medium text-emerald-500/80">
-                      {completedTasks.length} done today
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        'ml-auto size-3 text-muted-foreground/40 transition-transform duration-200',
-                        !showCompleted && '-rotate-90'
-                      )}
-                    />
-                  </button>
-                  {showCompleted &&
-                    completedTasks.map((task) => (
-                      <TeamTaskCard
-                        key={task.id}
-                        task={task}
-                        currentUserId={currentUserId}
-                        onTaskUpdate={onTaskUpdate}
-                        workspaceId={workspaceId}
-                        canInteract={canInteract}
-                      />
-                    ))}
-                </div>
-              )}
-            </>
-          )}
-          {canInteract && (
-            <InlineTaskAdd
-              assigneeId={profile.id}
-              workspaceId={workspaceId}
-              onCreated={onTaskUpdate}
-            />
-          )}
-        </div>
+      {projects.length === 0 && activeTasks.length === 0 && (
+        <p className="mt-1.5 text-[10px] text-muted-foreground/50">No active work</p>
       )}
     </div>
   );
@@ -385,7 +426,6 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      {/* Header toggle */}
       <button
         type="button"
         className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
@@ -407,7 +447,6 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
 
       {open && (
         <div className="border-t border-border">
-          {/* Filter bar */}
           <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/20 px-4 py-2">
             <Filter className="size-3.5 shrink-0 text-muted-foreground" />
             <Input
@@ -431,7 +470,6 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
             </Select>
           </div>
 
-          {/* Checkins list */}
           <div className="max-h-80 divide-y divide-border/30 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-8">
@@ -455,15 +493,6 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
 }
 
 function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
-  const initials = checkin.profile?.full_name
-    ? checkin.profile.full_name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : '?';
-
   const isMorning = checkin.checkin_type === 'morning';
 
   return (
@@ -474,7 +503,9 @@ function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
             src={checkin.profile?.avatar_url ?? undefined}
             alt={checkin.profile?.full_name ?? 'Member'}
           />
-          <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+          <AvatarFallback className="text-xs">
+            {getInitials(checkin.profile?.full_name ?? null)}
+          </AvatarFallback>
         </Avatar>
         <span className="text-xs font-medium text-foreground">
           {checkin.profile?.full_name ?? 'Unknown'}
@@ -570,46 +601,73 @@ export function TeamTaskContainer({
     full_name: m.profile.full_name,
   }));
 
+  // Find the current user's member data (for "My Tasks")
+  const myMember = members.find((m) => m.profile.id === currentUserId) ?? null;
+  // Everyone else (for "Team" overview)
+  const otherMembers = members.filter((m) => m.profile.id !== currentUserId);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Loading */}
       {isLoading && <TeamTaskSkeleton />}
 
-      {/* Error */}
       {isError && !isLoading && (
         <p className="text-xs text-destructive">Failed to load team tasks.</p>
       )}
 
-      {/* Content — 2×2 grid for all roles */}
       {!isLoading && !isError && (
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
-          {members.length === 0 ? (
+          {/* ── My Tasks ── */}
+          {myMember && (
+            <MyTaskList
+              member={myMember}
+              currentUserId={currentUserId}
+              onTaskUpdate={handleTaskUpdate}
+              workspaceId={workspaceId}
+            />
+          )}
+
+          {/* ── Team Overview ── */}
+          {otherMembers.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center gap-2 px-0.5">
+                <Users className="size-3.5 text-muted-foreground/60" />
+                <span className="text-xs font-semibold tracking-tight text-muted-foreground">
+                  Team
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {otherMembers.map((member) => (
+                  <TeamOverviewCard key={member.profile.id} member={member} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Admin: show all members as overview when not in the list */}
+          {isAdmin && !myMember && members.length > 0 && (
+            <div>
+              <div className="mb-2 flex items-center gap-2 px-0.5">
+                <Users className="size-3.5 text-muted-foreground/60" />
+                <span className="text-xs font-semibold tracking-tight text-muted-foreground">
+                  Team
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {members.map((member) => (
+                  <TeamOverviewCard key={member.profile.id} member={member} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {members.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-10 text-center">
               <Users className="mb-2 size-8 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground/70">No team members found</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {members.map((member, i) => (
-                <div
-                  key={member.profile.id}
-                  className="animate-stagger-in"
-                  style={{ animationDelay: `${i * 60}ms` }}
-                >
-                  <MemberGroup
-                    member={member}
-                    workspaceId={workspaceId}
-                    canInteract={member.profile.id === currentUserId || isAdmin}
-                    isOwner={member.profile.id === currentUserId}
-                    currentUserId={currentUserId}
-                    onTaskUpdate={handleTaskUpdate}
-                  />
-                </div>
-              ))}
-            </div>
           )}
 
-          {/* Admin check-ins — below the grid */}
+          {/* Admin check-ins */}
           {isAdmin && <AdminCheckinsSection workspaceId={workspaceId} profiles={profiles} />}
         </div>
       )}
