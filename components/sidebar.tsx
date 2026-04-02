@@ -10,6 +10,8 @@ import {
   Calendar,
   Building2,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   LogOut,
   Settings,
   BookOpen,
@@ -37,6 +39,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { createClient } from '@/lib/supabase/client';
 
 const workspaceNav = [
@@ -70,17 +73,20 @@ function NavLink({
   item,
   isActive,
   onClick,
+  collapsed,
 }: {
   item: NavItem;
   isActive: boolean;
   onClick?: () => void;
+  collapsed?: boolean;
 }) {
-  return (
+  const link = (
     <Link
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-10 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-200 ease-premium',
+        'group relative flex h-10 items-center rounded-lg text-[13px] font-medium transition-all duration-200 ease-premium',
+        collapsed ? 'justify-center px-0' : 'gap-2.5 px-3',
         isActive
           ? 'bg-primary/10 text-foreground'
           : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
@@ -92,15 +98,34 @@ function NavLink({
           isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-muted-foreground'
         )}
       />
-      <span>{item.name}</span>
-      {isActive && (
+      {!collapsed && <span>{item.name}</span>}
+      {isActive && !collapsed && (
         <span className="absolute right-2 top-1/2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-primary" />
+      )}
+      {isActive && collapsed && (
+        <span className="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary" />
       )}
     </Link>
   );
+
+  if (collapsed) {
+    return (
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>{link}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {item.name}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return link;
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabel({ children, collapsed }: { children: React.ReactNode; collapsed?: boolean }) {
+  if (collapsed) {
+    return <div className="mx-auto my-1 h-px w-6 bg-border/40" />;
+  }
   return (
     <span className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">
       {children}
@@ -108,7 +133,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
+function UserMenu({ onLinkClick, collapsed }: { onLinkClick?: () => void; collapsed?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -131,19 +156,29 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-200 ease-premium',
+            'flex items-center rounded-lg py-2 text-sm transition-all duration-200 ease-premium',
             'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-            'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30'
+            'focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30',
+            collapsed ? 'w-full justify-center px-0' : 'min-w-0 flex-1 gap-2.5 px-2.5'
           )}
         >
           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10">
             <span className="text-xs font-semibold text-primary">Q</span>
           </div>
-          <span className="truncate text-[13px] font-medium">Qualia</span>
-          <ChevronUp className="ml-auto h-3 w-3 shrink-0 opacity-30" />
+          {!collapsed && (
+            <>
+              <span className="truncate text-[13px] font-medium">Qualia</span>
+              <ChevronUp className="ml-auto h-3 w-3 shrink-0 opacity-30" />
+            </>
+          )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-48">
+      <DropdownMenuContent
+        side="top"
+        align={collapsed ? 'center' : 'start'}
+        sideOffset={8}
+        className="w-48"
+      >
         <DropdownMenuItem onClick={() => handleMenuItemClick('/settings')}>
           <Settings className="h-4 w-4" />
           Settings
@@ -161,11 +196,18 @@ function UserMenu({ onLinkClick }: { onLinkClick?: () => void }) {
   );
 }
 
-function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
+function SidebarContent({
+  onLinkClick,
+  collapsed = false,
+}: {
+  onLinkClick?: () => void;
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
   const canTrackTime = userRole === 'employee';
   const [showClockOut, setShowClockOut] = useState(false);
+  const { toggleSidebar } = useSidebar();
 
   // Session clock-out (employees and managers)
   const { workspaceId } = useCurrentWorkspaceId();
@@ -177,75 +219,85 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
     pathname === href || (href !== '/' && pathname.startsWith(href));
 
   return (
-    <div className="flex h-full flex-col bg-card">
-      {/* Logo */}
-      <div className="relative flex h-[60px] items-center border-b border-border px-4">
-        <Link
-          href="/"
-          className="ease-out-quart group flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]"
-          onClick={onLinkClick}
+    <TooltipProvider>
+      <div className="flex h-full flex-col bg-card">
+        {/* Logo */}
+        <div
+          className={cn(
+            'relative flex h-[60px] items-center border-b border-border',
+            collapsed ? 'justify-center px-2' : 'px-4'
+          )}
         >
-          <div className="ease-out-quart relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 group-hover:scale-[1.05]">
-            <Image
-              src="/logo.webp"
-              alt="Qualia"
-              width={28}
-              height={28}
-              className="h-7 w-7 object-contain"
-              priority
-            />
-          </div>
-          <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
-        </Link>
-        {/* Separator gradient */}
-        <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-5 px-3 pt-4">
-        {/* Workspace section */}
-        <div className="space-y-1">
-          <SectionLabel>Workspace</SectionLabel>
-          <div className="space-y-0.5">
-            {workspaceNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-                onClick={onLinkClick}
+          <Link
+            href="/"
+            className="ease-out-quart group flex items-center gap-2.5 transition-transform duration-200 hover:scale-[1.02]"
+            onClick={onLinkClick}
+          >
+            <div className="ease-out-quart relative h-7 w-7 shrink-0 overflow-hidden rounded-lg transition-transform duration-200 group-hover:scale-[1.05]">
+              <Image
+                src="/logo.webp"
+                alt="Qualia"
+                width={28}
+                height={28}
+                className="h-7 w-7 object-contain"
+                priority
               />
-            ))}
-            {isAdmin &&
-              adminWorkspaceNav.map((item) => (
+            </div>
+            {!collapsed && (
+              <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
+            )}
+          </Link>
+          {/* Separator gradient */}
+          <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-border/50 to-transparent" />
+        </div>
+
+        {/* Navigation */}
+        <nav className={cn('flex-1 space-y-5 pt-4', collapsed ? 'px-2' : 'px-3')}>
+          {/* Workspace section */}
+          <div className="space-y-1">
+            <SectionLabel collapsed={collapsed}>Workspace</SectionLabel>
+            <div className="space-y-0.5">
+              {workspaceNav.map((item) => (
                 <NavLink
                   key={item.name}
                   item={item}
                   isActive={isActive(item.href)}
                   onClick={onLinkClick}
+                  collapsed={collapsed}
                 />
               ))}
+              {isAdmin &&
+                adminWorkspaceNav.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    item={item}
+                    isActive={isActive(item.href)}
+                    onClick={onLinkClick}
+                    collapsed={collapsed}
+                  />
+                ))}
+            </div>
           </div>
-        </div>
 
-        {/* Resources section */}
-        <div className="space-y-1">
-          <SectionLabel>Resources</SectionLabel>
-          <div className="space-y-0.5">
-            {resourcesNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item.href)}
-                onClick={onLinkClick}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Portal section — visible to all internal roles */}
-        {
+          {/* Resources section */}
           <div className="space-y-1">
-            <SectionLabel>External</SectionLabel>
+            <SectionLabel collapsed={collapsed}>Resources</SectionLabel>
+            <div className="space-y-0.5">
+              {resourcesNav.map((item) => (
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item.href)}
+                  onClick={onLinkClick}
+                  collapsed={collapsed}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Portal section — visible to all internal roles */}
+          <div className="space-y-1">
+            <SectionLabel collapsed={collapsed}>External</SectionLabel>
             <div className="space-y-0.5">
               {portalNav.map((item) => (
                 <NavLink
@@ -253,72 +305,115 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
                   item={item}
                   isActive={isActive(item.href)}
                   onClick={onLinkClick}
+                  collapsed={collapsed}
                 />
               ))}
             </div>
           </div>
-        }
 
-        {/* Admin section — admins only */}
-        {isAdmin && (
-          <div className="space-y-1">
-            <SectionLabel>Admin</SectionLabel>
-            <div className="space-y-0.5">
-              {adminNav.map((item) => (
-                <NavLink
-                  key={item.name}
-                  item={item}
-                  isActive={isActive(item.href)}
-                  onClick={onLinkClick}
-                />
-              ))}
+          {/* Admin section — admins only */}
+          {isAdmin && (
+            <div className="space-y-1">
+              <SectionLabel collapsed={collapsed}>Admin</SectionLabel>
+              <div className="space-y-0.5">
+                {adminNav.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    item={item}
+                    isActive={isActive(item.href)}
+                    onClick={onLinkClick}
+                    collapsed={collapsed}
+                  />
+                ))}
+              </div>
             </div>
+          )}
+        </nav>
+
+        {/* Clock-out button — employees and managers with active session */}
+        {canTrackTime && activeSession && workspaceId && (
+          <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
+            <div className="mb-2 h-px bg-border/40" />
+            {collapsed ? (
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setShowClockOut(true)}
+                    className="bg-primary/8 flex w-full items-center justify-center rounded-lg border border-primary/30 p-2.5 transition-all duration-200 hover:bg-primary/15"
+                  >
+                    <Timer className="size-4 text-primary" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={8}>
+                  Clock out — {activeSession.project?.name ?? 'Session active'}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowClockOut(true)}
+                className="bg-primary/8 flex w-full items-center gap-2.5 rounded-lg border border-primary/30 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
+              >
+                <Timer className="size-4 shrink-0 text-primary" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold">
+                    {activeSession.project?.name ?? 'Session active'}
+                  </div>
+                  <div className="text-[11px] text-primary/70 dark:text-primary/70">
+                    Tap to clock out
+                  </div>
+                </div>
+                <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary dark:text-primary">
+                  LIVE
+                </span>
+              </button>
+            )}
+            <ClockOutModal
+              open={showClockOut}
+              onOpenChange={setShowClockOut}
+              workspaceId={workspaceId}
+              session={activeSession}
+              onSuccess={() => setShowClockOut(false)}
+            />
           </div>
         )}
-      </nav>
 
-      {/* Clock-out button — employees and managers with active session */}
-      {canTrackTime && activeSession && workspaceId && (
-        <div className="px-3 pb-2">
-          <div className="mb-2 h-px bg-border/40" />
-          <button
-            type="button"
-            onClick={() => setShowClockOut(true)}
-            className="bg-primary/8 flex w-full items-center gap-2.5 rounded-lg border border-primary/30 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
-          >
-            <Timer className="size-4 shrink-0 text-primary" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold">
-                {activeSession.project?.name ?? 'Session active'}
-              </div>
-              <div className="text-[11px] text-primary/70 dark:text-primary/70">
-                Tap to clock out
-              </div>
-            </div>
-            <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary dark:text-primary">
-              LIVE
-            </span>
-          </button>
-          <ClockOutModal
-            open={showClockOut}
-            onOpenChange={setShowClockOut}
-            workspaceId={workspaceId}
-            session={activeSession}
-            onSuccess={() => setShowClockOut(false)}
-          />
+        {/* Collapse toggle */}
+        <div className={cn('border-t border-border', collapsed ? 'px-2 py-2' : 'px-3 py-1.5')}>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={toggleSidebar}
+                className={cn(
+                  'flex h-8 w-full items-center rounded-md text-muted-foreground/50 transition-all duration-200 ease-premium hover:bg-muted/40 hover:text-muted-foreground',
+                  collapsed ? 'justify-center' : 'justify-end px-2'
+                )}
+              >
+                {collapsed ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            </TooltipContent>
+          </Tooltip>
         </div>
-      )}
 
-      {/* Bottom section — account menu */}
-      <div className="border-t border-border px-3 py-2.5">
-        <UserMenu onLinkClick={onLinkClick} />
+        {/* Bottom section — account menu */}
+        <div className={cn('border-t border-border py-2.5', collapsed ? 'px-2' : 'px-3')}>
+          <UserMenu onLinkClick={onLinkClick} collapsed={collapsed} />
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
 
 export function Sidebar() {
-  const { isMobileOpen, toggleMobile } = useSidebar();
+  const { isCollapsed, isMobileOpen, toggleMobile } = useSidebar();
   const pathname = usePathname();
 
   const handleLinkClick = () => {
@@ -335,11 +430,16 @@ export function Sidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden h-full w-56 flex-shrink-0 border-r border-border bg-card md:block">
-        <SidebarContent onLinkClick={handleLinkClick} />
+      <aside
+        className={cn(
+          'ease-out-quart hidden h-full flex-shrink-0 border-r border-border bg-card transition-[width] duration-200 md:block',
+          isCollapsed ? 'w-[60px]' : 'w-56'
+        )}
+      >
+        <SidebarContent onLinkClick={handleLinkClick} collapsed={isCollapsed} />
       </aside>
 
-      {/* Mobile Sidebar */}
+      {/* Mobile Sidebar — always expanded */}
       <Sheet open={isMobileOpen} onOpenChange={toggleMobile}>
         <SheetContent side="left" className="w-64 p-0">
           <SidebarContent onLinkClick={handleLinkClick} />

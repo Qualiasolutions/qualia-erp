@@ -98,7 +98,7 @@ export const metadata: Metadata = {
 
 function SidebarSkeleton() {
   return (
-    <div className="hidden h-full w-56 flex-shrink-0 flex-col border-r border-border bg-card md:flex">
+    <div className="ease-out-quart hidden h-full w-56 flex-shrink-0 flex-col border-r border-border bg-card transition-[width] duration-200 md:flex">
       <div className="flex h-[60px] items-center gap-2.5 border-b border-border px-4">
         <div className="h-7 w-7 animate-pulse rounded-lg bg-muted" />
         <div className="h-3 w-14 animate-pulse rounded bg-muted" />
