@@ -33,30 +33,13 @@ import { TeamTaskCard } from './team-task-card';
 import type { TeamMemberTasks } from '@/app/actions/team-dashboard';
 import type { DailyCheckin } from '@/app/actions/checkins';
 
-// ─── Accent Colors ───────────────────────────────────────────────────────────
+// ─── Brand Accent ────────────────────────────────────────────────────────────
 
-const MEMBER_ACCENTS = [
-  {
-    bar: 'bg-violet-500',
-    light: 'bg-violet-100 dark:bg-violet-500/15',
-    text: 'text-violet-600 dark:text-violet-400',
-  },
-  {
-    bar: 'bg-sky-500',
-    light: 'bg-sky-100 dark:bg-sky-500/15',
-    text: 'text-sky-600 dark:text-sky-400',
-  },
-  {
-    bar: 'bg-amber-500',
-    light: 'bg-amber-100 dark:bg-amber-500/15',
-    text: 'text-amber-600 dark:text-amber-400',
-  },
-  {
-    bar: 'bg-rose-500',
-    light: 'bg-rose-100 dark:bg-rose-500/15',
-    text: 'text-rose-600 dark:text-rose-400',
-  },
-];
+const MEMBER_ACCENT = {
+  bar: 'bg-primary',
+  light: 'bg-primary/10',
+  text: 'text-primary',
+};
 
 // ─── Skeleton ────────────────────────────────────────────────────────────────
 
@@ -184,7 +167,6 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
 interface MemberGroupProps {
   member: TeamMemberTasks;
   workspaceId: string;
-  accentIndex?: number;
   canInteract?: boolean;
   isOwner?: boolean;
   currentUserId?: string | null;
@@ -194,7 +176,6 @@ interface MemberGroupProps {
 function MemberGroup({
   member,
   workspaceId,
-  accentIndex = 0,
   canInteract = false,
   isOwner = false,
   currentUserId,
@@ -206,7 +187,7 @@ function MemberGroup({
   const activeTasks = allTasks.filter((t) => t.status !== 'Done');
   const completedTasks = allTasks.filter((t) => t.status === 'Done');
   const inProgressCount = activeTasks.filter((t) => t.status === 'In Progress').length;
-  const accent = MEMBER_ACCENTS[accentIndex % MEMBER_ACCENTS.length];
+  const accent = MEMBER_ACCENT;
 
   const initials = profile.full_name
     ? profile.full_name
@@ -618,7 +599,6 @@ export function TeamTaskContainer({
                   <MemberGroup
                     member={member}
                     workspaceId={workspaceId}
-                    accentIndex={i}
                     canInteract={member.profile.id === currentUserId || isAdmin}
                     isOwner={member.profile.id === currentUserId}
                     currentUserId={currentUserId}

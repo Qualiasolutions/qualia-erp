@@ -263,8 +263,8 @@ export function TodayDashboard({
             </div>
           )}
 
-          {/* Owner updates banner — employees only */}
-          {isNonAdmin && <OwnerUpdatesBanner workspaceId={workspaceId} />}
+          {/* Owner updates banner — real employees only (not admin viewing as) */}
+          {isNonAdmin && !viewingAsOther && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
           {/* ── TOP ROW: Meetings + Tasks side by side (fills available height) ── */}
           <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
