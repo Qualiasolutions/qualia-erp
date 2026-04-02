@@ -28,15 +28,22 @@ export type TaskAttachment = {
   } | null;
 };
 
-// Max file size: 1MB
-const MAX_FILE_SIZE = 1 * 1024 * 1024;
+// Max file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = [
+  // Images
   'image/jpeg',
   'image/png',
   'image/gif',
   'image/webp',
   'image/svg+xml',
+  'image/bmp',
+  'image/tiff',
+  'image/heic',
+  'image/heif',
+  'image/avif',
+  // Documents
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -44,17 +51,50 @@ const ALLOWED_MIME_TYPES = [
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.ms-powerpoint',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.oasis.opendocument.text',
+  'application/vnd.oasis.opendocument.spreadsheet',
+  'application/vnd.oasis.opendocument.presentation',
+  'application/rtf',
+  'application/epub+zip',
+  // Text
   'text/plain',
   'text/csv',
   'text/markdown',
   'text/html',
+  'text/xml',
+  'text/css',
+  'text/javascript',
+  // Data
   'application/json',
+  'application/xml',
+  'application/yaml',
+  'application/sql',
+  // Archives
   'application/zip',
   'application/x-rar-compressed',
+  'application/gzip',
+  'application/x-tar',
+  'application/x-7z-compressed',
+  // Video
   'video/mp4',
   'video/quicktime',
+  'video/webm',
+  'video/x-msvideo',
+  'video/x-matroska',
+  // Audio
   'audio/mpeg',
   'audio/wav',
+  'audio/ogg',
+  'audio/webm',
+  'audio/aac',
+  'audio/flac',
+  'audio/x-m4a',
+  // Design
+  'application/postscript',
+  'image/vnd.adobe.photoshop',
+  'application/x-figma',
+  // Misc
+  'application/octet-stream',
 ];
 
 /**
@@ -116,7 +156,7 @@ export async function uploadTaskAttachment(formData: FormData): Promise<ActionRe
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return { success: false, error: 'File size exceeds 1MB limit' };
+    return { success: false, error: 'File size exceeds 10MB limit' };
   }
 
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
@@ -282,4 +322,47 @@ export async function getTaskAttachmentUrl(attachmentId: string): Promise<Action
   }
 
   return { success: true, data: { url: signedUrl.signedUrl, filename: attachment.file_name } };
+}
+
+/**
+ * Submit a text response/data for a task (visible to admin)
+ */
+export async function submitTaskResponse(
+  taskId: string,
+  submissionText: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
+  if (!submissionText.trim()) {
+    return { success: false, error: 'Submission text cannot be empty' };
+  }
+
+  // Authorization: Only task creator, assignee, project lead, or admin can submit
+  const canModify = await canModifyTask(user.id, taskId);
+  if (!canModify) {
+    return { success: false, error: 'You do not have permission to submit on this task' };
+  }
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      submission_text: submissionText.trim(),
+      submitted_at: new Date().toISOString(),
+    })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('[submitTaskResponse] Error:', error);
+    return { success: false, error: 'Failed to save submission' };
+  }
+
+  revalidatePath('/inbox');
+  return { success: true };
 }

@@ -302,6 +302,8 @@ export function InboxView({ initialTasks }: InboxViewProps) {
       priority: 'No Priority',
       show_in_inbox: true,
       requires_attachment: null,
+      submission_text: null,
+      submitted_at: null,
       item_type: 'task',
       workspace_id: '',
       creator_id: null,

@@ -165,7 +165,7 @@ export function TaskAttachments({ taskId, taskStatus, onTaskMarkedDone }: TaskAt
           <Upload className="size-5 text-muted-foreground/60" />
         )}
         <span className="text-xs text-muted-foreground">
-          {uploading ? 'Uploading...' : 'Drop a file or click to upload (max 1MB)'}
+          {uploading ? 'Uploading...' : 'Drop a file or click to upload (max 10MB)'}
         </span>
         <input
           ref={fileInputRef}

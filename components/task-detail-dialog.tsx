@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import {
@@ -11,6 +12,8 @@ import {
   User,
   Pencil,
   AlertTriangle,
+  Send,
+  FileText,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -18,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useTimezone } from '@/lib/schedule-utils';
 import { RichText } from '@/components/ui/rich-text';
 import { TaskAttachments } from '@/components/task-attachments';
+import { TaskSubmissionDialog } from '@/components/task-submission-dialog';
 import { useTaskAttachments } from '@/lib/swr';
 import type { Task } from '@/app/actions/inbox';
 
@@ -54,6 +58,7 @@ export function TaskDetailDialog({
 }: TaskDetailDialogProps) {
   const { timezone } = useTimezone();
   const { attachments } = useTaskAttachments(task?.id ?? null);
+  const [submissionOpen, setSubmissionOpen] = useState(false);
 
   if (!task) return null;
 
@@ -187,6 +192,26 @@ export function TaskDetailDialog({
             taskStatus={done ? 'Done' : task.status}
             onTaskMarkedDone={() => onToggleDone(task)}
           />
+
+          {/* Submission */}
+          {task.submission_text && (
+            <div className="border-t border-border px-6 py-4">
+              <div className="mb-2 flex items-center gap-2">
+                <FileText className="size-3.5 text-qualia-500" />
+                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Submission
+                </span>
+                {task.submitted_at && (
+                  <span className="text-[10px] text-muted-foreground/60">
+                    {format(parseISO(task.submitted_at), 'MMM d, h:mm a')}
+                  </span>
+                )}
+              </div>
+              <div className="rounded-lg bg-muted/40 px-3 py-2.5 text-sm leading-relaxed text-foreground/80">
+                <RichText>{task.submission_text}</RichText>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
@@ -203,6 +228,16 @@ export function TaskDetailDialog({
           >
             <Pencil className="size-3.5" />
             Edit
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setSubmissionOpen(true)}
+            className="gap-1.5"
+          >
+            <Send className="size-3.5" />
+            {task.submission_text ? 'Update Response' : 'Submit Work'}
           </Button>
           <div className="ml-auto flex items-center gap-2">
             {needsAttachment && (
@@ -238,6 +273,16 @@ export function TaskDetailDialog({
           </div>
         </div>
       </DialogContent>
+
+      <TaskSubmissionDialog
+        taskId={task.id}
+        taskTitle={task.title}
+        existingSubmission={task.submission_text}
+        submittedAt={task.submitted_at}
+        open={submissionOpen}
+        onOpenChange={setSubmissionOpen}
+        onSubmitted={() => onOpenChange(false)}
+      />
     </Dialog>
   );
 }

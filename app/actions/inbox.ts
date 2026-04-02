@@ -60,6 +60,8 @@ export type Task = {
   scheduled_end_time: string | null;
   show_in_inbox: boolean;
   requires_attachment: string | null;
+  submission_text: string | null;
+  submitted_at: string | null;
   created_at: string;
   updated_at: string;
   creator?: {
@@ -143,6 +145,8 @@ export async function getTasks(
       scheduled_end_time,
       show_in_inbox,
       requires_attachment,
+      submission_text,
+      submitted_at,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -585,6 +589,8 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
       scheduled_end_time,
       show_in_inbox,
       requires_attachment,
+      submission_text,
+      submitted_at,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -807,6 +813,8 @@ export async function getScheduledTasks(workspaceId?: string | null): Promise<Ta
       scheduled_end_time,
       show_in_inbox,
       requires_attachment,
+      submission_text,
+      submitted_at,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
@@ -957,6 +965,8 @@ export async function getBacklogTasks(workspaceId?: string | null): Promise<Task
       scheduled_end_time,
       show_in_inbox,
       requires_attachment,
+      submission_text,
+      submitted_at,
       created_at,
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
