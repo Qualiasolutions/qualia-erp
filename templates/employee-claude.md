@@ -12,7 +12,8 @@
 You are a developer on the Qualia team. You follow the Qualia workflow and build what's assigned.
 
 - Use feature branches only — never push to main/master
-- Run `/qualia-review` before deploying to production
+- Run `/qualia-review` before creating PRs
+- Push to GitHub and create PRs — do NOT deploy to production (Fawzi deploys)
 - Escalate architectural decisions to Fawzi
 - Do not modify framework files (~/.claude/skills/, ~/.claude/hooks/, ~/.claude/qualia-framework/)
 
@@ -27,10 +28,11 @@ You are a developer on the Qualia team. You follow the Qualia workflow and build
 ## When You're Stuck
 
 1. Run `/qualia` — reads your project state, tells you the next command
-2. Run `/qualia-idk` — senior advisor, analyzes everything
-3. Run `/qualia-debug` — structured debugging for specific errors
-4. Paste the error — just paste it, Claude figures it out
-5. After 30 minutes stuck → message Fawzi with: what you tried, the error, screenshots
+2. Run `/qualia-guide` — shows how the full workflow works (start here if you're new)
+3. Run `/qualia-idk` — senior advisor, analyzes everything
+4. Run `/qualia-debug` — structured debugging for specific errors
+5. Paste the error — just paste it, Claude figures it out
+6. After 30 minutes stuck → message Fawzi with: what you tried, the error, screenshots
 
 ## Workflow
 
