@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { connection } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from '@/app/actions';
+import { getFinancialSummary } from '@/app/actions/financials';
 import { FinancialDashboard } from './financial-dashboard';
 import { Wallet } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
@@ -18,6 +19,8 @@ export default async function PaymentsPage() {
     redirect('/');
   }
 
+  const summary = await getFinancialSummary();
+
   return (
     <div className="flex h-full flex-col bg-background">
       <PageHeader
@@ -26,7 +29,7 @@ export default async function PaymentsPage() {
         title="Financials"
       />
       <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-        <FinancialDashboard />
+        <FinancialDashboard summary={summary} />
       </div>
     </div>
   );
