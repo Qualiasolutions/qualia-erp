@@ -87,7 +87,7 @@ export function SettingsLayout({ sections }: SettingsLayoutProps) {
 
         {/* Main content area */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
-          <div className="max-w-2xl">
+          <div>
             <div
               className={cn(
                 'rounded-lg border bg-card p-6',

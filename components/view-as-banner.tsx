@@ -9,7 +9,7 @@ export function ViewAsBanner() {
   if (!isViewingAs) return null;
 
   return (
-    <div className="sticky top-0 z-toast flex items-center justify-center gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 backdrop-blur-sm">
+    <div className="sticky top-0 z-sticky flex items-center justify-center gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-1.5 backdrop-blur-sm">
       <Eye className="size-3.5 text-amber-600 dark:text-amber-400" />
       <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
         Viewing platform as <span className="font-bold capitalize">{userRole}</span>

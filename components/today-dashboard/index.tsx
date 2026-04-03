@@ -178,17 +178,15 @@ export function TodayDashboard({
               <span className="mx-1 hidden h-5 w-px bg-border sm:inline-block" />
             </>
           )}
-          {!isNonAdmin && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 rounded-lg border-border transition-colors hover:bg-primary/10 hover:text-primary"
-              onClick={() => setShowNewTaskModal(true)}
-            >
-              <Plus className="size-3.5" />
-              <span className="hidden sm:inline">New task</span>
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 rounded-lg border-border transition-colors hover:bg-primary/10 hover:text-primary"
+            onClick={() => setShowNewTaskModal(true)}
+          >
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">New task</span>
+          </Button>
           <TooltipProvider delayDuration={300}>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -213,25 +211,23 @@ export function TodayDashboard({
           <HeaderOnlineIndicator />
           <NotificationPanel />
           <ThemeSwitcher />
-          {!isNonAdmin && (
-            <TooltipProvider delayDuration={300}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-8 min-h-[44px] min-w-[44px]"
-                    asChild
-                  >
-                    <Link href="/settings">
-                      <Settings className="size-3.5" />
-                    </Link>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Settings</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-8 min-h-[44px] min-w-[44px]"
+                  asChild
+                >
+                  <Link href="/settings">
+                    <Settings className="size-3.5" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Settings</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </header>
 

@@ -129,7 +129,7 @@ export default function RootLayout({
         {/* Preconnect hints for faster resource loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://dhnlvbjxmmsxetxphqbh.supabase.co" />
+        <link rel="dns-prefetch" href="https://vbpzaiqovffpsroxaulv.supabase.co" />
       </head>
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}

@@ -60,25 +60,20 @@ function NavLink({
       href={item.href}
       onClick={onClick}
       className={cn(
-        'group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13px] font-medium transition-all duration-150',
+        'group flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150',
         isActive
-          ? 'bg-primary/[0.06] text-foreground dark:bg-primary/[0.10]'
-          : 'text-muted-foreground hover:bg-primary/[0.04] hover:text-foreground'
+          ? 'bg-gradient-to-r from-primary/15 to-transparent text-primary shadow-sm'
+          : 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground'
       )}
     >
       <item.icon
         className={cn(
-          'h-[15px] w-[15px] flex-shrink-0 transition-colors duration-150',
-          isActive
-            ? 'text-primary dark:text-primary'
-            : 'text-muted-foreground/60 group-hover:text-muted-foreground'
+          'h-5 w-5 flex-shrink-0 transition-colors duration-150',
+          isActive ? 'text-primary' : 'text-muted-foreground/60 group-hover:text-muted-foreground'
         )}
         strokeWidth={isActive ? 2 : 1.75}
       />
       <span>{item.name}</span>
-      {isActive && (
-        <span className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r-full bg-primary" />
-      )}
     </Link>
   );
 }
@@ -197,30 +192,23 @@ function SidebarContent({
       )}
 
       {/* Navigation */}
-      <div className="flex-1 space-y-5 px-3 pt-3">
-        <nav className="space-y-0.5">
+      <div className="flex-1 space-y-1 px-4 pt-4">
+        <nav className="space-y-1">
           {mainNav.map((item) => (
             <NavLink key={item.name} item={item} isActive={isActive(item)} onClick={onLinkClick} />
           ))}
         </nav>
 
-        <div>
-          <div className="mb-1.5 px-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/40">
-              Manage
-            </p>
-          </div>
-          <nav className="space-y-0.5">
-            {manageNav.map((item) => (
-              <NavLink
-                key={item.name}
-                item={item}
-                isActive={isActive(item)}
-                onClick={onLinkClick}
-              />
-            ))}
-          </nav>
+        <div className="pb-2 pt-6">
+          <span className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Manage
+          </span>
         </div>
+        <nav className="space-y-1">
+          {manageNav.map((item) => (
+            <NavLink key={item.name} item={item} isActive={isActive(item)} onClick={onLinkClick} />
+          ))}
+        </nav>
       </div>
 
       {/* User — glass-effect bottom bar with ThemeSwitcher integrated */}
@@ -260,7 +248,7 @@ export function PortalSidebar(props: PortalSidebarProps) {
       </div>
 
       {/* Desktop sidebar */}
-      <aside className="hidden h-full w-[220px] flex-shrink-0 border-r border-border md:block">
+      <aside className="hidden h-full w-64 flex-shrink-0 border-r border-border md:block">
         <SidebarContent {...props} onLinkClick={handleLinkClick} />
       </aside>
     </>

@@ -72,8 +72,8 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
       <PortalTabs projectId={projectId} />
 
       {/* Info Banner */}
-      <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 p-4">
-        <p className="text-sm text-blue-800 dark:text-blue-300">
+      <div className="rounded-lg border border-primary/20 bg-primary/10 p-4">
+        <p className="text-sm text-primary dark:text-qualia-300">
           Track the latest updates, milestones, and activities on your project.
         </p>
       </div>

@@ -87,8 +87,8 @@ function PasswordChangeSection() {
   return (
     <section className="space-y-5">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/[0.08] dark:bg-emerald-500/15">
-          <Lock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+          <Lock className="h-4 w-4 text-primary" />
         </div>
         <div>
           <h2 className="text-sm font-medium text-foreground">Change Password</h2>
@@ -269,7 +269,7 @@ export default function PortalSettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-10">
+    <div className="space-y-10">
       <div>
         <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
           Settings

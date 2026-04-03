@@ -73,7 +73,7 @@ export function NewTeamModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="flex items-center gap-2 bg-primary hover:bg-primary">
+        <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
           <Plus className="h-4 w-4" />
           <span>New Team</span>
         </Button>
@@ -173,7 +173,7 @@ export function NewTeamModal() {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary">
+            <Button type="submit" disabled={loading} className="bg-primary hover:bg-primary/90">
               {loading ? 'Creating...' : 'Create Team'}
             </Button>
           </div>

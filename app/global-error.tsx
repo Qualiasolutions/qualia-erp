@@ -31,9 +31,9 @@ export default function GlobalError({
             minHeight: '100vh',
             gap: '1.5rem',
             padding: '1rem',
-            fontFamily: 'system-ui, sans-serif',
-            backgroundColor: '#08090b',
-            color: '#fff',
+            fontFamily: '"Geist Sans", system-ui, sans-serif',
+            backgroundColor: '#121819',
+            color: '#d0dce0',
           }}
         >
           <div
@@ -64,7 +64,7 @@ export default function GlobalError({
             <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
               Application Error
             </h1>
-            <p style={{ color: '#888', maxWidth: '400px' }}>
+            <p style={{ color: '#8a9da3', maxWidth: '400px' }}>
               A critical error occurred. Please try refreshing the page.
             </p>
             {error.digest && (
@@ -100,8 +100,8 @@ export default function GlobalError({
                 padding: '0.5rem 1rem',
                 borderRadius: '0.75rem',
                 border: 'none',
-                backgroundColor: '#00d4de',
-                color: '#000',
+                backgroundColor: '#00A4AC',
+                color: '#fff',
                 cursor: 'pointer',
                 fontWeight: 500,
               }}

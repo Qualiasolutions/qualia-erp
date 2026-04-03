@@ -82,7 +82,7 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
       <div className="flex items-center gap-4">
         <a
           href={`/projects/${projectId}`}
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <svg
             className="h-4 w-4"
@@ -95,8 +95,8 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
           </svg>
         </a>
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">Project Files</h1>
-          <p className="mt-1 text-sm text-neutral-600">{project.name}</p>
+          <h1 className="text-2xl font-bold text-foreground">Project Files</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{project.name}</p>
         </div>
       </div>
 
@@ -114,7 +114,7 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
       {clientFiles.length > 0 && (
         <div>
           <div className="mb-4 flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-neutral-900">Client Uploads</h2>
+            <h2 className="text-lg font-semibold text-foreground">Client Uploads</h2>
             <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
               {clientFiles.length}
             </span>
@@ -130,7 +130,7 @@ async function ProjectFilesContent({ projectId }: { projectId: string }) {
 
       {/* Internal Files List */}
       <div>
-        <h2 className="mb-4 text-lg font-semibold text-neutral-900">Internal Files</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Internal Files</h2>
         <FileList
           files={internalFiles}
           onFileDeleted={() => {

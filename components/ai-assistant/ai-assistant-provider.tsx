@@ -105,7 +105,7 @@ Format the final document with clear section headers for easy printing:
 - Professional formatting
 
 COMPANY INFO:
-- Legal Name: Qualio Solutions LTD
+- Legal Name: Qualia Solutions LTD
 - Registration: 1109346
 - Address: Nicosia, Lefkosia 1011, Cyprus
 - Founder: Fawzi Goussous

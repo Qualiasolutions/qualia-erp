@@ -11,28 +11,28 @@ const templates = [
     icon: Globe,
     title: 'Web Development',
     description: 'Websites and web apps',
-    file: '/tempaltes/TEMPLATE_Web_Development_Agreement.pdf',
+    file: '/templates/TEMPLATE_Web_Development_Agreement.pdf',
   },
   {
     id: 'ai-agent',
     icon: Bot,
     title: 'AI Agent',
     description: 'Voice agents and chatbots',
-    file: '/tempaltes/TEMPLATE_AI_Agent_Agreement.pdf',
+    file: '/templates/TEMPLATE_AI_Agent_Agreement.pdf',
   },
   {
     id: 'marketing',
     icon: Megaphone,
     title: 'Marketing',
     description: 'Social media and digital',
-    file: '/tempaltes/TEMPLATE_Marketing_Agreement.pdf',
+    file: '/templates/TEMPLATE_Marketing_Agreement.pdf',
   },
   {
     id: 'nda',
     icon: Shield,
     title: 'NDA',
     description: 'Confidentiality',
-    file: '/tempaltes/TEMPLATE_NDA_Agreement.pdf',
+    file: '/templates/TEMPLATE_NDA_Agreement.pdf',
   },
 ];
 
@@ -105,7 +105,7 @@ export function AIAssistantTemplates() {
               </div>
             </div>
             <a
-              href="/tempaltes/Qualia_Solutions_Brand_Guidelines.pdf"
+              href="/templates/Qualia_Solutions_Brand_Guidelines.pdf"
               download
               className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90"
             >

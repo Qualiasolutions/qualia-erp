@@ -118,7 +118,7 @@ export function CalendarView({ meetings, onDateSelect }: CalendarViewProps) {
               {format(currentDate, 'MMMM yyyy')}
             </h2>
             <div className="flex items-center gap-1 rounded-full border border-border bg-secondary/50 px-3 py-1.5 text-xs text-muted-foreground">
-              Cyprus
+              {timezone === TIMEZONE_CYPRUS ? 'Cyprus' : 'Jordan'}
               <ChevronRight className="h-3 w-3 rotate-90" />
             </div>
           </div>

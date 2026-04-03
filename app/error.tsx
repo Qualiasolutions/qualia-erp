@@ -36,7 +36,7 @@ export default function Error({
         <Button onClick={() => window.location.reload()} variant="outline">
           Reload Page
         </Button>
-        <Button onClick={() => reset()} className="bg-primary hover:bg-primary">
+        <Button onClick={() => reset()} className="bg-primary hover:bg-primary/90">
           Try Again
         </Button>
       </div>

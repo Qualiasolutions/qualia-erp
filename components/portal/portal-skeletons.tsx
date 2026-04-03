@@ -208,7 +208,7 @@ export function PortalDashboardSkeleton() {
       </div>
 
       {/* Quick actions */}
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {[1, 2, 3].map((i) => (
           <Card key={i}>
             <CardContent className="flex items-center gap-3 p-4">

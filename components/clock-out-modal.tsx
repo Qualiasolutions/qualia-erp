@@ -166,7 +166,7 @@ export function ClockOutModal({
             type="button"
             onClick={handleSubmit}
             disabled={!summary.trim() || isPending}
-            className="bg-primary text-primary-foreground hover:bg-primary"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {isPending ? (
               <>

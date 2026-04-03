@@ -23,17 +23,12 @@ import {
   invalidateScheduledTasks,
   invalidateDailyFlow,
 } from '@/lib/swr';
-import { TEAM_MEMBERS } from '@/lib/team-constants';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useProfiles } from '@/lib/swr';
 
-// Hardcoded team
-const TEAM = [
-  { id: TEAM_MEMBERS.FAWZI_ID, name: 'Fawzi', initial: 'F', color: 'qualia' },
-  { id: TEAM_MEMBERS.MOAYAD_ID, name: 'Moayad', initial: 'M', color: 'indigo' },
-  { id: TEAM_MEMBERS.HASAN_ID, name: 'Hasan', initial: 'H', color: 'amber' },
-] as const;
+const ATTENDEE_COLORS = ['qualia', 'indigo', 'amber', 'rose', 'violet', 'emerald'] as const;
 
-const COLOR_MAP = {
+const COLOR_MAP: Record<string, { active: string; idle: string }> = {
   qualia: {
     active: 'bg-primary text-white ring-2 ring-primary/30',
     idle: 'bg-primary/10 text-primary dark:text-primary hover:bg-primary/20',
@@ -50,7 +45,15 @@ const COLOR_MAP = {
     active: 'bg-rose-500 text-white ring-2 ring-rose-500/30',
     idle: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20',
   },
-} as const;
+  violet: {
+    active: 'bg-violet-500 text-white ring-2 ring-violet-500/30',
+    idle: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20',
+  },
+  emerald: {
+    active: 'bg-emerald-500 text-white ring-2 ring-emerald-500/30',
+    idle: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20',
+  },
+};
 
 // Time slots in 30-minute increments (7:00 AM - 8:00 PM)
 const TIME_SLOTS = Array.from({ length: 48 }, (_, i) => {
@@ -102,6 +105,15 @@ interface EditMeetingModalProps {
 }
 
 export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingModalProps) {
+  const { profiles } = useProfiles();
+  const teamMembers = (profiles || [])
+    .filter((p) => p.role !== 'client')
+    .map((p, i) => ({
+      id: p.id,
+      name: p.full_name || p.email || 'Unknown',
+      initial: (p.full_name || p.email || '?')[0].toUpperCase(),
+      color: ATTENDEE_COLORS[i % ATTENDEE_COLORS.length],
+    }));
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -292,9 +304,9 @@ export function EditMeetingModal({ meeting, open, onOpenChange }: EditMeetingMod
                   Who&apos;s joining
                 </span>
                 <div className="flex gap-2">
-                  {TEAM.map((member) => {
+                  {teamMembers.map((member) => {
                     const isSelected = selectedAttendees.has(member.id);
-                    const colors = COLOR_MAP[member.color];
+                    const colors = COLOR_MAP[member.color] || COLOR_MAP.qualia;
 
                     return (
                       <button

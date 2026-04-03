@@ -67,8 +67,8 @@ export default function ResetPasswordConfirmPage() {
         {isSuccess ? (
           <Card>
             <CardHeader>
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                <CheckCircle className="h-6 w-6 text-green-600" />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 dark:bg-emerald-500/15">
+                <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <CardTitle className="pt-4 text-center text-2xl">Password updated</CardTitle>
             </CardHeader>

@@ -25,7 +25,7 @@ import { updateProject } from '@/app/actions';
 import { toast } from 'sonner';
 
 const statusConfig = {
-  dropped: { label: 'Dropped', bg: 'bg-gray-500/10', color: 'text-gray-600 dark:text-gray-400' },
+  dropped: { label: 'Dropped', bg: 'bg-muted', color: 'text-muted-foreground' },
   cold: { label: 'Cold', bg: 'bg-blue-500/10', color: 'text-blue-600 dark:text-blue-400' },
   hot: { label: 'Hot', bg: 'bg-red-500/10', color: 'text-red-600 dark:text-red-400' },
   active_client: {
@@ -40,8 +40,8 @@ const statusConfig = {
   },
   dead_lead: {
     label: 'Dead Lead',
-    bg: 'bg-gray-500/10',
-    color: 'text-gray-600 dark:text-gray-400',
+    bg: 'bg-muted',
+    color: 'text-muted-foreground',
   },
 } as const;
 

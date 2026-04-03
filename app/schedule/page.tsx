@@ -39,7 +39,7 @@ function ScheduleSkeleton() {
     <div>
       <div className="flex gap-5">
         {/* Sidebar skeleton */}
-        <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card lg:block">
+        <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card xl:block">
           <div className="px-5 pb-3 pt-5">
             <div className="h-4 w-20 animate-pulse rounded bg-muted" />
           </div>

@@ -91,7 +91,7 @@ export function OnboardingChecklist({ steps, onComplete, className }: Onboarding
         ))}
 
         {allComplete && onComplete && (
-          <Button onClick={onComplete} className="mt-3 w-full bg-primary hover:bg-primary">
+          <Button onClick={onComplete} className="mt-3 w-full bg-primary hover:bg-primary/90">
             Complete Onboarding
           </Button>
         )}

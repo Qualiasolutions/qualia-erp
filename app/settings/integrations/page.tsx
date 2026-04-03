@@ -89,7 +89,7 @@ export default function IntegrationsPage() {
       </header>
 
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-2xl space-y-6">
+        <div className="space-y-6">
           <Suspense fallback={<IntegrationsSkeleton />}>
             <IntegrationsLoader />
           </Suspense>

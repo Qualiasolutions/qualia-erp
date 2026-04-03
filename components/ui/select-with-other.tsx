@@ -222,7 +222,7 @@ export function SelectWithOther({
                 size="sm"
                 onClick={handleCustomSubmit}
                 disabled={!customValue.trim()}
-                className="h-10 shrink-0 bg-primary px-4 hover:bg-primary"
+                className="h-10 shrink-0 bg-primary px-4 hover:bg-primary/90"
               >
                 Add
               </Button>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { FolderOpen, Clock, FileWarning } from 'lucide-react';
+import { FolderKanban, FileText, Receipt } from 'lucide-react';
 
 interface DashboardStats {
   projectCount: number;
@@ -23,28 +23,28 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
       label: 'Active projects',
       value: stats?.projectCount ?? 0,
       href: '/portal/projects',
-      icon: FolderOpen,
-      accentBg: 'bg-primary/10',
-      accentText: 'text-primary dark:text-primary',
-      iconColor: 'text-primary',
+      icon: FolderKanban,
+      iconBg: 'bg-primary/15 text-primary',
+      orbColor: 'from-primary/10 to-transparent',
+      hoverBorder: 'hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5',
     },
     {
       label: 'Pending requests',
       value: stats?.pendingRequests ?? 0,
       href: '/portal/requests',
-      icon: Clock,
-      accentBg: 'bg-amber-500/10',
-      accentText: 'text-amber-600 dark:text-amber-400',
-      iconColor: 'text-amber-500',
+      icon: FileText,
+      iconBg: 'bg-amber-500/15 text-amber-500',
+      orbColor: 'from-amber-500/10 to-transparent',
+      hoverBorder: 'hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5',
     },
     {
       label: 'Unpaid invoices',
       value: stats?.unpaidInvoiceCount ?? 0,
       href: '/portal/billing',
-      icon: FileWarning,
-      accentBg: 'bg-rose-500/10',
-      accentText: 'text-rose-600 dark:text-rose-400',
-      iconColor: 'text-rose-500',
+      icon: Receipt,
+      iconBg: 'bg-rose-500/15 text-rose-500',
+      orbColor: 'from-rose-500/10 to-transparent',
+      hoverBorder: 'hover:border-rose-500/30 hover:shadow-lg hover:shadow-rose-500/5',
       suffix: stats?.unpaidTotal
         ? stats.unpaidTotal.toLocaleString('en', { style: 'currency', currency: 'EUR' })
         : undefined,
@@ -53,11 +53,14 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="rounded-xl border border-border bg-background/50 px-4 py-3.5">
-            <Skeleton className="h-3 w-16 rounded" />
-            <Skeleton className="mt-2 h-7 w-10 rounded" />
+          <div key={i} className="rounded-2xl border border-border bg-card p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <Skeleton className="h-4 w-24 rounded" />
+            </div>
+            <Skeleton className="h-10 w-12 rounded" />
           </div>
         ))}
       </div>
@@ -65,9 +68,8 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
       {metrics.map((metric) => {
-        const isEmpty = metric.value === 0;
         const Icon = metric.icon;
 
         return (
@@ -75,34 +77,34 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
             key={metric.label}
             href={metric.href}
             className={cn(
-              'group rounded-xl border border-border bg-background/50 px-4 py-3.5 backdrop-blur-sm transition-all duration-200',
-              'hover:border-border hover:bg-background/80 hover:shadow-sm'
+              'group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all',
+              metric.hoverBorder
             )}
           >
-            <div className="flex items-center gap-2">
-              <div
-                className={cn(
-                  'flex h-5 w-5 items-center justify-center rounded-md',
-                  isEmpty ? 'bg-muted/40' : metric.accentBg
-                )}
-              >
-                <Icon
-                  className={cn('h-3 w-3', isEmpty ? 'text-muted-foreground/30' : metric.iconColor)}
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground/60">{metric.label}</p>
-            </div>
-            <p
+            {/* Decorative gradient orb */}
+            <div
               className={cn(
-                'mt-2 text-[22px] font-semibold tabular-nums leading-none tracking-tight',
-                isEmpty ? 'text-muted-foreground/25' : 'text-foreground'
+                'absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br',
+                metric.orbColor
               )}
-            >
-              {metric.value}
-            </p>
-            {metric.suffix && !isEmpty && (
-              <p className="mt-1 text-[11px] font-medium text-rose-500/70">{metric.suffix}</p>
-            )}
+            />
+            <div className="relative">
+              <div className="mb-4 flex items-center gap-3">
+                <div
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-xl',
+                    metric.iconBg
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="text-sm font-medium text-muted-foreground">{metric.label}</span>
+              </div>
+              <p className="text-4xl font-semibold tabular-nums text-foreground">{metric.value}</p>
+              {metric.suffix && metric.value > 0 && (
+                <p className="mt-1 text-sm font-medium text-rose-500/70">{metric.suffix}</p>
+              )}
+            </div>
           </Link>
         );
       })}

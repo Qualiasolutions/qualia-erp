@@ -73,11 +73,11 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
   const overdueCount = items.filter((item) => getUrgency(item.due_date) === 'overdue').length;
 
   return (
-    <div>
+    <div className="rounded-2xl border border-border bg-card p-6">
       {/* Section header */}
-      <div className="mb-4 flex items-center gap-2">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/50">
-          Action items
+      <div className="mb-5 flex items-center gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Action Items
         </h2>
         {!isLoading && items.length > 0 && (
           <span className="rounded-full bg-muted/50 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/60">
@@ -106,9 +106,9 @@ export function PortalActionItems({ clientId }: PortalActionItemsProps) {
           </div>
         </div>
       ) : items.length === 0 ? (
-        <div className="flex items-center gap-2.5 px-3 py-4">
-          <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground/25" />
-          <p className="text-[13px] text-muted-foreground/50">All caught up</p>
+        <div className="flex items-center gap-3 rounded-xl bg-primary/5 px-4 py-3 text-primary">
+          <CheckCircle2 className="h-5 w-5" />
+          <span className="text-sm font-medium">All caught up</span>
         </div>
       ) : (
         <div className="space-y-0.5">
