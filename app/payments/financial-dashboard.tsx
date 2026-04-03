@@ -21,7 +21,7 @@ type ClientGroup = {
   totalPaid: number;
   totalOutstanding: number;
   invoices: FinancialInvoice[];
-  mrr: number; // Monthly recurring revenue for this client
+  mrr: number;
   isRetainer: boolean;
 };
 
@@ -30,14 +30,15 @@ type Props = {
 };
 
 // ─── MRR Config ──────────────────────────────────────────
-// Clients with known retainer/recurring agreements
 const RETAINER_CLIENTS: Record<string, { amount: number; label: string }> = {
   Underdog: { amount: 700, label: 'Monthly retainer' },
+  'Sophia - Zyprus': { amount: 375, label: '1st of month' },
+  Armenius: { amount: 250, label: '1st of month' },
 };
 
 // ─── Helpers ─────────────────────────────────────────────
 
-function formatCurrency(amount: number): string {
+function fmt(amount: number): string {
   return new Intl.NumberFormat('en-EU', {
     style: 'currency',
     currency: 'EUR',
@@ -46,7 +47,7 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-function formatCurrencyDetailed(amount: number): string {
+function fmtDetail(amount: number): string {
   return new Intl.NumberFormat('en-EU', {
     style: 'currency',
     currency: 'EUR',
@@ -55,9 +56,17 @@ function formatCurrencyDetailed(amount: number): string {
   }).format(amount);
 }
 
-function formatDate(dateStr: string): string {
+function fmtDate(dateStr: string): string {
   try {
     return format(parseISO(dateStr), 'dd MMM yyyy');
+  } catch {
+    return dateStr;
+  }
+}
+
+function fmtShortDate(dateStr: string): string {
+  try {
+    return format(parseISO(dateStr), 'dd MMM');
   } catch {
     return dateStr;
   }
@@ -86,14 +95,16 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-3">
-        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${color}`}>
-          <Icon className="h-4 w-4" />
+        <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${color}`}>
+          <Icon className="h-3.5 w-3.5" />
         </div>
         <div>
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <p className="text-lg font-semibold text-foreground">{value}</p>
+          <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+            {label}
+          </p>
+          <p className="text-base font-semibold text-foreground">{value}</p>
         </div>
       </div>
     </div>
@@ -101,110 +112,69 @@ function StatCard({
 }
 
 function ClientCard({ client }: { client: ClientGroup }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card">
-      {/* Client header */}
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {/* Header — compact */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left transition-colors hover:bg-muted/50"
+        className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-muted/50"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2">
           {expanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
           )}
-          <div>
-            <h3 className="text-sm font-semibold text-foreground">{client.name}</h3>
-            <div className="mt-0.5 flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">
-                {client.invoices.length} invoice{client.invoices.length !== 1 ? 's' : ''}
-              </span>
-              {client.isRetainer && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-qualia-500/10 px-2 py-0.5 text-[10px] font-medium text-qualia-600 dark:text-qualia-400">
-                  <RefreshCw className="h-2.5 w-2.5" />
-                  {RETAINER_CLIENTS[client.name]?.label ?? 'Recurring'}
-                </span>
-              )}
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="truncate text-sm font-semibold text-foreground">{client.name}</h3>
+              {client.isRetainer && <RefreshCw className="h-3 w-3 shrink-0 text-qualia-500" />}
             </div>
+            <span className="text-[10px] text-muted-foreground">
+              {client.invoices.length} inv · {fmt(client.totalPaid)} paid
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-right">
+        <div className="flex shrink-0 items-center gap-4 text-right">
           {client.totalOutstanding > 0 && (
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                Outstanding
-              </p>
-              <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-                {formatCurrency(client.totalOutstanding)}
-              </p>
-            </div>
+            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+              {fmt(client.totalOutstanding)} due
+            </span>
           )}
-          <div>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              Total
-            </p>
-            <p className="text-sm font-semibold text-foreground">
-              {formatCurrency(client.totalInvoiced)}
-            </p>
-          </div>
+          <span className="text-sm font-bold text-foreground">{fmt(client.totalInvoiced)}</span>
         </div>
       </button>
 
-      {/* Invoice table */}
+      {/* Invoice rows — compact */}
       {expanded && (
         <div className="border-t border-border">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="px-5 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Invoice
-                </th>
-                <th className="px-5 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Date
-                </th>
-                <th className="px-5 py-2.5 text-left text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Status
-                </th>
-                <th className="px-5 py-2.5 text-right text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Amount
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {client.invoices.map((inv) => (
-                <tr
-                  key={inv.zoho_id}
-                  className="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/20"
+          {client.invoices.map((inv) => (
+            <div
+              key={inv.zoho_id}
+              className="flex items-center justify-between border-b border-border/40 px-4 py-2 last:border-0 hover:bg-muted/20"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <FileText className="h-3 w-3 shrink-0 text-muted-foreground/50" />
+                <span className="truncate text-xs font-medium text-foreground">
+                  {inv.invoice_number}
+                </span>
+                <span className="text-[10px] text-muted-foreground">{fmtShortDate(inv.date)}</span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span
+                  className={`inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-medium capitalize ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.draft}`}
                 >
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground/60" />
-                      <span className="text-xs font-medium text-foreground">
-                        {inv.invoice_number}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-xs text-muted-foreground">
-                    {formatDate(inv.date)}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${STATUS_STYLES[inv.status] ?? STATUS_STYLES.draft}`}
-                    >
-                      {inv.status}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3 text-right text-xs font-medium text-foreground">
-                    {formatCurrencyDetailed(inv.total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  {inv.status}
+                </span>
+                <span className="w-20 text-right text-xs font-medium text-foreground">
+                  {fmtDetail(inv.total)}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -214,7 +184,6 @@ function ClientCard({ client }: { client: ClientGroup }) {
 // ─── Main Dashboard ──────────────────────────────────────
 
 export function FinancialDashboard({ summary }: Props) {
-  // Hooks must be called unconditionally
   const clientGroups = useMemo(() => {
     if (!summary) return [];
     const map = new Map<string, FinancialInvoice[]>();
@@ -248,7 +217,13 @@ export function FinancialDashboard({ summary }: Props) {
   }, [summary]);
 
   const totalMRR = useMemo(() => {
-    return clientGroups.reduce((sum, c) => sum + c.mrr, 0);
+    // Include all retainer clients, even if they have no invoices yet
+    const fromInvoiced = clientGroups.reduce((sum, c) => sum + c.mrr, 0);
+    const invoicedNames = new Set(clientGroups.map((c) => c.name));
+    const fromMissing = Object.entries(RETAINER_CLIENTS)
+      .filter(([name]) => !invoicedNames.has(name))
+      .reduce((sum, [, config]) => sum + config.amount, 0);
+    return fromInvoiced + fromMissing;
   }, [clientGroups]);
 
   const totalARR = totalMRR * 12;
@@ -264,73 +239,72 @@ export function FinancialDashboard({ summary }: Props) {
   return (
     <div className="space-y-6">
       {/* KPI row */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard
           label="Total Invoiced"
-          value={formatCurrency(summary.totalInvoiced)}
+          value={fmt(summary.totalInvoiced)}
           icon={DollarSign}
           color="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
         />
         <StatCard
-          label="Total Collected"
-          value={formatCurrency(summary.totalCollected)}
+          label="Collected"
+          value={fmt(summary.totalCollected)}
           icon={TrendingUp}
           color="bg-qualia-500/10 text-qualia-600 dark:text-qualia-400"
         />
         <StatCard
           label="Outstanding"
-          value={formatCurrency(summary.totalOutstanding)}
+          value={fmt(summary.totalOutstanding)}
           icon={Clock}
           color="bg-amber-500/10 text-amber-600 dark:text-amber-400"
         />
         <StatCard
           label="MRR"
-          value={formatCurrency(totalMRR)}
+          value={fmt(totalMRR)}
           icon={RefreshCw}
           color="bg-violet-500/10 text-violet-600 dark:text-violet-400"
         />
       </div>
 
-      {/* MRR detail strip */}
+      {/* MRR strip */}
       {totalMRR > 0 && (
-        <div className="flex items-center gap-4 rounded-xl border border-violet-500/20 bg-violet-500/5 px-5 py-3">
-          <RefreshCw className="h-4 w-4 text-violet-500" />
-          <div className="flex-1">
-            <p className="text-xs font-medium text-foreground">
-              Monthly Recurring Revenue:{' '}
-              <span className="text-violet-600 dark:text-violet-400">
-                {formatCurrency(totalMRR)}/mo
-              </span>
-              <span className="mx-2 text-muted-foreground">·</span>
-              ARR:{' '}
-              <span className="text-violet-600 dark:text-violet-400">
-                {formatCurrency(totalARR)}
-              </span>
-            </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {clientGroups
-                .filter((c) => c.mrr > 0)
-                .map((c) => `${c.name}: ${formatCurrency(c.mrr)}/mo`)
+        <div className="flex items-center gap-3 rounded-lg border border-violet-500/20 bg-violet-500/5 px-4 py-2.5">
+          <RefreshCw className="h-3.5 w-3.5 shrink-0 text-violet-500" />
+          <p className="text-xs text-foreground">
+            <span className="font-semibold text-violet-600 dark:text-violet-400">
+              {fmt(totalMRR)}/mo
+            </span>
+            <span className="mx-1.5 text-muted-foreground">·</span>
+            ARR{' '}
+            <span className="font-semibold text-violet-600 dark:text-violet-400">
+              {fmt(totalARR)}
+            </span>
+            <span className="mx-1.5 text-muted-foreground">·</span>
+            <span className="text-muted-foreground">
+              {Object.entries(RETAINER_CLIENTS)
+                .map(([name, c]) => `${name} ${fmt(c.amount)}`)
                 .join(' · ')}
-            </p>
-          </div>
+            </span>
+          </p>
         </div>
       )}
 
-      {/* Client sections */}
-      <div className="space-y-4">
-        <h2 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      {/* Client grid — 2 columns on larger screens */}
+      <div>
+        <h2 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Clients ({clientGroups.length})
         </h2>
-        {clientGroups.map((client) => (
-          <ClientCard key={client.name} client={client} />
-        ))}
+        <div className="grid gap-3 lg:grid-cols-2">
+          {clientGroups.map((client) => (
+            <ClientCard key={client.name} client={client} />
+          ))}
+        </div>
       </div>
 
       {/* Sync info */}
       {summary.lastSyncedAt && (
         <p className="text-center text-[10px] text-muted-foreground/60">
-          Last synced: {formatDate(summary.lastSyncedAt)}
+          Last synced: {fmtDate(summary.lastSyncedAt)}
         </p>
       )}
     </div>
