@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Send,
   FileText,
+  Trash2,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import { useTimezone } from '@/lib/schedule-utils';
 import { RichText } from '@/components/ui/rich-text';
 import { TaskAttachments } from '@/components/task-attachments';
 import { TaskSubmissionDialog } from '@/components/task-submission-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useTaskAttachments } from '@/lib/swr';
 import type { Task } from '@/app/actions/inbox';
 
@@ -31,6 +33,7 @@ interface TaskDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onEdit: (task: Task) => void;
   onToggleDone: (task: Task) => void;
+  onDelete?: (task: Task) => void;
   isDone?: boolean;
 }
 
@@ -54,11 +57,13 @@ export function TaskDetailDialog({
   onOpenChange,
   onEdit,
   onToggleDone,
+  onDelete,
   isDone: isDoneProp,
 }: TaskDetailDialogProps) {
   const { timezone } = useTimezone();
   const { attachments } = useTaskAttachments(task?.id ?? null);
   const [submissionOpen, setSubmissionOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!task) return null;
 
@@ -239,6 +244,18 @@ export function TaskDetailDialog({
             <Send className="size-3.5" />
             {task.submission_text ? 'Update Response' : 'Submit Work'}
           </Button>
+          {onDelete && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDelete(true)}
+              className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="size-3.5" />
+              Delete
+            </Button>
+          )}
           <div className="ml-auto flex items-center gap-2">
             {needsAttachment && (
               <span className="flex items-center gap-1 text-[11px] text-amber-500">
@@ -283,6 +300,20 @@ export function TaskDetailDialog({
         onOpenChange={setSubmissionOpen}
         onSubmitted={() => onOpenChange(false)}
       />
+
+      {onDelete && (
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          title="Delete task"
+          description={`Permanently delete "${task.title}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            setConfirmDelete(false);
+            onDelete(task);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

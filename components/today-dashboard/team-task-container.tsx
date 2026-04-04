@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, memo } from 'react';
 import { format } from 'date-fns';
 import {
   ChevronDown,
@@ -18,6 +18,7 @@ import {
   Smartphone,
   Megaphone,
   Folder,
+  Circle,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -32,16 +33,18 @@ import {
 } from '@/components/ui/select';
 import {
   useTeamTaskDashboard,
+  useTeamStatus,
   invalidateInboxTasks,
   invalidateDailyFlow,
   invalidateTeamDashboard,
 } from '@/lib/swr';
 import { createTask } from '@/app/actions/inbox';
+import { useRealtimeTasks } from '@/lib/hooks/use-realtime-tasks';
 import { TeamTaskCard } from './team-task-card';
 import type { TeamMemberTasks, TeamMemberTask } from '@/app/actions/team-dashboard';
 import type { DailyCheckin } from '@/app/actions/checkins';
 
-// ─── Project Type Styles (shared with team-task-card) ────────────────────────
+// ─── Project Type Styles ────────────────────────────────────────────────────
 
 const PROJECT_TYPE_STYLES: Record<
   string,
@@ -91,7 +94,7 @@ const PROJECT_TYPE_STYLES: Record<
   },
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function getInitials(name: string | null) {
   if (!name) return '?';
@@ -106,63 +109,65 @@ function getInitials(name: string | null) {
 function getUniqueProjects(tasks: TeamMemberTask[]) {
   const map = new Map<string, { id: string; name: string; project_type: string | null }>();
   for (const t of tasks) {
-    if (t.project && !map.has(t.project.id)) {
-      map.set(t.project.id, t.project);
-    }
+    if (t.project && !map.has(t.project.id)) map.set(t.project.id, t.project);
   }
   return [...map.values()];
 }
 
-// ─── Skeleton ────────────────────────────────────────────────────────────────
+// ─── Skeleton ───────────────────────────────────────────────────────────────
 
 function TeamTaskSkeleton() {
   return (
-    <div className="animate-pulse space-y-4">
-      {/* My tasks skeleton */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-4 py-3">
-          <div className="h-4 w-24 rounded bg-muted" />
+    <div className="space-y-3">
+      <div>
+        <div className="mb-2 h-4 w-20 rounded bg-muted/60" />
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="divide-y divide-border/20">
+            {[0, 1, 2, 3].map((j) => (
+              <div key={j} className="flex animate-pulse items-center gap-3 px-4 py-3">
+                <div className="size-1.5 rounded-full bg-muted" />
+                <div className="size-4 rounded-full bg-muted" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-3/4 rounded bg-muted" />
+                  <div className="h-3 w-1/3 rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="divide-y divide-border/30">
-          {[0, 1, 2].map((j) => (
-            <div key={j} className="flex items-center gap-3 px-4 py-2.5">
-              <div className="size-1.5 rounded-full bg-muted" />
-              <div className="size-3.5 rounded-full bg-muted" />
-              <div className="flex-1 space-y-1.5">
-                <div className="h-3.5 w-3/4 rounded bg-muted" />
-                <div className="h-3 w-1/3 rounded bg-muted" />
+      </div>
+      <div>
+        <div className="mb-2 h-4 w-16 rounded bg-muted/60" />
+        <div className="space-y-2">
+          {[0, 1].map((i) => (
+            <div
+              key={i}
+              className="animate-pulse rounded-xl border border-border bg-card px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <div className="size-8 rounded-full bg-muted" />
+                <div className="h-4 w-28 rounded bg-muted" />
+                <div className="ml-auto h-3 w-12 rounded bg-muted" />
               </div>
             </div>
           ))}
         </div>
       </div>
-      {/* Team overview skeleton */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="rounded-lg border border-border bg-card px-3 py-3">
-            <div className="flex items-center gap-2">
-              <div className="size-7 rounded-full bg-muted" />
-              <div className="h-3.5 w-16 rounded bg-muted" />
-            </div>
-            <div className="mt-2 space-y-1">
-              <div className="h-3 w-20 rounded bg-muted" />
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
 
-// ─── Inline Quick-Add ─────────────────────────────────────────────────────────
+// ─── Inline Quick-Add ───────────────────────────────────────────────────────
 
-interface InlineTaskAddProps {
+function InlineTaskAdd({
+  assigneeId,
+  workspaceId,
+  onCreated,
+}: {
   assigneeId: string;
   workspaceId: string;
   onCreated?: () => void;
-}
-
-function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProps) {
+}) {
   const [active, setActive] = useState(false);
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
@@ -171,7 +176,6 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
   const handleSubmit = async () => {
     const trimmed = value.trim();
     if (!trimmed || loading) return;
-
     setLoading(true);
     const fd = new FormData();
     fd.set('title', trimmed);
@@ -179,10 +183,8 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
     fd.set('show_in_inbox', 'true');
     fd.set('assignee_id', assigneeId);
     fd.set('due_date', format(new Date(), 'yyyy-MM-dd'));
-
     const result = await createTask(fd);
     setLoading(false);
-
     if (result.success) {
       setValue('');
       invalidateInboxTasks(true);
@@ -190,17 +192,6 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
       invalidateTeamDashboard(workspaceId);
       onCreated?.();
       setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleSubmit();
-    }
-    if (e.key === 'Escape') {
-      setValue('');
-      setActive(false);
     }
   };
 
@@ -212,7 +203,7 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
           setActive(true);
           setTimeout(() => inputRef.current?.focus(), 50);
         }}
-        className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs text-muted-foreground/50 transition-colors hover:bg-muted/30 hover:text-muted-foreground"
+        className="flex w-full items-center gap-2 rounded-b-xl px-4 py-2 text-left text-[12px] text-muted-foreground/40 transition-colors hover:bg-muted/20 hover:text-muted-foreground/60"
       >
         <Plus className="size-3" />
         <span>Add task</span>
@@ -222,172 +213,242 @@ function InlineTaskAdd({ assigneeId, workspaceId, onCreated }: InlineTaskAddProp
 
   return (
     <div className="flex items-center gap-2 px-4 py-2">
-      <Plus className="size-3 shrink-0 text-muted-foreground/40" />
+      <Plus className="size-3 shrink-0 text-muted-foreground/30" />
       <input
         ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSubmit();
+          }
+          if (e.key === 'Escape') {
+            setValue('');
+            setActive(false);
+          }
+        }}
         onBlur={() => {
           if (!value.trim()) setActive(false);
         }}
-        placeholder="Task name — Enter to create, Esc to cancel"
+        placeholder="Task name — Enter to save, Esc to cancel"
         disabled={loading}
-        className="min-w-0 flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+        className="min-w-0 flex-1 bg-transparent text-[13px] text-foreground placeholder:text-muted-foreground/35 focus:outline-none"
       />
       {loading && <Loader2 className="size-3 shrink-0 animate-spin text-primary" />}
     </div>
   );
 }
 
-// ─── My Tasks (full interactive task list) ───────────────────────────────────
+// ─── Person Task Section (expandable) ───────────────────────────────────────
 
-function MyTaskList({
+const PersonTaskSection = memo(function PersonTaskSection({
   member,
+  isMe = false,
+  isOnline,
   currentUserId,
   onTaskUpdate,
   workspaceId,
+  defaultExpanded = false,
 }: {
   member: TeamMemberTasks;
+  isMe?: boolean;
+  isOnline?: boolean;
   currentUserId?: string | null;
   onTaskUpdate?: () => void;
   workspaceId: string;
+  defaultExpanded?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [showCompleted, setShowCompleted] = useState(false);
-  const activeTasks = member.tasks.filter((t) => t.status !== 'Done');
-  const completedTasks = member.tasks.filter((t) => t.status === 'Done');
-
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      {activeTasks.length === 0 && completedTasks.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <CheckCircle2 className="mb-2 size-6 text-emerald-500/40" />
-          <p className="text-sm text-muted-foreground/70">All caught up</p>
-        </div>
-      ) : (
-        <div className="divide-y divide-border/20">
-          {activeTasks.map((task) => (
-            <TeamTaskCard
-              key={task.id}
-              task={task}
-              currentUserId={currentUserId}
-              onTaskUpdate={onTaskUpdate}
-              workspaceId={workspaceId}
-              canInteract
-            />
-          ))}
-
-          {completedTasks.length > 0 && (
-            <div>
-              <button
-                type="button"
-                onClick={() => setShowCompleted((v) => !v)}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-xs transition-colors hover:bg-muted/20"
-              >
-                <CheckCircle2 className="size-3 text-emerald-500" />
-                <span className="font-medium text-emerald-500/80">
-                  {completedTasks.length} done today
-                </span>
-                <ChevronDown
-                  className={cn(
-                    'ml-auto size-3 text-muted-foreground/40 transition-transform duration-200',
-                    !showCompleted && '-rotate-90'
-                  )}
-                />
-              </button>
-              {showCompleted &&
-                completedTasks.map((task) => (
-                  <TeamTaskCard
-                    key={task.id}
-                    task={task}
-                    currentUserId={currentUserId}
-                    onTaskUpdate={onTaskUpdate}
-                    workspaceId={workspaceId}
-                    canInteract
-                  />
-                ))}
-            </div>
-          )}
-        </div>
-      )}
-      <InlineTaskAdd
-        assigneeId={member.profile.id}
-        workspaceId={workspaceId}
-        onCreated={onTaskUpdate}
-      />
-    </div>
-  );
-}
-
-// ─── Team Overview Card (compact — projects + task count) ────────────────────
-
-function TeamOverviewCard({ member }: { member: TeamMemberTasks }) {
   const { profile, tasks } = member;
   const activeTasks = tasks.filter((t) => t.status !== 'Done');
+  const completedTasks = tasks.filter((t) => t.status === 'Done');
   const inProgress = activeTasks.filter((t) => t.status === 'In Progress').length;
   const projects = getUniqueProjects(activeTasks);
 
   return (
-    <div className="rounded-lg border border-border bg-card px-3 py-3 transition-colors hover:bg-muted/20">
-      {/* Name row */}
-      <div className="flex items-center gap-2">
-        <Avatar className="size-7 shrink-0 ring-1 ring-border/20">
-          <AvatarImage src={profile.avatar_url ?? undefined} alt={profile.full_name ?? ''} />
-          <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
-            {getInitials(profile.full_name)}
-          </AvatarFallback>
-        </Avatar>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-foreground">
-            {profile.full_name ?? 'Unknown'}
-          </p>
-          <p className="text-[10px] text-muted-foreground">
-            {activeTasks.length} task{activeTasks.length !== 1 ? 's' : ''}
-            {inProgress > 0 && <span className="text-blue-500"> · {inProgress} active</span>}
-          </p>
-        </div>
-      </div>
-
-      {/* Projects */}
-      {projects.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {projects.map((p) => {
-            const style = p.project_type ? PROJECT_TYPE_STYLES[p.project_type] : null;
-            const Icon = style?.icon || Folder;
-            return (
-              <span
-                key={p.id}
-                className={cn(
-                  'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium',
-                  style
-                    ? `${style.bg} ${style.border} ${style.color}`
-                    : 'border-border bg-muted/30 text-muted-foreground/70'
-                )}
-              >
-                <Icon className="size-2.5" />
-                {p.name}
-              </span>
-            );
-          })}
-        </div>
+    <div
+      className={cn(
+        'overflow-hidden rounded-xl border transition-colors duration-200',
+        isMe
+          ? 'border-primary/15 bg-card shadow-sm'
+          : expanded
+            ? 'border-border bg-card shadow-sm'
+            : 'border-border/60 bg-card/50 hover:border-border hover:bg-card'
       )}
+    >
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className={cn(
+          'flex w-full items-center gap-2.5 px-3 py-2 text-left transition-colors duration-150',
+          expanded && 'border-b border-border/30'
+        )}
+      >
+        <div className="relative shrink-0">
+          <Avatar className={cn('size-7 ring-1', isMe ? 'ring-primary/20' : 'ring-border/30')}>
+            <AvatarImage src={profile.avatar_url ?? undefined} alt={profile.full_name ?? ''} />
+            <AvatarFallback
+              className={cn(
+                'text-[11px] font-semibold',
+                isMe ? 'bg-primary/10 text-primary' : 'bg-muted/60 text-muted-foreground/60'
+              )}
+            >
+              {getInitials(profile.full_name)}
+            </AvatarFallback>
+          </Avatar>
+          {isOnline !== undefined && (
+            <span
+              className={cn(
+                'absolute -bottom-0.5 -right-0.5 block size-2.5 rounded-full ring-2 ring-card',
+                isOnline ? 'bg-emerald-500' : 'bg-muted-foreground/25'
+              )}
+            />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span
+              className={cn(
+                'text-[13px] font-semibold',
+                isMe ? 'text-foreground' : 'text-foreground/90'
+              )}
+            >
+              {isMe ? 'My Tasks' : (profile.full_name ?? 'Unknown')}
+            </span>
+            {isMe && profile.full_name && (
+              <span className="text-[11px] text-muted-foreground/40">
+                {profile.full_name.split(' ')[0]}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] tabular-nums text-muted-foreground/50">
+              {activeTasks.length} task{activeTasks.length !== 1 ? 's' : ''}
+            </span>
+            {inProgress > 0 && (
+              <>
+                <span className="text-[11px] text-muted-foreground/20">&middot;</span>
+                <span className="text-[11px] font-medium text-blue-500">{inProgress} active</span>
+              </>
+            )}
+            {completedTasks.length > 0 && (
+              <>
+                <span className="text-[11px] text-muted-foreground/20">&middot;</span>
+                <span className="text-[11px] text-emerald-500/70">
+                  {completedTasks.length} done
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+        {!expanded && projects.length > 0 && (
+          <div className="hidden flex-wrap gap-1 sm:flex">
+            {projects.slice(0, 3).map((p) => {
+              const style = p.project_type ? PROJECT_TYPE_STYLES[p.project_type] : null;
+              const Icon = style?.icon || Folder;
+              return (
+                <span
+                  key={p.id}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-medium',
+                    style
+                      ? `${style.bg} ${style.border} ${style.color}`
+                      : 'border-border bg-muted/30 text-muted-foreground/60'
+                  )}
+                >
+                  <Icon className="size-2.5" />
+                  {p.name}
+                </span>
+              );
+            })}
+            {projects.length > 3 && (
+              <span className="text-[10px] text-muted-foreground/40">+{projects.length - 3}</span>
+            )}
+          </div>
+        )}
+        <ChevronDown
+          className={cn(
+            'size-4 shrink-0 text-muted-foreground/30 transition-transform duration-200',
+            !expanded && '-rotate-90'
+          )}
+        />
+      </button>
 
-      {projects.length === 0 && activeTasks.length === 0 && (
-        <p className="mt-1.5 text-[10px] text-muted-foreground/50">No active work</p>
+      {expanded && (
+        <div>
+          {activeTasks.length === 0 && completedTasks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+              <CheckCircle2 className="mb-1 size-4 text-emerald-500/30" />
+              <p className="text-[12px] text-muted-foreground/50">All caught up</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/15">
+              {activeTasks.map((task) => (
+                <TeamTaskCard
+                  key={task.id}
+                  task={task}
+                  currentUserId={currentUserId}
+                  onTaskUpdate={onTaskUpdate}
+                  workspaceId={workspaceId}
+                  canInteract
+                />
+              ))}
+              {completedTasks.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowCompleted((v) => !v)}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-[12px] transition-colors hover:bg-muted/15"
+                  >
+                    <CheckCircle2 className="size-3 text-emerald-500/60" />
+                    <span className="font-medium text-emerald-600/60 dark:text-emerald-400/60">
+                      {completedTasks.length} done today
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'ml-auto size-3 text-muted-foreground/30 transition-transform duration-200',
+                        !showCompleted && '-rotate-90'
+                      )}
+                    />
+                  </button>
+                  {showCompleted &&
+                    completedTasks.map((task) => (
+                      <TeamTaskCard
+                        key={task.id}
+                        task={task}
+                        currentUserId={currentUserId}
+                        onTaskUpdate={onTaskUpdate}
+                        workspaceId={workspaceId}
+                        canInteract
+                      />
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+          <InlineTaskAdd
+            assigneeId={member.profile.id}
+            workspaceId={workspaceId}
+            onCreated={onTaskUpdate}
+          />
+        </div>
       )}
     </div>
   );
-}
+});
 
-// ─── Admin Check-ins Section ──────────────────────────────────────────────────
+// ─── Admin Check-ins ────────────────────────────────────────────────────────
 
-interface AdminCheckinsSectionProps {
+function AdminCheckinsSection({
+  workspaceId,
+  profiles,
+}: {
   workspaceId: string;
   profiles: { id: string; full_name: string | null }[];
-}
-
-function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionProps) {
+}) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedProfileId, setSelectedProfileId] = useState<string>('all');
@@ -399,8 +460,7 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
       setLoading(true);
       try {
         const { getCheckins } = await import('@/app/actions/checkins');
-        const result = await getCheckins(workspaceId, { date, limit: 100 });
-        setCheckins(result);
+        setCheckins(await getCheckins(workspaceId, { date, limit: 100 }));
       } finally {
         setLoading(false);
       }
@@ -408,51 +468,41 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
     [workspaceId]
   );
 
-  const handleOpen = () => {
-    if (!open) loadCheckins(selectedDate);
-    setOpen((v) => !v);
-  };
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = e.target.value;
-    setSelectedDate(newDate);
-    if (open) loadCheckins(newDate);
-  };
-
   const filteredCheckins =
     selectedProfileId === 'all'
       ? checkins
       : checkins.filter((c) => c.profile_id === selectedProfileId);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-card/50 transition-colors hover:border-border hover:bg-card">
       <button
         type="button"
-        className="flex w-full items-center gap-2.5 px-4 py-3 text-left transition-all duration-200 hover:bg-muted/20"
-        onClick={handleOpen}
+        className="flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-muted/15"
+        onClick={() => {
+          if (!open) loadCheckins(selectedDate);
+          setOpen((v) => !v);
+        }}
       >
-        <div className="flex size-6 items-center justify-center rounded-md bg-muted/40">
-          <ClipboardList className="size-3.5 shrink-0 text-muted-foreground/70" />
-        </div>
-        <span className="flex-1 text-[13px] font-semibold tracking-tight text-foreground">
-          Today&apos;s Check-ins
-        </span>
+        <ClipboardList className="size-4 shrink-0 text-muted-foreground/40" />
+        <span className="flex-1 text-[13px] font-semibold text-foreground/80">Check-ins</span>
         <ChevronDown
           className={cn(
-            'size-3.5 shrink-0 text-muted-foreground/50 transition-transform duration-200',
+            'size-3.5 shrink-0 text-muted-foreground/30 transition-transform duration-200',
             !open && '-rotate-90'
           )}
         />
       </button>
-
       {open && (
-        <div className="border-t border-border">
-          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/20 px-4 py-2">
-            <Filter className="size-3.5 shrink-0 text-muted-foreground" />
+        <div className="border-t border-border/30">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border/30 bg-muted/10 px-4 py-2">
+            <Filter className="size-3 shrink-0 text-muted-foreground/40" />
             <Input
               type="date"
               value={selectedDate}
-              onChange={handleDateChange}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                if (open) loadCheckins(e.target.value);
+              }}
               className="h-7 w-36 text-xs"
             />
             <Select value={selectedProfileId} onValueChange={setSelectedProfileId}>
@@ -469,21 +519,20 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
               </SelectContent>
             </Select>
           </div>
-
-          <div className="max-h-80 divide-y divide-border/30 overflow-y-auto">
+          <div className="max-h-72 divide-y divide-border/20 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <span className="text-xs text-muted-foreground">Loading…</span>
+                <Loader2 className="size-4 animate-spin text-muted-foreground/40" />
               </div>
             ) : filteredCheckins.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <ClipboardList className="mb-2 size-8 text-muted-foreground/40" />
-                <p className="text-xs text-muted-foreground">
+              <div className="py-8 text-center">
+                <ClipboardList className="mx-auto mb-2 size-6 text-muted-foreground/20" />
+                <p className="text-[12px] text-muted-foreground/40">
                   No check-ins for {format(new Date(selectedDate + 'T12:00:00'), 'MMMM d')}
                 </p>
               </div>
             ) : (
-              filteredCheckins.map((checkin) => <CheckinRow key={checkin.id} checkin={checkin} />)
+              filteredCheckins.map((c) => <CheckinRow key={c.id} checkin={c} />)
             )}
           </div>
         </div>
@@ -494,182 +543,171 @@ function AdminCheckinsSection({ workspaceId, profiles }: AdminCheckinsSectionPro
 
 function CheckinRow({ checkin }: { checkin: DailyCheckin }) {
   const isMorning = checkin.checkin_type === 'morning';
-
   return (
     <div className="px-4 py-3">
-      <div className="mb-2 flex items-center gap-2">
-        <Avatar className="size-6 shrink-0">
-          <AvatarImage
-            src={checkin.profile?.avatar_url ?? undefined}
-            alt={checkin.profile?.full_name ?? 'Member'}
-          />
-          <AvatarFallback className="text-xs">
+      <div className="mb-1.5 flex items-center gap-2">
+        <Avatar className="size-5 shrink-0">
+          <AvatarImage src={checkin.profile?.avatar_url ?? undefined} />
+          <AvatarFallback className="text-[8px]">
             {getInitials(checkin.profile?.full_name ?? null)}
           </AvatarFallback>
         </Avatar>
-        <span className="text-xs font-medium text-foreground">
+        <span className="text-[12px] font-medium text-foreground/80">
           {checkin.profile?.full_name ?? 'Unknown'}
         </span>
         <Badge
           variant="outline"
           className={cn(
-            'ml-1 shrink-0 text-xs',
+            'ml-1 h-4 shrink-0 px-1.5 text-[9px]',
             isMorning
               ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400'
               : 'border-primary/20 bg-primary/5 text-primary dark:border-primary/30 dark:bg-primary/10'
           )}
         >
-          {isMorning ? 'Morning' : 'Evening'}
+          {isMorning ? 'AM' : 'PM'}
         </Badge>
       </div>
-
-      {isMorning ? (
-        <div className="space-y-1 pl-8">
-          {(checkin.planned_tasks ?? []).length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">Planned:</p>
-              <ul className="space-y-0.5">
-                {checkin.planned_tasks.map((task, idx) => (
-                  <li
-                    key={idx}
-                    className="text-xs text-foreground before:mr-1.5 before:content-['·']"
-                  >
-                    {task}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {checkin.blockers && (
-            <p className="text-xs text-red-600 dark:text-red-400">
-              <span className="font-medium">Blocker:</span> {checkin.blockers}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-1 pl-8">
-          {(checkin.completed_tasks ?? []).length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-medium text-muted-foreground">Completed:</p>
-              <ul className="space-y-0.5">
-                {checkin.completed_tasks.map((task, idx) => (
-                  <li
-                    key={idx}
-                    className="text-xs text-foreground before:mr-1.5 before:content-['·']"
-                  >
-                    {task}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {checkin.wins && (
-            <p className="text-xs text-emerald-600 dark:text-emerald-400">
-              <span className="font-medium">Win:</span> {checkin.wins}
-            </p>
-          )}
-        </div>
-      )}
+      <div className="space-y-1 pl-7">
+        {isMorning ? (
+          <>
+            {(checkin.planned_tasks ?? []).map((task, i) => (
+              <p key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/70">
+                <Circle className="mt-1 size-1.5 shrink-0 fill-muted-foreground/30 text-muted-foreground/30" />
+                {task}
+              </p>
+            ))}
+            {checkin.blockers && (
+              <p className="text-[11px] text-red-600 dark:text-red-400">
+                <span className="font-medium">Blocker:</span> {checkin.blockers}
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            {(checkin.completed_tasks ?? []).map((task, i) => (
+              <p key={i} className="flex items-start gap-1.5 text-[11px] text-foreground/70">
+                <CheckCircle2 className="mt-0.5 size-2.5 shrink-0 text-emerald-500/50" />
+                {task}
+              </p>
+            ))}
+            {checkin.wins && (
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                <span className="font-medium">Win:</span> {checkin.wins}
+              </p>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-// ─── Main Container ──────────────────────────────────────────────────────────
-
-interface TeamTaskContainerProps {
-  workspaceId: string;
-  userRole: string | null;
-  currentUserId?: string | null;
-  viewingAs?: boolean;
-}
+// ─── Main Container ─────────────────────────────────────────────────────────
 
 export function TeamTaskContainer({
   workspaceId,
   userRole,
   currentUserId,
   viewingAs = false,
-}: TeamTaskContainerProps) {
+}: {
+  workspaceId: string;
+  userRole: string | null;
+  currentUserId?: string | null;
+  viewingAs?: boolean;
+}) {
   const isAdmin = userRole === 'admin' && !viewingAs;
   const { members, isLoading, isError, revalidate } = useTeamTaskDashboard(workspaceId);
-
+  const { members: teamStatusMembers } = useTeamStatus(isAdmin ? workspaceId : null);
+  useRealtimeTasks(workspaceId);
   const handleTaskUpdate = useCallback(() => {
     revalidate();
   }, [revalidate]);
 
-  const profiles = members.map((m) => ({
-    id: m.profile.id,
-    full_name: m.profile.full_name,
-  }));
+  const onlineMap = new Map<string, boolean>();
+  for (const m of teamStatusMembers) onlineMap.set(m.profileId, m.status === 'online');
 
-  // Find the current user's member data (for "My Tasks")
+  const profiles = members.map((m) => ({ id: m.profile.id, full_name: m.profile.full_name }));
   const myMember = members.find((m) => m.profile.id === currentUserId) ?? null;
-  // Everyone else (for "Team" overview)
   const otherMembers = members.filter((m) => m.profile.id !== currentUserId);
+  const totalActive = members.reduce(
+    (s, m) => s + m.tasks.filter((t) => t.status !== 'Done').length,
+    0
+  );
+  const totalDone = members.reduce(
+    (s, m) => s + m.tasks.filter((t) => t.status === 'Done').length,
+    0
+  );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="space-y-2.5">
       {isLoading && <TeamTaskSkeleton />}
-
       {isError && !isLoading && (
-        <p className="text-xs text-destructive">Failed to load team tasks.</p>
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
+          <p className="text-[13px] text-destructive">Failed to load team tasks.</p>
+        </div>
       )}
-
       {!isLoading && !isError && (
-        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-0.5">
-          {/* ── My Tasks ── */}
+        <>
+          {(totalActive > 0 || totalDone > 0) && (
+            <div className="flex items-center gap-4 text-[11px] tabular-nums text-muted-foreground/50">
+              <span>
+                <span className="font-semibold text-foreground/70">{totalActive}</span> active
+              </span>
+              {totalDone > 0 && (
+                <span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {totalDone}
+                  </span>{' '}
+                  done today
+                </span>
+              )}
+              <span>
+                <span className="font-semibold text-foreground/70">{members.length}</span> members
+              </span>
+            </div>
+          )}
           {myMember && (
-            <MyTaskList
+            <PersonTaskSection
               member={myMember}
+              isMe
+              isOnline={onlineMap.get(myMember.profile.id)}
               currentUserId={currentUserId}
               onTaskUpdate={handleTaskUpdate}
               workspaceId={workspaceId}
+              defaultExpanded
             />
           )}
-
-          {/* ── Team Overview ── */}
-          {otherMembers.length > 0 && (
-            <div>
-              <div className="mb-2 flex items-center gap-2 px-0.5">
-                <Users className="size-3.5 text-muted-foreground/60" />
-                <span className="text-xs font-semibold tracking-tight text-muted-foreground">
+          {/* Team members — show otherMembers if I'm in the list, otherwise all members */}
+          {(myMember ? otherMembers : members).length > 0 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 px-0.5">
+                <Users className="size-3.5 text-muted-foreground/40" />
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/40">
                   Team
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {otherMembers.map((member) => (
-                  <TeamOverviewCard key={member.profile.id} member={member} />
+              <div className="space-y-1.5">
+                {(myMember ? otherMembers : members).map((m) => (
+                  <PersonTaskSection
+                    key={m.profile.id}
+                    member={m}
+                    isOnline={onlineMap.get(m.profile.id)}
+                    currentUserId={currentUserId}
+                    onTaskUpdate={handleTaskUpdate}
+                    workspaceId={workspaceId}
+                  />
                 ))}
               </div>
             </div>
           )}
-
-          {/* Admin: show all members as overview when not in the list */}
-          {isAdmin && !myMember && members.length > 0 && (
-            <div>
-              <div className="mb-2 flex items-center gap-2 px-0.5">
-                <Users className="size-3.5 text-muted-foreground/60" />
-                <span className="text-xs font-semibold tracking-tight text-muted-foreground">
-                  Team
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {members.map((member) => (
-                  <TeamOverviewCard key={member.profile.id} member={member} />
-                ))}
-              </div>
-            </div>
-          )}
-
           {members.length === 0 && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-10 text-center">
-              <Users className="mb-2 size-8 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground/70">No team members found</p>
+            <div className="flex flex-col items-center justify-center rounded-xl border border-border/50 bg-card/50 py-12 text-center">
+              <Users className="mb-2 size-7 text-muted-foreground/20" />
+              <p className="text-[13px] text-muted-foreground/50">No team members found</p>
             </div>
           )}
-
-          {/* Admin check-ins */}
           {isAdmin && <AdminCheckinsSection workspaceId={workspaceId} profiles={profiles} />}
-        </div>
+        </>
       )}
     </div>
   );

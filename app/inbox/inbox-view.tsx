@@ -39,11 +39,25 @@ import {
   CheckCircle2,
   AlertCircle,
   Menu,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { quickUpdateTask, toggleTaskInbox, createTask, type Task } from '@/app/actions/inbox';
-import { invalidateInboxTasks, invalidateDailyFlow, useInboxTasks } from '@/lib/swr';
+import {
+  quickUpdateTask,
+  toggleTaskInbox,
+  createTask,
+  deleteTask,
+  type Task,
+} from '@/app/actions/inbox';
+import {
+  invalidateInboxTasks,
+  invalidateDailyFlow,
+  useInboxTasks,
+  useCurrentWorkspaceId,
+} from '@/lib/swr';
+import { useRealtimeTasks } from '@/lib/hooks/use-realtime-tasks';
 import { EditTaskModal } from '@/components/edit-task-modal';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { m, AnimatePresence } from '@/lib/lazy-motion';
 import Link from 'next/link';
 import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
@@ -76,6 +90,7 @@ function isOverdue(dueDate: string | null): boolean {
 type OptimisticAction =
   | { type: 'toggle'; taskId: string; completed: boolean }
   | { type: 'hide'; taskId: string }
+  | { type: 'delete'; taskId: string }
   | { type: 'add'; task: Task };
 
 function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
@@ -92,6 +107,8 @@ function tasksReducer(state: Task[], action: OptimisticAction): Task[] {
       );
     case 'hide':
       return state.filter((t) => t.id !== action.taskId);
+    case 'delete':
+      return state.filter((t) => t.id !== action.taskId);
     case 'add':
       return [action.task, ...state];
     default:
@@ -103,11 +120,13 @@ const TaskRow = React.memo(function TaskRow({
   task,
   onToggle,
   onHide,
+  onDelete,
   onEdit,
 }: {
   task: Task;
   onToggle: (taskId: string, completed: boolean) => void;
   onHide: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
   onEdit: (task: Task) => void;
 }) {
   const isCompleted = task.status === 'Done';
@@ -195,7 +214,7 @@ const TaskRow = React.memo(function TaskRow({
       </div>
 
       {/* Actions */}
-      <div className="flex w-20 shrink-0 items-center justify-end gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+      <div className="flex w-24 shrink-0 items-center justify-end gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -223,6 +242,19 @@ const TaskRow = React.memo(function TaskRow({
             </TooltipTrigger>
             <TooltipContent>Remove from inbox</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7 rounded-lg text-muted-foreground/50 hover:text-destructive"
+                onClick={() => onDelete(task.id)}
+              >
+                <Trash2 className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Delete task</TooltipContent>
+          </Tooltip>
         </TooltipProvider>
       </div>
     </div>
@@ -235,9 +267,13 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   const [isPending, startTransition] = useTransition();
   // SWR keeps data fresh across tabs/background refetch (45s interval)
   const { tasks: liveTasks } = useInboxTasks();
+  const { workspaceId } = useCurrentWorkspaceId();
+  // Realtime: auto-refresh when any task changes
+  useRealtimeTasks(workspaceId ?? null);
   const baseTasks = liveTasks.length > 0 ? liveTasks : initialTasks;
   const [optimisticTasks, dispatchOptimistic] = useOptimistic(baseTasks, tasksReducer);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
   const [quickAddValue, setQuickAddValue] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
@@ -367,6 +403,24 @@ export function InboxView({ initialTasks }: InboxViewProps) {
     },
     [router, dispatchOptimistic]
   );
+
+  const handleDeleteTask = useCallback((taskId: string) => {
+    setDeleteTaskId(taskId);
+  }, []);
+
+  const confirmDeleteTask = useCallback(() => {
+    if (!deleteTaskId) return;
+    const id = deleteTaskId;
+    setDeleteTaskId(null);
+    startTransition(async () => {
+      dispatchOptimistic({ type: 'delete', taskId: id });
+      const result = await deleteTask(id);
+      if (!result.success) toast.error(result.error ?? 'Failed to delete task');
+      invalidateInboxTasks(true);
+      invalidateDailyFlow(true);
+      router.refresh();
+    });
+  }, [deleteTaskId, router, dispatchOptimistic]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -532,7 +586,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         <div className="hidden w-40 shrink-0 md:block">Project</div>
         <div className="hidden w-24 shrink-0 sm:block">Due</div>
         <div className="w-20 shrink-0">Priority</div>
-        <div className="w-20 shrink-0" /> {/* Actions space */}
+        <div className="w-24 shrink-0" /> {/* Actions space */}
       </div>
 
       {/* Task List - Virtualized */}
@@ -586,6 +640,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
                       task={task}
                       onToggle={handleToggleTask}
                       onHide={handleHideTask}
+                      onDelete={handleDeleteTask}
                       onEdit={setEditingTask}
                     />
                   </m.div>
@@ -604,6 +659,16 @@ export function InboxView({ initialTasks }: InboxViewProps) {
           onOpenChange={(open) => !open && setEditingTask(null)}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        open={!!deleteTaskId}
+        onOpenChange={(open) => !open && setDeleteTaskId(null)}
+        title="Delete task"
+        description="Permanently delete this task? This cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDeleteTask}
+      />
     </div>
   );
 }
