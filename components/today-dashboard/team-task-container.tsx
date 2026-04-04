@@ -11,13 +11,6 @@ import {
   Plus,
   Loader2,
   CheckCircle2,
-  Globe,
-  Bot,
-  Phone,
-  Sparkles,
-  TrendingUp,
-  Smartphone,
-  Megaphone,
   Folder,
   Circle,
 } from 'lucide-react';
@@ -45,55 +38,7 @@ import { TeamTaskCard } from './team-task-card';
 import type { TeamMemberTasks, TeamMemberTask } from '@/app/actions/team-dashboard';
 import type { DailyCheckin } from '@/app/actions/checkins';
 
-// ─── Project Type Styles ────────────────────────────────────────────────────
-
-const PROJECT_TYPE_STYLES: Record<
-  string,
-  { icon: typeof Globe; color: string; bg: string; border: string }
-> = {
-  ai_agent: {
-    icon: Bot,
-    color: 'text-violet-500',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/20',
-  },
-  voice_agent: {
-    icon: Phone,
-    color: 'text-pink-500',
-    bg: 'bg-pink-500/10',
-    border: 'border-pink-500/20',
-  },
-  ai_platform: {
-    icon: Sparkles,
-    color: 'text-indigo-500',
-    bg: 'bg-indigo-500/10',
-    border: 'border-indigo-500/20',
-  },
-  web_design: {
-    icon: Globe,
-    color: 'text-sky-500',
-    bg: 'bg-sky-500/10',
-    border: 'border-sky-500/20',
-  },
-  seo: {
-    icon: TrendingUp,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/20',
-  },
-  app: {
-    icon: Smartphone,
-    color: 'text-teal-500',
-    bg: 'bg-teal-500/10',
-    border: 'border-teal-500/20',
-  },
-  ads: {
-    icon: Megaphone,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-  },
-};
+import { getProjectTypeStyle } from '@/lib/project-type-config';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -350,7 +295,7 @@ const PersonTaskSection = memo(function PersonTaskSection({
         {!expanded && projects.length > 0 && (
           <div className="hidden flex-wrap gap-1 sm:flex">
             {projects.slice(0, 3).map((p) => {
-              const style = p.project_type ? PROJECT_TYPE_STYLES[p.project_type] : null;
+              const style = getProjectTypeStyle(p.project_type ?? null);
               const Icon = style?.icon || Folder;
               return (
                 <span

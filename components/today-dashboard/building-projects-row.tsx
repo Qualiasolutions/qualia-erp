@@ -1,20 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  Folder,
-  Bot,
-  Globe,
-  Phone,
-  TrendingUp,
-  Megaphone,
-  Smartphone,
-  Sparkles,
-  ChevronRight,
-  Hammer,
-} from 'lucide-react';
+import { Folder, ChevronRight, Hammer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { EntityAvatar } from '@/components/entity-avatar';
+import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
 import type { ProjectType } from '@/types/database';
 
 export interface PipelineProject {
@@ -26,16 +16,6 @@ export interface PipelineProject {
   logo_url: string | null;
   issue_stats: { total: number; done: number };
 }
-
-const PROJECT_TYPE_CONFIG: Record<ProjectType, { icon: typeof Globe; color: string }> = {
-  ai_agent: { icon: Bot, color: 'text-violet-500' },
-  voice_agent: { icon: Phone, color: 'text-pink-500' },
-  ai_platform: { icon: Sparkles, color: 'text-indigo-500' },
-  web_design: { icon: Globe, color: 'text-sky-500' },
-  seo: { icon: TrendingUp, color: 'text-emerald-500' },
-  app: { icon: Smartphone, color: 'text-teal-500' },
-  ads: { icon: Megaphone, color: 'text-amber-500' },
-};
 
 interface BuildingProjectsRowProps {
   building: PipelineProject[];

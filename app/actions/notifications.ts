@@ -29,6 +29,12 @@ export async function createNotification(
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
+  // Auth check — only authenticated users can create notifications
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
   const { error } = await supabase.from('notifications').insert({
     user_id: userId,
     workspace_id: workspaceId,

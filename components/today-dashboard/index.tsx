@@ -5,23 +5,7 @@ import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import {
-  RefreshCw,
-  Settings,
-  Menu,
-  Plus,
-  Eye,
-  ChevronRight,
-  Folder,
-  Bot,
-  Globe,
-  Phone,
-  Sparkles,
-  TrendingUp,
-  Smartphone,
-  Megaphone,
-  Hammer,
-} from 'lucide-react';
+import { RefreshCw, Settings, Menu, Plus, Eye, ChevronRight, Folder, Hammer } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSidebar } from '@/components/sidebar-provider';
@@ -45,19 +29,8 @@ import { NewTaskModalControlled } from '@/components/new-task-modal';
 import { OwnerUpdatesBanner } from './owner-updates-banner';
 import { useAdminContext } from '@/components/admin-provider';
 import type { PipelineProject } from './building-projects-row';
-import type { ProjectType } from '@/types/database';
 
-// ─── Project Type Config ────────────────────────────────────────────────────
-
-const PROJECT_TYPE_CONFIG: Record<ProjectType, { icon: typeof Globe; color: string }> = {
-  ai_agent: { icon: Bot, color: 'text-violet-500' },
-  voice_agent: { icon: Phone, color: 'text-pink-500' },
-  ai_platform: { icon: Sparkles, color: 'text-indigo-500' },
-  web_design: { icon: Globe, color: 'text-sky-500' },
-  seo: { icon: TrendingUp, color: 'text-emerald-500' },
-  app: { icon: Smartphone, color: 'text-teal-500' },
-  ads: { icon: Megaphone, color: 'text-amber-500' },
-};
+import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
 
 // ─── Team Presence (Header) ─────────────────────────────────────────────────
 

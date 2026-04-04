@@ -3,80 +3,14 @@
 import { useState, memo } from 'react';
 import { cn } from '@/lib/utils';
 import { format, isPast, isToday } from 'date-fns';
-import {
-  Calendar,
-  Check,
-  Globe,
-  Bot,
-  Phone,
-  Sparkles,
-  TrendingUp,
-  Smartphone,
-  Megaphone,
-  Folder,
-  Eye,
-} from 'lucide-react';
+import { Calendar, Check, Folder, Eye } from 'lucide-react';
+import { getProjectTypeStyle } from '@/lib/project-type-config';
 import { ISSUE_PRIORITY_COLORS, TASK_STATUS_COLORS } from '@/lib/color-constants';
 import type { TeamMemberTask } from '@/app/actions/team-dashboard';
 import { updateTask, getTaskById, type Task } from '@/app/actions/inbox';
 import { invalidateTeamDashboard, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { TaskDetailDialog } from '@/components/task-detail-dialog';
-
-const PROJECT_TYPE_STYLES: Record<
-  string,
-  { icon: typeof Globe; color: string; bg: string; border: string; bar: string }
-> = {
-  ai_agent: {
-    icon: Bot,
-    color: 'text-violet-500',
-    bg: 'bg-violet-500/10',
-    border: 'border-violet-500/20',
-    bar: 'bg-violet-500/60',
-  },
-  voice_agent: {
-    icon: Phone,
-    color: 'text-pink-500',
-    bg: 'bg-pink-500/10',
-    border: 'border-pink-500/20',
-    bar: 'bg-pink-500/60',
-  },
-  ai_platform: {
-    icon: Sparkles,
-    color: 'text-indigo-500',
-    bg: 'bg-indigo-500/10',
-    border: 'border-indigo-500/20',
-    bar: 'bg-indigo-500/60',
-  },
-  web_design: {
-    icon: Globe,
-    color: 'text-sky-500',
-    bg: 'bg-sky-500/10',
-    border: 'border-sky-500/20',
-    bar: 'bg-sky-500/60',
-  },
-  seo: {
-    icon: TrendingUp,
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/20',
-    bar: 'bg-emerald-500/60',
-  },
-  app: {
-    icon: Smartphone,
-    color: 'text-teal-500',
-    bg: 'bg-teal-500/10',
-    border: 'border-teal-500/20',
-    bar: 'bg-teal-500/60',
-  },
-  ads: {
-    icon: Megaphone,
-    color: 'text-amber-500',
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/20',
-    bar: 'bg-amber-500/60',
-  },
-};
 
 interface TeamTaskCardProps {
   task: TeamMemberTask;
@@ -107,9 +41,7 @@ export const TeamTaskCard = memo(function TeamTaskCard({
   const isDueToday = task.due_date && isToday(new Date(task.due_date));
 
   // Project type styling
-  const typeStyle = task.project?.project_type
-    ? PROJECT_TYPE_STYLES[task.project.project_type]
-    : null;
+  const typeStyle = getProjectTypeStyle(task.project?.project_type ?? null);
   const ProjectIcon = typeStyle?.icon || Folder;
 
   const handleView = async () => {

@@ -51,11 +51,8 @@ export default function AgentPage() {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
-  const [autoGreetingSent, setAutoGreetingSent] = useState(false);
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const sendMessageRef = useRef<((text: string) => Promise<void>) | null>(null);
 
   const { conversations } = useConversations();
   const { messages: dbMessages } = useConversationMessages(activeConversationId);
@@ -162,78 +159,6 @@ export default function AgentPage() {
     }
   };
 
-  // Reusable send function for auto-greeting
-  const sendAuto = async (text: string) => {
-    if (isStreaming) return;
-    setIsStreaming(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: text }],
-        }),
-      });
-
-      if (!response.ok) return;
-
-      const newConversationId = response.headers.get('X-Conversation-Id');
-      if (newConversationId) {
-        setActiveConversationId(newConversationId);
-        invalidateConversations(true);
-      }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let assistantContent = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          assistantContent += decoder.decode(value, { stream: true });
-
-          setLocalMessages([
-            {
-              id: 'auto-greeting',
-              conversation_id: newConversationId || '',
-              role: 'assistant' as const,
-              content: assistantContent,
-              tool_calls: null,
-              tool_results: null,
-              created_at: new Date().toISOString(),
-            },
-          ]);
-        }
-      }
-
-      if (newConversationId) {
-        invalidateConversationMessages(newConversationId, true);
-      }
-    } catch {
-      // Silent fail for auto-greeting
-    } finally {
-      setIsStreaming(false);
-    }
-  };
-
-  // Store ref for auto-greeting effect
-  sendMessageRef.current = sendAuto;
-
-  // Auto-greeting: 3 seconds after page load, send a greeting if no conversation active
-  useEffect(() => {
-    if (autoGreetingSent || activeConversationId || localMessages.length > 0) return;
-
-    const timer = setTimeout(() => {
-      setAutoGreetingSent(true);
-      sendMessageRef.current?.('hi');
-    }, 3000);
-
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoGreetingSent, activeConversationId]);
-
   const handleQuickAction = (action: string) => {
     setInput(action);
     inputRef.current?.focus();
@@ -242,7 +167,6 @@ export default function AgentPage() {
   const handleNewConversation = () => {
     setActiveConversationId(null);
     setLocalMessages([]);
-    setAutoGreetingSent(false);
   };
 
   const activeConversation = conversations.find((c) => c.id === activeConversationId);

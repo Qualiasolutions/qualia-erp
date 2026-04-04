@@ -5,26 +5,21 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Folder,
-  Bot,
-  Globe,
-  Phone,
-  TrendingUp,
-  Megaphone,
   Building,
+  Sparkles,
   ExternalLink,
   MoreVertical,
   Trash2,
   Inbox,
-  Sparkles,
   Beaker,
   Hammer,
   Rocket,
   Archive,
   CheckCircle2,
   ClipboardCheck,
-  Smartphone,
   Github,
 } from 'lucide-react';
+import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
 import { cn } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
 import { deleteProject, updateProjectStatus, toggleProjectPreProduction } from '@/app/actions';
@@ -41,61 +36,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import type { ProjectData } from '@/app/projects/page';
-import type { ProjectType } from '@/types/database';
 
-// Project type configuration
-const PROJECT_TYPE_CONFIG: Record<
-  ProjectType,
-  {
-    icon: typeof Globe;
-    color: string;
-    bgColor: string;
-    label: string;
-  }
-> = {
-  ai_agent: {
-    icon: Bot,
-    color: 'text-violet-400',
-    bgColor: 'bg-violet-500/10',
-    label: 'AI',
-  },
-  voice_agent: {
-    icon: Phone,
-    color: 'text-pink-400',
-    bgColor: 'bg-pink-500/10',
-    label: 'Voice',
-  },
-  ai_platform: {
-    icon: Sparkles,
-    color: 'text-indigo-400',
-    bgColor: 'bg-indigo-500/10',
-    label: 'Platform',
-  },
-  web_design: {
-    icon: Globe,
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-500/10',
-    label: 'Web',
-  },
-  seo: {
-    icon: TrendingUp,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-500/10',
-    label: 'SEO',
-  },
-  app: {
-    icon: Smartphone,
-    color: 'text-teal-400',
-    bgColor: 'bg-teal-500/10',
-    label: 'App',
-  },
-  ads: {
-    icon: Megaphone,
-    color: 'text-amber-400',
-    bgColor: 'bg-amber-500/10',
-    label: 'Ads',
-  },
-};
+// Project type configuration — imported from shared module
 
 // Stage move options
 const STAGE_MOVES = [
@@ -222,7 +164,7 @@ function ProjectRow({
         <EntityAvatar
           src={project.logo_url}
           fallbackIcon={<TypeIcon className="h-3.5 w-3.5" />}
-          fallbackBgColor={typeConfig?.bgColor || 'bg-muted'}
+          fallbackBgColor={typeConfig?.bg || 'bg-muted'}
           fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
           size="md"
           className="transition-transform duration-200 group-hover:scale-105"
@@ -399,7 +341,7 @@ function ProjectRow({
       <EntityAvatar
         src={project.logo_url}
         fallbackIcon={<TypeIcon className="h-4 w-4" />}
-        fallbackBgColor={typeConfig?.bgColor || 'bg-muted'}
+        fallbackBgColor={typeConfig?.bg || 'bg-muted'}
         fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
         size="md"
         className="flex-shrink-0"
