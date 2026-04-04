@@ -21,13 +21,14 @@ export function useRealtimeTasks(workspaceId: string | null) {
     const supabase = createClient();
 
     const channel = supabase
-      .channel('tasks-realtime')
+      .channel(`tasks-realtime-${workspaceId}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'tasks',
+          filter: `workspace_id=eq.${workspaceId}`,
         },
         () => {
           invalidateInboxTasks(true);

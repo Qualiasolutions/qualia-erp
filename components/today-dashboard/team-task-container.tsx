@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, memo } from 'react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 import {
   ChevronDown,
   Users,
@@ -192,6 +193,8 @@ function InlineTaskAdd({
       invalidateTeamDashboard(workspaceId);
       onCreated?.();
       setTimeout(() => inputRef.current?.focus(), 50);
+    } else {
+      toast.error(result.error || 'Failed to create task');
     }
   };
 

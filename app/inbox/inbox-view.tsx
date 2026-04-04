@@ -447,7 +447,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   }, [optimisticTasks]);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card/80 px-6 backdrop-blur-xl">
         <div className="flex items-center gap-4">

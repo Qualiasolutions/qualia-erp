@@ -173,6 +173,7 @@ export function PortalDashboardContent({
             <Wrapper
               key={action.label}
               href={action.href}
+              {...(action.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
               className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-5 text-left transition-all hover:border-primary/30 hover:shadow-lg"
             >
               <div

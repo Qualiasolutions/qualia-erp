@@ -17,7 +17,7 @@ function ClientDetailSkeleton() {
         <div className="h-6 w-32 animate-pulse rounded bg-muted" />
       </header>
       <div className="flex-1 p-6">
-        <div className="max-w-4xl space-y-6">
+        <div className="space-y-6">
           <div className="h-8 w-1/2 animate-pulse rounded bg-muted" />
           <div className="h-32 animate-pulse rounded bg-muted" />
         </div>

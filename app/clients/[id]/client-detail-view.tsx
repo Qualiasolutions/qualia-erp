@@ -187,7 +187,7 @@ export function ClientDetailView({
 
   return (
     <div className="p-6">
-      <div className="max-w-6xl space-y-8">
+      <div className="space-y-8">
         {/* Header */}
         <div className="space-y-4">
           <div className="flex items-center gap-5">

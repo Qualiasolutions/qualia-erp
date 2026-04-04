@@ -30,7 +30,7 @@ export default async function AdminAssignmentsPage() {
   }
 
   return (
-    <div className="container mx-auto space-y-8 py-8">
+    <div className="space-y-8 px-4 py-8 sm:px-6 lg:px-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Employee Assignments</h1>
         <p className="mt-2 text-muted-foreground">

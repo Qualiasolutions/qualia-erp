@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function InboxLoading() {
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-full flex-col bg-background">
       {/* Header */}
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border px-6">
         <div className="flex items-center gap-4">

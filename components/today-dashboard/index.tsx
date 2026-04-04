@@ -306,7 +306,7 @@ export function TodayDashboard({
   };
 
   return (
-    <div className="flex h-[90vh] max-h-screen flex-col overflow-hidden bg-background">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
       {/* ═══════════════════ HEADER ═══════════════════ */}
       <header className="sticky top-0 z-sticky flex shrink-0 items-center justify-between border-b border-border/60 bg-card/80 px-4 py-2 backdrop-blur-xl sm:px-6">
         {/* Left: Nav + Greeting */}

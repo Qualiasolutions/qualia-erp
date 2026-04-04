@@ -31,10 +31,10 @@ export async function isAdminRole(userId: string): Promise<boolean> {
 }
 
 /**
- * Check if a user has portal admin privileges (admin only)
+ * Check if a user has portal admin privileges (admin or manager)
  */
 export function isPortalAdminRole(role: string | null): boolean {
-  return role === 'admin';
+  return role === 'admin' || role === 'manager';
 }
 
 /**

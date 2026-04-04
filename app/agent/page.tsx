@@ -249,7 +249,7 @@ export default function AgentPage() {
   const hasMessages = localMessages.length > 0;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-full">
       {/* Sidebar */}
       <div
         className={cn(
