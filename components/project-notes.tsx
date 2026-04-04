@@ -40,8 +40,8 @@ export function ProjectNotes({ projectId, workspaceId, className }: ProjectNotes
     try {
       const data = await getProjectNotes(projectId);
       setNotes(data);
-    } catch (error) {
-      console.error('Error fetching notes:', error);
+    } catch {
+      // Notes fetch failed silently — not critical
     } finally {
       setLoading(false);
     }

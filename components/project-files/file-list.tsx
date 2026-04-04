@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   deleteProjectFile,
   getFileDownloadUrl,
@@ -50,12 +51,13 @@ interface FileListProps {
 }
 
 export function FileList({ files, onFileDeleted }: FileListProps) {
+  const router = useRouter();
   const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
   const [fileToDelete, setFileToDelete] = useState<ProjectFile | null>(null);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
   const getFileIcon = (mimeType: string | null) => {
-    if (!mimeType) return <File className="h-5 w-5 text-neutral-400" />;
+    if (!mimeType) return <File className="h-5 w-5 text-muted-foreground/60" />;
 
     if (mimeType.startsWith('image/')) {
       return <FileImage className="h-5 w-5 text-blue-500" />;
@@ -73,7 +75,7 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
       return <FileText className="h-5 w-5 text-red-500" />;
     }
 
-    return <File className="h-5 w-5 text-neutral-400" />;
+    return <File className="h-5 w-5 text-muted-foreground/60" />;
   };
 
   const handleDownload = async (fileId: string) => {
@@ -106,10 +108,8 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
 
       if (result.success) {
         toast.success(`${fileToDelete.original_name} has been deleted`);
-
-        if (onFileDeleted) {
-          onFileDeleted();
-        }
+        router.refresh();
+        onFileDeleted?.();
       } else {
         toast.error('Delete Failed', { description: result.error || 'Failed to delete file' });
       }
@@ -125,9 +125,9 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
   if (files.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-        <File className="mb-4 h-12 w-12 text-neutral-400" />
-        <h3 className="mb-2 text-lg font-semibold text-neutral-900">No files yet</h3>
-        <p className="text-sm text-neutral-600">Upload your first file to get started</p>
+        <File className="mb-4 h-12 w-12 text-muted-foreground/40" />
+        <h3 className="mb-2 text-lg font-semibold text-foreground">No files yet</h3>
+        <p className="text-sm text-muted-foreground">Upload your first file to get started</p>
       </div>
     );
   }
@@ -158,7 +158,7 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
                     <span className="truncate">{file.original_name}</span>
-                    <span className="text-xs text-neutral-500">
+                    <span className="text-xs text-muted-foreground">
                       {(file.file_size / 1024).toFixed(2)} KB
                     </span>
                   </div>
@@ -166,9 +166,9 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
 
                 {/* Description */}
                 <TableCell className="hidden max-w-xs truncate md:table-cell">
-                  <span className="text-sm text-neutral-600">
+                  <span className="text-sm text-muted-foreground">
                     {file.description || (
-                      <span className="italic text-neutral-400">No description</span>
+                      <span className="italic text-muted-foreground/50">No description</span>
                     )}
                   </span>
                 </TableCell>
@@ -180,7 +180,7 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
                       {file.phase.phase_name}
                     </Badge>
                   ) : (
-                    <span className="text-xs italic text-neutral-400">No phase</span>
+                    <span className="text-xs italic text-muted-foreground/50">No phase</span>
                   )}
                 </TableCell>
 
@@ -190,23 +190,22 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
                     {file.is_client_visible ? (
                       <Badge
                         variant="outline"
-                        className="border-green-200 bg-green-50 text-green-700"
+                        className="border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400"
                       >
                         <Eye className="mr-1 h-3 w-3" />
                         Client visible
                       </Badge>
                     ) : (
-                      <Badge variant="secondary" className="text-neutral-600">
+                      <Badge variant="secondary" className="text-muted-foreground">
                         <EyeOff className="mr-1 h-3 w-3" />
                         Internal only
                       </Badge>
                     )}
                     {/* Client Upload Badge */}
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {(file as any).is_client_upload && (
+                    {file.is_client_upload && (
                       <Badge
                         variant="outline"
-                        className="border-amber-200 bg-amber-50 text-amber-700"
+                        className="border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400"
                       >
                         <Upload className="mr-1 h-3 w-3" />
                         Client upload
@@ -216,14 +215,14 @@ export function FileList({ files, onFileDeleted }: FileListProps) {
                 </TableCell>
 
                 {/* Upload Date */}
-                <TableCell className="hidden text-sm text-neutral-600 lg:table-cell">
+                <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
                   {file.created_at
                     ? formatDistanceToNow(new Date(file.created_at), { addSuffix: true })
                     : 'Unknown'}
                 </TableCell>
 
                 {/* Uploaded By */}
-                <TableCell className="hidden text-sm text-neutral-600 xl:table-cell">
+                <TableCell className="hidden text-sm text-muted-foreground xl:table-cell">
                   {file.uploader?.full_name || 'Unknown'}
                 </TableCell>
 

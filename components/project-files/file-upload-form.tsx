@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { uploadProjectFile } from '@/app/actions/project-files';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ interface FileUploadFormProps {
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUploadFormProps) {
+  const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [description, setDescription] = useState('');
@@ -83,10 +85,9 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
         const fileInput = document.getElementById('file-input') as HTMLInputElement;
         if (fileInput) fileInput.value = '';
 
-        // Call completion callback
-        if (onUploadComplete) {
-          onUploadComplete();
-        }
+        // Refresh server data
+        router.refresh();
+        onUploadComplete?.();
       } else {
         toast.error('Upload Failed', { description: result.error || 'Failed to upload file' });
       }
@@ -117,7 +118,7 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
               className={fileSizeError ? 'border-red-500' : ''}
             />
             {selectedFile && !fileSizeError && (
-              <p className="text-sm text-neutral-600">
+              <p className="text-sm text-muted-foreground">
                 Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(2)} KB)
               </p>
             )}
@@ -161,7 +162,9 @@ export function FileUploadForm({ projectId, phases, onUploadComplete }: FileUplo
               <Label htmlFor="client-visible" className="text-base">
                 Share with client
               </Label>
-              <p className="text-sm text-neutral-600">Client will see this file in their portal</p>
+              <p className="text-sm text-muted-foreground">
+                Client will see this file in their portal
+              </p>
             </div>
             <Switch
               id="client-visible"

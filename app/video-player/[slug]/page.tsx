@@ -18,7 +18,6 @@ export default function VideoPlayerPage() {
 
     // Auto-play
     video.play().catch(() => {
-      console.log('Auto-play blocked');
       setError('Tap to play video');
     });
 

@@ -661,9 +661,8 @@ export function ProjectWorkflow({
       } else {
         toast.error(result.error || 'Sync failed');
       }
-    } catch (err) {
+    } catch {
       toast.error('Failed to sync from GitHub');
-      console.error(err);
     } finally {
       setIsSyncing(false);
     }
