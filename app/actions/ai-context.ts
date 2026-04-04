@@ -1,12 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
+import type { ActionResult } from './shared';
 
 export type AdminNote = {
   content: string;

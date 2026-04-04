@@ -1469,7 +1469,7 @@ export function useActiveSession(workspaceId: string | null) {
       const { getActiveSession } = await import('@/app/actions/work-sessions');
       return getActiveSession(workspaceId);
     },
-    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
+    { ...autoRefreshConfig, refreshInterval: () => (isDocumentVisible() ? 30_000 : 0) }
   );
 
   return {
@@ -1572,7 +1572,7 @@ export function useSessionsAdmin(
       const { getSessionsAdmin } = await import('@/app/actions/work-sessions');
       return getSessionsAdmin(workspaceId, { profileId, date });
     },
-    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
+    { ...autoRefreshConfig, refreshInterval: () => (isDocumentVisible() ? 30_000 : 0) }
   );
 
   return {
@@ -1618,7 +1618,7 @@ export function useTeamStatus(workspaceId: string | null) {
       const { getTeamStatus } = await import('@/app/actions/work-sessions');
       return getTeamStatus(workspaceId);
     },
-    { ...autoRefreshConfig, refreshInterval: isDocumentVisible() ? 30_000 : 0 }
+    { ...autoRefreshConfig, refreshInterval: () => (isDocumentVisible() ? 30_000 : 0) }
   );
 
   return {

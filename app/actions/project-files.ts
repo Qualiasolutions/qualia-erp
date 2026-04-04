@@ -14,16 +14,10 @@ export type ProjectFileWithUploader = ProjectFile & {
   } | null;
   phase?: { id: string; phase_name: string | null } | null;
 };
-import { canAccessProject, canDeleteProjectFile } from './shared';
+import { canAccessProject, canDeleteProjectFile, type ActionResult } from './shared';
 import { canAccessProject as canClientAccessProject } from '@/lib/portal-utils';
 import { createActivityLogEntry } from './activity-feed';
 import { notifyEmployeesOfClientFileUpload } from '@/lib/email';
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
 
 // Max file size: 50MB
 const MAX_FILE_SIZE = 50 * 1024 * 1024;

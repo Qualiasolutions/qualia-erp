@@ -71,6 +71,19 @@ export async function updateDashboardNote(noteId: string, content: string): Prom
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
+  // Ownership check: only author or admin/manager can update
+  const { data: note } = await supabase
+    .from('dashboard_notes')
+    .select('author_id')
+    .eq('id', noteId)
+    .single();
+
+  if (!note) return { success: false, error: 'Note not found' };
+
+  if (note.author_id !== user.id && !(await isUserManagerOrAbove(user.id))) {
+    return { success: false, error: 'You can only edit your own notes' };
+  }
+
   const { error } = await supabase
     .from('dashboard_notes')
     .update({ content: content.trim(), updated_at: new Date().toISOString() })
@@ -88,6 +101,19 @@ export async function deleteDashboardNote(noteId: string): Promise<ActionResult>
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Ownership check: only author or admin/manager can delete
+  const { data: note } = await supabase
+    .from('dashboard_notes')
+    .select('author_id')
+    .eq('id', noteId)
+    .single();
+
+  if (!note) return { success: false, error: 'Note not found' };
+
+  if (note.author_id !== user.id && !(await isUserManagerOrAbove(user.id))) {
+    return { success: false, error: 'You can only delete your own notes' };
+  }
 
   const { error } = await supabase.from('dashboard_notes').delete().eq('id', noteId);
 

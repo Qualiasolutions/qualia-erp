@@ -2,12 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
+import type { ActionResult } from './shared';
 
 // Conversation type
 export type Conversation = {

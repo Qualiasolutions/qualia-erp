@@ -2,12 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
+import type { ActionResult } from './shared';
 
 // Max logo size: 5MB
 const MAX_LOGO_SIZE = 5 * 1024 * 1024;

@@ -3,13 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentWorkspaceId } from '@/app/actions';
-import { isUserAdmin, canModifyTask } from './shared';
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
+import { isUserAdmin, canModifyTask, type ActionResult } from './shared';
 
 export type TaskAttachment = {
   id: string;

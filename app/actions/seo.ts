@@ -4,12 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { z } from 'zod';
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
+import type { ActionResult } from './shared';
 
 // Blog post type
 export type BlogPost = {

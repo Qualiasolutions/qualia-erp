@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
-import { canModifyTask, isUserAdmin } from './shared';
+import { canModifyTask, isUserAdmin, type ActionResult } from './shared';
 
 /**
  * Check if a task with requires_attachment can be marked as Done.
@@ -33,12 +33,6 @@ async function checkAttachmentRequirement(
   }
   return null;
 }
-
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-  data?: unknown;
-};
 
 // Task type for responses
 export type Task = {

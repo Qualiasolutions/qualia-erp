@@ -39,7 +39,7 @@ export const updateIssueSchema = z.object({
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required').max(500, 'Title must be less than 500 characters'),
   description: z.string().max(10000, 'Description too long').optional().nullable(),
-  status: z.enum(['Todo', 'In Progress', 'Done'] as const).default('Todo'),
+  status: z.enum(['Todo', 'In Progress', 'Done', 'Canceled'] as const).default('Todo'),
   workspace_id: z.string().uuid('Invalid workspace ID').optional().nullable(),
   due_date: z.string().optional().nullable(),
   assignee_id: z.string().uuid('Invalid assignee ID').optional().nullable(),
@@ -62,7 +62,7 @@ export const updateTaskSchema = z.object({
   id: z.string().uuid('Invalid task ID'),
   title: z.string().min(1, 'Title is required').max(500).optional(),
   description: z.string().max(10000).optional().nullable(),
-  status: z.enum(['Todo', 'In Progress', 'Done'] as const).optional(),
+  status: z.enum(['Todo', 'In Progress', 'Done', 'Canceled'] as const).optional(),
   priority: z.enum(['No Priority', 'Urgent', 'High', 'Medium', 'Low'] as const).optional(),
   due_date: z.string().optional().nullable(),
   sort_order: z.number().optional(),
@@ -81,7 +81,7 @@ export const createProjectSchema = z.object({
   name: z.string().min(1, 'Name is required').max(200, 'Name must be less than 200 characters'),
   description: z.string().max(5000, 'Description too long').optional().nullable(),
   status: z
-    .enum(['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'] as const)
+    .enum(['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled', 'Done'] as const)
     .default('Active'),
   project_group: z
     .enum([
@@ -164,7 +164,7 @@ export const updateProjectSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   description: z.string().max(5000).optional().nullable(),
   status: z
-    .enum(['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled'] as const)
+    .enum(['Demos', 'Active', 'Launched', 'Delayed', 'Archived', 'Canceled', 'Done'] as const)
     .optional(),
   project_group: z
     .enum([
