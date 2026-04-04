@@ -85,6 +85,12 @@ export async function middleware(request: NextRequest) {
       '/settings',
       '/clients',
       '/payments',
+      '/knowledge',
+      '/research',
+      '/agent',
+      '/seo',
+      '/status',
+      '/video-player',
     ];
 
     // Client users: redirect to portal if trying to access internal routes or root

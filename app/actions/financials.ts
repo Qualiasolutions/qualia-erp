@@ -417,10 +417,6 @@ export async function syncZohoFinancials(): Promise<{
     }
   }
 
-  console.log(
-    `[zoho-sync] Synced ${zohoInvoices.length} invoices, ${zohoPayments.length} payments`
-  );
-
   revalidatePath('/payments');
   return {
     success: true,
@@ -482,6 +478,8 @@ export type Expense = {
 };
 
 export async function getExpenses(): Promise<Expense[]> {
+  if (!(await checkAdmin())) return [];
+
   const supabase = await createClient();
   const { data } = await supabase
     .from('expenses')

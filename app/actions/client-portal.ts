@@ -314,7 +314,14 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
     }
 
     // Remove all project links
-    await adminClient.from('client_projects').delete().eq('client_id', portalUserId);
+    const { error: unlinkError } = await adminClient
+      .from('client_projects')
+      .delete()
+      .eq('client_id', portalUserId);
+    if (unlinkError) {
+      console.error('[revokePortalAccess] Unlink error:', unlinkError);
+      return { success: false, error: `Failed to remove project links: ${unlinkError.message}` };
+    }
 
     // Delete the auth user (cascades to profile via trigger)
     const { error: deleteError } = await adminClient.auth.admin.deleteUser(portalUserId);
@@ -648,7 +655,7 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
     const newUserId = newUserData.user.id;
 
     // Ensure profile exists with client role
-    await adminClient.from('profiles').upsert(
+    const { error: profileError2 } = await adminClient.from('profiles').upsert(
       {
         id: newUserId,
         email: clientEmail,
@@ -657,6 +664,11 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
       },
       { onConflict: 'id' }
     );
+
+    if (profileError2) {
+      console.error('[setupClientForProject] Profile creation error:', profileError2);
+      return { success: false, error: 'Account created but profile setup failed' };
+    }
 
     // Link client to project
     const { error: linkError } = await adminClient.from('client_projects').insert({
@@ -814,7 +826,7 @@ export async function getClientInvoices(): Promise<ActionResult> {
       .order('date', { ascending: false });
 
     if (!isAdmin) {
-      // Resolve CRM client_id: auth.uid() → client_projects → projects.client_id
+      // Resolve CRM client_id scoped to ONLY the portal user's linked projects
       const { data: linkedProjects } = await supabase
         .from('client_projects')
         .select('project_id')
@@ -825,13 +837,14 @@ export async function getClientInvoices(): Promise<ActionResult> {
 
       const { data: projects } = await supabase
         .from('projects')
-        .select('client_id')
+        .select('id, client_id')
         .in('id', projectIds)
         .not('client_id', 'is', null);
 
       const crmClientIds = [...new Set((projects || []).map((p) => p.client_id).filter(Boolean))];
       if (crmClientIds.length === 0) return { success: true, data: [] };
 
+      // Filter invoices by CRM client AND only for projects the portal user has access to
       query = query.in('client_id', crmClientIds as string[]);
     }
 
@@ -2208,15 +2221,20 @@ export async function resetClientPassword(email: string): Promise<ActionResult> 
       };
     }
 
-    const { data: listData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
-    const authUser = listData?.users?.find((u) => u.email?.toLowerCase() === normalizedEmail);
+    // Look up profile by email to get auth user ID
+    const { data: profileRow } = await adminClient
+      .from('profiles')
+      .select('id, full_name')
+      .eq('email', normalizedEmail)
+      .eq('role', 'client')
+      .single();
 
-    if (!authUser) {
+    if (!profileRow) {
       return { success: false, error: 'No portal account found for this email' };
     }
 
     // Update password via admin API
-    const { error: updateError } = await adminClient.auth.admin.updateUserById(authUser.id, {
+    const { error: updateError } = await adminClient.auth.admin.updateUserById(profileRow.id, {
       password: tempPassword,
     });
 
@@ -2230,7 +2248,7 @@ export async function resetClientPassword(email: string): Promise<ActionResult> 
       data: {
         email: normalizedEmail,
         tempPassword,
-        name: (authUser.user_metadata?.full_name as string | null | undefined) ?? null,
+        name: profileRow.full_name ?? null,
       },
     };
   } catch (error) {

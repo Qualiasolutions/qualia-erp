@@ -1,46 +1,7 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-
-/**
- * Skeleton for portal project card (matches portal-projects-list.tsx)
- */
-export function PortalProjectCardSkeleton() {
-  return (
-    <Card
-      className={cn(
-        'h-full transition-all duration-200',
-        'shadow-elevation-1 hover:-translate-y-1 hover:shadow-elevation-2'
-      )}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <Skeleton className="h-5 w-3/4" />
-          <Skeleton className="h-6 w-16 shrink-0 rounded" />
-        </div>
-        <div className="mt-2 space-y-1.5">
-          <Skeleton className="h-3 w-full" />
-          <Skeleton className="h-3 w-4/5" />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-8" />
-          </div>
-          <Skeleton className="h-2 w-full rounded-full" />
-        </div>
-        <div className="flex items-center justify-between text-xs">
-          <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-3 w-24" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+import { Card, CardContent } from '@/components/ui/card';
 
 /**
  * Skeleton for portal roadmap phases (matches portal-roadmap.tsx)
@@ -264,48 +225,6 @@ export function PortalBillingSkeleton() {
           </CardContent>
         </Card>
       ))}
-    </div>
-  );
-}
-
-/**
- * Skeleton for portal admin panel tables (matches portal-admin-panel.tsx)
- */
-export function PortalAdminPanelSkeleton() {
-  return (
-    <div className="space-y-6">
-      {/* Tabs skeleton */}
-      <Skeleton className="h-10 w-full" />
-
-      {/* Table container */}
-      <div className="rounded-lg border border-border">
-        {/* Table header */}
-        <div className="border-b border-border bg-muted/50 p-4">
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="ml-auto h-4 w-20" />
-          </div>
-        </div>
-
-        {/* Table rows */}
-        <div className="divide-y divide-border">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="p-4">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-4 w-48" />
-                  <Skeleton className="h-3 w-64" />
-                </div>
-                <Skeleton className="h-6 w-16 rounded" />
-                <Skeleton className="h-8 w-20 rounded" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

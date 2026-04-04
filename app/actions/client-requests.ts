@@ -58,17 +58,23 @@ export async function createFeatureRequest(input: {
 
     // Add activity log entry and notify assigned employees
     try {
-      // Get a project for the client to associate with
-      const { data: clientProject } = await supabase
-        .from('client_projects')
-        .select('project_id')
-        .eq('client_id', user.id)
-        .limit(1)
-        .single();
+      // Use the specified project_id, or fall back to any linked project
+      const activityProjectId = safeInput.project_id || null;
+      let resolvedProjectId = activityProjectId;
 
-      if (clientProject) {
+      if (!resolvedProjectId) {
+        const { data: clientProject } = await supabase
+          .from('client_projects')
+          .select('project_id')
+          .eq('client_id', user.id)
+          .limit(1)
+          .single();
+        resolvedProjectId = clientProject?.project_id || null;
+      }
+
+      if (resolvedProjectId) {
         await supabase.from('activity_log').insert({
-          project_id: clientProject.project_id,
+          project_id: resolvedProjectId,
           action_type: 'feature_request',
           actor_id: user.id,
           action_data: { request_title: safeInput.title, request_id: data.id },
@@ -76,7 +82,7 @@ export async function createFeatureRequest(input: {
         });
 
         await notifyAssignedEmployees(
-          clientProject.project_id,
+          resolvedProjectId,
           `Client submitted feature request: ${safeInput.title}`,
           {
             request_id: data.id,
@@ -187,7 +193,7 @@ export async function updateFeatureRequest(
       if (updates.description !== undefined)
         updateData.description = updates.description?.trim() || null;
     } else {
-      // Clients can only update title and description
+      // Clients can only update title and description of pending/in_review requests
       if (updates.title !== undefined) updateData.title = updates.title.trim();
       if (updates.description !== undefined)
         updateData.description = updates.description?.trim() || null;
@@ -195,9 +201,9 @@ export async function updateFeatureRequest(
 
     let query = supabase.from('client_feature_requests').update(updateData).eq('id', requestId);
 
-    // Non-admin clients can only update their own requests (IDOR fix)
+    // Non-admin clients can only update their own pending/in_review requests
     if (!isAdmin) {
-      query = query.eq('client_id', user.id);
+      query = query.eq('client_id', user.id).in('status', ['pending', 'in_review']);
     }
 
     const { data, error } = await query.select().single();

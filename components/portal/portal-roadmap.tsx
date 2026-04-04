@@ -7,7 +7,7 @@ import { RichText } from '@/components/ui/rich-text';
 import { useInView } from 'framer-motion';
 import { m } from '@/lib/lazy-motion';
 import { PhaseCommentThread } from './phase-comment-thread';
-import { getPhaseComments, getPhaseCommentCount } from '@/app/actions/phase-comments';
+import { getPhaseComments, getAllPhaseCommentCounts } from '@/app/actions/phase-comments';
 import { getProjectStatusColor } from '@/lib/portal-styles';
 import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 import {
@@ -178,16 +178,18 @@ function PhaseWithComments({
   project,
   userRole,
   currentUserId,
+  initialCommentCount = 0,
 }: {
   phase: Phase;
   isLast: boolean;
   project: Project;
   userRole: 'client' | 'admin';
   currentUserId: string;
+  initialCommentCount?: number;
 }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState<CommentWithProfile[]>([]);
-  const [commentCount, setCommentCount] = useState(0);
+  const [commentCount, setCommentCount] = useState(initialCommentCount);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const phaseRef = useRef(null);
   const isInView = useInView(phaseRef, { once: true, margin: '-80px' });
@@ -213,6 +215,8 @@ function PhaseWithComments({
       const result = await getPhaseComments(project.id, phase.name, canSeeInternal);
       if (!cancelled && result.success && result.data) {
         setComments(result.data as CommentWithProfile[]);
+        // Update count from loaded data
+        setCommentCount((result.data as CommentWithProfile[]).length);
       }
       if (!cancelled) setIsLoadingComments(false);
     }
@@ -222,21 +226,6 @@ function PhaseWithComments({
       cancelled = true;
     };
   }, [commentsOpen, project.id, phase.name, canSeeInternal]);
-
-  // Load comment count on mount
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const result = await getPhaseCommentCount(project.id, phase.name, canSeeInternal);
-      if (!cancelled && result.success && typeof result.data === 'number') {
-        setCommentCount(result.data);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [project.id, phase.name, canSeeInternal]);
 
   return (
     <m.div
@@ -502,7 +491,25 @@ export function PortalRoadmap({
   isLoading = false,
   isValidating = false,
 }: PortalRoadmapProps) {
+  const [commentCounts, setCommentCounts] = useState<Record<string, number>>({});
   const hasPhases = phases && phases.length > 0;
+
+  // Batch-fetch all comment counts in one query (avoids N+1)
+  useEffect(() => {
+    if (!hasPhases || isLoading) return;
+    let cancelled = false;
+
+    async function loadCounts() {
+      const result = await getAllPhaseCommentCounts(project.id, userRole === 'admin');
+      if (!cancelled && result.success && result.data) {
+        setCommentCounts(result.data as Record<string, number>);
+      }
+    }
+    loadCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [project.id, hasPhases, isLoading, userRole]);
 
   if (isLoading) {
     return (
@@ -591,6 +598,7 @@ export function PortalRoadmap({
                   project={project}
                   userRole={userRole}
                   currentUserId={currentUserId}
+                  initialCommentCount={commentCounts[phase.name] || 0}
                 />
               </div>
             ))}

@@ -216,6 +216,46 @@ export async function deletePhaseComment(
 }
 
 /**
+ * Get comment counts for ALL phases of a project in one query (avoids N+1)
+ */
+export async function getAllPhaseCommentCounts(
+  projectId: string,
+  includeInternal = false
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  if (!(await canAccessProject(user.id, projectId))) {
+    return { success: false, error: 'Project not found or access denied' };
+  }
+
+  let query = supabase.from('phase_comments').select('phase_name').eq('project_id', projectId);
+
+  if (!includeInternal) {
+    query = query.or('is_internal.is.null,is_internal.eq.false');
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('[getAllPhaseCommentCounts] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  // Count by phase_name
+  const counts: Record<string, number> = {};
+  for (const row of data || []) {
+    counts[row.phase_name] = (counts[row.phase_name] || 0) + 1;
+  }
+
+  return { success: true, data: counts };
+}
+
+/**
  * Get comment count for a specific phase
  */
 export async function getPhaseCommentCount(

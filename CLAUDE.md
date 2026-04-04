@@ -210,7 +210,6 @@ useEmployeeAssignments(employeeId);
 useAllAssignments();
 
 // Portal hooks
-usePortalProject(projectId);
 usePortalProjectWithPhases(projectId);
 usePortalDashboard(clientId);
 useClientActionItems(clientId);
@@ -266,7 +265,6 @@ invalidateEmployeeAssignments(employeeId);
 invalidateAllAssignments();
 
 // Portal
-invalidatePortalProject(projectId);
 invalidatePortalProjectWithPhases(projectId);
 invalidatePortalDashboard(clientId);
 invalidateClientActionItems(clientId);

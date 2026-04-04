@@ -539,8 +539,8 @@ export function PortalHub({
                       onClick={() => {
                         if (client.projects.length === 1) {
                           router.push(`/portal/${client.projects[0].id}`);
-                        } else if (client.projects.length > 1) {
-                          // Show projects — they're already clickable above
+                        } else {
+                          router.push('/portal');
                         }
                       }}
                     >

@@ -74,7 +74,7 @@ export function PortalDashboardContent({
   displayName,
   companyName,
 }: PortalDashboardContentProps) {
-  const { data, isLoading, isValidating } = usePortalDashboard(clientId);
+  const { data, isLoading, isValidating, isError } = usePortalDashboard(clientId);
 
   const stats = (data.stats as DashboardStats | null) || null;
   const projects = (data.projects as ProjectWithPhases[]) || [];
@@ -107,6 +107,13 @@ export function PortalDashboardContent({
           </span>
         </h1>
       </div>
+
+      {/* Error banner */}
+      {isError && !isLoading && (
+        <div className="mb-6 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          Something went wrong loading your dashboard. Data shown may be outdated.
+        </div>
+      )}
 
       {/* Stats Grid — big cards with gradient orbs */}
       <div className={cn('mb-10', fadeInClasses)} style={getStaggerDelay(1)}>

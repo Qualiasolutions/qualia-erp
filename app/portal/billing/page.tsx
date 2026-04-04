@@ -16,6 +16,7 @@ export default async function PortalBillingPage() {
   }
 
   const result = await getClientInvoices();
+  const invoiceLoadError = !result.success ? result.error || 'Failed to load invoices' : null;
   const invoices = (result.success ? result.data : []) as Array<{
     id: string;
     invoice_number: string;
@@ -40,6 +41,12 @@ export default async function PortalBillingPage() {
           View and track your invoices and payment history
         </p>
       </div>
+
+      {invoiceLoadError && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {invoiceLoadError}
+        </div>
+      )}
 
       {invoices.length > 0 && <PortalBillingSummary invoices={invoices} />}
 

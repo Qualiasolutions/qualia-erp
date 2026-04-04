@@ -95,8 +95,6 @@ export function PortalFileList({ files }: PortalFileListProps) {
   return (
     <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${fadeInClasses}`}>
       {files.map((file, index) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const f = file as any;
         return (
           <Card
             key={file.id}
@@ -108,27 +106,27 @@ export function PortalFileList({ files }: PortalFileListProps) {
           >
             <CardHeader className="pb-3">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0">{getFileIcon(f.mime_type)}</div>
+                <div className="flex-shrink-0">{getFileIcon(file.mime_type)}</div>
                 <div className="min-w-0 flex-1">
-                  <CardTitle className="truncate text-base" title={f.original_name}>
-                    {f.original_name}
+                  <CardTitle className="truncate text-base" title={file.original_name}>
+                    {file.original_name}
                   </CardTitle>
                   <CardDescription className="mt-1 text-xs">
-                    {(f.file_size / 1024).toFixed(2)} KB
+                    {(file.file_size / 1024).toFixed(2)} KB
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Description */}
-              {f.description && (
-                <p className="line-clamp-2 text-sm text-muted-foreground">{f.description}</p>
+              {file.description && (
+                <p className="line-clamp-2 text-sm text-muted-foreground">{file.description}</p>
               )}
 
               {/* Phase Badge */}
-              {f.phase && (
+              {file.phase_name && (
                 <Badge variant="outline" className="text-xs">
-                  {f.phase.phase_name}
+                  {file.phase_name}
                 </Badge>
               )}
 
@@ -139,7 +137,7 @@ export function PortalFileList({ files }: PortalFileListProps) {
 
               {/* Download Button */}
               <Button
-                onClick={() => handleDownload(file.id, f.original_name)}
+                onClick={() => handleDownload(file.id, file.original_name)}
                 disabled={downloadingFileId === file.id}
                 className="min-h-[44px] w-full"
               >

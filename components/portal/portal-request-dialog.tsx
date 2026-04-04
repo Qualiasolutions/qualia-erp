@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, CheckCircle2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface Project {
   id: string;
@@ -78,6 +79,8 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
     if (result.success) {
       setSubmitted(true);
       router.refresh();
+    } else {
+      toast.error(result.error || 'Failed to submit request. Please try again.');
     }
   };
 

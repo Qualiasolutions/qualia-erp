@@ -1,4 +1,4 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { canAccessProject } from '@/lib/portal-utils';
 import type { ActivityLogEntry } from '@/lib/activity-utils';
@@ -42,11 +42,11 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
     redirect('/portal');
   }
 
-  // Fetch client-visible activities using admin client (bypasses RLS for webhook-inserted entries)
+  // Fetch client-visible activities via RLS-protected client
   let activities: ActivityLogEntry[] = [];
+  let activitiesError: string | null = null;
   try {
-    const adminSupabase = createAdminClient();
-    const { data } = await adminSupabase
+    const { data, error } = await supabase
       .from('activity_log')
       .select(
         `id, project_id, action_type, actor_id, action_data, is_client_visible, created_at,
@@ -57,12 +57,18 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
       .order('created_at', { ascending: false })
       .limit(20);
 
+    if (error) {
+      console.error('[PortalUpdatesPage] Activity fetch error:', error);
+      activitiesError = 'Could not load updates';
+    }
+
     activities = ((data || []) as unknown as ActivityLogEntry[]).map((entry) => ({
       ...entry,
       actor: Array.isArray(entry.actor) ? entry.actor[0] || null : entry.actor,
     })) as ActivityLogEntry[];
-  } catch {
-    // Fallback: no activities shown if admin client unavailable
+  } catch (err) {
+    console.error('[PortalUpdatesPage] Unexpected error:', err);
+    activitiesError = 'Could not load updates';
   }
 
   return (
@@ -77,6 +83,13 @@ export default async function PortalUpdatesPage({ params }: PortalUpdatesPagePro
           Track the latest updates, milestones, and activities on your project.
         </p>
       </div>
+
+      {/* Error banner */}
+      {activitiesError && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {activitiesError}
+        </div>
+      )}
 
       {/* Activity Feed */}
       <PortalActivityFeed activities={activities} projectId={projectId} />
