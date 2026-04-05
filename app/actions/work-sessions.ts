@@ -478,17 +478,38 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
   }
 
   // Build a map of profileId -> open session
+  // Treat sessions older than 14 hours as stale (person forgot to clock out)
+  const STALE_THRESHOLD_MS = 14 * 60 * 60 * 1000;
+  const now = Date.now();
   const openSessionMap = new Map<
     string,
     { started_at: string; projectName: string | null; clockInNote: string | null }
   >();
+  const staleSessionIds: string[] = [];
   for (const session of openSessions || []) {
+    const sessionAge = now - new Date(session.started_at).getTime();
+    if (sessionAge > STALE_THRESHOLD_MS) {
+      // Mark as stale — will auto-close below
+      staleSessionIds.push(session.profile_id);
+      continue;
+    }
     const project = Array.isArray(session.project) ? session.project[0] || null : session.project;
     openSessionMap.set(session.profile_id, {
       started_at: session.started_at,
       projectName: (project as { name: string } | null)?.name ?? null,
       clockInNote: session.clock_in_note ?? null,
     });
+  }
+
+  // Auto-close stale sessions in the background (fire-and-forget)
+  if (staleSessionIds.length > 0) {
+    supabase
+      .from('work_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .is('ended_at', null)
+      .in('profile_id', staleSessionIds)
+      .eq('workspace_id', workspaceId)
+      .then(() => {});
   }
 
   // Query 3: Most recent closed session per profile (for offline last-seen time)
