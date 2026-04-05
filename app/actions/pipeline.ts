@@ -108,6 +108,10 @@ export async function createPhaseResource(
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    return { success: false, error: 'Not authenticated' };
+  }
+
   // Get max display_order
   const { data: existing } = await supabase
     .from('phase_resources')
@@ -127,7 +131,7 @@ export async function createPhaseResource(
       description: input.description || null,
       resource_type: input.resource_type || 'link',
       display_order: nextOrder,
-      created_by: user?.id || null,
+      created_by: user.id,
     })
     .select()
     .single();

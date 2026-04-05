@@ -202,6 +202,11 @@ export async function notifyTaskAssigned(
 ): Promise<void> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
   const notifications = assigneeIds.map((userId) => ({
     user_id: userId,
     workspace_id: workspaceId,

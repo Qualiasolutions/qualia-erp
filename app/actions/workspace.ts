@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
+import { isUserAdmin } from './shared';
 
 // ============ WORKSPACE HELPERS ============
 
@@ -146,6 +147,11 @@ export async function createWorkspace(formData: FormData): Promise<ActionResult>
     return { success: false, error: 'Not authenticated' };
   }
 
+  const admin = await isUserAdmin(user.id);
+  if (!admin) {
+    return { success: false, error: 'Only admins can create workspaces' };
+  }
+
   const name = formData.get('name') as string;
   const slug = formData.get('slug') as string;
   const description = formData.get('description') as string | null;
@@ -228,6 +234,11 @@ export async function addWorkspaceMember(
     return { success: false, error: 'Not authenticated' };
   }
 
+  const admin = await isUserAdmin(user.id);
+  if (!admin) {
+    return { success: false, error: 'Only admins can manage workspace members' };
+  }
+
   const { error } = await supabase.from('workspace_members').insert({
     workspace_id: workspaceId,
     profile_id: profileId,
@@ -257,6 +268,11 @@ export async function removeWorkspaceMember(
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  const admin = await isUserAdmin(user.id);
+  if (!admin) {
+    return { success: false, error: 'Only admins can manage workspace members' };
   }
 
   const { error } = await supabase
