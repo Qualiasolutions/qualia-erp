@@ -1,27 +1,29 @@
 'use client';
 
-import { useState, useEffect, useActionState, useOptimistic } from 'react';
-import { CalendarIcon, User, FolderOpen, Clock } from 'lucide-react';
+import { useState, useEffect, useOptimistic } from 'react';
+import {
+  CalendarIcon,
+  User,
+  FolderOpen,
+  Clock,
+  Timer,
+  Paperclip,
+  Check,
+  X,
+  Circle,
+  Search,
+  Activity,
+  Flag,
+} from 'lucide-react';
 import { format, setHours, setMinutes, addMinutes, differenceInMinutes, parseISO } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn, getInitials } from '@/lib/utils';
 import { useAdminContext } from '@/components/admin-provider';
 import { updateTask, type Task } from '@/app/actions/inbox';
-import { Circle } from 'lucide-react';
 import {
   useProfiles,
   useProjects,
@@ -30,6 +32,41 @@ import {
   invalidateScheduledTasks,
   invalidateDailyFlow,
 } from '@/lib/swr';
+
+/* ─── Options ─── */
+
+const STATUS_OPTIONS = [
+  { value: 'Todo', label: 'Todo', color: 'bg-slate-400' },
+  { value: 'In Progress', label: 'In Progress', color: 'bg-amber-500' },
+  { value: 'Done', label: 'Done', color: 'bg-emerald-500' },
+];
+
+const PRIORITY_OPTIONS = [
+  { value: 'No Priority', label: 'No Priority', color: '' },
+  { value: 'Urgent', label: 'Urgent', color: 'bg-red-500 text-red-500' },
+  { value: 'High', label: 'High', color: 'bg-orange-500 text-orange-500' },
+  { value: 'Medium', label: 'Medium', color: 'bg-amber-500 text-amber-500' },
+  { value: 'Low', label: 'Low', color: 'bg-blue-500 text-blue-500' },
+];
+
+const TIME_SLOTS = Array.from({ length: 17 }, (_, i) => {
+  const totalMinutes = 7.5 * 60 + i * 30;
+  const h = Math.floor(totalMinutes / 60);
+  const mins = totalMinutes % 60;
+  const label = format(setMinutes(setHours(new Date(), h), mins), 'h:mm a');
+  const value = `${h}:${mins.toString().padStart(2, '0')}`;
+  return { label, value };
+});
+
+const DURATION_OPTIONS = [
+  { value: '15', label: '15 min' },
+  { value: '30', label: '30 min' },
+  { value: '60', label: '1 hour' },
+  { value: '90', label: '1.5 hours' },
+  { value: '120', label: '2 hours' },
+];
+
+/* ─── Component ─── */
 
 interface EditTaskModalProps {
   task: Task;
@@ -41,25 +78,23 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
   const { profiles } = useProfiles();
   const { projects } = useProjects();
   const { isAdmin } = useAdminContext();
-  // Date picker state (controlled for calendar component)
+
+  // Form state
+  const [status, setStatus] = useState(task.status);
+  const [priority, setPriority] = useState(task.priority || 'No Priority');
+  const [assigneeId, setAssigneeId] = useState(task.assignee_id || 'unassigned');
+  const [selectedProjectId, setSelectedProjectId] = useState(task.project_id || 'no-project');
   const [dueDate, setDueDate] = useState<Date | undefined>(
     task.due_date ? new Date(task.due_date) : undefined
   );
-
-  // Project state
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(
-    task.project_id || 'no-project'
-  );
-
-  // Schedule state
-  const [scheduledTime, setScheduledTime] = useState<string>(() => {
+  const [scheduledTime, setScheduledTime] = useState(() => {
     if (task.scheduled_start_time) {
       const start = parseISO(task.scheduled_start_time);
       return `${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')}`;
     }
     return '';
   });
-  const [duration, setDuration] = useState<string>(() => {
+  const [duration, setDuration] = useState(() => {
     if (task.scheduled_start_time && task.scheduled_end_time) {
       const mins = differenceInMinutes(
         parseISO(task.scheduled_end_time),
@@ -69,8 +104,20 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
     }
     return '30';
   });
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // React 19: Optimistic task updates for instant UI feedback
+  // Popover states
+  const [statusOpen, setStatusOpen] = useState(false);
+  const [priorityOpen, setPriorityOpen] = useState(false);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
+  const [durationOpen, setDurationOpen] = useState(false);
+  const [projectSearch, setProjectSearch] = useState('');
+
+  // Optimistic updates
   const [optimisticTask, updateOptimisticTask] = useOptimistic(
     task,
     (currentTask: Task, updatedFields: Partial<Task>) => ({
@@ -79,91 +126,16 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
     })
   );
 
-  // React 19: useActionState for form handling
-  const [state, formAction, isPending] = useActionState(
-    async (prevState: { success: boolean; error: string | null }, formData: FormData) => {
-      // Client-side validation
-      const title = formData.get('title') as string;
-      if (!title.trim()) {
-        return { success: false, error: 'Title is required' };
-      }
-
-      // Add due date to form data if selected
-      if (dueDate) {
-        formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
-      }
-
-      // Add project_id to form data
-      if (selectedProjectId && selectedProjectId !== 'no-project') {
-        formData.set('project_id', selectedProjectId);
-      } else {
-        formData.set('project_id', '');
-      }
-
-      // Add scheduled time
-      if (scheduledTime && scheduledTime !== 'none') {
-        const [hours, minutes] = scheduledTime.split(':').map(Number);
-        const today = new Date();
-        const startTime = setMinutes(setHours(today, hours), minutes);
-        const endTime = addMinutes(startTime, parseInt(duration, 10));
-        formData.set('scheduled_start_time', startTime.toISOString());
-        formData.set('scheduled_end_time', endTime.toISOString());
-      } else {
-        formData.set('scheduled_start_time', '');
-        formData.set('scheduled_end_time', '');
-      }
-
-      // Add task ID for server action
-      formData.set('id', task.id);
-
-      // Apply optimistic updates immediately for instant feedback
-      const updates: Partial<Task> = {
-        title: title.trim(),
-        description: (formData.get('description') as string) || null,
-        status: (formData.get('status') as Task['status']) || task.status,
-        priority: (formData.get('priority') as Task['priority']) || task.priority,
-        assignee_id: (formData.get('assignee_id') as string) || null,
-        due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
-        project_id: selectedProjectId !== 'no-project' ? selectedProjectId : null,
-      };
-      updateOptimisticTask(updates);
-
-      // Call server action
-      const result = await updateTask(formData);
-
-      if (result.success) {
-        onOpenChange(false);
-        setDueDate(task.due_date ? new Date(task.due_date) : undefined);
-
-        // Invalidate caches for refresh
-        invalidateInboxTasks(true);
-        invalidateScheduledTasks(undefined, true);
-        invalidateDailyFlow(true);
-        if (task.project_id) {
-          invalidateProjectTasks(task.project_id, true);
-        }
-        if (
-          selectedProjectId &&
-          selectedProjectId !== 'no-project' &&
-          selectedProjectId !== task.project_id
-        ) {
-          invalidateProjectTasks(selectedProjectId, true);
-        }
-
-        return { success: true, error: null };
-      } else {
-        // If server fails, optimistic update will be reverted automatically
-        return { success: false, error: result.error || 'Failed to update task' };
-      }
-    },
-    { success: false, error: null }
-  );
-
-  // Reset form when modal opens
+  // Reset on open
   useEffect(() => {
     if (open) {
-      setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setStatus(task.status);
+      setPriority(task.priority || 'No Priority');
+      setAssigneeId(task.assignee_id || 'unassigned');
       setSelectedProjectId(task.project_id || 'no-project');
+      setDueDate(task.due_date ? new Date(task.due_date) : undefined);
+      setError(null);
+      setProjectSearch('');
       if (task.scheduled_start_time) {
         const start = parseISO(task.scheduled_start_time);
         setScheduledTime(`${start.getHours()}:${start.getMinutes().toString().padStart(2, '0')}`);
@@ -180,240 +152,463 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         setDuration('30');
       }
     }
-  }, [open, task.due_date, task.project_id, task.scheduled_start_time, task.scheduled_end_time]);
+  }, [open, task]);
+
+  // Submit handler
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+
+    // Manually set controlled values
+    formData.set('id', task.id);
+    formData.set('status', status);
+    formData.set('priority', priority);
+    formData.set('assignee_id', assigneeId);
+    if (selectedProjectId && selectedProjectId !== 'no-project') {
+      formData.set('project_id', selectedProjectId);
+    } else {
+      formData.set('project_id', '');
+    }
+    if (dueDate) {
+      formData.set('due_date', format(dueDate, 'yyyy-MM-dd'));
+    }
+    if (scheduledTime && scheduledTime !== 'none') {
+      const [hours, minutes] = scheduledTime.split(':').map(Number);
+      const today = new Date();
+      const startTime = setMinutes(setHours(today, hours), minutes);
+      const endTime = addMinutes(startTime, parseInt(duration, 10));
+      formData.set('scheduled_start_time', startTime.toISOString());
+      formData.set('scheduled_end_time', endTime.toISOString());
+    } else {
+      formData.set('scheduled_start_time', '');
+      formData.set('scheduled_end_time', '');
+    }
+
+    // Optimistic update
+    const title = formData.get('title') as string;
+    if (!title.trim()) {
+      setError('Title is required');
+      setIsPending(false);
+      return;
+    }
+
+    updateOptimisticTask({
+      title: title.trim(),
+      description: (formData.get('description') as string) || null,
+      status: status as Task['status'],
+      priority: priority as Task['priority'],
+      assignee_id: assigneeId === 'unassigned' ? null : assigneeId,
+      due_date: dueDate ? format(dueDate, 'yyyy-MM-dd') : null,
+      project_id: selectedProjectId !== 'no-project' ? selectedProjectId : null,
+    });
+
+    const result = await updateTask(formData);
+
+    if (result.success) {
+      onOpenChange(false);
+      invalidateInboxTasks(true);
+      invalidateScheduledTasks(undefined, true);
+      invalidateDailyFlow(true);
+      if (task.project_id) invalidateProjectTasks(task.project_id, true);
+      if (
+        selectedProjectId &&
+        selectedProjectId !== 'no-project' &&
+        selectedProjectId !== task.project_id
+      ) {
+        invalidateProjectTasks(selectedProjectId, true);
+      }
+    } else {
+      setError(result.error || 'Failed to update task');
+    }
+    setIsPending(false);
+  }
+
+  // Derived values
+  const selectedAssignee = profiles.find((p) => p.id === assigneeId);
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+  const filteredProjects = projectSearch
+    ? projects.filter((p) => p.name.toLowerCase().includes(projectSearch.toLowerCase()))
+    : projects;
+  const currentStatus = STATUS_OPTIONS.find((s) => s.value === status);
+  const currentPriority = PRIORITY_OPTIONS.find((p) => p.value === priority);
+  const selectedTimeLabel = scheduledTime
+    ? TIME_SLOTS.find((s) => s.value === scheduledTime)?.label || scheduledTime
+    : null;
+  const selectedDurationLabel =
+    DURATION_OPTIONS.find((d) => d.value === duration)?.label || '30 min';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-border bg-card text-foreground sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="text-lg">Edit Task</DialogTitle>
+      <DialogContent className="border-border bg-card p-0 text-foreground sm:max-w-[520px]">
+        <DialogHeader className="px-5 pb-0 pt-5">
+          <DialogTitle className="text-sm font-medium text-foreground/70">Edit task</DialogTitle>
         </DialogHeader>
-        <form action={formAction} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="edit-title">Title *</Label>
-            <Input
-              id="edit-title"
-              name="title"
-              defaultValue={optimisticTask.title}
-              placeholder="Task title"
-              required
-              className="border-border bg-background"
-            />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="edit-description">Description</Label>
-            <Textarea
-              id="edit-description"
-              name="description"
-              defaultValue={optimisticTask.description || ''}
-              placeholder="Task description (optional)"
-              rows={3}
-              className="resize-none border-border bg-background"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="px-5 pb-5">
+          {/* Title */}
+          <input
+            name="title"
+            defaultValue={optimisticTask.title}
+            placeholder="Task title"
+            required
+            className="mb-1 w-full border-0 bg-transparent text-[17px] font-semibold text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-status">Status</Label>
-              <Select name="status" defaultValue={optimisticTask.status}>
-                <SelectTrigger id="edit-status" className="border-border bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="Todo">Todo</SelectItem>
-                  <SelectItem value="In Progress">In Progress</SelectItem>
-                  <SelectItem value="Done">Done</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Description */}
+          <textarea
+            name="description"
+            defaultValue={optimisticTask.description || ''}
+            placeholder="Add a description..."
+            rows={2}
+            className="mb-3 w-full resize-none rounded-lg border border-border bg-muted/30 px-3 py-2 text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:border-border focus:outline-none dark:bg-muted/20"
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-priority">Priority</Label>
-              <Select name="priority" defaultValue={optimisticTask.priority || 'No Priority'}>
-                <SelectTrigger id="edit-priority" className="border-border bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="No Priority">No Priority</SelectItem>
-                  <SelectItem value="Urgent">
-                    <span className="flex items-center gap-1.5">
-                      <Circle className="h-2 w-2 fill-red-500 text-red-500" />
-                      Urgent
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="High">
-                    <span className="flex items-center gap-1.5">
-                      <Circle className="h-2 w-2 fill-orange-500 text-orange-500" />
-                      High
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="Medium">
-                    <span className="flex items-center gap-1.5">
-                      <Circle className="h-2 w-2 fill-amber-500 text-amber-500" />
-                      Medium
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="Low">
-                    <span className="flex items-center gap-1.5">
-                      <Circle className="h-2 w-2 fill-blue-500 text-blue-500" />
-                      Low
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <div className="mb-4 h-px bg-border/30" />
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-assignee">Assignee</Label>
-              <Select name="assignee_id" defaultValue={optimisticTask.assignee_id || 'unassigned'}>
-                <SelectTrigger id="edit-assignee" className="border-border bg-background">
-                  <SelectValue placeholder="Select assignee" />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="unassigned">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-5 w-5">
-                        <AvatarFallback className="text-[11px]">
-                          <User className="h-3 w-3" />
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>Unassigned</span>
-                    </div>
-                  </SelectItem>
-                  {profiles.map((profile) => (
-                    <SelectItem key={profile.id} value={profile.id}>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                          {profile.avatar_url ? (
-                            <AvatarImage src={profile.avatar_url} alt={profile.full_name || ''} />
-                          ) : null}
-                          <AvatarFallback className="bg-primary text-[11px] text-primary-foreground">
-                            {getInitials(profile.full_name || profile.email || 'U')}
+          {/* ── Properties ── */}
+          <div className="space-y-0.5">
+            {/* Status */}
+            <PropertyRow label="Status" icon={Activity}>
+              <Popover open={statusOpen} onOpenChange={setStatusOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-foreground transition-colors hover:bg-muted/60"
+                  >
+                    {currentStatus && (
+                      <span className={cn('h-2 w-2 rounded-full', currentStatus.color)} />
+                    )}
+                    {status}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[180px] p-1">
+                  {STATUS_OPTIONS.map((opt) => (
+                    <OptionButton
+                      key={opt.value}
+                      selected={status === opt.value}
+                      onClick={() => {
+                        setStatus(opt.value as Task['status']);
+                        setStatusOpen(false);
+                      }}
+                    >
+                      <span className={cn('h-2 w-2 rounded-full', opt.color)} />
+                      <span>{opt.label}</span>
+                    </OptionButton>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </PropertyRow>
+
+            {/* Priority */}
+            <PropertyRow label="Priority" icon={Flag}>
+              <Popover open={priorityOpen} onOpenChange={setPriorityOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 rounded-md px-2 py-1 text-sm text-foreground transition-colors hover:bg-muted/60"
+                  >
+                    {currentPriority?.color && (
+                      <Circle
+                        className={cn(
+                          'h-2 w-2',
+                          currentPriority.color.includes('text-') ? currentPriority.color : ''
+                        )}
+                        fill="currentColor"
+                      />
+                    )}
+                    {priority}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[180px] p-1">
+                  {PRIORITY_OPTIONS.map((opt) => (
+                    <OptionButton
+                      key={opt.value}
+                      selected={priority === opt.value}
+                      onClick={() => {
+                        setPriority(opt.value as Task['priority']);
+                        setPriorityOpen(false);
+                      }}
+                    >
+                      {opt.color ? (
+                        <Circle
+                          className={cn('h-2 w-2', opt.color.includes('text-') ? opt.color : '')}
+                          fill="currentColor"
+                        />
+                      ) : (
+                        <span className="h-2 w-2" />
+                      )}
+                      <span>{opt.label}</span>
+                    </OptionButton>
+                  ))}
+                </PopoverContent>
+              </Popover>
+            </PropertyRow>
+
+            {/* Assignee */}
+            <PropertyRow label="Assignee" icon={User}>
+              <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/60',
+                      assigneeId !== 'unassigned' ? 'text-foreground' : 'text-muted-foreground/60'
+                    )}
+                  >
+                    {selectedAssignee ? (
+                      <>
+                        <Avatar className="h-4 w-4">
+                          {selectedAssignee.avatar_url && (
+                            <AvatarImage src={selectedAssignee.avatar_url} />
+                          )}
+                          <AvatarFallback className="bg-primary/20 text-[8px] text-primary">
+                            {getInitials(selectedAssignee.full_name || 'U')}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{profile.full_name || profile.email}</span>
-                      </div>
-                    </SelectItem>
+                        <span>{selectedAssignee.full_name?.split(' ')[0]}</span>
+                      </>
+                    ) : (
+                      'Unassigned'
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[220px] p-1">
+                  <OptionButton
+                    selected={assigneeId === 'unassigned'}
+                    onClick={() => {
+                      setAssigneeId('unassigned');
+                      setAssigneeOpen(false);
+                    }}
+                  >
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Unassigned</span>
+                  </OptionButton>
+                  <div className="my-1 h-px bg-border/50" />
+                  {profiles.map((profile) => (
+                    <OptionButton
+                      key={profile.id}
+                      selected={assigneeId === profile.id}
+                      onClick={() => {
+                        setAssigneeId(profile.id);
+                        setAssigneeOpen(false);
+                      }}
+                    >
+                      <Avatar className="h-5 w-5">
+                        {profile.avatar_url && <AvatarImage src={profile.avatar_url} />}
+                        <AvatarFallback className="bg-primary/20 text-[10px] text-primary">
+                          {getInitials(profile.full_name || profile.email || 'U')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{profile.full_name || profile.email}</span>
+                    </OptionButton>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                </PopoverContent>
+              </Popover>
+            </PropertyRow>
 
-          <div className="space-y-2">
-            <Label htmlFor="edit-project">Project</Label>
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-              <SelectTrigger id="edit-project" className="border-border bg-background">
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent className="border-border bg-card">
-                <SelectItem value="no-project">
-                  <div className="flex items-center gap-2">
-                    <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                    <span>No Project</span>
-                  </div>
-                </SelectItem>
-                {projects.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    <div className="flex items-center gap-2">
-                      <FolderOpen className="h-4 w-4 text-primary" />
-                      <span>{project.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-time-slot">Time Slot</Label>
-              <Select
-                value={scheduledTime || 'none'}
-                onValueChange={(v) => setScheduledTime(v === 'none' ? '' : v)}
+            {/* Project */}
+            <PropertyRow label="Project" icon={FolderOpen}>
+              <Popover
+                open={projectOpen}
+                onOpenChange={(v) => {
+                  setProjectOpen(v);
+                  if (!v) setProjectSearch('');
+                }}
               >
-                <SelectTrigger id="edit-time-slot" className="border-border bg-background">
-                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="No time" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[200px] border-border bg-card">
-                  <SelectItem value="none">No time</SelectItem>
-                  {Array.from({ length: 17 }, (_, i) => {
-                    const totalMinutes = 7.5 * 60 + i * 30;
-                    const h = Math.floor(totalMinutes / 60);
-                    const m = totalMinutes % 60;
-                    const label = format(setMinutes(setHours(new Date(), h), m), 'h:mm a');
-                    const value = `${h}:${m.toString().padStart(2, '0')}`;
-                    return (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-duration">Duration</Label>
-              <Select value={duration} onValueChange={setDuration} disabled={!scheduledTime}>
-                <SelectTrigger id="edit-duration" className="border-border bg-background">
-                  <SelectValue placeholder="Duration" />
-                </SelectTrigger>
-                <SelectContent className="border-border bg-card">
-                  <SelectItem value="30">30 min</SelectItem>
-                  <SelectItem value="60">1 hour</SelectItem>
-                  <SelectItem value="90">1.5 hours</SelectItem>
-                  <SelectItem value="120">2 hours</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/60',
+                      selectedProject ? 'text-foreground' : 'text-muted-foreground/60'
+                    )}
+                  >
+                    {selectedProject?.name || 'No Project'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[260px] p-0">
+                  <div className="border-b border-border p-2">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground/50" />
+                      <input
+                        autoFocus
+                        type="text"
+                        value={projectSearch}
+                        onChange={(e) => setProjectSearch(e.target.value)}
+                        placeholder="Search projects..."
+                        className="h-8 w-full rounded-md bg-muted/50 pl-8 pr-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-[220px] overflow-y-auto p-1">
+                    <OptionButton
+                      selected={selectedProjectId === 'no-project'}
+                      onClick={() => {
+                        setSelectedProjectId('no-project');
+                        setProjectOpen(false);
+                      }}
+                    >
+                      <span className="text-muted-foreground">No Project</span>
+                    </OptionButton>
+                    {filteredProjects.map((project) => (
+                      <OptionButton
+                        key={project.id}
+                        selected={selectedProjectId === project.id}
+                        onClick={() => {
+                          setSelectedProjectId(project.id);
+                          setProjectOpen(false);
+                        }}
+                      >
+                        <span className="truncate">{project.name}</span>
+                      </OptionButton>
+                    ))}
+                    {filteredProjects.length === 0 && projectSearch && (
+                      <p className="px-2.5 py-3 text-center text-sm text-muted-foreground/60">
+                        No results
+                      </p>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </PropertyRow>
+
+            {/* Due date */}
+            <PropertyRow label="Due date" icon={CalendarIcon}>
+              <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/60',
+                      dueDate ? 'text-foreground' : 'text-muted-foreground/60'
+                    )}
+                  >
+                    {dueDate ? (
+                      <>
+                        {format(dueDate, 'MMM d, yyyy')}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDueDate(undefined);
+                            setDateOpen(false);
+                          }}
+                          className="ml-0.5 rounded p-0.5 text-muted-foreground/40 hover:text-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    ) : (
+                      'None'
+                    )}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={(d) => {
+                      setDueDate(d);
+                      setDateOpen(false);
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </PropertyRow>
+
+            {/* Time */}
+            <PropertyRow label="Time" icon={Clock}>
+              <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-2 py-1 text-sm transition-colors hover:bg-muted/60',
+                      scheduledTime ? 'text-foreground' : 'text-muted-foreground/60'
+                    )}
+                  >
+                    {selectedTimeLabel || 'No time'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-[170px] p-1">
+                  <div className="max-h-[220px] overflow-y-auto">
+                    <OptionButton
+                      selected={!scheduledTime}
+                      onClick={() => {
+                        setScheduledTime('');
+                        setTimeOpen(false);
+                      }}
+                    >
+                      No time
+                    </OptionButton>
+                    {TIME_SLOTS.map((slot) => (
+                      <OptionButton
+                        key={slot.value}
+                        selected={scheduledTime === slot.value}
+                        onClick={() => {
+                          setScheduledTime(slot.value);
+                          setTimeOpen(false);
+                        }}
+                      >
+                        {slot.label}
+                      </OptionButton>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </PropertyRow>
+
+            {/* Duration */}
+            {scheduledTime && (
+              <PropertyRow label="Duration" icon={Timer}>
+                <Popover open={durationOpen} onOpenChange={setDurationOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-foreground transition-colors hover:bg-muted/60"
+                    >
+                      {selectedDurationLabel}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-[150px] p-1">
+                    {DURATION_OPTIONS.map((opt) => (
+                      <OptionButton
+                        key={opt.value}
+                        selected={duration === opt.value}
+                        onClick={() => {
+                          setDuration(opt.value);
+                          setDurationOpen(false);
+                        }}
+                      >
+                        {opt.label}
+                      </OptionButton>
+                    ))}
+                  </PopoverContent>
+                </Popover>
+              </PropertyRow>
+            )}
+
+            {/* Require attachment — admin only */}
+            {isAdmin && (
+              <PropertyRow label="Require upload" icon={Paperclip}>
+                <input
+                  name="requires_attachment"
+                  defaultValue={task.requires_attachment || ''}
+                  placeholder="e.g. Screenshot of completed work"
+                  className="h-7 w-full rounded-md bg-transparent px-2 text-sm text-foreground/80 placeholder:text-muted-foreground/40 focus:bg-muted/30 focus:outline-none"
+                />
+              </PropertyRow>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="edit-due_date">Due Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={cn(
-                    'w-full justify-start border-border bg-background text-left font-normal',
-                    !dueDate && 'text-muted-foreground'
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dueDate ? format(dueDate, 'PPP') : 'Pick a date (optional)'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto border-border bg-card p-0" align="start">
-                <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
-              </PopoverContent>
-            </Popover>
-          </div>
+          {/* Error */}
+          {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
 
-          {/* Require attachment to mark done — admin only */}
-          {isAdmin && (
-            <div className="space-y-2">
-              <Label htmlFor="edit-requires_attachment">Require upload to complete</Label>
-              <Input
-                id="edit-requires_attachment"
-                name="requires_attachment"
-                defaultValue={task.requires_attachment || ''}
-                placeholder="e.g. Screenshot of completed work"
-                className="border-border bg-background"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                If set, assignee must upload a file before marking this task done
-              </p>
-            </div>
-          )}
-
-          {state.error && <p className="text-sm text-destructive">{state.error}</p>}
-
-          <div className="flex gap-2">
+          {/* Footer */}
+          <div className="mt-5 flex gap-2">
             <Button
               type="button"
               variant="outline"
@@ -433,5 +628,51 @@ export function EditTaskModal({ task, open, onOpenChange }: EditTaskModalProps) 
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* ─── Helpers ─── */
+
+function PropertyRow({
+  label,
+  icon: Icon,
+  children,
+}: {
+  label: string;
+  icon: typeof Clock;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg px-1 py-0.5 transition-colors hover:bg-muted/30">
+      <div className="flex w-[100px] shrink-0 items-center gap-2.5">
+        <Icon className="h-3.5 w-3.5 text-muted-foreground/50" />
+        <span className="text-[13px] text-muted-foreground/60">{label}</span>
+      </div>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+function OptionButton({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors',
+        selected ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-muted/80'
+      )}
+    >
+      {children}
+      {selected && <Check className="ml-auto h-3.5 w-3.5 shrink-0" />}
+    </button>
   );
 }
