@@ -207,7 +207,7 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
-  const canTrackTime = userRole === 'employee';
+  const canTrackTime = userRole === 'employee' || userRole === 'admin';
   const [showClockOut, setShowClockOut] = useState(false);
   const { toggleSidebar } = useSidebar();
 

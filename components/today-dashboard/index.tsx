@@ -256,14 +256,13 @@ export function TodayDashboard({
 
   const effectiveUserId = viewAsUserId || currentUserId;
   const effectiveRole = isViewingAs ? 'employee' : userRole;
-  const isNonAdmin = effectiveRole !== 'admin';
   const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
 
   const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
-    isNonAdmin ? workspaceId : null
+    workspaceId ?? null
   );
   const showClockIn =
-    isNonAdmin && !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
+    !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
 
   const { meetings } = useMeetings(initialMeetings);
 
@@ -455,7 +454,7 @@ export function TodayDashboard({
         defaultScheduledTime={null}
       />
 
-      {isNonAdmin && !viewingAsOther && (
+      {!viewingAsOther && (
         <ClockInModal
           open={showClockIn}
           workspaceId={workspaceId}
