@@ -412,8 +412,8 @@ export function TodayDashboard({
       <main className="flex min-h-0 flex-1 overflow-hidden lg:flex-row">
         {/* ── LEFT COLUMN: Tasks ── */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-4 py-2 sm:px-5 lg:px-6">
-          {/* Owner updates banner — employees only */}
-          {isNonAdmin && !viewingAsOther && <OwnerUpdatesBanner workspaceId={workspaceId} />}
+          {/* Owner updates banner — all users */}
+          {!viewingAsOther && <OwnerUpdatesBanner workspaceId={workspaceId} />}
 
           {/* Task workspace — scrolls internally */}
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">

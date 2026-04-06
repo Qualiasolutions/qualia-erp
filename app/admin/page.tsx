@@ -38,6 +38,8 @@ import {
   removeTeamMember,
   type AdminProfile,
 } from '@/app/actions/admin';
+import { TeamLiveStatus } from '@/components/admin/team-live-status';
+import { useCurrentWorkspaceId } from '@/lib/swr';
 import type { Database } from '@/types/database';
 
 type UserRole = Database['public']['Enums']['user_role'];
@@ -176,6 +178,7 @@ function InviteDialog({
 
 export default function AdminDashboard() {
   const { toggleMobile } = useSidebar();
+  const { workspaceId } = useCurrentWorkspaceId();
   const [members, setMembers] = useState<AdminProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
@@ -273,6 +276,13 @@ export default function AdminDashboard() {
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-6 lg:px-8">
+        {/* Team Live Status */}
+        {workspaceId && (
+          <div className="mb-8">
+            <TeamLiveStatus workspaceId={workspaceId} />
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
