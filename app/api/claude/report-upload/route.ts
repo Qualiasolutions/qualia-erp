@@ -77,11 +77,24 @@ export async function POST(request: NextRequest) {
   const sessionId = session?.id || 'no-session';
   const storagePath = `reports/${sessionId}/${dateStr}-report.${ext}`;
 
+  // Determine MIME type — curl often sends application/octet-stream, so detect from extension
+  const MIME_MAP: Record<string, string> = {
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    doc: 'application/msword',
+    pdf: 'application/pdf',
+    md: 'text/markdown',
+    txt: 'text/plain',
+  };
+  const contentType =
+    file.type && file.type !== 'application/octet-stream'
+      ? file.type
+      : MIME_MAP[ext] || 'application/octet-stream';
+
   const fileBuffer = await file.arrayBuffer();
   const { error: uploadError } = await supabase.storage
     .from('project-files')
     .upload(storagePath, fileBuffer, {
-      contentType: file.type || 'application/octet-stream',
+      contentType,
       upsert: true,
     });
 
