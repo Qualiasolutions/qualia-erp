@@ -5,10 +5,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
 import { NotificationSection } from '@/components/settings/notification-section';
-import { AdminNotesSection } from '@/components/ai-assistant/admin-notes-section';
-import { WorkScheduleSection } from '@/components/settings/work-schedule-section';
-import { MyHoursSection } from '@/components/settings/my-hours-section';
-import { ChevronRight, Plug, MessageSquarePlus } from 'lucide-react';
+import { ChevronRight, Plug } from 'lucide-react';
 import Link from 'next/link';
 
 async function AccountInfoLoader() {
@@ -92,44 +89,6 @@ async function getUserRoleForSettings(): Promise<string | null> {
   return profile?.role || null;
 }
 
-async function AdminNotesLoader() {
-  await connection();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-
-  if (profile?.role !== 'admin') return null;
-
-  return <AdminNotesSection currentUserId={user.id} />;
-}
-
-async function AdminNotesWrapper() {
-  const content = await AdminNotesLoader();
-  if (!content) return null;
-
-  return (
-    <div>
-      <div className="mb-4 flex items-center gap-2">
-        <MessageSquarePlus className="h-5 w-5 text-primary" />
-        <h2 className="text-md font-medium text-foreground">AI Assistant Notes</h2>
-      </div>
-      <p className="mb-4 text-sm text-muted-foreground">
-        Leave notes for team members that the AI assistant will deliver in their next conversation.
-      </p>
-      {content}
-    </div>
-  );
-}
-
 function AccountInfoSkeleton() {
   return (
     <div className="animate-pulse space-y-4">
@@ -164,14 +123,6 @@ function AppearanceSection() {
   );
 }
 
-function AINotesSection() {
-  return (
-    <Suspense fallback={null}>
-      <AdminNotesWrapper />
-    </Suspense>
-  );
-}
-
 function DangerZoneSection() {
   return (
     <div className="space-y-4">
@@ -192,7 +143,6 @@ function NotificationsSection() {
 
 const allSections = [
   { id: 'account', label: 'Account', content: <AccountSection />, adminOnly: false },
-  { id: 'my-hours', label: 'My Hours', content: <MyHoursSection />, adminOnly: false },
   { id: 'appearance', label: 'Appearance', content: <AppearanceSection />, adminOnly: false },
   {
     id: 'notifications',
@@ -200,13 +150,6 @@ const allSections = [
     content: <NotificationsSection />,
     adminOnly: false,
   },
-  {
-    id: 'work-schedule',
-    label: 'Work Schedule',
-    content: <WorkScheduleSection />,
-    adminOnly: false,
-  },
-  { id: 'ai-notes', label: 'AI Notes', content: <AINotesSection />, adminOnly: true },
   {
     id: 'danger',
     label: 'Danger Zone',
