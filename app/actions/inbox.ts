@@ -17,11 +17,14 @@ async function checkAttachmentRequirement(
 ): Promise<string | null> {
   const { data: task } = await supabase
     .from('tasks')
-    .select('requires_attachment')
+    .select('requires_attachment, submission_text')
     .eq('id', taskId)
     .single();
 
   if (!task?.requires_attachment) return null;
+
+  // A text submission also satisfies the requirement
+  if (task.submission_text && task.submission_text.trim().length > 0) return null;
 
   const { count } = await supabase
     .from('task_attachments')
@@ -29,7 +32,7 @@ async function checkAttachmentRequirement(
     .eq('task_id', taskId);
 
   if (!count || count === 0) {
-    return `This task requires an upload before completion: ${task.requires_attachment}`;
+    return `This task requires a file upload or work submission before completion: ${task.requires_attachment}`;
   }
   return null;
 }
@@ -458,6 +461,35 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
   }
 
   revalidatePath('/inbox');
+  return { success: true };
+}
+
+/**
+ * Admin: force-mark a task as Done, bypassing attachment requirements
+ */
+export async function adminMarkTaskDone(taskId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  const admin = await isUserAdmin(user.id);
+  if (!admin) return { success: false, error: 'Admin access required' };
+
+  const { error } = await supabase
+    .from('tasks')
+    .update({ status: 'Done', completed_at: new Date().toISOString() })
+    .eq('id', taskId);
+
+  if (error) {
+    console.error('[adminMarkTaskDone] Error:', error);
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath('/inbox');
+  revalidatePath('/admin/tasks');
   return { success: true };
 }
 

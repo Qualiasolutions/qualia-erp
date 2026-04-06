@@ -20,6 +20,7 @@ import {
   Shield,
   Wallet,
   ClipboardList,
+  ListTodo,
   Activity,
   Timer,
   UserPlus,
@@ -61,6 +62,7 @@ const resourcesNav = [
 const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
+  { name: 'Tasks', href: '/admin/tasks', icon: ListTodo },
   { name: 'Assignments', href: '/admin/assignments', icon: UserPlus },
   { name: 'Attendance', href: '/admin/attendance', icon: ClipboardList },
   { name: 'Reports', href: '/admin/reports', icon: BarChart3 },

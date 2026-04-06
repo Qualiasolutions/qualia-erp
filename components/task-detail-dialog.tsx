@@ -68,7 +68,9 @@ export function TaskDetailDialog({
   if (!task) return null;
 
   const done = isDoneProp ?? task.status === 'Done';
-  const needsAttachment = !done && !!task.requires_attachment && attachments.length === 0;
+  const hasSubmission = !!task.submission_text && task.submission_text.trim().length > 0;
+  const needsAttachment =
+    !done && !!task.requires_attachment && attachments.length === 0 && !hasSubmission;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -176,7 +178,15 @@ export function TaskDetailDialog({
             >
               <AlertTriangle className="mt-0.5 size-3 shrink-0" />
               <span>
-                <span className="font-medium">Required upload:</span> {task.requires_attachment}
+                <span className="font-medium">
+                  {needsAttachment ? 'Action required:' : 'Requirement met:'}
+                </span>{' '}
+                {task.requires_attachment}
+                {needsAttachment && (
+                  <span className="mt-0.5 block text-muted-foreground">
+                    Upload a file below or click &quot;Submit Work&quot; to complete this task.
+                  </span>
+                )}
               </span>
             </div>
           )}
@@ -260,7 +270,7 @@ export function TaskDetailDialog({
             {needsAttachment && (
               <span className="flex items-center gap-1 text-[11px] text-amber-500">
                 <AlertTriangle className="size-3" />
-                Upload required
+                Upload or submit required
               </span>
             )}
             <Button

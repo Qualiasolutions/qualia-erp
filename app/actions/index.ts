@@ -157,6 +157,7 @@ export {
   createTask,
   updateTask,
   deleteTask,
+  adminMarkTaskDone,
   reorderTasks,
   getProjectTasks,
   toggleTaskInbox,
