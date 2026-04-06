@@ -180,6 +180,21 @@ export async function getProjects(workspaceId?: string | null) {
 }
 
 /**
+ * Get all active/launched projects (for admin clock-in)
+ */
+export async function getActiveProjects(): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient();
+  const wsId = await getCurrentWorkspaceId();
+  const { data } = await supabase
+    .from('projects')
+    .select('id, name')
+    .eq('workspace_id', wsId!)
+    .in('status', ['Active', 'Launched'])
+    .order('name');
+  return data || [];
+}
+
+/**
  * Get project stats with issue counts and roadmap progress
  */
 export async function getProjectStats(workspaceId?: string | null): Promise<{

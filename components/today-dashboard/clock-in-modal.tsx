@@ -22,6 +22,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { clockIn } from '@/app/actions/work-sessions';
 import { invalidateActiveSession } from '@/lib/swr';
 import { getEmployeeAssignments } from '@/app/actions/project-assignments';
+import { getActiveProjects } from '@/app/actions/projects';
+import { useAdminContext } from '@/components/admin-provider';
 import { format } from 'date-fns';
 
 interface ClockInModalProps {
@@ -29,9 +31,17 @@ interface ClockInModalProps {
   workspaceId: string;
   currentUserId: string | null;
   onSuccess: () => void;
+  onDismiss?: () => void;
 }
 
-export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: ClockInModalProps) {
+export function ClockInModal({
+  open,
+  workspaceId,
+  currentUserId,
+  onSuccess,
+  onDismiss,
+}: ClockInModalProps) {
+  const { isAdmin } = useAdminContext();
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,23 +59,23 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
     setShowOtherInput(false);
     setOtherNote('');
 
-    getEmployeeAssignments(currentUserId)
-      .then((result) => {
-        const assignments =
-          (result.data as Array<{ project: { id: string; name: string; status: string } }>) ?? [];
-        const activeProjects = assignments
-          .filter((a) => a.project?.status === 'Active' || a.project?.status === 'Launched')
-          .map((a) => ({ id: a.project.id, name: a.project.name }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-        setProjects(activeProjects);
-      })
-      .catch(() => {
-        setError('Failed to load projects. Please try again.');
-      })
-      .finally(() => {
-        setLoadingProjects(false);
-      });
-  }, [open, currentUserId]);
+    // Admin sees all active projects; employees see only assigned ones
+    const fetchProjects = isAdmin
+      ? getActiveProjects().then((data) => data)
+      : getEmployeeAssignments(currentUserId).then((result) => {
+          const assignments =
+            (result.data as Array<{ project: { id: string; name: string; status: string } }>) ?? [];
+          return assignments
+            .filter((a) => a.project?.status === 'Active' || a.project?.status === 'Launched')
+            .map((a) => ({ id: a.project.id, name: a.project.name }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+        });
+
+    fetchProjects
+      .then((activeProjects) => setProjects(activeProjects))
+      .catch(() => setError('Failed to load projects. Please try again.'))
+      .finally(() => setLoadingProjects(false));
+  }, [open, currentUserId, isAdmin]);
 
   function handleClockIn(projectId: string | null, note?: string) {
     setError(null);
@@ -91,12 +101,12 @@ export function ClockInModal({ open, workspaceId, currentUserId, onSuccess }: Cl
   }
 
   return (
-    <Dialog open={open} modal>
+    <Dialog open={open} onOpenChange={(v) => !v && isAdmin && onDismiss?.()} modal>
       <DialogContent
         className="max-w-sm"
-        showCloseButton={false}
-        onEscapeKeyDown={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        showCloseButton={isAdmin}
+        onEscapeKeyDown={(e) => !isAdmin && e.preventDefault()}
+        onInteractOutside={(e) => !isAdmin && e.preventDefault()}
       >
         <DialogHeader>
           <div className="mb-1 flex items-center gap-2">

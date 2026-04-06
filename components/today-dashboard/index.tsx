@@ -460,6 +460,7 @@ export function TodayDashboard({
           workspaceId={workspaceId}
           currentUserId={currentUserId}
           onSuccess={() => setJustClockedIn(true)}
+          onDismiss={() => setJustClockedIn(true)}
         />
       )}
     </div>
