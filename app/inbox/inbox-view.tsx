@@ -282,40 +282,54 @@ export function InboxView({ initialTasks }: InboxViewProps) {
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    return optimisticTasks.filter((task) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const matchesTitle = task.title.toLowerCase().includes(query);
-        const matchesProject = task.project?.name.toLowerCase().includes(query);
-        if (!matchesTitle && !matchesProject) return false;
-      }
+    const PRIORITY_ORDER: Record<string, number> = {
+      Urgent: 0,
+      High: 1,
+      Medium: 2,
+      Low: 3,
+      'No Priority': 4,
+    };
 
-      // Status filter
-      if (statusFilter !== 'all') {
-        const statusMap: Record<FilterStatus, string> = {
-          all: '',
-          todo: 'Todo',
-          in_progress: 'In Progress',
-          done: 'Done',
-        };
-        if (task.status !== statusMap[statusFilter]) return false;
-      }
+    return optimisticTasks
+      .filter((task) => {
+        // Search filter
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          const matchesTitle = task.title.toLowerCase().includes(query);
+          const matchesProject = task.project?.name.toLowerCase().includes(query);
+          if (!matchesTitle && !matchesProject) return false;
+        }
 
-      // Priority filter
-      if (priorityFilter !== 'all') {
-        const priorityMap: Record<FilterPriority, string> = {
-          all: '',
-          urgent: 'Urgent',
-          high: 'High',
-          medium: 'Medium',
-          low: 'Low',
-        };
-        if (task.priority !== priorityMap[priorityFilter]) return false;
-      }
+        // Status filter
+        if (statusFilter !== 'all') {
+          const statusMap: Record<FilterStatus, string> = {
+            all: '',
+            todo: 'Todo',
+            in_progress: 'In Progress',
+            done: 'Done',
+          };
+          if (task.status !== statusMap[statusFilter]) return false;
+        }
 
-      return true;
-    });
+        // Priority filter
+        if (priorityFilter !== 'all') {
+          const priorityMap: Record<FilterPriority, string> = {
+            all: '',
+            urgent: 'Urgent',
+            high: 'High',
+            medium: 'Medium',
+            low: 'Low',
+          };
+          if (task.priority !== priorityMap[priorityFilter]) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        const aPriority = PRIORITY_ORDER[a.priority ?? 'No Priority'] ?? 4;
+        const bPriority = PRIORITY_ORDER[b.priority ?? 'No Priority'] ?? 4;
+        return aPriority - bPriority;
+      });
   }, [optimisticTasks, searchQuery, statusFilter, priorityFilter]);
 
   // Virtual list

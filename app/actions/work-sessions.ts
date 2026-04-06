@@ -132,7 +132,8 @@ export async function clockIn(
 export async function clockOut(
   workspaceId: string,
   sessionId: string,
-  summary: string
+  summary: string,
+  reportUrl?: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -166,12 +167,17 @@ export async function clockOut(
     return { success: false, error: 'No active session found.' };
   }
 
+  const updatePayload: Record<string, unknown> = {
+    ended_at: new Date().toISOString(),
+    summary: summary.trim(),
+  };
+  if (reportUrl) {
+    updatePayload.report_url = reportUrl;
+  }
+
   const { data, error } = await supabase
     .from('work_sessions')
-    .update({
-      ended_at: new Date().toISOString(),
-      summary: summary.trim(),
-    })
+    .update(updatePayload)
     .eq('id', sessionId)
     .eq('profile_id', user.id)
     .select()

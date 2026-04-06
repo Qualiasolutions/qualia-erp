@@ -210,8 +210,21 @@ const PersonTaskSection = memo(function PersonTaskSection({
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [showCompleted, setShowCompleted] = useState(false);
+  const PRIORITY_ORDER: Record<string, number> = {
+    Urgent: 0,
+    High: 1,
+    Medium: 2,
+    Low: 3,
+    'No Priority': 4,
+  };
   const { profile, tasks } = member;
-  const activeTasks = tasks.filter((t) => t.status !== 'Done');
+  const activeTasks = tasks
+    .filter((t) => t.status !== 'Done')
+    .sort(
+      (a, b) =>
+        (PRIORITY_ORDER[a.priority ?? 'No Priority'] ?? 4) -
+        (PRIORITY_ORDER[b.priority ?? 'No Priority'] ?? 4)
+    );
   const completedTasks = tasks.filter((t) => t.status === 'Done');
   const inProgress = activeTasks.filter((t) => t.status === 'In Progress').length;
   const projects = getUniqueProjects(activeTasks);
