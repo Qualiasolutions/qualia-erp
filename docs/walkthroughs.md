@@ -1083,14 +1083,14 @@ curl -s -o /dev/null -w "%{http_code}" https://site.com  # HTTP 200
 
 ### Use the right commands
 
-| Situation                        | Command                 |
-| -------------------------------- | ----------------------- |
-| Most tasks (build, fix, improve) | `/qualia-quick`         |
-| Premium UI work                  | `/frontend-master`      |
-| Plan a project phase             | `/qualia-plan-phase`    |
-| Execute a project phase          | `/qualia-execute-phase` |
-| Deploy to production             | `/ship`                 |
-| Code review                      | `/review`               |
-| Check project health             | `/status`               |
+| Situation                        | Command          |
+| -------------------------------- | ---------------- |
+| Most tasks (build, fix, improve) | `/qualia-quick`  |
+| Premium UI work                  | `/qualia-design` |
+| Plan a project phase             | `/qualia-plan`   |
+| Execute a project phase          | `/qualia-build`  |
+| Deploy to production             | `/qualia-ship`   |
+| Code review                      | `/qualia-review` |
+| Design/UX polish pass            | `/qualia-polish` |
 
 Or just describe what you want and say "and ship" — no command needed.

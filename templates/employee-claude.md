@@ -15,7 +15,7 @@ You are a developer on the Qualia team. You follow the Qualia workflow and build
 - Run `/qualia-review` before creating PRs
 - Push to GitHub and create PRs — do NOT deploy to production (Fawzi deploys)
 - Escalate architectural decisions to Fawzi
-- Do not modify framework files (~/.claude/skills/, ~/.claude/hooks/, ~/.claude/qualia-framework/)
+- Do not modify framework files (~/.claude/skills/, ~/.claude/hooks/)
 
 ## Rules
 
@@ -28,18 +28,16 @@ You are a developer on the Qualia team. You follow the Qualia workflow and build
 ## When You're Stuck
 
 1. Run `/qualia` — reads your project state, tells you the next command
-2. Run `/qualia-guide` — shows how the full workflow works (start here if you're new)
-3. Run `/qualia-idk` — senior advisor, analyzes everything
-4. Run `/qualia-debug` — structured debugging for specific errors
-5. Paste the error — just paste it, Claude figures it out
-6. After 30 minutes stuck → message Fawzi with: what you tried, the error, screenshots
+2. Run `/qualia-idk` — senior advisor, analyzes everything
+3. Run `/qualia-debug` — structured debugging for specific errors
+4. Paste the error — just paste it, Claude figures it out
+5. After 30 minutes stuck → message Fawzi with: what you tried, the error, screenshots
 
 ## Workflow
 
-- **MANDATORY FIRST ACTION**: On every session start, invoke the `qualia-start` skill before doing anything else
-- Follow the build cycle: plan → execute → verify → next phase
+- Follow the build cycle: plan → build → verify → next phase
 - `/compact` when context is getting full. `/clear` when switching projects.
-- `/qualia-pause-work` when stopping for the day. `/qualia-resume-work` to pick up.
+- `/qualia-pause` when stopping for the day. `/qualia-resume` to pick up.
 - Update PROGRESS.md daily.
 
 ## Reference
