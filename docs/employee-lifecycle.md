@@ -24,7 +24,14 @@ That's it. You're now working with an AI that reads your codebase, writes code, 
 Every project follows this cycle. It doesn't matter if it's a website, AI agent, voice agent, or mobile app — the cycle is the same.
 
 ```
-Start → Plan → Execute → Verify → Next Phase → ... → Finish Line → Client Has It
+/qualia-new → set up project
+For each phase:
+  /qualia-plan  → plan the phase
+  /qualia-build → build it (parallel tasks)
+  /qualia-verify → verify it works
+/qualia-polish → design/UX pass
+/qualia-ship → deploy
+/qualia-handoff → deliver to client
 ```
 
 ### Step 1: Start the Project
@@ -32,40 +39,28 @@ Start → Plan → Execute → Verify → Next Phase → ... → Finish Line →
 If it's a brand new project:
 
 ```
-/qualia-new-project
+/qualia-new
 ```
 
 This asks you questions about what you're building, creates the project structure, and sets up a roadmap with phases. It takes about 10-15 minutes.
 
-If the project already exists and you're starting new work:
-
-```
-/qualia-new-milestone
-```
-
-Either way, you end up with a `.planning/` directory containing a roadmap of phases to build.
+You end up with a `.planning/` directory containing a roadmap of phases to build.
 
 ### Step 2: Plan a Phase
 
 ```
-/qualia-plan-phase 1
+/qualia-plan
 ```
 
-This creates a detailed plan for phase 1 — what to build, acceptance criteria, and step-by-step tasks. The plan lives in `.planning/phases/1/PLAN.md`.
+This creates a detailed plan for the current phase — what to build, acceptance criteria, and step-by-step tasks. The plan lives in `.planning/phases/N/PLAN.md`.
 
-If you're unsure about the approach, discuss first:
-
-```
-/qualia-discuss-phase 1
-```
-
-### Step 3: Execute the Phase
+### Step 3: Build the Phase
 
 ```
-/qualia-execute-phase 1
+/qualia-build
 ```
 
-This is where the actual building happens. Claude reads the plan and builds it. For larger phases, it spawns multiple agents working in parallel.
+This is where the actual building happens. Claude reads the plan and builds it. For larger phases, it spawns multiple builder agents working in parallel on independent tasks.
 
 During execution, you can describe what you want naturally:
 
@@ -74,7 +69,7 @@ During execution, you can describe what you want naturally:
 ### Step 4: Verify the Work
 
 ```
-/qualia-verify-work 1
+/qualia-verify
 ```
 
 This walks through the acceptance criteria from the plan and checks that everything was actually built. If something's missing, it flags it.
@@ -84,7 +79,7 @@ This walks through the acceptance criteria from the plan and checks that everyth
 After verification passes, move to the next phase:
 
 ```
-/qualia-plan-phase 2
+/qualia-plan
 ```
 
 Or just ask what's next:
@@ -100,9 +95,9 @@ The smart router reads your project state and tells you exactly what command to 
 The cycle repeats for every phase in your roadmap:
 
 ```
-Phase 1: Plan → Execute → Verify ✓
-Phase 2: Plan → Execute → Verify ✓
-Phase 3: Plan → Execute → Verify ✓
+Phase 1: Plan → Build → Verify
+Phase 2: Plan → Build → Verify
+Phase 3: Plan → Build → Verify
 ...
 All feature phases done → The Finish Line
 ```
@@ -115,41 +110,50 @@ You don't need to know 70+ commands. These are the ones you'll actually use:
 
 ### Building
 
-| When                     | Command                   | What it does                        |
-| ------------------------ | ------------------------- | ----------------------------------- |
-| Starting a new project   | `/qualia-new-project`     | Sets up everything, creates roadmap |
-| Planning a phase         | `/qualia-plan-phase N`    | Creates detailed plan for phase N   |
-| Building a phase         | `/qualia-execute-phase N` | Builds what was planned             |
-| Verifying work           | `/qualia-verify-work N`   | Checks work against plan            |
-| Quick task (most common) | `/qualia-quick`           | Build/fix/improve anything fast     |
-| Premium UI               | `/frontend-master`        | Distinctive, animated interfaces    |
+| When                     | Command          | What it does                        |
+| ------------------------ | ---------------- | ----------------------------------- |
+| Starting a new project   | `/qualia-new`    | Sets up everything, creates roadmap |
+| Planning a phase         | `/qualia-plan`   | Creates detailed plan for phase     |
+| Building a phase         | `/qualia-build`  | Builds what was planned (parallel)  |
+| Verifying work           | `/qualia-verify` | Checks work against plan            |
+| Build one task properly  | `/qualia-task`   | Single task, done right             |
+| Quick task (most common) | `/qualia-quick`  | Build/fix/improve anything fast     |
+| Design transformation    | `/qualia-design` | One-shot design overhaul            |
 
 ### Shipping
 
-| When                    | Command          | What it does                                      |
-| ----------------------- | ---------------- | ------------------------------------------------- |
-| Deploy to production    | `/ship`          | Full pipeline: quality gates, git, deploy, verify |
-| Code review before ship | `/qualia-review` | Security + quality audit                          |
-| Verify after deploy     | `/deploy-verify` | HTTP 200, auth, console, latency checks           |
+| When                    | Command           | What it does                                      |
+| ----------------------- | ----------------- | ------------------------------------------------- |
+| Design/UX pass          | `/qualia-polish`  | Critique + polish + harden in one pass            |
+| Code review before ship | `/qualia-review`  | Security + quality audit                          |
+| Deploy to production    | `/qualia-ship`    | Full pipeline: quality gates, git, deploy, verify |
+| Deliver to client       | `/qualia-handoff` | Generates delivery document for client            |
 
 ### Navigation (When You're Not Sure)
 
-| When                          | Command            | What it does                                         |
-| ----------------------------- | ------------------ | ---------------------------------------------------- |
-| What should I do next?        | `/qualia`          | Reads your project state, tells you the next command |
-| How does this all work?       | `/qualia-guide`    | The full developer guide — 10 commands, clear flow   |
-| I'm completely stuck          | `/qualia-idk`      | Senior advisor — analyzes everything, gives options  |
-| Where does the project stand? | `/qualia-progress` | Phase-by-phase status overview                       |
-| See all commands              | `/qualia-help`     | Full reference list                                  |
+| When                   | Command         | What it does                                         |
+| ---------------------- | --------------- | ---------------------------------------------------- |
+| What should I do next? | `/qualia`       | Reads your project state, tells you the next command |
+| I'm completely stuck   | `/qualia-idk`   | Senior advisor — analyzes everything, gives options  |
+| Something is broken    | `/qualia-debug` | Structured debugging with error analysis             |
 
 ### Session Management
 
-| When                 | Command               | What it does                                 |
-| -------------------- | --------------------- | -------------------------------------------- |
-| Stopping for the day | `/qualia-pause-work`  | Saves everything so you can pick up tomorrow |
-| Starting next day    | `/qualia-resume-work` | Picks up where you left off                  |
-| Context getting long | `/compact`            | Compresses context, preserves project state  |
-| Switching projects   | `/clear`              | Clears context for a fresh start             |
+| When                 | Command          | What it does                                 |
+| -------------------- | ---------------- | -------------------------------------------- |
+| Stopping for the day | `/qualia-pause`  | Saves everything so you can pick up tomorrow |
+| Starting next day    | `/qualia-resume` | Picks up where you left off                  |
+| End of day report    | `/qualia-report` | Mandatory before clock-out                   |
+| Context getting long | `/compact`       | Compresses context, preserves project state  |
+| Switching projects   | `/clear`         | Clears context for a fresh start             |
+
+### Design Refinement
+
+| When                      | Command     | What it does                        |
+| ------------------------- | ----------- | ----------------------------------- |
+| Final detail pass         | `/polish`   | Spacing, alignment, consistency     |
+| Design director review    | `/critique` | High-level design review            |
+| Edge cases and robustness | `/harden`   | Overflow, i18n, edge case hardening |
 
 **Most of the time**, you don't need a specific command. Just describe what you want and say "and ship" at the end. Claude handles the rest.
 
@@ -161,77 +165,39 @@ This is the part that gets missed. Building features is maybe 70% of a project. 
 
 ### After All Feature Phases Are Verified:
 
-**1. Audit the milestone**
+**1. Design polish**
 
 ```
-/qualia-audit-milestone
+/qualia-polish
 ```
 
-Checks: are all phases actually verified? Are all requirements from the roadmap met? This catches anything that slipped through.
+Runs a full design/UX pass — critique, polish, and harden in one go. Fixes spacing, visual consistency, and edge cases.
 
-**2. Fix any gaps the audit found**
-
-```
-/qualia-plan-milestone-gaps
-```
-
-Then execute the gap-fix phases the same way (plan → execute → verify).
-
-**3. Complete the milestone**
+**2. Code review**
 
 ```
-/qualia-complete-milestone
-```
-
-Archives the milestone, tags a release, generates a changelog.
-
-**4. Design polish**
-
-```
-/critique
-```
-
-Then fix what it finds:
-
-```
-/polish
-```
-
-Then harden edge cases:
-
-```
-/harden
-```
-
-**5. Code review**
-
-```
-/qualia-review --web
+/qualia-review
 ```
 
 Security audit, quality checks, consistency review.
 
-**6. Create a pull request**
+**3. Create a pull request**
 
-```
-/pr
-```
+Push your branch to GitHub and create a PR for Fawzi to review. You do NOT deploy to production — Fawzi handles that after reviewing your PR.
 
-Pushes your branch to GitHub and creates a PR for Fawzi to review. You do NOT deploy to production — Fawzi handles that after reviewing your PR.
-
-**7. Fawzi reviews + deploys**
+**4. Fawzi reviews + deploys**
 
 After your PR is created, Fawzi reviews it and deploys to production. You'll be notified when it's live.
 
-**8. Client handoff**
+**5. Client handoff**
 
 ```
-/client-handoff
+/qualia-handoff
 ```
 
 Generates the delivery document for the client. (Fawzi may run this himself, or ask you to.)
 
-**Important:** The framework now guides you through these steps automatically. After `/qualia-complete-milestone`, just keep typing `/qualia` — it tells you exactly what to do next until the PR is created. You don't need to memorize this list.
+**Important:** The framework guides you through these steps automatically. After all phases are verified, just keep typing `/qualia` — it tells you exactly what to do next until the PR is created. You don't need to memorize this list.
 
 ---
 
@@ -241,28 +207,29 @@ Every project has a `.planning/` directory. You don't edit these files manually 
 
 ```
 .planning/
-  STATE.md          ← Where the project is right now
-  ROADMAP.md        ← All phases and their status
-  PROJECT.md        ← What the project is, requirements, decisions
-  config.json       ← Workflow preferences
+  STATE.md          <- Where the project is right now
+  ROADMAP.md        <- All phases and their status
+  PROJECT.md        <- What the project is, requirements, decisions
+  DESIGN.md         <- Design system spec (read before frontend changes)
   phases/
     1/
-      PLAN.md       ← What phase 1 should build
-      SUMMARY.md    ← What phase 1 actually built
-      UAT.md        ← Verification results
+      PLAN.md       <- What phase 1 should build
+      SUMMARY.md    <- What phase 1 actually built
+      VERIFICATION.md <- Verification results
     2/
       PLAN.md
       ...
 ```
 
-| File         | Updated by                    | What it tells you                        |
-| ------------ | ----------------------------- | ---------------------------------------- |
-| `STATE.md`   | Every command                 | Current phase, status, what to do next   |
-| `ROADMAP.md` | `/qualia-new-project`, audits | Full phase list with status              |
-| `PROJECT.md` | `/qualia-new-project`         | Project scope, requirements, constraints |
-| `PLAN.md`    | `/qualia-plan-phase`          | Detailed build plan for one phase        |
-| `SUMMARY.md` | `/qualia-execute-phase`       | What was actually built                  |
-| `UAT.md`     | `/qualia-verify-work`         | Pass/fail for each acceptance criterion  |
+| File              | Updated by                      | What it tells you                        |
+| ----------------- | ------------------------------- | ---------------------------------------- |
+| `STATE.md`        | Every command                   | Current phase, status, what to do next   |
+| `ROADMAP.md`      | `/qualia-new`                   | Full phase list with status              |
+| `PROJECT.md`      | `/qualia-new`                   | Project scope, requirements, constraints |
+| `DESIGN.md`       | `/qualia-new`, `/qualia-design` | Design system and visual spec            |
+| `PLAN.md`         | `/qualia-plan`                  | Detailed build plan for one phase        |
+| `SUMMARY.md`      | `/qualia-build`                 | What was actually built                  |
+| `VERIFICATION.md` | `/qualia-verify`                | Pass/fail for each acceptance criterion  |
 
 **The golden rule:** Run `/qualia` and it reads STATE.md to tell you exactly what to do next. You never need to parse these files yourself.
 
@@ -288,13 +255,14 @@ Claude Code has a context window — it can hold a certain amount of conversatio
 
 ### Pause and Resume
 
-- `/qualia-pause-work` — Saves a `.continue-here.md` file with full context. Use when stopping for the day.
-- `/qualia-resume-work` — Reads `.continue-here.md` and picks up where you left off. Use when starting the next day.
+- `/qualia-pause` — Saves a `.continue-here.md` file with full context. Use when stopping for the day.
+- `/qualia-resume` — Reads `.continue-here.md` and picks up where you left off. Use when starting the next day.
 
 ### End of day
 
 - Update your project's `PROGRESS.md` with what you did today
-- Run `/qualia-pause-work` if you're mid-phase
+- Run `/qualia-pause` if you're mid-phase
+- Run `/qualia-report` before clocking out
 - The framework auto-saves a session summary
 
 ---
@@ -323,13 +291,12 @@ In order of what to try:
 
 The build cycle above works for all project types. Here's where they differ:
 
-| Type            | Starter Template   | Deploy Target              | Stack                                   | Special Notes              |
-| --------------- | ------------------ | -------------------------- | --------------------------------------- | -------------------------- |
-| **AI Agent**    | `ai-agent-starter` | Vercel                     | Next.js 16+ + OpenRouter + Supabase     | RAG, chat interfaces       |
-| **Platform**    | `platform-starter` | Vercel                     | Next.js 16+ + Server Actions + Supabase | Dashboards, internal tools |
-| **Voice Agent** | `voice-starter`    | Supabase Edge / Cloudflare | Retell AI or VAPI + ElevenLabs          | Use `/voice-agent` skill   |
-| **Website**     | `website-starter`  | Vercel                     | Next.js 16+ (default) or Vite + React   | Use `/seo-master` for SEO  |
-| **Mobile App**  | (ask Fawzi)        | Expo / App Store           | React Native + Expo + Supabase          | Use `/mobile-expo` skill   |
+| Type            | Starter Template   | Deploy Target              | Stack                                   | Special Notes                       |
+| --------------- | ------------------ | -------------------------- | --------------------------------------- | ----------------------------------- |
+| **AI Agent**    | `ai-agent-starter` | Vercel                     | Next.js 16+ + OpenRouter + Supabase     | RAG, chat interfaces                |
+| **Platform**    | `platform-starter` | Vercel                     | Next.js 16+ + Server Actions + Supabase | Dashboards, internal tools          |
+| **Voice Agent** | `voice-starter`    | Supabase Edge / Cloudflare | Retell AI or VAPI + ElevenLabs          | Voice workflows                     |
+| **Website**     | `website-starter`  | Vercel                     | Next.js 16+ (default) or Vite + React   | Use `/qualia-design` for premium UI |
 
 Templates are at `~/Projects/qualia-erp/templates/`. Copy the right one when starting a project:
 
@@ -337,7 +304,7 @@ Templates are at `~/Projects/qualia-erp/templates/`. Copy the right one when sta
 cp -r ~/Projects/qualia-erp/templates/[type]-starter/* .
 ```
 
-Or use `/qualia-new-project` — it auto-detects the type and loads the right template.
+Or use `/qualia-new` — it auto-detects the type and loads the right template.
 
 ---
 
@@ -349,20 +316,21 @@ Here's what a typical day looks like:
 
 1. Open Claude Code in your project: `cd ~/Projects/[project] && claude`
 2. The Qualia dashboard shows automatically
-3. If continuing from yesterday: `/qualia-resume-work`
+3. If continuing from yesterday: `/qualia-resume`
 4. Otherwise: `/qualia` to see what's next
 
 ### During the day
 
-- Follow the build cycle: plan → execute → verify → next
+- Follow the build cycle: plan → build → verify → next
 - Use `/qualia-quick` for small tasks that don't need a full phase
 - Describe what you want naturally: "fix the responsive layout on mobile and ship"
 - Update `PROGRESS.md` with what you completed
 
 ### End of day
 
-- `/qualia-pause-work` if mid-phase
+- `/qualia-pause` if mid-phase
 - Update `PROGRESS.md`
+- `/qualia-report` before clocking out
 - `/clear` if switching projects tomorrow
 
 ---

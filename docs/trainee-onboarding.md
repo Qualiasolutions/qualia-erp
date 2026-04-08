@@ -59,9 +59,19 @@ Before starting any project, make sure you have everything:
 - [ ] Node.js v22+ installed (`node -v`)
 - [ ] Git configured (`git config user.name` and `git config user.email`)
 - [ ] SSH key added to GitHub
-- [ ] `~/.claude/CLAUDE.md` says `Role: DEVELOPER`
-- [ ] `~/.claude/settings.json` has the employee hooks config
+- [ ] Install the Qualia Framework:
+  ```bash
+  npx qualia-framework-v2 install
+  ```
+  Enter your team code when prompted. Get it from Fawzi.
 - [ ] Run `claude` in any directory — you should see the Qualia teal dashboard
+
+**Useful framework commands:**
+
+```bash
+npx qualia-framework-v2 version    # Check installed version
+npx qualia-framework-v2 update     # Update to latest
+```
 
 ### Communication
 
@@ -76,15 +86,15 @@ Before starting any project, make sure you have everything:
 
 Every Qualia project has a `.planning/` directory that tracks the project lifecycle. You don't manage these files manually — the Qualia commands handle them. But here's what they are:
 
-| File          | What it tracks                                                        |
-| ------------- | --------------------------------------------------------------------- |
-| `STATE.md`    | Where the project is right now — current phase, status, last activity |
-| `ROADMAP.md`  | All phases and their status (planned, executed, verified)             |
-| `PROJECT.md`  | Project description, requirements, key decisions                      |
-| `config.json` | Workflow preferences (parallel vs sequential, quality level)          |
-| `phases/`     | Detailed plans and summaries for each phase                           |
+| File         | What it tracks                                                        |
+| ------------ | --------------------------------------------------------------------- |
+| `STATE.md`   | Where the project is right now — current phase, status, last activity |
+| `ROADMAP.md` | All phases and their status (planned, executed, verified)             |
+| `PROJECT.md` | Project description, requirements, key decisions                      |
+| `DESIGN.md`  | Design system spec — read before any frontend changes                 |
+| `phases/`    | Detailed plans and summaries for each phase                           |
 
-When you run `/qualia-plan-phase 3`, it creates `phases/3/PLAN.md`. When you run `/qualia-execute-phase 3`, it updates `STATE.md` and creates `phases/3/SUMMARY.md`. The system tracks everything automatically.
+When you run `/qualia-plan`, it creates `phases/N/PLAN.md`. When you run `/qualia-build`, it updates `STATE.md` and creates `phases/N/SUMMARY.md`. When you run `/qualia-verify`, it creates `phases/N/VERIFICATION.md` (and `UAT.md` if applicable). The system tracks everything automatically.
 
 For the full explanation, see [Employee Lifecycle Guide](./employee-lifecycle.md).
 
@@ -480,12 +490,14 @@ components/
 
 ### 3.5 Useful Commands During Development
 
-| Task                 | Command                 | What it does                              |
-| -------------------- | ----------------------- | ----------------------------------------- |
-| Build + ship fast    | `/qualia-quick`         | The go-to command for most tasks          |
-| Build distinctive UI | `/frontend-master`      | React components with animations, styling |
-| Plan a phase         | `/qualia-plan-phase`    | Plan a project phase with milestones      |
-| Execute a phase      | `/qualia-execute-phase` | Execute the planned phase                 |
+| Task                 | Command          | What it does                              |
+| -------------------- | ---------------- | ----------------------------------------- |
+| Build + ship fast    | `/qualia-quick`  | The go-to command for most tasks          |
+| Build a single task  | `/qualia-task`   | Between quick and build — one task focus  |
+| Build distinctive UI | `/qualia-design` | React components with animations, styling |
+| Plan a phase         | `/qualia-plan`   | Plan a project phase with milestones      |
+| Execute a phase      | `/qualia-build`  | Execute the planned phase                 |
+| Design/UX pass       | `/qualia-polish` | Critique + polish + harden before ship    |
 
 Most of the time, just describe what you want and say "and ship" — Claude handles the rest.
 
@@ -567,7 +579,7 @@ Aim for **50% coverage minimum** before deployment.
 ### Command to Use
 
 ```
-/review  # Code review and security audit before shipping
+/qualia-review  # Code review and security audit before shipping
 ```
 
 ---
@@ -651,7 +663,7 @@ git push -u origin feature/[name]
 
 ### 7.2 Deploy Changes
 
-Just tell Claude to ship it. In practice, you say "and ship" or use `/ship` — Claude handles the git, build, deploy, and verification.
+Just tell Claude to ship it. In practice, you say "and ship" or use `/qualia-ship` — Claude handles the git, build, deploy, and verification.
 
 ### 7.3 Update Qualia Internal Suite
 
@@ -683,28 +695,29 @@ npm audit fix
 
 These are the commands we actually use day to day:
 
-| Task                    | Command                 | Description                                                       |
-| ----------------------- | ----------------------- | ----------------------------------------------------------------- |
-| Build + ship (go-to)    | `/qualia-quick`         | Fast all-purpose workflow — the most used one                     |
-| Plan a project phase    | `/qualia-plan-phase`    | Plan phase milestones for bigger projects                         |
-| Execute a project phase | `/qualia-execute-phase` | Execute the planned phase                                         |
-| Build premium UI        | `/frontend-master`      | Distinctive, animated, professional UI                            |
-| Deploy (full pipeline)  | `/ship`                 | Quality gates → git → deploy → verify (auto-detects project type) |
-| Code review             | `/qualia-review`        | Security + quality audit                                          |
-| Project status          | `/status`               | HTTP status, SSL, Supabase, response times                        |
-| Optimize performance    | `/qualia-optimize`      | Analyze and fix performance issues                                |
-| I'm stuck               | `/qualia-idk`           | When you don't know what to do next                               |
-| See all commands        | `/qualia-help`          | Full list of available commands                                   |
-| Client delivery         | `/client-handoff`       | Generate handoff document for client                              |
-| Learn from mistake      | `/learn`                | Save a note for future sessions                                   |
-| View saved notes        | `/memory`               | See what Claude remembers                                         |
+| Task                      | Command           | Description                                                       |
+| ------------------------- | ----------------- | ----------------------------------------------------------------- |
+| Smart router (start here) | `/qualia`         | Tells you exactly what's next — the smart entry point             |
+| Build + ship (go-to)      | `/qualia-quick`   | Fast all-purpose workflow — the most used one                     |
+| Build a single task       | `/qualia-task`    | Between quick and build — focused single task                     |
+| Plan a project phase      | `/qualia-plan`    | Plan phase milestones for bigger projects                         |
+| Execute a project phase   | `/qualia-build`   | Execute the planned phase                                         |
+| Verify work               | `/qualia-verify`  | Goal-backward verification checks                                 |
+| Build premium UI          | `/qualia-design`  | Distinctive, animated, professional UI                            |
+| Design/UX pass            | `/qualia-polish`  | Critique + polish + harden before shipping                        |
+| Deploy (full pipeline)    | `/qualia-ship`    | Quality gates → git → deploy → verify (auto-detects project type) |
+| Code review               | `/qualia-review`  | Security + quality audit                                          |
+| I'm stuck                 | `/qualia-idk`     | When you don't know what to do next                               |
+| Debug an issue            | `/qualia-debug`   | Structured diagnosis of a problem                                 |
+| Client delivery           | `/qualia-handoff` | Generate handoff document for client                              |
+| End of day                | `/qualia-report`  | Mandatory before clock-out                                        |
 
 Most of the time you don't need a specific command — just describe what you want and say "and ship".
 
-**List all available commands:**
+**Lost? Just type:**
 
 ```
-/qualia-help
+/qualia
 ```
 
 ---
@@ -731,9 +744,9 @@ Most of the time you don't need a specific command — just describe what you wa
 
 ### Need Help?
 
+- Type `/qualia` — the smart router tells you exactly what's next
 - Type `/qualia-idk` — the framework will analyze your situation and suggest what to do
-- Type `/qualia-help` — see all available commands organized by situation
-- Type `/qualia-progress` — see where the project stands and what's next
+- Type `/qualia-debug` — structured diagnosis of a specific problem
 - Just paste the error to Claude Code — it'll figure it out
 - Escalate to Fawzi after 30 minutes of being stuck
 
@@ -751,4 +764,4 @@ All starter templates are at:
 └── website-starter/
 ```
 
-Copy the appropriate one when starting a new project, or use `/qualia-new-project` which auto-detects the project type.
+Copy the appropriate one when starting a new project, or use `/qualia-new` which auto-detects the project type.

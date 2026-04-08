@@ -15,8 +15,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
+import { ClockInModal } from './clock-in-modal';
 import { useTransition, useState, useEffect } from 'react';
-import { type MeetingWithRelations, useMeetings, useTeamStatus } from '@/lib/swr';
+import { type MeetingWithRelations, useMeetings, useActiveSession, useTeamStatus } from '@/lib/swr';
 import {
   Select,
   SelectContent,
@@ -236,6 +237,7 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+  const [justClockedIn, setJustClockedIn] = useState(false);
   const {
     isViewingAs,
     startViewAs,
@@ -254,6 +256,12 @@ export function TodayDashboard({
   const effectiveUserId = viewAsUserId || currentUserId;
   const effectiveRole = isViewingAs ? 'employee' : userRole;
   const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
+
+  const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
+    workspaceId ?? null
+  );
+  const showClockIn =
+    !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
 
   const { meetings } = useMeetings(initialMeetings);
 
@@ -441,6 +449,16 @@ export function TodayDashboard({
         defaultAssigneeId={viewAsUserId}
         defaultScheduledTime={null}
       />
+
+      {!viewingAsOther && (
+        <ClockInModal
+          open={showClockIn}
+          workspaceId={workspaceId}
+          currentUserId={currentUserId}
+          onSuccess={() => setJustClockedIn(true)}
+          onDismiss={() => setJustClockedIn(true)}
+        />
+      )}
     </div>
   );
 }
