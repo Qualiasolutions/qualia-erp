@@ -15,9 +15,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { EntityAvatar } from '@/components/entity-avatar';
 import { MeetingsSidebar } from './meetings-sidebar';
 import { TeamTaskContainer } from './team-task-container';
-import { ClockInModal } from './clock-in-modal';
 import { useTransition, useState, useEffect } from 'react';
-import { type MeetingWithRelations, useMeetings, useActiveSession, useTeamStatus } from '@/lib/swr';
+import { type MeetingWithRelations, useMeetings, useTeamStatus } from '@/lib/swr';
 import {
   Select,
   SelectContent,
@@ -26,7 +25,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { NewTaskModalControlled } from '@/components/new-task-modal';
-import { OwnerUpdatesBanner } from './owner-updates-banner';
 import { useAdminContext } from '@/components/admin-provider';
 import type { PipelineProject } from './building-projects-row';
 
@@ -238,7 +236,6 @@ export function TodayDashboard({
   const [isRefreshing, startRefresh] = useTransition();
   const [greeting, setGreeting] = useState('');
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
-  const [justClockedIn, setJustClockedIn] = useState(false);
   const {
     isViewingAs,
     startViewAs,
@@ -257,12 +254,6 @@ export function TodayDashboard({
   const effectiveUserId = viewAsUserId || currentUserId;
   const effectiveRole = isViewingAs ? 'employee' : userRole;
   const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
-
-  const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
-    workspaceId ?? null
-  );
-  const showClockIn =
-    !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
 
   const { meetings } = useMeetings(initialMeetings);
 
@@ -411,9 +402,6 @@ export function TodayDashboard({
       <main className="flex min-h-0 flex-1 overflow-hidden lg:flex-row">
         {/* ── LEFT COLUMN: Tasks ── */}
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-4 py-2 sm:px-5 lg:px-6">
-          {/* Owner updates banner — all users */}
-          {!viewingAsOther && <OwnerUpdatesBanner workspaceId={workspaceId} />}
-
           {/* Task workspace — scrolls internally */}
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">
             <TeamTaskContainer
@@ -453,16 +441,6 @@ export function TodayDashboard({
         defaultAssigneeId={viewAsUserId}
         defaultScheduledTime={null}
       />
-
-      {!viewingAsOther && (
-        <ClockInModal
-          open={showClockIn}
-          workspaceId={workspaceId}
-          currentUserId={currentUserId}
-          onSuccess={() => setJustClockedIn(true)}
-          onDismiss={() => setJustClockedIn(true)}
-        />
-      )}
     </div>
   );
 }
