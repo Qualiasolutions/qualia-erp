@@ -19,7 +19,7 @@ That's it. You're now talking to an AI that can read your codebase, write code, 
 
 ## The Core Commands You'll Actually Use
 
-These are the commands we use every day. They live in `~/.claude/commands/`.
+These are the commands we use every day. They live in `~/.claude/skills/`.
 
 ### `/qualia-quick` — The Go-To Command
 
@@ -38,36 +38,36 @@ Use it when:
 
 In practice, most of the time you'll just describe what you want in plain English and say "and ship" at the end. Claude handles the rest.
 
-### `/qualia-plan-phase` and `/qualia-execute-phase` — For Bigger Work
+### `/qualia-plan` and `/qualia-build` — For Bigger Work
 
-When a project has a structured roadmap with phases (stored in `.planning/`), these commands let you plan and execute them one by one.
-
-```
-/qualia-plan-phase 5       # Plan phase 5
-/qualia-execute-phase 5    # Execute phase 5
-```
-
-Each phase has milestones, and each milestone gets planned, executed, and verified before moving on. This is how we handle larger projects like Aquad'or, Alkemy, etc.
-
-### `/frontend-master` — For UI Work
-
-When you need premium, distinctive UI. Not generic Bootstrap-looking stuff — sharp, animated, layered, professional.
+When a project has a structured roadmap with phases (stored in `.planning/`), these commands let you plan and execute them. `/qualia-plan` creates a wave-based plan. `/qualia-build` spins up parallel builder agents to execute each task with fresh context.
 
 ```
-/frontend-master
+/qualia-plan       # Plan the current phase
+/qualia-build      # Build it (parallel tasks)
 ```
 
-We often combine this with `/qualia-quick` like: "use qualia-quick and frontend master to remake this section..."
+Each phase gets planned, built in parallel waves, and verified before moving on. This is how we handle larger projects.
 
-### `/ship` — Deploy Pipeline
+### `/qualia-design` — For UI Work
 
-Full quality gates → git → deploy → verify. Use when you're done and ready to push to production.
+When you need premium, distinctive UI. Not generic Bootstrap-looking stuff — sharp, animated, layered, professional. One-shot design transformation.
 
 ```
-/ship
+/qualia-design
 ```
 
-`/ship` auto-detects the project type and runs the right checks (SEO for websites, safety for AI agents, webhook verification for voice agents).
+We often combine this with `/qualia-quick` like: "use qualia-quick and qualia-design to remake this section..."
+
+### `/qualia-ship` — Deploy Pipeline
+
+Full quality gates, git, deploy, verify. Use when you're done and ready to push to production.
+
+```
+/qualia-ship
+```
+
+`/qualia-ship` auto-detects the project type and runs the right checks (SEO for websites, safety for AI agents, webhook verification for voice agents).
 
 ### `/qualia-review` — Code Review
 
@@ -77,53 +77,48 @@ Run before shipping something important. Checks security, quality, and consisten
 /qualia-review
 ```
 
-### `/status` — Project Health Check
+### `/qualia-polish` — Design and UX Pass
 
-Quick check: is the site up? SSL valid? Supabase responding? API latency OK?
+Runs critique, polish, and harden passes on your frontend work. Use before shipping any UI.
 
 ```
-/status
+/qualia-polish
 ```
 
-### `/learn` and `/memory` — Teaching Claude
+### `/qualia-learn` — Teaching Claude
 
 When something goes wrong and you want Claude to remember the lesson for next time:
 
 ```
-/learn
+/qualia-learn
 ```
-
-To see what Claude has learned:
-
-```
-/memory
-```
-
-### `/qualia-optimize` — Speed Up
-
-When something feels slow. Analyzes and optimizes performance.
 
 ---
 
-## Other Qualia Workflow Commands
+## All Qualia Commands
 
-The `/qualia` namespace has more subcommands for project workflow management:
+The `/qualia` namespace covers the full project lifecycle:
 
-| Command                      | What it does                                    |
-| ---------------------------- | ----------------------------------------------- |
-| `/qualia-progress`           | Show current project progress                   |
-| `/qualia-new-project`        | Initialize a new project with workflow files    |
-| `/qualia-verify-work`        | Verify completed work                           |
-| `/qualia-new-milestone`      | Create a new milestone                          |
-| `/qualia-complete-milestone` | Mark a milestone as complete                    |
-| `/qualia-add-todo`           | Add a todo item                                 |
-| `/qualia-check-todos`        | Check todo status                               |
-| `/qualia-pause-work`         | Pause current work and save state               |
-| `/qualia-resume-work`        | Resume paused work                              |
-| `/qualia-idk`                | When you're stuck and don't know what to do     |
-| `/qualia-report`             | Generate work report (what was done vs planned) |
-| `/qualia-help`               | See all available commands                      |
-| `/client-handoff`            | Generate client delivery document               |
+| Command           | What it does                          |
+| ----------------- | ------------------------------------- |
+| `/qualia-new`     | Set up a new project                  |
+| `/qualia`         | What should I do next? (smart router) |
+| `/qualia-idk`     | I'm stuck — smart advisor             |
+| `/qualia-plan`    | Plan the current phase                |
+| `/qualia-build`   | Build it (parallel tasks)             |
+| `/qualia-verify`  | Verify it actually works              |
+| `/qualia-design`  | One-shot design transformation        |
+| `/qualia-debug`   | Structured debugging                  |
+| `/qualia-review`  | Production audit                      |
+| `/qualia-quick`   | Skip planning, just do it             |
+| `/qualia-task`    | Build one thing properly              |
+| `/qualia-polish`  | Design and UX pass                    |
+| `/qualia-ship`    | Deploy to production                  |
+| `/qualia-handoff` | Deliver to client                     |
+| `/qualia-pause`   | Save session, continue later          |
+| `/qualia-resume`  | Pick up where you left off            |
+| `/qualia-learn`   | Save a pattern, fix, or client pref   |
+| `/qualia-report`  | Log your work (mandatory)             |
 
 ---
 
@@ -133,7 +128,7 @@ Here's how real tasks look at Qualia. Notice the style — direct, fast, descrip
 
 **Building/fixing UI:**
 
-> "remove the 4 badges, make the team notes container extend more, move it to the left, then move the team members on the right, use frontend master and qualia quick to make it premium and structured and useable and ship"
+> "remove the 4 badges, make the team notes container extend more, move it to the left, then move the team members on the right, use qualia-quick and qualia-design to make it premium and structured and useable and ship"
 
 **Deploying:**
 
@@ -152,7 +147,7 @@ Here's how real tasks look at Qualia. Notice the style — direct, fast, descrip
 > "compositing: Access to fetch blocked by CORS policy..."
 > (Just paste the error. Claude will figure it out.)
 
-The pattern is: **describe what you want → say "ship" when done**. No ceremony needed.
+The pattern is: **describe what you want, say "ship" when done**. No ceremony needed.
 
 ---
 
@@ -178,15 +173,11 @@ If you're creating a new project, make sure to set up `CLAUDE.md` — it saves e
 - **Be specific.** "The button doesn't work" is better than "it's broken."
 - **Paste errors directly.** Console errors, network errors — just paste them. Claude will figure it out.
 - **Say "and ship" when you want it deployed.** Claude handles git, build, deploy, and verification.
-- **Use `/learn` when something goes wrong.** Claude will remember and avoid the same mistake next time.
+- **Use `/qualia-learn` when something goes wrong.** Claude will remember and avoid the same mistake next time.
 - **Don't fight Claude Code.** If it suggests a different approach, listen. It usually has a reason.
 
 ---
 
-## All Available Commands
+## Lost?
 
-To see everything available:
-
-```
-/qualia-help
-```
+Just run `/qualia`. It's the smart router — it looks at where you are and tells you exactly what to do next.
