@@ -18,12 +18,18 @@ function parseRepoFromUrl(url: string): { owner: string; repo: string } | null {
   return { owner: match[1], repo: match[2].replace(/\.git$/, '') };
 }
 
+interface FetchResult {
+  content: string | null;
+  status: number;
+  error?: string;
+}
+
 async function fetchGitHubFile(
   token: string,
   owner: string,
   repo: string,
   path: string
-): Promise<string | null> {
+): Promise<FetchResult> {
   try {
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       headers: {
@@ -31,14 +37,16 @@ async function fetchGitHubFile(
         Accept: 'application/vnd.github.v3+json',
       },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return { content: null, status: res.status };
+    }
     const data = await res.json();
     if (data.content && data.encoding === 'base64') {
-      return Buffer.from(data.content, 'base64').toString('utf-8');
+      return { content: Buffer.from(data.content, 'base64').toString('utf-8'), status: 200 };
     }
-    return null;
-  } catch {
-    return null;
+    return { content: null, status: 200, error: 'Unexpected response format' };
+  } catch (err) {
+    return { content: null, status: 0, error: String(err) };
   }
 }
 
@@ -106,41 +114,50 @@ export async function syncPlanningFromGitHubWithServiceRole(
   }
 
   // 3. Try to fetch ROADMAP.md (try multiple org names)
-  let roadmapContent = await fetchGitHubFile(
+  let roadmapResult = await fetchGitHubFile(
     token,
     repoParsed.owner,
     repoParsed.repo,
     '.planning/ROADMAP.md'
   );
+  let lastStatus = roadmapResult.status;
 
-  if (!roadmapContent) {
+  if (!roadmapResult.content) {
     // Try alternate org names
     for (const altOwner of ['SakaniQualia', 'Qualiasolutions']) {
       if (altOwner === repoParsed.owner) continue;
-      roadmapContent = await fetchGitHubFile(
+      roadmapResult = await fetchGitHubFile(
         token,
         altOwner,
         repoParsed.repo,
         '.planning/ROADMAP.md'
       );
-      if (roadmapContent) {
+      if (roadmapResult.status !== 0) lastStatus = roadmapResult.status;
+      if (roadmapResult.content) {
         repoParsed.owner = altOwner;
         break;
       }
     }
-    if (!roadmapContent) {
-      return { success: false, phasesUpserted: 0, error: 'No .planning/ROADMAP.md found' };
+    if (!roadmapResult.content) {
+      const detail =
+        lastStatus === 404
+          ? 'No .planning/ROADMAP.md found'
+          : lastStatus === 401 || lastStatus === 403
+            ? 'GitHub token lacks access to this repo'
+            : `GitHub fetch failed (HTTP ${lastStatus})`;
+      return { success: false, phasesUpserted: 0, error: detail };
     }
   }
+  const roadmapContent = roadmapResult.content;
 
   // 4. Fetch STATE.md for dates
-  const stateContent = await fetchGitHubFile(
+  const stateResult = await fetchGitHubFile(
     token,
     repoParsed.owner,
     repoParsed.repo,
     '.planning/STATE.md'
   );
-  const stateMap = stateContent ? parseStateTable(stateContent) : new Map();
+  const stateMap = stateResult.content ? parseStateTable(stateResult.content) : new Map();
 
   // 5. Parse ROADMAP.md
   const milestones = parseRoadmap(roadmapContent);

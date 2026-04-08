@@ -205,7 +205,7 @@ export async function POST(req: Request) {
 
       // Save assistant response after stream completes (fire and forget)
       if (activeConversationId) {
-        result.text
+        Promise.resolve(result.text)
           .then(async (rawText) => {
             // If model only made tool calls without text, generate a summary
             const text =
