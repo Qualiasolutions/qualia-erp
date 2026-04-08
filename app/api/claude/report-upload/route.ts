@@ -50,12 +50,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing employee_email' }, { status: 400 });
   }
 
-  // Find the employee profile
-  const { data: profile } = await supabase
+  // Find the employee profile — try exact email first, then domain match by first name
+  const emailNorm = employeeEmail.trim().toLowerCase();
+  let { data: profile } = await supabase
     .from('profiles')
     .select('id')
-    .eq('email', employeeEmail.trim().toLowerCase())
+    .eq('email', emailNorm)
     .single();
+
+  if (!profile) {
+    // Fallback: extract local part and try @qualiasolutions.net
+    const localPart = emailNorm.split('@')[0];
+    const { data: fallback } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', `${localPart}@qualiasolutions.net`)
+      .single();
+    profile = fallback;
+  }
 
   if (!profile) {
     return NextResponse.json({ error: 'Employee not found' }, { status: 404 });
