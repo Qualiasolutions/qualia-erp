@@ -5,7 +5,6 @@ import type { Client } from '@/types/database';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Select,
   SelectContent,
@@ -13,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Building2, Phone, Globe, MapPin, Folder, User, Pencil, Plus, X } from 'lucide-react';
+import { Building2, Phone, Globe, Folder, User, Pencil, Plus, X } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { WorkShowcase } from '@/components/work-showcase';
@@ -226,216 +225,234 @@ export function ClientDetailView({
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Contact Information */}
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <Phone className="h-4 w-4 text-primary" />
-                Contact Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {client.phone && (
-                <a
-                  href={`tel:${client.phone}`}
-                  className="group/item flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
-                    <Phone className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">{client.phone}</span>
-                </a>
-              )}
-              {client.website && (
-                <a
-                  href={
-                    client.website.startsWith('http') ? client.website : `https://${client.website}`
-                  }
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group/item flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors group-hover/item:bg-primary/20">
-                    <Globe className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">{client.website}</span>
-                </a>
-              )}
-              {client.billing_address && (
-                <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-4">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm leading-relaxed">{client.billing_address}</span>
+        {/* Client Details — structured finance-style layout */}
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="grid divide-y divide-border lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+            {/* Contact Information */}
+            <div>
+              <div className="border-b border-border bg-secondary/40 px-5 py-3">
+                <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Phone className="h-3.5 w-3.5" />
+                  Contact
+                </h3>
+              </div>
+              <div className="divide-y divide-border">
+                <div className="flex items-center justify-between px-5 py-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Phone
+                  </span>
+                  {client.phone ? (
+                    <a
+                      href={`tel:${client.phone}`}
+                      className="text-sm font-medium text-foreground transition-colors hover:text-primary"
+                    >
+                      {client.phone}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">&mdash;</span>
+                  )}
                 </div>
-              )}
-              {!client.phone && !client.website && !client.billing_address && (
-                <p className="py-4 text-center text-sm text-muted-foreground">
-                  No contact information available
-                </p>
-              )}
-            </CardContent>
-          </Card>
+                <div className="flex items-center justify-between px-5 py-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Website
+                  </span>
+                  {client.website ? (
+                    <a
+                      href={
+                        client.website.startsWith('http')
+                          ? client.website
+                          : `https://${client.website}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-primary"
+                    >
+                      <Globe className="h-3.5 w-3.5 text-muted-foreground" />
+                      {client.website.replace(/^https?:\/\//, '')}
+                    </a>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">&mdash;</span>
+                  )}
+                </div>
+                <div className="flex items-start justify-between gap-6 px-5 py-3">
+                  <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Address
+                  </span>
+                  {client.billing_address ? (
+                    <span className="text-right text-sm leading-relaxed text-foreground">
+                      {client.billing_address}
+                    </span>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">&mdash;</span>
+                  )}
+                </div>
+              </div>
+            </div>
 
-          {/* Account Details */}
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-                <User className="h-4 w-4 text-primary" />
-                Account Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Assigned To */}
-              {client.assigned && (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                    <AvatarFallback className="bg-primary/10 font-semibold text-primary dark:text-primary">
-                      {getInitials(client.assigned.full_name || 'U')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">{client.assigned.full_name}</p>
-                    {client.assigned.email && (
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {client.assigned.email}
-                      </p>
+            {/* Account Details */}
+            <div>
+              <div className="border-b border-border bg-secondary/40 px-5 py-3">
+                <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <User className="h-3.5 w-3.5" />
+                  Account
+                </h3>
+              </div>
+              <div className="divide-y divide-border">
+                <div className="flex items-center justify-between px-5 py-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Assigned To
+                  </span>
+                  {client.assigned ? (
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-primary/10 text-[10px] font-semibold text-primary">
+                          {getInitials(client.assigned.full_name || 'U')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium text-foreground">
+                        {client.assigned.full_name}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-muted-foreground/50">&mdash;</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between px-5 py-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Projects
+                  </span>
+                  <span
+                    className={cn(
+                      'text-sm font-medium tabular-nums',
+                      (client.projects?.length || 0) > 0
+                        ? 'text-foreground'
+                        : 'text-muted-foreground/50'
                     )}
-                  </div>
-                </div>
-              )}
-
-              {/* Projects */}
-              {client.projects && client.projects.length > 0 && (
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <Folder className="h-4 w-4" />
-                  </div>
-                  <span className="text-sm font-medium">
-                    {client.projects.length} project{client.projects.length !== 1 ? 's' : ''}{' '}
-                    connected
+                  >
+                    {client.projects?.length || 0}
                   </span>
                 </div>
-              )}
-
-              {/* Created Date */}
-              <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                  <User className="h-4 w-4" />
+                <div className="flex items-center justify-between px-5 py-3">
+                  <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Client Since
+                  </span>
+                  <span className="text-sm font-medium tabular-nums text-foreground">
+                    {client.created_at
+                      ? new Date(client.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : 'N/A'}
+                  </span>
                 </div>
-                <span className="text-sm font-medium">
-                  Client since{' '}
-                  {client.created_at ? new Date(client.created_at).toLocaleDateString() : 'N/A'}
-                </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         {/* Notes */}
         {client.notes && (
-          <Card className="group transition-all duration-300 hover:shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold">Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-xl border border-border bg-gradient-to-br from-muted/50 to-muted/30 p-4 backdrop-blur-sm">
-                <RichText className="text-foreground/90">{client.notes}</RichText>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="border-b border-border bg-secondary/40 px-5 py-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Notes
+              </h3>
+            </div>
+            <div className="px-5 py-4">
+              <RichText className="text-sm leading-relaxed text-foreground/90">
+                {client.notes}
+              </RichText>
+            </div>
+          </div>
         )}
 
         {/* ERP Linked Projects */}
-        <Card className="group transition-all duration-300 hover:shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Folder className="h-4 w-4 text-primary" />
-              Linked Projects ({erpLinkedProjects.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Link project dropdown (admin only) */}
-            {isAdmin && filteredErpAvailable.length > 0 && (
-              <div className="flex gap-2">
-                <Select value={selectedErpProjectId} onValueChange={setSelectedErpProjectId}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Link an existing project..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredErpAvailable.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.name}
-                        {p.project_type && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            — {p.project_type.replace('_', ' ')}
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={handleLinkProject}
-                  disabled={!selectedErpProjectId || isLinkingProject}
-                  size="default"
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Link
-                </Button>
-              </div>
-            )}
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3">
+            <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <Folder className="h-3.5 w-3.5" />
+              Linked Projects
+              <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-bold tabular-nums">
+                {erpLinkedProjects.length}
+              </span>
+            </h3>
+          </div>
 
-            {/* Linked project list */}
-            {erpLinkedProjects.length === 0 ? (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                No projects linked yet. {isAdmin ? 'Use the dropdown above to link a project.' : ''}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {erpLinkedProjects.map((project, index) => (
-                  <div
-                    key={project.id}
-                    className="group/item flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:shadow-sm"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="flex-1">
-                      <p className="font-semibold text-foreground">{project.name}</p>
-                      <p className="mt-1 text-sm capitalize text-muted-foreground">
-                        {project.project_type?.replace(/_/g, ' ')} &bull;{' '}
-                        <span className="capitalize">{project.status}</span>
-                      </p>
-                    </div>
-                    <div className="ml-4 flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="hover:border-primary/40 hover:bg-primary/10 hover:text-primary dark:hover:text-primary"
-                      >
-                        <a href={`/projects/${project.id}`}>View</a>
-                      </Button>
-                      {isAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLinkingProject}
-                          onClick={() => handleUnlinkProject(project.id)}
-                          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                          title="Unlink project"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+          {/* Link project dropdown (admin only) */}
+          {isAdmin && filteredErpAvailable.length > 0 && (
+            <div className="flex gap-2 border-b border-border px-5 py-3">
+              <Select value={selectedErpProjectId} onValueChange={setSelectedErpProjectId}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Link an existing project..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredErpAvailable.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.project_type && (
+                        <span className="ml-1 text-xs text-muted-foreground">
+                          — {p.project_type.replace('_', ' ')}
+                        </span>
                       )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleLinkProject}
+                disabled={!selectedErpProjectId || isLinkingProject}
+                size="default"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Link
+              </Button>
+            </div>
+          )}
+
+          {/* Linked project list */}
+          {erpLinkedProjects.length === 0 ? (
+            <p className="px-5 py-6 text-center text-sm text-muted-foreground">
+              No projects linked yet.{isAdmin ? ' Use the dropdown above to link a project.' : ''}
+            </p>
+          ) : (
+            <div className="divide-y divide-border">
+              {erpLinkedProjects.map((project) => (
+                <div
+                  key={project.id}
+                  className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-secondary/30"
+                >
+                  <div className="min-w-0 flex-1">
+                    <span className="text-sm font-medium text-foreground">{project.name}</span>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="capitalize">{project.project_type?.replace(/_/g, ' ')}</span>
+                      <span>&middot;</span>
+                      <span className="capitalize">{project.status}</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <div className="ml-4 flex shrink-0 items-center gap-1.5">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={`/projects/${project.id}`}>View</a>
+                    </Button>
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                        disabled={isLinkingProject}
+                        onClick={() => handleUnlinkProject(project.id)}
+                        title="Unlink project"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Project Access Management */}
         <ClientProjectAccess
@@ -447,11 +464,11 @@ export function ClientDetailView({
 
         {/* Work Showcase */}
         {workItems.length > 0 && (
-          <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg">
-            <CardContent className="pt-6">
+          <div className="overflow-hidden rounded-lg border border-border bg-card">
+            <div className="p-5">
               <WorkShowcase clientName={client.display_name || 'Client'} workItems={workItems} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
 
