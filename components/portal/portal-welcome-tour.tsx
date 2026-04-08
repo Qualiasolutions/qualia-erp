@@ -64,7 +64,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
   return (
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm transition-opacity duration-200',
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/80 transition-opacity duration-200',
         exiting ? 'opacity-0' : 'opacity-100 duration-300 animate-in fade-in'
       )}
     >

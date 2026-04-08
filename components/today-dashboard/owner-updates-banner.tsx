@@ -84,7 +84,7 @@ export function OwnerUpdatesBanner({ workspaceId }: OwnerUpdatesBannerProps) {
       {/* Backdrop */}
       <div
         className={cn(
-          'fixed inset-0 z-overlay bg-black/40 backdrop-blur-[2px] transition-opacity duration-300',
+          'fixed inset-0 z-overlay bg-black/80 transition-opacity duration-300',
           closing ? 'opacity-0' : 'opacity-100'
         )}
         onClick={handleClose}

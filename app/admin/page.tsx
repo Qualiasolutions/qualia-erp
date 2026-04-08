@@ -103,7 +103,7 @@ function InviteDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/80">
       <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Invite Team Member</h2>
