@@ -257,11 +257,15 @@ export function TodayDashboard({
   const effectiveRole = isViewingAs ? 'employee' : userRole;
   const viewingAsOther = isRealAdmin && (viewAsUserId !== null || isViewingAs);
 
+  // Admin (owner) does not clock in. Only employees/managers see the modal.
+  // When admin is viewing-as an employee, effectiveRole becomes 'employee', so the modal still appears in that mode.
+  const canTrackTime = effectiveRole === 'employee' || effectiveRole === 'manager';
+
   const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
-    workspaceId ?? null
+    canTrackTime ? (workspaceId ?? null) : null
   );
   const showClockIn =
-    !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
+    canTrackTime && !viewingAsOther && !justClockedIn && !sessionLoading && activeSession === null;
 
   const { meetings } = useMeetings(initialMeetings);
 
@@ -450,7 +454,7 @@ export function TodayDashboard({
         defaultScheduledTime={null}
       />
 
-      {!viewingAsOther && (
+      {canTrackTime && !viewingAsOther && (
         <ClockInModal
           open={showClockIn}
           workspaceId={workspaceId}

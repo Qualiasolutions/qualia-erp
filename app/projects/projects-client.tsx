@@ -13,8 +13,11 @@ import {
   Folder,
   ClipboardCheck,
 } from 'lucide-react';
+import Link from 'next/link';
 import { ProjectListView } from '@/components/project-list-view';
 import { DemoSheet } from '@/components/demo-sheet';
+import { EntityAvatar } from '@/components/entity-avatar';
+import { PROJECT_TYPE_CONFIG } from '@/lib/project-type-config';
 import { useProjectStats, invalidateProjectStats, type ProjectStatsData } from '@/lib/swr';
 import { reorderProject } from '@/app/actions';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -321,13 +324,7 @@ export function ProjectsClient({
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="mt-2 rounded-xl border border-teal-500/20 bg-teal-500/5 p-3">
-              <div className="scrollbar-none flex gap-2 overflow-x-auto pb-1">
-                {done.map((project) => (
-                  <div key={project.id} className="w-[220px] flex-shrink-0">
-                    <ProjectListView projects={[project as ProjectData]} compact />
-                  </div>
-                ))}
-              </div>
+              <DoneMarquee projects={done as ProjectData[]} />
             </div>
           </CollapsibleContent>
         </Collapsible>
@@ -366,5 +363,73 @@ export function ProjectsClient({
         <DemoSheet open={sheetOpen} onOpenChange={setSheetOpen} demo={selectedDemo} />
       )}
     </div>
+  );
+}
+
+// ─── Done Marquee ───────────────────────────────────────────────────────────
+// Uniform-height tiles scrolling leftward forever. Duplicated once so
+// translateX(-50%) loops seamlessly. Pauses on hover. Honors reduced motion.
+
+function DoneMarquee({ projects }: { projects: ProjectData[] }) {
+  if (projects.length === 0) return null;
+
+  // Slow pace: ~6s per tile, minimum 40s so short lists don't look frantic.
+  const duration = Math.max(40, projects.length * 6);
+  const loop = [...projects, ...projects];
+
+  return (
+    <div
+      className="group/marquee relative overflow-hidden"
+      style={{
+        maskImage:
+          'linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%)',
+        WebkitMaskImage:
+          'linear-gradient(to right, transparent 0, #000 56px, #000 calc(100% - 56px), transparent 100%)',
+      }}
+    >
+      <div
+        className="flex w-max animate-marquee gap-2 group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none"
+        style={{ animationDuration: `${duration}s` }}
+      >
+        {loop.map((project, i) => (
+          <DoneTile
+            key={`${project.id}-${i}`}
+            project={project}
+            ariaHidden={i >= projects.length}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DoneTile({ project, ariaHidden }: { project: ProjectData; ariaHidden: boolean }) {
+  const typeConfig = project.project_type ? PROJECT_TYPE_CONFIG[project.project_type] : null;
+  const TypeIcon = typeConfig?.icon || Folder;
+
+  return (
+    <Link
+      href={`/projects/${project.id}`}
+      aria-hidden={ariaHidden || undefined}
+      tabIndex={ariaHidden ? -1 : 0}
+      className="group flex h-[60px] w-[240px] flex-shrink-0 items-center gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-500/10"
+    >
+      <EntityAvatar
+        src={project.logo_url}
+        fallbackIcon={<TypeIcon className="h-3.5 w-3.5" />}
+        fallbackBgColor={typeConfig?.bg || 'bg-muted'}
+        fallbackIconColor={typeConfig?.color || 'text-muted-foreground'}
+        size="md"
+        className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-sm font-medium leading-tight text-foreground">
+          {project.name}
+        </div>
+        {project.client_name && (
+          <div className="truncate text-xs text-muted-foreground">{project.client_name}</div>
+        )}
+      </div>
+    </Link>
   );
 }

@@ -126,6 +126,7 @@ export default {
         'modal-enter': 'modalEnter 0.3s cubic-bezier(0.19,1,0.22,1) forwards',
         'stagger-in': 'staggerIn 0.3s cubic-bezier(0.16,1,0.3,1) forwards',
         'tooltip-pop': 'tooltipPop 0.15s cubic-bezier(0.25,1,0.5,1) forwards',
+        marquee: 'marquee 60s linear infinite',
       },
       keyframes: {
         float: {
@@ -189,6 +190,10 @@ export default {
         tooltipPop: {
           '0%': { opacity: '0', transform: 'scale(0.95) translateY(2px)' },
           '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
         },
       },
       transitionTimingFunction: {

@@ -207,7 +207,9 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const { isAdmin, userRole } = useAdminContext();
-  const canTrackTime = userRole === 'employee' || userRole === 'admin' || userRole === 'manager';
+  // Owner (admin) does not clock in/out. Employees and managers track time.
+  // When an admin is viewing-as an employee, userRole becomes 'employee', so this still works.
+  const canTrackTime = userRole === 'employee' || userRole === 'manager';
   const [showClockOut, setShowClockOut] = useState(false);
   const { toggleSidebar } = useSidebar();
 
