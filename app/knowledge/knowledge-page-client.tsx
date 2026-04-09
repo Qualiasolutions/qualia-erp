@@ -927,11 +927,21 @@ export function KnowledgePageClient({ initialData, isAdmin }: KnowledgePageClien
   };
 
   const handleSeed = async () => {
+    const hasExisting = guides.length > 0;
+    if (hasExisting) {
+      const confirmed = window.confirm(
+        `This will delete all ${guides.length} existing guides in the database and ` +
+          `re-seed them from the latest file (lib/guides-data.ts). ` +
+          `Use this after a framework release to refresh the knowledge base.\n\n` +
+          `Continue?`
+      );
+      if (!confirmed) return;
+    }
     setSeeding(true);
     try {
-      const result = await seedKnowledgeGuides();
+      const result = await seedKnowledgeGuides({ force: hasExisting });
       if (result.success) {
-        // Reload page to fetch from DB
+        // Reload page to fetch fresh data from DB
         window.location.reload();
       }
     } finally {

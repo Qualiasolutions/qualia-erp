@@ -64,7 +64,9 @@ export async function getKnowledgeGuides(): Promise<Guide[]> {
 
 // ============ SEED ============
 
-export async function seedKnowledgeGuides(): Promise<ActionResult> {
+export async function seedKnowledgeGuides(
+  options: { force?: boolean } = {}
+): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -79,8 +81,21 @@ export async function seedKnowledgeGuides(): Promise<ActionResult> {
     .from('knowledge_guides')
     .select('*', { count: 'exact', head: true });
 
-  if (count && count > 0) {
+  if (count && count > 0 && !options.force) {
     return { success: true, data: { message: 'Already seeded', count } };
+  }
+
+  // Force mode: wipe existing rows before re-seeding from the latest
+  // guides-data.ts. Safe because this action is admin-gated and the
+  // source of truth lives in the file anyway.
+  if (options.force && count && count > 0) {
+    const { error: deleteError } = await supabase
+      .from('knowledge_guides')
+      .delete()
+      .neq('slug', '__impossible_value__'); // match-all filter (slug is NOT NULL UNIQUE)
+    if (deleteError) {
+      return { success: false, error: `Wipe failed: ${deleteError.message}` };
+    }
   }
 
   const rows = defaultGuides.map((guide, index) => ({
@@ -102,7 +117,10 @@ export async function seedKnowledgeGuides(): Promise<ActionResult> {
   }
 
   revalidatePath('/knowledge');
-  return { success: true };
+  return {
+    success: true,
+    data: { message: options.force ? 'Re-seeded' : 'Seeded', count: rows.length },
+  };
 }
 
 // ============ UPDATE ============
