@@ -48,82 +48,121 @@ export async function GET(request: Request) {
 
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
+    const startOfDay = `${todayStr}T00:00:00.000Z`;
+    const endOfDay = `${todayStr}T23:59:59.999Z`;
 
-    const results: { email: string; success: boolean; error?: string }[] = [];
+    // Only profiles with both email + workspace are eligible for briefing
+    const eligible = profiles.filter((p) => p.email && p.workspace_id);
+    const profileIds = eligible.map((p) => p.id);
+    const workspaceIds = Array.from(
+      new Set(eligible.map((p) => p.workspace_id).filter((w): w is string => Boolean(w)))
+    );
 
-    for (const profile of profiles) {
-      if (!profile.email || !profile.workspace_id) continue;
+    // Batch-fetch tasks and meetings for everyone in parallel.
+    // 3 queries total instead of 3 × N profiles.
+    const [overdueRes, todayTasksRes, meetingsRes] = await Promise.all([
+      supabase
+        .from('tasks')
+        .select('id, title, priority, due_date, assignee_id, workspace_id, project:projects(name)')
+        .in('workspace_id', workspaceIds)
+        .in('assignee_id', profileIds)
+        .in('status', ['Todo', 'In Progress'])
+        .lt('due_date', todayStr)
+        .order('due_date', { ascending: true }),
+      supabase
+        .from('tasks')
+        .select('id, title, priority, due_date, assignee_id, workspace_id, project:projects(name)')
+        .in('workspace_id', workspaceIds)
+        .in('assignee_id', profileIds)
+        .in('status', ['Todo', 'In Progress'])
+        .eq('due_date', todayStr),
+      supabase
+        .from('meetings')
+        .select('id, title, start_time, end_time, meeting_link, workspace_id')
+        .in('workspace_id', workspaceIds)
+        .gte('start_time', startOfDay)
+        .lte('start_time', endOfDay)
+        .order('start_time', { ascending: true }),
+    ]);
 
-      try {
-        // Fetch overdue tasks (due before today, not done)
-        const { data: overdueTasks } = await supabase
-          .from('tasks')
-          .select('id, title, priority, due_date, project:projects(name)')
-          .eq('workspace_id', profile.workspace_id)
-          .eq('assignee_id', profile.id)
-          .in('status', ['Todo', 'In Progress'])
-          .lt('due_date', todayStr)
-          .order('due_date', { ascending: true });
+    // Helper to extract project name from Supabase FK array or object
+    const getProjectName = (raw: unknown): string | null => {
+      if (!raw) return null;
+      if (Array.isArray(raw)) return (raw[0] as { name?: string } | undefined)?.name ?? null;
+      return (raw as { name?: string }).name ?? null;
+    };
 
-        // Fetch due-today tasks
-        const { data: todayTasks } = await supabase
-          .from('tasks')
-          .select('id, title, priority, due_date, project:projects(name)')
-          .eq('workspace_id', profile.workspace_id)
-          .eq('assignee_id', profile.id)
-          .in('status', ['Todo', 'In Progress'])
-          .eq('due_date', todayStr);
+    // Group tasks by assignee_id, meetings by workspace_id
+    type TaskRow = NonNullable<typeof overdueRes.data>[number];
+    type MeetingRow = NonNullable<typeof meetingsRes.data>[number];
 
-        // Fetch today's meetings
-        const startOfDay = `${todayStr}T00:00:00.000Z`;
-        const endOfDay = `${todayStr}T23:59:59.999Z`;
-        const { data: todayMeetings } = await supabase
-          .from('meetings')
-          .select('id, title, start_time, end_time, meeting_link')
-          .eq('workspace_id', profile.workspace_id)
-          .gte('start_time', startOfDay)
-          .lte('start_time', endOfDay)
-          .order('start_time', { ascending: true });
-
-        // Helper to extract project name from Supabase FK array or object
-        const getProjectName = (raw: unknown): string | null => {
-          if (!raw) return null;
-          if (Array.isArray(raw)) return (raw[0] as { name?: string } | undefined)?.name ?? null;
-          return (raw as { name?: string }).name ?? null;
-        };
-
-        const result = await sendMorningEmail(
-          profile.email,
-          profile.full_name || 'there',
-          (overdueTasks || []).map((t) => ({
-            id: t.id,
-            title: t.title,
-            priority: t.priority,
-            due_date: t.due_date,
-            project_name: getProjectName(t.project),
-          })),
-          (todayTasks || []).map((t) => ({
-            id: t.id,
-            title: t.title,
-            priority: t.priority,
-            due_date: t.due_date,
-            project_name: getProjectName(t.project),
-          })),
-          (todayMeetings || []).map((m) => ({
-            id: m.id,
-            title: m.title,
-            start_time: m.start_time,
-            end_time: m.end_time,
-            meeting_link: m.meeting_link,
-          }))
-        );
-
-        results.push({ email: profile.email, success: result.success, error: result.error });
-      } catch (err) {
-        console.error(`[cron/morning-email] Error processing ${profile.email}:`, err);
-        results.push({ email: profile.email, success: false, error: 'Send failed' });
-      }
+    const overdueByAssignee = new Map<string, TaskRow[]>();
+    for (const t of overdueRes.data || []) {
+      if (!t.assignee_id) continue;
+      const list = overdueByAssignee.get(t.assignee_id) || [];
+      list.push(t);
+      overdueByAssignee.set(t.assignee_id, list);
     }
+
+    const todayByAssignee = new Map<string, TaskRow[]>();
+    for (const t of todayTasksRes.data || []) {
+      if (!t.assignee_id) continue;
+      const list = todayByAssignee.get(t.assignee_id) || [];
+      list.push(t);
+      todayByAssignee.set(t.assignee_id, list);
+    }
+
+    const meetingsByWorkspace = new Map<string, MeetingRow[]>();
+    for (const m of meetingsRes.data || []) {
+      if (!m.workspace_id) continue;
+      const list = meetingsByWorkspace.get(m.workspace_id) || [];
+      list.push(m);
+      meetingsByWorkspace.set(m.workspace_id, list);
+    }
+
+    // Send emails in parallel — each profile gets its own slice of the batched data.
+    const results = await Promise.all(
+      eligible.map(async (profile) => {
+        const email = profile.email as string;
+        const workspaceId = profile.workspace_id as string;
+        try {
+          const overdueTasks = overdueByAssignee.get(profile.id) || [];
+          const todayTasks = todayByAssignee.get(profile.id) || [];
+          const todayMeetings = meetingsByWorkspace.get(workspaceId) || [];
+
+          const result = await sendMorningEmail(
+            email,
+            profile.full_name || 'there',
+            overdueTasks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              priority: t.priority,
+              due_date: t.due_date,
+              project_name: getProjectName(t.project),
+            })),
+            todayTasks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              priority: t.priority,
+              due_date: t.due_date,
+              project_name: getProjectName(t.project),
+            })),
+            todayMeetings.map((m) => ({
+              id: m.id,
+              title: m.title,
+              start_time: m.start_time,
+              end_time: m.end_time,
+              meeting_link: m.meeting_link,
+            }))
+          );
+
+          return { email, success: result.success, error: result.error };
+        } catch (err) {
+          console.error(`[cron/morning-email] Error processing ${email}:`, err);
+          return { email, success: false, error: 'Send failed' };
+        }
+      })
+    );
 
     const successCount = results.filter((r) => r.success).length;
     const failureCount = results.filter((r) => !r.success).length;

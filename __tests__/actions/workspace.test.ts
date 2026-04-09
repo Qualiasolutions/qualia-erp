@@ -25,6 +25,10 @@ jest.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => adminSupabase,
 }));
 
+jest.mock('@/app/actions/shared', () => ({
+  isUserAdmin: jest.fn().mockResolvedValue(true),
+}));
+
 // ---- Imports ----
 import {
   getCurrentWorkspaceId,
@@ -37,6 +41,7 @@ import {
   removeWorkspaceMember,
   getWorkspaceMembers,
 } from '@/app/actions/workspace';
+import { isUserAdmin } from '@/app/actions/shared';
 
 // ---- Helpers ----
 
@@ -78,6 +83,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockAuth();
   adminSupabase.from.mockReset();
+  // Re-set admin mock cleared by clearAllMocks
+  (isUserAdmin as jest.Mock).mockResolvedValue(true);
 });
 
 // ---- Tests ----
