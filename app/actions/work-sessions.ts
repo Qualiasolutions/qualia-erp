@@ -507,15 +507,21 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     });
   }
 
-  // Auto-close stale sessions in the background (fire-and-forget)
+  // Auto-close stale sessions in the background (fire-and-forget).
+  // We don't await this — the team status response is returned immediately —
+  // but we DO log failures so silent RLS/permission breakage doesn't hide.
   if (staleSessionIds.length > 0) {
-    supabase
+    void supabase
       .from('work_sessions')
       .update({ ended_at: new Date().toISOString() })
       .is('ended_at', null)
       .in('profile_id', staleSessionIds)
       .eq('workspace_id', workspaceId)
-      .then(() => {});
+      .then(({ error }) => {
+        if (error) {
+          console.error('[work-sessions] stale session auto-close failed:', error);
+        }
+      });
   }
 
   // Query 3: Most recent closed session per profile (for offline last-seen time)

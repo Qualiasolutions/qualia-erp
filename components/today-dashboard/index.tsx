@@ -249,8 +249,12 @@ export function TodayDashboard({
   const isRealAdmin = realRole === 'admin';
   const [now, setNow] = useState(() => new Date());
 
+  // Keep the header date fresh so it rolls over at midnight on long-open tabs.
+  // Ticks once a minute — cheap and prevents a stale date label.
   useEffect(() => {
     setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   const effectiveUserId = viewAsUserId || currentUserId;

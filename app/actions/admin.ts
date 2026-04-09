@@ -30,7 +30,7 @@ export async function getTeamMembers(): Promise<ActionResult> {
   const { data, error } = await supabase
     .from('profiles')
     .select('id, email, full_name, role, avatar_url, created_at')
-    .in('role', ['admin', 'employee'])
+    .in('role', ['admin', 'manager', 'employee'])
     .order('created_at');
 
   if (error) return { success: false, error: error.message };
@@ -58,7 +58,7 @@ export async function updateUserRole(
   }
 
   // Only allow valid internal roles
-  if (!['admin', 'employee'].includes(newRole)) {
+  if (!['admin', 'manager', 'employee'].includes(newRole)) {
     return { success: false, error: 'Invalid role' };
   }
 
@@ -88,7 +88,7 @@ export async function inviteTeamMember(
     return { success: false, error: 'Only admins can invite members' };
   }
 
-  if (!['admin', 'employee'].includes(role)) {
+  if (!['admin', 'manager', 'employee'].includes(role)) {
     return { success: false, error: 'Invalid role' };
   }
 

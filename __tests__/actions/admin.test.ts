@@ -155,10 +155,10 @@ describe('updateUserRole', () => {
     expect(result.error).toContain('Invalid role');
   });
 
-  it('returns error for manager role (manager deprecated)', async () => {
+  it('updates to manager role successfully', async () => {
+    supabase.from.mockReturnValue(buildChain({ data: null, error: null }));
     const result = await updateUserRole(TARGET_USER_ID, 'manager');
-    expect(result.success).toBe(false);
-    expect(result.error).toContain('Invalid role');
+    expect(result.success).toBe(true);
   });
 
   it('updates user role successfully', async () => {

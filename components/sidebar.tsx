@@ -344,7 +344,7 @@ function SidebarContent({
                   <button
                     type="button"
                     onClick={() => setShowClockOut(true)}
-                    className="bg-primary/8 flex w-full items-center justify-center rounded-lg border border-primary/30 p-2.5 transition-all duration-200 hover:bg-primary/15"
+                    className="flex w-full items-center justify-center rounded-lg border border-primary/30 bg-primary/10 p-2.5 transition-all duration-200 hover:bg-primary/15"
                   >
                     <Timer className="size-4 text-primary" />
                   </button>
@@ -357,7 +357,7 @@ function SidebarContent({
               <button
                 type="button"
                 onClick={() => setShowClockOut(true)}
-                className="bg-primary/8 flex w-full items-center gap-2.5 rounded-lg border border-primary/30 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
+                className="flex w-full items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
               >
                 <Timer className="size-4 shrink-0 text-primary" />
                 <div className="min-w-0 flex-1">

@@ -260,7 +260,7 @@ export function ProjectsClient({
         )}
         {done.length > 0 && (
           <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/60 px-3 py-1.5">
-            <CheckCircle2 className="h-3.5 w-3.5 text-teal-500" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-qualia-500" />
             <span className="text-sm font-semibold tabular-nums text-foreground">
               {done.length}
             </span>
@@ -316,14 +316,14 @@ export function ProjectsClient({
                 doneOpen && 'rotate-90'
               )}
             />
-            <CheckCircle2 className="h-3.5 w-3.5 text-teal-500" />
+            <CheckCircle2 className="h-3.5 w-3.5 text-qualia-500" />
             <span className="font-medium">Done</span>
-            <span className="rounded-full bg-teal-500/10 px-2 py-0.5 text-xs text-teal-500">
+            <span className="rounded-full bg-qualia-500/10 px-2 py-0.5 text-xs text-qualia-500">
               {done.length}
             </span>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <div className="mt-2 rounded-xl border border-teal-500/20 bg-teal-500/5 p-3">
+            <div className="mt-2 rounded-xl border border-qualia-500/20 bg-qualia-500/5 p-3">
               <DoneMarquee projects={done as ProjectData[]} />
             </div>
           </CollapsibleContent>
@@ -388,7 +388,7 @@ function DoneMarquee({ projects }: { projects: ProjectData[] }) {
       }}
     >
       <div
-        className="flex w-max animate-marquee gap-2 group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none"
+        className="flex w-max animate-marquee gap-2 group-focus-within/marquee:[animation-play-state:paused] group-hover/marquee:[animation-play-state:paused] motion-reduce:animate-none"
         style={{ animationDuration: `${duration}s` }}
       >
         {loop.map((project, i) => (
@@ -412,7 +412,7 @@ function DoneTile({ project, ariaHidden }: { project: ProjectData; ariaHidden: b
       href={`/projects/${project.id}`}
       aria-hidden={ariaHidden || undefined}
       tabIndex={ariaHidden ? -1 : 0}
-      className="group flex h-[60px] w-[240px] flex-shrink-0 items-center gap-3 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 transition-all duration-200 hover:border-emerald-500/40 hover:bg-emerald-500/10"
+      className="group flex h-[60px] w-[240px] flex-shrink-0 items-center gap-3 rounded-lg border border-qualia-500/25 bg-qualia-500/5 px-3 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/10"
     >
       <EntityAvatar
         src={project.logo_url}

@@ -83,11 +83,12 @@ export async function POST(request: NextRequest) {
     .limit(1)
     .maybeSingle();
 
-  // Upload file to storage
+  // Upload file to storage — fall back to user-scoped path when no active session
+  // so multiple uploads without a session don't collide under a shared 'no-session' key.
   const dateStr = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
   const ext = file.name.split('.').pop() || 'docx';
-  const sessionId = session?.id || 'no-session';
-  const storagePath = `reports/${sessionId}/${dateStr}-report.${ext}`;
+  const sessionSegment = session?.id ? `session-${session.id}` : `user-${profile.id}`;
+  const storagePath = `reports/${sessionSegment}/${dateStr}-report.${ext}`;
 
   // Determine MIME type — curl often sends application/octet-stream, so detect from extension
   const MIME_MAP: Record<string, string> = {
