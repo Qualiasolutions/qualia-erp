@@ -1186,6 +1186,7 @@ export function createWriteTools(
         cc?: string;
       }) => {
         if (!workspaceId) return { error: 'No workspace found' };
+        if (user.role !== 'admin') return { error: 'Only admins can send emails' };
 
         const result = await sendZohoEmail(workspaceId, { to, subject, body, cc });
 

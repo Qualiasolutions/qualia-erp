@@ -285,15 +285,12 @@ describe('project actions', () => {
     function setupProjectByIdMock(projectData: unknown, error: unknown = null) {
       const projectChain = buildChain({ data: projectData, error });
       projectChain.single.mockResolvedValue({ data: projectData, error });
-      // issues query returns array
+      // issues query returns array (stats computed from same result — no second query)
       const issuesChain = buildChain({ data: [], error: null });
-      // issue statuses query returns array
-      const issueStatusChain = buildChain({ data: [], error: null });
 
       mockSupabase.from
         .mockReturnValueOnce(projectChain) // projects query
-        .mockReturnValueOnce(issuesChain) // issues list query
-        .mockReturnValueOnce(issueStatusChain); // issue status query
+        .mockReturnValueOnce(issuesChain); // issues list query
 
       mockSupabase.auth.getUser.mockResolvedValue({
         data: { user: { id: USER_ID } },

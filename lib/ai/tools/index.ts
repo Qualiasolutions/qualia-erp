@@ -26,10 +26,12 @@ const ADMIN_ONLY_TOOLS = new Set([
   'createProject',
   'bulkUpdateTasks',
   'createInvoice',
+  'sendEmail',
   // GitHub tools
   'mergeGitHubPR',
   // Vercel tools
   'promoteVercelDeployment',
+  'redeployVercelProject',
   'deleteVercelEnvVar',
   // Supabase ops tools
   'executeProjectQuery',

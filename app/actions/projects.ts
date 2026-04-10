@@ -153,12 +153,15 @@ export async function getProjects(workspaceId?: string | null) {
     query = query.eq('workspace_id', wsId);
   }
 
-  const { data: projects } = await query;
+  // Fetch projects and user auth in parallel
+  const [
+    { data: projects },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([query, supabase.auth.getUser()]);
 
   // Non-admin users only see assigned projects
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   if (user) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -221,9 +224,16 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
     return { demos: [], building: [], preProduction: [], live: [], done: [], archived: [] };
   }
 
-  // Fetch sort_order, team assignments, and GitHub integrations (not in RPC)
+  // Fetch sort_order, team assignments, GitHub integrations, AND user auth in parallel
   const projectIds = (rawProjects || []).map((p: Record<string, unknown>) => p.id as string);
-  const [{ data: sortData }, { data: assignmentData }, { data: githubData }] = await Promise.all([
+  const [
+    { data: sortData },
+    { data: assignmentData },
+    { data: githubData },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
     supabase.from('projects').select('id, sort_order').in('id', projectIds),
     supabase
       .from('project_assignments')
@@ -237,6 +247,7 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
       .select('project_id')
       .eq('service_type', 'github')
       .in('project_id', projectIds),
+    supabase.auth.getUser(),
   ]);
   const sortMap = new Map<string, number>();
   for (const s of sortData || []) {
@@ -256,9 +267,6 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
   const githubProjectIds = new Set((githubData || []).map((i) => i.project_id));
 
   // Check if current user is an employee (filter to assigned projects only)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   let assignedProjectIds: Set<string> | null = null;
   if (user) {
     const { data: profile } = await supabase
@@ -366,14 +374,9 @@ export async function getProjectById(id: string) {
     .eq('project_id', id)
     .order('created_at', { ascending: false });
 
-  // Get issue stats - optimized: fetch once, count in-memory
-  const { data: issueStatuses } = await supabase
-    .from('issues')
-    .select('status')
-    .eq('project_id', id);
-
-  const totalIssues = issueStatuses?.length || 0;
-  const doneIssues = issueStatuses?.filter((i) => i.status === 'Done')?.length || 0;
+  // Compute stats from already-fetched issues (was a second query before)
+  const totalIssues = issues?.length || 0;
+  const doneIssues = issues?.filter((i) => i.status === 'Done')?.length || 0;
 
   return {
     ...project,

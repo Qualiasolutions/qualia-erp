@@ -105,9 +105,13 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Admin-only routes
-    const adminOnlyRoutes = ['/admin', '/clients', '/status'];
-    if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
+    // Admin-only routes (only /admin requires admin role)
+    const adminOnlyRoutes = ['/admin'];
+    if (
+      userRole !== 'admin' &&
+      userRole !== 'manager' &&
+      adminOnlyRoutes.some((route) => pathname.startsWith(route))
+    ) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
       return NextResponse.redirect(url);

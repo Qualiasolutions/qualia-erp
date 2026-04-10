@@ -117,7 +117,6 @@ const onErrorRetry = (
 // Optimized: 45s refresh (was 30s) to reduce API calls by 33%
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
-  revalidateOnFocus: true,
   refreshInterval: () => (isDocumentVisible() ? 45000 : 0), // 45s refresh when visible, stop when hidden
   dedupingInterval: 20000, // 20s dedup for tasks (was 15s)
   onErrorRetry, // Use exponential backoff
@@ -126,7 +125,6 @@ const autoRefreshConfig: SWRConfiguration = {
 // Less frequent refresh for semi-static data (projects, teams, profiles)
 const slowRefreshConfig: SWRConfiguration = {
   ...swrConfig,
-  revalidateOnFocus: true,
   refreshInterval: () => (isDocumentVisible() ? 90000 : 0), // 90s refresh for less critical data
   dedupingInterval: 45000, // 45s dedup
   onErrorRetry,

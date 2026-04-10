@@ -452,11 +452,21 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     return [];
   }
 
-  // Query 1: All profiles in the workspace (via workspace_members — profiles has no workspace_id)
-  const { data: members, error: membersError } = await supabase
-    .from('workspace_members')
-    .select('profile:profiles!workspace_members_profile_id_fkey(id, full_name, avatar_url)')
-    .eq('workspace_id', workspaceId);
+  // Query 1 + 2 in parallel: workspace members AND open sessions
+  const [{ data: members, error: membersError }, { data: openSessions, error: openError }] =
+    await Promise.all([
+      supabase
+        .from('workspace_members')
+        .select('profile:profiles!workspace_members_profile_id_fkey(id, full_name, avatar_url)')
+        .eq('workspace_id', workspaceId),
+      supabase
+        .from('work_sessions')
+        .select(
+          'profile_id, started_at, clock_in_note, project:projects!work_sessions_project_id_fkey (id, name)'
+        )
+        .eq('workspace_id', workspaceId)
+        .is('ended_at', null),
+    ]);
 
   if (membersError) {
     console.error('[getTeamStatus] Profiles error:', membersError);
@@ -468,15 +478,6 @@ export async function getTeamStatus(workspaceId: string): Promise<TeamMemberStat
     .filter((p): p is { id: string; full_name: string | null; avatar_url: string | null } => !!p);
 
   if (profiles.length === 0) return [];
-
-  // Query 2: All open sessions (ended_at IS NULL) for this workspace
-  const { data: openSessions, error: openError } = await supabase
-    .from('work_sessions')
-    .select(
-      'profile_id, started_at, clock_in_note, project:projects!work_sessions_project_id_fkey (id, name)'
-    )
-    .eq('workspace_id', workspaceId)
-    .is('ended_at', null);
 
   if (openError) {
     console.error('[getTeamStatus] Open sessions error:', openError);

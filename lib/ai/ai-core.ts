@@ -75,11 +75,15 @@ export async function processStreamingAI(options: ProcessOptions) {
     content: m.content,
   }));
 
+  // Cap conversation history to prevent context overflow and cost spikes
+  const trimmedMessages = coreMessages.length > 40 ? coreMessages.slice(-40) : coreMessages;
+
   return streamText({
     model: geminiModel,
     system: systemPrompt,
-    messages: coreMessages,
+    messages: trimmedMessages,
     tools,
+    maxOutputTokens: 4096,
     stopWhen: stepCountIs(10),
   });
 }
@@ -105,11 +109,15 @@ export async function processNonStreamingAI(options: ProcessOptions) {
     content: m.content,
   }));
 
+  // Cap conversation history for voice (shorter window — voice sessions are brief)
+  const trimmedMessages = coreMessages.length > 20 ? coreMessages.slice(-20) : coreMessages;
+
   return generateText({
     model: geminiModel,
     system: systemPrompt,
-    messages: coreMessages,
+    messages: trimmedMessages,
     tools,
+    maxOutputTokens: 2048,
     stopWhen: stepCountIs(5),
   });
 }
