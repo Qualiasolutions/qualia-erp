@@ -38,11 +38,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Qualia Internal Suite',
+    default: 'Qualia Suite',
     template: '%s | Qualia',
   },
   description:
-    'Project Planning & Management platform by Qualia Solutions. Streamline your workflow with AI-powered project management.',
+    'Client portal and project management platform by Qualia Solutions. Streamline your workflow with AI-powered project management.',
   keywords: [
     'project management',
     'task management',
@@ -61,22 +61,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: siteUrl,
-    siteName: 'Qualia Internal Suite',
-    title: 'Qualia Internal Suite',
-    description: 'Project Planning & Management platform by Qualia Solutions',
+    siteName: 'Qualia Suite',
+    title: 'Qualia Suite',
+    description: 'Client portal and project management platform by Qualia Solutions',
     images: [
       {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'Qualia Internal Suite',
+        alt: 'Qualia Suite',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Qualia Internal Suite',
-    description: 'Project Planning & Management platform by Qualia Solutions',
+    title: 'Qualia Suite',
+    description: 'Client portal and project management platform by Qualia Solutions',
     images: ['/twitter-image.png'],
   },
   icons: {

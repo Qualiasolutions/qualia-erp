@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientProjects } from '@/app/actions/client-portal';
@@ -30,7 +31,30 @@ export default async function PortalProjectsPage({
     .select('role')
     .eq('id', user.id)
     .single();
-  const isAdmin = isPortalAdminRole(profile?.role || null);
+
+  const realRole = profile?.role || null;
+
+  // --- View-as impersonation: resolve effective user ---
+  const cookieStore = await cookies();
+  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+
+  let effectiveUserId = user.id;
+  let effectiveRole = realRole;
+
+  if (viewAsUserId && realRole === 'admin') {
+    const { data: viewAsProfile } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', viewAsUserId)
+      .single();
+
+    if (viewAsProfile) {
+      effectiveUserId = viewAsProfile.id;
+      effectiveRole = viewAsProfile.role || 'client';
+    }
+  }
+
+  const isAdmin = isPortalAdminRole(effectiveRole);
 
   // Admin viewing a specific workspace: scope to that client's projects
   if (isAdmin && workspaceId) {
@@ -67,19 +91,19 @@ export default async function PortalProjectsPage({
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">Projects for this client</p>
         </div>
-        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} groupByStatus />
       </div>
     );
   }
 
   // Employee: show assigned projects
-  const isEmployee = profile?.role === 'employee';
+  const isEmployee = effectiveRole === 'employee';
   if (isEmployee) {
     // Get project IDs from active assignments
     const { data: assignments } = await supabase
       .from('project_assignments')
       .select('project_id')
-      .eq('employee_id', user.id)
+      .eq('employee_id', effectiveUserId)
       .is('removed_at', null);
 
     const assignedProjectIds = (assignments || []).map((a) => a.project_id);
@@ -139,7 +163,7 @@ export default async function PortalProjectsPage({
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">Projects you are assigned to</p>
         </div>
-        <PortalProjectsGrid projects={empFormatted} progressMap={empProgressMap} />
+        <PortalProjectsGrid projects={empFormatted} progressMap={empProgressMap} groupByStatus />
       </div>
     );
   }
@@ -177,13 +201,13 @@ export default async function PortalProjectsPage({
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">All active projects</p>
         </div>
-        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} groupByStatus />
       </div>
     );
   }
 
   // Client: their assigned projects
-  const result = await getClientProjects(user.id);
+  const result = await getClientProjects(effectiveUserId);
   if (!result.success) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">

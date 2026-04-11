@@ -185,7 +185,7 @@ function buildReportHtml(
       ${presentSection}
       ${offSection}
       <p style="margin-top:24px;font-size:12px;color:#94a3b8;">
-        Sent by Qualia ERP attendance tracker
+        Sent by Qualia Suite
       </p>
     </div>
   `;

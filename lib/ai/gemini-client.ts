@@ -12,7 +12,7 @@ const openrouter = createOpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
   headers: {
     'HTTP-Referer': 'https://portal.qualiasolutions.net',
-    'X-Title': 'Qualia ERP',
+    'X-Title': 'Qualia Suite',
   },
 });
 

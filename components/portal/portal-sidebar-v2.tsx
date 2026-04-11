@@ -85,6 +85,8 @@ interface PortalSidebarV2Props {
   userRole?: string | null;
   /** The real (admin) user's role — used to show view-as option */
   realUserRole?: string | null;
+  /** Whether the admin is currently impersonating another user via view-as */
+  isViewingAs?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -273,6 +275,7 @@ function SidebarContent({
   userId,
   userRole,
   realUserRole,
+  isViewingAs,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -281,8 +284,10 @@ function SidebarContent({
   const workspaceName = isAdminViewing ? searchParams.get('wname') || companyName : null;
   const { total } = useUnreadMessageCount(userId ?? null);
 
-  const isStaff = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
-  const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
+  // Hide staff nav during impersonation — internal routes don't respect view-as cookie
+  const isStaff =
+    !isViewingAs && (userRole === 'admin' || userRole === 'manager' || userRole === 'employee');
+  const isAdminOrManager = !isViewingAs && (userRole === 'admin' || userRole === 'manager');
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
@@ -312,7 +317,12 @@ function SidebarContent({
               priority
             />
           </div>
-          <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
+            <span className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">
+              SUITE
+            </span>
+          </div>
         </Link>
       </div>
 
@@ -358,17 +368,19 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.name}
-            item={item}
-            isActive={isActive(item)}
-            onClick={onLinkClick}
-            badge={item.name === 'Messages' ? unreadBadge : undefined}
-            workspaceId={workspaceId}
-            workspaceName={workspaceName}
-          />
-        ))}
+        {navItems
+          .filter((item) => item.name !== 'Billing' || displayEmail === 'info@qualiasolutions.net')
+          .map((item) => (
+            <NavLink
+              key={item.name}
+              item={item}
+              isActive={isActive(item)}
+              onClick={onLinkClick}
+              badge={item.name === 'Messages' ? unreadBadge : undefined}
+              workspaceId={workspaceId}
+              workspaceName={workspaceName}
+            />
+          ))}
 
         {/* Staff-only section: internal routes */}
         {isStaff && (

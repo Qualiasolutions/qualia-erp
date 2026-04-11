@@ -15,7 +15,7 @@ import {
 
 /**
  * Create read-only Supabase ops tools
- * These query CLIENT project databases, not the Qualia ERP database
+ * These query CLIENT project databases, not the Qualia Suite database
  */
 export function createSupabaseReadTools(workspaceId: string | null) {
   if (!workspaceId) return {};
@@ -23,7 +23,7 @@ export function createSupabaseReadTools(workspaceId: string | null) {
   return {
     listProjectTables: tool({
       description:
-        'List tables in a client project\'s Supabase database. Use when user asks "show tables in X\'s database", "what tables does X have". This queries the CLIENT PROJECT database, not our ERP.',
+        'List tables in a client project\'s Supabase database. Use when user asks "show tables in X\'s database", "what tables does X have". This queries the CLIENT PROJECT database, not our Qualia Suite database.',
       inputSchema: z.object({
         project_id: z
           .string()
