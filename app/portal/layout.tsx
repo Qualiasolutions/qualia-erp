@@ -100,6 +100,7 @@ export default async function PortalLayout({ children }: { children: React.React
         userId={effectiveUserId}
         userRole={effectiveRole}
         realUserRole={realUserRole}
+        isViewingAs={isViewingAs}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {isViewingAs && <ViewAsBanner viewAsName={viewAsName} viewAsRole={viewAsRole} />}

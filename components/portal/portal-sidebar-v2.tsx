@@ -85,6 +85,8 @@ interface PortalSidebarV2Props {
   userRole?: string | null;
   /** The real (admin) user's role — used to show view-as option */
   realUserRole?: string | null;
+  /** Whether the admin is currently impersonating another user via view-as */
+  isViewingAs?: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -273,6 +275,7 @@ function SidebarContent({
   userId,
   userRole,
   realUserRole,
+  isViewingAs,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -281,8 +284,10 @@ function SidebarContent({
   const workspaceName = isAdminViewing ? searchParams.get('wname') || companyName : null;
   const { total } = useUnreadMessageCount(userId ?? null);
 
-  const isStaff = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
-  const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
+  // Hide staff nav during impersonation — internal routes don't respect view-as cookie
+  const isStaff =
+    !isViewingAs && (userRole === 'admin' || userRole === 'manager' || userRole === 'employee');
+  const isAdminOrManager = !isViewingAs && (userRole === 'admin' || userRole === 'manager');
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
