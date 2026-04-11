@@ -95,7 +95,7 @@ export default async function Page({ searchParams }: PageProps) {
             Welcome to <span className="text-primary">Qualia Suite.</span>
           </h1>
           <p className="mt-5 text-base leading-relaxed text-qualia-200/60">
-            Your client portal for real-time project updates, direct communication, and secure
+            Your portal for real-time project updates, direct communication, and secure
             collaboration.
           </p>
 

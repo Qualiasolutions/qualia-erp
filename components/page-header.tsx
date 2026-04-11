@@ -56,7 +56,9 @@ export function PageHeader({ icon, iconBg, title, children, className }: PageHea
           </div>
         )}
 
-        <h1 className="text-sm font-semibold text-foreground">{title}</h1>
+        <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+          {title}
+        </h1>
       </div>
 
       {children && <div className="flex items-center gap-2">{children}</div>}

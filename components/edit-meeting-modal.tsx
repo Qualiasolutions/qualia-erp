@@ -30,7 +30,7 @@ const ATTENDEE_COLORS = ['qualia', 'indigo', 'amber', 'rose', 'violet', 'emerald
 
 const COLOR_MAP: Record<string, { active: string; idle: string }> = {
   qualia: {
-    active: 'bg-primary text-white ring-2 ring-primary/30',
+    active: 'bg-primary text-primary-foreground ring-2 ring-primary/30',
     idle: 'bg-primary/10 text-primary dark:text-primary hover:bg-primary/20',
   },
   indigo: {

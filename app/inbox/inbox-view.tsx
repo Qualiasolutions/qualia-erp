@@ -148,7 +148,7 @@ const TaskRow = React.memo(function TaskRow({
         className={cn(
           'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
           isCompleted
-            ? 'border-emerald-500/50 bg-emerald-500 text-white'
+            ? 'border-emerald-500/50 bg-emerald-500 text-primary-foreground'
             : 'border-muted-foreground/40 hover:border-emerald-500/50 hover:bg-emerald-500/10'
         )}
       >
@@ -484,7 +484,9 @@ export function InboxView({ initialTasks }: InboxViewProps) {
               <Inbox className="size-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-foreground">Inbox</h1>
+              <h1 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">
+                Inbox
+              </h1>
               <p className="text-xs text-muted-foreground">{optimisticTasks.length} tasks</p>
             </div>
           </div>

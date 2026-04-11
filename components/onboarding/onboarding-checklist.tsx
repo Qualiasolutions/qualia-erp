@@ -56,7 +56,7 @@ export function OnboardingChecklist({ steps, onComplete, className }: Onboarding
               className={cn(
                 'mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border',
                 step.completed
-                  ? 'border-emerald-500 bg-emerald-500 text-white'
+                  ? 'border-emerald-500 bg-emerald-500 text-primary-foreground'
                   : 'border-border text-muted-foreground'
               )}
             >

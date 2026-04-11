@@ -301,7 +301,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                                     className={cn(
                                       'mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-200',
                                       isDone
-                                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                                        ? 'border-emerald-500 bg-emerald-500 text-primary-foreground'
                                         : 'border-foreground/20 group-hover:border-primary/60'
                                     )}
                                     animate={

@@ -1061,7 +1061,7 @@ export function InternalAppWalkthrough() {
                                     <m.div
                                       initial={{ scale: 0 }}
                                       animate={{ scale: 1 }}
-                                      className="flex size-6 items-center justify-center rounded-full bg-primary text-white"
+                                      className="flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground"
                                     >
                                       <CheckCircle2 className="size-4" />
                                     </m.div>

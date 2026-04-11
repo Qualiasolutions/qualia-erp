@@ -970,7 +970,7 @@ export function ProjectWorkflow({
                       className={cn(
                         'h-4 w-4 shrink-0 rounded border-[1.5px] transition-all',
                         isDone
-                          ? 'border-emerald-500 bg-emerald-500 text-white'
+                          ? 'border-emerald-500 bg-emerald-500 text-primary-foreground'
                           : 'border-muted-foreground/25 hover:border-primary'
                       )}
                       disabled={isPending}

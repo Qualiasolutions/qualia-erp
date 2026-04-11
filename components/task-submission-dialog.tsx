@@ -116,7 +116,7 @@ export function TaskSubmissionDialog({
             size="sm"
             onClick={handleSubmit}
             disabled={submitting || !text.trim()}
-            className="gap-1.5 bg-qualia-600 text-white hover:bg-qualia-700"
+            className="gap-1.5 bg-qualia-600 text-primary-foreground hover:bg-qualia-700"
           >
             {submitting ? (
               <Loader2 className="size-3.5 animate-spin" />

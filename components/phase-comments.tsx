@@ -218,7 +218,7 @@ export function PhaseComments({ projectId, phaseName, isAdmin }: PhaseCommentsPr
             className={cn(
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
               text.trim() && !isSending
-                ? 'bg-qualia-500 text-white hover:bg-qualia-600'
+                ? 'bg-qualia-500 text-primary-foreground hover:bg-qualia-600'
                 : 'bg-muted text-muted-foreground/30'
             )}
           >
