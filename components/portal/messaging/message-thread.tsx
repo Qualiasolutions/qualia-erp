@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { parseISO, format, isToday, isYesterday } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,8 +57,8 @@ export function MessageThread({
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
 
-  // Group messages by date (memoized to avoid recalculating on every render)
-  const groupedMessages = useMemo(() => groupMessagesByDate(messages), [messages]);
+  // Group messages by date
+  const groupedMessages = groupMessagesByDate(messages);
 
   return (
     <div className="flex h-full flex-1 flex-col">
@@ -67,7 +67,7 @@ export function MessageThread({
         {onBack && (
           <button
             onClick={onBack}
-            className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:hidden"
+            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:hidden"
             aria-label="Back to channels"
           >
             <ArrowLeft className="h-4 w-4" />

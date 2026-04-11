@@ -17,15 +17,11 @@ export default async function PortalMessagesPage() {
     redirect('/auth/login');
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('id, full_name, email, role')
     .eq('id', user.id)
     .single();
-
-  if (profileError) {
-    console.error('[PortalMessagesPage] Profile fetch error:', profileError);
-  }
 
   const userName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const userRole = profile?.role || 'client';

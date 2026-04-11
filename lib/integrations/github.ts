@@ -1192,6 +1192,45 @@ export async function createBranch(
   }
 }
 
+const WEBHOOK_URL = 'https://portal.qualiasolutions.net/api/github/webhook';
+
+/**
+ * Set up a push webhook for a single repo.
+ * Idempotent — skips if webhook already exists.
+ */
+export async function setupRepoWebhook(
+  workspaceId: string,
+  repoFullName: string
+): Promise<IntegrationResult<{ created: boolean }>> {
+  const client = await getGitHubClient(workspaceId);
+  if (!client) return { success: false, error: 'GitHub not configured' };
+
+  const [owner, repo] = repoFullName.split('/');
+  if (!owner || !repo) return { success: false, error: 'Invalid repo name' };
+
+  try {
+    const { data: hooks } = await client.octokit.repos.listWebhooks({ owner, repo });
+    if (hooks.some((h) => h.config.url === WEBHOOK_URL)) {
+      return { success: true, data: { created: false } };
+    }
+
+    const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET || '';
+    await client.octokit.repos.createWebhook({
+      owner,
+      repo,
+      config: { url: WEBHOOK_URL, content_type: 'json', secret: webhookSecret },
+      events: ['push'],
+      active: true,
+    });
+
+    return { success: true, data: { created: true } };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Webhook setup failed';
+    console.error(`[GitHub] setupRepoWebhook ${repoFullName}:`, msg);
+    return { success: false, error: msg };
+  }
+}
+
 /**
  * Clear cached client (useful after settings update)
  */

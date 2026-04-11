@@ -192,7 +192,7 @@ export function ProjectBoard({ projectId }: ProjectBoardProps) {
       </div>
 
       {activeView === 'board' && (
-        <KanbanBoard tasks={boardTasks} onStatusChange={handleStatusChange} />
+        <KanbanBoard tasks={boardTasks} projectId={projectId} onStatusChange={handleStatusChange} />
       )}
 
       {activeView === 'table' && <TableView tasks={boardTasks} />}

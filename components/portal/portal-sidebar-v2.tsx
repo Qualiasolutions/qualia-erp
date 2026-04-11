@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   House,
   FolderKanban,
@@ -15,13 +15,8 @@ import {
   LogOut,
   ChevronUp,
   Menu,
-  ArrowLeftRight,
-  Eye,
-  Inbox,
-  CalendarDays,
-  Timer,
+  Shield,
 } from 'lucide-react';
-import { ViewAsDialog } from '@/components/portal/view-as-dialog';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -33,10 +28,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
-import { useUnreadMessageCount, useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
-import { ClockOutModal } from '@/components/clock-out-modal';
-import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
-import type { WorkSession } from '@/app/actions/work-sessions';
+import { useUnreadMessageCount } from '@/lib/swr';
 
 /* ------------------------------------------------------------------ */
 /* Navigation items                                                    */
@@ -48,35 +40,28 @@ interface NavItemDef {
   icon: typeof House;
   exact?: boolean;
   comingSoon?: boolean;
-  /** Which roles can see this item. Omit = all roles. */
-  roles?: string[];
+  appKey: string;
 }
 
 const navItems: NavItemDef[] = [
-  { name: 'Home', href: '/portal', icon: House, exact: true },
-  { name: 'Inbox', href: '/portal/inbox', icon: Inbox, roles: ['admin', 'employee', 'manager'] },
-  { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
-  {
-    name: 'Schedule',
-    href: '/portal/schedule',
-    icon: CalendarDays,
-    roles: ['admin', 'employee', 'manager'],
-  },
-  { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
-  { name: 'Files', href: '/portal/files', icon: FileStack },
-  { name: 'Billing', href: '/portal/billing', icon: Receipt, roles: ['admin', 'manager'] },
-  {
-    name: 'Requests',
-    href: '/portal/requests',
-    icon: Lightbulb,
-    roles: ['admin', 'manager', 'client'],
-  },
-  { name: 'Settings', href: '/portal/settings', icon: Settings },
+  { name: 'Home', href: '/portal', icon: House, exact: true, appKey: 'home' },
+  { name: 'Projects', href: '/portal/projects', icon: FolderKanban, appKey: 'projects' },
+  { name: 'Messages', href: '/portal/messages', icon: MessageSquare, appKey: 'messages' },
+  { name: 'Files', href: '/portal/files', icon: FileStack, appKey: 'files' },
+  { name: 'Billing', href: '/portal/billing', icon: Receipt, appKey: 'billing' },
+  { name: 'Requests', href: '/portal/requests', icon: Lightbulb, appKey: 'requests' },
+  { name: 'Settings', href: '/portal/settings', icon: Settings, appKey: 'settings' },
 ];
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
 /* ------------------------------------------------------------------ */
+
+interface PortalBranding {
+  company_name?: string | null;
+  logo_url?: string | null;
+  accent_color?: string | null;
+}
 
 interface PortalSidebarV2Props {
   displayName: string;
@@ -84,11 +69,8 @@ interface PortalSidebarV2Props {
   isAdminViewing: boolean;
   companyName?: string | null;
   userId?: string;
-  userRole?: string | null;
-  /** The real (admin) user's role — used to show view-as option */
-  realUserRole?: string | null;
-  /** Whether the admin is currently impersonating another user via view-as */
-  isViewingAs?: boolean;
+  enabledApps?: string[];
+  branding?: PortalBranding | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -100,30 +82,12 @@ function NavLink({
   isActive,
   onClick,
   badge,
-  workspaceId,
-  workspaceName,
 }: {
   item: NavItemDef;
   isActive: boolean;
   onClick?: () => void;
   badge?: React.ReactNode;
-  workspaceId?: string | null;
-  workspaceName?: string | null;
 }) {
-  // Append workspace query params to portal nav links when workspace is active
-  // Non-portal routes don't use workspace params
-  const isInternalRoute = item.href && !item.href.startsWith('/portal');
-  const href = item.href
-    ? workspaceId && !isInternalRoute
-      ? (() => {
-          const params = new URLSearchParams();
-          params.set('workspace', workspaceId);
-          if (workspaceName) params.set('wname', workspaceName);
-          return `${item.href}?${params.toString()}`;
-        })()
-      : item.href
-    : null;
-
   const inner = (
     <>
       <item.icon
@@ -145,13 +109,12 @@ function NavLink({
 
   const baseClasses = cn(
     'group flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150',
-    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
     isActive
       ? 'border-l-2 border-primary bg-primary/[0.06] text-primary font-medium'
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
   );
 
-  if (item.comingSoon || !href) {
+  if (item.comingSoon || !item.href) {
     return (
       <div className={cn(baseClasses, 'cursor-default opacity-70')} aria-disabled="true">
         {inner}
@@ -160,7 +123,7 @@ function NavLink({
   }
 
   return (
-    <Link href={href} onClick={onClick} className={baseClasses}>
+    <Link href={item.href} onClick={onClick} className={baseClasses}>
       {inner}
     </Link>
   );
@@ -174,18 +137,15 @@ function UserMenu({
   displayName,
   displayEmail,
   isAdminViewing,
-  realUserRole,
   onLinkClick,
 }: {
   displayName: string;
   displayEmail: string;
   isAdminViewing: boolean;
-  realUserRole?: string | null;
   onLinkClick?: () => void;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [viewAsOpen, setViewAsOpen] = useState(false);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -193,78 +153,57 @@ function UserMenu({
     router.push('/auth/login');
   };
 
-  const canViewAs = realUserRole === 'admin';
-
   return (
-    <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
-          <button
-            className={cn(
-              'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
-              'hover:bg-primary/[0.04]',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
-            )}
-          >
-            {/* Avatar */}
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
-              {displayName.charAt(0).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
-              <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
-            </div>
-            <ThemeSwitcher />
-            <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/25" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-52">
-          <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{displayName}</p>
-            <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(
+            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors duration-150',
+            'hover:bg-primary/[0.04]',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+          )}
+        >
+          {/* Avatar */}
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/20">
+            {displayName.charAt(0).toUpperCase()}
           </div>
-          <DropdownMenuSeparator />
-          {canViewAs && (
-            <>
-              <DropdownMenuItem
-                onClick={() => {
-                  setOpen(false);
-                  setViewAsOpen(true);
-                }}
-              >
-                <Eye className="h-4 w-4" />
-                View as...
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          {isAdminViewing && (
-            <>
-              <DropdownMenuItem
-                onClick={() => {
-                  setOpen(false);
-                  onLinkClick?.();
-                  router.push('/portal');
-                }}
-              >
-                <ArrowLeftRight className="h-4 w-4" />
-                Switch workspace
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          <DropdownMenuItem
-            onClick={handleSignOut}
-            className="text-destructive focus:text-destructive"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign Out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      {canViewAs && <ViewAsDialog open={viewAsOpen} onOpenChange={setViewAsOpen} />}
-    </>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-medium text-foreground">{displayName}</p>
+            <p className="truncate text-[11px] text-muted-foreground/60">{displayEmail}</p>
+          </div>
+          <ThemeSwitcher />
+          <ChevronUp className="h-3 w-3 shrink-0 text-muted-foreground/25" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="top" align="start" sideOffset={8} className="w-52">
+        <div className="px-2 py-1.5">
+          <p className="text-sm font-medium">{displayName}</p>
+          <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
+        </div>
+        <DropdownMenuSeparator />
+        {isAdminViewing && (
+          <>
+            <DropdownMenuItem
+              onClick={() => {
+                setOpen(false);
+                onLinkClick?.();
+                router.push('/');
+              }}
+            >
+              Exit preview
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <DropdownMenuItem
+          onClick={handleSignOut}
+          className="text-destructive focus:text-destructive"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -278,28 +217,24 @@ function SidebarContent({
   isAdminViewing,
   companyName,
   userId,
-  userRole,
-  realUserRole,
+  enabledApps,
+  branding,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const workspaceId = isAdminViewing ? searchParams.get('workspace') : null;
-  const workspaceName = isAdminViewing ? searchParams.get('wname') || companyName : null;
   const { total } = useUnreadMessageCount(userId ?? null);
-
-  const [showClockOut, setShowClockOut] = useState(false);
-  const [showClockIn, setShowClockIn] = useState(false);
-  const canTrackTime = userRole === 'admin' || userRole === 'employee' || userRole === 'manager';
-  const { workspaceId: wsId } = useCurrentWorkspaceId();
-  const { session: activeSession } = useActiveSession(canTrackTime && wsId ? wsId : null);
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
-    const base = item.href.split('?')[0];
-    if (item.exact) return pathname === base;
-    return pathname === base || pathname.startsWith(base + '/');
+    if (item.exact) return pathname === item.href;
+    return pathname === item.href || pathname.startsWith(item.href + '/');
   };
+
+  // Filter nav items by enabled apps (admins always see all)
+  const visibleNavItems =
+    isAdminViewing || !enabledApps || enabledApps.length === 0
+      ? navItems
+      : navItems.filter((item) => enabledApps.includes(item.appKey));
 
   const unreadBadge =
     total > 0 ? (
@@ -308,6 +243,10 @@ function SidebarContent({
       </span>
     ) : null;
 
+  // Branding values (fallback to defaults)
+  const brandLogoUrl = branding?.logo_url || '/logo.webp';
+  const brandName = branding?.company_name || 'QUALIA';
+
   return (
     <div className="flex h-full flex-col bg-card">
       {/* Company branding area */}
@@ -315,56 +254,21 @@ function SidebarContent({
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:scale-105">
             <Image
-              src="/logo.webp"
-              alt="Qualia"
+              src={brandLogoUrl}
+              alt={brandName}
               width={28}
               height={28}
               className="h-7 w-7 object-contain"
               priority
+              unoptimized={brandLogoUrl !== '/logo.webp'}
             />
           </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
-            <span className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">
-              SUITE
-            </span>
-          </div>
+          <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">
+            {brandName}
+          </span>
         </Link>
       </div>
-
-      {/* Workspace indicator (admin viewing a client) */}
-      {workspaceId && workspaceName && (
-        <div className="border-b border-border/30 px-4 pb-3 pt-3">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground/60">
-                Workspace
-              </p>
-              <p className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
-                {workspaceName}
-              </p>
-            </div>
-            <Link
-              href="/portal"
-              onClick={onLinkClick}
-              className={cn(
-                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                'text-muted-foreground transition-colors duration-150',
-                'hover:bg-muted/50 hover:text-foreground',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
-                'cursor-pointer'
-              )}
-              title="Switch workspace"
-              aria-label="Switch workspace"
-            >
-              <ArrowLeftRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Company name (client view, no workspace) */}
-      {!workspaceId && companyName && (
+      {companyName && (
         <div className="px-5 pb-3 pt-2.5">
           <p className="truncate text-[11px] font-medium tracking-[0.06em] text-muted-foreground/60">
             {companyName}
@@ -374,75 +278,29 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
-        {navItems
-          .filter((item) => {
-            if (!item.roles) return true;
-            return item.roles.includes(userRole || '');
-          })
-          .map((item) => (
-            <NavLink
-              key={item.name}
-              item={item}
-              isActive={isActive(item)}
-              onClick={onLinkClick}
-              badge={item.name === 'Messages' ? unreadBadge : undefined}
-              workspaceId={workspaceId}
-              workspaceName={workspaceName}
-            />
-          ))}
-      </nav>
+        {visibleNavItems.map((item) => (
+          <NavLink
+            key={item.name}
+            item={item}
+            isActive={isActive(item)}
+            onClick={onLinkClick}
+            badge={item.name === 'Messages' ? unreadBadge : undefined}
+          />
+        ))}
 
-      {/* Clock in/out */}
-      {canTrackTime && wsId && (
-        <div className="px-3 pb-2">
-          <div className="mb-2 h-px bg-border/30" />
-          {activeSession ? (
-            <button
-              type="button"
-              onClick={() => setShowClockOut(true)}
-              className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-left text-[13px] font-medium text-primary transition-all duration-150 hover:bg-primary/15"
-            >
-              <Timer className="size-4 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-semibold">
-                  {(activeSession as WorkSession).project?.name ?? 'Session active'}
-                </div>
-                <div className="text-[11px] text-primary/70">Tap to clock out</div>
-              </div>
-              <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                LIVE
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowClockIn(true)}
-              className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border/50 px-3 py-2.5 text-left text-[13px] font-medium text-muted-foreground transition-all duration-150 hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground"
-            >
-              <Timer className="size-4 shrink-0" />
-              <span>Clock in</span>
-            </button>
-          )}
-          {activeSession && wsId && (
-            <ClockOutModal
-              open={showClockOut}
-              onOpenChange={setShowClockOut}
-              workspaceId={wsId}
-              session={activeSession}
-              onSuccess={() => setShowClockOut(false)}
-            />
-          )}
-          {!activeSession && wsId && (
-            <ClockInModal
-              open={showClockIn}
-              workspaceId={wsId}
-              currentUserId={userId || ''}
-              onSuccess={() => setShowClockIn(false)}
-              onDismiss={() => setShowClockIn(false)}
-            />
-          )}
-        </div>
-      )}
+        {/* Admin section — only visible to admin/manager */}
+        {isAdminViewing && (
+          <>
+            <div className="mt-2 border-t border-border/20 pt-2">
+              <NavLink
+                item={{ name: 'Admin', href: '/portal/admin', icon: Shield, appKey: 'admin' }}
+                isActive={pathname === '/portal/admin' || pathname.startsWith('/portal/admin/')}
+                onClick={onLinkClick}
+              />
+            </div>
+          </>
+        )}
+      </nav>
 
       {/* User area at bottom */}
       <div className="border-t border-border/30 bg-primary/[0.02] px-3 py-3 backdrop-blur-sm">
@@ -450,7 +308,6 @@ function SidebarContent({
           displayName={displayName}
           displayEmail={displayEmail}
           isAdminViewing={isAdminViewing}
-          realUserRole={realUserRole}
           onLinkClick={onLinkClick}
         />
       </div>

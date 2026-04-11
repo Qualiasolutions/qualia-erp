@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { isPortalAdminRole, resolveEffectiveUser } from '@/lib/portal-utils';
+import { isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalFilesContent } from './files-content';
 import { fadeInClasses } from '@/lib/transitions';
 
@@ -24,14 +24,7 @@ export interface PortalFileWithProject {
   uploader_name: string | null;
 }
 
-export default async function PortalFilesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ workspace?: string }>;
-}) {
-  const params = await searchParams;
-  const workspaceId = params.workspace;
-
+export default async function PortalFilesPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,31 +34,18 @@ export default async function PortalFilesPage({
     redirect('/auth/login');
   }
 
-  // Get user profile/role and resolve view-as
+  // Get user profile/role
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  const { effectiveUserId, effectiveRole } = await resolveEffectiveUser(
-    user.id,
-    profile?.role || 'client'
-  );
-  const isAdmin = isPortalAdminRole(effectiveRole);
+  const isAdmin = isPortalAdminRole(profile?.role || null);
 
   let projectIds: string[] = [];
 
-  if (isAdmin && workspaceId) {
-    // Admin viewing a specific workspace: scope to that client's projects
-    const { data: clientProjects } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('client_id', workspaceId)
-      .not('status', 'eq', 'Canceled');
-
-    projectIds = (clientProjects || []).map((p) => p.id);
-  } else if (isAdmin) {
+  if (isAdmin) {
     // Admin: get all projects
     const { data: allProjects } = await supabase
       .from('projects')
@@ -73,21 +53,12 @@ export default async function PortalFilesPage({
       .not('status', 'eq', 'Canceled');
 
     projectIds = (allProjects || []).map((p) => p.id);
-  } else if (effectiveRole === 'employee') {
-    // Employee: get assigned project IDs
-    const { data: assignments } = await supabase
-      .from('project_assignments')
-      .select('project_id')
-      .eq('employee_id', effectiveUserId)
-      .is('removed_at', null);
-
-    projectIds = (assignments || []).map((a) => a.project_id);
   } else {
     // Client: get their project IDs from client_projects
     const { data: clientProjects } = await supabase
       .from('client_projects')
       .select('project_id')
-      .eq('client_id', effectiveUserId);
+      .eq('client_id', user.id);
 
     projectIds = (clientProjects || []).map((cp) => cp.project_id);
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Loader2 } from 'lucide-react';
+import { Send, Loader2, Bold, Italic, Link2 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { sendMessage } from '@/app/actions/portal-messages';
@@ -20,6 +20,45 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const canSendInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+
+  // Wrap selected text with markdown markers
+  const wrapSelection = useCallback(
+    (before: string, after: string) => {
+      const el = textareaRef.current;
+      if (!el) return;
+      const start = el.selectionStart;
+      const end = el.selectionEnd;
+      const selected = content.substring(start, end);
+      const newContent =
+        content.substring(0, start) + before + selected + after + content.substring(end);
+      setContent(newContent);
+      // Restore cursor position after the wrapped text
+      requestAnimationFrame(() => {
+        el.focus();
+        const cursorPos = start + before.length + selected.length + after.length;
+        el.setSelectionRange(
+          selected.length > 0 ? cursorPos : start + before.length,
+          selected.length > 0 ? cursorPos : start + before.length
+        );
+      });
+    },
+    [content]
+  );
+
+  const handleBold = useCallback(() => wrapSelection('**', '**'), [wrapSelection]);
+  const handleItalic = useCallback(() => wrapSelection('*', '*'), [wrapSelection]);
+  const handleLink = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = content.substring(start, end);
+    if (selected) {
+      wrapSelection('[', '](url)');
+    } else {
+      wrapSelection('[text](', ')');
+    }
+  }, [content, wrapSelection]);
 
   // Auto-resize textarea
   const adjustHeight = useCallback(() => {
@@ -68,9 +107,23 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend();
+        return;
+      }
+      // Formatting shortcuts
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'b') {
+          e.preventDefault();
+          handleBold();
+        } else if (e.key === 'i') {
+          e.preventDefault();
+          handleItalic();
+        } else if (e.key === 'k') {
+          e.preventDefault();
+          handleLink();
+        }
       }
     },
-    [handleSend]
+    [handleSend, handleBold, handleItalic, handleLink]
   );
 
   const isEmpty = content.trim().length === 0;
@@ -97,6 +150,35 @@ export function MessageComposer({ projectId, userRole, onMessageSent }: MessageC
         />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={handleBold}
+                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                title="Bold (Ctrl+B)"
+                aria-label="Bold"
+              >
+                <Bold className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleItalic}
+                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                title="Italic (Ctrl+I)"
+                aria-label="Italic"
+              >
+                <Italic className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleLink}
+                className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+                title="Link (Ctrl+K)"
+                aria-label="Insert link"
+              >
+                <Link2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
             {canSendInternal && (
               <div className="flex items-center gap-2">
                 <Switch

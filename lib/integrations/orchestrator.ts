@@ -7,7 +7,7 @@ import type {
   ProjectProvisioningResult,
   ProvisioningStatus,
 } from './types';
-import { createRepository, clearGitHubClientCache } from './github';
+import { createRepository, clearGitHubClientCache, setupRepoWebhook } from './github';
 import { createVercelProject } from './vercel';
 
 // =====================================================
@@ -103,6 +103,19 @@ export async function setupProjectIntegrations(
         .from('projects')
         .update({ github_repo_url: gitHubResult.data.repoUrl })
         .eq('id', config.projectId);
+
+      // Auto-setup push webhook for phase sync + auto-assign
+      if (gitHubResult.data.repoName) {
+        const webhookResult = await setupRepoWebhook(
+          config.workspaceId,
+          gitHubResult.data.repoName
+        );
+        if (!webhookResult.success) {
+          console.warn(
+            `[Provisioning] Webhook setup failed for ${gitHubResult.data.repoName}: ${webhookResult.error}`
+          );
+        }
+      }
     } else if (gitHubResult.error) {
       result.errors.push(`GitHub: ${gitHubResult.error}`);
 

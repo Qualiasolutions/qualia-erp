@@ -30,12 +30,11 @@ export function useRealtimeMessages(projectId: string | null, userId: string | n
           filter: `project_id=eq.${projectId}`,
         },
         () => {
-          // Invalidate channel messages immediately (user needs to see the new message)
+          // Invalidate all messaging caches on new message
           invalidateChannelMessages(projectId, true);
-          // Channel list and unread counts can update on next poll cycle
           if (userId) {
-            invalidateMessageChannels(userId, false);
-            invalidateUnreadMessageCount(userId, false);
+            invalidateMessageChannels(userId, true);
+            invalidateUnreadMessageCount(userId, true);
           }
         }
       )

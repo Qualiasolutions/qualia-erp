@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
-import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { PageTransition } from '@/components/page-transition';
+import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal-admin';
 
 export const metadata: Metadata = {
   title: {
@@ -25,10 +25,10 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow all authenticated users (clients, employees, managers, admins)
+  // Allow clients and admins
   const userRole = await getUserRole(user.id);
-  if (!userRole) {
-    redirect('/auth/login');
+  if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
+    redirect('/');
   }
 
   // Get user profile for display
@@ -38,56 +38,78 @@ export default async function PortalLayout({ children }: { children: React.React
     .eq('id', user.id)
     .single();
 
-  // --- View-as impersonation logic ---
-  const cookieStore = await cookies();
-  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+  const isAdminViewing = isPortalAdminRole(userRole);
+  const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
+  const displayEmail = profile?.email || user.email || '';
 
-  let effectiveUserId = user.id;
-  let effectiveRole = userRole;
-  let effectiveDisplayName = profile?.full_name || user.email?.split('@')[0] || 'User';
-  let effectiveDisplayEmail = profile?.email || user.email || '';
-  let isViewingAs = false;
-  let viewAsName = '';
-  let viewAsRole = '';
-  const realUserRole = userRole;
-
-  if (viewAsUserId && userRole === 'admin') {
-    const { data: viewAsProfile } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, role')
-      .eq('id', viewAsUserId)
-      .single();
-
-    if (viewAsProfile) {
-      effectiveUserId = viewAsProfile.id;
-      effectiveRole = viewAsProfile.role || 'client';
-      effectiveDisplayName =
-        viewAsProfile.full_name || viewAsProfile.email?.split('@')[0] || 'User';
-      effectiveDisplayEmail = viewAsProfile.email || '';
-      isViewingAs = true;
-      viewAsName = viewAsProfile.full_name || viewAsProfile.email || 'Unknown';
-      viewAsRole = viewAsProfile.role || 'unknown';
-    }
-  }
-
-  const isAdminViewing = isViewingAs
-    ? isPortalAdminRole(effectiveRole)
-    : isPortalAdminRole(userRole);
-  const displayName = effectiveDisplayName;
-  const displayEmail = effectiveDisplayEmail;
-
-  // For client users, resolve company name from portal mappings
-  // For admin/staff users, the company name will be passed per-page via workspace context
   let companyName: string | null = null;
-  if (effectiveRole === 'client') {
+  if (!isAdminViewing) {
     const { data: mapping } = await supabase
       .from('portal_project_mappings')
       .select('erp_company_name')
-      .eq('portal_client_id', effectiveUserId)
+      .eq('portal_client_id', user.id)
       .not('erp_company_name', 'is', null)
       .limit(1)
       .maybeSingle();
     companyName = mapping?.erp_company_name || null;
+  }
+
+  // Fetch workspace ID for app config + branding
+  let workspaceId: string | null = null;
+  if (isAdminViewing) {
+    // Admin: get from workspace_members
+    const { data: wm } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('profile_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    workspaceId = wm?.workspace_id || null;
+  } else {
+    // Client: get workspace via their first linked project
+    const { data: cp } = await supabase
+      .from('client_projects')
+      .select('project_id')
+      .eq('client_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    if (cp?.project_id) {
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('workspace_id')
+        .eq('id', cp.project_id)
+        .single();
+      workspaceId = proj?.workspace_id || null;
+    }
+  }
+
+  // Fetch enabled apps and branding in parallel
+  const allAppKeys = ['home', 'projects', 'messages', 'files', 'billing', 'requests', 'settings'];
+  let enabledApps = allAppKeys;
+  let branding: {
+    company_name?: string | null;
+    logo_url?: string | null;
+    accent_color?: string | null;
+  } | null = null;
+
+  if (workspaceId) {
+    const [appsResult, brandingResult] = await Promise.all([
+      isAdminViewing
+        ? Promise.resolve({ success: true, data: allAppKeys })
+        : getEnabledAppsForClient(workspaceId, user.id),
+      getPortalBranding(workspaceId),
+    ]);
+
+    if (appsResult.success && Array.isArray(appsResult.data)) {
+      enabledApps = appsResult.data as string[];
+    }
+    if (brandingResult.success && brandingResult.data) {
+      branding = brandingResult.data as {
+        company_name?: string | null;
+        logo_url?: string | null;
+        accent_color?: string | null;
+      };
+    }
   }
 
   return (
@@ -97,13 +119,31 @@ export default async function PortalLayout({ children }: { children: React.React
         displayEmail={displayEmail}
         isAdminViewing={isAdminViewing}
         companyName={companyName}
-        userId={effectiveUserId}
-        userRole={effectiveRole}
-        realUserRole={realUserRole}
-        isViewingAs={isViewingAs}
+        userId={user.id}
+        enabledApps={enabledApps}
+        branding={branding}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        {isViewingAs && <ViewAsBanner viewAsName={viewAsName} viewAsRole={viewAsRole} />}
+        {/* Admin banner — floating, not a full header */}
+        {isAdminViewing && (
+          <div className="shrink-0 border-b border-l-2 border-primary/[0.08] border-l-primary/30 bg-primary/[0.03] px-6 py-1.5 dark:border-primary/[0.12] dark:bg-primary/[0.06]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5 text-xs">
+                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-qualia-700 dark:text-primary">
+                  {userRole === 'admin' ? 'Admin' : 'Manager'}
+                </span>
+                <span className="text-muted-foreground">Viewing as client</span>
+              </div>
+              <Link
+                href="/"
+                className="text-xs font-medium text-primary transition-colors hover:text-qualia-800 dark:hover:text-qualia-300"
+              >
+                Exit preview
+              </Link>
+            </div>
+          </div>
+        )}
+
         <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
           <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
             <PageTransition>{children}</PageTransition>
