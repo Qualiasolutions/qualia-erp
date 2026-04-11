@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
@@ -41,6 +40,8 @@ export default async function PortalLayout({ children }: { children: React.React
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 
+  // For client users, resolve company name from portal mappings
+  // For admin users, the company name will be passed per-page via workspace context
   let companyName: string | null = null;
   if (!isAdminViewing) {
     const { data: mapping } = await supabase
@@ -63,26 +64,6 @@ export default async function PortalLayout({ children }: { children: React.React
         userId={user.id}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Admin banner — floating, not a full header */}
-        {isAdminViewing && (
-          <div className="shrink-0 border-b border-l-2 border-primary/[0.08] border-l-primary/30 bg-primary/[0.03] px-6 py-1.5 dark:border-primary/[0.12] dark:bg-primary/[0.06]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5 text-xs">
-                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-qualia-700 dark:text-primary">
-                  {userRole === 'admin' ? 'Admin' : 'Manager'}
-                </span>
-                <span className="text-muted-foreground">Viewing as client</span>
-              </div>
-              <Link
-                href="/"
-                className="text-xs font-medium text-primary transition-colors hover:text-qualia-800 dark:hover:text-qualia-300"
-              >
-                Exit preview
-              </Link>
-            </div>
-          </div>
-        )}
-
         <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
           <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
             <PageTransition>{children}</PageTransition>

@@ -24,7 +24,14 @@ export interface PortalFileWithProject {
   uploader_name: string | null;
 }
 
-export default async function PortalFilesPage() {
+export default async function PortalFilesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ workspace?: string }>;
+}) {
+  const params = await searchParams;
+  const workspaceId = params.workspace;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -45,7 +52,16 @@ export default async function PortalFilesPage() {
 
   let projectIds: string[] = [];
 
-  if (isAdmin) {
+  if (isAdmin && workspaceId) {
+    // Admin viewing a specific workspace: scope to that client's projects
+    const { data: clientProjects } = await supabase
+      .from('projects')
+      .select('id')
+      .eq('client_id', workspaceId)
+      .not('status', 'eq', 'Canceled');
+
+    projectIds = (clientProjects || []).map((p) => p.id);
+  } else if (isAdmin) {
     // Admin: get all projects
     const { data: allProjects } = await supabase
       .from('projects')
