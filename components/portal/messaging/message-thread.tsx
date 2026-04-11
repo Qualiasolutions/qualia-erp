@@ -91,7 +91,7 @@ export function MessageThread({
         </div>
       ) : (
         <ScrollArea className="flex-1">
-          <div className="space-y-1 p-4">
+          <div className="space-y-1 p-4" role="log" aria-live="polite">
             {groupedMessages.map((group) => (
               <div key={group.dateLabel}>
                 {/* Date separator */}

@@ -9,8 +9,8 @@ import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal
 
 export const metadata: Metadata = {
   title: {
-    default: 'Client Portal | Qualia Solutions',
-    template: '%s | Client Portal',
+    default: 'Portal | Qualia Solutions',
+    template: '%s | Portal',
   },
   description: 'Your project portal, powered by Qualia Solutions.',
 };
@@ -118,6 +118,12 @@ export default async function PortalLayout({ children }: { children: React.React
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <PortalSidebarV2
         displayName={displayName}
         displayEmail={displayEmail}
@@ -148,7 +154,7 @@ export default async function PortalLayout({ children }: { children: React.React
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
+        <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
           <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
             <PageTransition>{children}</PageTransition>
           </div>

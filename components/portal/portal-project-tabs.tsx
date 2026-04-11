@@ -164,7 +164,7 @@ export function PortalProjectTabs({
     <div>
       {/* Tab bar */}
       <nav className="border-b border-border" aria-label="Project tabs">
-        <div className="flex gap-6">
+        <div className="flex gap-6" role="tablist">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -193,7 +193,7 @@ export function PortalProjectTabs({
       </nav>
 
       {/* Tab content */}
-      <div className="mt-6">
+      <div className="mt-6" role="tabpanel">
         {activeTab === 'overview' && (
           <OverviewTab
             project={project}

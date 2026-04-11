@@ -87,7 +87,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
           <div className="px-8 pb-8 pt-12 text-center">
             {/* Qualia logo mark */}
             <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20 ring-4 ring-primary/[0.12]">
-              <span className="text-xl font-bold text-white">Q</span>
+              <span className="text-xl font-bold text-primary-foreground">Q</span>
             </div>
 
             <h2 className="text-xl font-semibold tracking-tight text-foreground">
@@ -95,8 +95,8 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
             </h2>
 
             <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground/80">
-              Your client portal is ready. Track projects, submit requests, and manage everything in
-              one place.
+              Your portal is ready. Track projects, submit requests, and manage everything in one
+              place.
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-3">

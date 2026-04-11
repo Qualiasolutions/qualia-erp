@@ -54,11 +54,8 @@ export function PortalStatsRow({ stats, isLoading }: PortalStatsRowProps) {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-5 w-5 rounded" />
-            </div>
-            <Skeleton className="mt-3 h-7 w-16" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="mt-3 h-8 w-14" />
           </div>
         ))}
       </div>
@@ -73,14 +70,24 @@ export function PortalStatsRow({ stats, isLoading }: PortalStatsRowProps) {
         const displayValue = card.format(rawValue);
 
         return (
-          <div key={card.label} className="relative rounded-xl border border-border bg-card p-5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {card.label}
-              </span>
-              <Icon className="h-5 w-5 text-muted-foreground/20" />
+          <div
+            key={card.label}
+            className="group relative overflow-hidden rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20"
+          >
+            {/* Subtle left accent bar */}
+            <div className="absolute inset-y-0 left-0 w-[3px] bg-primary/15 transition-colors duration-200 group-hover:bg-primary/40" />
+
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {card.label}
+                </span>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">
+                  {displayValue}
+                </p>
+              </div>
+              <Icon className="h-5 w-5 text-muted-foreground/20" aria-hidden="true" />
             </div>
-            <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{displayValue}</p>
           </div>
         );
       })}

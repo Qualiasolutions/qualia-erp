@@ -60,6 +60,9 @@ export function PortalDashboardContent({
     currentPhase: p.currentPhase?.name,
   }));
 
+  // Extract recent activity from stats
+  const recentActivity = stats?.recentActivity || [];
+
   return (
     <>
       {/* Welcome tour for first-time clients */}
@@ -68,6 +71,7 @@ export function PortalDashboardContent({
       <PortalDashboardV2
         stats={stats}
         projects={mappedProjects}
+        recentActivity={recentActivity}
         isLoading={isLoading}
         isError={isError}
         clientId={clientId}

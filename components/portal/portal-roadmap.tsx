@@ -245,7 +245,7 @@ function PhaseWithComments({
             config.ring
           )}
         >
-          <StatusIcon className="size-4 text-white" strokeWidth={2.5} />
+          <StatusIcon className="size-4 text-primary-foreground" strokeWidth={2.5} />
         </div>
         {/* Connecting line */}
         {!isLast && (

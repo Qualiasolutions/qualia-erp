@@ -166,7 +166,7 @@ function SidebarContent({
   };
 
   return (
-    <div className="flex h-full flex-col bg-[#EDF0F0] dark:bg-[#121819]">
+    <div className="flex h-full flex-col bg-card">
       {/* Logo area */}
       <div className="flex h-[60px] items-center border-b border-border/30 px-5">
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
