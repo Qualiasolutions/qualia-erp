@@ -1,5 +1,5 @@
-// Knowledge Base — Qualia Framework v2.8.1 Workflow Guides
-// Rewritten 2026-04-09 against qualia-framework-v2 v2.8.1 (npm: qualia-framework-v2).
+// Knowledge Base — Qualia Framework v2.10.0 Workflow Guides
+// Updated 2026-04-11 against qualia-framework-v2 v2.10.0 (npm: qualia-framework-v2).
 // Each guide teaches the REAL v2 workflow with copy-paste commands and real examples.
 
 export type GuideCategory = 'foundations' | 'lifecycle' | 'operations' | 'reference' | 'checklist';
@@ -49,7 +49,7 @@ export const guides: Guide[] = [
   {
     slug: 'quick-start',
     title: 'Qualia Framework in 5 Minutes',
-    subtitle: 'Install v2.8.1, learn the road, ship your first project',
+    subtitle: 'Install v2.10.0, learn the road, ship your first project',
     category: 'foundations',
     projectType: 'workflow',
     steps: [
@@ -57,7 +57,7 @@ export const guides: Guide[] = [
         id: 'qs-1',
         title: 'Install the Framework',
         description:
-          'Run the v2 installer and enter your team code when prompted. Codes look like QS-NAME-NN — digit suffix, not year (e.g., QS-MOAYAD-03). The installer detects your role from the code and configures everything: skills, agents, hooks, rules, knowledge base, status line, settings.json. You only do this once per machine.',
+          'Run the v2 installer and enter your team code when prompted. Codes look like QS-NAME-NN — digit suffix, not year (e.g., QS-MOAYAD-03). The installer detects your role from the code and configures everything: skills (19), agents (4), hooks (8), rules (4), knowledge base, status line, and settings.json. You only do this once per machine.',
         commands: ['npx qualia-framework-v2 install'],
         tips: [
           'Get your code from Fawzi. The valid codes are QS-FAWZI-01 (OWNER), QS-HASAN-02, QS-MOAYAD-03, QS-RAMA-04, QS-SALLY-05 (employees).',
@@ -132,33 +132,37 @@ export const guides: Guide[] = [
         id: 'qs-5',
         title: 'The Road',
         description:
-          'Every project follows the same path. Each step calls state.js to advance the state machine, which writes both STATE.md and tracking.json atomically.',
+          'Every project follows the same path. Each step calls state.js to advance the state machine, which writes both STATE.md and tracking.json atomically. state.js validates schema before every transition — if STATE.md is malformed, it blocks and suggests `state.js fix`.',
         example:
           '/qualia-new → set up project (PROJECT.md, STATE.md, tracking.json, DESIGN.md if frontend)\n' +
           '     ↓\n' +
           'For each phase:\n' +
           '  /qualia-plan {N}   → planner agent writes phase-{N}-plan.md (fresh context)\n' +
+          '                       planner auto-adds DESIGN.md task if missing on Phase 1 frontend\n' +
           '  /qualia-build {N}  → builder subagents per task, parallel waves (fresh context each)\n' +
-          '  /qualia-verify {N} → verifier agent writes phase-{N}-verification.md (greps the code)\n' +
-          '     ↓ (auto-advances on PASS)\n' +
-          '/qualia-polish  → design + UX pass (run after all phases verified)\n' +
+          '  /qualia-verify {N} → verifier greps the code + qa-browser tests in real browser\n' +
+          '                       design verification: fonts, max-widths, a11y, states, responsive\n' +
+          '     ↓ (auto-advances on PASS, offers /qualia-learn on FAIL)\n' +
+          '/qualia-polish  → structured design + UX + hardening pass\n' +
           '/qualia-ship    → quality gates + vercel --prod + post-deploy verification\n' +
           '/qualia-handoff → writes HANDOFF.md, delivers credentials\n' +
-          '/qualia-report  → MANDATORY before clock-out',
-        exampleTitle: 'The Road (v2.8.1)',
+          '/qualia-report  → MANDATORY before clock-out (uploads to ERP)',
+        exampleTitle: 'The Road (v2.10.0)',
       },
       {
         id: 'qs-6',
-        title: 'Updates',
+        title: 'Updates and Recovery',
         description:
-          'The auto-update.js hook runs silently on every Bash tool call with a 24-hour debounce. It checks npm for a newer qualia-framework-v2 version and installs it in the background using your saved code. You can also update manually any time.',
+          'The auto-update.js hook runs silently on every Bash tool call with a 24-hour debounce. It checks npm for a newer qualia-framework-v2 version and installs it in the background using your saved code. You can also update manually any time. If STATE.md gets corrupted, state.js fix reconstructs it from tracking.json.',
         commands: [
           'npx qualia-framework-v2 version    # Check installed version + latest on npm',
           'npx qualia-framework-v2 update     # Force update to latest',
+          'node ~/.claude/bin/state.js fix     # Repair malformed STATE.md from tracking.json',
         ],
         tips: [
           'Auto-update runs at most once per 24 hours and never blocks Claude Code — it forks a detached background process.',
           'After a manual update, restart Claude Code so the new settings.json takes effect.',
+          'state.js fix is safe — it reconstructs STATE.md preferring tracking.json values. Use it when transitions fail with STATE_SCHEMA_ERROR.',
         ],
       },
     ],
@@ -212,7 +216,7 @@ export const guides: Guide[] = [
         id: 'pd-2',
         title: 'STATE.md — The Atomic State File',
         description:
-          'STATE.md is managed by ~/.claude/bin/state.js. It is the single source of truth for which phase you are in, the status (setup → planned → built → verified → polished → shipped → handed_off → done), the roadmap, and any blockers. NEVER hand-edit this file. Every skill that changes state calls `node ~/.claude/bin/state.js transition --to {status}` which validates preconditions and rewrites STATE.md atomically.',
+          'STATE.md is managed by ~/.claude/bin/state.js. It is the single source of truth for which phase you are in, the status (setup → planned → built → verified → polished → shipped → handed_off → done), the roadmap, and any blockers. NEVER hand-edit this file. Every skill that changes state calls `node ~/.claude/bin/state.js transition --to {status}` which validates schema first (Phase header format, Status field, roadmap table structure), then rewrites STATE.md and tracking.json atomically. If STATE.md gets corrupted, run `node ~/.claude/bin/state.js fix` to reconstruct it from tracking.json.',
         example:
           '# Project State\n\n' +
           '## Project\n' +
@@ -238,7 +242,7 @@ export const guides: Guide[] = [
           'Resume: —',
         exampleTitle: 'Example: .planning/STATE.md',
         warning:
-          'Never hand-edit STATE.md. state.js validates preconditions (you cannot go from setup straight to verified) and rewrites STATE.md and tracking.json together. Hand-edits will desync the two files and the ERP will show wrong data.',
+          'Never hand-edit STATE.md. state.js validates schema (Phase header, Status field, roadmap table) and preconditions (you cannot go from setup straight to verified). Schema errors with severity "error" block ALL transitions until fixed with `state.js fix`. Hand-edits will desync STATE.md and tracking.json — the ERP will show wrong data.',
       },
       {
         id: 'pd-3',
@@ -308,7 +312,7 @@ export const guides: Guide[] = [
         id: 'pd-5',
         title: 'phase-{N}-verification.md — Written by the Verifier',
         description:
-          'When you run /qualia-verify {N}, a verifier subagent spawns in fresh context. It does NOT trust the plan or build summaries — it greps the codebase for stubs, missing wiring, and unused imports. Then it runs `npx tsc --noEmit`. If the phase touched frontend files, the qa-browser subagent runs in parallel via Playwright MCP at 375/768/1440 viewports. The combined report goes here.',
+          'When you run /qualia-verify {N}, a verifier subagent spawns in fresh context. It does NOT trust the plan or build summaries — it uses a 3-level check per criterion: (1) Truths — what must be observable, (2) Artifacts — grep for existence + stub detection, (3) Wiring — verify imports and actual usage. It also runs design verification on frontend phases: font compliance, max-width caps, accessibility basics, interactive states, and responsive utility counts. Then it runs `npx tsc --noEmit`. If the phase touched frontend files (.tsx/.jsx/.css), the qa-browser subagent runs in parallel via Playwright MCP at 375/768/1440 viewports. On FAIL, it offers to save recurring issues to common-fixes.md via /qualia-learn (passive knowledge capture). The combined report goes here.',
         example:
           '---\n' +
           'phase: 2\n' +
@@ -326,6 +330,12 @@ export const guides: Guide[] = [
           '- TypeScript: PASS\n' +
           '- Stubs found: 0\n' +
           '- Empty handlers: 0\n\n' +
+          '## Design Verification\n' +
+          '- Generic fonts (Inter/Roboto/Arial): 0\n' +
+          '- Hardcoded max-widths: 0\n' +
+          '- Accessibility (alt, labels, focus): PASS\n' +
+          '- Interactive states: PASS\n' +
+          '- Responsive utilities: PASS\n\n' +
           '## Browser QA\n' +
           '- 375px / 768px / 1440px: PASS\n' +
           '- Console errors: 0\n' +
@@ -409,18 +419,19 @@ export const guides: Guide[] = [
         id: 'bw-3',
         title: 'Plan → Build → Verify Each Phase',
         description:
-          'For every phase, run the same three commands. Each spawns a fresh subagent with isolated context — task 50 gets the same quality as task 1 because the builder for task 50 sees zero history from task 1.',
+          'For every phase, run the same three commands. Each spawns a fresh subagent with isolated context — task 50 gets the same quality as task 1 because the builder for task 50 sees zero history from task 1. The planner is design-aware: if no DESIGN.md exists and Phase 1 has frontend work, it auto-adds a Wave 1 task to create it. Every frontend task references @.planning/DESIGN.md in its Context field.',
         commands: [
           '/qualia-plan 1     # planner writes .planning/phase-1-plan.md (2-5 tasks, waves)',
           '/qualia-build 1    # builder subagents per task, parallel waves',
-          '/qualia-verify 1   # verifier agent + qa-browser if frontend touched',
+          '/qualia-verify 1   # verifier (3-level check + design verification) + qa-browser',
           '# Repeat for phase 2, 3, 4...',
         ],
         tips: [
           'On verify PASS, state.js auto-advances to the next phase — you do not need to bump the number manually.',
-          'On verify FAIL, run `/qualia-plan {N} --gaps` to plan surgical fixes for only the failed criteria.',
+          'On verify FAIL, the verifier offers to save recurring issues to common-fixes.md via /qualia-learn (passive knowledge capture). Then run `/qualia-plan {N} --gaps` to plan surgical fixes for only the failed criteria.',
           'Gap cycles are capped at 2. If a phase fails verification 2 times, state.js blocks further attempts and tells you to escalate to Fawzi.',
           'qa-browser uses the Playwright MCP. If Playwright is not connected, it returns BLOCKED — that is a note in the report, not a phase failure.',
+          'The verifier runs 4 design checks on frontend phases: font compliance, hardcoded max-widths, accessibility basics, interactive states + responsive utilities.',
         ],
       },
       {
@@ -529,7 +540,7 @@ export const guides: Guide[] = [
         id: 'ba-3',
         title: 'Plan → Build → Verify',
         description:
-          'Same workflow as any project. A typical AI agent roadmap is Foundation → Agent → Interface → Polish. The planner agent will look up library APIs via Context7 MCP before writing tasks — it does not guess at SDK signatures.',
+          'Same workflow as any project. A typical AI agent roadmap is Foundation → Agent → Interface → Polish. The planner agent looks up library APIs via Context7 MCP (or WebFetch) before writing tasks — it never guesses at SDK signatures. It also has a quality degradation curve: stops planning at 50% context usage to keep task quality high.',
         commands: [
           '/qualia-plan 1     # Foundation: webhook handler, Supabase, auth',
           '/qualia-build 1',
@@ -708,10 +719,10 @@ export const guides: Guide[] = [
         id: 'bwa-6',
         title: 'Gap Closure when Verify Fails',
         description:
-          'If /qualia-verify finds gaps, you do not re-plan the whole phase. You run /qualia-plan {N} --gaps. The planner reads the verification report, extracts only the FAIL items, and writes a surgical fix plan (phase-{N}-gaps-plan.md). Then /qualia-build {N} executes only the fixes.',
+          'If /qualia-verify finds gaps, it first offers passive knowledge capture — asks if any failed items should be saved to common-fixes.md via /qualia-learn. Then you run /qualia-plan {N} --gaps. The planner reads only the FAIL items from the verification report and writes a surgical fix plan (phase-{N}-gaps-plan.md) with all tasks in Wave 1 (parallel unless file conflicts). Then /qualia-build {N} executes only the fixes.',
         commands: [
-          '/qualia-verify 5            # FAIL — 2 gaps found',
-          '/qualia-plan 5 --gaps       # surgical fix plan, only the failed items',
+          '/qualia-verify 5            # FAIL — 2 gaps found, offers to save to common-fixes.md',
+          '/qualia-plan 5 --gaps       # surgical fix plan, only the failed items, type: gap-closure',
           '/qualia-build 5             # build the fixes',
           '/qualia-verify 5            # re-verify',
         ],
@@ -805,10 +816,11 @@ export const guides: Guide[] = [
         id: 'ep-4',
         title: 'Read Before You Write',
         description:
-          'Three files give you everything you need to understand an existing project. Read them in this order: PROJECT.md (what we are building), STATE.md (where we are), most recent phase plan (what is currently being done).',
+          'Three files give you everything you need to understand an existing project. Read them in this order: PROJECT.md (what we are building), STATE.md (where we are), most recent phase plan (what is currently being done). If STATE.md looks malformed, run `node ~/.claude/bin/state.js fix` to reconstruct it from tracking.json before proceeding.',
         commands: [
           'cat .planning/PROJECT.md',
           'cat .planning/STATE.md',
+          'node ~/.claude/bin/state.js check      # JSON with phase, status, next_command, schema_errors',
           'ls .planning/phase-*-plan.md',
         ],
       },
@@ -919,7 +931,7 @@ export const guides: Guide[] = [
         id: 'qt-5',
         title: 'Save What You Learn',
         description:
-          'When you fix a recurring issue or discover a pattern, save it with /qualia-learn so future-you (or another team member) does not redo the work. The save goes to ~/.claude/knowledge/ which is read by /qualia-plan, /qualia-debug, and /qualia-new automatically.',
+          'When you fix a recurring issue or discover a pattern, save it with /qualia-learn so future-you (or another team member) does not redo the work. The save goes to ~/.claude/knowledge/ which is read by /qualia-plan, /qualia-debug, and /qualia-new automatically. /qualia-verify also offers passive knowledge capture on FAIL — it asks if any recurring issues should be saved.',
         commands: ['/qualia-learn'],
         example:
           '/qualia-learn\n\n' +
@@ -959,11 +971,17 @@ export const guides: Guide[] = [
         id: 'dp-1',
         title: '/qualia-design — One-Shot Transformation',
         description:
-          'Use /qualia-design when you need a frontend page or component to look good RIGHT NOW. No plan, no report, no choices. Reads .planning/DESIGN.md if it exists (or falls back to ~/.claude/rules/frontend.md), critiques the file, fixes typography + color + layout + states + responsive in one pass, commits.',
-        commands: ['/qualia-design'],
+          'Use /qualia-design when you need a frontend page or component to look good RIGHT NOW. No plan, no report, no choices. Reads .planning/DESIGN.md if it exists (or falls back to ~/.claude/rules/frontend.md), runs an internal critique (AI slop detection, hierarchy, typography, color, states, motion, spacing, responsive, microcopy), fixes everything in one pass, commits.',
+        commands: [
+          '/qualia-design                               # all frontend files',
+          '/qualia-design app/page.tsx                   # specific file',
+          '/qualia-design --scope=dashboard              # specific section',
+        ],
         tips: [
           'Use this mid-build when a component looks rough and you want it production-ready in one shot.',
           'It is less structured than /qualia-polish — no critique report, no hardening pass, no per-category fix list. Just makes it look right.',
+          'Kill list: card grids → varied layouts, generic heroes → distinctive, blue-purple gradients → brand, static → purposeful motion, fixed widths → fluid.',
+          'After transformation, prints fine-tune options: /bolder, /design-quieter, /colorize, /animate.',
         ],
       },
       {
@@ -980,7 +998,7 @@ export const guides: Guide[] = [
         id: 'dp-3',
         title: 'DESIGN.md — Project-Specific Brand Standard',
         description:
-          'Created by /qualia-new for any frontend project. It is the project-specific source of truth for palette, typography, spacing, motion, components. Builders read it before writing any frontend file. If a project does not have one, /qualia-plan adds a Phase 1 task to create it from the design direction in PROJECT.md.',
+          'Created by /qualia-new (Step 8a) from ~/.claude/qualia-templates/DESIGN.md with palette, typography, effects, and motion filled from your chosen design direction. It is the project-specific source of truth. Builders read it before writing any frontend file. The planner is design-aware: if DESIGN.md is missing and Phase 1 has frontend work, it auto-adds a Wave 1 task to create it. The verifier runs design compliance checks (fonts, max-widths, a11y, states, responsive) against it.',
         example:
           '# Aquador Design System\n\n' +
           '## Palette (CSS variables)\n' +
@@ -1101,36 +1119,48 @@ export const guides: Guide[] = [
           'planner       subagent_type: qualia-planner\n' +
           '  Reads:  PROJECT.md + STATE.md + phase goal + ~/.claude/knowledge/learned-patterns.md\n' +
           '  Writes: .planning/phase-{N}-plan.md (2-5 atomic tasks, waves)\n' +
-          '  Tools:  Read, Write, Bash, Glob, Grep, WebFetch, Context7 MCP\n\n' +
+          '  Tools:  Read, Write, Bash, Glob, Grep, WebFetch, Context7 MCP\n' +
+          '  NEW:    Design-aware — auto-adds DESIGN.md task if missing on Phase 1 frontend\n' +
+          '          Looks up library docs via Context7 before specifying APIs\n' +
+          '          Quality degradation curve — stops planning at 50% context\n\n' +
           'builder       subagent_type: qualia-builder\n' +
           '  Reads:  ONE task block + PROJECT.md + DESIGN.md (if frontend)\n' +
           '  Writes: code + atomic git commit\n' +
-          '  Tools:  Read, Write, Edit, Bash, Grep, Glob\n\n' +
+          '  Tools:  Read, Write, Edit, Bash, Grep, Glob\n' +
+          "  Scope:  Strict discipline — only touches files in task's Files list\n" +
+          '          Deviations classified: Trivial/Minor (do it) / Major/Blocker (STOP)\n\n' +
           'verifier      subagent_type: qualia-verifier\n' +
           '  Reads:  phase plan + codebase\n' +
           '  Writes: .planning/phase-{N}-verification.md (PASS or FAIL with grep evidence)\n' +
-          '  Tools:  Read, Bash, Grep, Glob (NO write — cannot fix anything)\n\n' +
+          '  Tools:  Read, Bash, Grep, Glob (NO write — cannot fix anything)\n' +
+          '  NEW:    3-level checks (Truths → Artifacts → Wiring) per criterion\n' +
+          '          Design verification: fonts, max-widths, a11y, states, responsive\n' +
+          '          Stub detection: TODO, return null, empty catch, "not implemented"\n\n' +
           'qa-browser    subagent_type: qualia-qa-browser\n' +
           '  Reads:  phase plan + dev server\n' +
           '  Writes: appends "Browser QA" section to phase-{N}-verification.md\n' +
-          '  Tools:  Playwright MCP (navigate, snapshot, resize, click, console)',
+          '  Tools:  Playwright MCP (navigate, snapshot, resize, click, console)\n' +
+          '  Tests:  375px (iPhone), 768px (iPad), 1440px (laptop) per route',
         exampleTitle: 'The 4 agents',
         tips: [
           'The verifier intentionally has NO Write or Edit tools. Its job is to grep the code and report — it cannot fix what it finds. That comes back to /qualia-plan {N} --gaps.',
           'qa-browser runs in parallel with the verifier on frontend phases. If Playwright MCP is unavailable, it returns BLOCKED — that is a note, not a failure.',
+          'On verify FAIL, the skill offers passive knowledge capture — asks if any failed items should be saved to common-fixes.md via /qualia-learn.',
+          'The verifier checks PARTIAL status (file exists but not wired) — PARTIAL is NOT a PASS.',
         ],
       },
       {
         id: 'inf-4',
         title: 'state.js — The Atomic State Machine',
         description:
-          'Every workflow skill calls ~/.claude/bin/state.js to read or change state. It is a small Node.js state machine (no dependencies, ~500 lines) that validates preconditions, rewrites STATE.md and tracking.json atomically, and tracks gap-closure cycles. Three commands: check, transition, init.',
+          'Every workflow skill calls ~/.claude/bin/state.js to read or change state. It is a small Node.js state machine (no dependencies) that validates schema + preconditions, rewrites STATE.md and tracking.json atomically, and tracks gap-closure cycles. Four commands: check, transition, init, fix.',
         commands: [
-          'node ~/.claude/bin/state.js check                                                # JSON: phase, status, next_command',
+          'node ~/.claude/bin/state.js check                                                # JSON: phase, status, next_command, schema_errors',
           'node ~/.claude/bin/state.js transition --to planned --phase 2                    # called by /qualia-plan',
           'node ~/.claude/bin/state.js transition --to built --phase 2 --tasks-done 3 --tasks-total 3',
           'node ~/.claude/bin/state.js transition --to verified --phase 2 --verification pass',
           'node ~/.claude/bin/state.js transition --to shipped --deployed-url https://aquador.com',
+          'node ~/.claude/bin/state.js fix                                                  # Repair malformed STATE.md from tracking.json',
         ],
         example:
           'Valid transitions:\n\n' +
@@ -1141,12 +1171,19 @@ export const guides: Guide[] = [
           '  polished → shipped    (requires --deployed-url)\n' +
           '  shipped  → handed_off (requires HANDOFF.md to exist)\n' +
           '  handed_off → done\n\n' +
+          'Auto-advance:\n' +
+          '  verified(pass) → auto-advances to next phase (status: setup)\n' +
+          '  Last phase verified(pass) → ready for /qualia-polish\n\n' +
           'Gap closure:\n' +
           '  verified(fail) → planned   (increments gap_cycles[phase])\n' +
-          '  Capped at 2 cycles per phase. The 3rd attempt returns GAP_CYCLE_LIMIT.',
+          '  Capped at 2 cycles per phase. The 3rd attempt returns GAP_CYCLE_LIMIT.\n\n' +
+          'Schema validation:\n' +
+          '  Validates Phase header (Phase: N of M — Name), Status field, roadmap table.\n' +
+          '  Schema errors with severity "error" → blocks ALL transitions.\n' +
+          '  Fix with: node ~/.claude/bin/state.js fix (reconstructs from tracking.json)',
         exampleTitle: 'state.js transitions',
         warning:
-          'Never edit STATE.md or tracking.json by hand. state.js writes both files together with backup-and-revert on failure. Hand-edits will desync the two and the ERP will show wrong data.',
+          'Never edit STATE.md or tracking.json by hand. state.js validates schema on every read and writes both files together with backup-and-revert on failure. Hand-edits cause STATE_SCHEMA_ERROR — run `state.js fix` to recover.',
       },
       {
         id: 'inf-5',
@@ -1186,11 +1223,14 @@ export const guides: Guide[] = [
         'Knows the 8 hooks and what each one blocks',
         'Knows the 4 agents and that each runs in fresh context (planner, builder, verifier, qa-browser)',
         'Knows that the verifier has no Write/Edit tools — it reports, never fixes',
+        'Knows the verifier runs 3-level checks (Truths → Artifacts → Wiring) + design verification',
+        'Knows the planner is design-aware — auto-adds DESIGN.md task, looks up APIs via Context7',
         'Knows state.js is the only thing allowed to write STATE.md or tracking.json',
-        'Knows the valid state transitions and the gap-cycle cap of 2',
+        'Knows the valid state transitions, the gap-cycle cap of 2, and auto-advance on verify PASS',
+        'Knows state.js validates schema and `state.js fix` repairs malformed STATE.md',
         'Knows the 3 knowledge files and which skill reads each',
         'Knows pre-push.js stamps tracking.json so the ERP always sees fresh data',
-        'Uses /qualia-learn whenever a fix or pattern is worth saving',
+        'Uses /qualia-learn whenever a fix or pattern is worth saving (or when verify offers it)',
       ],
     },
   },
@@ -1210,9 +1250,9 @@ export const guides: Guide[] = [
         id: 'sc-1',
         title: 'Pre-Ship: All Phases Verified',
         description:
-          'Before you even think about shipping, every phase must be verified PASS. /qualia checks STATE.md and refuses to advance if anything is built-but-unverified or verified-but-failed.',
+          'Before you even think about shipping, every phase must be verified PASS. /qualia checks STATE.md and refuses to advance if anything is built-but-unverified or verified-but-failed. state.js validates schema before every transition — if STATE.md is malformed, it blocks with STATE_SCHEMA_ERROR (fix with `state.js fix`).',
         commands: [
-          'node ~/.claude/bin/state.js check    # JSON: status should be "polished" (or last phase "verified")',
+          'node ~/.claude/bin/state.js check    # JSON: status should be "polished", check schema_errors',
           'cat .planning/STATE.md               # roadmap should show every phase = verified',
         ],
       },
