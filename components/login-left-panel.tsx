@@ -109,7 +109,7 @@ export function LoginLeftPanel() {
             transition={{ duration: 0.8, delay: 0.2 }}
           >
             <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-white xl:text-6xl">
-              Client Portal
+              Qualia Portal
             </h1>
             <div className="mx-auto mt-6 h-0.5 w-16 rounded-full bg-gradient-to-r from-qualia-400 to-cyan-400" />
             <p className="mx-auto mt-6 max-w-xs text-lg leading-relaxed text-white/50">

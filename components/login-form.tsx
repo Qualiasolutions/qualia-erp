@@ -36,7 +36,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
           onClick={() => setMode('team')}
         />
         <PortalCard
-          title="Client Portal"
+          title="Portal"
           description="Track projects & manage your account"
           icon={<Briefcase className="h-5 w-5" />}
           onClick={() => setMode('client')}

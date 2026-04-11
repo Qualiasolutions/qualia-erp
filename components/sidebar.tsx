@@ -59,7 +59,7 @@ const resourcesNav = [
   { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
 ];
 
-const portalNav = [{ name: 'Client Portal', href: '/portal', icon: ExternalLink }];
+const portalNav = [{ name: 'Portal', href: '/portal', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Tasks', href: '/admin/tasks', icon: ListTodo },
