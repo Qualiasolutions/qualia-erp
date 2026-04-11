@@ -42,7 +42,7 @@ export default async function PortalRequestsPage() {
     .filter((p): p is { id: string; name: string } => p !== null);
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in-up space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Requests</h1>

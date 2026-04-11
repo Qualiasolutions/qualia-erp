@@ -102,7 +102,7 @@ function DroppableColumn(props: Omit<DroppableColumnProps, 'isOver'>) {
   const { setNodeRef, isOver } = useDroppable({ id: props.columnId });
 
   return (
-    <div ref={setNodeRef} className="flex min-w-[250px] flex-1 flex-col">
+    <div ref={setNodeRef} className="flex min-w-0 flex-1 flex-col md:min-w-[250px]">
       <DroppableColumnInner {...props} isOver={isOver} />
     </div>
   );
@@ -177,7 +177,7 @@ export function KanbanBoard({ tasks, onStatusChange }: KanbanBoardProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="flex flex-col gap-4 md:flex-row">
+      <div className="flex flex-col gap-4 md:flex-row md:overflow-x-auto">
         {STATUS_COLUMNS.map((col) => (
           <DroppableColumn
             key={col.id}
@@ -193,7 +193,7 @@ export function KanbanBoard({ tasks, onStatusChange }: KanbanBoardProps) {
 
       <DragOverlay dropAnimation={null}>
         {activeTask ? (
-          <div className="w-[280px]">
+          <div className="z-overlay w-[280px]">
             <TaskCard task={activeTask} isDragging />
           </div>
         ) : null}

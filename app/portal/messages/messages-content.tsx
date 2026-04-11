@@ -110,7 +110,7 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
   }, [channels]);
 
   return (
-    <div className="-mx-[clamp(1.5rem,4vw,2.5rem)] -mb-[clamp(1.5rem,3vw,2.5rem)] -mt-16 flex h-screen md:-mt-[clamp(1.5rem,3vw,2.5rem)]">
+    <div className="-mx-[clamp(1.5rem,4vw,2.5rem)] -mb-[clamp(1.5rem,3vw,2.5rem)] -mt-16 flex h-[100dvh] md:-mt-[clamp(1.5rem,3vw,2.5rem)]">
       {/* Channel List — left panel */}
       <div
         className={cn(

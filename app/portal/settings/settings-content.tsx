@@ -204,7 +204,7 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in-up space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
