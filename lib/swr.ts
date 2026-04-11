@@ -1732,8 +1732,8 @@ export function useMessageChannels(userId: string | null) {
     {
       ...swrConfig,
       refreshInterval: () => (isDocumentVisible() ? 30000 : 0),
-      revalidateOnFocus: true,
-      dedupingInterval: 10000,
+      revalidateOnFocus: false,
+      dedupingInterval: 30000,
       onErrorRetry,
     }
   );

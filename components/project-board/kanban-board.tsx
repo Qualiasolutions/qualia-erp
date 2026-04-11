@@ -25,7 +25,7 @@ interface DraggableTaskProps {
   children: React.ReactNode;
 }
 
-function DraggableTask({ task, children }: DraggableTaskProps) {
+const DraggableTask = React.memo(function DraggableTask({ task, children }: DraggableTaskProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
     data: { status: task.status },
@@ -36,7 +36,7 @@ function DraggableTask({ task, children }: DraggableTaskProps) {
       {children}
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Droppable column

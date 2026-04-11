@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { ArrowLeft, MessageSquare } from 'lucide-react';
 import { parseISO, format, isToday, isYesterday } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -57,8 +57,8 @@ export function MessageThread({
     prevMessageCountRef.current = messages.length;
   }, [messages.length]);
 
-  // Group messages by date
-  const groupedMessages = groupMessagesByDate(messages);
+  // Group messages by date (memoized to avoid recalculating on every render)
+  const groupedMessages = useMemo(() => groupMessagesByDate(messages), [messages]);
 
   return (
     <div className="flex h-full flex-1 flex-col">

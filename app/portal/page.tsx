@@ -67,13 +67,17 @@ export default async function PortalDashboard({
       return <PortalWorkspaceGrid workspaces={workspaces} />;
     }
 
-    // Workspace selected -> show that client's dashboard
-    // Look up the CRM client name for display
+    // Workspace selected -> validate client exists before proceeding (IDOR protection)
     const { data: client } = await supabase
       .from('clients')
       .select('name')
       .eq('id', workspaceId)
       .single();
+
+    if (!client) {
+      // Invalid workspace ID — redirect to workspace grid
+      redirect('/portal');
+    }
 
     // Find the portal user ID for this CRM client (via contact email -> profile)
     const { data: contact } = await supabase

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { Lock } from 'lucide-react';
 
@@ -14,7 +15,7 @@ interface MessageBubbleProps {
   timestamp: string;
 }
 
-export function MessageBubble({
+export const MessageBubble = React.memo(function MessageBubble({
   content,
   isInternal,
   senderName,
@@ -80,7 +81,7 @@ export function MessageBubble({
       </div>
     </div>
   );
-}
+});
 
 function formatTime(dateStr: string): string {
   try {
