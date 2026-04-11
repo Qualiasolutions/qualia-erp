@@ -65,17 +65,32 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
 
   const greeting = getGreeting();
 
+  const formatDate = () => {
+    const now = new Date();
+    return now
+      .toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+      .toUpperCase();
+  };
+
   return (
     <div className="space-y-8">
       {/* Greeting */}
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          {greeting}, {displayName}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Here is an overview of your assigned projects and quick actions.
+      <section
+        className="animate-fade-in-up"
+        style={{ animationDelay: '0ms', animationFillMode: 'both' }}
+      >
+        <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          {formatDate()}
         </p>
-      </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+          {greeting}, <span className="text-primary">{displayName}</span>
+        </h1>
+      </section>
 
       {/* Stats row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

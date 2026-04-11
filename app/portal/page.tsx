@@ -3,10 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalDashboardContent } from './portal-dashboard-content';
-import { PortalWorkspaceGrid } from '@/components/portal/portal-workspace-grid';
 import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { EmployeeDashboardContent } from './employee-dashboard-content';
+import { AdminDashboardContent } from './admin-dashboard-content';
 
 export default async function PortalDashboard({
   searchParams,
@@ -59,12 +59,12 @@ export default async function PortalDashboard({
 
   // Admin/Manager flow (use effective role so view-as routes correctly)
   if (isPortalAdminRole(effectiveRole)) {
-    // No workspace selected -> show workspace grid
+    // No workspace selected -> show admin dashboard with workspace grid
     if (!workspaceId) {
       const result = await getClientWorkspaces();
       const workspaces = (result.success ? result.data : []) as ClientWorkspace[];
 
-      return <PortalWorkspaceGrid workspaces={workspaces} />;
+      return <AdminDashboardContent workspaces={workspaces} displayName={displayName} />;
     }
 
     // Workspace selected -> validate client exists before proceeding (IDOR protection)
