@@ -58,6 +58,7 @@ const navItems: NavItemDef[] = [
 interface PortalSidebarV2Props {
   displayName: string;
   displayEmail: string;
+  isAdminViewing: boolean;
   companyName?: string | null;
   userId?: string;
 }
@@ -122,7 +123,17 @@ function NavLink({
 /* UserMenu                                                            */
 /* ------------------------------------------------------------------ */
 
-function UserMenu({ displayName, displayEmail }: { displayName: string; displayEmail: string }) {
+function UserMenu({
+  displayName,
+  displayEmail,
+  isAdminViewing,
+  onLinkClick,
+}: {
+  displayName: string;
+  displayEmail: string;
+  isAdminViewing: boolean;
+  onLinkClick?: () => void;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -160,6 +171,20 @@ function UserMenu({ displayName, displayEmail }: { displayName: string; displayE
           <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
         </div>
         <DropdownMenuSeparator />
+        {isAdminViewing && (
+          <>
+            <DropdownMenuItem
+              onClick={() => {
+                setOpen(false);
+                onLinkClick?.();
+                router.push('/');
+              }}
+            >
+              Exit preview
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           onClick={handleSignOut}
           className="text-destructive focus:text-destructive"
@@ -179,6 +204,7 @@ function UserMenu({ displayName, displayEmail }: { displayName: string; displayE
 function SidebarContent({
   displayName,
   displayEmail,
+  isAdminViewing,
   companyName,
   userId,
   onLinkClick,
@@ -240,7 +266,12 @@ function SidebarContent({
 
       {/* User area at bottom */}
       <div className="border-t border-border/30 bg-primary/[0.02] px-3 py-3 backdrop-blur-sm">
-        <UserMenu displayName={displayName} displayEmail={displayEmail} />
+        <UserMenu
+          displayName={displayName}
+          displayEmail={displayEmail}
+          isAdminViewing={isAdminViewing}
+          onLinkClick={onLinkClick}
+        />
       </div>
     </div>
   );
