@@ -60,6 +60,7 @@ export default async function PortalLayout({ children }: { children: React.React
         displayEmail={displayEmail}
         isAdminViewing={isAdminViewing}
         companyName={companyName}
+        userId={user.id}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner — floating, not a full header */}

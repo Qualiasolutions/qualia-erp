@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
+import { useUnreadMessageCount } from '@/lib/swr';
 
 /* ------------------------------------------------------------------ */
 /* Navigation items                                                    */
@@ -43,7 +44,7 @@ interface NavItemDef {
 const navItems: NavItemDef[] = [
   { name: 'Home', href: '/portal', icon: House, exact: true },
   { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
-  { name: 'Messages', href: null, icon: MessageSquare, comingSoon: true },
+  { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
   { name: 'Files', href: null, icon: FileStack, comingSoon: true },
   { name: 'Billing', href: '/portal/billing', icon: Receipt },
   { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
@@ -59,6 +60,7 @@ interface PortalSidebarV2Props {
   displayEmail: string;
   isAdminViewing: boolean;
   companyName?: string | null;
+  userId?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -69,10 +71,12 @@ function NavLink({
   item,
   isActive,
   onClick,
+  badge,
 }: {
   item: NavItemDef;
   isActive: boolean;
   onClick?: () => void;
+  badge?: React.ReactNode;
 }) {
   const inner = (
     <>
@@ -89,6 +93,7 @@ function NavLink({
           Soon
         </span>
       )}
+      {badge && <span className="ml-auto">{badge}</span>}
     </>
   );
 
@@ -201,15 +206,24 @@ function SidebarContent({
   displayEmail,
   isAdminViewing,
   companyName,
+  userId,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
+  const { total } = useUnreadMessageCount(userId ?? null);
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
     if (item.exact) return pathname === item.href;
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
+
+  const unreadBadge =
+    total > 0 ? (
+      <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+        {total > 99 ? '99+' : total}
+      </span>
+    ) : null;
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -240,7 +254,13 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
         {navItems.map((item) => (
-          <NavLink key={item.name} item={item} isActive={isActive(item)} onClick={onLinkClick} />
+          <NavLink
+            key={item.name}
+            item={item}
+            isActive={isActive(item)}
+            onClick={onLinkClick}
+            badge={item.name === 'Messages' ? unreadBadge : undefined}
+          />
         ))}
       </nav>
 
