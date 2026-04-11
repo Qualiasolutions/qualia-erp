@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -16,6 +16,12 @@ import {
   ChevronUp,
   Menu,
   Shield,
+  Inbox,
+  Calendar,
+  BookOpen,
+  FlaskConical,
+  Building2,
+  Activity,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -43,14 +49,33 @@ interface NavItemDef {
   appKey: string;
 }
 
-const navItems: NavItemDef[] = [
+// Apps visible to everyone
+const coreApps: NavItemDef[] = [
   { name: 'Home', href: '/portal', icon: House, exact: true, appKey: 'home' },
   { name: 'Projects', href: '/portal/projects', icon: FolderKanban, appKey: 'projects' },
   { name: 'Messages', href: '/portal/messages', icon: MessageSquare, appKey: 'messages' },
   { name: 'Files', href: '/portal/files', icon: FileStack, appKey: 'files' },
+  { name: 'Settings', href: '/portal/settings', icon: Settings, appKey: 'settings' },
+];
+
+// Client-only apps (hidden from employees)
+const clientApps: NavItemDef[] = [
   { name: 'Billing', href: '/portal/billing', icon: Receipt, appKey: 'billing' },
   { name: 'Requests', href: '/portal/requests', icon: Lightbulb, appKey: 'requests' },
-  { name: 'Settings', href: '/portal/settings', icon: Settings, appKey: 'settings' },
+];
+
+// Internal team apps (admin, manager, employee — never shown to clients)
+const internalApps: NavItemDef[] = [
+  { name: 'Inbox', href: '/portal/inbox', icon: Inbox, appKey: 'inbox' },
+  { name: 'Schedule', href: '/portal/schedule', icon: Calendar, appKey: 'schedule' },
+  { name: 'Knowledge', href: '/portal/knowledge', icon: BookOpen, appKey: 'knowledge' },
+  { name: 'Research', href: '/portal/research', icon: FlaskConical, appKey: 'research' },
+];
+
+// Admin-only apps (admin, manager — never shown to employee or client)
+const adminOnlyApps: NavItemDef[] = [
+  { name: 'Clients', href: '/portal/clients', icon: Building2, appKey: 'clients' },
+  { name: 'Status', href: '/portal/status', icon: Activity, appKey: 'status' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -71,6 +96,7 @@ interface PortalSidebarV2Props {
   userId?: string;
   enabledApps?: string[];
   branding?: PortalBranding | null;
+  userRole?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -219,6 +245,7 @@ function SidebarContent({
   userId,
   enabledApps,
   branding,
+  userRole,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -230,11 +257,26 @@ function SidebarContent({
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
+  // Build role-aware nav items
+  const allNavItems = useMemo(() => {
+    const items = [...coreApps];
+
+    if (userRole === 'client') {
+      items.push(...clientApps);
+    } else if (userRole === 'employee') {
+      items.push(...internalApps);
+    } else if (userRole === 'admin' || userRole === 'manager') {
+      items.push(...clientApps, ...internalApps, ...adminOnlyApps);
+    }
+
+    return items;
+  }, [userRole]);
+
   // Filter nav items by enabled apps (admins always see all)
   const visibleNavItems =
     isAdminViewing || !enabledApps || enabledApps.length === 0
-      ? navItems
-      : navItems.filter((item) => enabledApps.includes(item.appKey));
+      ? allNavItems
+      : allNavItems.filter((item) => enabledApps.includes(item.appKey));
 
   const unreadBadge =
     total > 0 ? (

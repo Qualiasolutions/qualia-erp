@@ -100,6 +100,25 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
+    // Old routes → portal equivalents (unified portal layout)
+    const ROUTE_REDIRECTS: Record<string, string> = {
+      '/knowledge': '/portal/knowledge',
+      '/research': '/portal/research',
+      '/clients': '/portal/clients',
+      '/status': '/portal/status',
+      '/schedule': '/portal/schedule',
+      '/inbox': '/portal/inbox',
+      '/team': '/portal',
+      '/payments': '/portal/billing',
+    };
+
+    const redirectTo = ROUTE_REDIRECTS[pathname];
+    if (redirectTo) {
+      const url = request.nextUrl.clone();
+      url.pathname = redirectTo;
+      return NextResponse.redirect(url);
+    }
+
     // Client users: redirect to portal if trying to access internal routes
     if (userRole === 'client') {
       const isAccessingInternal = internalRoutes.some((route) => pathname.startsWith(route));

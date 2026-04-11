@@ -85,7 +85,21 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   // Fetch enabled apps and branding in parallel
-  const allAppKeys = ['home', 'projects', 'messages', 'files', 'billing', 'requests', 'settings'];
+  const allAppKeys = [
+    'home',
+    'projects',
+    'messages',
+    'files',
+    'billing',
+    'requests',
+    'settings',
+    'inbox',
+    'schedule',
+    'knowledge',
+    'research',
+    'clients',
+    'status',
+  ];
   let enabledApps = allAppKeys;
   let branding: {
     company_name?: string | null;
@@ -132,6 +146,7 @@ export default async function PortalLayout({ children }: { children: React.React
         userId={user.id}
         enabledApps={enabledApps}
         branding={branding}
+        userRole={userRole}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner with view-as trigger */}
