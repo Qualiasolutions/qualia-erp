@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
-import { fadeInClasses } from '@/lib/transitions';
 
 export default async function PortalRequestsPage() {
   const supabase = await createClient();
@@ -43,13 +42,11 @@ export default async function PortalRequestsPage() {
     .filter((p): p is { id: string; name: string } => p !== null);
 
   return (
-    <div className={`space-y-6 ${fadeInClasses}`}>
+    <div className="animate-fade-in-up space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-            Requests
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Requests</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Track your feature requests and changes
           </p>
         </div>

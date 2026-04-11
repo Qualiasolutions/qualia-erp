@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation';
 import { getClientProjects } from '@/app/actions/client-portal';
 import { calculateProjectsProgress } from '@/app/actions/phases';
 import { isPortalAdminRole } from '@/lib/portal-utils';
-import { PortalProjectsList } from '@/components/portal/portal-projects-list';
+import { PortalProjectsGrid } from '@/components/portal/portal-projects-grid';
 import { fadeInClasses } from '@/lib/transitions';
+import { AlertCircle } from 'lucide-react';
 
 export default async function PortalProjectsPage() {
   const supabase = await createClient();
@@ -54,12 +55,10 @@ export default async function PortalProjectsPage() {
     return (
       <div className={`space-y-6 ${fadeInClasses}`}>
         <div>
-          <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-            Projects
-          </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground/70">All active projects</p>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">All active projects</p>
         </div>
-        <PortalProjectsList projects={formatted} progressMap={progressMap} />
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
       </div>
     );
   }
@@ -70,8 +69,9 @@ export default async function PortalProjectsPage() {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-sm font-medium text-foreground">Error loading projects</h2>
-          <p className="mt-1 text-[13px] text-muted-foreground">{result.error}</p>
+          <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
+          <p className="mt-3 text-base font-medium text-foreground">Error loading projects</p>
+          <p className="mt-1 text-sm text-muted-foreground">{result.error}</p>
         </div>
       </div>
     );
@@ -117,14 +117,12 @@ export default async function PortalProjectsPage() {
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
-        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-          Your Projects
-        </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground/70">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Track the progress of your active projects
         </p>
       </div>
-      <PortalProjectsList projects={projects} progressMap={progressMap} />
+      <PortalProjectsGrid projects={projects} progressMap={progressMap} />
     </div>
   );
 }

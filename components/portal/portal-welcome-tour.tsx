@@ -70,7 +70,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
     >
       <div
         className={cn(
-          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-primary/[0.12] bg-[#EDF0F0] shadow-2xl shadow-primary/[0.08] transition-all duration-200 dark:border-primary/[0.16] dark:bg-[#121819]',
+          'relative mx-4 w-full max-w-md overflow-hidden rounded-2xl border border-primary/[0.12] bg-background shadow-2xl shadow-primary/[0.08] transition-all duration-200 dark:border-primary/[0.16]',
           exiting ? 'scale-95 opacity-0' : 'duration-300 animate-in fade-in zoom-in-95'
         )}
       >
@@ -78,7 +78,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
         <button
           type="button"
           onClick={dismiss}
-          className="absolute right-3 top-3 z-10 rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-muted-foreground"
+          className="absolute right-3 top-3 z-10 cursor-pointer rounded-lg p-1.5 text-muted-foreground/40 transition-colors hover:bg-muted/50 hover:text-muted-foreground"
         >
           <X className="size-4" />
         </button>
@@ -111,7 +111,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
               <button
                 type="button"
                 onClick={dismiss}
-                className="text-xs text-muted-foreground/60 transition-colors hover:text-primary/70"
+                className="cursor-pointer text-xs text-muted-foreground/60 transition-colors hover:text-primary/70"
               >
                 I&apos;ll explore on my own
               </button>
@@ -156,7 +156,7 @@ export function PortalWelcomeTour({ displayName, companyName }: PortalWelcomeTou
                 type="button"
                 onClick={() => setCurrentStep((s) => Math.max(0, s - 1))}
                 className={cn(
-                  'flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary/70',
+                  'flex cursor-pointer items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary/70',
                   currentStep === 0 && 'invisible'
                 )}
               >

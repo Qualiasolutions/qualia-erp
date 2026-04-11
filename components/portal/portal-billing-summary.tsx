@@ -2,7 +2,6 @@
 
 import { DollarSign, Clock, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getStaggerDelay } from '@/lib/transitions';
 
 interface Invoice {
   amount: number;
@@ -44,48 +43,37 @@ export function PortalBillingSummary({ invoices }: PortalBillingSummaryProps) {
       label: 'Outstanding',
       value: formatCurrency(outstanding, currency),
       icon: DollarSign,
-      iconColor: outstanding > 0 ? 'text-rose-500' : 'text-green-500',
-      iconBg:
-        outstanding > 0
-          ? 'bg-rose-500/8 dark:bg-rose-500/15'
-          : 'bg-green-500/8 dark:bg-green-500/15',
+      iconColor: outstanding > 0 ? 'text-rose-500' : 'text-emerald-500',
     },
     {
       label: 'Total Paid',
       value: formatCurrency(paid, currency),
       icon: CheckCircle2,
-      iconColor: 'text-green-500',
-      iconBg: 'bg-green-500/8 dark:bg-green-500/15',
+      iconColor: 'text-emerald-500',
     },
     {
       label: 'Next Due',
       value: nextDue ? new Date(nextDue).toLocaleDateString() : 'None',
       icon: Clock,
       iconColor: 'text-blue-500',
-      iconBg: 'bg-blue-500/8 dark:bg-blue-500/15',
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       {cards.map((card, index) => (
         <div
           key={card.label}
-          className="flex animate-fade-in-up items-center gap-4 rounded-xl border border-primary/[0.08] bg-card px-5 py-5 transition-all duration-200 fill-mode-both hover:border-primary/20 hover:shadow-elevation-1"
-          style={getStaggerDelay(index)}
+          className="relative animate-fade-in rounded-xl border border-border bg-card p-5 fill-mode-both"
+          style={{ animationDelay: `${index * 50}ms` }}
         >
-          <div
-            className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-              card.iconBg
-            )}
-          >
-            <card.icon className={cn('h-5 w-5', card.iconColor)} />
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {card.label}
+            </p>
+            <card.icon className={cn('h-4 w-4 text-muted-foreground/20', card.iconColor)} />
           </div>
-          <div>
-            <p className="text-lg font-semibold tabular-nums text-foreground">{card.value}</p>
-            <p className="text-[12px] text-muted-foreground">{card.label}</p>
-          </div>
+          <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{card.value}</p>
         </div>
       ))}
     </div>

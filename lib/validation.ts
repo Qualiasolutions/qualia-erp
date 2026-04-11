@@ -507,3 +507,20 @@ export const FeatureRequestCreateSchema = z.object({
 
 export type ClientProfileUpdateInput = z.infer<typeof ClientProfileUpdateSchema>;
 export type FeatureRequestCreateInput = z.infer<typeof FeatureRequestCreateSchema>;
+
+// =====================
+// Portal Messaging Schemas
+// =====================
+export const sendMessageSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  content: z.string().min(1, 'Message cannot be empty').max(10000, 'Message too long'),
+  contentHtml: z.string().max(50000).optional().nullable(),
+  isInternal: z.boolean().default(false),
+});
+
+export const markChannelReadSchema = z.object({
+  channelId: z.string().uuid('Invalid channel ID'),
+});
+
+export type SendMessageInput = z.infer<typeof sendMessageSchema>;
+export type MarkChannelReadInput = z.infer<typeof markChannelReadSchema>;

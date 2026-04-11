@@ -21,6 +21,8 @@ import {
   Package,
   Compass,
   ArrowLeft,
+  LayoutGrid,
+  Map as MapIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +45,9 @@ import { invalidateProjectPhases, invalidateProjectTasks, invalidateInboxTasks }
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { PhaseComments } from '@/components/phase-comments';
+import { ProjectBoard } from '@/components/project-board/project-board';
+
+type WorkflowViewMode = 'roadmap' | 'board';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -521,6 +526,7 @@ export function ProjectWorkflow({
   userRole,
   className,
 }: ProjectWorkflowProps) {
+  const [viewMode, setViewMode] = useState<WorkflowViewMode>('roadmap');
   const [phases, setPhases] = useState<Phase[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [activePhaseId, setActivePhaseId] = useState<string | null>(null);
@@ -1092,164 +1098,217 @@ export function ProjectWorkflow({
 
   return (
     <div className={cn('flex flex-col', className)}>
-      {/* Header */}
+      {/* Header with view mode toggle */}
       <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-3">
         <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-foreground">Roadmap</h2>
-          {isGitHubSynced && (
+          {/* View mode toggle */}
+          <div
+            className="flex gap-0.5 rounded-lg border border-border bg-muted/30 p-0.5"
+            role="tablist"
+            aria-label="Project view"
+          >
+            <button
+              role="tab"
+              aria-selected={viewMode === 'roadmap'}
+              onClick={() => setViewMode('roadmap')}
+              className={cn(
+                'flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                viewMode === 'roadmap'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <MapIcon className="h-3.5 w-3.5" aria-hidden="true" />
+              Roadmap
+            </button>
+            <button
+              role="tab"
+              aria-selected={viewMode === 'board'}
+              onClick={() => setViewMode('board')}
+              className={cn(
+                'flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                viewMode === 'board'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              <LayoutGrid className="h-3.5 w-3.5" aria-hidden="true" />
+              Board
+            </button>
+          </div>
+          {viewMode === 'roadmap' && isGitHubSynced && (
             <Badge variant="outline" className="gap-1 rounded-full px-2 py-0 text-[10px]">
               <GitBranch className="size-2.5" />
               Synced
             </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {/* Sync button */}
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground disabled:opacity-50"
-            title="Sync from GitHub .planning"
-          >
-            {isSyncing ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3 w-3" />
-            )}
-            Sync
-          </button>
-          {/* Add phase */}
-          {showNewPhase ? (
-            <div className="flex items-center gap-1.5">
-              <Input
-                ref={newPhaseInputRef}
-                value={newPhaseName}
-                onChange={(e) => setNewPhaseName(e.target.value)}
-                placeholder="Phase name..."
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddPhase();
-                  if (e.key === 'Escape') {
-                    setShowNewPhase(false);
-                    setNewPhaseName('');
-                  }
-                }}
-                autoFocus
-                className="h-7 w-40 text-xs"
-                disabled={isPending}
-              />
-              <Button
-                size="sm"
-                onClick={handleAddPhase}
-                disabled={isPending || !newPhaseName.trim()}
-                className="h-7 px-2 text-xs"
-              >
-                Add
-              </Button>
-            </div>
-          ) : (
+        {viewMode === 'roadmap' && (
+          <div className="flex items-center gap-2">
+            {/* Sync button */}
             <button
-              onClick={() => {
-                setShowNewPhase(true);
-                setTimeout(() => newPhaseInputRef.current?.focus(), 50);
-              }}
-              className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground disabled:opacity-50"
+              title="Sync from GitHub .planning"
             >
-              <Plus className="h-3 w-3" />
-              Add phase
+              {isSyncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              Sync
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Progress summary cards */}
-      <ProgressSummary phases={phases} />
-
-      {/* Milestone sections — scrollable */}
-      <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
-        <div className="px-5 pb-4">
-          {/* General tasks section */}
-          {unphasedTasks.length > 0 && (
-            <div className="mb-4">
-              <button
-                onClick={() => setActivePhaseId('__general')}
-                className="group flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left transition-all hover:border-primary/20 hover:bg-muted/20"
-              >
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/30">
-                  <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">Unphased Tasks</p>
-                  <p className="text-xs text-muted-foreground">
-                    {unphasedTasks.filter((t) => t.status === 'Done').length}/{unphasedTasks.length}{' '}
-                    done
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-foreground" />
-              </button>
-            </div>
-          )}
-
-          {/* Milestone groups */}
-          {milestones.map((ms) => (
-            <MilestoneSection
-              key={ms.number}
-              milestone={ms}
-              tasksByPhase={tasksByPhase}
-              onDrillIn={(phaseId) => setActivePhaseId(phaseId)}
-              onEditPhase={(phase) => {
-                setEditingPhaseId(phase.id);
-                setEditingPhaseName(phase.name);
-              }}
-              onDeletePhase={handleDeletePhase}
-              isPending={isPending}
-              defaultExpanded={ms.status === 'in_progress' || milestones.length === 1}
-            />
-          ))}
-
-          {/* Phase name edit dialog */}
-          <Dialog open={!!editingPhaseId} onOpenChange={(open) => !open && setEditingPhaseId(null)}>
-            <DialogContent className="sm:max-w-sm">
-              <DialogHeader>
-                <DialogTitle>Edit Phase Name</DialogTitle>
-              </DialogHeader>
-              <Input
-                value={editingPhaseName}
-                onChange={(e) => setEditingPhaseName(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && editingPhaseId) handleUpdatePhase(editingPhaseId);
-                }}
-                autoFocus
-                className="mb-3"
-                disabled={isPending}
-              />
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setEditingPhaseId(null)}>
-                  Cancel
-                </Button>
+            {/* Add phase */}
+            {showNewPhase ? (
+              <div className="flex items-center gap-1.5">
+                <Input
+                  ref={newPhaseInputRef}
+                  value={newPhaseName}
+                  onChange={(e) => setNewPhaseName(e.target.value)}
+                  placeholder="Phase name..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAddPhase();
+                    if (e.key === 'Escape') {
+                      setShowNewPhase(false);
+                      setNewPhaseName('');
+                    }
+                  }}
+                  autoFocus
+                  className="h-7 w-40 text-xs"
+                  disabled={isPending}
+                />
                 <Button
                   size="sm"
-                  onClick={() => editingPhaseId && handleUpdatePhase(editingPhaseId)}
-                  disabled={isPending}
+                  onClick={handleAddPhase}
+                  disabled={isPending || !newPhaseName.trim()}
+                  className="h-7 px-2 text-xs"
                 >
-                  Save
+                  Add
                 </Button>
               </div>
-            </DialogContent>
-          </Dialog>
-
-          <ConfirmDialog
-            open={!!confirmDialog}
-            onOpenChange={(open) => !open && setConfirmDialog(null)}
-            title={confirmDialog?.title ?? ''}
-            description={confirmDialog?.description ?? ''}
-            confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
-            onConfirm={() => {
-              confirmDialog?.action();
-              setConfirmDialog(null);
-            }}
-          />
-        </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setShowNewPhase(true);
+                  setTimeout(() => newPhaseInputRef.current?.focus(), 50);
+                }}
+                className="flex h-7 items-center gap-1 rounded-md px-2 text-xs text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+              >
+                <Plus className="h-3 w-3" />
+                Add phase
+              </button>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Board View */}
+      {viewMode === 'board' && (
+        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+          <ProjectBoard projectId={projectId} userRole={userRole} />
+        </div>
+      )}
+
+      {/* Roadmap View */}
+      {viewMode === 'roadmap' && (
+        <>
+          {/* Progress summary cards */}
+          <ProgressSummary phases={phases} />
+
+          {/* Milestone sections — scrollable */}
+          <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
+            <div className="px-5 pb-4">
+              {/* General tasks section */}
+              {unphasedTasks.length > 0 && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => setActivePhaseId('__general')}
+                    className="group flex w-full items-center gap-3 rounded-lg border border-border px-4 py-3 text-left transition-all hover:border-primary/20 hover:bg-muted/20"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted/30">
+                      <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-foreground">Unphased Tasks</p>
+                      <p className="text-xs text-muted-foreground">
+                        {unphasedTasks.filter((t) => t.status === 'Done').length}/
+                        {unphasedTasks.length} done
+                      </p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/30 transition-colors group-hover:text-foreground" />
+                  </button>
+                </div>
+              )}
+
+              {/* Milestone groups */}
+              {milestones.map((ms) => (
+                <MilestoneSection
+                  key={ms.number}
+                  milestone={ms}
+                  tasksByPhase={tasksByPhase}
+                  onDrillIn={(phaseId) => setActivePhaseId(phaseId)}
+                  onEditPhase={(phase) => {
+                    setEditingPhaseId(phase.id);
+                    setEditingPhaseName(phase.name);
+                  }}
+                  onDeletePhase={handleDeletePhase}
+                  isPending={isPending}
+                  defaultExpanded={ms.status === 'in_progress' || milestones.length === 1}
+                />
+              ))}
+
+              {/* Phase name edit dialog */}
+              <Dialog
+                open={!!editingPhaseId}
+                onOpenChange={(open) => !open && setEditingPhaseId(null)}
+              >
+                <DialogContent className="sm:max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>Edit Phase Name</DialogTitle>
+                  </DialogHeader>
+                  <Input
+                    value={editingPhaseName}
+                    onChange={(e) => setEditingPhaseName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && editingPhaseId) handleUpdatePhase(editingPhaseId);
+                    }}
+                    autoFocus
+                    className="mb-3"
+                    disabled={isPending}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setEditingPhaseId(null)}>
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => editingPhaseId && handleUpdatePhase(editingPhaseId)}
+                      disabled={isPending}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <ConfirmDialog
+                open={!!confirmDialog}
+                onOpenChange={(open) => !open && setConfirmDialog(null)}
+                title={confirmDialog?.title ?? ''}
+                description={confirmDialog?.description ?? ''}
+                confirmLabel={confirmDialog?.confirmLabel ?? 'Confirm'}
+                onConfirm={() => {
+                  confirmDialog?.action();
+                  setConfirmDialog(null);
+                }}
+              />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

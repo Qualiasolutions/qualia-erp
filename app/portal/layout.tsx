@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
-import { PortalSidebar } from '@/components/portal/portal-sidebar';
+import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
 
 export const metadata: Metadata = {
@@ -54,12 +54,13 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="flex h-full overflow-hidden bg-background transition-colors duration-200">
-      <PortalSidebar
+    <div className="flex h-screen overflow-hidden bg-background">
+      <PortalSidebarV2
         displayName={displayName}
         displayEmail={displayEmail}
         isAdminViewing={isAdminViewing}
         companyName={companyName}
+        userId={user.id}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner — floating, not a full header */}
@@ -82,7 +83,7 @@ export default async function PortalLayout({ children }: { children: React.React
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto scroll-smooth">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
           <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
             <PageTransition>{children}</PageTransition>
           </div>

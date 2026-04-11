@@ -1,10 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { usePortalProjectWithPhases } from '@/lib/swr';
-import { PortalRoadmap } from '@/components/portal/portal-roadmap';
-import { PortalTabs } from '@/components/portal/portal-tabs';
-import { PortalPageHeader } from '@/components/portal/portal-page-header';
+import { PortalProjectTabs } from '@/components/portal/portal-project-tabs';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { getProjectStatusColor } from '@/lib/portal-styles';
 import { fadeInClasses } from '@/lib/transitions';
+import { ChevronLeft, AlertCircle } from 'lucide-react';
 
 interface PortalProjectContentProps {
   projectId: string;
@@ -26,21 +29,22 @@ export function PortalProjectContent({
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="animate-pulse space-y-3">
+          <div className="h-5 w-20 rounded-lg bg-primary/[0.04]" />
           <div className="h-8 w-64 rounded-xl bg-primary/[0.04]" />
-          <div className="h-4 w-96 rounded-xl bg-primary/[0.04]" />
         </div>
 
         {/* Tabs skeleton */}
-        <div className="flex gap-2">
-          <div className="h-9 w-24 animate-pulse rounded-xl bg-primary/[0.04]" />
-          <div className="h-9 w-24 animate-pulse rounded-xl bg-primary/[0.04]" />
+        <div className="flex gap-6 border-b border-border pb-3">
+          <div className="h-5 w-20 animate-pulse rounded bg-primary/[0.04]" />
+          <div className="h-5 w-20 animate-pulse rounded bg-primary/[0.04]" />
+          <div className="h-5 w-16 animate-pulse rounded bg-primary/[0.04]" />
+          <div className="h-5 w-20 animate-pulse rounded bg-primary/[0.04]" />
         </div>
 
-        {/* Roadmap skeleton */}
+        {/* Content skeleton */}
         <div className="space-y-4">
-          <div className="h-28 animate-pulse rounded-xl bg-primary/[0.04]" />
-          <div className="h-28 animate-pulse rounded-xl bg-primary/[0.04]" />
-          <div className="h-28 animate-pulse rounded-xl bg-primary/[0.04]" />
+          <div className="h-32 animate-pulse rounded-xl bg-primary/[0.04]" />
+          <div className="h-48 animate-pulse rounded-xl bg-primary/[0.04]" />
         </div>
       </div>
     );
@@ -51,23 +55,9 @@ export function PortalProjectContent({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
-            <svg
-              className="h-6 w-6 text-destructive"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-          </div>
-          <h3 className="mt-4 text-lg font-semibold text-foreground">Failed to load project</h3>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
+          <h3 className="mt-4 text-base font-medium text-foreground">Failed to load project</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
             Unable to fetch project details. Please try refreshing the page.
           </p>
         </div>
@@ -75,31 +65,42 @@ export function PortalProjectContent({
     );
   }
 
-  const totalPhases = phases?.length ?? 0;
-  const completedPhases = (phases ?? []).filter(
-    (p) => p.status === 'completed' || p.status === 'done'
-  ).length;
-
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
-      <div className="pb-4">
-        <PortalPageHeader
-          title={project.name}
-          description={project.description}
-          completedPhases={completedPhases}
-          totalPhases={totalPhases}
-        />
-      </div>
+      {/* Header with back link, name, status */}
+      <header>
+        <Link
+          href="/portal/projects"
+          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Back to Projects
+        </Link>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{project.name}</h1>
+          <Badge
+            className={cn(
+              'shrink-0 border px-2 py-0.5 text-xs',
+              getProjectStatusColor(project.project_status)
+            )}
+          >
+            {project.project_status}
+          </Badge>
+        </div>
+        {project.description && (
+          <p className="mt-1.5 text-sm text-muted-foreground/70">{project.description}</p>
+        )}
+      </header>
 
-      <PortalTabs projectId={projectId} />
-
-      <PortalRoadmap
+      {/* Tabbed interface */}
+      <PortalProjectTabs
         project={project}
         phases={phases}
         userRole={userRole}
         currentUserId={currentUserId}
         isLoading={isLoading}
         isValidating={isValidating}
+        projectId={projectId}
       />
     </div>
   );

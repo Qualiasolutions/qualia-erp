@@ -5,6 +5,7 @@ import { createFeatureRequest } from '@/app/actions/client-requests';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, CheckCircle2 } from 'lucide-react';
+import { Plus, CheckCircle2, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -95,7 +96,7 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="default" className="h-10 gap-1.5">
+        <Button size="default" className="h-10 cursor-pointer gap-1.5 rounded-lg">
           <Plus className="h-4 w-4" />
           New Request
         </Button>
@@ -103,33 +104,39 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
       <DialogContent className="sm:max-w-lg">
         {submitted ? (
           <div className="flex flex-col items-center py-8 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
-              <CheckCircle2 className="h-7 w-7 text-green-600" />
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-500/10">
+              <CheckCircle2 className="h-7 w-7 text-emerald-600 dark:text-emerald-400" />
             </div>
             <h3 className="text-lg font-semibold text-foreground">Request Submitted</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               We&apos;ll review your request and respond with updates.
             </p>
-            <Button variant="outline" className="mt-6" onClick={() => handleOpenChange(false)}>
+            <Button
+              variant="outline"
+              className="mt-6 cursor-pointer rounded-lg"
+              onClick={() => handleOpenChange(false)}
+            >
               Close
             </Button>
           </div>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>New Request</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-lg font-semibold tracking-tight">
+                New Request
+              </DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
                 Submit a feature request, bug report, or question.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 pt-2">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <Label htmlFor="request-category" className="text-sm font-medium">
                     Category
-                  </label>
+                  </Label>
                   <Select value={category} onValueChange={setCategory}>
-                    <SelectTrigger>
+                    <SelectTrigger id="request-category">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -141,12 +148,12 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <Label htmlFor="request-priority" className="text-sm font-medium">
                     Priority
-                  </label>
+                  </Label>
                   <Select value={priority} onValueChange={setPriority}>
-                    <SelectTrigger>
+                    <SelectTrigger id="request-priority">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -158,9 +165,12 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">Title</label>
+              <div className="space-y-1.5">
+                <Label htmlFor="request-title" className="text-sm font-medium">
+                  Title
+                </Label>
                 <Input
+                  id="request-title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Brief description of your request"
@@ -168,11 +178,12 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
                 />
               </div>
 
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+              <div className="space-y-1.5">
+                <Label htmlFor="request-description" className="text-sm font-medium">
                   Description
-                </label>
+                </Label>
                 <Textarea
+                  id="request-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Provide more details..."
@@ -181,12 +192,12 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
               </div>
 
               {projects.length > 0 && (
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <div className="space-y-1.5">
+                  <Label htmlFor="request-project" className="text-sm font-medium">
                     Project (optional)
-                  </label>
+                  </Label>
                   <Select value={projectId} onValueChange={setProjectId}>
-                    <SelectTrigger>
+                    <SelectTrigger id="request-project">
                       <SelectValue placeholder="Select project" />
                     </SelectTrigger>
                     <SelectContent>
@@ -201,11 +212,27 @@ export function PortalRequestDialog({ projects }: PortalRequestDialogProps) {
               )}
 
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="cursor-pointer rounded-lg"
+                  onClick={() => handleOpenChange(false)}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={loading || !title.trim()}>
-                  {loading ? 'Submitting...' : 'Submit Request'}
+                <Button
+                  type="submit"
+                  disabled={loading || !title.trim()}
+                  className="cursor-pointer rounded-lg bg-primary text-primary-foreground"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Request'
+                  )}
                 </Button>
               </div>
             </form>
