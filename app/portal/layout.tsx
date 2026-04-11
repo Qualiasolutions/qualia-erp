@@ -23,10 +23,10 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow clients and admins
+  // Allow all authenticated users (clients, employees, managers, admins)
   const userRole = await getUserRole(user.id);
-  if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
-    redirect('/');
+  if (!userRole) {
+    redirect('/auth/login');
   }
 
   // Get user profile for display
@@ -41,9 +41,9 @@ export default async function PortalLayout({ children }: { children: React.React
   const displayEmail = profile?.email || user.email || '';
 
   // For client users, resolve company name from portal mappings
-  // For admin users, the company name will be passed per-page via workspace context
+  // For admin/staff users, the company name will be passed per-page via workspace context
   let companyName: string | null = null;
-  if (!isAdminViewing) {
+  if (userRole === 'client') {
     const { data: mapping } = await supabase
       .from('portal_project_mappings')
       .select('erp_company_name')
@@ -62,6 +62,7 @@ export default async function PortalLayout({ children }: { children: React.React
         isAdminViewing={isAdminViewing}
         companyName={companyName}
         userId={user.id}
+        userRole={userRole}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">

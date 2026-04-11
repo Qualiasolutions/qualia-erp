@@ -72,6 +72,78 @@ export default async function PortalProjectsPage({
     );
   }
 
+  // Employee: show assigned projects
+  const isEmployee = profile?.role === 'employee';
+  if (isEmployee) {
+    // Get project IDs from active assignments
+    const { data: assignments } = await supabase
+      .from('project_assignments')
+      .select('project_id')
+      .eq('employee_id', user.id)
+      .is('removed_at', null);
+
+    const assignedProjectIds = (assignments || []).map((a) => a.project_id);
+
+    if (assignedProjectIds.length === 0) {
+      return (
+        <div className={`space-y-6 ${fadeInClasses}`}>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Projects you are assigned to</p>
+          </div>
+          <div className="flex min-h-[400px] items-center justify-center">
+            <div className="text-center">
+              <AlertCircle
+                className="mx-auto h-12 w-12 text-muted-foreground/30"
+                aria-hidden="true"
+              />
+              <p className="mt-3 text-base font-medium text-foreground">No projects assigned</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Projects will appear here once you are assigned to them.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const { data: employeeProjects } = await supabase
+      .from('projects')
+      .select('id, name, description, project_type, status, start_date, end_date:target_date')
+      .in('id', assignedProjectIds)
+      .not('status', 'eq', 'Canceled')
+      .order('name');
+
+    const empProjectIds = (employeeProjects || []).map((p) => p.id);
+    const empProgressMap = await calculateProjectsProgress(empProjectIds);
+
+    const empFormatted = (employeeProjects || []).map((p) => ({
+      id: p.id,
+      project_id: p.id,
+      access_level: 'employee' as string | null,
+      invited_at: null as string | null,
+      project: {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        project_type: p.project_type || 'web_design',
+        project_status: p.status || 'Active',
+        start_date: p.start_date,
+        end_date: p.end_date,
+      },
+    }));
+
+    return (
+      <div className={`space-y-6 ${fadeInClasses}`}>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Projects you are assigned to</p>
+        </div>
+        <PortalProjectsGrid projects={empFormatted} progressMap={empProgressMap} />
+      </div>
+    );
+  }
+
   // Admin: show all projects
   if (isAdmin) {
     const { data: allProjects } = await supabase

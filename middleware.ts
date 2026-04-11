@@ -93,10 +93,16 @@ export async function middleware(request: NextRequest) {
       '/video-player',
     ];
 
-    // Client users: redirect to portal if trying to access internal routes or root
+    // ALL users: redirect root `/` to `/portal` (unified portal experience)
+    if (pathname === '/') {
+      const url = request.nextUrl.clone();
+      url.pathname = '/portal';
+      return NextResponse.redirect(url);
+    }
+
+    // Client users: redirect to portal if trying to access internal routes
     if (userRole === 'client') {
-      const isAccessingInternal =
-        pathname === '/' || internalRoutes.some((route) => pathname.startsWith(route));
+      const isAccessingInternal = internalRoutes.some((route) => pathname.startsWith(route));
 
       if (isAccessingInternal && !pathname.startsWith('/portal')) {
         const url = request.nextUrl.clone();
@@ -113,14 +119,14 @@ export async function middleware(request: NextRequest) {
       adminOnlyRoutes.some((route) => pathname.startsWith(route))
     ) {
       const url = request.nextUrl.clone();
-      url.pathname = '/';
+      url.pathname = '/portal';
       return NextResponse.redirect(url);
     }
 
-    // If user is authenticated and trying to access /auth/login or /auth/signup, redirect based on role
+    // If user is authenticated and trying to access /auth/login or /auth/signup, redirect to portal
     if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();
-      url.pathname = userRole === 'client' ? '/portal' : '/';
+      url.pathname = '/portal';
       return NextResponse.redirect(url);
     }
   }
