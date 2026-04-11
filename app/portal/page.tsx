@@ -5,6 +5,7 @@ import { PortalDashboardContent } from './portal-dashboard-content';
 import { PortalWorkspaceGrid } from '@/components/portal/portal-workspace-grid';
 import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
+import { EmployeeDashboardContent } from './employee-dashboard-content';
 
 export default async function PortalDashboard({
   searchParams,
@@ -84,6 +85,11 @@ export default async function PortalDashboard({
         companyName={companyName}
       />
     );
+  }
+
+  // Employee flow: show their assigned projects dashboard
+  if (userRole === 'employee') {
+    return <EmployeeDashboardContent userId={user.id} displayName={displayName} />;
   }
 
   // Client: fetch company name for personalization

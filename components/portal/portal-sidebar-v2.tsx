@@ -16,6 +16,12 @@ import {
   ChevronUp,
   Menu,
   ArrowLeftRight,
+  Inbox,
+  Calendar,
+  Users,
+  UserCircle,
+  BookOpen,
+  Shield,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -52,6 +58,18 @@ const navItems: NavItemDef[] = [
   { name: 'Settings', href: '/portal/settings', icon: Settings },
 ];
 
+/** Staff-only nav items (admin/manager/employee) — internal routes */
+const staffNavItems: NavItemDef[] = [
+  { name: 'Inbox', href: '/inbox', icon: Inbox },
+  { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Clients', href: '/clients', icon: Users },
+  { name: 'Team', href: '/team', icon: UserCircle },
+  { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
+];
+
+/** Admin/manager-only nav items */
+const adminNavItems: NavItemDef[] = [{ name: 'Admin', href: '/admin', icon: Shield }];
+
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
 /* ------------------------------------------------------------------ */
@@ -62,6 +80,7 @@ interface PortalSidebarV2Props {
   isAdminViewing: boolean;
   companyName?: string | null;
   userId?: string;
+  userRole?: string | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -200,15 +219,6 @@ function UserMenu({
               <ArrowLeftRight className="h-4 w-4" />
               Switch workspace
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setOpen(false);
-                onLinkClick?.();
-                router.push('/');
-              }}
-            >
-              Back to ERP
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
@@ -234,6 +244,7 @@ function SidebarContent({
   isAdminViewing,
   companyName,
   userId,
+  userRole,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -241,6 +252,9 @@ function SidebarContent({
   const workspaceId = isAdminViewing ? searchParams.get('workspace') : null;
   const workspaceName = isAdminViewing ? searchParams.get('wname') || companyName : null;
   const { total } = useUnreadMessageCount(userId ?? null);
+
+  const isStaff = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const isAdminOrManager = userRole === 'admin' || userRole === 'manager';
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
@@ -327,6 +341,34 @@ function SidebarContent({
             workspaceName={workspaceName}
           />
         ))}
+
+        {/* Staff-only section: internal routes */}
+        {isStaff && (
+          <>
+            <div className="pb-1 pt-4" role="separator">
+              <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/50">
+                Workspace
+              </p>
+            </div>
+            {staffNavItems.map((item) => (
+              <NavLink
+                key={item.name}
+                item={item}
+                isActive={isActive(item)}
+                onClick={onLinkClick}
+              />
+            ))}
+            {isAdminOrManager &&
+              adminNavItems.map((item) => (
+                <NavLink
+                  key={item.name}
+                  item={item}
+                  isActive={isActive(item)}
+                  onClick={onLinkClick}
+                />
+              ))}
+          </>
+        )}
       </nav>
 
       {/* User area at bottom */}
