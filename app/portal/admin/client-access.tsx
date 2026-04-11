@@ -12,6 +12,7 @@ interface PortalClient {
   email: string | null;
   projectCount: number;
   isActive: boolean;
+  lastLogin: string | null;
 }
 
 interface ClientAccessProps {
@@ -63,14 +64,21 @@ export function ClientAccess({ workspaceId }: ClientAccessProps) {
           throw profileError;
         }
 
-        const portalClients: PortalClient[] = (profiles ?? []).map((p) => ({
-          id: p.id,
-          full_name: p.full_name,
-          email: p.email,
-          projectCount: projectCounts.get(p.id) ?? 0,
-          // Consider active if they have been updated (logged in) recently
-          isActive: true,
-        }));
+        const now = Date.now();
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+        const portalClients: PortalClient[] = (profiles ?? []).map((p) => {
+          const lastLogin = p.updated_at || null;
+          const lastLoginMs = lastLogin ? new Date(lastLogin).getTime() : 0;
+          return {
+            id: p.id,
+            full_name: p.full_name,
+            email: p.email,
+            projectCount: projectCounts.get(p.id) ?? 0,
+            isActive: lastLoginMs > 0 && now - lastLoginMs < THIRTY_DAYS_MS,
+            lastLogin,
+          };
+        });
 
         // Sort by name
         portalClients.sort((a, b) =>
@@ -129,6 +137,9 @@ export function ClientAccess({ workspaceId }: ClientAccessProps) {
               <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Projects
               </th>
+              <th className="hidden px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground sm:table-cell">
+                Last Login
+              </th>
               <th className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Status
               </th>
@@ -157,6 +168,15 @@ export function ClientAccess({ workspaceId }: ClientAccessProps) {
                 <td className="px-4 py-3 text-muted-foreground">{client.email ?? '-'}</td>
                 <td className="px-4 py-3 text-center tabular-nums text-foreground">
                   {client.projectCount}
+                </td>
+                <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
+                  {client.lastLogin
+                    ? new Date(client.lastLogin).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : '—'}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <span
