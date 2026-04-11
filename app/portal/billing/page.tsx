@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import { getClientInvoices } from '@/app/actions/client-portal';
 import { PortalInvoiceList } from '@/components/portal/portal-invoice-list';
 import { PortalBillingSummary } from '@/components/portal/portal-billing-summary';
-import { fadeInClasses } from '@/lib/transitions';
 
 export default async function PortalBillingPage() {
   const supabase = await createClient();
@@ -32,12 +31,10 @@ export default async function PortalBillingPage() {
   }>;
 
   return (
-    <div className={`space-y-6 ${fadeInClasses}`}>
+    <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-          Billing
-        </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Billing</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           View and track your invoices and payment history
         </p>
       </div>

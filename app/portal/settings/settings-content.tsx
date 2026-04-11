@@ -86,23 +86,23 @@ function PasswordChangeSection() {
   };
 
   return (
-    <section className="space-y-5">
-      <div className="flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+    <section
+      className="animate-fade-in rounded-xl border border-border bg-card p-6 fill-mode-both"
+      style={{ animationDelay: '100ms' }}
+    >
+      <div className="mb-5 flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
           <Lock className="h-4 w-4 text-primary" />
         </div>
         <div>
-          <h2 className="text-sm font-medium text-foreground">Change Password</h2>
-          <p className="text-[12px] text-muted-foreground">Update your account password</p>
+          <h2 className="text-base font-semibold text-foreground">Change Password</h2>
+          <p className="text-xs text-muted-foreground">Update your account password</p>
         </div>
       </div>
 
-      <form
-        onSubmit={handlePasswordChange}
-        className="space-y-4 rounded-xl border border-primary/[0.08] bg-card p-5 dark:border-primary/[0.12]"
-      >
+      <form onSubmit={handlePasswordChange} className="space-y-4">
         <div className="space-y-1.5">
-          <Label htmlFor="new_password" className="text-[13px]">
+          <Label htmlFor="new_password" className="text-sm font-medium">
             New Password
           </Label>
           <Input
@@ -113,12 +113,11 @@ function PasswordChangeSection() {
             placeholder="Minimum 8 characters"
             required
             minLength={8}
-            className="h-9"
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="confirm_password" className="text-[13px]">
+          <Label htmlFor="confirm_password" className="text-sm font-medium">
             Confirm New Password
           </Label>
           <Input
@@ -129,7 +128,6 @@ function PasswordChangeSection() {
             placeholder="Repeat new password"
             required
             minLength={8}
-            className="h-9"
           />
         </div>
 
@@ -137,17 +135,16 @@ function PasswordChangeSection() {
           <Button
             type="submit"
             disabled={saving || !newPassword || !confirmPassword}
-            size="sm"
-            className="min-h-[44px] bg-primary text-white hover:bg-qualia-700"
+            className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
           >
             {saving ? (
               <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 Updating...
               </>
             ) : (
               <>
-                <Lock className="mr-1.5 h-3.5 w-3.5" />
+                <Lock className="mr-1.5 h-4 w-4" />
                 Update Password
               </>
             )}
@@ -207,34 +204,29 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
   };
 
   return (
-    <div className="space-y-10">
+    <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-          Settings
-        </h1>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your account and notification preferences
         </p>
       </div>
 
       {/* Profile Settings */}
-      <section className="space-y-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
+      <section className="animate-fade-in rounded-xl border border-border bg-card p-6 fill-mode-both">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/[0.08] dark:bg-primary/15">
             <User className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h2 className="text-sm font-medium text-foreground">Profile Information</h2>
-            <p className="text-[12px] text-muted-foreground">Update your personal details</p>
+            <h2 className="text-base font-semibold text-foreground">Profile Information</h2>
+            <p className="text-xs text-muted-foreground">Update your personal details</p>
           </div>
         </div>
 
-        <form
-          onSubmit={handleProfileSubmit}
-          className="space-y-4 rounded-xl border border-primary/[0.08] bg-card p-5 dark:border-primary/[0.12]"
-        >
+        <form onSubmit={handleProfileSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="full_name" className="text-[13px]">
+            <Label htmlFor="full_name" className="text-sm font-medium">
               Display Name
             </Label>
             <Input
@@ -244,12 +236,11 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
               onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
               placeholder="Your name"
               required
-              className="h-9"
             />
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-[13px]">
+            <Label htmlFor="email" className="text-sm font-medium">
               Email
             </Label>
             <Input
@@ -257,15 +248,16 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
               type="email"
               value={profileData.email}
               disabled
-              className="h-9 bg-muted/50"
+              className="bg-muted/50"
+              aria-describedby="email-help"
             />
-            <p className="text-[11px] text-muted-foreground/70">
+            <p id="email-help" className="text-xs text-muted-foreground">
               Email cannot be changed. Contact support if you need to update it.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="company" className="text-[13px]">
+            <Label htmlFor="company" className="text-sm font-medium">
               Company
             </Label>
             <Input
@@ -274,7 +266,6 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
               value={profileData.company}
               onChange={(e) => setProfileData({ ...profileData, company: e.target.value })}
               placeholder="Your company name (optional)"
-              className="h-9"
             />
           </div>
 
@@ -282,17 +273,16 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
             <Button
               type="submit"
               disabled={profileSaving}
-              size="sm"
-              className="min-h-[44px] bg-primary text-white hover:bg-qualia-700"
+              className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
             >
               {profileSaving ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-1.5 h-3.5 w-3.5" />
+                  <Save className="mr-1.5 h-4 w-4" />
                   Save Profile
                 </>
               )}
@@ -305,35 +295,37 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
       <PasswordChangeSection />
 
       {/* Notification Preferences */}
-      <section className="space-y-5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/[0.08] dark:bg-amber-500/15">
-            <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <div>
-            <h2 className="text-sm font-medium text-foreground">Notification Preferences</h2>
-            <p className="text-[12px] text-muted-foreground">
-              Choose which notifications you receive
-            </p>
+      <section
+        className="animate-fade-in overflow-hidden rounded-xl border border-border bg-card fill-mode-both"
+        style={{ animationDelay: '150ms' }}
+      >
+        <div className="p-6 pb-0">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/[0.08] dark:bg-amber-500/15">
+              <Bell className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-foreground">Notification Preferences</h2>
+              <p className="text-xs text-muted-foreground">
+                Choose which notifications you receive
+              </p>
+            </div>
           </div>
         </div>
 
-        <form
-          onSubmit={handleNotificationSubmit}
-          className="rounded-xl border border-primary/[0.08] bg-card dark:border-primary/[0.12]"
-        >
+        <form onSubmit={handleNotificationSubmit}>
           {/* Notification Toggles */}
-          <div className="divide-y divide-primary/[0.06]">
+          <div className="divide-y divide-border/50">
             {notificationItems.map((item) => (
               <div
                 key={item.id}
-                className="flex min-h-[56px] items-center justify-between px-5 py-4"
+                className="flex min-h-[56px] items-center justify-between px-6 py-4"
               >
                 <div className="space-y-0.5">
-                  <Label htmlFor={item.id} className="text-[13px] font-medium">
+                  <Label htmlFor={item.id} className="cursor-pointer text-sm font-medium">
                     {item.label}
                   </Label>
-                  <p className="text-[12px] text-muted-foreground">{item.description}</p>
+                  <p className="text-xs text-muted-foreground">{item.description}</p>
                 </div>
                 <Switch
                   id={item.id}
@@ -347,8 +339,8 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
           </div>
 
           {/* Delivery Method */}
-          <div className="border-t border-border px-5 py-5">
-            <Label className="mb-3 block text-[13px] font-medium">Delivery Method</Label>
+          <div className="border-t border-border px-6 py-5">
+            <Label className="mb-3 block text-sm font-medium">Delivery Method</Label>
             <RadioGroup
               value={notificationPrefs.delivery_method}
               onValueChange={(value: string) =>
@@ -361,7 +353,10 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="both" id="both" />
-                <Label htmlFor="both" className="text-[13px] font-normal text-muted-foreground">
+                <Label
+                  htmlFor="both"
+                  className="cursor-pointer text-sm font-normal text-muted-foreground"
+                >
                   Email and in-app notifications
                 </Label>
               </div>
@@ -369,14 +364,17 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
                 <RadioGroupItem value="email" id="email_method" />
                 <Label
                   htmlFor="email_method"
-                  className="text-[13px] font-normal text-muted-foreground"
+                  className="cursor-pointer text-sm font-normal text-muted-foreground"
                 >
                   Email only
                 </Label>
               </div>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="in_app" id="in_app" />
-                <Label htmlFor="in_app" className="text-[13px] font-normal text-muted-foreground">
+                <Label
+                  htmlFor="in_app"
+                  className="cursor-pointer text-sm font-normal text-muted-foreground"
+                >
                   In-app only
                 </Label>
               </div>
@@ -384,21 +382,20 @@ export function SettingsContent({ initialProfile, initialNotifications }: Settin
           </div>
 
           {/* Save button */}
-          <div className="border-t border-border px-5 py-4">
+          <div className="border-t border-border px-6 py-4">
             <Button
               type="submit"
               disabled={notificationsSaving}
-              size="sm"
-              className="min-h-[44px] bg-primary text-white hover:bg-qualia-700"
+              className="min-h-[44px] cursor-pointer rounded-lg bg-primary text-primary-foreground"
             >
               {notificationsSaving ? (
                 <>
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="mr-1.5 h-3.5 w-3.5" />
+                  <Save className="mr-1.5 h-4 w-4" />
                   Save Preferences
                 </>
               )}

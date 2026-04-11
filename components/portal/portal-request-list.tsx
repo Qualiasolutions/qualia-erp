@@ -2,10 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
-import { fadeInClasses, getStaggerDelay } from '@/lib/transitions';
 import { Lightbulb, MessageSquare, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -42,9 +40,10 @@ const sortOptions = [
 ];
 
 const priorityOrder: Record<string, number> = {
-  high: 0,
-  medium: 1,
-  low: 2,
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
 };
 
 const statusOrder: Record<string, number> = {
@@ -59,30 +58,32 @@ const statusOrder: Record<string, number> = {
 function getStatusColor(status: string) {
   switch (status) {
     case 'pending':
-      return 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/20';
+      return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-transparent';
     case 'in_review':
-      return 'bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/20';
+      return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-transparent';
     case 'planned':
-      return 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border-purple-500/20';
+      return 'bg-primary/10 text-primary border-transparent';
     case 'in_progress':
-      return 'bg-primary/15 text-qualia-700 dark:text-primary border-primary/20';
+      return 'bg-primary/10 text-primary border-transparent';
     case 'completed':
-      return 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/20';
+      return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border-transparent';
     case 'declined':
-      return 'bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/20';
+      return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-transparent';
     default:
-      return 'bg-muted text-muted-foreground border-border';
+      return 'bg-muted text-muted-foreground border-transparent';
   }
 }
 
 function getPriorityColor(priority: string) {
   switch (priority) {
+    case 'urgent':
+      return 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border-red-200 dark:border-red-500/20';
     case 'high':
-      return 'bg-red-500/10 text-red-600 border-red-500/20';
+      return 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20';
     case 'medium':
-      return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20';
+      return 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20';
     case 'low':
-      return 'bg-green-500/10 text-green-600 border-green-500/20';
+      return 'bg-slate-50 text-slate-600 dark:bg-slate-500/10 dark:text-slate-400 border-slate-200 dark:border-slate-500/20';
     default:
       return 'bg-muted text-muted-foreground border-border';
   }
@@ -139,17 +140,15 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
 
   if (requests.length === 0) {
     return (
-      <div className="flex min-h-[360px] flex-col items-center justify-center px-4">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary/[0.08] to-primary/[0.03] ring-1 ring-primary/[0.12]">
-          <Lightbulb className="h-10 w-10 text-primary" />
-        </div>
-        <h3 className="mb-2 text-xl font-bold tracking-tight text-foreground">No requests yet</h3>
-        <p className="max-w-xs text-center text-[13px] leading-relaxed text-muted-foreground/70">
+      <div className="flex min-h-[320px] flex-col items-center justify-center px-4">
+        <Lightbulb className="h-12 w-12 text-muted-foreground/30" />
+        <h3 className="mt-4 text-base font-medium text-foreground">No requests yet</h3>
+        <p className="mt-1 max-w-xs text-center text-sm text-muted-foreground">
           Got an idea or need a change? Submit your first request and we&apos;ll get on it.
         </p>
         <Link
           href="/portal/requests"
-          className="mt-6 inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-md transition-all hover:opacity-90"
+          className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Lightbulb className="h-4 w-4" />
           Submit your first request
@@ -162,7 +161,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
     <div className="space-y-4">
       {/* Filter tabs + sort */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-1">
+        <nav className="flex flex-wrap gap-1" aria-label="Filter by status">
           {statusTabs.map((tab) => {
             const count = statusCounts[tab.value] || 0;
             if (tab.value !== 'all' && count === 0) return null;
@@ -171,20 +170,21 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
                 className={cn(
-                  'min-h-[40px] rounded-lg px-2.5 py-2 text-xs font-medium transition-all duration-200',
+                  'min-h-[44px] cursor-pointer rounded-lg px-3 py-2 text-xs font-medium transition-colors duration-150',
                   statusFilter === tab.value
-                    ? 'bg-primary/10 text-qualia-700 shadow-[inset_0_1px_0_0_rgba(0,164,172,0.06)] dark:text-primary'
-                    : 'text-muted-foreground/70 hover:bg-muted/50 hover:text-foreground'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                 )}
+                aria-pressed={statusFilter === tab.value}
               >
                 {tab.label}
                 {count > 0 && (
-                  <span className="ml-1 text-[10px] tabular-nums opacity-50">{count}</span>
+                  <span className="ml-1.5 text-[10px] tabular-nums opacity-60">{count}</span>
                 )}
               </button>
             );
           })}
-        </div>
+        </nav>
         <div className="flex items-center gap-1.5">
           <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
           {sortOptions.map((opt) => (
@@ -192,7 +192,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
               key={opt.value}
               onClick={() => setSortBy(opt.value)}
               className={cn(
-                'rounded px-2 py-0.5 text-[11px] font-medium transition-colors',
+                'cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors duration-150',
                 sortBy === opt.value
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
@@ -205,89 +205,87 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
       </div>
 
       {/* Request list */}
-      <div className={`space-y-3 ${fadeInClasses}`}>
+      <div className="space-y-3">
         {filtered.map((request, index) => (
-          <Card
+          <div
             key={request.id}
-            style={index < 6 ? getStaggerDelay(index) : undefined}
             className={cn(
-              'rounded-xl border-border transition-all duration-200 hover:border-border hover:shadow-elevation-1',
-              index < 6 && 'animate-fade-in-up fill-mode-both'
+              'rounded-xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/20',
+              'animate-fade-in fill-mode-both'
             )}
+            style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
           >
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-foreground">{request.title}</h3>
-                  {request.description && (
-                    <RichText compact className="mt-1">
-                      {request.description}
-                    </RichText>
-                  )}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <Badge className={cn('text-xs', getStatusColor(request.status))}>
-                      {request.status.replace(/_/g, ' ')}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={cn('text-xs', getPriorityColor(request.priority))}
-                    >
-                      {request.priority}
-                    </Badge>
-                    {request.project && (
-                      <span className="text-xs text-muted-foreground">{request.project.name}</span>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {new Date(request.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Expand/collapse for admin response */}
-                {request.admin_response && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 shrink-0 p-0"
-                    onClick={() => toggleExpanded(request.id)}
-                  >
-                    {expandedIds.has(request.id) ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4" />
-                    )}
-                  </Button>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-medium text-foreground">{request.title}</h3>
+                {request.description && (
+                  <RichText compact className="mt-1 line-clamp-2">
+                    {request.description}
+                  </RichText>
                 )}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Badge className={cn('text-[10px] capitalize', getStatusColor(request.status))}>
+                    {request.status.replace(/_/g, ' ')}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={cn('text-[10px] capitalize', getPriorityColor(request.priority))}
+                  >
+                    {request.priority}
+                  </Badge>
+                  {request.project && (
+                    <span className="text-xs text-muted-foreground">{request.project.name}</span>
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(request.created_at).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
 
-              {request.admin_response && expandedIds.has(request.id) && (
-                <div className="mt-4 rounded-lg border border-qualia-200 bg-qualia-50/50 p-3 dark:border-qualia-800/30 dark:bg-qualia-950/20">
-                  <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-qualia-700 dark:text-primary">
-                    <MessageSquare className="h-3 w-3" />
-                    Response from Qualia
-                  </div>
-                  <p className="text-sm text-qualia-800 dark:text-qualia-300">
-                    {request.admin_response}
-                  </p>
-                </div>
-              )}
-
-              {/* Indicator that there's a response */}
-              {request.admin_response && !expandedIds.has(request.id) && (
-                <button
+              {/* Expand/collapse for admin response */}
+              {request.admin_response && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 shrink-0 cursor-pointer p-0"
                   onClick={() => toggleExpanded(request.id)}
-                  className="mt-2 flex items-center gap-1 text-xs text-primary hover:text-qualia-700"
+                  aria-expanded={expandedIds.has(request.id)}
+                  aria-label={expandedIds.has(request.id) ? 'Collapse response' : 'Expand response'}
                 >
-                  <MessageSquare className="h-3 w-3" />
-                  View response
-                </button>
+                  {expandedIds.has(request.id) ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
               )}
-            </CardContent>
-          </Card>
+            </div>
+
+            {request.admin_response && expandedIds.has(request.id) && (
+              <div className="mt-4 rounded-lg border border-primary/10 bg-primary/[0.04] p-3 dark:border-primary/20 dark:bg-primary/[0.06]">
+                <div className="mb-1 flex items-center gap-1.5 text-xs font-medium text-primary">
+                  <MessageSquare className="h-3 w-3" />
+                  Response from Qualia
+                </div>
+                <p className="text-sm text-foreground/80">{request.admin_response}</p>
+              </div>
+            )}
+
+            {/* Indicator that there's a response */}
+            {request.admin_response && !expandedIds.has(request.id) && (
+              <button
+                onClick={() => toggleExpanded(request.id)}
+                className="mt-2 flex cursor-pointer items-center gap-1 text-xs text-primary transition-colors duration-150 hover:text-primary/80"
+              >
+                <MessageSquare className="h-3 w-3" />
+                View response
+              </button>
+            )}
+          </div>
         ))}
 
         {filtered.length === 0 && (
-          <div className="py-12 text-center">
+          <div className="flex min-h-[200px] flex-col items-center justify-center">
             <p className="text-sm text-muted-foreground">
               No requests matching &ldquo;{statusTabs.find((t) => t.value === statusFilter)?.label}
               &rdquo;
