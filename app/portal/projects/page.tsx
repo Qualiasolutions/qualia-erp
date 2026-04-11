@@ -67,7 +67,7 @@ export default async function PortalProjectsPage({
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">Projects for this client</p>
         </div>
-        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} groupByStatus />
       </div>
     );
   }
@@ -139,7 +139,7 @@ export default async function PortalProjectsPage({
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">Projects you are assigned to</p>
         </div>
-        <PortalProjectsGrid projects={empFormatted} progressMap={empProgressMap} />
+        <PortalProjectsGrid projects={empFormatted} progressMap={empProgressMap} groupByStatus />
       </div>
     );
   }
@@ -177,7 +177,7 @@ export default async function PortalProjectsPage({
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
           <p className="mt-1 text-sm text-muted-foreground">All active projects</p>
         </div>
-        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} groupByStatus />
       </div>
     );
   }

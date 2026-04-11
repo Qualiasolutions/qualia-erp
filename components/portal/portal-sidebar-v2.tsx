@@ -363,17 +363,19 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.name}
-            item={item}
-            isActive={isActive(item)}
-            onClick={onLinkClick}
-            badge={item.name === 'Messages' ? unreadBadge : undefined}
-            workspaceId={workspaceId}
-            workspaceName={workspaceName}
-          />
-        ))}
+        {navItems
+          .filter((item) => item.name !== 'Billing' || displayEmail === 'info@qualiasolutions.net')
+          .map((item) => (
+            <NavLink
+              key={item.name}
+              item={item}
+              isActive={isActive(item)}
+              onClick={onLinkClick}
+              badge={item.name === 'Messages' ? unreadBadge : undefined}
+              workspaceId={workspaceId}
+              workspaceName={workspaceName}
+            />
+          ))}
 
         {/* Staff-only section: internal routes */}
         {isStaff && (
