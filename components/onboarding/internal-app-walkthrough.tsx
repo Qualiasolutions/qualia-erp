@@ -10,11 +10,8 @@ import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
-  Bell,
-  BookOpen,
   Bot,
   Building2,
-  CalendarRange,
   CheckCircle2,
   ClipboardList,
   Command,
@@ -25,7 +22,6 @@ import {
   GitBranch,
   LayoutDashboard,
   type LucideIcon,
-  MessagesSquare,
   Monitor,
   Moon,
   Palette,
@@ -36,7 +32,6 @@ import {
   Sun,
   Upload,
   Users,
-  Wallet,
   Workflow,
   X,
 } from 'lucide-react';
@@ -44,7 +39,7 @@ import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { useReducedMotion } from 'framer-motion';
 
-const WALKTHROUGH_VERSION = 1;
+const WALKTHROUGH_VERSION = 2;
 const WALKTHROUGH_STORAGE_KEY = 'qualia-internal-walkthrough';
 
 type WalkthroughTone = 'teal' | 'sky' | 'amber' | 'violet' | 'rose' | 'emerald';
@@ -177,283 +172,250 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
       id: 'welcome',
       icon: Sparkles,
       eyebrow: 'Welcome',
-      title: `Hey ${firstName} — let\u2019s get you set up.`,
+      title: `Hey ${firstName} \u2014 let\u2019s get you up to speed with Qualia.`,
       description:
-        'Qualia is where we manage everything: projects, clients, tasks, and team coordination. This quick walkthrough shows you the key areas so you can hit the ground running.',
+        'Qualia is how we build. It\u2019s a framework that runs inside Claude Code and handles planning, building, verifying, and shipping \u2014 so you can focus on the work, not the process.',
       tone: 'teal',
-      routes: ['/', '/projects', '/clients'],
-      metrics: ['Everything in one place', 'Built for our workflow', 'Takes 2 minutes'],
-      note: 'Sidebar on the left for navigation, your work in the center, quick actions in the header. Simple layout, same everywhere.',
+      routes: ['/qualia', '/qualia-new'],
+      metrics: ['Type / commands', 'AI handles the rest', 'Takes 3 minutes'],
+      note: 'Everything happens inside Claude Code. You type slash commands, the framework orchestrates the workflow. No extra tools to install.',
       highlights: [
         {
-          icon: Workflow,
-          title: 'Sidebar is your map',
-          description:
-            'Projects, clients, schedule, knowledge — everything is one click away in the sidebar. No digging.',
-          tag: 'Navigation',
-        },
-        {
           icon: Command,
-          title: 'Cmd+K to jump anywhere',
+          title: 'Slash commands are your interface',
           description:
-            'The command menu lets you search and navigate instantly. Once you get used to it, you won\u2019t use anything else.',
-          tag: 'Shortcut',
+            'Type /qualia in any project to get started. The framework tells you exactly what to do next.',
+          tag: 'Commands',
         },
         {
-          icon: Bell,
-          title: 'Notifications keep you in the loop',
+          icon: Workflow,
+          title: 'Plan \u2192 Build \u2192 Verify \u2192 Ship',
           description:
-            'Task assignments, project updates, and mentions — you\u2019ll see them in the bell icon, no need to check Slack.',
-          tag: 'Alerts',
+            'Every project follows the same flow. The framework enforces quality at each step.',
+          tag: 'Workflow',
         },
         {
           icon: Shield,
-          title: 'You see what\u2019s relevant to you',
+          title: 'Guards protect you automatically',
           description:
-            'Admins see everything. Team members see their projects and tasks. Clients see their portal. Clean and focused.',
-          tag: 'Roles',
+            'Security checks, migration safety, branch protection \u2014 all handled by hooks that run in the background.',
+          tag: 'Guards',
+        },
+        {
+          icon: Sparkles,
+          title: 'Fresh context per task',
+          description:
+            'Each task gets a fresh AI brain. Task 50 is as sharp as Task 1. No quality degradation.',
+          tag: 'Quality',
         },
       ],
     },
     {
-      id: 'theme',
-      icon: Palette,
-      eyebrow: 'Appearance',
-      title: 'Pick your vibe.',
+      id: 'starting',
+      icon: FolderKanban,
+      eyebrow: 'Getting Started',
+      title: 'Every project starts with /qualia-new.',
       description:
-        'Qualia looks great in both light and dark mode. Choose what feels right — you can always change it later in settings.',
-      tone: 'violet',
-      routes: ['/settings'],
-      metrics: ['Light mode', 'Dark mode', 'Match your system'],
-      note: 'Your choice is saved instantly. No need to confirm — just click and it applies.',
-      highlights: [
-        {
-          icon: Sun,
-          title: 'Light',
-          description: 'Clean and bright. Teal-tinted warm neutrals.',
-          tag: 'light',
-        },
-        {
-          icon: Moon,
-          title: 'Dark',
-          description: 'Easy on the eyes. Deep teal-tinted surfaces.',
-          tag: 'dark',
-        },
-        {
-          icon: Monitor,
-          title: 'System',
-          description: 'Follows your OS preference automatically.',
-          tag: 'system',
-        },
-      ],
-    },
-    {
-      id: 'dashboard',
-      icon: LayoutDashboard,
-      eyebrow: 'Dashboard',
-      title: 'Your day starts here.',
-      description:
-        'The dashboard shows what matters today: your tasks, upcoming meetings, active projects, and team updates. Open this first thing — it\u2019s your morning briefing.',
+        'Open Claude Code in your project folder and type /qualia-new. The wizard asks about the client, the scope, and the phases. It creates a .planning/ directory with everything the framework needs.',
       tone: 'sky',
-      routes: ['/'],
-      metrics: ['Today\u2019s tasks', 'Meetings at a glance', 'Team pulse'],
-      note: 'You can clock in, check your tasks, and see what the team is working on — all without leaving this page.',
+      routes: ['/qualia-new', '/qualia'],
+      metrics: ['Interactive setup', 'Creates .planning/', 'Defines all phases'],
+      note: 'The .planning/ directory is the project brain \u2014 it tracks state, plans, verifications, and progress. Never edit these files manually.',
       highlights: [
-        {
-          icon: ClipboardList,
-          title: 'Your tasks for today',
-          description:
-            'Tasks due today and overdue items surface at the top. Pick what to work on and update progress as you go.',
-          tag: 'Focus',
-        },
         {
           icon: FolderKanban,
-          title: 'Active project movement',
+          title: 'Project setup wizard',
           description:
-            'See which projects are moving, which need attention, and where things stand across the pipeline.',
-          tag: 'Projects',
-        },
-        {
-          icon: CalendarRange,
-          title: 'Meetings right there',
-          description:
-            'Today\u2019s meetings show up on the dashboard so you\u2019re never caught off guard by a call.',
-          tag: 'Schedule',
-        },
-        {
-          icon: MessagesSquare,
-          title: 'Team updates and notes',
-          description:
-            'Announcements, owner updates, and shared notes live here — no need to hunt through chat threads.',
-          tag: 'Updates',
-        },
-      ],
-    },
-    {
-      id: 'projects',
-      icon: FolderKanban,
-      eyebrow: 'Projects',
-      title: 'This is where the real work happens.',
-      description:
-        'Every client project lives here — organized by stage (demos, active, launched). Click into a project to see its roadmap, tasks, files, team, and deployment status.',
-      tone: 'amber',
-      routes: ['/projects', '/projects/[id]'],
-      metrics: ['Pipeline by stage', 'Roadmap phases', 'Files and deployments'],
-      note: 'Projects page gives you the bird\u2019s eye view. Project detail page is where you actually execute.',
-      highlights: [
-        {
-          icon: GitBranch,
-          title: 'Pipeline shows everything',
-          description:
-            'Projects are grouped by stage: Demos, Active, Launched, Done. You can see the full portfolio at a glance.',
-          tag: 'Pipeline',
-        },
-        {
-          icon: LayoutDashboard,
-          title: 'Deep project detail',
-          description:
-            'Each project has phases, tasks, notes, health metrics, and team assignments. Everything you need is inside.',
-          tag: 'Detail',
+            'Answers a few questions: client name, project type, how many phases. Creates the whole structure.',
+          tag: 'Setup',
         },
         {
           icon: Files,
-          title: 'Files stay with the project',
+          title: '.planning/ is the brain',
           description:
-            'Designs, documents, assets — upload them to the project directly. No more digging through Google Drive.',
-          tag: 'Files',
+            'STATE.md tracks where you are. tracking.json syncs to the ERP. Plans and verifications live here.',
+          tag: 'State',
         },
         {
-          icon: Users,
-          title: 'Clear ownership',
+          icon: LayoutDashboard,
+          title: 'DESIGN.md defines the look',
           description:
-            'Every project shows who\u2019s assigned and responsible. No ambiguity about who\u2019s doing what.',
-          tag: 'Team',
-        },
-      ],
-    },
-    {
-      id: 'client-experience',
-      icon: Building2,
-      eyebrow: 'Clients & Portal',
-      title: 'Manage the relationship and what the client sees.',
-      description:
-        'The Clients page is our internal CRM — track leads, contacts, and account status. The Portal is what clients actually see: their project progress, invoices, and feature requests.',
-      tone: 'violet',
-      routes: ['/clients', '/portal'],
-      metrics: ['CRM for leads', 'Client-facing portal', 'Invoices and requests'],
-      note: 'When you update a project internally, the client sees it reflected in their portal automatically. One source of truth.',
-      highlights: [
-        {
-          icon: Building2,
-          title: 'Client CRM',
-          description:
-            'Track every client: their status, contacts, projects, and last interaction. This is the relationship hub.',
-          tag: 'CRM',
+            'Colors, fonts, components, shadows \u2014 all specified upfront so the AI builds exactly what you want.',
+          tag: 'Design',
         },
         {
-          icon: ExternalLink,
-          title: 'Client portal',
+          icon: GitBranch,
+          title: 'Feature branches only',
           description:
-            'Clients log in here to check progress, submit requests, download files, and view invoices. Professional and clean.',
-          tag: 'Portal',
-        },
-        {
-          icon: Upload,
-          title: 'Feature requests',
-          description:
-            'Clients can submit requests through the portal. They stay organized and tied to the project — not lost in email.',
-          tag: 'Requests',
-        },
-        {
-          icon: Receipt,
-          title: 'Billing in context',
-          description:
-            'Invoices and payments are attached to the client account. Financial tracking next to the delivery work.',
-          tag: 'Billing',
+            'The framework creates a branch for you. You never push to main directly \u2014 that\u2019s enforced by guards.',
+          tag: 'Git',
         },
       ],
     },
     {
-      id: 'operations',
-      icon: CalendarRange,
-      eyebrow: 'Schedule & Status',
-      title: 'Keep the team coordinated without the chaos.',
+      id: 'planning',
+      icon: ClipboardList,
+      eyebrow: 'Planning',
+      title: 'Before building, you plan. Type /qualia-plan.',
       description:
-        'Schedule manages meetings and team availability. Status monitors our live systems and deployments. Together, they keep things running smoothly.',
-      tone: 'rose',
-      routes: ['/schedule', '/status'],
-      metrics: ['Team calendar', 'System monitoring', 'Uptime tracking'],
-      note: 'Good operations are boring operations. These pages help keep it that way.',
+        'The planner AI reads your project context and breaks the phase into tasks. Each task gets success criteria and verification contracts. You review the plan before building starts.',
+      tone: 'amber',
+      routes: ['/qualia-plan'],
+      metrics: ['AI generates the plan', 'Tasks with success criteria', 'You approve before build'],
+      note: 'Plans are not suggestions \u2014 they become the builder\u2019s instructions. If the plan is wrong, the build will be wrong. Review carefully.',
       highlights: [
         {
-          icon: CalendarRange,
-          title: 'Team schedule',
+          icon: ClipboardList,
+          title: 'Tasks with \u2018Done when\u2019',
           description:
-            'See who\u2019s available, when meetings are, and plan your week without back-and-forth messages.',
-          tag: 'Calendar',
+            'Every task has clear criteria: \u2018Done when auth page renders and accepts email/password.\u2019 No ambiguity.',
+          tag: 'Criteria',
         },
         {
           icon: Activity,
-          title: 'Live system status',
+          title: 'Verification contracts',
           description:
-            'Monitor all our production systems in one place. If something\u2019s down, you\u2019ll know before the client does.',
-          tag: 'Monitoring',
+            'The planner creates testable contracts \u2014 file-exists checks, grep patterns \u2014 that the verifier runs later.',
+          tag: 'Contracts',
         },
         {
-          icon: Bell,
-          title: 'Real-time updates',
+          icon: Users,
+          title: 'Wave-based parallelization',
           description:
-            'The suite auto-refreshes. Task changes, project updates, and notifications come through live — no manual refresh needed.',
-          tag: 'Live',
+            'Independent tasks run in parallel (Wave 1). Dependent tasks wait (Wave 2). Faster builds, same quality.',
+          tag: 'Waves',
         },
         {
-          icon: ClipboardList,
-          title: 'Daily check-ins',
-          description:
-            'Quick daily updates keep the team aligned. What you did, what you\u2019re doing, anything blocking you.',
-          tag: 'Check-ins',
+          icon: CheckCircle2,
+          title: 'You approve before anything builds',
+          description: 'Read the plan, check the tasks, confirm. Nothing happens until you say go.',
+          tag: 'Control',
         },
       ],
     },
     {
-      id: 'intelligence',
-      icon: BookOpen,
-      eyebrow: 'Knowledge & AI',
-      title: 'Don\u2019t start from scratch — the answers are already here.',
+      id: 'building',
+      icon: Bot,
+      eyebrow: 'Building',
+      title: 'Now the real work happens. Type /qualia-build.',
       description:
-        'Research tracks investigations and findings. Knowledge stores guides and how-tos. And the AI assistant can help you find information, create tasks, and move faster.',
-      tone: 'emerald',
-      routes: ['/research', '/knowledge', '/agent'],
-      metrics: ['Research library', 'Team knowledge base', 'AI assistant'],
-      note: 'If you solved a problem, write it down in Knowledge. If you\u2019re investigating something new, use Research. Future you will thank you.',
+        'The framework spawns a fresh AI agent for each task. They read the plan, build the code, and report results. Each agent gets clean context \u2014 no accumulated garbage from previous tasks.',
+      tone: 'violet',
+      routes: ['/qualia-build', '/qualia-task', '/qualia-quick'],
+      metrics: ['One agent per task', 'Fresh context each time', 'Parallel execution'],
+      note: 'If something small needs fixing, use /qualia-quick instead. It skips planning for hot fixes and tweaks.',
       highlights: [
         {
-          icon: FlaskConical,
-          title: 'Research workspace',
-          description:
-            'Running a technical investigation or market research? Track your findings here so the team can reference them later.',
-          tag: 'Research',
-        },
-        {
-          icon: BookOpen,
-          title: 'Knowledge base',
-          description:
-            'Guides, processes, and internal documentation. If someone asks the same question twice, it should live here.',
-          tag: 'Knowledge',
-        },
-        {
           icon: Bot,
-          title: 'AI assistant',
+          title: 'Fresh AI per task',
           description:
-            'Ask questions about projects, create tasks, or get help — the assistant knows the context of your workspace.',
-          tag: 'AI',
+            'Each builder agent starts with a clean slate. No context pollution. Task 50 is as good as Task 1.',
+          tag: 'Isolation',
+        },
+        {
+          icon: Workflow,
+          title: 'Waves execute in order',
+          description:
+            'Wave 1 tasks run in parallel. When all finish, Wave 2 starts. The framework orchestrates everything.',
+          tag: 'Execution',
+        },
+        {
+          icon: FlaskConical,
+          title: '/qualia-quick for small fixes',
+          description:
+            'Bug fixes and tweaks don\u2019t need full planning. /qualia-quick skips straight to building.',
+          tag: 'Quick',
         },
         {
           icon: Settings,
-          title: 'Your settings',
+          title: 'Recovery if things go wrong',
           description:
-            'Notification preferences, integrations, and personal config. Make the suite work the way you want.',
-          tag: 'Settings',
+            'The framework tags a recovery point before each build. If something breaks, you can roll back.',
+          tag: 'Safety',
+        },
+      ],
+    },
+    {
+      id: 'verifying',
+      icon: Shield,
+      eyebrow: 'Verification',
+      title: 'Built doesn\u2019t mean done. Type /qualia-verify.',
+      description:
+        'The verifier doesn\u2019t trust claims \u2014 it greps the code. Does the file exist? Is it imported? Does the data flow end-to-end? It scores on four dimensions and fails anything below the threshold.',
+      tone: 'rose',
+      routes: ['/qualia-verify'],
+      metrics: ['Checks real code, not claims', 'Scores on 4 dimensions', 'Hard fail threshold'],
+      note: 'If verification fails, the framework routes you back to /qualia-plan with a --gaps flag. It only replans what failed. Maximum 2 retries before escalation.',
+      highlights: [
+        {
+          icon: Shield,
+          title: 'Goal-backward checking',
+          description:
+            'Doesn\u2019t ask \u2018did the task run?\u2019 \u2014 asks \u2018does the GOAL hold?\u2019 A component that exists but isn\u2019t imported = FAIL.',
+          tag: 'Goals',
+        },
+        {
+          icon: BarChart3,
+          title: 'Scored on 4 dimensions',
+          description:
+            'Correctness, Completeness, Wiring, Quality \u2014 each scored 1\u20135. Any score below 3 = automatic FAIL.',
+          tag: 'Scoring',
+        },
+        {
+          icon: Activity,
+          title: 'Contracts run automatically',
+          description:
+            'The testable contracts from planning execute first. File-exists, grep-match, command checks. Deterministic.',
+          tag: 'Contracts',
+        },
+        {
+          icon: ExternalLink,
+          title: 'Gap closure loop',
+          description:
+            'Failed? The framework replans just the gaps, rebuilds, re-verifies. Up to 2 cycles before escalating to Fawzi.',
+          tag: 'Retry',
+        },
+      ],
+    },
+    {
+      id: 'polish-ship',
+      icon: Upload,
+      eyebrow: 'Polish & Deploy',
+      title: 'Make it beautiful, then ship it. /qualia-polish \u2192 /qualia-ship.',
+      description:
+        'Polish runs the anti-AI-slop detector, fixes typography, color, states, motion, accessibility, and responsive design. Ship runs quality gates (TypeScript, lint, build, tests) then deploys to Vercel.',
+      tone: 'emerald',
+      routes: ['/qualia-polish', '/qualia-ship', '/qualia-handoff'],
+      metrics: ['Anti-AI-slop detector', 'Quality gates before deploy', 'Client handoff docs'],
+      note: 'After shipping, /qualia-handoff generates the client deliverable: credentials, deployment URL, documentation. Then /qualia-report logs your session.',
+      highlights: [
+        {
+          icon: Palette,
+          title: 'Polish kills AI slop',
+          description:
+            'Scans for generic fonts, card grids, blue-purple gradients, hardcoded colors. Fixes everything automatically.',
+          tag: 'Polish',
+        },
+        {
+          icon: Shield,
+          title: 'Quality gates block bad deploys',
+          description:
+            'TypeScript must compile. Lint must pass. Build must succeed. Service keys must not leak to client code.',
+          tag: 'Gates',
+        },
+        {
+          icon: Upload,
+          title: 'Deploy with one command',
+          description:
+            '/qualia-ship pushes to GitHub, deploys to Vercel, and verifies the live site returns HTTP 200.',
+          tag: 'Deploy',
+        },
+        {
+          icon: Building2,
+          title: 'Handoff to the client',
+          description:
+            '/qualia-handoff creates credentials, docs, and the handover package. Professional delivery, every time.',
+          tag: 'Handoff',
         },
       ],
     },
@@ -463,84 +425,87 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
     ? {
         id: 'admin',
         icon: Shield,
-        eyebrow: 'Admin Panel',
-        title: 'You have the controls. Here\u2019s where they live.',
+        eyebrow: 'Your Toolkit',
+        title: 'As owner, you have the full picture.',
         description:
-          'As an admin, you manage assignments, attendance, reports, and financials. These tools are separate from everyday work so they don\u2019t clutter the team\u2019s view.',
+          'You can push to main, approve deploys, edit secrets, and manage the team. Everyone else works on feature branches with guard rails. The framework enforces this automatically.',
         tone: 'rose',
-        routes: ['/admin', '/admin/assignments', '/payments'],
-        metrics: ['Team assignments', 'Attendance tracking', 'Financial overview'],
-        note: 'Only admins see the /admin section. Everyone else gets a cleaner, focused experience.',
+        routes: ['/qualia', '/qualia-report'],
+        metrics: ['Full access', 'Team management', 'Analytics dashboard'],
+        note: 'Run `qualia-framework analytics` to see how plans are performing \u2014 first-pass success rate, gap cycles, hook activity.',
         highlights: [
           {
-            icon: Users,
-            title: 'Assign people to projects',
+            icon: Shield,
+            title: 'Owner-level access',
             description:
-              'Control who\u2019s working on what. Assignments auto-create tasks from the project roadmap.',
-            tag: 'Assignments',
+              'Push to main, approve deploys, edit .env files. Guards step aside for you but still log everything.',
+            tag: 'Access',
           },
           {
-            icon: ClipboardList,
-            title: 'Track attendance',
+            icon: Users,
+            title: 'Team management',
             description:
-              'See who\u2019s clocked in, review work sessions, and keep the team accountable.',
-            tag: 'Attendance',
+              '`qualia-framework team list` shows everyone. Add or remove members with their install codes.',
+            tag: 'Team',
           },
           {
             icon: BarChart3,
-            title: 'Reports and analytics',
+            title: 'Analytics & traces',
             description:
-              'Check-in stats, task completion rates, and team performance — all generated from real data.',
-            tag: 'Reports',
+              '`qualia-framework analytics` shows verification pass rates, gap cycles, and hook performance.',
+            tag: 'Analytics',
           },
           {
-            icon: Wallet,
-            title: 'Payments and invoices',
+            icon: Receipt,
+            title: 'Session reports',
             description:
-              'Track what\u2019s been invoiced, what\u2019s paid, and what\u2019s outstanding — right next to the project work.',
-            tag: 'Financials',
+              '/qualia-report logs hours, commits, and progress. Syncs to the ERP automatically on push.',
+            tag: 'Reports',
           },
         ],
       }
     : {
-        id: 'team-rhythm',
-        icon: ClipboardList,
-        eyebrow: 'Your Daily Loop',
-        title: 'The rhythm is simple once you know it.',
+        id: 'daily-flow',
+        icon: Workflow,
+        eyebrow: 'Your Daily Flow',
+        title: 'The flow is simple once you know it.',
         description:
-          'Open Dashboard to see your day. Work inside Projects. Check Schedule for meetings. Update your progress so the team stays in sync. That\u2019s it.',
+          'Open Claude Code. Type /qualia. It tells you what to do next. Follow the commands: plan, build, verify, polish, ship. End your day with /qualia-report.',
         tone: 'teal',
-        routes: ['/', '/projects', '/schedule'],
-        metrics: ['Dashboard first', 'Execute in projects', 'Stay in sync'],
-        note: 'The best thing you can do is keep your tasks and check-ins up to date. Everything else follows from that.',
+        routes: ['/qualia', '/qualia-report', '/qualia-pause'],
+        metrics: [
+          '/qualia tells you what\u2019s next',
+          'Follow the road',
+          'Report before clock-out',
+        ],
+        note: '/qualia-pause saves your progress for tomorrow. /qualia-resume picks up exactly where you left off. No context lost between sessions.',
         highlights: [
           {
             icon: LayoutDashboard,
-            title: 'Start with Dashboard',
+            title: 'Start with /qualia',
             description:
-              'Check what\u2019s on your plate today before diving into project work. 30 seconds, every morning.',
-            tag: 'Morning',
+              'It reads the project state and tells you exactly what command to run next. No guessing.',
+            tag: 'Start',
           },
           {
             icon: FolderKanban,
-            title: 'Do the work in Projects',
+            title: 'Follow the road',
             description:
-              'Update tasks, upload files, move phases forward. Keep the project state real — not in your head.',
-            tag: 'Execute',
+              'Plan \u2192 Build \u2192 Verify \u2192 Polish \u2192 Ship. The framework advances you through each step.',
+            tag: 'Flow',
           },
           {
             icon: ExternalLink,
-            title: 'Check the client view',
+            title: 'Pause and resume',
             description:
-              'Curious what a client sees? Open the portal. It mirrors the real project state automatically.',
-            tag: 'Portal',
+              '/qualia-pause saves session context. /qualia-resume picks up tomorrow. Zero context loss.',
+            tag: 'Sessions',
           },
           {
             icon: Settings,
-            title: 'Set up your preferences',
-            description:
-              'Notification settings, integrations, and personal config. Tweak once, forget about it.',
-            tag: 'Settings',
+            title: '/qualia-report before clock-out',
+            description: 'Mandatory. Logs your work, syncs to the ERP. Takes 10 seconds.',
+            tag: 'Report',
           },
         ],
       };
@@ -552,42 +517,44 @@ function getInternalWalkthroughSteps(firstName: string, isAdmin: boolean): Walkt
       id: 'finish',
       icon: CheckCircle2,
       eyebrow: 'You\u2019re Ready',
-      title: 'That\u2019s the whole picture. Go build something.',
+      title: 'That\u2019s the whole framework. Go build something.',
       description:
-        'Dashboard for your day. Projects for the work. Clients and Portal for the relationship. Knowledge and AI when you need context. You\u2019ve got this.',
+        '/qualia-new to start. /qualia-plan to plan. /qualia-build to build. /qualia-verify to check. /qualia-polish to make it beautiful. /qualia-ship to deploy. /qualia-report to log. You\u2019ve got this.',
       tone: 'sky',
-      routes: ['/', '/projects', '/clients', '/agent'],
+      routes: ['/qualia', '/qualia-new', '/qualia-plan', '/qualia-build'],
       metrics: [
-        'Dashboard \u2192 Projects \u2192 Clients',
-        'One source of truth',
+        'New \u2192 Plan \u2192 Build \u2192 Verify',
+        'Polish \u2192 Ship \u2192 Handoff',
         'Won\u2019t show again',
       ],
-      note: 'This walkthrough is saved to your account. It won\u2019t appear again. If you need a refresher, the sidebar has everything.',
+      note: 'This walkthrough is saved to your account. It won\u2019t appear again. Type /qualia in any project for guidance.',
       highlights: [
         {
-          icon: LayoutDashboard,
-          title: 'Dashboard',
-          description: 'Your starting point every day. Tasks, meetings, and team pulse.',
-          tag: '/',
+          icon: Command,
+          title: '/qualia',
+          description: 'Your compass. Type it anywhere to know what\u2019s next.',
+          tag: '/qualia',
         },
         {
-          icon: FolderKanban,
-          title: 'Projects',
-          description: 'Where delivery happens. Phases, tasks, files, and team.',
-          tag: '/projects',
-        },
-        {
-          icon: Building2,
-          title: 'Clients',
-          description: 'CRM and portal. The full client relationship in one place.',
-          tag: '/clients',
+          icon: Workflow,
+          title: 'The Road',
+          description:
+            'New \u2192 Plan \u2192 Build \u2192 Verify \u2192 Polish \u2192 Ship \u2192 Handoff. Every project, every time.',
+          tag: 'Flow',
         },
         {
           icon: Bot,
-          title: 'AI Assistant',
+          title: 'AI does the heavy lifting',
           description:
-            'Ask anything about your workspace. Create tasks, find answers, move faster.',
-          tag: '/agent',
+            'You direct. The framework orchestrates. Fresh context per task. Quality guaranteed.',
+          tag: 'AI',
+        },
+        {
+          icon: CheckCircle2,
+          title: 'Quality is enforced',
+          description:
+            'Guards, contracts, scored verification, anti-slop detection. Ships only when it\u2019s ready.',
+          tag: 'Quality',
         },
       ],
     },
