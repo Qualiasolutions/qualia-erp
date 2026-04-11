@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
 export default function RequestsLoading() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="space-y-1">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-96" />

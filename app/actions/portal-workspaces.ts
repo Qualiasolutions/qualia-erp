@@ -112,17 +112,26 @@ export async function getClientWorkspaces(): Promise<ActionResult> {
     }
 
     // Try to get last sign-in data (optional — fails gracefully)
+    // Paginate to handle >1000 users
     const signInMap = new Map<string, string | null>();
     try {
       const adminClient = createAdminClient();
-      const { data: authUsersResult } = await adminClient.auth.admin.listUsers({
-        perPage: 1000,
-      });
-      for (const authUser of authUsersResult?.users ?? []) {
-        const email = authUser.email?.toLowerCase();
-        if (email) {
-          signInMap.set(email, authUser.last_sign_in_at ?? null);
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: authUsersResult } = await adminClient.auth.admin.listUsers({
+          perPage: 1000,
+          page,
+        });
+        const users = authUsersResult?.users ?? [];
+        for (const authUser of users) {
+          const email = authUser.email?.toLowerCase();
+          if (email) {
+            signInMap.set(email, authUser.last_sign_in_at ?? null);
+          }
         }
+        hasMore = users.length === 1000;
+        page++;
       }
     } catch {
       // No service role key — skip last sign-in data
