@@ -14,6 +14,7 @@ import {
 } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
 import { TaskCard } from './task-card';
+import { QuickAddTask } from './quick-add-task';
 import { STATUS_COLUMNS, type BoardTask, type StatusColumnId } from './board-types';
 
 // ---------------------------------------------------------------------------
@@ -50,15 +51,18 @@ interface DroppableColumnProps {
   dotColor: string;
   tasks: BoardTask[];
   isOver: boolean;
+  projectId: string;
 }
 
 function DroppableColumnInner({
+  columnId,
   label,
   badgeBg,
   badgeText,
   dotColor,
   tasks,
   isOver,
+  projectId,
 }: DroppableColumnProps) {
   return (
     <div
@@ -93,6 +97,7 @@ function DroppableColumnInner({
             </DraggableTask>
           ))
         )}
+        <QuickAddTask projectId={projectId} defaultStatus={columnId} />
       </div>
     </div>
   );
@@ -114,10 +119,11 @@ function DroppableColumn(props: Omit<DroppableColumnProps, 'isOver'>) {
 
 interface KanbanBoardProps {
   tasks: BoardTask[];
+  projectId: string;
   onStatusChange: (taskId: string, newStatus: StatusColumnId) => void;
 }
 
-export function KanbanBoard({ tasks, onStatusChange }: KanbanBoardProps) {
+export function KanbanBoard({ tasks, projectId, onStatusChange }: KanbanBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -187,6 +193,7 @@ export function KanbanBoard({ tasks, onStatusChange }: KanbanBoardProps) {
             badgeText={col.badgeText}
             dotColor={col.dotColor}
             tasks={tasksByStatus[col.id]}
+            projectId={projectId}
           />
         ))}
       </div>
