@@ -1,9 +1,37 @@
 'use server';
 
+import crypto from 'crypto';
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { Octokit } from '@octokit/rest';
 import type { ActionResult } from './shared';
+
+const ENCRYPTION_KEY =
+  process.env.TOKEN_ENCRYPTION_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+function encryptToken(token: string): string {
+  if (!ENCRYPTION_KEY) return token; // Fallback if no key configured
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'qualia-token-salt', 32);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(token, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return `enc:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
+}
+
+function decryptToken(stored: string): string {
+  if (!stored.startsWith('enc:')) return stored; // Handle legacy plaintext tokens
+  if (!ENCRYPTION_KEY) return stored;
+  const [, ivHex, authTagHex, encryptedHex] = stored.split(':');
+  const key = crypto.scryptSync(ENCRYPTION_KEY, 'qualia-token-salt', 32);
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
+  decipher.setAuthTag(Buffer.from(authTagHex, 'hex'));
+  const decrypted = Buffer.concat([
+    decipher.update(Buffer.from(encryptedHex, 'hex')),
+    decipher.final(),
+  ]);
+  return decrypted.toString('utf8');
+}
 import type {
   IntegrationProvider,
   GitHubConfig,
@@ -132,7 +160,7 @@ export async function saveIntegrationToken(
     {
       workspace_id: workspaceId,
       provider,
-      encrypted_token: token,
+      encrypted_token: encryptToken(token),
       config,
       is_connected: true,
       last_verified_at: new Date().toISOString(),
@@ -244,10 +272,13 @@ export async function testIntegration(
   let testResult: { success: boolean; error?: string };
   if (provider === 'github') {
     const config = integration.config as GitHubConfig;
-    testResult = await testGitHubConnection(integration.encrypted_token, config.org);
+    testResult = await testGitHubConnection(decryptToken(integration.encrypted_token), config.org);
   } else if (provider === 'vercel') {
     const config = integration.config as VercelConfig;
-    testResult = await testVercelConnection(integration.encrypted_token, config.teamId);
+    testResult = await testVercelConnection(
+      decryptToken(integration.encrypted_token),
+      config.teamId
+    );
   } else if (provider === 'zoho') {
     const result = await testZohoConnection(workspaceId);
     testResult = { success: result.valid, error: result.error };
@@ -513,7 +544,7 @@ export async function syncGitHubWebhooks(
     return { success: false, error: 'GitHub integration not configured' };
   }
 
-  const octokit = new Octokit({ auth: githubIntegration.encrypted_token });
+  const octokit = new Octokit({ auth: decryptToken(githubIntegration.encrypted_token) });
   const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET || process.env.GSD_WEBHOOK_SECRET || '';
 
   // Get all GitHub-linked projects

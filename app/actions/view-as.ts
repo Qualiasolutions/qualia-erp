@@ -125,7 +125,7 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
     // Verify the target user exists
     const { data: targetProfile } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, role')
       .eq('id', userId)
       .single();
 
@@ -141,6 +141,13 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
       maxAge: MAX_AGE,
       secure: process.env.NODE_ENV === 'production',
     });
+
+    console.info(
+      '[VIEW-AS] Admin %s started viewing as user %s (role: %s)',
+      user.id,
+      userId,
+      targetProfile.role
+    );
 
     return { success: true };
   } catch (err) {
@@ -215,8 +222,18 @@ export async function getViewAsState(): Promise<ActionResult> {
  */
 export async function clearViewAs(): Promise<ActionResult> {
   try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const cookieStore = await cookies();
     cookieStore.delete(VIEW_AS_COOKIE);
+
+    if (user) {
+      console.info('[VIEW-AS] Admin %s stopped viewing as another user', user.id);
+    }
+
     return { success: true };
   } catch (err) {
     console.error('clearViewAs error:', err);

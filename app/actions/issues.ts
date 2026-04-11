@@ -232,18 +232,20 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
       .eq('issue_id', id);
 
     if (assignees) {
-      for (const assignee of assignees) {
-        if (assignee.profile_id !== user.id && assignee.profile_id !== oldIssue.creator_id) {
-          await createNotification(
-            assignee.profile_id,
-            oldIssue.workspace_id,
-            'task_completed',
-            `Task completed: ${issueTitle}`,
-            `${completerName} marked this task as done`,
-            `/hub`
-          );
-        }
-      }
+      await Promise.all(
+        assignees
+          .filter((a) => a.profile_id !== user.id && a.profile_id !== oldIssue.creator_id)
+          .map((assignee) =>
+            createNotification(
+              assignee.profile_id,
+              oldIssue.workspace_id,
+              'task_completed',
+              `Task completed: ${issueTitle}`,
+              `${completerName} marked this task as done`,
+              `/hub`
+            )
+          )
+      );
     }
   }
 
@@ -426,17 +428,19 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
       }
     }
 
-    // Send notifications
-    for (const userId of usersToNotify) {
-      await createNotification(
-        userId,
-        issue.workspace_id,
-        'comment_added',
-        `New comment on: ${issue.title}`,
-        `${commenterName}: "${commentPreview}"`,
-        `/hub`
-      );
-    }
+    // Send notifications in parallel
+    await Promise.all(
+      Array.from(usersToNotify).map((notifyUserId) =>
+        createNotification(
+          notifyUserId,
+          issue.workspace_id,
+          'comment_added',
+          `New comment on: ${issue.title}`,
+          `${commenterName}: "${commentPreview}"`,
+          `/hub`
+        )
+      )
+    );
   }
 
   revalidatePath(`/issues/${issue_id}`);
@@ -569,7 +573,7 @@ export async function getIssueAssignees(issueId: string) {
             id,
             assigned_at,
             profile:profiles (id, full_name, email, avatar_url),
-            assigned_by_profile:profiles!issue_assignees_assigned_by_fkey (id, full_name)
+            assigned_by_profile:profiles!issue_assignees_assigned_by_fkey (full_name)
         `
     )
     .eq('issue_id', issueId);

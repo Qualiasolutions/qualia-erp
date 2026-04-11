@@ -182,6 +182,13 @@ export async function getClientById(id: string) {
         `
     )
     .eq('id', id)
+    // Paginate client_activities: latest 50 only
+    // Note: Supabase PostgREST does not support .order()/.limit() on
+    // embedded foreign-table resources via the query builder. The ordering
+    // and limiting below use the foreignTable option which is supported in
+    // recent versions of @supabase/postgrest-js.
+    .order('created_at', { ascending: false, referencedTable: 'client_activities' })
+    .limit(50, { referencedTable: 'client_activities' })
     .single();
 
   if (error) {

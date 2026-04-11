@@ -24,6 +24,17 @@ import type { TeamMemberStatus } from '@/app/actions/work-sessions';
 
 export type { TeamMemberStatus };
 
+// ============================================================================
+// POLLING INTERVALS
+// ============================================================================
+const REFRESH_INTERVAL_DEFAULT = 60_000; // 60s — standard data (tasks, meetings)
+const REFRESH_INTERVAL_SLOW = 90_000; // 90s — semi-static data (profiles, teams)
+const REFRESH_INTERVAL_FAST = 2_000; // 2s — provisioning status during setup
+const REFRESH_INTERVAL_SESSIONS = 30_000; // 30s — work sessions, messaging
+const DEDUP_INTERVAL_DEFAULT = 60_000; // 60s — standard dedup
+const DEDUP_INTERVAL_TASKS = 20_000; // 20s — tasks need fresher data
+const DEDUP_INTERVAL_SLOW = 45_000; // 45s — semi-static data dedup
+
 // Type for meetings with all relations
 export type MeetingWithRelations = Awaited<ReturnType<typeof getMeetings>>[number];
 
@@ -31,7 +42,7 @@ export type MeetingWithRelations = Awaited<ReturnType<typeof getMeetings>>[numbe
 export const swrConfig: SWRConfiguration = {
   revalidateOnFocus: false, // Don't refetch on window focus (server actions handle this)
   revalidateOnReconnect: true, // Refetch when network reconnects
-  dedupingInterval: 60000, // Dedupe requests within 60 seconds (increased from 30s for less API calls)
+  dedupingInterval: DEDUP_INTERVAL_DEFAULT, // Dedupe requests within 60 seconds (increased from 30s for less API calls)
   errorRetryCount: 3, // Retry failed requests 3 times
   shouldRetryOnError: true,
   keepPreviousData: true, // Show stale data while revalidating for better UX
@@ -85,6 +96,73 @@ export const cacheKeys = {
   unreadMessageCount: (userId: string) => `unread-message-count-${userId}`,
 } as const;
 
+// ============================================================================
+// RETURN TYPE INTERFACES (for critical hooks)
+// ============================================================================
+
+/** Return type for useInboxTasks hook */
+export interface UseInboxTasksReturn {
+  tasks: Awaited<ReturnType<typeof getTasks>>;
+  isLoading: boolean;
+  isValidating: boolean;
+  isError: boolean;
+  error: Error | undefined;
+  revalidate: () => Promise<Awaited<ReturnType<typeof getTasks>> | undefined>;
+}
+
+/** Return type for useProjects hook */
+export interface UseProjectsReturn {
+  projects: Awaited<ReturnType<typeof getProjects>>;
+  isLoading: boolean;
+  isValidating: boolean;
+  isError: boolean;
+  error: Error | undefined;
+  revalidate: () => Promise<Awaited<ReturnType<typeof getProjects>> | undefined>;
+}
+
+/** Return type for useDailyFlow hook */
+export interface UseDailyFlowReturn {
+  data: Awaited<ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>> | null;
+  meetings: Awaited<
+    ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>
+  >['meetings'];
+  tasks: Awaited<ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>>['tasks'];
+  focusProject: Awaited<
+    ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>
+  >['focusProject'];
+  teamMembers: Awaited<
+    ReturnType<typeof import('@/app/actions/daily-flow').getDailyFlowData>
+  >['teamMembers'];
+  currentUserId: string | null;
+  isLoading: boolean;
+  isValidating: boolean;
+  isError: boolean;
+  error: Error | undefined;
+  revalidate: () => Promise<unknown>;
+}
+
+/** Return type for useActiveSession hook */
+export interface UseActiveSessionReturn {
+  session: Awaited<
+    ReturnType<typeof import('@/app/actions/work-sessions').getActiveSession>
+  > | null;
+  isLoading: boolean;
+  isValidating: boolean;
+  isError: boolean;
+  error: Error | undefined;
+  revalidate: () => Promise<unknown>;
+}
+
+/** Return type for useNotifications hook */
+export interface UseNotificationsReturn {
+  notifications: Awaited<ReturnType<typeof getNotifications>>;
+  isLoading: boolean;
+  isValidating: boolean;
+  isError: boolean;
+  error: Error | undefined;
+  revalidate: () => Promise<Awaited<ReturnType<typeof getNotifications>> | undefined>;
+}
+
 // Check if document is visible (for tab visibility)
 const isDocumentVisible = () => {
   if (typeof document === 'undefined') return true;
@@ -100,12 +178,8 @@ const onErrorRetry = (
   { retryCount }: { retryCount: number }
 ) => {
   // Don't retry on 4xx errors
-  if (
-    (error as Error & { status?: number }).status &&
-    (error as Error & { status?: number }).status! >= 400 &&
-    (error as Error & { status?: number }).status! < 500
-  )
-    return;
+  const status = (error as Error & { status?: number }).status;
+  if (typeof status === 'number' && status >= 400 && status < 500) return;
 
   // Only retry up to 3 times
   if (retryCount >= 3) return;
@@ -117,19 +191,19 @@ const onErrorRetry = (
 
 // SWR config with auto-refresh for real-time task updates
 // Stops refreshing when tab is hidden to save resources
-// Optimized: 45s refresh (was 30s) to reduce API calls by 33%
+// Optimized: 60s refresh (was 45s) to reduce API calls further
 const autoRefreshConfig: SWRConfiguration = {
   ...swrConfig,
-  refreshInterval: () => (isDocumentVisible() ? 45000 : 0), // 45s refresh when visible, stop when hidden
-  dedupingInterval: 20000, // 20s dedup for tasks (was 15s)
+  refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_DEFAULT : 0), // 60s refresh when visible, stop when hidden
+  dedupingInterval: DEDUP_INTERVAL_TASKS, // 20s dedup for tasks (was 15s)
   onErrorRetry, // Use exponential backoff
 };
 
 // Less frequent refresh for semi-static data (projects, teams, profiles)
 const slowRefreshConfig: SWRConfiguration = {
   ...swrConfig,
-  refreshInterval: () => (isDocumentVisible() ? 90000 : 0), // 90s refresh for less critical data
-  dedupingInterval: 45000, // 45s dedup
+  refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_SLOW : 0), // 90s refresh for less critical data
+  dedupingInterval: DEDUP_INTERVAL_SLOW, // 45s dedup
   onErrorRetry,
 };
 
@@ -160,7 +234,7 @@ export function useTeams() {
  * Hook to fetch projects with caching
  * Useful for dropdowns and selects that appear multiple times
  */
-export function useProjects() {
+export function useProjects(): UseProjectsReturn {
   const {
     data,
     error,
@@ -337,7 +411,7 @@ export function invalidateProjectStats(immediate = true) {
  * Hook to fetch inbox tasks with auto-refresh
  * Only fetches tasks where show_in_inbox = true
  */
-export function useInboxTasks() {
+export function useInboxTasks(): UseInboxTasksReturn {
   const {
     data,
     error,
@@ -562,7 +636,7 @@ export function invalidateTodaysSchedule(immediate = true) {
  * Hook for Daily Flow page data (legacy - will be replaced by useTimelineDashboard)
  * Combines meetings, tasks, and focus project with auto-refresh
  */
-export function useDailyFlow() {
+export function useDailyFlow(): UseDailyFlowReturn {
   const {
     data,
     error,
@@ -648,7 +722,7 @@ export function invalidateMeetings(immediate = true) {
 /**
  * Hook to fetch notifications with auto-refresh
  */
-export function useNotifications(workspaceId: string | null) {
+export function useNotifications(workspaceId: string | null): UseNotificationsReturn {
   const {
     data,
     error,
@@ -714,7 +788,7 @@ export function invalidateNotifications(workspaceId: string, immediate = true) {
 const provisioningRefreshConfig: SWRConfiguration = {
   ...swrConfig,
   revalidateOnFocus: true,
-  refreshInterval: () => (isDocumentVisible() ? 2000 : 0), // 2s refresh when visible
+  refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_FAST : 0), // 2s refresh when visible
   dedupingInterval: 1000, // 1s dedup
   onErrorRetry,
 };
@@ -1456,7 +1530,7 @@ export function invalidateTeamDashboard(workspaceId: string, immediate = true) {
  * Hook to fetch the current user's active (open) work session.
  * Polls every 30s when tab is visible for live clock-in status.
  */
-export function useActiveSession(workspaceId: string | null) {
+export function useActiveSession(workspaceId: string | null): UseActiveSessionReturn {
   const {
     data,
     error,
@@ -1470,7 +1544,10 @@ export function useActiveSession(workspaceId: string | null) {
       const { getActiveSession } = await import('@/app/actions/work-sessions');
       return getActiveSession(workspaceId);
     },
-    { ...autoRefreshConfig, refreshInterval: () => (isDocumentVisible() ? 30_000 : 0) }
+    {
+      ...autoRefreshConfig,
+      refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_DEFAULT : 0),
+    }
   );
 
   return {
@@ -1573,7 +1650,10 @@ export function useSessionsAdmin(
       const { getSessionsAdmin } = await import('@/app/actions/work-sessions');
       return getSessionsAdmin(workspaceId, { profileId, date });
     },
-    { ...autoRefreshConfig, refreshInterval: () => (isDocumentVisible() ? 30_000 : 0) }
+    {
+      ...autoRefreshConfig,
+      refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_SESSIONS : 0),
+    }
   );
 
   return {
@@ -1619,7 +1699,10 @@ export function useTeamStatus(workspaceId: string | null) {
       const { getTeamStatus } = await import('@/app/actions/work-sessions');
       return getTeamStatus(workspaceId);
     },
-    { ...autoRefreshConfig, refreshInterval: () => (isDocumentVisible() ? 30_000 : 0) }
+    {
+      ...autoRefreshConfig,
+      refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_DEFAULT : 0),
+    }
   );
 
   return {
@@ -1731,9 +1814,9 @@ export function useMessageChannels(userId: string | null) {
     },
     {
       ...swrConfig,
-      refreshInterval: () => (isDocumentVisible() ? 30000 : 0),
+      refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_SESSIONS : 0),
       revalidateOnFocus: false,
-      dedupingInterval: 30000,
+      dedupingInterval: REFRESH_INTERVAL_SESSIONS,
       onErrorRetry,
     }
   );
@@ -1801,9 +1884,9 @@ export function useUnreadMessageCount(userId: string | null) {
     },
     {
       ...swrConfig,
-      refreshInterval: () => (isDocumentVisible() ? 60000 : 0),
+      refreshInterval: () => (isDocumentVisible() ? REFRESH_INTERVAL_DEFAULT : 0),
       revalidateOnFocus: true,
-      dedupingInterval: 20000,
+      dedupingInterval: DEDUP_INTERVAL_TASKS,
       onErrorRetry,
     }
   );

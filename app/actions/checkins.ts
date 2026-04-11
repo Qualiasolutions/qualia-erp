@@ -110,7 +110,9 @@ export async function createDailyCheckin(
   }
 
   // Notify admins about the check-in (fire-and-forget)
-  notifyAdminsOfCheckin(supabase, user.id, workspaceId, input.checkin_type).catch(() => {});
+  notifyAdminsOfCheckin(supabase, user.id, workspaceId, input.checkin_type).catch((err) =>
+    console.error('[createCheckin] Failed to notify admins:', err)
+  );
 
   revalidatePath('/');
   return { success: true, data };

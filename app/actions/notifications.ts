@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
 
 // ============ NOTIFICATION TYPES ============
@@ -50,6 +51,7 @@ export async function createNotification(
     return { success: false, error: error.message };
   }
 
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -132,6 +134,7 @@ export async function markNotificationAsRead(notificationId: string): Promise<Ac
     return { success: false, error: error.message };
   }
 
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -160,6 +163,7 @@ export async function markAllNotificationsAsRead(workspaceId: string): Promise<A
     return { success: false, error: error.message };
   }
 
+  revalidatePath('/');
   return { success: true };
 }
 
@@ -187,6 +191,7 @@ export async function deleteNotification(notificationId: string): Promise<Action
     return { success: false, error: error.message };
   }
 
+  revalidatePath('/');
   return { success: true };
 }
 

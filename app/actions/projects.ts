@@ -498,7 +498,7 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
 
   revalidatePath(`/projects/${id}`);
   revalidatePath('/projects');
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${id}`);
   return { success: true, data };
 }
 
@@ -529,7 +529,7 @@ export async function deleteProject(id: string): Promise<ActionResult> {
   }
 
   revalidatePath('/projects');
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${id}`);
   return { success: true };
 }
 
@@ -566,7 +566,7 @@ export async function updateProjectPhaseProgress(
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -669,7 +669,7 @@ export async function updateProjectStatus(
 
   revalidatePath('/projects');
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -712,7 +712,7 @@ export async function toggleProjectPreProduction(projectId: string): Promise<Act
 
   revalidatePath('/projects');
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 

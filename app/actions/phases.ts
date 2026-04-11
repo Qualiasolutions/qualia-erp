@@ -56,7 +56,7 @@ export async function createProjectPhase(projectId: string, name: string) {
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true, data };
 }
 
@@ -75,7 +75,7 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -94,7 +94,7 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -108,10 +108,10 @@ export async function completePhase(phaseId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  // Get the phase and its project
+  // Get the phase, its project, and name in a single query
   const { data: phase, error: fetchError } = await supabase
     .from('project_phases')
-    .select('id, project_id, sort_order')
+    .select('id, project_id, sort_order, name')
     .eq('id', phaseId)
     .single();
 
@@ -119,13 +119,6 @@ export async function completePhase(phaseId: string) {
     console.error('[completePhase] Error fetching phase:', fetchError);
     return { success: false, error: 'Phase not found' };
   }
-
-  // Get phase name for notification
-  const { data: phaseDetail } = await supabase
-    .from('project_phases')
-    .select('name')
-    .eq('id', phaseId)
-    .single();
 
   // Mark the phase as complete
   const { error: updateError } = await supabase
@@ -142,17 +135,14 @@ export async function completePhase(phaseId: string) {
   }
 
   // Notify clients of phase completion (fire-and-forget, preference-aware)
-  if (phaseDetail?.name) {
+  if (phase.name) {
     const employeeName =
       (await supabase.from('profiles').select('full_name').eq('id', user.id).single()).data
         ?.full_name || 'Team member';
     import('@/lib/email').then(({ notifyClientOfPhaseMilestone }) => {
-      notifyClientOfPhaseMilestone(
-        phase.project_id,
-        employeeName,
-        phaseDetail.name,
-        'completed'
-      ).catch((err) => console.error('[completePhase] Notification error:', err));
+      notifyClientOfPhaseMilestone(phase.project_id, employeeName, phase.name, 'completed').catch(
+        (err) => console.error('[completePhase] Notification error:', err)
+      );
     });
   }
 
@@ -173,7 +163,7 @@ export async function completePhase(phaseId: string) {
 
   revalidatePath(`/projects/${phase.project_id}`);
   revalidatePath(`/projects/${phase.project_id}/roadmap`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${phase.project_id}`);
   return { success: true };
 }
 
@@ -258,7 +248,7 @@ export async function unlockPhase(phaseId: string) {
 
   revalidatePath(`/projects/${phase.project_id}`);
   revalidatePath(`/projects/${phase.project_id}/roadmap`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${phase.project_id}`);
   return { success: true };
 }
 
@@ -469,7 +459,7 @@ export async function loadQualiaFrameworkPipeline(projectId: string) {
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true, phasesCreated: template.phases.length };
 }
 
@@ -541,6 +531,6 @@ export async function updatePhaseStatusByName(
   }
 
   revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/portal');
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }

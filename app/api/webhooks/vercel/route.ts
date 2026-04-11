@@ -92,16 +92,28 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .single();
 
-    // Fallback: fuzzy match on name (only if ID match failed)
+    // Fallback: try exact name match first, then fuzzy only if needed
     if (!ourProject) {
-      const sanitizedName = project.name.replace(/[%_]/g, '');
-      const { data: nameMatch } = await supabase
+      const { data: exactMatch } = await supabase
         .from('projects')
         .select('id, name')
-        .ilike('name', `%${sanitizedName}%`)
-        .limit(1)
-        .single();
-      ourProject = nameMatch;
+        .eq('name', project.name)
+        .maybeSingle();
+
+      ourProject = exactMatch;
+
+      // Fall back to fuzzy match only if exact match fails
+      if (!ourProject) {
+        const sanitizedName = project.name.replace(/[%_]/g, '');
+        if (sanitizedName.length >= 3) {
+          const { data: fuzzyMatches } = await supabase
+            .from('projects')
+            .select('id, name')
+            .ilike('name', `%${sanitizedName}%`);
+          // Only use fuzzy match if exactly one result (avoid ambiguity)
+          ourProject = fuzzyMatches?.length === 1 ? fuzzyMatches[0] : null;
+        }
+      }
     }
 
     if (!ourProject) {

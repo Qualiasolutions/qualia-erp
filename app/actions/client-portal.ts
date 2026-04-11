@@ -10,6 +10,10 @@ import { ClientProfileUpdateSchema } from '@/lib/validation';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
 
+// ============================================================================
+// SECTION: Client Invitations & Onboarding
+// ============================================================================
+
 /**
  * Invite a client to a project by email.
  * If the client already has a Supabase account, links them directly.
@@ -343,6 +347,10 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
   }
 }
 
+// ============================================================================
+// SECTION: Client Project Access
+// ============================================================================
+
 /**
  * Get all projects a client has access to
  * Returns projects with full details joined from projects table
@@ -405,6 +413,10 @@ export async function getClientProjects(clientId: string): Promise<ActionResult>
     };
   }
 }
+
+// ============================================================================
+// SECTION: Portal Admin Management
+// ============================================================================
 
 /**
  * Get admin portal management data:
@@ -533,6 +545,10 @@ export async function sendClientPasswordReset(email: string): Promise<ActionResu
     };
   }
 }
+
+// ============================================================================
+// SECTION: Client Account Setup & Provisioning
+// ============================================================================
 
 /**
  * Setup client access for an existing project.
@@ -716,6 +732,10 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
   }
 }
 
+// ============================================================================
+// SECTION: Portal Project Creation
+// ============================================================================
+
 /**
  * Create a project from the portal admin panel.
  * Simplified version — auto-assigns workspace and first available team.
@@ -803,6 +823,10 @@ export async function createProjectFromPortal(input: {
   }
 }
 
+// ============================================================================
+// SECTION: Client Billing & Invoices
+// ============================================================================
+
 /**
  * Get invoices for the current client user.
  * Reads from `financial_invoices` (Zoho-synced) and maps fields to the portal shape.
@@ -875,6 +899,10 @@ export async function getClientInvoices(): Promise<ActionResult> {
     };
   }
 }
+
+// ============================================================================
+// SECTION: Client Dashboard Data
+// ============================================================================
 
 /**
  * Get dashboard summary data for a client
@@ -1139,6 +1167,10 @@ export async function getClientActivityFeed(
   }
 }
 
+// ============================================================================
+// SECTION: Client Profile & Settings
+// ============================================================================
+
 /**
  * Update client profile (name, company)
  */
@@ -1178,6 +1210,10 @@ export async function updateClientProfile(updates: {
     };
   }
 }
+
+// ============================================================================
+// SECTION: Notification Preferences
+// ============================================================================
 
 /**
  * Get notification preferences for the current user
@@ -1301,6 +1337,10 @@ export async function updateNotificationPreferences(preferences: {
     };
   }
 }
+
+// ============================================================================
+// SECTION: CRM-to-Portal Integration
+// ============================================================================
 
 /**
  * Setup portal access for a CRM client by looking up their email from contacts JSONB.
@@ -1521,6 +1561,10 @@ export async function setupPortalForClient(
   }
 }
 
+// ============================================================================
+// SECTION: Email Notifications (Internal Helpers)
+// ============================================================================
+
 /**
  * Send a portal invitation email to a newly created client.
  */
@@ -1569,6 +1613,10 @@ async function sendClientInvitationEmail(
     `,
   });
 }
+
+// ============================================================================
+// SECTION: Portal Project Assignment Management
+// ============================================================================
 
 /**
  * Update a portal client's project assignments (add new, remove deselected).
@@ -1681,6 +1729,10 @@ export async function updateClientPortalProjects(
     };
   }
 }
+
+// ============================================================================
+// SECTION: Project Features & Media
+// ============================================================================
 
 /**
  * Get project features (screenshots, mockups, design images)
@@ -2078,6 +2130,10 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
   }
 }
 
+// ============================================================================
+// SECTION: Bulk Operations
+// ============================================================================
+
 /**
  * Bulk setup portal access for multiple CRM clients at once.
  * Runs setupPortalForClient sequentially for each crmClientId (not in parallel to avoid rate limits).
@@ -2177,6 +2233,10 @@ export async function bulkSetupPortalForClients(
     };
   }
 }
+
+// ============================================================================
+// SECTION: Password Management
+// ============================================================================
 
 /**
  * Reset a client's portal password.
