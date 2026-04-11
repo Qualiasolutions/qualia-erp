@@ -33,6 +33,7 @@ export async function getInvitationByToken(token: string): Promise<{
         project_id,
         status,
         invited_by,
+        created_at,
         project:projects(
           id,
           name,
@@ -52,6 +53,16 @@ export async function getInvitationByToken(token: string): Promise<{
     // Check if invitation is already accepted
     if (invitation.status === 'accepted') {
       return { error: 'This invitation has already been used' };
+    }
+
+    // Check if invitation has expired (7-day window)
+    if (invitation.created_at) {
+      const expirationMs = 7 * 24 * 60 * 60 * 1000;
+      if (Date.now() - new Date(invitation.created_at).getTime() > expirationMs) {
+        return {
+          error: 'This invitation has expired. Please ask your project manager to send a new one.',
+        };
+      }
     }
 
     // Normalize FK response for project

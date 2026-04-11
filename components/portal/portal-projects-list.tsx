@@ -68,8 +68,10 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
             href={`/portal/${project.id}`}
             style={index < 10 ? getStaggerDelay(index) : undefined}
             className={cn(
-              'group flex items-center gap-4 rounded-lg px-4 py-4 transition-all duration-150',
+              'group flex min-h-[44px] items-center gap-4 rounded-lg px-4 py-3 transition-all duration-150',
               'hover:bg-primary/[0.03]',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
+              'cursor-pointer',
               index < 10 && 'animate-fade-in-up fill-mode-both'
             )}
           >

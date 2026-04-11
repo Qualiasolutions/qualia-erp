@@ -111,13 +111,9 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Admin-only routes (only /admin requires admin role)
+    // Admin-only routes — only admin role (managers access via portal)
     const adminOnlyRoutes = ['/admin'];
-    if (
-      userRole !== 'admin' &&
-      userRole !== 'manager' &&
-      adminOnlyRoutes.some((route) => pathname.startsWith(route))
-    ) {
+    if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = '/portal';
       return NextResponse.redirect(url);

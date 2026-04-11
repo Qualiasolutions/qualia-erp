@@ -103,7 +103,7 @@ export function ClockInModal({
   return (
     <Dialog open={open} onOpenChange={(v) => !v && isAdmin && onDismiss?.()} modal>
       <DialogContent
-        className="max-w-sm"
+        className="w-[calc(100%-2rem)] max-w-sm"
         showCloseButton={isAdmin}
         onEscapeKeyDown={(e) => !isAdmin && e.preventDefault()}
         onInteractOutside={(e) => !isAdmin && e.preventDefault()}

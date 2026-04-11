@@ -17,6 +17,9 @@ import {
   Menu,
   ArrowLeftRight,
   Eye,
+  Inbox,
+  CalendarDays,
+  Users,
 } from 'lucide-react';
 import { ViewAsDialog } from '@/components/portal/view-as-dialog';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -42,15 +45,30 @@ interface NavItemDef {
   icon: typeof House;
   exact?: boolean;
   comingSoon?: boolean;
+  /** Which roles can see this item. Omit = all roles. */
+  roles?: string[];
 }
 
 const navItems: NavItemDef[] = [
   { name: 'Home', href: '/portal', icon: House, exact: true },
+  { name: 'Inbox', href: '/inbox', icon: Inbox, roles: ['admin', 'employee', 'manager'] },
   { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
+  {
+    name: 'Schedule',
+    href: '/schedule',
+    icon: CalendarDays,
+    roles: ['admin', 'employee', 'manager'],
+  },
+  { name: 'Team', href: '/team', icon: Users, roles: ['admin', 'manager'] },
   { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
   { name: 'Files', href: '/portal/files', icon: FileStack },
-  { name: 'Billing', href: '/portal/billing', icon: Receipt },
-  { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
+  { name: 'Billing', href: '/portal/billing', icon: Receipt, roles: ['admin', 'manager'] },
+  {
+    name: 'Requests',
+    href: '/portal/requests',
+    icon: Lightbulb,
+    roles: ['admin', 'manager', 'client'],
+  },
   { name: 'Settings', href: '/portal/settings', icon: Settings },
 ];
 
@@ -90,9 +108,11 @@ function NavLink({
   workspaceId?: string | null;
   workspaceName?: string | null;
 }) {
-  // Append workspace query params to nav links when workspace is active
+  // Append workspace query params to portal nav links when workspace is active
+  // Internal routes (/inbox, /schedule, /team) don't use workspace params
+  const isInternalRoute = item.href && !item.href.startsWith('/portal');
   const href = item.href
-    ? workspaceId
+    ? workspaceId && !isInternalRoute
       ? (() => {
           const params = new URLSearchParams();
           params.set('workspace', workspaceId);
@@ -123,6 +143,7 @@ function NavLink({
 
   const baseClasses = cn(
     'group flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition-colors duration-150',
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
     isActive
       ? 'border-l-2 border-primary bg-primary/[0.06] text-primary font-medium'
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
@@ -267,8 +288,9 @@ function SidebarContent({
 
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
-    if (item.exact) return pathname === item.href;
-    return pathname === item.href || pathname.startsWith(item.href + '/');
+    const base = item.href.split('?')[0];
+    if (item.exact) return pathname === base;
+    return pathname === base || pathname.startsWith(base + '/');
   };
 
   const unreadBadge =
@@ -346,11 +368,8 @@ function SidebarContent({
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
         {navItems
           .filter((item) => {
-            // Billing: admin/manager only
-            if (item.name === 'Billing') return userRole === 'admin' || userRole === 'manager';
-            // Requests: hide from employees (they can't create/view requests)
-            if (item.name === 'Requests') return userRole !== 'employee';
-            return true;
+            if (!item.roles) return true;
+            return item.roles.includes(userRole || '');
           })
           .map((item) => (
             <NavLink

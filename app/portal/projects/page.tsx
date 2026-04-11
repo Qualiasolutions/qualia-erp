@@ -6,7 +6,7 @@ import { calculateProjectsProgress } from '@/app/actions/phases';
 import { isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalProjectsGrid } from '@/components/portal/portal-projects-grid';
 import { fadeInClasses } from '@/lib/transitions';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, FolderKanban } from 'lucide-react';
 
 export default async function PortalProjectsPage({
   searchParams,
@@ -210,11 +210,22 @@ export default async function PortalProjectsPage({
   const result = await getClientProjects(effectiveUserId);
   if (!result.success) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-muted-foreground/30" aria-hidden="true" />
-          <p className="mt-3 text-base font-medium text-foreground">Error loading projects</p>
-          <p className="mt-1 text-sm text-muted-foreground">{result.error}</p>
+      <div className={`space-y-6 ${fadeInClasses}`}>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track the progress of your active projects
+          </p>
+        </div>
+        <div className="flex min-h-[300px] items-center justify-center">
+          <div className="text-center">
+            <AlertCircle
+              className="mx-auto h-12 w-12 text-muted-foreground/30"
+              aria-hidden="true"
+            />
+            <p className="mt-3 text-base font-medium text-foreground">Error loading projects</p>
+            <p className="mt-1 text-sm text-muted-foreground">{result.error}</p>
+          </div>
         </div>
       </div>
     );
@@ -247,6 +258,31 @@ export default async function PortalProjectsPage({
   };
 
   const projects = (result.data || []) as ClientProjectRow[];
+
+  if (projects.length === 0) {
+    return (
+      <div className={`space-y-6 ${fadeInClasses}`}>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Track the progress of your active projects
+          </p>
+        </div>
+        <div className="flex min-h-[300px] items-center justify-center">
+          <div className="text-center">
+            <FolderKanban
+              className="mx-auto h-12 w-12 text-muted-foreground/20"
+              aria-hidden="true"
+            />
+            <p className="mt-3 text-base font-medium text-foreground">No projects yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Projects will appear here once you are invited to them.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const projectIds = projects
     .map((cp) => {

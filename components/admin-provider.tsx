@@ -2,12 +2,10 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getViewAsState, clearViewAs as clearViewAsAction } from '@/app/actions/view-as';
 
 // The super admin email address
 const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
-
-// Unified view-as cookie managed by app/actions/view-as.ts
-const VIEW_AS_COOKIE = 'view-as-user-id';
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -49,18 +47,7 @@ export function useAdminContext() {
   return useContext(AdminContext);
 }
 
-function setCookie(name: string, value: string) {
-  document.cookie = `${name}=${value};path=/;max-age=86400;samesite=lax`;
-}
-
-function deleteCookie(name: string) {
-  document.cookie = `${name}=;path=/;max-age=0`;
-}
-
-function getCookie(name: string): string | null {
-  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  return match ? match[1] : null;
-}
+// Cookie is now httpOnly — all view-as state resolved via server actions
 
 interface AdminProviderProps {
   children: ReactNode;
@@ -77,38 +64,30 @@ export function AdminProvider({ children }: AdminProviderProps) {
     loading: boolean;
   }>({ isSuperAdmin: false, userEmail: null, userId: null, loading: true });
 
-  // Read the unified view-as cookie on mount
+  // Resolve view-as state from httpOnly cookie via server action
   useEffect(() => {
-    const cookieUser = getCookie(VIEW_AS_COOKIE);
-    if (cookieUser) {
-      setViewAsUserId(cookieUser);
-      // Resolve the impersonated user's role
-      const supabase = createClient();
-      supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', cookieUser)
-        .single()
-        .then(({ data }) => {
-          if (data?.role) setViewAsRole(data.role);
-        });
-    }
+    getViewAsState().then((result) => {
+      if (result.success && result.data) {
+        const { userId, role } = result.data as { userId: string; role: string };
+        setViewAsUserId(userId);
+        setViewAsRole(role);
+      }
+    });
   }, []);
 
   const startViewAs = useCallback((role: string, userId?: string) => {
+    // Cookie is set by the server action setViewAsUser() — just update local state + reload
     setViewAsRole(role);
-    if (userId) {
-      setViewAsUserId(userId);
-      setCookie(VIEW_AS_COOKIE, userId);
-    }
+    if (userId) setViewAsUserId(userId);
     window.location.reload();
   }, []);
 
   const stopViewAs = useCallback(() => {
-    setViewAsRole(null);
-    setViewAsUserId(null);
-    deleteCookie(VIEW_AS_COOKIE);
-    window.location.reload();
+    clearViewAsAction().then(() => {
+      setViewAsRole(null);
+      setViewAsUserId(null);
+      window.location.reload();
+    });
   }, []);
 
   useEffect(() => {

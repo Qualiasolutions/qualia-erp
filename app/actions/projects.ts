@@ -225,30 +225,46 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
   }
 
   // Fetch sort_order, team assignments, GitHub integrations, AND user auth in parallel
+  // Each query is individually caught so a single failure doesn't blank the dashboard
   const projectIds = (rawProjects || []).map((p: Record<string, unknown>) => p.id as string);
-  const [
-    { data: sortData },
-    { data: assignmentData },
-    { data: githubData },
-    {
-      data: { user },
-    },
-  ] = await Promise.all([
-    supabase.from('projects').select('id, sort_order').in('id', projectIds),
+  const [sortResult, assignmentResult, githubResult, userResult] = await Promise.all([
+    supabase
+      .from('projects')
+      .select('id, sort_order')
+      .in('id', projectIds)
+      .then(
+        (r) => r,
+        () => ({ data: null })
+      ),
     supabase
       .from('project_assignments')
       .select(
         'project_id, employee:profiles!project_assignments_employee_id_fkey(id, full_name, avatar_url)'
       )
       .in('project_id', projectIds)
-      .is('removed_at', null),
+      .is('removed_at', null)
+      .then(
+        (r) => r,
+        () => ({ data: null })
+      ),
     supabase
       .from('project_integrations')
       .select('project_id')
       .eq('service_type', 'github')
-      .in('project_id', projectIds),
-    supabase.auth.getUser(),
+      .in('project_id', projectIds)
+      .then(
+        (r) => r,
+        () => ({ data: null })
+      ),
+    supabase.auth.getUser().then(
+      (r) => r,
+      () => ({ data: { user: null } })
+    ),
   ]);
+  const sortData = sortResult.data;
+  const assignmentData = assignmentResult.data;
+  const githubData = githubResult.data;
+  const { user } = userResult.data;
   const sortMap = new Map<string, number>();
   for (const s of sortData || []) {
     sortMap.set(s.id, s.sort_order ?? 0);

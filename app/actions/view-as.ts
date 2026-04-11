@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { ActionResult } from './shared';
 
 const VIEW_AS_COOKIE = 'view-as-user-id';
-const MAX_AGE = 60 * 60 * 24; // 24 hours
+const MAX_AGE = 60 * 60; // 1 hour — short window limits risk if admin session is compromised
 
 export interface ViewAsUser {
   id: string;
@@ -135,7 +135,7 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
 
     const cookieStore = await cookies();
     cookieStore.set(VIEW_AS_COOKIE, userId, {
-      httpOnly: false, // Readable by AdminProvider for client-side role resolution
+      httpOnly: true,
       path: '/',
       sameSite: 'strict',
       maxAge: MAX_AGE,
@@ -146,6 +146,67 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
   } catch (err) {
     console.error('setViewAsUser error:', err);
     return { success: false, error: 'An unexpected error occurred' };
+  }
+}
+
+/**
+ * Get current view-as state (server-side cookie read).
+ * Used by AdminProvider so the cookie can be httpOnly.
+ */
+export async function getViewAsState(): Promise<ActionResult> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: true, data: null };
+    }
+
+    // Verify caller is admin
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (callerProfile?.role !== 'admin') {
+      return { success: true, data: null };
+    }
+
+    const cookieStore = await cookies();
+    const viewAsUserId = cookieStore.get(VIEW_AS_COOKIE)?.value;
+
+    if (!viewAsUserId) {
+      return { success: true, data: null };
+    }
+
+    // Resolve the impersonated user
+    const { data: targetProfile } = await supabase
+      .from('profiles')
+      .select('id, role, full_name, email')
+      .eq('id', viewAsUserId)
+      .single();
+
+    if (!targetProfile) {
+      // Cookie refers to a deleted user — clean up
+      cookieStore.delete(VIEW_AS_COOKIE);
+      return { success: true, data: null };
+    }
+
+    return {
+      success: true,
+      data: {
+        userId: targetProfile.id,
+        role: targetProfile.role,
+        fullName: targetProfile.full_name,
+        email: targetProfile.email,
+      },
+    };
+  } catch (err) {
+    console.error('getViewAsState error:', err);
+    return { success: true, data: null };
   }
 }
 

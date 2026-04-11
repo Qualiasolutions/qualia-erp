@@ -14,6 +14,17 @@ export default async function PortalBillingPage() {
     redirect('/auth/login');
   }
 
+  // Billing is only accessible to admin, manager, and client roles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role === 'employee') {
+    redirect('/portal');
+  }
+
   const result = await getClientInvoices();
   const invoiceLoadError = !result.success ? result.error || 'Failed to load invoices' : null;
   const invoices = (result.success ? result.data : []) as Array<{
