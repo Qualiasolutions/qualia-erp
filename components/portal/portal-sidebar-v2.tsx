@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronUp,
   Menu,
+  Shield,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -39,21 +40,28 @@ interface NavItemDef {
   icon: typeof House;
   exact?: boolean;
   comingSoon?: boolean;
+  appKey: string;
 }
 
 const navItems: NavItemDef[] = [
-  { name: 'Home', href: '/portal', icon: House, exact: true },
-  { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
-  { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
-  { name: 'Files', href: '/portal/files', icon: FileStack },
-  { name: 'Billing', href: '/portal/billing', icon: Receipt },
-  { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
-  { name: 'Settings', href: '/portal/settings', icon: Settings },
+  { name: 'Home', href: '/portal', icon: House, exact: true, appKey: 'home' },
+  { name: 'Projects', href: '/portal/projects', icon: FolderKanban, appKey: 'projects' },
+  { name: 'Messages', href: '/portal/messages', icon: MessageSquare, appKey: 'messages' },
+  { name: 'Files', href: '/portal/files', icon: FileStack, appKey: 'files' },
+  { name: 'Billing', href: '/portal/billing', icon: Receipt, appKey: 'billing' },
+  { name: 'Requests', href: '/portal/requests', icon: Lightbulb, appKey: 'requests' },
+  { name: 'Settings', href: '/portal/settings', icon: Settings, appKey: 'settings' },
 ];
 
 /* ------------------------------------------------------------------ */
 /* Props                                                               */
 /* ------------------------------------------------------------------ */
+
+interface PortalBranding {
+  company_name?: string | null;
+  logo_url?: string | null;
+  accent_color?: string | null;
+}
 
 interface PortalSidebarV2Props {
   displayName: string;
@@ -61,6 +69,8 @@ interface PortalSidebarV2Props {
   isAdminViewing: boolean;
   companyName?: string | null;
   userId?: string;
+  enabledApps?: string[];
+  branding?: PortalBranding | null;
 }
 
 /* ------------------------------------------------------------------ */
@@ -207,6 +217,8 @@ function SidebarContent({
   isAdminViewing,
   companyName,
   userId,
+  enabledApps,
+  branding,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
@@ -218,12 +230,22 @@ function SidebarContent({
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
+  // Filter nav items by enabled apps (admins always see all)
+  const visibleNavItems =
+    isAdminViewing || !enabledApps || enabledApps.length === 0
+      ? navItems
+      : navItems.filter((item) => enabledApps.includes(item.appKey));
+
   const unreadBadge =
     total > 0 ? (
       <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
         {total > 99 ? '99+' : total}
       </span>
     ) : null;
+
+  // Branding values (fallback to defaults)
+  const brandLogoUrl = branding?.logo_url || '/logo.webp';
+  const brandName = branding?.company_name || 'QUALIA';
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -232,15 +254,18 @@ function SidebarContent({
         <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:scale-105">
             <Image
-              src="/logo.webp"
-              alt="Qualia"
+              src={brandLogoUrl}
+              alt={brandName}
               width={28}
               height={28}
               className="h-7 w-7 object-contain"
               priority
+              unoptimized={brandLogoUrl !== '/logo.webp'}
             />
           </div>
-          <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
+          <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">
+            {brandName}
+          </span>
         </Link>
       </div>
       {companyName && (
@@ -253,7 +278,7 @@ function SidebarContent({
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
-        {navItems.map((item) => (
+        {visibleNavItems.map((item) => (
           <NavLink
             key={item.name}
             item={item}
@@ -262,6 +287,19 @@ function SidebarContent({
             badge={item.name === 'Messages' ? unreadBadge : undefined}
           />
         ))}
+
+        {/* Admin section — only visible to admin/manager */}
+        {isAdminViewing && (
+          <>
+            <div className="mt-2 border-t border-border/20 pt-2">
+              <NavLink
+                item={{ name: 'Admin', href: '/portal/admin', icon: Shield, appKey: 'admin' }}
+                isActive={pathname === '/portal/admin' || pathname.startsWith('/portal/admin/')}
+                onClick={onLinkClick}
+              />
+            </div>
+          </>
+        )}
       </nav>
 
       {/* User area at bottom */}

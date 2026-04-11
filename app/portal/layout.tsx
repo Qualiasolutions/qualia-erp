@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
+import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal-admin';
 
 export const metadata: Metadata = {
   title: {
@@ -53,6 +54,64 @@ export default async function PortalLayout({ children }: { children: React.React
     companyName = mapping?.erp_company_name || null;
   }
 
+  // Fetch workspace ID for app config + branding
+  let workspaceId: string | null = null;
+  if (isAdminViewing) {
+    // Admin: get from workspace_members
+    const { data: wm } = await supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('profile_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    workspaceId = wm?.workspace_id || null;
+  } else {
+    // Client: get workspace via their first linked project
+    const { data: cp } = await supabase
+      .from('client_projects')
+      .select('project_id')
+      .eq('client_id', user.id)
+      .limit(1)
+      .maybeSingle();
+    if (cp?.project_id) {
+      const { data: proj } = await supabase
+        .from('projects')
+        .select('workspace_id')
+        .eq('id', cp.project_id)
+        .single();
+      workspaceId = proj?.workspace_id || null;
+    }
+  }
+
+  // Fetch enabled apps and branding in parallel
+  const allAppKeys = ['home', 'projects', 'messages', 'files', 'billing', 'requests', 'settings'];
+  let enabledApps = allAppKeys;
+  let branding: {
+    company_name?: string | null;
+    logo_url?: string | null;
+    accent_color?: string | null;
+  } | null = null;
+
+  if (workspaceId) {
+    const [appsResult, brandingResult] = await Promise.all([
+      isAdminViewing
+        ? Promise.resolve({ success: true, data: allAppKeys })
+        : getEnabledAppsForClient(workspaceId, user.id),
+      getPortalBranding(workspaceId),
+    ]);
+
+    if (appsResult.success && Array.isArray(appsResult.data)) {
+      enabledApps = appsResult.data as string[];
+    }
+    if (brandingResult.success && brandingResult.data) {
+      branding = brandingResult.data as {
+        company_name?: string | null;
+        logo_url?: string | null;
+        accent_color?: string | null;
+      };
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <PortalSidebarV2
@@ -61,6 +120,8 @@ export default async function PortalLayout({ children }: { children: React.React
         isAdminViewing={isAdminViewing}
         companyName={companyName}
         userId={user.id}
+        enabledApps={enabledApps}
+        branding={branding}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* Admin banner — floating, not a full header */}
