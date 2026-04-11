@@ -25,9 +25,9 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/auth/login');
   }
 
-  // Allow clients and admins
+  // Allow all authenticated roles: admin, manager, employee, client
   const userRole = await getUserRole(user.id);
-  if (!userRole || (userRole !== 'client' && !isPortalAdminRole(userRole))) {
+  if (!userRole) {
     redirect('/');
   }
 
@@ -39,11 +39,12 @@ export default async function PortalLayout({ children }: { children: React.React
     .single();
 
   const isAdminViewing = isPortalAdminRole(userRole);
+  const isInternalUser = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 
   let companyName: string | null = null;
-  if (!isAdminViewing) {
+  if (!isInternalUser) {
     const { data: mapping } = await supabase
       .from('portal_project_mappings')
       .select('erp_company_name')
@@ -56,8 +57,8 @@ export default async function PortalLayout({ children }: { children: React.React
 
   // Fetch workspace ID for app config + branding
   let workspaceId: string | null = null;
-  if (isAdminViewing) {
-    // Admin: get from workspace_members
+  if (isInternalUser) {
+    // Internal team (admin/manager/employee): get from workspace_members
     const { data: wm } = await supabase
       .from('workspace_members')
       .select('workspace_id')
@@ -94,8 +95,11 @@ export default async function PortalLayout({ children }: { children: React.React
 
   if (workspaceId) {
     const [appsResult, brandingResult] = await Promise.all([
-      isAdminViewing
-        ? Promise.resolve({ success: true, data: allAppKeys })
+      isInternalUser
+        ? Promise.resolve({
+            success: true,
+            data: userRole === 'employee' ? allAppKeys.filter((k) => k !== 'billing') : allAppKeys,
+          })
         : getEnabledAppsForClient(workspaceId, user.id),
       getPortalBranding(workspaceId),
     ]);
