@@ -1,6 +1,6 @@
-// Knowledge Base — Qualia Framework v2.10.0 Workflow Guides
-// Updated 2026-04-11 against qualia-framework-v2 v2.10.0 (npm: qualia-framework-v2).
-// Each guide teaches the REAL v2 workflow with copy-paste commands and real examples.
+// Knowledge Base — Qualia Framework v3.1.0 Workflow Guides
+// Updated 2026-04-12 against qualia-framework v3.1.0 (npm: qualia-framework).
+// Each guide teaches the REAL workflow with simple commands and real scenarios.
 
 export type GuideCategory = 'foundations' | 'lifecycle' | 'operations' | 'reference' | 'checklist';
 
@@ -47,326 +47,321 @@ export const guides: Guide[] = [
   // =====================================================================
 
   {
-    slug: 'quick-start',
-    title: 'Qualia Framework in 5 Minutes',
-    subtitle: 'Install v2.10.0, learn the road, ship your first project',
+    slug: 'getting-started',
+    title: 'Getting Started with Qualia',
+    subtitle: 'Install the framework, learn the basics, start your first day',
     category: 'foundations',
     projectType: 'workflow',
     steps: [
       {
-        id: 'qs-1',
-        title: 'Install the Framework',
+        id: 'gs-1',
+        title: 'What is Qualia Framework?',
         description:
-          'Run the v2 installer and enter your team code when prompted. Codes look like QS-NAME-NN — digit suffix, not year (e.g., QS-MOAYAD-03). The installer detects your role from the code and configures everything: skills (19), agents (4), hooks (8), rules (4), knowledge base, status line, and settings.json. You only do this once per machine.',
-        commands: ['npx qualia-framework-v2 install'],
+          'Qualia Framework is a workflow system that runs inside Claude Code. You type slash commands and the AI handles planning, building, and verification for you. There are no extra tools to install, no dashboards to learn, and no complex setup. If you can type a command, you can use Qualia.',
         tips: [
-          'Get your code from Fawzi. The valid codes are QS-FAWZI-01 (OWNER), QS-HASAN-02, QS-MOAYAD-03, QS-RAMA-04, QS-SALLY-05 (employees).',
-          'The installer tolerates a letter O typo in the suffix — QS-FAWZI-O1 auto-resolves to QS-FAWZI-01. Canonical is digit zero.',
-          'The installer wires up settings.json with status line, hooks, spinner, and permissions. You do not need to edit settings.json yourself.',
-          'After install, restart Claude Code so the new settings.json is picked up.',
+          'Think of it as your AI-powered project assistant. You tell it what to build, it breaks it into tasks, builds them, and checks its own work.',
+          'Everything happens in your terminal. No browser tabs, no Jira boards, no Notion pages.',
+        ],
+      },
+      {
+        id: 'gs-2',
+        title: 'Installing',
+        description:
+          'Run the install command and enter your team code when prompted. You get your code from Fawzi. This is a one-time setup. After installing, restart Claude Code so everything loads properly.',
+        commands: ['npx qualia-framework install'],
+        tips: [
+          'Get your team code from Fawzi before starting. It looks like QS-YOURNAME-NN.',
+          'The installer sets up everything automatically: commands, agents, rules, and settings.',
+          'After install, close and reopen Claude Code so the new settings take effect.',
         ],
         example:
-          '◆ Qualia Framework v2\n' +
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n' +
-          '  Enter install code: QS-MOAYAD-03\n\n' +
-          '  ✓ Moayad (EMPLOYEE)\n\n' +
-          '  Installing to /home/moayad/.claude\n\n' +
-          '  Skills        ✓ 19 (qualia, qualia-new, qualia-plan, ...)\n' +
-          '  Agents        ✓ 4  (planner, builder, verifier, qa-browser)\n' +
-          '  Hooks         ✓ 8  (session-start, auto-update, branch-guard, ...)\n' +
-          '  Rules         ✓ 4  (security, frontend, design-reference, deployment)\n' +
-          '  CLAUDE.md     ✓ Configured as EMPLOYEE',
+          'Enter install code: QS-MOAYAD-03\n\n' +
+          'Installing Qualia Framework v3.1.0...\n\n' +
+          'Skills        Done\n' +
+          'Agents        Done\n' +
+          'Hooks         Done\n' +
+          'Rules         Done\n' +
+          'Knowledge     Done\n\n' +
+          'Ready. Restart Claude Code to begin.',
         exampleTitle: 'What you see during install',
       },
       {
-        id: 'qs-2',
-        title: 'What Got Installed',
+        id: 'gs-3',
+        title: 'Your First Session',
         description:
-          'Everything lives under ~/.claude/. You will rarely touch any of this directly — the skills do it for you — but it helps to know what is on disk.',
+          'Open your terminal, navigate to any project folder, and run claude. The framework loads automatically and shows you the project status. It tells you exactly where you are and what to do next. No guessing.',
+        commands: ['cd ~/Projects/my-project', 'claude'],
         example:
-          '~/.claude/\n' +
-          '├── CLAUDE.md             # Global instructions (role-configured for you)\n' +
-          '├── skills/                # 19 slash commands (qualia, qualia-new, qualia-plan, ...)\n' +
-          '├── agents/                # 4 subagents (planner, builder, verifier, qa-browser)\n' +
-          '├── hooks/                 # 8 Node.js hooks (session-start, branch-guard, ...)\n' +
-          '├── bin/                   # state.js, qualia-ui.js, statusline.js\n' +
-          '├── knowledge/             # learned-patterns.md, common-fixes.md, client-prefs.md\n' +
-          '├── rules/                 # security, frontend, design-reference, deployment\n' +
-          '├── qualia-templates/      # tracking.json, state.md, project.md, plan.md, DESIGN.md\n' +
-          '└── .qualia-config.json    # your code, role, version (read by branch-guard)',
-        exampleTitle: '~/.claude/ after install',
-      },
-      {
-        id: 'qs-3',
-        title: 'Start a Session',
-        description:
-          'Open your terminal, cd into any project, and run claude. The session-start.js hook runs automatically and prints a branded panel showing the project state and the next command. You do not need to type /qualia-start (that command does not exist) — the hook does it for you.',
-        commands: ['cd ~/Projects/aquador', 'claude'],
-        example:
-          '◆ QUALIA — Project Loaded\n' +
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-          '  Phase: 2 of 4 — Core Pages\n' +
-          '  Status: planned\n' +
-          '  Run /qualia-build 2 to continue',
-        exampleTitle: 'session-start.js output',
+          'QUALIA — Project Loaded\n\n' +
+          '  Phase: 1 of 4 — Foundation\n' +
+          '  Status: ready to plan\n\n' +
+          '  Next: /qualia-plan 1',
+        exampleTitle: 'What you see when you open a project',
         isMilestone: true,
       },
       {
-        id: 'qs-4',
-        title: 'The 5 Commands You Will Use Every Day',
+        id: 'gs-4',
+        title: 'The 5 Commands You Will Use Daily',
         description:
-          'There are 19 skills total, but five cover 90% of daily work. Learn these first.',
+          'There are many commands available, but these five cover 90% of your daily work. Start here.',
         commands: [
-          '/qualia          — Smart router. Reads state, tells you the exact next command. Use when lost.',
-          '/qualia-new      — Interactive new project wizard (asks type, features, design, stack, client).',
-          '/qualia-quick    — Fast path for small fixes. No plan file, no subagents, just build and commit.',
-          '/qualia-report   — Mandatory before clock-out. Generates report, commits, uploads to ERP.',
-          '/qualia-idk      — Alias for /qualia. Same smart router, different mood.',
+          '/qualia          — What should I do next? Reads your project state and tells you.',
+          '/qualia-new      — Start a brand new project from scratch.',
+          '/qualia-quick    — Fast fix for something small (under 1 hour).',
+          '/qualia-report   — End of day report. MANDATORY before clock-out.',
+          '/qualia-idk      — Same as /qualia. Use when you feel stuck.',
         ],
         tips: [
-          'Lost? Type /qualia. It reads STATE.md and tells you whether to plan, build, verify, polish, or ship.',
-          '/qualia-report is enforced — the ERP clock-out modal will not let you out without a report uploaded today.',
+          'When in doubt, type /qualia. It reads your project state and tells you the exact next step.',
+          '/qualia-report is not optional. The ERP will not let you clock out without it.',
         ],
       },
       {
-        id: 'qs-5',
-        title: 'The Road',
+        id: 'gs-5',
+        title: 'Updating',
         description:
-          'Every project follows the same path. Each step calls state.js to advance the state machine, which writes both STATE.md and tracking.json atomically. state.js validates schema before every transition — if STATE.md is malformed, it blocks and suggests `state.js fix`.',
-        example:
-          '/qualia-new → set up project (PROJECT.md, STATE.md, tracking.json, DESIGN.md if frontend)\n' +
-          '     ↓\n' +
-          'For each phase:\n' +
-          '  /qualia-plan {N}   → planner agent writes phase-{N}-plan.md (fresh context)\n' +
-          '                       planner auto-adds DESIGN.md task if missing on Phase 1 frontend\n' +
-          '  /qualia-build {N}  → builder subagents per task, parallel waves (fresh context each)\n' +
-          '  /qualia-verify {N} → verifier greps the code + qa-browser tests in real browser\n' +
-          '                       design verification: fonts, max-widths, a11y, states, responsive\n' +
-          '     ↓ (auto-advances on PASS, offers /qualia-learn on FAIL)\n' +
-          '/qualia-polish  → structured design + UX + hardening pass\n' +
-          '/qualia-ship    → quality gates + vercel --prod + post-deploy verification\n' +
-          '/qualia-handoff → writes HANDOFF.md, delivers credentials\n' +
-          '/qualia-report  → MANDATORY before clock-out (uploads to ERP)',
-        exampleTitle: 'The Road (v2.10.0)',
-      },
-      {
-        id: 'qs-6',
-        title: 'Updates and Recovery',
-        description:
-          'The auto-update.js hook runs silently on every Bash tool call with a 24-hour debounce. It checks npm for a newer qualia-framework-v2 version and installs it in the background using your saved code. You can also update manually any time. If STATE.md gets corrupted, state.js fix reconstructs it from tracking.json.',
+          'The framework updates itself silently every 24 hours. You can also update manually or check your version at any time. If you are upgrading from v2, use the migrate command to move your settings over.',
         commands: [
-          'npx qualia-framework-v2 version    # Check installed version + latest on npm',
-          'npx qualia-framework-v2 update     # Force update to latest',
-          'node ~/.claude/bin/state.js fix     # Repair malformed STATE.md from tracking.json',
+          'qualia-framework update       # Update to the latest version',
+          'qualia-framework version      # Check your current version',
+          'qualia-framework migrate      # Upgrade from v2 to v3 (one-time)',
         ],
         tips: [
-          'Auto-update runs at most once per 24 hours and never blocks Claude Code — it forks a detached background process.',
-          'After a manual update, restart Claude Code so the new settings.json takes effect.',
-          'state.js fix is safe — it reconstructs STATE.md preferring tracking.json values. Use it when transitions fail with STATE_SCHEMA_ERROR.',
+          'Auto-updates happen in the background and never interrupt your work.',
+          'After a manual update, restart Claude Code so the new version loads.',
+          'The migrate command is only needed once, when moving from v2 to v3.',
+        ],
+      },
+      {
+        id: 'gs-6',
+        title: 'Getting Help',
+        description:
+          'There are three levels of help. First, type /qualia or /qualia-idk to let the framework figure out what you need. Second, use /qualia-debug if something is broken and you need to investigate. Third, ask Fawzi directly if you have been stuck for more than 30 minutes.',
+        tips: [
+          '/qualia is always the right first step when you are lost.',
+          '/qualia-debug follows a structured investigation process so you find the real problem, not just patch symptoms.',
+          'Do not spend more than 30 minutes stuck on the same issue. Escalate to Fawzi.',
         ],
       },
     ],
     checklist: {
-      title: 'Quick Start Checklist',
+      title: 'Getting Started Checklist',
       items: [
-        'Framework installed via npx qualia-framework-v2 install',
-        'Team code accepted and CLAUDE.md configured for your role',
+        'Framework installed via npx qualia-framework install',
+        'Team code accepted (got it from Fawzi)',
         'Claude Code restarted after install',
-        'Session-start banner appears when you cd into a project + run claude',
+        'Project status banner appears when you open a project',
         'Knows the 5 daily commands: /qualia, /qualia-new, /qualia-quick, /qualia-report, /qualia-idk',
-        'Understands the road: plan → build → verify → polish → ship → handoff → report',
-        'Committed to running /qualia-report before clock-out (enforced by the ERP)',
+        'Knows to type /qualia when lost',
+        'Committed to running /qualia-report before clock-out every day',
       ],
     },
   },
 
   {
-    slug: 'planning-directory',
-    title: 'The .planning/ Directory',
-    subtitle: 'Every file under .planning/, who writes it, and what reads it',
+    slug: 'how-projects-work',
+    title: 'How Projects Work',
+    subtitle: 'The road from new project to client handoff',
     category: 'foundations',
     projectType: 'workflow',
     steps: [
       {
-        id: 'pd-1',
-        title: 'PROJECT.md — What We Are Building',
+        id: 'hp-1',
+        title: 'The Road',
         description:
-          'Created by /qualia-new from your wizard answers. Contains: project name, client, description, requirements, tech stack, design direction, decisions, out of scope. The planner agent reads this on every /qualia-plan to anchor its work. If this file is wrong, every plan downstream will be wrong.',
+          'Every project follows the same path, no matter how big or small. New project setup, then repeat the plan/build/verify loop for each phase, then polish, ship, hand off, and report. The framework tracks where you are and always tells you the next step.',
         example:
-          '# Aquador\n\n' +
-          '## Description\n' +
-          'Premium water delivery e-commerce site for the Cyprus market.\n\n' +
-          '## Client\n' +
-          'Aquador Ltd — Nicosia, Cyprus\n\n' +
-          '## Stack\n' +
-          'Next.js 16 (App Router) + React 19 + TypeScript + Supabase + Vercel + Stripe\n\n' +
-          '## Features\n' +
-          '- Auth & accounts (customer signup/login)\n' +
-          '- Database & CRUD (products, orders)\n' +
-          '- Payments (Stripe Checkout)\n\n' +
-          '## Design Direction\n' +
-          'Clean & Minimal — refined typography, generous whitespace, single muted accent\n\n' +
-          '## Out of Scope\n' +
-          '- Mobile app\n' +
-          '- Inventory management for the warehouse\n' +
-          '- Multi-language (English only for v1)',
-        exampleTitle: 'Example: .planning/PROJECT.md',
+          '/qualia-new    Set up the project\n' +
+          '     |\n' +
+          'For each phase:\n' +
+          '  /qualia-plan     Plan the work\n' +
+          '  /qualia-build    Build it\n' +
+          '  /qualia-verify   Check it works\n' +
+          '     |\n' +
+          '/qualia-polish   Final design pass\n' +
+          '/qualia-ship     Deploy to production\n' +
+          '/qualia-handoff  Deliver to client\n' +
+          '/qualia-report   Log your work (mandatory)',
+        exampleTitle: 'The Road',
       },
       {
-        id: 'pd-2',
-        title: 'STATE.md — The Atomic State File',
+        id: 'hp-2',
+        title: 'Getting Assigned',
         description:
-          'STATE.md is managed by ~/.claude/bin/state.js. It is the single source of truth for which phase you are in, the status (setup → planned → built → verified → polished → shipped → handed_off → done), the roadmap, and any blockers. NEVER hand-edit this file. Every skill that changes state calls `node ~/.claude/bin/state.js transition --to {status}` which validates schema first (Phase header format, Status field, roadmap table structure), then rewrites STATE.md and tracking.json atomically. If STATE.md gets corrupted, run `node ~/.claude/bin/state.js fix` to reconstruct it from tracking.json.',
-        example:
-          '# Project State\n\n' +
-          '## Project\n' +
-          'See: .planning/PROJECT.md\n\n' +
-          '## Current Position\n' +
-          'Phase: 2 of 4 — Core Pages\n' +
-          'Status: planned\n' +
-          'Assigned to: Moayad\n' +
-          'Last activity: 2026-04-09 — planned (phase 2)\n\n' +
-          'Progress: [██░░░░░░░░] 25%\n\n' +
-          '## Roadmap\n' +
-          '| # | Phase | Goal | Status |\n' +
-          '|---|-------|------|--------|\n' +
-          '| 1 | Foundation | Auth, schema, layout | verified |\n' +
-          '| 2 | Core Pages | Home, products, cart | planned |\n' +
-          '| 3 | Checkout | Stripe, orders | — |\n' +
-          '| 4 | Polish | Design + UX pass | — |\n\n' +
-          '## Blockers\n' +
-          'None.\n\n' +
-          '## Session\n' +
-          'Last session: 2026-04-09\n' +
-          'Last worked by: Moayad\n' +
-          'Resume: —',
-        exampleTitle: 'Example: .planning/STATE.md',
-        warning:
-          'Never hand-edit STATE.md. state.js validates schema (Phase header, Status field, roadmap table) and preconditions (you cannot go from setup straight to verified). Schema errors with severity "error" block ALL transitions until fixed with `state.js fix`. Hand-edits will desync STATE.md and tracking.json — the ERP will show wrong data.',
-      },
-      {
-        id: 'pd-3',
-        title: 'tracking.json — Machine-Readable State for the ERP',
-        description:
-          'A small JSON mirror of STATE.md that the ERP reads from git. Updated by state.js on every transition, and stamped with last_commit + last_updated by the pre-push.js hook on every git push. Like STATE.md, never hand-edit it.',
-        example:
-          '{\n' +
-          '  "project": "aquador",\n' +
-          '  "client": "Aquador Ltd",\n' +
-          '  "type": "website",\n' +
-          '  "assigned_to": "Moayad",\n' +
-          '  "phase": 2,\n' +
-          '  "phase_name": "Core Pages",\n' +
-          '  "total_phases": 4,\n' +
-          '  "status": "planned",\n' +
-          '  "wave": 0,\n' +
-          '  "tasks_done": 0,\n' +
-          '  "tasks_total": 0,\n' +
-          '  "verification": "pending",\n' +
-          '  "gap_cycles": {},\n' +
-          '  "blockers": [],\n' +
-          '  "last_updated": "2026-04-09T14:22:11Z",\n' +
-          '  "last_commit": "a1b2c3d",\n' +
-          '  "deployed_url": "",\n' +
-          '  "notes": ""\n' +
-          '}',
-        exampleTitle: 'Example: .planning/tracking.json',
-      },
-      {
-        id: 'pd-4',
-        title: 'phase-{N}-plan.md — Written by the Planner',
-        description:
-          'When you run /qualia-plan {N}, a planner subagent spawns in fresh context. It reads PROJECT.md + STATE.md + the phase goal, then writes a plan file with 2-5 atomic tasks grouped into waves. Each task has Files, Action, Context refs, and a testable Done-when. Plans are prompts — the builder reads this file directly, no translation step.',
-        example:
-          '---\n' +
-          'phase: 2\n' +
-          'goal: "Homepage, product listing, and cart UI"\n' +
-          'tasks: 3\n' +
-          'waves: 2\n' +
-          '---\n\n' +
-          '# Phase 2: Core Pages\n\n' +
-          '## Task 1 — Homepage\n' +
-          '**Wave:** 1\n' +
-          '**Files:** app/page.tsx, components/Hero.tsx\n' +
-          '**Action:** Build Hero with brand image, headline, primary CTA → /products.\n' +
-          '**Context:** @.planning/DESIGN.md @.planning/PROJECT.md\n' +
-          '**Done when:** GET / returns 200, Hero visible at 375/768/1440, CTA navigates.\n\n' +
-          '## Task 2 — Product listing\n' +
-          '**Wave:** 1\n' +
-          '**Files:** app/products/page.tsx, lib/products.ts\n' +
-          '**Action:** Fetch products from Supabase server-side, render grid with empty state.\n' +
-          '**Context:** @.planning/DESIGN.md\n' +
-          '**Done when:** /products lists products, empty state shows when 0 rows.\n\n' +
-          '## Task 3 — Cart drawer\n' +
-          '**Wave:** 2 (after Task 1, 2)\n' +
-          '**Files:** components/Cart.tsx, lib/cart-store.ts\n' +
-          '**Action:** Cart drawer with add/remove, Zustand store, persists to localStorage.\n' +
-          '**Done when:** Add to cart from /products updates header badge + drawer.\n\n' +
-          '## Success Criteria\n' +
-          '- [ ] Homepage renders Hero with working CTA\n' +
-          '- [ ] /products lists items from Supabase with empty state\n' +
-          '- [ ] Cart drawer adds/removes items and persists across reload',
-        exampleTitle: 'Example: .planning/phase-2-plan.md',
-      },
-      {
-        id: 'pd-5',
-        title: 'phase-{N}-verification.md — Written by the Verifier',
-        description:
-          'When you run /qualia-verify {N}, a verifier subagent spawns in fresh context. It does NOT trust the plan or build summaries — it uses a 3-level check per criterion: (1) Truths — what must be observable, (2) Artifacts — grep for existence + stub detection, (3) Wiring — verify imports and actual usage. It also runs design verification on frontend phases: font compliance, max-width caps, accessibility basics, interactive states, and responsive utility counts. Then it runs `npx tsc --noEmit`. If the phase touched frontend files (.tsx/.jsx/.css), the qa-browser subagent runs in parallel via Playwright MCP at 375/768/1440 viewports. On FAIL, it offers to save recurring issues to common-fixes.md via /qualia-learn (passive knowledge capture). The combined report goes here.',
-        example:
-          '---\n' +
-          'phase: 2\n' +
-          'result: PASS\n' +
-          'gaps: 0\n' +
-          '---\n\n' +
-          '# Phase 2 Verification\n\n' +
-          '## Results\n' +
-          '| Criterion | Status | Evidence |\n' +
-          '|-----------|--------|----------|\n' +
-          '| Hero with CTA | PASS | app/page.tsx:12 imports Hero, CTA wired |\n' +
-          '| Products listing | PASS | app/products/page.tsx fetches via lib/products.ts |\n' +
-          '| Cart drawer | PASS | components/Cart.tsx imported in app/layout.tsx |\n\n' +
-          '## Code Quality\n' +
-          '- TypeScript: PASS\n' +
-          '- Stubs found: 0\n' +
-          '- Empty handlers: 0\n\n' +
-          '## Design Verification\n' +
-          '- Generic fonts (Inter/Roboto/Arial): 0\n' +
-          '- Hardcoded max-widths: 0\n' +
-          '- Accessibility (alt, labels, focus): PASS\n' +
-          '- Interactive states: PASS\n' +
-          '- Responsive utilities: PASS\n\n' +
-          '## Browser QA\n' +
-          '- 375px / 768px / 1440px: PASS\n' +
-          '- Console errors: 0\n' +
-          '- Primary flow (browse → add to cart): PASS\n\n' +
-          '## Verdict\n' +
-          'PASS — Phase 2 goal achieved. Auto-advanced to Phase 3.',
-        exampleTitle: 'Example: .planning/phase-2-verification.md',
-      },
-      {
-        id: 'pd-6',
-        title: 'DESIGN.md, HANDOFF.md, and reports/',
-        description:
-          'Three more files round out .planning/. DESIGN.md is your project-specific brand standard, HANDOFF.md is the client deliverable, and reports/ is your daily session log.',
+          'Fawzi creates the project on the ERP and connects it to a GitHub repo. You get notified. Clone the repo, navigate into it, and run claude. The framework picks up the project automatically and shows you what to do.',
+        commands: [
+          'git clone git@github.com:QualiasolutionsCY/project-name.git',
+          'cd project-name',
+          'claude',
+        ],
         tips: [
-          'DESIGN.md — written by /qualia-new for frontend projects, or by /qualia-plan as a Phase 1 task if missing. Builders read it before any frontend file. Contains palette, fonts, spacing, motion, components.',
-          'HANDOFF.md — written by /qualia-handoff at the end of the project. URL, credentials, repo, Vercel link, how-to, support contact.',
-          'reports/report-{YYYY-MM-DD}.md — written by /qualia-report. One per day. Committed to git and uploaded to https://portal.qualiasolutions.net by the skill itself.',
+          'All our repos live under two GitHub organizations: QualiasolutionsCY for main projects, and SakaniQualia for the Sakani project.',
+          'All repos are private. If you cannot access one, ask Fawzi to add you.',
+        ],
+      },
+      {
+        id: 'hp-3',
+        title: 'Setting Up a New Project',
+        description:
+          'Run /qualia-new and answer the questions one at a time. It asks about the project type, who the client is, what features you need, and what design direction to follow. When it finishes, everything is set up: the codebase, the GitHub repo, the design spec, and the project roadmap.',
+        commands: ['/qualia-new'],
+        tips: [
+          'Be specific in your answers. Instead of "a website," say "a water delivery website for Cyprus with a product catalog, online ordering, and a coverage map."',
+          'Mention the client name and any brand colors or fonts they already have.',
+          'The framework creates a DESIGN.md with 12 sections covering colors, fonts, spacing, components, accessibility, and more.',
+        ],
+      },
+      {
+        id: 'hp-4',
+        title: 'Working in Phases',
+        description:
+          'Projects are broken into 3-6 phases. Each phase has a clear goal like "Foundation" or "Core Pages." For each phase you plan it, build it, and verify it. When verification passes, the framework automatically moves you to the next phase. You never have to manually track where you are.',
+        commands: [
+          '/qualia-plan 1      # Plan phase 1',
+          '/qualia-build 1     # Build phase 1',
+          '/qualia-verify 1    # Verify phase 1 — moves to phase 2 on PASS',
+        ],
+        tips: [
+          'If verification fails, the framework tells you exactly what to fix. You plan the fixes, build them, and verify again.',
+          'Each phase is self-contained. You do not need to remember what happened in previous phases.',
+        ],
+      },
+      {
+        id: 'hp-5',
+        title: 'Pausing and Resuming',
+        description:
+          'When you stop for the day, run /qualia-pause to save your progress. When you come back tomorrow, run /qualia-resume to pick up exactly where you left off. Nothing is lost between sessions.',
+        commands: [
+          '/qualia-pause     # Save progress before you stop',
+          '/qualia-resume    # Pick up where you left off',
+        ],
+        tips: [
+          'If you forget to pause, /qualia-resume still works. It reads your project state and figures out where you were.',
+          'Always run /qualia-report before you clock out, even if you pause first.',
+        ],
+      },
+      {
+        id: 'hp-6',
+        title: 'The ERP Connection',
+        description:
+          'Every time you push code, a tracking file updates automatically. The ERP reads this file from GitHub, so your project status on the ERP dashboard is always current. At the end of each day, /qualia-report generates a session summary and uploads it to the ERP. This is what connects your work to the clock-in/clock-out system.',
+        tips: [
+          'You do not need to manually update the ERP. It reads your project status from GitHub automatically.',
+          '/qualia-report is mandatory. The ERP clock-out screen will not let you finish your day without a report uploaded.',
+          'If you forget to report and cannot clock out, run /qualia-report immediately and then try again.',
+        ],
+        warning:
+          'Clock-out will not work without a report. Run /qualia-report before ending your day, every day.',
+      },
+    ],
+    checklist: {
+      title: 'How Projects Work Checklist',
+      items: [
+        'Understands the road: new > plan > build > verify > polish > ship > handoff > report',
+        'Knows how to clone and open a project',
+        'Can run /qualia-new to set up a new project',
+        'Understands phases: plan it, build it, verify it, repeat',
+        'Knows /qualia-pause and /qualia-resume for multi-day projects',
+        'Understands that every push syncs to the ERP automatically',
+        '/qualia-report is mandatory for clock-out',
+      ],
+    },
+  },
+
+  {
+    slug: 'tools-and-services',
+    title: 'Our Tools and Services',
+    subtitle: 'Supabase, Vercel, Railway, OpenRouter — what we use and why',
+    category: 'foundations',
+    projectType: 'workflow',
+    steps: [
+      {
+        id: 'ts-1',
+        title: 'Supabase',
+        description:
+          'Supabase is our database for everything. It handles authentication (login/signup), file storage (images, documents), realtime updates, and of course the database itself. There is a Supabase MCP available in Claude Code so the AI can interact with your database directly. On the command line, use npx supabase. One critical rule: always enable Row Level Security (RLS) on every table. This ensures users can only see and edit their own data.',
+        commands: ['npx supabase'],
+        tips: [
+          'RLS is non-negotiable. Every table must have it enabled with policies that check who the user is.',
+          'The Supabase MCP lets Claude Code read your database schema, run queries, and manage migrations.',
+          'Ask Fawzi for database credentials. Never hardcode them in your project files.',
+        ],
+      },
+      {
+        id: 'ts-2',
+        title: 'Vercel',
+        description:
+          'Vercel hosts all our websites. We have 3 teams on Vercel. Important: there are NO automatic deploys. Every deployment goes through /qualia-ship, which runs quality checks first and then deploys via the Vercel CLI. This is intentional. We do not want broken code going live automatically.',
+        commands: [
+          'vercel             # Preview deploy',
+          'vercel link        # Link a project to Vercel',
+          'vercel --prod      # Production deploy (use /qualia-ship instead)',
+        ],
+        warning:
+          'Never deploy by pushing to main and relying on auto-deploy. We do not use auto-deploy. Always go through /qualia-ship, which runs quality gates first.',
+        tips: [
+          'Use /qualia-ship instead of running vercel --prod directly. It runs security and quality checks before deploying.',
+          'If you need to link a new project to Vercel, run vercel link in the project folder.',
+        ],
+      },
+      {
+        id: 'ts-3',
+        title: 'Railway',
+        description:
+          'Railway is for long-running processes that do not fit on Vercel. AI agents that need to stay running, background job workers, and services that need persistent connections. There is a Railway MCP available in Claude Code. On the command line, use railway.',
+        commands: ['railway'],
+        tips: [
+          'Use Railway when your service needs to run continuously, not just respond to web requests.',
+          'The Railway MCP lets Claude Code manage your Railway services directly.',
+          'Ask Fawzi for Railway credentials if you need access.',
+        ],
+      },
+      {
+        id: 'ts-4',
+        title: 'OpenRouter',
+        description:
+          'OpenRouter routes AI requests to the best model available. Instead of having separate API keys for Claude, GPT, Llama, and Gemini, you use one OpenRouter API key and it handles the routing. This gives us model failover (if one is down, it tries another) and cost tracking in one place.',
+        tips: [
+          'One API key for all AI models. Ask Fawzi for a key when you need one.',
+          'OpenRouter handles billing, rate limits, and failover automatically.',
+          'You can specify which model you want, or let OpenRouter pick the best one for the job.',
+        ],
+      },
+      {
+        id: 'ts-5',
+        title: 'Voice: Retell AI + ElevenLabs',
+        description:
+          'For voice agents, we use three services together. Retell AI handles the conversation logic (what the agent says, how it responds, when it transfers to a human). ElevenLabs provides the voice synthesis (making the AI sound natural and human-like). Telnyx provides the phone numbers and call infrastructure.',
+        tips: [
+          'Retell AI is for the conversation: prompts, tool calls, and call flow.',
+          'ElevenLabs is for the voice: how it sounds, what language, what accent.',
+          'Telnyx is for the phone: numbers, routing, SMS capabilities.',
+          'Always test voice agents with real phone calls. Dashboard previews do not reflect real-world latency.',
+        ],
+      },
+      {
+        id: 'ts-6',
+        title: 'GitHub',
+        description:
+          'All our code lives on GitHub across two organizations. QualiasolutionsCY is for main client projects and internal tools. SakaniQualia is specifically for the Sakani project. All repositories are private. We always use feature branches for our work and never push directly to main.',
+        tips: [
+          'QualiasolutionsCY: main projects and internal tools.',
+          'SakaniQualia: the Sakani project.',
+          'All repos are private. Ask Fawzi for access if you cannot see a repo.',
+          'Always work on a feature branch. The framework will block you from pushing to main.',
         ],
       },
     ],
     checklist: {
-      title: 'Files to Know',
+      title: 'Tools and Services Checklist',
       items: [
-        'PROJECT.md — what + who, written by /qualia-new, read by every planner spawn',
-        'STATE.md — current phase, status, roadmap, blockers; managed by state.js, NEVER hand-edit',
-        'tracking.json — JSON mirror for the ERP; managed by state.js + pre-push hook, NEVER hand-edit',
-        'phase-{N}-plan.md — written by the planner agent, read directly by builder agents',
-        'phase-{N}-verification.md — written by the verifier (+ qa-browser if frontend touched)',
-        'DESIGN.md — project-specific brand standard, read by builders before any frontend file',
-        'HANDOFF.md — written by /qualia-handoff for client delivery',
-        'reports/report-{date}.md — daily session log, written by /qualia-report and uploaded to ERP',
+        'Knows Supabase: database, auth, storage, realtime. Always enable RLS.',
+        'Knows Vercel: 3 teams, NO auto-deploy, always use /qualia-ship',
+        'Knows Railway: long-running AI agents and background jobs',
+        'Knows OpenRouter: one API key for all AI models',
+        'Knows voice stack: Retell AI (conversation) + ElevenLabs (voice) + Telnyx (phone)',
+        'Knows GitHub orgs: QualiasolutionsCY (main) and SakaniQualia (Sakani)',
+        'Always uses feature branches, never pushes to main directly',
       ],
     },
   },
@@ -377,259 +372,214 @@ export const guides: Guide[] = [
 
   {
     slug: 'build-website',
-    title: 'Building a Website',
-    subtitle: 'End-to-end flow for a marketing site, landing page, or SaaS dashboard',
+    title: 'Building a Website Step by Step',
+    subtitle: 'From empty folder to live site — a real example with Aquador',
     category: 'lifecycle',
     projectType: 'website',
     steps: [
       {
         id: 'bw-1',
-        title: 'Start the Project',
+        title: 'Create the Project',
         description:
-          'Make a folder, drop in any client assets (logo, brand guide, content doc), launch Claude, and run /qualia-new. The wizard asks one question at a time using AskUserQuestion: project type → core features → design vibe → stack → client/scope. At the end it scaffolds Next.js, creates the GitHub repo, links Vercel, and writes PROJECT.md + STATE.md + tracking.json + DESIGN.md.',
-        commands: [
-          'mkdir -p ~/Projects/aquador && cd ~/Projects/aquador',
-          '# Drop logo, brand guide, content doc into the folder',
-          'claude',
-          '/qualia-new',
-        ],
+          'Let us walk through building a fictional water delivery website called "Aquador" from start to finish. First, create a folder, open Claude Code, and run the project wizard. It asks you questions one at a time: what are you building, who is the client, what features, what design style. Answer them and it sets everything up.',
+        commands: ['mkdir -p ~/Projects/aquador', 'cd ~/Projects/aquador', 'claude', '/qualia-new'],
         tips: [
-          'Be specific in your free-text answer: "Premium water delivery in Cyprus. Hero with truck photo, 3 pricing plans, coverage map, testimonials, contact form to Supabase. Clean & minimal vibe."',
-          'Pick "Website / Web App" for project type. The wizard will offer the right feature checklist.',
-          'Pick "Qualia Stack (Recommended)" unless the client has specific tech requirements — Next.js 16 + React 19 + TypeScript + Supabase + Vercel.',
-          'If the client has existing brand colors / fonts, mention them in your free-text answer — they end up in DESIGN.md.',
+          'Be descriptive: "Premium water delivery website for Cyprus. Product catalog, online ordering, delivery coverage map, customer accounts. Clean and modern design with blue accents."',
+          'The wizard creates the GitHub repo, the design spec, the project roadmap, and the initial codebase. You just answer questions.',
         ],
       },
       {
         id: 'bw-2',
         title: 'Review the Roadmap',
         description:
-          'Once /qualia-new finishes scaffolding, it presents a roadmap of 4-6 phases for review. A typical website roadmap looks like Foundation → Core → Content → Polish, but the wizard tailors it to your features. Approve or ask to adjust.',
+          'After setup, the framework shows you a roadmap of 4 phases. Each phase has a clear goal. You can approve it or ask to adjust it before moving on.',
         example:
-          'Typical website roadmap:\n\n' +
-          '| # | Phase       | Goal                                                  |\n' +
-          '|---|-------------|-------------------------------------------------------|\n' +
-          '| 1 | Foundation  | Auth (if needed), DB schema, layout shell, DESIGN.md  |\n' +
-          '| 2 | Core Pages  | Homepage, primary feature pages, navigation           |\n' +
-          '| 3 | Content     | Real copy, images, forms, integrations                |\n' +
-          '| 4 | Polish      | Design + UX pass, edge cases, responsive at 320–1920  |',
-        exampleTitle: 'Roadmap example',
+          '| # | Phase        | Goal                              |\n' +
+          '|---|--------------|-----------------------------------|\n' +
+          '| 1 | Foundation   | Database, auth, layout, design    |\n' +
+          '| 2 | Core Pages   | Homepage, products, navigation    |\n' +
+          '| 3 | Ordering     | Cart, checkout, order management  |\n' +
+          '| 4 | Polish       | Design pass, testing, hardening   |',
+        exampleTitle: 'Aquador roadmap',
+        tips: [
+          'Most websites have 3-5 phases. The framework suggests a roadmap based on your features.',
+          'You can ask to add, remove, or rearrange phases before you start.',
+        ],
       },
       {
         id: 'bw-3',
-        title: 'Plan → Build → Verify Each Phase',
+        title: 'Phase 1: Foundation',
         description:
-          'For every phase, run the same three commands. Each spawns a fresh subagent with isolated context — task 50 gets the same quality as task 1 because the builder for task 50 sees zero history from task 1. The planner is design-aware: if no DESIGN.md exists and Phase 1 has frontend work, it auto-adds a Wave 1 task to create it. Every frontend task references @.planning/DESIGN.md in its Context field.',
+          'For every phase, you run three commands: plan, build, verify. Plan breaks the phase into tasks. Build executes them. Verify checks that everything actually works. When verify says PASS, you automatically move to the next phase.',
         commands: [
-          '/qualia-plan 1     # planner writes .planning/phase-1-plan.md (2-5 tasks, waves)',
-          '/qualia-build 1    # builder subagents per task, parallel waves',
-          '/qualia-verify 1   # verifier (3-level check + design verification) + qa-browser',
-          '# Repeat for phase 2, 3, 4...',
+          '/qualia-plan 1      # Creates 2-5 tasks for Phase 1',
+          '/qualia-build 1     # Builds all tasks',
+          '/qualia-verify 1    # Checks the work — PASS means move on',
         ],
-        tips: [
-          'On verify PASS, state.js auto-advances to the next phase — you do not need to bump the number manually.',
-          'On verify FAIL, the verifier offers to save recurring issues to common-fixes.md via /qualia-learn (passive knowledge capture). Then run `/qualia-plan {N} --gaps` to plan surgical fixes for only the failed criteria.',
-          'Gap cycles are capped at 2. If a phase fails verification 2 times, state.js blocks further attempts and tells you to escalate to Fawzi.',
-          'qa-browser uses the Playwright MCP. If Playwright is not connected, it returns BLOCKED — that is a note in the report, not a phase failure.',
-          'The verifier runs 4 design checks on frontend phases: font compliance, hardcoded max-widths, accessibility basics, interactive states + responsive utilities.',
-        ],
+        example:
+          'Phase 1 Verification\n\n' +
+          'Correctness:   5/5\n' +
+          'Completeness:  4/5\n' +
+          'Wiring:        5/5\n' +
+          'Quality:       4/5\n\n' +
+          'Result: PASS\n' +
+          'Auto-advancing to Phase 2.',
+        exampleTitle: 'What PASS looks like',
+        isMilestone: true,
       },
       {
         id: 'bw-4',
-        title: 'Polish Pass',
+        title: 'Phases 2-3: Features',
         description:
-          'After ALL phases are verified, run /qualia-polish. This is the structured design + UX pass — typography, color, layout, interactive states, motion, accessibility, responsive, performance, then hardening (long text, empty data, slow network, keyboard-only flow). Reads .planning/DESIGN.md as the standard.',
-        commands: ['/qualia-polish'],
-        tips: [
-          '/qualia-polish runs ONCE after all phases are verified, not after every phase. Polishing in the middle wastes work because later phases will undo it.',
-          'For one-shot ad-hoc design fixes during build phases, use /qualia-design instead — it is the lighter, no-report version.',
+          'Same loop for every phase. Plan it, build it, verify it. Between phases, you can use /qualia-quick for small fixes that come up along the way, like tweaking a color or fixing a typo.',
+        commands: [
+          '/qualia-plan 2 && /qualia-build 2 && /qualia-verify 2',
+          '/qualia-quick "fix the logo size on mobile"',
+          '/qualia-plan 3 && /qualia-build 3 && /qualia-verify 3',
         ],
-        isMilestone: true,
+        tips: [
+          'Use /qualia-quick for small tweaks between phases. It does not interrupt the phase flow.',
+          'If verify fails, the framework tells you exactly what went wrong. Plan the fix, build it, verify again.',
+        ],
       },
       {
         id: 'bw-5',
-        title: 'Production Audit',
+        title: 'Polish and Ship',
         description:
-          'Before shipping, run /qualia-review --web for a full production audit: security (no secrets leaked, RLS, CORS, CSP, rate limiting), performance (Core Web Vitals, image optimization, bundle), reliability (error boundaries, graceful degradation, health endpoint), observability (Sentry, logging, monitoring). Findings go to .planning/REVIEW.md ranked CRITICAL/HIGH/MEDIUM/LOW. CRITICAL or HIGH findings block /qualia-ship.',
-        commands: ['/qualia-review --web'],
-      },
-      {
-        id: 'bw-6',
-        title: 'Ship',
-        description:
-          '/qualia-ship runs the full pipeline: pre-deploy-gate.js hook (tsc + lint + tests + build + service_role leak scan), commit, push, vercel --prod, then post-deploy verification (HTTP 200, latency < 500ms, auth endpoint responds). On success, state.js transitions to shipped.',
-        commands: ['/qualia-ship'],
-        warning:
-          'pre-deploy-gate.js scans every .ts/.tsx/.js/.jsx file under app/, components/, src/, pages/, lib/ for the literal "service_role" string. Files matching `*.server.*` or `server/` paths are skipped. Keep service_role in server-only files or the deploy will be blocked.',
+          'After all phases pass verification, run /qualia-polish. This is a full design and quality pass that checks typography, colors, responsive layouts, accessibility, and edge cases. Then /qualia-ship runs quality gates and deploys to Vercel.',
+        commands: [
+          '/qualia-polish    # Full design and quality pass',
+          '/qualia-ship      # Quality gates + deploy to production',
+        ],
+        tips: [
+          'Run /qualia-polish once, after ALL phases are verified. Do not polish in the middle because later phases will change things.',
+          '/qualia-ship checks TypeScript, linting, security, and builds before deploying. If anything fails, it tells you what to fix.',
+        ],
         isMilestone: true,
       },
       {
-        id: 'bw-7',
-        title: 'Handoff and Report',
+        id: 'bw-6',
+        title: 'Handoff to Client',
         description:
-          'After shipping, run /qualia-handoff to write .planning/HANDOFF.md (URL, credentials, repo, how-to-use, maintenance, support). Then /qualia-report to log the session — this is mandatory before clock-out.',
-        commands: ['/qualia-handoff', '/qualia-report'],
-        tips: [
-          'HANDOFF.md is the client deliverable. Make sure URL, admin login, Supabase project ref, GitHub repo, and Vercel project are all accurate.',
-          '/qualia-report uploads the report to https://portal.qualiasolutions.net/api/claude/report-upload using the API key at ~/.claude/.erp-api-key. The ERP clock-out modal will not let you out without it.',
+          'After the site is live, run /qualia-handoff to create the client delivery package with the URL, credentials, and instructions. Then run /qualia-report to log your work for the day.',
+        commands: [
+          '/qualia-handoff    # Creates delivery package for the client',
+          '/qualia-report     # Logs your work to the ERP (mandatory)',
         ],
-      },
-      {
-        id: 'bw-8',
-        title: 'Supabase: Ask Fawzi for Keys',
-        description:
-          'Employees cannot edit .env files — block-env-edit.js refuses any Edit/Write on `.env*` paths. If a phase needs Supabase credentials, ask Fawzi to add them to .env.local on your machine, or have him set them in the Vercel project. After Vercel env changes, you must redeploy for them to take effect.',
-        warning:
-          'Never commit .env files. The settings.json deny list also blocks Read on .env, .env.*, and secrets/**. If you need to test against a credential, ask Fawzi.',
+        tips: [
+          'Double-check the handoff document: correct URL, working login credentials, accurate instructions.',
+          '/qualia-report is mandatory. You cannot clock out without it.',
+        ],
       },
     ],
     checklist: {
       title: 'Website Ship Checklist',
       items: [
-        '/qualia-new completed, PROJECT.md and DESIGN.md created',
-        'Every phase ran /qualia-plan → /qualia-build → /qualia-verify with verification PASS',
-        '/qualia-polish ran after ALL phases verified',
-        '/qualia-review --web clean (no CRITICAL or HIGH findings)',
+        'Project set up with /qualia-new, roadmap approved',
+        'Every phase: plan > build > verify with PASS',
+        '/qualia-polish done after all phases verified',
         'RLS enabled on every Supabase table',
-        'No service_role in client code (pre-deploy-gate enforces)',
-        '/qualia-ship succeeded — vercel --prod deployed, HTTP 200, latency < 500ms',
-        '/qualia-handoff produced HANDOFF.md with credentials',
+        'No secret keys in client-facing code',
+        '/qualia-ship succeeded — site is live and loads fast',
+        '/qualia-handoff created the client delivery package',
         '/qualia-report uploaded to ERP',
       ],
     },
   },
 
   {
-    slug: 'build-ai-agent',
-    title: 'Building an AI Agent',
-    subtitle: 'Chatbot, RAG, voice agent, or tool-calling agent on the Qualia stack',
+    slug: 'build-voice-agent',
+    title: 'Building an AI Voice Agent',
+    subtitle: 'Receptionist bot, sales agent, or support bot — from setup to live calls',
     category: 'lifecycle',
-    projectType: 'ai-agent',
+    projectType: 'voice-agent',
     steps: [
       {
-        id: 'ba-1',
+        id: 'bva-1',
         title: 'Start the Project',
         description:
-          'Same wizard as any project. Run /qualia-new and pick "AI Agent" or "Voice Agent" for project type. Be specific about what the agent does, who talks to it, and what actions it can take.',
+          'Let us walk through building a receptionist bot for a dental clinic. Run /qualia-new and pick "Voice Agent" for the project type. Describe what the agent does: "A friendly receptionist for a dental clinic that answers frequently asked questions, books appointments, and transfers complex calls to the office manager."',
         commands: [
-          'mkdir -p ~/Projects/clinic-bot && cd ~/Projects/clinic-bot',
+          'mkdir -p ~/Projects/clinic-bot',
+          'cd ~/Projects/clinic-bot',
           'claude',
           '/qualia-new',
         ],
         tips: [
-          'For voice: "A friendly receptionist for Dr. Ahmad\'s dental clinic that answers FAQ, books appointments via webhook, and transfers complex calls to a human."',
-          'For chat: "RAG chatbot over the client\'s product docs. Answers in English and Arabic. Cites sources. Refuses out-of-scope questions."',
-          'Pick the right template: AI Agent for chat/RAG, Voice Agent for VAPI/Retell/ElevenLabs phone agents.',
+          'Be specific about what the agent should do, who it talks to, and when it should hand off to a human.',
+          'Mention the tone: "friendly and professional" or "warm and reassuring." This shapes the voice and prompts.',
         ],
       },
       {
-        id: 'ba-2',
-        title: 'Stack Choices',
+        id: 'bva-2',
+        title: 'The Voice Stack',
         description:
-          'The Qualia stack for AI agents: Next.js 16 API routes for webhook handlers, Supabase + pgvector for data and RAG, OpenRouter for LLM routing, plus a voice provider if it is a phone agent.',
+          'Voice agents use three services working together. Retell AI handles the conversation logic: what the agent says, how it responds to questions, when it books an appointment or transfers a call. ElevenLabs provides the voice: making the AI sound natural and human-like. Telnyx provides the phone number that patients call. OpenRouter routes the AI thinking to the best available model.',
         tips: [
-          'OpenRouter — single API for Claude, GPT, Llama, Gemini. Model failover and cost tracking built in.',
-          'Supabase pgvector — store embeddings next to your application data. RLS still applies.',
-          'VAPI — easiest inbound/outbound phone agents with built-in webhooks.',
-          'Retell AI — strong for sales coaching and roleplay scenarios.',
-          'ElevenLabs — when the client needs a custom voice clone.',
-          'Telnyx — raw SIP / number porting / SMS.',
+          'Retell AI: the brain. It manages the conversation flow, tool calls, and decision-making.',
+          'ElevenLabs: the voice. It turns text into natural-sounding speech.',
+          'Telnyx: the phone line. It provides the number and handles call routing.',
+          'OpenRouter: the AI engine. It processes what the caller says and decides what to respond.',
         ],
       },
       {
-        id: 'ba-3',
-        title: 'Plan → Build → Verify',
+        id: 'bva-3',
+        title: 'Building Phases',
         description:
-          'Same workflow as any project. A typical AI agent roadmap is Foundation → Agent → Interface → Polish. The planner agent looks up library APIs via Context7 MCP (or WebFetch) before writing tasks — it never guesses at SDK signatures. It also has a quality degradation curve: stops planning at 50% context usage to keep task quality high.',
+          'A voice agent typically has 3 phases. Foundation sets up the webhook handler and database. Agent builds the prompts, tools, and conversation flow. Testing is where you make real phone calls and refine the experience.',
+        example:
+          '| # | Phase       | Goal                                        |\n' +
+          '|---|-------------|---------------------------------------------|\n' +
+          '| 1 | Foundation  | Webhook handler, Supabase schema, env setup |\n' +
+          '| 2 | Agent       | Prompts, tools, conversation flow, voice    |\n' +
+          '| 3 | Testing     | Real calls, latency tuning, edge cases      |',
+        exampleTitle: 'Voice agent roadmap',
         commands: [
-          '/qualia-plan 1     # Foundation: webhook handler, Supabase, auth',
-          '/qualia-build 1',
-          '/qualia-verify 1',
-          '/qualia-plan 2     # Agent: prompts, tool calling, streaming',
-          '/qualia-build 2',
-          '/qualia-verify 2',
-          '# ...',
-        ],
-        example:
-          'Typical AI agent roadmap:\n\n' +
-          '| # | Phase       | Goal                                                  |\n' +
-          '|---|-------------|-------------------------------------------------------|\n' +
-          '| 1 | Foundation  | Webhook handler, Supabase schema, auth, env wiring    |\n' +
-          '| 2 | Agent       | Prompts, tool calling, conversation memory            |\n' +
-          '| 3 | Interface   | Chat UI with streaming, history, error states         |\n' +
-          '| 4 | Polish      | Rate limiting, cost guards, fallbacks, observability  |',
-        exampleTitle: 'AI agent phases',
-      },
-      {
-        id: 'ba-4',
-        title: 'Webhook Handler Pattern',
-        description:
-          'Every webhook-based agent (VAPI, Retell, Telnyx) needs the same 3 things: signature verification, event routing, structured error handling. Builder agents follow this pattern automatically when the task says "webhook handler".',
-        example:
-          '// app/api/vapi/route.ts\n' +
-          'import { verifySignature } from "@/lib/vapi.server";\n\n' +
-          'export async function POST(req: Request) {\n' +
-          '  const body = await req.text();\n' +
-          '  const signature = req.headers.get("x-vapi-signature");\n' +
-          '  if (!verifySignature(signature, body)) {\n' +
-          '    return new Response("Unauthorized", { status: 401 });\n' +
-          '  }\n\n' +
-          '  const { message } = JSON.parse(body);\n' +
-          '  switch (message.type) {\n' +
-          '    case "function-call":      return handleToolCall(message);\n' +
-          '    case "end-of-call-report": return handleCallEnd(message);\n' +
-          '    default:                   return new Response("OK");\n' +
-          '  }\n' +
-          '}',
-        exampleTitle: 'Standard webhook handler',
-      },
-      {
-        id: 'ba-5',
-        title: 'AI-Specific Production Audit',
-        description:
-          'Before shipping any AI or voice agent, run /qualia-review --ai. This auto-detects the stack (VAPI, ElevenLabs, Retell, OpenAI, Anthropic, pgvector) and audits prompt safety (no system prompt leakage, no eval on AI output, token limits set), conversation flow (off-topic handling, context window management, error recovery, human handoff), voice latency (< 500ms), RAG quality (chunk size, retrieval relevance), and resilience (provider failover, cost monitoring, streaming error recovery).',
-        commands: ['/qualia-review --ai'],
-        tips: [
-          'CRITICAL or HIGH findings block /qualia-ship — fix them or ask Fawzi to override.',
-          'If the agent uses RAG, the audit checks embedding consistency and index refresh strategy too.',
+          '/qualia-plan 1 && /qualia-build 1 && /qualia-verify 1',
+          '/qualia-plan 2 && /qualia-build 2 && /qualia-verify 2',
+          '/qualia-plan 3 && /qualia-build 3 && /qualia-verify 3',
         ],
       },
       {
-        id: 'ba-6',
-        title: 'Voice Latency Discipline',
+        id: 'bva-4',
+        title: 'Testing Voice Agents',
         description:
-          'Voice agents fail in production for one reason more than any other: latency. First-token must arrive within 500ms or the user hangs up. Webhook responses must be under 300ms. Test with REAL phone calls, not just the provider dashboard.',
+          'This is the most important step. Always test with REAL phone calls, not just the provider dashboard. Dashboard numbers do not reflect what callers actually experience. The first response from the agent must arrive within 500 milliseconds or callers will hang up. Call the number yourself, try different questions, try interrupting the agent, try edge cases.',
         warning:
-          'High latency is the #1 voice agent failure mode. Always measure end-to-end on a real phone call before shipping. Provider dashboards under-report by 100-200ms.',
+          'Provider dashboards under-report latency by 100-200ms. A response that looks fast on screen may feel slow on the phone. Always test with a real call.',
         tips: [
-          'Start streaming the first sentence as soon as you have it — do not wait for the full response.',
-          'Pre-load common responses (greeting, "let me check that for you") to mask LLM latency.',
-          'Handle interruptions: the user must be able to talk over the agent without breaking the flow.',
-          'Silence detection: if the user is quiet for 5+ seconds, prompt them.',
+          'Call the number yourself and have a real conversation. Do not just read test scripts.',
+          'Try interrupting the agent mid-sentence. It should handle interruptions gracefully.',
+          'Try asking something completely off-topic. The agent should redirect politely.',
+          'Try staying silent for 5+ seconds. The agent should prompt you.',
+          'Test at different times of day. Latency varies with provider load.',
         ],
       },
       {
-        id: 'ba-7',
-        title: 'Ship and Hand Off',
+        id: 'bva-5',
+        title: 'Ship and Monitor',
         description:
-          'Same shipping flow as any project: /qualia-ship → /qualia-handoff → /qualia-report. The only difference is the post-deploy verification should include a real test call (voice) or a real test conversation (chat) before you close out.',
+          'Deploy with /qualia-ship, then make one final real phone call to confirm everything works in production. Voice agents need ongoing monitoring because latency can change as provider load fluctuates.',
         commands: ['/qualia-ship', '/qualia-handoff', '/qualia-report'],
+        tips: [
+          'After deploying, make a real call to the production number before handing off to the client.',
+          'Set up monitoring for response latency. If it goes above 500ms, something needs attention.',
+          'Hand off to the client with clear instructions on how to check call logs and update the agent prompts.',
+        ],
         isMilestone: true,
       },
     ],
     checklist: {
-      title: 'AI Agent Ship Checklist',
+      title: 'Voice Agent Ship Checklist',
       items: [
-        'Webhook signature verification implemented and tested',
-        'Rate limiting configured per user / per phone number',
-        'maxTokens set on every LLM call',
-        'System prompt lives in the provider dashboard or a *.server.ts file — never client-side',
-        'No dangerouslySetInnerHTML on AI output, no eval on AI output',
-        'Cost guard / billing alert configured on the provider dashboard',
-        'Voice: first-token latency measured under 500ms on a real phone call',
-        '/qualia-review --ai clean (no CRITICAL or HIGH)',
-        'Conversation flow tested end-to-end with a real call/message',
-        '/qualia-ship → /qualia-handoff → /qualia-report all completed',
+        'Webhook handler verifies signatures and handles all event types',
+        'Agent prompts are in a secure server-side file, never exposed to the client',
+        'Tested with real phone calls, not just the dashboard',
+        'First response latency under 500ms on a real call',
+        'Agent handles interruptions, silence, and off-topic questions gracefully',
+        'Human handoff works when the agent cannot help',
+        'Cost monitoring configured on the provider dashboard',
+        '/qualia-ship + /qualia-handoff + /qualia-report completed',
       ],
     },
   },
@@ -637,109 +587,90 @@ export const guides: Guide[] = [
   {
     slug: 'build-web-app',
     title: 'Building a Web App',
-    subtitle: 'Larger SaaS products with auth, dashboards, payments, and 8-12 phases',
+    subtitle: 'SaaS dashboards, platforms, and larger apps with 6-12 phases',
     category: 'lifecycle',
     projectType: 'ai-platform',
     steps: [
       {
         id: 'bwa-1',
-        title: 'Start the Project',
+        title: 'Longer Roadmap',
         description:
-          'Same /qualia-new wizard. Pick "Website / Web App" for project type and check the auth + database + payments + dashboard features. The wizard generates a longer roadmap (8-12 phases) for full SaaS apps because there is more to build.',
-        commands: [
-          'mkdir -p ~/Projects/saas-name && cd ~/Projects/saas-name',
-          'claude',
-          '/qualia-new',
-        ],
-        tips: [
-          'Be specific about user roles (admin, customer, manager) — this shapes the auth and RLS design from Phase 1.',
-          'Mention paid plans up front so the wizard adds a Subscriptions phase to the roadmap.',
-          'v2 has NO concept of milestones. The unit is the phase. A bigger app just has more phases.',
-        ],
+          'Web apps are bigger than websites. A SaaS dashboard or platform typically has 6-12 phases instead of 3-5. Phases cover things like Foundation, Authentication, Core Features, Dashboard, Payments, Notifications, and Polish. The framework handles this the same way, just with more phases.',
+        example:
+          '| # | Phase          | Goal                              |\n' +
+          '|---|----------------|-----------------------------------|\n' +
+          '| 1 | Foundation     | Database, auth, layout, design    |\n' +
+          '| 2 | Onboarding     | Signup, verification, welcome     |\n' +
+          '| 3 | Core CRUD      | Main features, list/detail/edit   |\n' +
+          '| 4 | Roles          | Admin/customer roles, permissions |\n' +
+          '| 5 | Dashboard      | Stats, charts, recent activity    |\n' +
+          '| 6 | Payments       | Stripe, subscriptions, tiers      |\n' +
+          '| 7 | Notifications  | Email, in-app alerts              |\n' +
+          '| 8 | Polish         | Design pass, hardening            |',
+        exampleTitle: 'Typical SaaS roadmap',
       },
       {
         id: 'bwa-2',
-        title: 'Phase Structure for SaaS',
+        title: 'Same Workflow, More Phases',
         description:
-          'A typical SaaS roadmap is longer than a marketing site. Foundation → Core CRUD → Auth/Roles → Dashboard → Subscriptions → Polish. Each phase is still atomic — you plan, build, verify it, then move on.',
-        example:
-          'Typical SaaS roadmap:\n\n' +
-          '| # | Phase           | Goal                                              |\n' +
-          '|---|-----------------|---------------------------------------------------|\n' +
-          '| 1 | Foundation      | DB schema, RLS, auth, layout shell, DESIGN.md     |\n' +
-          '| 2 | Onboarding      | Signup, email verification, welcome flow          |\n' +
-          '| 3 | Core CRUD       | Main entities, list/detail/create/edit            |\n' +
-          '| 4 | Roles & Perms   | Admin/manager/customer roles, RLS policies        |\n' +
-          '| 5 | Dashboard       | Stats, charts, recent activity                    |\n' +
-          '| 6 | Subscriptions   | Stripe Checkout, webhooks, tier enforcement       |\n' +
-          '| 7 | Notifications   | Email, in-app, transactional triggers             |\n' +
-          '| 8 | Polish          | Design pass, hardening, edge cases                |',
-        exampleTitle: 'SaaS phase structure',
-      },
-      {
-        id: 'bwa-3',
-        title: 'Plan, Build, Verify — Same Loop, More Phases',
-        description:
-          'The exact same plan/build/verify loop as any project — just repeated for each phase. State.js auto-advances on verify PASS, so you can flow phase to phase without manual state edits.',
+          'The workflow is exactly the same as building a website. Plan, build, verify. Repeat for each phase. The framework tracks your progress and always tells you the next step. The only difference is that there are more phases to go through.',
         commands: [
           '/qualia-plan 1 && /qualia-build 1 && /qualia-verify 1',
           '/qualia-plan 2 && /qualia-build 2 && /qualia-verify 2',
-          '# Or just type /qualia between phases — it tells you the next command',
+          '# ... same loop for each phase',
+          '# Or just type /qualia and it tells you the next command',
+        ],
+        tips: [
+          'You do not need to remember which phase you are on. /qualia always tells you.',
+          'Each phase builds on the previous ones, but the framework handles the context for you.',
+        ],
+      },
+      {
+        id: 'bwa-3',
+        title: 'Working Across Days',
+        description:
+          'A SaaS build takes days or weeks. At the end of each day, pause your work and file your report. Next morning, resume where you left off. The framework makes this seamless.',
+        commands: [
+          '# End of day:',
+          '/qualia-pause      # Save your progress',
+          '/qualia-report     # Log your work (mandatory for clock-out)',
+          '',
+          '# Next morning:',
+          '/qualia-resume     # Pick up where you left off',
+        ],
+        tips: [
+          '/qualia-resume reads your saved progress and tells you exactly where you were and what to do next.',
+          'Even if you forget to /qualia-pause, the framework can reconstruct your position from the project state.',
         ],
       },
       {
         id: 'bwa-4',
-        title: 'Pause and Resume Across Days',
+        title: 'Save What You Learn',
         description:
-          'A SaaS build takes weeks. End each session with /qualia-pause to write .continue-here.md (session summary, in-progress work, next steps, blockers, modified files). Next session, start with /qualia-resume to restore context.',
-        commands: [
-          '/qualia-pause     # Saves .continue-here.md before you stop for the day',
-          '/qualia-resume    # Restores context from .continue-here.md or STATE.md',
-        ],
+          'When you discover a useful pattern or fix a tricky bug, save it with /qualia-learn. This goes into a knowledge base that the framework reads automatically on future projects. It saves you (and your teammates) from solving the same problem twice.',
+        commands: ['/qualia-learn'],
         tips: [
-          '/qualia-pause also commits any uncommitted work files as a WIP commit on your feature branch.',
-          '/qualia-resume cleans up .continue-here.md after restoring (or asks if you want to keep it).',
-          'If you forget to /qualia-pause, /qualia-resume falls back to STATE.md + git history.',
+          'Save patterns: "For Stripe webhooks, always verify the signature before processing."',
+          'Save fixes: "When next/font crashes on Vercel, move the import to a server component."',
+          'Save client preferences: "Sakani always wants Arabic language support."',
+          'The framework also offers to save lessons when verification fails. Accept the offer.',
         ],
       },
       {
         id: 'bwa-5',
-        title: 'Save Patterns as You Find Them',
+        title: 'Ship the Big Thing',
         description:
-          'When you discover a reusable pattern (a Stripe webhook trick, a Supabase RLS gotcha, a Tailwind component pattern), save it to the knowledge base with /qualia-learn. Future planners and debuggers will read it automatically.',
-        commands: ['/qualia-learn'],
+          'Same flow as any project: polish after all phases are verified, then ship. For web apps, the security checks are especially important because you are handling user data, authentication, and possibly payments.',
+        commands: [
+          '/qualia-polish     # Full design and quality pass',
+          '/qualia-ship       # Quality gates + deploy',
+          '/qualia-handoff    # Client delivery package',
+          '/qualia-report     # Log your work',
+        ],
         tips: [
-          'Three categories: Pattern (architecture / approach), Fix (problem + solution), Client preference.',
-          '/qualia-plan reads ~/.claude/knowledge/learned-patterns.md before planning every phase.',
-          '/qualia-debug reads ~/.claude/knowledge/common-fixes.md before investigating any bug.',
-          '/qualia-new reads ~/.claude/knowledge/client-prefs.md when you set up a project for a returning client.',
-        ],
-      },
-      {
-        id: 'bwa-6',
-        title: 'Gap Closure when Verify Fails',
-        description:
-          'If /qualia-verify finds gaps, it first offers passive knowledge capture — asks if any failed items should be saved to common-fixes.md via /qualia-learn. Then you run /qualia-plan {N} --gaps. The planner reads only the FAIL items from the verification report and writes a surgical fix plan (phase-{N}-gaps-plan.md) with all tasks in Wave 1 (parallel unless file conflicts). Then /qualia-build {N} executes only the fixes.',
-        commands: [
-          '/qualia-verify 5            # FAIL — 2 gaps found, offers to save to common-fixes.md',
-          '/qualia-plan 5 --gaps       # surgical fix plan, only the failed items, type: gap-closure',
-          '/qualia-build 5             # build the fixes',
-          '/qualia-verify 5            # re-verify',
-        ],
-        warning:
-          'Gap cycles are capped at 2 per phase by state.js. If a phase fails verification 2 times in a row, state.js returns GAP_CYCLE_LIMIT and blocks further attempts. Escalate to Fawzi or re-plan from scratch.',
-      },
-      {
-        id: 'bwa-7',
-        title: 'Polish, Review, Ship',
-        description:
-          'After every feature phase verifies, run /qualia-polish (one structured pass), then /qualia-review --web (production audit), then /qualia-ship (deploy with quality gates). Same as a website, just more substance.',
-        commands: [
-          '/qualia-polish',
-          '/qualia-review --web',
-          '/qualia-ship',
-          '/qualia-handoff',
-          '/qualia-report',
+          'For web apps with payments, double-check that subscription tier enforcement is server-side, not just client-side.',
+          'Make sure every database table has RLS policies. This is the most common security issue.',
+          'Test the login/signup flow after deployment. Auth issues are the most common post-deploy problem.',
         ],
         isMilestone: true,
       },
@@ -747,16 +678,14 @@ export const guides: Guide[] = [
     checklist: {
       title: 'Web App Ship Checklist',
       items: [
-        'All 8-12 phases verified (no FAIL outstanding)',
-        'RLS on every Supabase table, policies check auth.uid()',
-        'No service_role key in any client component',
-        'All mutations use server actions or *.server.ts files with auth check',
-        'Input validated with Zod at every system boundary',
-        'Subscription tier enforcement is server-side (RLS + server actions, not client checks)',
-        'Loading + empty + error states on every data-fetching component',
-        '/qualia-polish complete',
-        '/qualia-review --web clean (no CRITICAL or HIGH)',
-        '/qualia-ship + /qualia-handoff + /qualia-report all completed',
+        'All 6-12 phases verified with PASS',
+        'RLS on every Supabase table, with proper auth policies',
+        'No secret keys in client-facing code',
+        'Server-side auth checks on all mutations',
+        'Input validation on all forms and API routes',
+        'Subscription enforcement is server-side (not just client checks)',
+        'Loading, empty, and error states on every data-fetching component',
+        '/qualia-polish + /qualia-ship + /qualia-handoff + /qualia-report completed',
       ],
     },
   },
@@ -766,614 +695,420 @@ export const guides: Guide[] = [
   // =====================================================================
 
   {
-    slug: 'existing-projects',
-    title: 'Working on Existing Projects',
-    subtitle: 'Pick up code you did not write, or resume after days away',
+    slug: 'daily-routine',
+    title: 'Your Daily Routine',
+    subtitle: 'Clock in, work, report, clock out — the daily rhythm',
     category: 'operations',
     projectType: 'workflow',
     steps: [
       {
-        id: 'ep-1',
-        title: 'Open the Project',
+        id: 'dr-1',
+        title: 'Morning',
         description:
-          'cd into the project, run claude. The session-start.js hook runs automatically and prints a branded panel showing the current phase, status, and next command. You do not need to type anything to "activate" the framework — it is always on.',
-        commands: ['cd ~/Projects/existing-project', 'claude'],
-        example:
-          '◆ QUALIA — Project Loaded\n' +
-          '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n' +
-          '  Phase: 3 of 5 — Dashboard\n' +
-          '  Status: built\n' +
-          '  Run /qualia-verify 3 to continue',
-        exampleTitle: 'session-start panel for an in-progress project',
+          'Open the ERP and clock in. Then open Claude Code in your project folder. The framework loads and shows you the project status. Type /qualia or /qualia-resume to get started. The framework tells you exactly what to do.',
+        commands: [
+          '# 1. Clock in on the ERP',
+          '# 2. Open your terminal',
+          'cd ~/Projects/current-project',
+          'claude',
+          '/qualia-resume     # or /qualia if this is a new session',
+        ],
       },
       {
-        id: 'ep-2',
-        title: 'Ask /qualia What to Do',
+        id: 'dr-2',
+        title: 'Working',
         description:
-          'The /qualia smart router reads STATE.md via state.js, classifies your situation, and tells you the exact next command. It is the answer to "what do I do now?"',
-        commands: ['/qualia'],
-        example:
-          '## Where You Are\n' +
-          'Phase 3 (Dashboard) is built but not verified. The verifier has not run yet.\n\n' +
-          '## I Recommend\n' +
-          '**Verify Phase 3** — checks if the build actually works\n' +
-          '/qualia-verify 3',
-        exampleTitle: '/qualia output',
-      },
-      {
-        id: 'ep-3',
-        title: 'Resume from a Pause',
-        description:
-          'If a previous session ran /qualia-pause, there will be a .continue-here.md in the project root. /qualia-resume reads it, summarizes what was happening, and routes you to the next action. If there is no .continue-here.md, /qualia-resume falls back to STATE.md + git history.',
-        commands: ['/qualia-resume'],
+          'Follow the commands the framework gives you. For full project work: plan, build, verify. For small fixes: /qualia-quick. For focused single tasks: /qualia-task. The framework always tells you what to do next.',
+        commands: [
+          '/qualia              # What should I do next?',
+          '/qualia-plan 2       # Plan phase 2',
+          '/qualia-build 2      # Build phase 2',
+          '/qualia-verify 2     # Verify phase 2',
+          '/qualia-quick "fix the header alignment"     # Quick fix',
+        ],
         tips: [
-          '.continue-here.md is the richest source — it has session summary, in-progress work, next steps, blockers, and modified files.',
-          'After resume restores context, it cleans up .continue-here.md (or asks if you want to keep it).',
-          'Uncommitted work is reported clearly so you do not blow past it.',
+          'Do not overthink the workflow. Type /qualia and it tells you the next step.',
+          'For small changes (under 1 hour), use /qualia-quick. It skips planning and just does it.',
         ],
       },
       {
-        id: 'ep-4',
-        title: 'Read Before You Write',
+        id: 'dr-3',
+        title: 'Breaks and Context',
         description:
-          'Three files give you everything you need to understand an existing project. Read them in this order: PROJECT.md (what we are building), STATE.md (where we are), most recent phase plan (what is currently being done). If STATE.md looks malformed, run `node ~/.claude/bin/state.js fix` to reconstruct it from tracking.json before proceeding.',
-        commands: [
-          'cat .planning/PROJECT.md',
-          'cat .planning/STATE.md',
-          'node ~/.claude/bin/state.js check      # JSON with phase, status, next_command, schema_errors',
-          'ls .planning/phase-*-plan.md',
+          'Going to lunch? You can run /qualia-pause to save your place, but it is optional for short breaks. For breaks under an hour, you can usually just come back and keep working. For longer breaks, /qualia-pause ensures nothing is lost.',
+        commands: ['/qualia-pause      # Optional for short breaks'],
+        tips: [
+          'For a 30-minute lunch, you probably do not need to pause. Just pick up where you left off.',
+          'For a longer break or if you are switching to a different project, /qualia-pause is a good idea.',
         ],
       },
       {
-        id: 'ep-5',
-        title: 'Make Changes Safely',
+        id: 'dr-4',
+        title: 'End of Day',
         description:
-          'Always work on a feature branch. branch-guard.js blocks employees from pushing to main or master — it reads your role from ~/.claude/.qualia-config.json. For small changes, use /qualia-quick. For larger changes that need a plan, jump back into the phase loop with /qualia-plan.',
+          'Run /qualia-report. This is mandatory. It generates a summary of what you did today and uploads it to the ERP. Without this report, you cannot clock out. After the report uploads, go to the ERP and clock out.',
         commands: [
-          'git checkout -b feature/your-feature-name',
-          '/qualia-quick "fix the navbar background"        # small fix',
-          '/qualia-task "add a contact form to /about"      # one focused task',
-          '/qualia-plan 4                                    # full phase work',
+          '/qualia-report     # MANDATORY — generates and uploads your daily report',
+          '# Then clock out on the ERP',
         ],
         warning:
-          'Employees cannot push to main. branch-guard.js blocks the push and tells you to create a feature branch. OWNER (Fawzi) can push to main.',
+          '/qualia-report is enforced by the ERP. The clock-out button will not work until your report is uploaded for today. Run it before you stop working, every single day.',
       },
       {
-        id: 'ep-6',
-        title: 'Ship and Report',
+        id: 'dr-5',
+        title: 'Quick Fixes vs Full Phases',
         description:
-          'When your work is done, /qualia-ship runs the full pipeline (quality gates + service_role scan + commit + push + deploy + post-deploy verify). Then /qualia-report before clock-out — mandatory.',
-        commands: ['/qualia-ship', '/qualia-report'],
-        isMilestone: true,
+          'Not all work needs full phases. Small fixes and tweaks use /qualia-quick. Focused individual tasks (like adding a contact form) use /qualia-task. Full feature phases use the plan/build/verify loop. Pick the right tool for the job.',
+        commands: [
+          '/qualia-quick "fix button color"          # Under 1 hour, small fix',
+          '/qualia-task "add contact form to /about"  # 1-3 hours, focused task',
+          '/qualia-plan 3                              # Full phase work',
+        ],
+        tips: [
+          '/qualia-quick: typos, color changes, config tweaks. Under 1 hour.',
+          '/qualia-task: a single feature or component. 1-3 hours.',
+          '/qualia-plan: a full phase with multiple tasks. Half a day or more.',
+        ],
+      },
+      {
+        id: 'dr-6',
+        title: 'When You Are Stuck',
+        description:
+          'Three levels of help. First, type /qualia and let it figure out what you need. Second, use /qualia-debug if something is broken. Third, ask Fawzi if you have been stuck for 30+ minutes. Do not spend hours going in circles.',
+        commands: [
+          '/qualia                         # Level 1: Let the framework guide you',
+          '/qualia-debug                   # Level 2: Structured investigation',
+          '# Level 3: Ask Fawzi on Slack   # After 30 minutes stuck',
+        ],
+        tips: [
+          '/qualia-debug follows a structured investigation process: symptoms, diagnosis, then fix. It does not guess.',
+          'If you have been trying to fix the same bug for 30 minutes, stop and ask for help. Fresh eyes solve problems faster.',
+        ],
       },
     ],
     checklist: {
-      title: 'Existing Project Checklist',
+      title: 'Daily Routine Checklist',
       items: [
-        'Session-start banner showed the current phase and status',
-        'Ran /qualia or /qualia-resume to get oriented',
-        'Read PROJECT.md and STATE.md before touching code',
-        'On a feature branch (not main)',
-        'Used /qualia-quick for small fixes, /qualia-task for one focused thing, /qualia-plan for phase work',
-        'Followed security rules: no service_role in client, server-side auth, Zod validation',
-        '/qualia-ship + /qualia-report before clock-out',
+        'Clocked in on the ERP',
+        'Opened Claude Code, ran /qualia or /qualia-resume',
+        'Used the right tool: /qualia-quick for small fixes, /qualia-task for focused work, /qualia-plan for phases',
+        'Asked for help after 30 minutes stuck (not 3 hours)',
+        'Ran /qualia-report before stopping (mandatory)',
+        'Clocked out on the ERP',
       ],
     },
   },
 
   {
-    slug: 'quick-tasks',
-    title: 'Quick Tasks, Single Tasks, and Debugging',
-    subtitle: 'When to skip the phase loop — and when to ask for help',
+    slug: 'design-quality',
+    title: 'Design and Quality',
+    subtitle: 'How the framework ensures every site looks professional',
     category: 'operations',
     projectType: 'workflow',
     steps: [
       {
-        id: 'qt-1',
-        title: '/qualia-quick — Under 1 Hour, Single File',
+        id: 'dq-1',
+        title: 'DESIGN.md — Your Project Design Spec',
         description:
-          'For typo fixes, color tweaks, config changes, hot fixes — anything under 1 hour and roughly one file. No plan file. No subagents. Claude reads, edits, runs `npx tsc --noEmit`, commits atomically, then updates tracking.json notes via state.js.',
+          'Every project gets a DESIGN.md file with 12 sections covering colors, fonts, spacing, components, shadows, motion, accessibility, and anti-patterns. The AI reads this before building any frontend component. This is why every project looks intentionally designed, not generically AI-generated.',
+        tips: [
+          "The 12 sections: palette, typography, spacing, effects/shadows, border radii, motion, component patterns, layout rules, responsive behavior, do/don't rules, accessibility requirements, and dark mode (if applicable).",
+          'DESIGN.md is created during /qualia-new based on the design direction you choose.',
+          'You can edit DESIGN.md any time to adjust the design direction. The AI re-reads it before every frontend task.',
+        ],
+      },
+      {
+        id: 'dq-2',
+        title: 'Anti-AI-Slop',
+        description:
+          'The framework actively scans for generic AI patterns and fixes them. These are the telltale signs that a site was built by AI without design direction: the Inter font, identical card grids everywhere, blue-purple gradients, hardcoded max-widths, gray-on-gray text that fails accessibility. The framework catches all of these and replaces them with the project design spec.',
+        tips: [
+          'Banned fonts: Inter, Roboto, Arial, system-ui, Space Grotesk. These scream "AI-generated."',
+          'Banned patterns: identical card grids, generic hero sections, blue-purple gradients.',
+          'Banned layout: hardcoded max-width (like 1200px). Everything should be fluid and full-width.',
+          'The framework enforces these rules during build, verify, and polish. You do not need to check manually.',
+        ],
+      },
+      {
+        id: 'dq-3',
+        title: '/qualia-design — Quick Design Fix',
+        description:
+          'Use /qualia-design when a page or component needs to look better right now. It reads your DESIGN.md, critiques the current state, and fixes everything in one pass. Use this during building when something looks rough.',
         commands: [
-          '/qualia-quick "fix the navbar color"',
-          '/qualia-quick "bump the hero h1 to 72px"',
-          '/qualia-quick "fix login button returning 500 on mobile"',
-        ],
-        tips: [
-          '/qualia-quick is the fastest path. Use it when you know exactly what to change.',
-          'It still calls `npx tsc --noEmit` before committing, so you cannot accidentally break types.',
-          'It updates the tracking.json notes field via state.js so the ERP shows what you did.',
+          '/qualia-design                       # Fix all frontend files',
+          '/qualia-design app/page.tsx           # Fix a specific file',
         ],
       },
       {
-        id: 'qt-2',
-        title: '/qualia-task — One Focused Task, 1-3 Hours',
+        id: 'dq-4',
+        title: '/qualia-polish — Full Structured Pass',
         description:
-          'For a single feature, component, or API route that needs more structure than /qualia-quick but does not warrant a full phase plan. /qualia-task spawns a fresh builder subagent for the task — fresh context, atomic commit, follows all rules.',
-        commands: [
-          '/qualia-task "add a contact form to /about with Zod validation and Supabase insert"',
-          '/qualia-task "build the user settings page with avatar upload"',
-        ],
-        tips: [
-          '/qualia-task asks how complex the task is (Small / Medium / Large). Pick "Large" and it suggests /qualia-plan instead.',
-          'The builder runs in fresh context — task quality stays high regardless of how cluttered your main session is.',
-        ],
-      },
-      {
-        id: 'qt-3',
-        title: '/qualia-debug — When Something Is Broken',
-        description:
-          'Structured debugging. Step 0 always runs first: it greps ~/.claude/knowledge/common-fixes.md for a known fix. If your description matches, you skip the investigation entirely. Otherwise it follows the scientific method: gather symptoms → confirm diagnosis BEFORE any code changes → reproduce → isolate → root cause → minimal fix → verify.',
-        commands: [
-          '/qualia-debug                  # interactive — describe the symptom',
-          '/qualia-debug --frontend       # CSS, layout, z-index, overflow, animation',
-          '/qualia-debug --perf           # profile, slow queries, bundle size, render',
-        ],
-        tips: [
-          'Describe the symptom as precisely as you can: "When I click submit on the contact form, the button stays in loading state and no row appears in Supabase. No console errors."',
-          'Claude will present a diagnosis BEFORE writing any code. If the diagnosis is wrong, correct it — never proceed on a wrong diagnosis.',
-          '--frontend mode includes a quick-diagnostics cheat sheet for the common ones (z-index needs position, horizontal scroll = use width:100% not 100vw, flex overflow needs min-width:0).',
-        ],
-        warning:
-          'Do not guess at fixes. Claude is not allowed to either. Read the error, check the file, confirm the diagnosis, then change exactly one thing. Guessing wastes more time than investigating.',
-      },
-      {
-        id: 'qt-4',
-        title: '/qualia or /qualia-idk — When You Are Stuck',
-        description:
-          'When you do not know what is wrong, what is next, or what command to run. /qualia and /qualia-idk are aliases for the same smart router. It reads STATE.md, the .continue-here.md if any, recent git history, and conversation context, then routes you.',
-        commands: ['/qualia', '/qualia-idk'],
-        tips: [
-          'If you have been stuck on the same bug for 3+ tries, /qualia detects the bug-loop pattern and suggests a different approach or escalating to Fawzi.',
-          'If gap_cycles for the current phase is at the limit (2), /qualia tells you to escalate instead of trying again.',
-        ],
-      },
-      {
-        id: 'qt-5',
-        title: 'Save What You Learn',
-        description:
-          'When you fix a recurring issue or discover a pattern, save it with /qualia-learn so future-you (or another team member) does not redo the work. The save goes to ~/.claude/knowledge/ which is read by /qualia-plan, /qualia-debug, and /qualia-new automatically. /qualia-verify also offers passive knowledge capture on FAIL — it asks if any recurring issues should be saved.',
-        commands: ['/qualia-learn'],
-        example:
-          '/qualia-learn\n\n' +
-          'What did you learn?\n' +
-          '  1. Pattern\n' +
-          '  2. Fix\n' +
-          '  3. Client preference\n\n' +
-          'You: 2\n' +
-          'Title: next/font crash on Vercel\n' +
-          'Context: Vercel build failed on `next/font/google` import\n' +
-          'Fix: Move the font import from a client component to layout.tsx (server component).\n\n' +
-          '◆ Saved to ~/.claude/knowledge/common-fixes.md',
-        exampleTitle: 'Saving a fix',
-      },
-    ],
-    checklist: {
-      title: 'Quick Task Modes',
-      items: [
-        '/qualia-quick — under 1 hour, single file, just do it',
-        '/qualia-task — 1-3 hours, one focused thing, fresh builder agent',
-        '/qualia-debug — structured debugging with diagnosis confirmation before any code',
-        '/qualia or /qualia-idk — lost? smart router tells you the next command',
-        '/qualia-learn — save patterns and fixes to the knowledge base',
-        'Stuck for 30+ minutes? Escalate to Fawzi',
-      ],
-    },
-  },
-
-  {
-    slug: 'design-polish',
-    title: 'Design and Polish',
-    subtitle: 'The two design skills, when to use which, and the brand standards',
-    category: 'operations',
-    projectType: 'workflow',
-    steps: [
-      {
-        id: 'dp-1',
-        title: '/qualia-design — One-Shot Transformation',
-        description:
-          'Use /qualia-design when you need a frontend page or component to look good RIGHT NOW. No plan, no report, no choices. Reads .planning/DESIGN.md if it exists (or falls back to ~/.claude/rules/frontend.md), runs an internal critique (AI slop detection, hierarchy, typography, color, states, motion, spacing, responsive, microcopy), fixes everything in one pass, commits.',
-        commands: [
-          '/qualia-design                               # all frontend files',
-          '/qualia-design app/page.tsx                   # specific file',
-          '/qualia-design --scope=dashboard              # specific section',
-        ],
-        tips: [
-          'Use this mid-build when a component looks rough and you want it production-ready in one shot.',
-          'It is less structured than /qualia-polish — no critique report, no hardening pass, no per-category fix list. Just makes it look right.',
-          'Kill list: card grids → varied layouts, generic heroes → distinctive, blue-purple gradients → brand, static → purposeful motion, fixed widths → fluid.',
-          'After transformation, prints fine-tune options: /bolder, /design-quieter, /colorize, /animate.',
-        ],
-      },
-      {
-        id: 'dp-2',
-        title: '/qualia-polish — The Structured Pass',
-        description:
-          '/qualia-polish is the bigger, structured pass. Run it ONCE after all phases are verified, BEFORE /qualia-ship. It runs a full critique checklist (typography, color, layout, interactive states, motion, accessibility, responsive, performance), fixes every category in the right order, then runs a hardening pass (long text, empty data, error storms, 320px viewport, keyboard-only flow, reduced-motion). State transitions verified → polished.',
+          'Use /qualia-polish after all phases are verified, before shipping. It runs a comprehensive design and quality pass covering typography, color, layout, interactive states, motion, accessibility, responsive design, and hardening (what happens with long text, empty data, slow connections, keyboard-only use).',
         commands: ['/qualia-polish'],
         warning:
-          'Run /qualia-polish only AFTER all phases are verified. Polishing in the middle wastes work because later phases will undo it.',
+          'Run /qualia-polish only after ALL phases are verified. Running it in the middle wastes work because later phases will change things.',
         isMilestone: true,
       },
       {
-        id: 'dp-3',
-        title: 'DESIGN.md — Project-Specific Brand Standard',
+        id: 'dq-5',
+        title: 'Quality Gates',
         description:
-          'Created by /qualia-new (Step 8a) from ~/.claude/qualia-templates/DESIGN.md with palette, typography, effects, and motion filled from your chosen design direction. It is the project-specific source of truth. Builders read it before writing any frontend file. The planner is design-aware: if DESIGN.md is missing and Phase 1 has frontend work, it auto-adds a Wave 1 task to create it. The verifier runs design compliance checks (fonts, max-widths, a11y, states, responsive) against it.',
-        example:
-          '# Aquador Design System\n\n' +
-          '## Palette (CSS variables)\n' +
-          '--bg: #fafafa;\n' +
-          '--surface: #ffffff;\n' +
-          '--text: #0a0a0a;\n' +
-          '--text-muted: #555;\n' +
-          '--accent: #0077b6;     /* sharp accent for CTAs */\n' +
-          '--border: #e5e5e5;\n\n' +
-          '## Typography\n' +
-          '@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Source+Serif+4:wght@400;500&display=swap");\n' +
-          '--font-display: "Outfit", sans-serif;\n' +
-          '--font-body: "Source Serif 4", serif;\n\n' +
-          '## Spacing (8px grid)\n' +
-          '4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96\n\n' +
-          '## Motion\n' +
-          '--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);\n' +
-          '--ease-decelerate: cubic-bezier(0, 0, 0.2, 1);\n' +
-          'Hover/focus: 150ms. Expand: 250ms. Page transitions: 300-500ms.\n' +
-          'Always respect prefers-reduced-motion.\n\n' +
-          '## Anti-patterns (do not do)\n' +
-          '- Inter, Roboto, Arial, system-ui, Space Grotesk\n' +
-          '- Card grids where every card is identical\n' +
-          '- Blue-purple gradients\n' +
-          '- max-w-7xl / max-width: 1200px caps',
-        exampleTitle: 'Example: .planning/DESIGN.md',
+          'Before any deploy, the framework automatically runs quality checks. TypeScript must compile without errors. The linter must pass. The build must succeed. No secret keys can be in client-facing code. These checks run automatically during /qualia-ship. If any check fails, the deploy is blocked and you are told exactly what to fix.',
+        tips: [
+          'You can run the checks yourself anytime: npx tsc --noEmit (TypeScript), npm run lint (linter), npm run build (build).',
+          'The most common blocker is TypeScript errors. Fix them before trying to ship.',
+          'Secret key detection is automatic. If a service_role key appears in client code, the deploy stops immediately.',
+        ],
       },
       {
-        id: 'dp-4',
-        title: 'Frontend Rules (Always Enforced)',
+        id: 'dq-6',
+        title: 'Verification Scoring',
         description:
-          'These live in ~/.claude/rules/frontend.md and are mandatory for any .tsx/.jsx/.css file. The verifier greps for violations as part of every /qualia-verify on a frontend phase, and /qualia-polish enforces them in its critique checklist.',
+          'When the framework verifies a phase, it scores on 4 dimensions: Correctness (does it work?), Completeness (is everything built?), Wiring (are the pieces connected?), and Quality (is it well-built?). Each dimension is scored 1-5. Anything below 3 on any dimension means the phase fails and you need to fix the gaps before moving on.',
+        example:
+          'Phase 2 Verification\n\n' +
+          'Correctness:   5/5   All features work as specified\n' +
+          'Completeness:  4/5   All tasks built, one minor gap\n' +
+          'Wiring:        5/5   All components properly connected\n' +
+          'Quality:       4/5   Good code quality, minor improvements possible\n\n' +
+          'Result: PASS — advancing to Phase 3',
+        exampleTitle: 'Verification score example',
         tips: [
-          'Distinctive fonts only — never Inter, Roboto, Arial, system-ui, or Space Grotesk.',
-          'Cohesive palette via CSS variables — no scattered hex values in JSX.',
-          'WCAG AA contrast — 4.5:1 for normal text, 3:1 for large (18px+ bold or 24px+).',
-          'Full-width fluid layouts — no max-w-7xl, no max-width:1200px caps. Use clamp() for fluid padding.',
-          'Every interactive element needs ALL states: hover, focus (visible ring), active, disabled, loading, error, empty.',
-          'Semantic HTML — nav, main, section, article, header, footer. Not div soup.',
-          'Touch targets: 44px minimum. Skip link as the first focusable element. One h1 per page.',
-          'Motion: 150-200ms hover, 250ms expand, stagger children on load, respect prefers-reduced-motion.',
-          'Mobile-first responsive — base styles for mobile, min-width breakpoints for larger.',
-          'No emoji as icons — use SVGs.',
+          'Scoring is strict but fair. A 3/5 means acceptable. A 2/5 means significant issues.',
+          'The verifier provides specific evidence for each score, not just a number.',
+          'If you get a FAIL, the framework tells you exactly which criteria failed and why.',
         ],
       },
     ],
     checklist: {
-      title: 'Design Workflow',
+      title: 'Design and Quality Checklist',
       items: [
-        'DESIGN.md exists (created by /qualia-new or as a Phase 1 task)',
-        'Builders read DESIGN.md before any frontend file',
-        '/qualia-design used for ad-hoc fixes during build phases',
-        '/qualia-polish run ONCE after all phases verified, before /qualia-ship',
+        'DESIGN.md exists with 12 sections covering the full design spec',
         'No banned fonts (Inter, Roboto, Arial, system-ui, Space Grotesk)',
-        'No max-width:1200px or max-w-7xl caps — fluid layouts only',
-        'All interactive elements have hover/focus/active/disabled/loading/error/empty states',
-        'WCAG AA contrast on every text element',
-        'Tested at 375px, 768px, 1440px viewports',
+        'No identical card grids, generic heroes, or blue-purple gradients',
+        'Fluid full-width layouts, no hardcoded max-widths',
+        '/qualia-design used for quick fixes during building',
+        '/qualia-polish run once after all phases verified',
+        'Quality gates pass: TypeScript, linting, build, no leaked secrets',
+        'Verification scores: 3/5 or above on all 4 dimensions',
       ],
     },
   },
 
   // =====================================================================
-  // REFERENCE — How the framework works under the hood
+  // REFERENCE — All commands in one place
   // =====================================================================
 
   {
-    slug: 'infrastructure',
-    title: 'Hooks, Agents, and the State Machine',
-    subtitle: 'The plumbing that runs automatically — what each piece does and why',
+    slug: 'commands-reference',
+    title: 'All Commands Reference',
+    subtitle: 'Every slash command and CLI command in one place',
     category: 'reference',
     projectType: 'workflow',
     steps: [
       {
-        id: 'inf-1',
-        title: 'The 8 Hooks',
-        description:
-          'Hooks are pure Node.js scripts (no bash, no jq) that the Claude Code harness runs at specific events. They live in ~/.claude/hooks/ and are wired into ~/.claude/settings.json by the installer. You never run them by hand — they fire automatically.',
-        example:
-          'session-start.js     SessionStart        Renders the branded context panel + next command\n' +
-          'auto-update.js       PreToolUse:Bash     Daily silent update check (24h debounce, detached)\n' +
-          'branch-guard.js      PreToolUse:Bash     Blocks employees from `git push` to main/master\n' +
-          'pre-push.js          PreToolUse:Bash     Stamps last_commit + last_updated into tracking.json\n' +
-          'pre-deploy-gate.js   PreToolUse:Bash     tsc + lint + test + build + service_role leak scan\n' +
-          'block-env-edit.js    PreToolUse:Edit     Refuses Edit/Write on any .env* file\n' +
-          'migration-guard.js   PreToolUse:Edit     Blocks DROP TABLE w/o IF EXISTS, DELETE w/o WHERE,\n' +
-          '                                         TRUNCATE, CREATE TABLE w/o RLS\n' +
-          'pre-compact.js       PreCompact          Commits STATE.md before context compaction',
-        exampleTitle: '~/.claude/hooks/ at a glance',
-      },
-      {
-        id: 'inf-2',
-        title: 'How Hooks Block You (and Why)',
-        description:
-          'A hook can exit non-zero to BLOCK the tool call. The user (or Claude) sees the message printed by the hook. This is how the framework enforces guardrails without trusting Claude to follow rules.',
-        example:
-          '$ git push\n' +
-          'BLOCKED: Employees cannot push to main. Create a feature branch first.\n' +
-          'Run: git checkout -b feature/your-feature-name\n\n' +
-          '$ # block-env-edit.js firing on an Edit attempt:\n' +
-          'BLOCKED: Cannot edit environment files. Ask Fawzi to update secrets.\n\n' +
-          '$ vercel --prod\n' +
-          '◆ Pre-deploy gate...\n' +
-          '  ✓ TypeScript\n' +
-          '  ✓ Lint\n' +
-          '  ✓ Tests\n' +
-          '  ✓ Build\n' +
-          'BLOCKED: service_role found in client code. Remove before deploying.\n' +
-          '  ✗ app/dashboard/page.tsx',
-        exampleTitle: 'Hook block messages',
-      },
-      {
-        id: 'inf-3',
-        title: 'The 4 Agents (Fresh Context Isolation)',
-        description:
-          'Skills spawn agents using the Agent tool with a subagent_type. Each agent runs in a brand-new context window with zero history from the parent session. This is the "context isolation" core idea — task 50 gets the same quality as task 1 because the builder for task 50 has no garbage context from task 1.',
-        example:
-          'planner       subagent_type: qualia-planner\n' +
-          '  Reads:  PROJECT.md + STATE.md + phase goal + ~/.claude/knowledge/learned-patterns.md\n' +
-          '  Writes: .planning/phase-{N}-plan.md (2-5 atomic tasks, waves)\n' +
-          '  Tools:  Read, Write, Bash, Glob, Grep, WebFetch, Context7 MCP\n' +
-          '  NEW:    Design-aware — auto-adds DESIGN.md task if missing on Phase 1 frontend\n' +
-          '          Looks up library docs via Context7 before specifying APIs\n' +
-          '          Quality degradation curve — stops planning at 50% context\n\n' +
-          'builder       subagent_type: qualia-builder\n' +
-          '  Reads:  ONE task block + PROJECT.md + DESIGN.md (if frontend)\n' +
-          '  Writes: code + atomic git commit\n' +
-          '  Tools:  Read, Write, Edit, Bash, Grep, Glob\n' +
-          "  Scope:  Strict discipline — only touches files in task's Files list\n" +
-          '          Deviations classified: Trivial/Minor (do it) / Major/Blocker (STOP)\n\n' +
-          'verifier      subagent_type: qualia-verifier\n' +
-          '  Reads:  phase plan + codebase\n' +
-          '  Writes: .planning/phase-{N}-verification.md (PASS or FAIL with grep evidence)\n' +
-          '  Tools:  Read, Bash, Grep, Glob (NO write — cannot fix anything)\n' +
-          '  NEW:    3-level checks (Truths → Artifacts → Wiring) per criterion\n' +
-          '          Design verification: fonts, max-widths, a11y, states, responsive\n' +
-          '          Stub detection: TODO, return null, empty catch, "not implemented"\n\n' +
-          'qa-browser    subagent_type: qualia-qa-browser\n' +
-          '  Reads:  phase plan + dev server\n' +
-          '  Writes: appends "Browser QA" section to phase-{N}-verification.md\n' +
-          '  Tools:  Playwright MCP (navigate, snapshot, resize, click, console)\n' +
-          '  Tests:  375px (iPhone), 768px (iPad), 1440px (laptop) per route',
-        exampleTitle: 'The 4 agents',
-        tips: [
-          'The verifier intentionally has NO Write or Edit tools. Its job is to grep the code and report — it cannot fix what it finds. That comes back to /qualia-plan {N} --gaps.',
-          'qa-browser runs in parallel with the verifier on frontend phases. If Playwright MCP is unavailable, it returns BLOCKED — that is a note, not a failure.',
-          'On verify FAIL, the skill offers passive knowledge capture — asks if any failed items should be saved to common-fixes.md via /qualia-learn.',
-          'The verifier checks PARTIAL status (file exists but not wired) — PARTIAL is NOT a PASS.',
-        ],
-      },
-      {
-        id: 'inf-4',
-        title: 'state.js — The Atomic State Machine',
-        description:
-          'Every workflow skill calls ~/.claude/bin/state.js to read or change state. It is a small Node.js state machine (no dependencies) that validates schema + preconditions, rewrites STATE.md and tracking.json atomically, and tracks gap-closure cycles. Four commands: check, transition, init, fix.',
+        id: 'cr-1',
+        title: 'Navigation',
+        description: 'Commands for figuring out where you are and what to do next.',
         commands: [
-          'node ~/.claude/bin/state.js check                                                # JSON: phase, status, next_command, schema_errors',
-          'node ~/.claude/bin/state.js transition --to planned --phase 2                    # called by /qualia-plan',
-          'node ~/.claude/bin/state.js transition --to built --phase 2 --tasks-done 3 --tasks-total 3',
-          'node ~/.claude/bin/state.js transition --to verified --phase 2 --verification pass',
-          'node ~/.claude/bin/state.js transition --to shipped --deployed-url https://aquador.com',
-          'node ~/.claude/bin/state.js fix                                                  # Repair malformed STATE.md from tracking.json',
-        ],
-        example:
-          'Valid transitions:\n\n' +
-          '  setup    → planned    (requires phase-{N}-plan.md to exist)\n' +
-          '  planned  → built      (requires --tasks-done and --tasks-total)\n' +
-          '  built    → verified   (requires phase-{N}-verification.md and --verification pass|fail)\n' +
-          '  verified → polished   (only after the last phase passes)\n' +
-          '  polished → shipped    (requires --deployed-url)\n' +
-          '  shipped  → handed_off (requires HANDOFF.md to exist)\n' +
-          '  handed_off → done\n\n' +
-          'Auto-advance:\n' +
-          '  verified(pass) → auto-advances to next phase (status: setup)\n' +
-          '  Last phase verified(pass) → ready for /qualia-polish\n\n' +
-          'Gap closure:\n' +
-          '  verified(fail) → planned   (increments gap_cycles[phase])\n' +
-          '  Capped at 2 cycles per phase. The 3rd attempt returns GAP_CYCLE_LIMIT.\n\n' +
-          'Schema validation:\n' +
-          '  Validates Phase header (Phase: N of M — Name), Status field, roadmap table.\n' +
-          '  Schema errors with severity "error" → blocks ALL transitions.\n' +
-          '  Fix with: node ~/.claude/bin/state.js fix (reconstructs from tracking.json)',
-        exampleTitle: 'state.js transitions',
-        warning:
-          'Never edit STATE.md or tracking.json by hand. state.js validates schema on every read and writes both files together with backup-and-revert on failure. Hand-edits cause STATE_SCHEMA_ERROR — run `state.js fix` to recover.',
-      },
-      {
-        id: 'inf-5',
-        title: 'Knowledge Base — ~/.claude/knowledge/',
-        description:
-          'Three markdown files that persist across projects and sessions. Skills read them automatically: /qualia-plan reads learned-patterns.md, /qualia-debug reads common-fixes.md, /qualia-new reads client-prefs.md. Write to them via /qualia-learn.',
-        example:
-          '~/.claude/knowledge/\n' +
-          '├── learned-patterns.md   # Architecture, library, prompt patterns. Read by /qualia-plan.\n' +
-          '├── common-fixes.md       # Recurring problems and their fixes. Read by /qualia-debug step 0.\n' +
-          '└── client-prefs.md       # Client-specific design / requirements. Read by /qualia-new.',
-        exampleTitle: 'Knowledge base layout',
-        tips: [
-          'When you fix a tricky bug, save it: /qualia-learn → Fix. Future-you saves an hour.',
-          'When you discover a pattern that worked, save it: /qualia-learn → Pattern. The next planner reads it.',
-          'When a returning client says "I always want X", save it: /qualia-learn → Client preference. /qualia-new will pick it up next time.',
+          '/qualia          — Smart router. Reads your project state and tells you the exact next step. Use when lost.',
+          '/qualia-idk      — Same as /qualia. Different name, same function. Use when stuck.',
+          '/qualia-resume   — Resume from a previous session. Reads your saved progress.',
+          '/qualia-pause    — Save your progress before stopping. Creates a restore point.',
         ],
       },
       {
-        id: 'inf-6',
-        title: 'tracking.json Sync to ERP',
-        description:
-          ".planning/tracking.json is the ERP's window into project state. The pre-push.js hook stamps it with last_commit + last_updated on every git push. The ERP polls git and reads the file directly — no API call needed.",
+        id: 'cr-2',
+        title: 'Project Setup',
+        description: 'Commands for starting new projects.',
         commands: [
-          '# pre-push.js runs automatically on every `git push`. It does:',
-          '#   1. read tracking.json',
-          '#   2. set last_commit = `git log --oneline -1 --format=%h`',
-          '#   3. set last_updated = ISO timestamp',
-          '#   4. git add .planning/tracking.json',
-          '# Then your push proceeds.',
+          '/qualia-new      — Interactive project wizard. Asks questions one at a time, creates everything.',
+        ],
+        tips: [
+          'Be specific in your answers. The more detail you give, the better the roadmap and design spec.',
+        ],
+      },
+      {
+        id: 'cr-3',
+        title: 'The Build Loop',
+        description: 'The three commands you run for every phase.',
+        commands: [
+          '/qualia-plan N    — Plan phase N. Creates tasks grouped into waves.',
+          '/qualia-build N   — Build phase N. Executes tasks in parallel waves.',
+          '/qualia-verify N  — Verify phase N. Scores on 4 dimensions. PASS advances to next phase.',
+        ],
+        tips: [
+          'Always in this order: plan, build, verify.',
+          'On PASS, the framework auto-advances. On FAIL, it tells you what to fix.',
+        ],
+      },
+      {
+        id: 'cr-4',
+        title: 'Quick Work',
+        description: 'Commands for work that does not need a full phase.',
+        commands: [
+          '/qualia-quick    — Fast fix. Under 1 hour, no plan file, just build and commit.',
+          '/qualia-task     — Focused single task. 1-3 hours, fresh builder context.',
+        ],
+      },
+      {
+        id: 'cr-5',
+        title: 'Design',
+        description: 'Commands for design and visual quality.',
+        commands: [
+          '/qualia-design   — Quick one-shot design fix. Use during building.',
+          '/qualia-polish   — Full structured design + quality pass. Use after all phases verified.',
+        ],
+      },
+      {
+        id: 'cr-6',
+        title: 'Shipping',
+        description: 'Commands for deploying and delivering.',
+        commands: [
+          '/qualia-ship     — Quality gates + commit + push + deploy + post-deploy verification.',
+          '/qualia-handoff  — Creates client delivery package with URL, credentials, instructions.',
+          '/qualia-report   — Generates daily report and uploads to ERP. MANDATORY before clock-out.',
+        ],
+        warning: '/qualia-report is enforced by the ERP clock-out system. You cannot skip it.',
+      },
+      {
+        id: 'cr-7',
+        title: 'Debugging',
+        description: 'Commands for investigating and fixing problems.',
+        commands: [
+          '/qualia-debug    — Structured debugging. Symptoms > diagnosis > fix. No guessing.',
+          '/qualia-review   — Production audit. Checks security, performance, reliability.',
+        ],
+        tips: [
+          '/qualia-debug checks the knowledge base first. If your problem has a known fix, it skips the investigation.',
+          '/qualia-review --web for websites, /qualia-review --ai for AI/voice agents.',
+        ],
+      },
+      {
+        id: 'cr-8',
+        title: 'CLI Commands',
+        description:
+          'Commands you run directly in your terminal (not slash commands inside Claude Code).',
+        commands: [
+          'qualia-framework install      — One-time setup with your team code.',
+          'qualia-framework update       — Update to the latest version.',
+          'qualia-framework version      — Check your installed version.',
+          'qualia-framework migrate      — Upgrade from v2 to v3 (one-time).',
+          'qualia-framework analytics    — View framework usage statistics.',
+          'qualia-framework team         — View team member status.',
+          'qualia-framework traces       — View execution traces for debugging.',
+          'qualia-framework uninstall    — Remove the framework (rarely needed).',
         ],
       },
     ],
     checklist: {
-      title: 'Infrastructure Mental Model',
+      title: 'Command Quick Reference',
       items: [
-        'Knows the 8 hooks and what each one blocks',
-        'Knows the 4 agents and that each runs in fresh context (planner, builder, verifier, qa-browser)',
-        'Knows that the verifier has no Write/Edit tools — it reports, never fixes',
-        'Knows the verifier runs 3-level checks (Truths → Artifacts → Wiring) + design verification',
-        'Knows the planner is design-aware — auto-adds DESIGN.md task, looks up APIs via Context7',
-        'Knows state.js is the only thing allowed to write STATE.md or tracking.json',
-        'Knows the valid state transitions, the gap-cycle cap of 2, and auto-advance on verify PASS',
-        'Knows state.js validates schema and `state.js fix` repairs malformed STATE.md',
-        'Knows the 3 knowledge files and which skill reads each',
-        'Knows pre-push.js stamps tracking.json so the ERP always sees fresh data',
-        'Uses /qualia-learn whenever a fix or pattern is worth saving (or when verify offers it)',
+        'Lost? /qualia',
+        'New project? /qualia-new',
+        'Phase work? /qualia-plan N > /qualia-build N > /qualia-verify N',
+        'Small fix? /qualia-quick',
+        'Focused task? /qualia-task',
+        'Design fix? /qualia-design',
+        'Final polish? /qualia-polish',
+        'Deploy? /qualia-ship',
+        'Client delivery? /qualia-handoff',
+        'End of day? /qualia-report (mandatory)',
+        'Broken? /qualia-debug',
+        'Stuck 30+ min? Ask Fawzi',
       ],
     },
   },
 
   // =====================================================================
-  // CHECKLISTS — The single source of truth before clock-out
+  // CHECKLISTS — The single source of truth before going live
   // =====================================================================
 
   {
     slug: 'shipping-checklist',
     title: 'Shipping Checklist',
-    subtitle: 'Everything to verify before, during, and after /qualia-ship',
+    subtitle: 'Everything to verify before going live',
     category: 'checklist',
     projectType: 'workflow',
     steps: [
       {
         id: 'sc-1',
-        title: 'Pre-Ship: All Phases Verified',
+        title: 'All Phases Verified',
         description:
-          'Before you even think about shipping, every phase must be verified PASS. /qualia checks STATE.md and refuses to advance if anything is built-but-unverified or verified-but-failed. state.js validates schema before every transition — if STATE.md is malformed, it blocks with STATE_SCHEMA_ERROR (fix with `state.js fix`).',
-        commands: [
-          'node ~/.claude/bin/state.js check    # JSON: status should be "polished", check schema_errors',
-          'cat .planning/STATE.md               # roadmap should show every phase = verified',
-        ],
+          'Every phase in the roadmap must show PASS. Type /qualia to check. If any phase is unverified or failed, go back and fix it before shipping. The framework will not let you ship with unfinished phases.',
+        commands: ['/qualia     # Check your project status'],
       },
       {
         id: 'sc-2',
-        title: 'Pre-Ship: Polish + Review',
+        title: '/qualia-polish Done',
         description:
-          'Run /qualia-polish for the structured design + UX pass. Then /qualia-review --web (or --ai) for the production audit. CRITICAL or HIGH findings block /qualia-ship — fix them or ask Fawzi to override.',
-        commands: [
-          '/qualia-polish              # critique → fix → harden → tsc → commit → state.polished',
-          '/qualia-review --web        # full prod audit, writes .planning/REVIEW.md',
-        ],
-        warning:
-          'Do NOT skip /qualia-polish. It is the only step that exercises long text, empty data, error storms, 320px viewport, and keyboard-only flow. Clients notice when these break.',
+          'The full design and quality pass must be complete. This covers typography, colors, layout, interactive states, motion, accessibility, responsive design, and edge case hardening. Run it once after all phases are verified.',
+        commands: ['/qualia-polish'],
       },
       {
         id: 'sc-3',
-        title: 'Code Quality',
+        title: 'Security',
         description:
-          'pre-deploy-gate.js runs these automatically on `vercel --prod`, but you can run them ahead of time too.',
-        commands: [
-          'npx tsc --noEmit             # Zero TypeScript errors',
-          'npm run lint                 # Zero lint warnings',
-          'npm test                     # Tests pass (if package.json has a test script)',
-          'npm run build                # Build completes',
-        ],
+          'No secret keys in client-facing code. Row Level Security (RLS) on every Supabase table. Auth checks on every server-side mutation. Input validation on all forms and API routes. The framework checks for leaked keys automatically during /qualia-ship, but RLS and auth checks are your responsibility.',
         tips: [
-          'No TODO or FIXME comments left unresolved.',
-          'No console.log debug statements in production code.',
-          'No commented-out code blocks.',
-          'No empty catch blocks — at minimum, log the error.',
+          'RLS on every table with policies that check the user identity.',
+          'No service_role key anywhere in client code. Keep it in server-only files.',
+          'All mutations happen server-side with auth checks.',
+          'Validate input with Zod on every form, API route, and webhook.',
+          'Never hardcode API keys, passwords, or secrets in your code.',
+          'Never commit .env files to git.',
         ],
       },
       {
         id: 'sc-4',
-        title: 'Security',
+        title: 'Deploy',
         description:
-          'pre-deploy-gate.js scans every .ts/.tsx/.js/.jsx file under app/, components/, src/, pages/, lib/ for the literal "service_role" string and blocks the deploy if any file matches (excluding *.server.ts and server/ paths). RLS, Zod, and auth checks are your responsibility.',
-        warning:
-          'service_role bypasses ALL RLS. If it leaks into client code, anyone with your bundle can read/write/delete every row in every table. Keep it in *.server.ts files or server/ directories ONLY.',
-        tips: [
-          'RLS enabled on every Supabase table, with policies that check auth.uid() server-side',
-          'No service_role key in any client component',
-          'All mutations use server actions or *.server.ts files with auth checks',
-          'Input validated with Zod at every system boundary (forms, API routes, webhooks)',
-          'No hardcoded API keys, secrets, or passwords anywhere',
-          'No eval() and no dangerouslySetInnerHTML',
-          '.env files never committed (block-env-edit.js prevents you from editing them at all)',
-        ],
+          'Run /qualia-ship. It checks TypeScript compilation, linting, tests, build success, and leaked secrets. Then it deploys to Vercel and runs post-deploy verification. If anything fails, it tells you exactly what to fix.',
+        commands: ['/qualia-ship'],
+        isMilestone: true,
       },
       {
         id: 'sc-5',
-        title: 'Frontend Quality',
+        title: 'Post-Deploy',
         description:
-          '/qualia-polish handles most of this, but double-check before shipping. The verifier and qa-browser already test these on every /qualia-verify of a frontend phase.',
+          'After /qualia-ship deploys, it automatically checks that the site loads (HTTP 200), responds fast (under 500ms), and the auth endpoint works. If any check fails, the ship is considered incomplete.',
         tips: [
-          'All interactive elements have hover, focus, active, disabled, loading, error, empty states',
-          'Responsive at 375px (mobile), 768px (tablet), 1440px (desktop), 1920px (large)',
-          'No horizontal scroll at 320px',
-          'Every page has SEO metadata (title, description, OG tags)',
-          'Custom 404 error page exists and matches the design',
-          'Favicon configured',
-          'next/image with explicit width/height for all images',
-          'next/font for fonts (not @import) to prevent CLS',
-          'Skip link as first focusable element on every page',
+          'Site loads: the homepage returns HTTP 200.',
+          'Fast response: the homepage loads in under 500ms.',
+          'Auth works: the auth callback endpoint responds, not 404 or 500.',
+          'No critical errors in the browser console on first load.',
         ],
       },
       {
         id: 'sc-6',
-        title: 'Run /qualia-ship',
+        title: 'Handoff',
         description:
-          'One command runs the full pipeline: pre-deploy-gate (tsc + lint + tests + build + service_role scan), commit, push, vercel --prod, post-deploy verification (HTTP 200, latency < 500ms, auth endpoint responds), state.js transition to shipped.',
-        commands: ['/qualia-ship'],
-        warning:
-          'Employees stay on a feature branch — /qualia-ship does NOT merge to main. branch-guard.js will block any push to main from a non-OWNER role. If you need a main merge, ask Fawzi.',
-        isMilestone: true,
+          'Run /qualia-handoff to create the client delivery package. This includes the live URL, login credentials, repository link, how-to-use instructions, and support contact information. Double-check that everything is accurate before sending to the client.',
+        commands: ['/qualia-handoff'],
       },
       {
         id: 'sc-7',
-        title: 'Post-Deploy Verification',
+        title: 'Report',
         description:
-          '/qualia-ship runs these automatically after `vercel --prod` returns. If any fail, the ship is incomplete and state.js does not transition to shipped.',
-        commands: [
-          'curl -s -o /dev/null -w "%{http_code}" https://yoursite.com         # 200',
-          'curl -s -o /dev/null -w "%{time_total}" https://yoursite.com        # < 0.5',
-          'curl -s -o /dev/null -w "%{http_code}" https://yoursite.com/api/auth/callback',
-        ],
-        tips: [
-          'HTTP 200 on the homepage',
-          'Latency under 500ms on the homepage',
-          'Auth endpoint responds (not 404, not 500)',
-          'No critical errors in browser console on first load',
-          'UptimeRobot monitor shows UP (https://stats.uptimerobot.com/bKudHy1pLs)',
-        ],
-      },
-      {
-        id: 'sc-8',
-        title: 'Handoff and Report (MANDATORY)',
-        description:
-          'After /qualia-ship succeeds, two more commands. /qualia-handoff writes HANDOFF.md and delivers credentials. /qualia-report generates the daily session report and uploads it to the ERP — without this upload, you cannot clock out.',
-        commands: ['/qualia-handoff', '/qualia-report'],
+          'Run /qualia-report to generate your daily session report and upload it to the ERP. This is mandatory. The ERP clock-out button will not work until your report is uploaded for today.',
+        commands: ['/qualia-report'],
         warning:
-          '/qualia-report is enforced by the ERP clock-out modal. If you skip it, you cannot clock out for the day. Run it before you stop, every day.',
+          'You cannot clock out without running /qualia-report. This is enforced by the ERP, not by the framework. Run it before you stop working.',
         isMilestone: true,
       },
     ],
     checklist: {
-      title: 'Production Ready?',
+      title: 'Ready to Ship?',
       items: [
-        'All phases verified PASS (state.js check confirms)',
-        '/qualia-polish complete — state == polished',
-        '/qualia-review --web (or --ai) clean — no CRITICAL or HIGH',
-        'tsc + lint + tests + build all pass locally',
-        'No service_role string in app/, components/, src/, pages/, lib/ (except *.server.* and server/)',
+        'All phases show PASS',
+        '/qualia-polish completed',
+        'No secret keys in client-facing code',
         'RLS on every Supabase table',
-        'Zod validation at every system boundary',
-        'No .env files committed',
-        '/qualia-ship succeeded — vercel --prod deployed and post-deploy checks passed',
-        '/qualia-handoff produced HANDOFF.md',
-        '/qualia-report uploaded to https://portal.qualiasolutions.net (mandatory)',
-        'UptimeRobot monitor shows UP',
+        'Input validation on all system boundaries',
+        '/qualia-ship succeeded — site is live',
+        'Post-deploy: HTTP 200, under 500ms, auth works',
+        '/qualia-handoff created client delivery package',
+        '/qualia-report uploaded to ERP (mandatory for clock-out)',
       ],
     },
   },
