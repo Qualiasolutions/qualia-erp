@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
-import { AdminPortalBanner } from '@/components/portal/admin-portal-banner';
+import { cookies } from 'next/headers';
+import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal-admin';
 
 export const metadata: Metadata = {
@@ -130,6 +131,23 @@ export default async function PortalLayout({ children }: { children: React.React
     }
   }
 
+  // Check if admin is actively impersonating someone
+  let viewAsName: string | null = null;
+  let viewAsRole: string | null = null;
+  if (isAdminViewing) {
+    const cookieStore = await cookies();
+    const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+    if (viewAsUserId) {
+      const { data: viewAsProfile } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', viewAsUserId)
+        .single();
+      viewAsName = viewAsProfile?.full_name || 'Unknown';
+      viewAsRole = viewAsProfile?.role || 'client';
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <a
@@ -149,8 +167,10 @@ export default async function PortalLayout({ children }: { children: React.React
         userRole={userRole}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Admin banner with view-as trigger */}
-        {isAdminViewing && <AdminPortalBanner userRole={userRole!} />}
+        {/* View-as banner — only shows when admin is actively impersonating someone */}
+        {isAdminViewing && viewAsName && (
+          <ViewAsBanner viewAsName={viewAsName} viewAsRole={viewAsRole || 'client'} />
+        )}
 
         <main id="main-content" className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
           <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
