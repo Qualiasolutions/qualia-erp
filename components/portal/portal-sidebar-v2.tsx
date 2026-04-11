@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   House,
   FolderKanban,
@@ -15,6 +15,7 @@ import {
   LogOut,
   ChevronUp,
   Menu,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -72,12 +73,28 @@ function NavLink({
   isActive,
   onClick,
   badge,
+  workspaceId,
+  workspaceName,
 }: {
   item: NavItemDef;
   isActive: boolean;
   onClick?: () => void;
   badge?: React.ReactNode;
+  workspaceId?: string | null;
+  workspaceName?: string | null;
 }) {
+  // Append workspace query params to nav links when workspace is active
+  const href = item.href
+    ? workspaceId
+      ? (() => {
+          const params = new URLSearchParams();
+          params.set('workspace', workspaceId);
+          if (workspaceName) params.set('wname', workspaceName);
+          return `${item.href}?${params.toString()}`;
+        })()
+      : item.href
+    : null;
+
   const inner = (
     <>
       <item.icon
@@ -104,7 +121,7 @@ function NavLink({
       : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
   );
 
-  if (item.comingSoon || !item.href) {
+  if (item.comingSoon || !href) {
     return (
       <div className={cn(baseClasses, 'cursor-default opacity-70')} aria-disabled="true">
         {inner}
@@ -113,7 +130,7 @@ function NavLink({
   }
 
   return (
-    <Link href={item.href} onClick={onClick} className={baseClasses}>
+    <Link href={href} onClick={onClick} className={baseClasses}>
       {inner}
     </Link>
   );
@@ -177,10 +194,20 @@ function UserMenu({
               onClick={() => {
                 setOpen(false);
                 onLinkClick?.();
+                router.push('/portal');
+              }}
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              Switch workspace
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setOpen(false);
+                onLinkClick?.();
                 router.push('/');
               }}
             >
-              Exit preview
+              Back to ERP
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
@@ -210,6 +237,9 @@ function SidebarContent({
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const workspaceId = isAdminViewing ? searchParams.get('workspace') : null;
+  const workspaceName = isAdminViewing ? searchParams.get('wname') || companyName : null;
   const { total } = useUnreadMessageCount(userId ?? null);
 
   const isActive = (item: NavItemDef) => {
@@ -243,7 +273,40 @@ function SidebarContent({
           <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
         </Link>
       </div>
-      {companyName && (
+
+      {/* Workspace indicator (admin viewing a client) */}
+      {workspaceId && workspaceName && (
+        <div className="border-b border-border/30 px-4 pb-3 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground/60">
+                Workspace
+              </p>
+              <p className="mt-0.5 truncate text-[13px] font-semibold text-foreground">
+                {workspaceName}
+              </p>
+            </div>
+            <Link
+              href="/portal"
+              onClick={onLinkClick}
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                'text-muted-foreground transition-colors duration-150',
+                'hover:bg-muted/50 hover:text-foreground',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                'cursor-pointer'
+              )}
+              title="Switch workspace"
+              aria-label="Switch workspace"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Company name (client view, no workspace) */}
+      {!workspaceId && companyName && (
         <div className="px-5 pb-3 pt-2.5">
           <p className="truncate text-[11px] font-medium tracking-[0.06em] text-muted-foreground/60">
             {companyName}
@@ -260,6 +323,8 @@ function SidebarContent({
             isActive={isActive(item)}
             onClick={onLinkClick}
             badge={item.name === 'Messages' ? unreadBadge : undefined}
+            workspaceId={workspaceId}
+            workspaceName={workspaceName}
           />
         ))}
       </nav>

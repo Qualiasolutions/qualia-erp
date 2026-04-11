@@ -7,7 +7,14 @@ import { PortalProjectsGrid } from '@/components/portal/portal-projects-grid';
 import { fadeInClasses } from '@/lib/transitions';
 import { AlertCircle } from 'lucide-react';
 
-export default async function PortalProjectsPage() {
+export default async function PortalProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ workspace?: string }>;
+}) {
+  const params = await searchParams;
+  const workspaceId = params.workspace;
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -24,6 +31,46 @@ export default async function PortalProjectsPage() {
     .eq('id', user.id)
     .single();
   const isAdmin = isPortalAdminRole(profile?.role || null);
+
+  // Admin viewing a specific workspace: scope to that client's projects
+  if (isAdmin && workspaceId) {
+    // Get projects linked to this CRM client
+    const { data: clientProjects } = await supabase
+      .from('projects')
+      .select('id, name, description, project_type, status, start_date, end_date:target_date')
+      .eq('client_id', workspaceId)
+      .not('status', 'eq', 'Canceled')
+      .order('name');
+
+    const projectIds = (clientProjects || []).map((p) => p.id);
+    const progressMap = await calculateProjectsProgress(projectIds);
+
+    const formatted = (clientProjects || []).map((p) => ({
+      id: p.id,
+      project_id: p.id,
+      access_level: 'admin' as string | null,
+      invited_at: null as string | null,
+      project: {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        project_type: p.project_type || 'web_design',
+        project_status: p.status || 'Active',
+        start_date: p.start_date,
+        end_date: p.end_date,
+      },
+    }));
+
+    return (
+      <div className={`space-y-6 ${fadeInClasses}`}>
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Projects for this client</p>
+        </div>
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
+      </div>
+    );
+  }
 
   // Admin: show all projects
   if (isAdmin) {
