@@ -4,7 +4,7 @@
 Phase 1: Portal Shell & Foundation
 
 ## Status
-planned
+built
 
 ## Progress
 - [x] Research Assembly.com (explored every section via Playwright)
@@ -16,7 +16,7 @@ planned
 - [ ] Verify Phase 1
 
 ## Phases
-1. Portal Shell & Foundation — setup
+1. Portal Shell & Foundation — built
 2. Client Messaging — pending
 3. Portal Apps (Files, Tasks, Requests) — pending
 4. Admin Controls — pending

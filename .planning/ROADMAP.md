@@ -1,40 +1,41 @@
 # Roadmap — Portal v2
 
-## Phase 1: Portal Shell & Foundation
-**Goal:** New portal layout, sidebar, dashboard, and project views that match Assembly's quality.
-- New portal layout with app-based sidebar navigation
-- Redesigned portal dashboard (Home) with stats, action items, projects overview
-- Projects list and project detail redesign
-- Modern responsive design throughout
-- Client ↔ project connection as first-class citizen
+## Phase 1: Portal Shell & Foundation ✅
+- New portal layout with Assembly-style sidebar
+- Redesigned dashboard (Home) with stats, action items, projects
+- Projects grid + tabbed project detail
+- Modernized billing/requests/settings
 
-## Phase 2: Client Messaging
-**Goal:** Real-time chat system between team and clients.
+## Phase 2: Client Messaging (IN PROGRESS)
 - Per-project message channels
-- Rich text editor (bold, italic, links, lists)
-- File attachments in chat
-- Internal notes (team-only) per conversation
-- Team inbox view for admins
+- Rich text compose (markdown shortcuts)
+- Internal notes (team-only)
 - Supabase Realtime for live updates
+- Unread counts in sidebar
+- Three-panel layout (channels, thread, details)
 
-## Phase 3: Portal Apps (Files, Tasks, Requests)
-**Goal:** Full-featured portal apps for file sharing, task tracking, and feature requests.
+## Phase 3: Project Boards (GitHub Projects-style)
+- Kanban/table/list views per project
+- Tasks + phases + GitHub issues as board items
+- Import from GitHub repos (extend webhook)
+- Connected to auto-assign engine
+- Available in both internal ERP and portal
+
+## Phase 4: Portal Apps (Files, Forms)
 - Files redesign with folder structure per project
-- Client-visible task board (kanban or list view)
-- Feature requests redesign with better UX
+- Client-visible task board
+- Feature requests redesign
 - Activity feed improvements
 
-## Phase 4: Admin Controls
-**Goal:** Assembly-like App Library and Customization panels.
+## Phase 5: Admin Controls
 - App Library: Toggle portal apps on/off per client
 - Customization: Branding (logo, colors, name)
-- Client management improvements
-- Portal settings (auth methods, notifications, domains)
+- Portal settings (auth, notifications, domains)
 
-## Phase 5: Polish & Launch
-**Goal:** Production-ready, responsive, performant.
-- Responsive design audit (mobile, tablet, desktop)
-- Animation polish (stagger, transitions, micro-interactions)
+## Phase 6: Polish & Ship
+- Responsive audit (mobile, tablet, desktop)
+- Animation polish
 - Accessibility audit (WCAG AA)
-- Performance optimization (bundle size, lazy loading)
+- Performance optimization
 - Dark mode verification
+- Production deploy + merge to main
