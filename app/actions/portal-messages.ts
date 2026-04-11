@@ -184,45 +184,61 @@ export async function getMessageChannels(userId: string): Promise<ActionResult> 
       }
     }
 
-    // Calculate unread counts for each channel
-    const channelsWithUnread = await Promise.all(
-      channels.map(async (channel) => {
-        const lastReadAt = readStatusMap.get(channel.id) || '1970-01-01T00:00:00Z';
-
-        let unreadQuery = supabase
-          .from('portal_messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('channel_id', channel.id)
-          .gt('created_at', lastReadAt);
-
-        // Clients should not count internal messages
-        if (isClient) {
-          unreadQuery = unreadQuery.eq('is_internal', false);
-        }
-
-        const { count } = await unreadQuery;
-
-        // Normalize FK arrays (Supabase returns FKs as arrays in some join scenarios)
-        const project = Array.isArray(channel.project)
-          ? channel.project[0] || null
-          : channel.project;
-        const lastMessageSender = Array.isArray(channel.last_message_sender)
-          ? channel.last_message_sender[0] || null
-          : channel.last_message_sender;
-
-        return {
-          id: channel.id,
-          projectId: channel.project_id,
-          lastMessageAt: channel.last_message_at,
-          lastMessagePreview: channel.last_message_preview,
-          lastMessageSenderId: channel.last_message_sender_id,
-          createdAt: channel.created_at,
-          project,
-          lastMessageSender,
-          unreadCount: count || 0,
-        };
+    // Batch-fetch unread counts: get all messages created after last_read_at per channel
+    // Instead of N queries (one per channel), we use a single query to count
+    // messages grouped by channel_id, filtered by the earliest possible last_read_at.
+    const earliestReadAt = Math.min(
+      ...channels.map((c) => {
+        const lastRead = readStatusMap.get(c.id);
+        return lastRead ? new Date(lastRead).getTime() : 0;
       })
     );
+    const earliestReadAtISO =
+      earliestReadAt > 0 ? new Date(earliestReadAt).toISOString() : '1970-01-01T00:00:00Z';
+
+    // Fetch all recent messages (after the earliest read timestamp) for all channels at once
+    let messagesQuery = supabase
+      .from('portal_messages')
+      .select('id, channel_id, created_at')
+      .in('channel_id', channelIds)
+      .gt('created_at', earliestReadAtISO);
+
+    if (isClient) {
+      messagesQuery = messagesQuery.eq('is_internal', false);
+    }
+
+    const { data: recentMessages } = await messagesQuery;
+
+    // Compute unread counts in memory by comparing each message against per-channel last_read_at
+    const unreadCountMap = new Map<string, number>();
+    if (recentMessages) {
+      for (const msg of recentMessages) {
+        const channelLastRead = readStatusMap.get(msg.channel_id) || '1970-01-01T00:00:00Z';
+        if (msg.created_at > channelLastRead) {
+          unreadCountMap.set(msg.channel_id, (unreadCountMap.get(msg.channel_id) || 0) + 1);
+        }
+      }
+    }
+
+    const channelsWithUnread = channels.map((channel) => {
+      // Normalize FK arrays (Supabase returns FKs as arrays in some join scenarios)
+      const project = Array.isArray(channel.project) ? channel.project[0] || null : channel.project;
+      const lastMessageSender = Array.isArray(channel.last_message_sender)
+        ? channel.last_message_sender[0] || null
+        : channel.last_message_sender;
+
+      return {
+        id: channel.id,
+        projectId: channel.project_id,
+        lastMessageAt: channel.last_message_at,
+        lastMessagePreview: channel.last_message_preview,
+        lastMessageSenderId: channel.last_message_sender_id,
+        createdAt: channel.created_at,
+        project,
+        lastMessageSender,
+        unreadCount: unreadCountMap.get(channel.id) || 0,
+      };
+    });
 
     return { success: true, data: channelsWithUnread };
   } catch (error) {
@@ -584,34 +600,43 @@ export async function getUnreadCounts(
       }
     }
 
-    // Count unread messages for each channel in parallel
+    // Batch-fetch unread counts with a single query instead of N queries
+    const earliestReadAt = Math.min(
+      ...channels.map((c) => {
+        const lastRead = readStatusMap.get(c.id);
+        return lastRead ? new Date(lastRead).getTime() : 0;
+      })
+    );
+    const earliestReadAtISO =
+      earliestReadAt > 0 ? new Date(earliestReadAt).toISOString() : '1970-01-01T00:00:00Z';
+
+    let messagesQuery = supabase
+      .from('portal_messages')
+      .select('id, channel_id, created_at')
+      .in('channel_id', channelIds)
+      .gt('created_at', earliestReadAtISO);
+
+    if (isClient) {
+      messagesQuery = messagesQuery.eq('is_internal', false);
+    }
+
+    const { data: recentMessages } = await messagesQuery;
+
+    // Compute unread counts in memory
     const counts: Record<string, number> = {};
     let total = 0;
 
-    await Promise.all(
-      channels.map(async (channel) => {
-        const lastReadAt = readStatusMap.get(channel.id) || '1970-01-01T00:00:00Z';
-
-        let countQuery = supabase
-          .from('portal_messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('channel_id', channel.id)
-          .gt('created_at', lastReadAt);
-
-        // Clients should not count internal messages
-        if (isClient) {
-          countQuery = countQuery.eq('is_internal', false);
+    if (recentMessages) {
+      for (const msg of recentMessages) {
+        const channelLastRead = readStatusMap.get(msg.channel_id) || '1970-01-01T00:00:00Z';
+        if (msg.created_at > channelLastRead) {
+          counts[msg.channel_id] = (counts[msg.channel_id] || 0) + 1;
         }
-
-        const { count } = await countQuery;
-        const unreadCount = count || 0;
-
-        if (unreadCount > 0) {
-          counts[channel.id] = unreadCount;
-          total += unreadCount;
-        }
-      })
-    );
+      }
+      for (const count of Object.values(counts)) {
+        total += count;
+      }
+    }
 
     return { success: true, data: { counts, total } };
   } catch (error) {

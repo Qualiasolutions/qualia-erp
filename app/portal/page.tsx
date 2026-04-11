@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
@@ -30,11 +31,34 @@ export default async function PortalDashboard({
     .eq('id', user.id)
     .single();
 
-  const userRole = profile?.role || null;
-  const displayName = profile?.full_name || user.email?.split('@')[0] || 'there';
+  const realRole = profile?.role || null;
 
-  // Admin/Manager flow
-  if (isPortalAdminRole(userRole)) {
+  // --- View-as impersonation: resolve effective user ---
+  const cookieStore = await cookies();
+  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+
+  let effectiveUserId = user.id;
+  let effectiveRole = realRole;
+  let effectiveDisplayName = profile?.full_name || user.email?.split('@')[0] || 'there';
+
+  if (viewAsUserId && realRole === 'admin') {
+    const { data: viewAsProfile } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('id', viewAsUserId)
+      .single();
+
+    if (viewAsProfile) {
+      effectiveUserId = viewAsProfile.id;
+      effectiveRole = viewAsProfile.role || 'client';
+      effectiveDisplayName = viewAsProfile.full_name || 'there';
+    }
+  }
+
+  const displayName = effectiveDisplayName;
+
+  // Admin/Manager flow (use effective role so view-as routes correctly)
+  if (isPortalAdminRole(effectiveRole)) {
     // No workspace selected -> show workspace grid
     if (!workspaceId) {
       const result = await getClientWorkspaces();
@@ -43,13 +67,17 @@ export default async function PortalDashboard({
       return <PortalWorkspaceGrid workspaces={workspaces} />;
     }
 
-    // Workspace selected -> show that client's dashboard
-    // Look up the CRM client name for display
+    // Workspace selected -> validate client exists before proceeding (IDOR protection)
     const { data: client } = await supabase
       .from('clients')
       .select('name')
       .eq('id', workspaceId)
       .single();
+
+    if (!client) {
+      // Invalid workspace ID — redirect to workspace grid
+      redirect('/portal');
+    }
 
     // Find the portal user ID for this CRM client (via contact email -> profile)
     const { data: contact } = await supabase
@@ -88,8 +116,8 @@ export default async function PortalDashboard({
   }
 
   // Employee flow: show their assigned projects dashboard
-  if (userRole === 'employee') {
-    return <EmployeeDashboardContent userId={user.id} displayName={displayName} />;
+  if (effectiveRole === 'employee') {
+    return <EmployeeDashboardContent userId={effectiveUserId} displayName={displayName} />;
   }
 
   // Client: fetch company name for personalization
@@ -97,7 +125,7 @@ export default async function PortalDashboard({
   const { data: companyMapping } = await supabase
     .from('portal_project_mappings')
     .select('erp_company_name')
-    .eq('portal_client_id', user.id)
+    .eq('portal_client_id', effectiveUserId)
     .not('erp_company_name', 'is', null)
     .limit(1)
     .maybeSingle();
@@ -106,7 +134,7 @@ export default async function PortalDashboard({
   // Client: show their dashboard
   return (
     <PortalDashboardContent
-      clientId={user.id}
+      clientId={effectiveUserId}
       displayName={displayName}
       companyName={companyName}
     />
