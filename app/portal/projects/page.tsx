@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getClientProjects } from '@/app/actions/client-portal';
 import { calculateProjectsProgress } from '@/app/actions/phases';
 import { isPortalAdminRole } from '@/lib/portal-utils';
-import { PortalProjectsList } from '@/components/portal/portal-projects-list';
+import { PortalProjectsGrid } from '@/components/portal/portal-projects-grid';
 import { fadeInClasses } from '@/lib/transitions';
 
 export default async function PortalProjectsPage() {
@@ -54,12 +54,10 @@ export default async function PortalProjectsPage() {
     return (
       <div className={`space-y-6 ${fadeInClasses}`}>
         <div>
-          <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-            Projects
-          </h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Projects</h1>
           <p className="mt-1 text-[13px] text-muted-foreground/70">All active projects</p>
         </div>
-        <PortalProjectsList projects={formatted} progressMap={progressMap} />
+        <PortalProjectsGrid projects={formatted} progressMap={progressMap} />
       </div>
     );
   }
@@ -117,14 +115,12 @@ export default async function PortalProjectsPage() {
   return (
     <div className={`space-y-6 ${fadeInClasses}`}>
       <div>
-        <h1 className="text-[clamp(1.25rem,3vw,1.5rem)] font-bold tracking-tight text-foreground">
-          Your Projects
-        </h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">Your Projects</h1>
         <p className="mt-1 text-[13px] text-muted-foreground/70">
           Track the progress of your active projects
         </p>
       </div>
-      <PortalProjectsList projects={projects} progressMap={progressMap} />
+      <PortalProjectsGrid projects={projects} progressMap={progressMap} />
     </div>
   );
 }
