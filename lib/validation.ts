@@ -524,3 +524,27 @@ export const markChannelReadSchema = z.object({
 
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type MarkChannelReadInput = z.infer<typeof markChannelReadSchema>;
+
+// =====================
+// Portal Admin Schemas
+// =====================
+export const PortalAppConfigSchema = z.object({
+  workspaceId: z.string().uuid(),
+  clientId: z.string().uuid().nullable(),
+  apps: z.record(
+    z.enum(['home', 'projects', 'messages', 'files', 'billing', 'requests', 'settings']),
+    z.boolean()
+  ),
+});
+
+export const PortalBrandingSchema = z.object({
+  company_name: z.string().max(100).optional().nullable(),
+  accent_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, 'Must be a valid hex color')
+    .optional()
+    .nullable(),
+});
+
+export type PortalAppConfigInput = z.infer<typeof PortalAppConfigSchema>;
+export type PortalBrandingInput = z.infer<typeof PortalBrandingSchema>;

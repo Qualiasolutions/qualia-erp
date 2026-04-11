@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { LogoutButton } from '@/components/logout-button';
 import { NotificationSection } from '@/components/settings/notification-section';
+import { MyHoursSection } from '@/components/settings/my-hours-section';
 import { ChevronRight, Plug } from 'lucide-react';
 import Link from 'next/link';
 
@@ -143,6 +144,7 @@ function NotificationsSection() {
 
 const allSections = [
   { id: 'account', label: 'Account', content: <AccountSection />, adminOnly: false },
+  { id: 'work-hours', label: 'Work Hours', content: <MyHoursSection />, adminOnly: false },
   { id: 'appearance', label: 'Appearance', content: <AppearanceSection />, adminOnly: false },
   {
     id: 'notifications',

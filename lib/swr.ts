@@ -83,6 +83,9 @@ export const cacheKeys = {
   messageChannels: (userId: string) => `message-channels-${userId}`,
   channelMessages: (projectId: string) => `channel-messages-${projectId}`,
   unreadMessageCount: (userId: string) => `unread-message-count-${userId}`,
+  portalAppConfig: (workspaceId: string, clientId?: string) =>
+    `portal-app-config-${workspaceId}-${clientId || 'default'}`,
+  portalBranding: (workspaceId: string) => `portal-branding-${workspaceId}`,
 } as const;
 
 // Check if document is visible (for tab visibility)
@@ -1846,5 +1849,110 @@ export function invalidateUnreadMessageCount(userId: string, immediate = true) {
     mutate(cacheKeys.unreadMessageCount(userId), undefined, { revalidate: true });
   } else {
     mutate(cacheKeys.unreadMessageCount(userId));
+  }
+}
+
+// ============================================================================
+// PORTAL ADMIN — App Config & Branding
+// ============================================================================
+
+/**
+ * Hook to fetch portal app config for a workspace, optionally merged with client overrides.
+ * No auto-refresh — manually invalidate after updates.
+ */
+export function usePortalAppConfig(workspaceId: string | null, clientId?: string) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidateMutate,
+  } = useSWR(
+    workspaceId ? cacheKeys.portalAppConfig(workspaceId, clientId) : null,
+    async () => {
+      const { getPortalAppConfig } = await import('@/app/actions/portal-admin');
+      const result = await getPortalAppConfig(workspaceId!, clientId);
+      if (!result.success) throw new Error(result.error);
+      return result.data as Record<string, boolean>;
+    },
+    {
+      ...swrConfig,
+      refreshInterval: 0,
+      onErrorRetry,
+    }
+  );
+
+  return {
+    config: data ?? null,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidateMutate,
+  };
+}
+
+/**
+ * Hook to fetch portal branding for a workspace.
+ * No auto-refresh — manually invalidate after updates.
+ */
+export function usePortalBranding(workspaceId: string | null) {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidateMutate,
+  } = useSWR(
+    workspaceId ? cacheKeys.portalBranding(workspaceId) : null,
+    async () => {
+      const { getPortalBranding } = await import('@/app/actions/portal-admin');
+      const result = await getPortalBranding(workspaceId!);
+      if (!result.success) throw new Error(result.error);
+      return result.data as {
+        workspace_id: string;
+        company_name: string | null;
+        logo_url: string | null;
+        accent_color: string | null;
+      };
+    },
+    {
+      ...swrConfig,
+      refreshInterval: 0,
+      onErrorRetry,
+    }
+  );
+
+  return {
+    branding: data ?? null,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidateMutate,
+  };
+}
+
+/**
+ * Invalidate portal app config cache
+ */
+export function invalidatePortalAppConfig(
+  workspaceId: string,
+  clientId?: string,
+  immediate = true
+) {
+  if (immediate) {
+    mutate(cacheKeys.portalAppConfig(workspaceId, clientId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.portalAppConfig(workspaceId, clientId));
+  }
+}
+
+/**
+ * Invalidate portal branding cache
+ */
+export function invalidatePortalBranding(workspaceId: string, immediate = true) {
+  if (immediate) {
+    mutate(cacheKeys.portalBranding(workspaceId), undefined, { revalidate: true });
+  } else {
+    mutate(cacheKeys.portalBranding(workspaceId));
   }
 }
