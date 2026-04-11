@@ -16,6 +16,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({
   content,
+  contentHtml,
   isInternal,
   senderName,
   senderRole,
@@ -45,7 +46,9 @@ export function MessageBubble({
                 Internal note
               </span>
             </div>
-            <p className="whitespace-pre-wrap text-sm text-foreground">{content}</p>
+            <p className="whitespace-pre-wrap text-sm text-foreground">
+              {renderMarkdown(contentHtml || content)}
+            </p>
             <p className="mt-1 text-[10px] text-muted-foreground">{formattedTime}</p>
           </div>
         </div>
@@ -72,7 +75,9 @@ export function MessageBubble({
               : 'rounded-2xl rounded-bl-sm bg-muted/50'
           )}
         >
-          <p className="whitespace-pre-wrap text-sm text-foreground">{content}</p>
+          <p className="whitespace-pre-wrap text-sm text-foreground">
+            {renderMarkdown(contentHtml || content)}
+          </p>
           <p className={cn('mt-1 text-[10px] text-muted-foreground', isOwn && 'text-right')}>
             {formattedTime}
           </p>
@@ -80,6 +85,60 @@ export function MessageBubble({
       </div>
     </div>
   );
+}
+
+/**
+ * Renders simple inline markdown: **bold**, *italic*, [text](url)
+ * No dangerouslySetInnerHTML — builds React elements safely.
+ */
+function renderMarkdown(text: string): React.ReactNode[] {
+  // Process bold, italic, and links via regex replacement
+  const parts: React.ReactNode[] = [];
+  // Pattern matches: **bold**, *italic*, [text](url)
+  const regex = /(\*\*(.+?)\*\*)|(\*(.+?)\*)|(\[(.+?)\]\((.+?)\))/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Add text before this match
+    if (match.index > lastIndex) {
+      parts.push(text.substring(lastIndex, match.index));
+    }
+
+    if (match[1]) {
+      // **bold**
+      parts.push(
+        <strong key={match.index} className="font-semibold">
+          {match[2]}
+        </strong>
+      );
+    } else if (match[3]) {
+      // *italic*
+      parts.push(<em key={match.index}>{match[4]}</em>);
+    } else if (match[5]) {
+      // [text](url)
+      parts.push(
+        <a
+          key={match.index}
+          href={match[7]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-primary underline underline-offset-2 hover:text-primary/80"
+        >
+          {match[6]}
+        </a>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.substring(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
 }
 
 function formatTime(dateStr: string): string {
