@@ -19,7 +19,7 @@ import {
   Eye,
   Inbox,
   CalendarDays,
-  Users,
+  Timer,
 } from 'lucide-react';
 import { ViewAsDialog } from '@/components/portal/view-as-dialog';
 import { ThemeSwitcher } from '@/components/theme-switcher';
@@ -33,7 +33,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
-import { useUnreadMessageCount } from '@/lib/swr';
+import { useUnreadMessageCount, useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
+import { ClockOutModal } from '@/components/clock-out-modal';
+import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
+import type { WorkSession } from '@/app/actions/work-sessions';
 
 /* ------------------------------------------------------------------ */
 /* Navigation items                                                    */
@@ -51,15 +54,14 @@ interface NavItemDef {
 
 const navItems: NavItemDef[] = [
   { name: 'Home', href: '/portal', icon: House, exact: true },
-  { name: 'Inbox', href: '/inbox', icon: Inbox, roles: ['admin', 'employee', 'manager'] },
+  { name: 'Inbox', href: '/portal/inbox', icon: Inbox, roles: ['admin', 'employee', 'manager'] },
   { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
   {
     name: 'Schedule',
-    href: '/schedule',
+    href: '/portal/schedule',
     icon: CalendarDays,
     roles: ['admin', 'employee', 'manager'],
   },
-  { name: 'Team', href: '/team', icon: Users, roles: ['admin', 'manager'] },
   { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
   { name: 'Files', href: '/portal/files', icon: FileStack },
   { name: 'Billing', href: '/portal/billing', icon: Receipt, roles: ['admin', 'manager'] },
@@ -109,7 +111,7 @@ function NavLink({
   workspaceName?: string | null;
 }) {
   // Append workspace query params to portal nav links when workspace is active
-  // Internal routes (/inbox, /schedule, /team) don't use workspace params
+  // Non-portal routes don't use workspace params
   const isInternalRoute = item.href && !item.href.startsWith('/portal');
   const href = item.href
     ? workspaceId && !isInternalRoute
@@ -286,6 +288,12 @@ function SidebarContent({
   const workspaceName = isAdminViewing ? searchParams.get('wname') || companyName : null;
   const { total } = useUnreadMessageCount(userId ?? null);
 
+  const [showClockOut, setShowClockOut] = useState(false);
+  const [showClockIn, setShowClockIn] = useState(false);
+  const canTrackTime = userRole === 'admin' || userRole === 'employee' || userRole === 'manager';
+  const { workspaceId: wsId } = useCurrentWorkspaceId();
+  const { session: activeSession } = useActiveSession(canTrackTime && wsId ? wsId : null);
+
   const isActive = (item: NavItemDef) => {
     if (!item.href) return false;
     const base = item.href.split('?')[0];
@@ -383,6 +391,58 @@ function SidebarContent({
             />
           ))}
       </nav>
+
+      {/* Clock in/out */}
+      {canTrackTime && wsId && (
+        <div className="px-3 pb-2">
+          <div className="mb-2 h-px bg-border/30" />
+          {activeSession ? (
+            <button
+              type="button"
+              onClick={() => setShowClockOut(true)}
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-left text-[13px] font-medium text-primary transition-all duration-150 hover:bg-primary/15"
+            >
+              <Timer className="size-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-semibold">
+                  {(activeSession as WorkSession).project?.name ?? 'Session active'}
+                </div>
+                <div className="text-[11px] text-primary/70">Tap to clock out</div>
+              </div>
+              <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                LIVE
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowClockIn(true)}
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg border border-border/50 px-3 py-2.5 text-left text-[13px] font-medium text-muted-foreground transition-all duration-150 hover:border-primary/30 hover:bg-primary/[0.04] hover:text-foreground"
+            >
+              <Timer className="size-4 shrink-0" />
+              <span>Clock in</span>
+            </button>
+          )}
+          {activeSession && wsId && (
+            <ClockOutModal
+              open={showClockOut}
+              onOpenChange={setShowClockOut}
+              workspaceId={wsId}
+              session={activeSession}
+              onSuccess={() => setShowClockOut(false)}
+            />
+          )}
+          {!activeSession && wsId && (
+            <ClockInModal
+              open={showClockIn}
+              workspaceId={wsId}
+              currentUserId={userId || ''}
+              onSuccess={() => setShowClockIn(false)}
+              onDismiss={() => setShowClockIn(false)}
+            />
+          )}
+        </div>
+      )}
 
       {/* User area at bottom */}
       <div className="border-t border-border/30 bg-primary/[0.02] px-3 py-3 backdrop-blur-sm">

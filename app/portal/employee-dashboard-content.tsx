@@ -38,13 +38,13 @@ const quickActions = [
   {
     title: 'Go to Inbox',
     description: 'View your tasks and action items',
-    href: '/inbox',
+    href: '/portal/inbox',
     icon: Inbox,
   },
   {
     title: 'View Schedule',
     description: 'Check your calendar and meetings',
-    href: '/schedule',
+    href: '/portal/schedule',
     icon: Calendar,
   },
   {
