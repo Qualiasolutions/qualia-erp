@@ -1,8 +1,97 @@
-# Production Audit — 2026-04-11
+# Production Audit — Qualia Suite
 
-Full audit across Employee, Client, and Admin roles. Covers security, permissions, UI/UX, silent errors, design, responsiveness.
+## Latest: Full Codebase Audit (2026-04-11)
 
-## Fixed — Pass 1 (e34fa22)
+Deep review across Security, Performance, Architecture, Code Quality, and Test Coverage.
+
+---
+
+### CRITICAL (2)
+
+| # | Category | Finding | Where | Fix |
+|---|----------|---------|-------|-----|
+| C1 | Performance | N+1 query — `completePhase()` fetches same phase row twice | `app/actions/phases.ts:112-128` | Merge both queries into one `.select('id, project_id, sort_order, name')` |
+| C2 | Code Quality | SWR `onErrorRetry` uses non-null assertion on possibly-undefined `.status` | `lib/swr.ts:104-107` | Add type guard: `isErrorWithStatus(error)` before comparison |
+
+### HIGH (8)
+
+| # | Category | Finding | Where | Fix |
+|---|----------|---------|-------|-----|
+| H1 | Performance | Loop N+1 — `updateIssue()` sends sequential notifications per assignee | `app/actions/issues.ts:229-247` | Use `Promise.all()` for parallel notification |
+| H2 | Performance | Loop N+1 — `createComment()` sequential notification loop | `app/actions/issues.ts:407-440` | Combine into single `Promise.all()` |
+| H3 | Performance | Aggressive SWR polling — 20+ hooks × 30-45s = 25+ API calls/min | `lib/swr.ts:123,1473,1622` | Increase to 60s default; consider WebSocket for team status |
+| H4 | Performance | Barrel file `actions/index.ts` (247 lines) forces full module load | `app/actions/index.ts` | Import directly from domain files, not barrel |
+| H5 | Architecture | SWR cache not invalidated after notification/activity actions | `app/actions/notifications.ts`, `activity-feed.ts` | Add `mutate(cacheKeys.notifications)` after mutations |
+| H6 | Architecture | 5 components exceed 600 lines (project-workflow: 1314, day-view: 922) | `components/project-workflow.tsx`, `components/day-view.tsx` | Extract sub-components (RoadmapView, BoardView, etc.) |
+| H7 | Code Quality | Fire-and-forget `.catch(() => {})` swallows errors silently (6+ instances) | `app/actions/checkins.ts:113`, `clients.ts:89`, `issues.ts:144` | Create `fireAndForget()` helper with console.error + Sentry |
+| H8 | Testing | Auth actions (login, signup, admin check) have 0% test coverage | `app/actions/auth.ts` | Create `__tests__/actions/auth.test.ts` (~80 tests) |
+
+### MEDIUM (13)
+
+| # | Category | Finding | Where |
+|---|----------|---------|-------|
+| M1 | Security | Integration tokens stored in plaintext despite `encrypted_token` column name | `app/actions/integrations.ts:135` |
+| M2 | Security | Vercel webhook uses ILIKE fuzzy match for project lookup (could match wrong project) | `app/api/webhooks/vercel/route.ts:97-101` |
+| M3 | Security | View-as impersonation has no audit trail logging | `app/actions/view-as.ts:103-150` |
+| M4 | Performance | `getClientById()` fetches all activities without pagination | `app/actions/clients.ts:161-181` |
+| M5 | Performance | 44 `'use client'` components — many don't need interactivity | `components/` |
+| M6 | Performance | `revalidatePath('/portal')` too broad — purges entire portal cache | `app/actions/phases.ts:176` (30+ places) |
+| M7 | Architecture | Portal ↔ internal code duplication (ViewAsBanner, project views) | `components/view-as-banner.tsx` vs `components/portal/view-as-banner.tsx` |
+| M8 | Architecture | WorkspaceProvider re-fetches data already available from server layout | `components/workspace-provider.tsx:35-99` |
+| M9 | Architecture | Inconsistent parameter validation — mix of Zod, inline checks, none | `app/actions/notifications.ts`, `clients.ts` |
+| M10 | Architecture | Ambiguous route coverage — some routes accessible from both portal and internal | `middleware.ts:78-94` |
+| M11 | Code Quality | `client-portal.ts` is 2604 lines — god file with mixed concerns | `app/actions/client-portal.ts` |
+| M12 | Code Quality | Missing return types on 37 SWR hooks | `lib/swr.ts` |
+| M13 | Testing | Financials, file uploads, client invitations have 0% coverage | `app/actions/financials.ts`, `project-files.ts`, `client-invitations.ts` |
+
+### LOW (8)
+
+| # | Category | Finding | Where |
+|---|----------|---------|-------|
+| L1 | Security | In-memory rate limiter doesn't persist across serverless instances | `lib/rate-limit.ts` |
+| L2 | Performance | `getIssueAssignees()` over-fetches assigned_by profile columns | `app/actions/issues.ts:567-573` |
+| L3 | Performance | No lazy-loading for AI assistant widget (12KB+) | `app/layout.tsx` |
+| L4 | Code Quality | Magic numbers in SWR polling intervals (45000, 30000, 90000) | `lib/swr.ts:34,121,131` |
+| L5 | Code Quality | `console.log` used for debugging (20 instances) | Various |
+| L6 | Testing | Coverage at 31.6% statements, below 50% target | Global |
+| L7 | Testing | No E2E tests configured (Playwright installed but unused) | No `playwright.config.ts` |
+| L8 | Testing | Pre-commit hooks run lint/tsc only, not tests | `.husky/pre-commit` |
+
+---
+
+### Positive Findings (no action needed)
+
+- **Auth**: Middleware properly validates sessions; API routes check auth independently
+- **Webhooks**: GitHub/Vercel use HMAC-SHA256/SHA1 with timing-safe comparison
+- **Authorization**: Server actions verify permissions (canAccessProject, canModifyTask, etc.)
+- **Input validation**: Zod schemas in `lib/validation.ts` cover all core entities
+- **No XSS vectors**: No `dangerouslySetInnerHTML`, `eval()`, or reflected input
+- **File uploads**: MIME whitelist, 50MB limit, filename sanitization
+- **Cron auth**: Bearer token validation on all cron endpoints
+- **Service role isolation**: `SUPABASE_SERVICE_ROLE_KEY` never in client bundles
+- **Security headers**: CSP, HSTS, X-Frame-Options properly configured
+- **Error handling**: All 49 action modules return `ActionResult` consistently
+- **Provider hierarchy**: Correct SSR-safe ordering in root layout
+- **No circular dependencies**: Action modules form proper DAG
+- **React patterns**: Proper keys, memoization on list items, Suspense boundaries
+- **Accessibility**: Labels on forms, aria-hidden on decorative elements, skip link present
+- **Font optimization**: Geist fonts via `next/font` (self-hosted, no layout shift)
+
+---
+
+### Quick Wins (do first)
+
+1. **Fix completePhase() N+1** — 5 min, eliminates 1 DB round-trip per action
+2. **Parallelize notification loops** — 10 min each, scales with team size
+3. **Increase SWR polling to 60s** — 5 min, 30% fewer API calls
+4. **Add type guard for SWR onErrorRetry** — 5 min, prevents runtime error
+5. **Replace `.catch(() => {})` with logged helper** — 15 min, fixes silent failures
+
+---
+
+## Previous Audit (2026-04-11 — UI/UX/Security)
+
+### Fixed — Pass 1 (e34fa22)
 
 | # | Finding | Fix | Severity |
 |---|---------|-----|----------|
@@ -22,7 +111,7 @@ Full audit across Employee, Client, and Admin roles. Covers security, permission
 | 14 | Project list touch targets < 44px | min-h-[44px] + min touch target | MEDIUM |
 | 15 | Clock-in modal: breaks on mobile | Responsive width calc | LOW |
 
-## Fixed — Pass 2 (089687d)
+### Fixed — Pass 2 (089687d)
 
 | # | Finding | Fix | Severity |
 |---|---------|-----|----------|
@@ -42,39 +131,24 @@ Full audit across Employee, Client, and Admin roles. Covers security, permission
 | 29 | ViewAsBanner z-index z-toast→z-sticky | Correct semantic layer | LOW |
 | 30 | Employee project links go to /projects/ | Changed to /portal/ for consistency | LOW |
 
-## Previously Fixed (confirmed in this audit)
+### Fixed — Pass 3 (2da290b)
 
-- C1/C2: `canAccessProject()` — already handles employees via `project_assignments`
-- C3/C4: `getProjectActivityFeed` + `getProjectTasks` — already have `canAccessProject()` checks
-- H1: Employee role mapping — already maps to 'admin' (internal view)
-- H2: Files page employee support — already has employee branch via `project_assignments`
-- H6: "Back to Projects" workspace link — already reads from `useSearchParams()`
-- H10: Tab touch targets — already has `min-h-[44px]`
-- H12: Employee message access — already scoped via `project_assignments`
-- H13: `getEmployeeAssignments` auth — already checks self/admin
-
----
-
-## Remaining: LOW (5)
-
-| # | Finding | Where |
-|---|---------|-------|
-| L3 | Client-side date hydration mismatch risk | Multiple dashboard files |
-| L5 | Missing error boundaries on portal sub-routes | `app/portal/*/` |
-| L9 | Workspace grid needs intermediate breakpoint | `portal-workspace-grid.tsx:242` |
-| L10 | Section spacing inconsistency (space-y-6 vs space-y-8) | Multiple |
-| L12 | `listUsers` capped at 1000 users | `portal-workspaces.ts:119` |
+| # | Finding | Fix | Severity |
+|---|---------|-----|----------|
+| 31 | Sidebar switching when clicking nav items | Portal sidebar links now stay within /portal/* layout | HIGH |
+| 32 | Clock-in/out hidden for admin role | Restored for admin, added to portal sidebar | HIGH |
+| 33 | /team link circular redirect | Removed from portal sidebar | LOW |
 
 ---
 
 ## Summary
 
-| Severity | Fixed | Remaining |
-|----------|-------|-----------|
-| CRITICAL | 3 | 0 |
-| HIGH | 7 | 0 |
-| MEDIUM | 14 | 0 |
-| LOW | 6 | 5 |
-| **Total** | **30** | **5** |
+| Severity | Fixed (prev) | New Findings | Deploy Blocker? |
+|----------|-------------|--------------|-----------------|
+| CRITICAL | 3 | 2 | Yes — fix before next deploy |
+| HIGH | 10 | 8 | Yes — fix within 1 week |
+| MEDIUM | 14 | 13 | No |
+| LOW | 6 | 8 | No |
+| **Total** | **33** | **31** | |
 
-**No deploy blockers remain.** All CRITICAL and HIGH findings resolved. Remaining 5 LOWs are cosmetic/edge-case.
+**Deploy status**: 2 CRITICAL findings (N+1 query, SWR type guard) should be fixed before next major deploy. Both are 5-minute fixes.
