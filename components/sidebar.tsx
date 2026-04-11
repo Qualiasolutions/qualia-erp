@@ -248,7 +248,12 @@ function SidebarContent({
               />
             </div>
             {!collapsed && (
-              <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-sm font-bold tracking-wider text-foreground">QUALIA</span>
+                <span className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">
+                  SUITE
+                </span>
+              </div>
             )}
           </Link>
           {/* Separator gradient */}

@@ -15,7 +15,7 @@ export default function Page() {
           <div className="flex items-center gap-3">
             <Image src="/logo.webp" alt="Qualia" width={32} height={32} className="rounded-lg" />
             <span className="text-sm font-semibold uppercase tracking-[0.15em] text-foreground">
-              Qualia Solutions
+              Qualia Suite
             </span>
           </div>
         </header>

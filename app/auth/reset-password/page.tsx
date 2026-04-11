@@ -44,8 +44,14 @@ export default function ResetPasswordPage() {
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-[420px]">
         <div className="mb-8 flex items-center gap-3">
-          <Image src="/logo.webp" alt="Qualia" width={36} height={36} className="rounded-lg" />
-          <span className="text-lg font-semibold tracking-tight text-foreground">Qualia</span>
+          <Image
+            src="/logo.webp"
+            alt="Qualia Suite"
+            width={36}
+            height={36}
+            className="rounded-lg"
+          />
+          <span className="text-lg font-semibold tracking-tight text-foreground">Qualia Suite</span>
         </div>
 
         {isSent ? (

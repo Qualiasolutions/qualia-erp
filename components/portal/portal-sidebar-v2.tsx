@@ -312,7 +312,12 @@ function SidebarContent({
               priority
             />
           </div>
-          <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[13px] font-bold tracking-[0.08em] text-foreground">QUALIA</span>
+            <span className="text-[10px] font-medium tracking-[0.3em] text-muted-foreground">
+              SUITE
+            </span>
+          </div>
         </Link>
       </div>
 

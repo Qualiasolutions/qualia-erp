@@ -78,15 +78,21 @@ export default async function Page({ searchParams }: PageProps) {
         {/* Top — Logo */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <Image src="/logo.webp" alt="Qualia" width={40} height={40} className="rounded-lg" />
-            <span className="text-lg font-semibold tracking-tight text-white">Qualia</span>
+            <Image
+              src="/logo.webp"
+              alt="Qualia Suite"
+              width={40}
+              height={40}
+              className="rounded-lg"
+            />
+            <span className="text-lg font-semibold tracking-tight text-white">Qualia Suite</span>
           </div>
         </div>
 
         {/* Center — Headline + Feature bullets */}
         <div className="relative z-10 max-w-md">
           <h1 className="text-[3.25rem] font-bold leading-[1.06] tracking-[-0.04em] text-white">
-            Welcome to <span className="text-primary">Qualia.</span>
+            Welcome to <span className="text-primary">Qualia Suite.</span>
           </h1>
           <p className="mt-5 text-base leading-relaxed text-qualia-200/60">
             Your client portal for real-time project updates, direct communication, and secure
@@ -162,8 +168,16 @@ export default async function Page({ searchParams }: PageProps) {
         <div className="relative z-10 w-full max-w-[420px]">
           {/* Mobile logo */}
           <div className="mb-10 flex items-center gap-3 lg:hidden">
-            <Image src="/logo.webp" alt="Qualia" width={36} height={36} className="rounded-lg" />
-            <span className="text-lg font-semibold tracking-tight text-foreground">Qualia</span>
+            <Image
+              src="/logo.webp"
+              alt="Qualia Suite"
+              width={36}
+              height={36}
+              className="rounded-lg"
+            />
+            <span className="text-lg font-semibold tracking-tight text-foreground">
+              Qualia Suite
+            </span>
           </div>
 
           {/* Header */}
@@ -171,9 +185,7 @@ export default async function Page({ searchParams }: PageProps) {
             <h2 className="text-[2rem] font-bold tracking-[-0.03em] text-foreground">
               Create your account
             </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Join your team on the Qualia platform
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground">Join your team on Qualia Suite</p>
           </div>
 
           <SignupForm

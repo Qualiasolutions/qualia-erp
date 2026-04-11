@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Qualia Internal Suite',
+    name: 'Qualia Suite',
     short_name: 'Qualia',
-    description: 'Project Planning & Management by Qualia Solutions',
+    description: 'Client portal and project management platform by Qualia Solutions',
     start_url: '/',
     display: 'standalone',
     background_color: '#0a0a0b',

@@ -1,7 +1,7 @@
 {
-  "name": "Qualia Solutions",
+  "name": "Qualia Suite",
   "short_name": "Qualia",
-  "description": "Project management & client portal by Qualia Solutions",
+  "description": "Client portal and project management platform by Qualia Solutions",
   "start_url": "/",
   "scope": "/",
   "icons": [

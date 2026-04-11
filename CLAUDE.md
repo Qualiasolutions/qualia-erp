@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-Qualia Internal Suite — project management, CRM, client portal, and AI assistant platform built with Next.js 16+, Supabase, and AI.
+Qualia Suite — project management, CRM, client portal, and AI assistant platform built with Next.js 16+, Supabase, and AI.
 
 **Design**: Clean, professional UI like Linear/Plane. No flashy effects. See `.planning/DESIGN.md` for full design spec.
 
