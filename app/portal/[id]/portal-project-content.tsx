@@ -85,7 +85,9 @@ export function PortalProjectContent({
           Back to Projects
         </Link>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">{project.name}</h1>
+          <h1 className="min-w-0 truncate text-2xl font-semibold tracking-tight text-foreground">
+            {project.name}
+          </h1>
           <Badge
             className={cn(
               'shrink-0 border px-2 py-0.5 text-xs',

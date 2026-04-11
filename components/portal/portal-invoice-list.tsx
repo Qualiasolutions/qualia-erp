@@ -70,7 +70,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
   return (
     <div className="animate-fade-in overflow-hidden rounded-xl border border-border">
       {/* Table header */}
-      <div className="hidden gap-4 bg-muted/30 px-5 py-3 sm:grid sm:grid-cols-[1fr_120px_120px_100px_80px]">
+      <div className="hidden gap-4 bg-muted/30 px-5 py-3 md:grid md:grid-cols-[1fr_120px_120px_100px_80px]">
         <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           Invoice
         </span>
@@ -99,7 +99,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
           style={index < 10 ? { animationDelay: `${index * 30}ms` } : undefined}
         >
           {/* Desktop layout */}
-          <div className="hidden items-center gap-4 sm:grid sm:grid-cols-[1fr_120px_120px_100px_80px]">
+          <div className="hidden items-center gap-4 md:grid md:grid-cols-[1fr_120px_120px_100px_80px]">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-foreground">
@@ -145,7 +145,7 @@ export function PortalInvoiceList({ invoices }: PortalInvoiceListProps) {
           </div>
 
           {/* Mobile layout */}
-          <div className="space-y-2 sm:hidden">
+          <div className="space-y-2 md:hidden">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="text-sm font-medium text-foreground">

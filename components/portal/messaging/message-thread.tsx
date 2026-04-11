@@ -67,7 +67,7 @@ export function MessageThread({
         {onBack && (
           <button
             onClick={onBack}
-            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:hidden"
+            className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors duration-150 hover:bg-muted/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 md:hidden"
             aria-label="Back to channels"
           >
             <ArrowLeft className="h-4 w-4" />

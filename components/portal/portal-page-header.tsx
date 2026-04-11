@@ -44,14 +44,16 @@ export function PortalPageHeader({
       <div className="flex items-start gap-3 sm:items-center">
         <Link
           href="/portal"
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors duration-150 hover:bg-muted/30 hover:text-foreground sm:mt-0"
+          className="mt-0.5 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors duration-150 hover:bg-muted/30 hover:text-foreground sm:mt-0"
           aria-label="Back to dashboard"
         >
           <ChevronLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{title}</h1>
+            <h1 className="min-w-0 truncate text-2xl font-bold tracking-tight text-foreground">
+              {title}
+            </h1>
             {status && (
               <span
                 className={cn(

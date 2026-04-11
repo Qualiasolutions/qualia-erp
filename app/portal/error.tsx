@@ -23,8 +23,11 @@ export default function PortalError({
       <div>
         <h2 className="text-lg font-semibold">Something went wrong</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {error.message || 'An unexpected error occurred loading your portal.'}
+          An unexpected error occurred loading your portal. Please try again.
         </p>
+        {error.digest && (
+          <p className="mt-0.5 text-xs text-muted-foreground/50">Error ID: {error.digest}</p>
+        )}
       </div>
       <Button variant="outline" size="sm" onClick={reset}>
         Try again

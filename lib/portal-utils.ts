@@ -99,6 +99,44 @@ export async function canAccessProject(userId: string, projectId: string): Promi
 }
 
 /**
+ * Resolve effective user for portal pages considering view-as impersonation.
+ * Returns the target user's id and role when an admin is viewing-as, otherwise the real user.
+ */
+export async function resolveEffectiveUser(
+  userId: string,
+  userRole: string
+): Promise<{ effectiveUserId: string; effectiveRole: string }> {
+  if (userRole !== 'admin') {
+    return { effectiveUserId: userId, effectiveRole: userRole };
+  }
+
+  // Dynamic import to avoid pulling cookies() into non-server contexts
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+
+  if (!viewAsUserId) {
+    return { effectiveUserId: userId, effectiveRole: userRole };
+  }
+
+  const supabase = await createClient();
+  const { data: viewAsProfile } = await supabase
+    .from('profiles')
+    .select('id, role')
+    .eq('id', viewAsUserId)
+    .single();
+
+  if (viewAsProfile) {
+    return {
+      effectiveUserId: viewAsProfile.id,
+      effectiveRole: viewAsProfile.role || 'client',
+    };
+  }
+
+  return { effectiveUserId: userId, effectiveRole: userRole };
+}
+
+/**
  * Get all project IDs that a client has access to
  * @param userId - The client user ID
  * @returns Array of project IDs the client can access

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getClientFeatureRequests } from '@/app/actions/client-requests';
+import { isUserManagerOrAbove } from '@/app/actions/shared';
 import { PortalRequestList } from '@/components/portal/portal-request-list';
 import { PortalRequestDialog } from '@/components/portal/portal-request-dialog';
 
@@ -14,14 +15,43 @@ export default async function PortalRequestsPage() {
     redirect('/auth/login');
   }
 
-  // Get feature requests and client projects in parallel
-  const [requestsResult, projectsResult] = await Promise.all([
-    getClientFeatureRequests(),
-    supabase
+  // Employees don't submit/view feature requests — redirect
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profile?.role === 'employee') {
+    redirect('/portal');
+  }
+
+  const isAdmin = await isUserManagerOrAbove(user.id);
+
+  // Get feature requests
+  const requestsResult = await getClientFeatureRequests();
+
+  // Get project dropdown: admins see all active projects, clients see their linked projects
+  let projectsData: { id: string; name: string }[] = [];
+  if (isAdmin) {
+    const { data } = await supabase
+      .from('projects')
+      .select('id, name')
+      .not('status', 'eq', 'Canceled')
+      .order('name');
+    projectsData = (data || []).map((p) => ({ id: p.id, name: p.name }));
+  } else {
+    const { data } = await supabase
       .from('client_projects')
       .select('project:projects!client_projects_project_id_fkey(id, name)')
-      .eq('client_id', user.id),
-  ]);
+      .eq('client_id', user.id);
+    projectsData = (data ?? [])
+      .map((row) => {
+        const p = Array.isArray(row.project) ? row.project[0] : row.project;
+        return p ? { id: p.id, name: p.name } : null;
+      })
+      .filter((p): p is { id: string; name: string } => p !== null);
+  }
 
   const requests = (requestsResult.success ? requestsResult.data : []) as Array<{
     id: string;
@@ -34,12 +64,7 @@ export default async function PortalRequestsPage() {
     project: { id: string; name: string } | null;
   }>;
 
-  const projects = (projectsResult.data ?? [])
-    .map((row) => {
-      const p = Array.isArray(row.project) ? row.project[0] : row.project;
-      return p ? { id: p.id, name: p.name } : null;
-    })
-    .filter((p): p is { id: string; name: string } => p !== null);
+  const projects = projectsData;
 
   return (
     <div className="animate-fade-in-up space-y-6">

@@ -192,7 +192,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
               key={opt.value}
               onClick={() => setSortBy(opt.value)}
               className={cn(
-                'cursor-pointer rounded px-2 py-1 text-[11px] font-medium transition-colors duration-150',
+                'cursor-pointer rounded px-2.5 py-1.5 text-[11px] font-medium transition-colors duration-150',
                 sortBy === opt.value
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground'

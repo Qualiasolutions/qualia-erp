@@ -189,7 +189,7 @@ export function PhaseCommentThread({
                       {showInternal && (
                         <Badge
                           variant="outline"
-                          className="border-amber-400 bg-amber-100 text-amber-800"
+                          className="border-amber-400 bg-amber-100 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300"
                         >
                           Internal
                         </Badge>
@@ -209,7 +209,7 @@ export function PhaseCommentThread({
                   {canDelete && (
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-red-600"
+                      className="flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded p-1 text-muted-foreground hover:bg-muted hover:text-red-600"
                       disabled={isPending || isDeleting}
                       aria-label="Delete comment"
                     >

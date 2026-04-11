@@ -176,7 +176,7 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
               return (
                 <Link
                   key={assignment.id}
-                  href={`/projects/${project.id}`}
+                  href={`/portal/${project.id}`}
                   className={cn(
                     'group flex items-center justify-between rounded-xl border border-border/50 px-5 py-4',
                     'transition-all duration-150',

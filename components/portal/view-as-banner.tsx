@@ -27,7 +27,7 @@ export function ViewAsBanner({ viewAsName, viewAsRole }: ViewAsBannerProps) {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-0 z-toast flex items-center justify-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm dark:border-amber-500/20 dark:bg-amber-500/10"
+      className="sticky top-0 z-sticky flex items-center justify-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm dark:border-amber-500/20 dark:bg-amber-500/10"
     >
       <Eye className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
       <span className="text-amber-800 dark:text-amber-300">

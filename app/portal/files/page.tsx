@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { isPortalAdminRole } from '@/lib/portal-utils';
+import { isPortalAdminRole, resolveEffectiveUser } from '@/lib/portal-utils';
 import { PortalFilesContent } from './files-content';
 import { fadeInClasses } from '@/lib/transitions';
 
@@ -41,14 +41,18 @@ export default async function PortalFilesPage({
     redirect('/auth/login');
   }
 
-  // Get user profile/role
+  // Get user profile/role and resolve view-as
   const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single();
 
-  const isAdmin = isPortalAdminRole(profile?.role || null);
+  const { effectiveUserId, effectiveRole } = await resolveEffectiveUser(
+    user.id,
+    profile?.role || 'client'
+  );
+  const isAdmin = isPortalAdminRole(effectiveRole);
 
   let projectIds: string[] = [];
 
@@ -69,12 +73,12 @@ export default async function PortalFilesPage({
       .not('status', 'eq', 'Canceled');
 
     projectIds = (allProjects || []).map((p) => p.id);
-  } else if (profile?.role === 'employee') {
+  } else if (effectiveRole === 'employee') {
     // Employee: get assigned project IDs
     const { data: assignments } = await supabase
       .from('project_assignments')
       .select('project_id')
-      .eq('employee_id', user.id)
+      .eq('employee_id', effectiveUserId)
       .is('removed_at', null);
 
     projectIds = (assignments || []).map((a) => a.project_id);
@@ -83,7 +87,7 @@ export default async function PortalFilesPage({
     const { data: clientProjects } = await supabase
       .from('client_projects')
       .select('project_id')
-      .eq('client_id', user.id);
+      .eq('client_id', effectiveUserId);
 
     projectIds = (clientProjects || []).map((cp) => cp.project_id);
   }
