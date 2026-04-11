@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
-import { PortalSidebar } from '@/components/portal/portal-sidebar';
+import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
 
 export const metadata: Metadata = {
@@ -54,8 +54,8 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div className="flex h-full overflow-hidden bg-background transition-colors duration-200">
-      <PortalSidebar
+    <div className="flex h-screen overflow-hidden bg-background">
+      <PortalSidebarV2
         displayName={displayName}
         displayEmail={displayEmail}
         isAdminViewing={isAdminViewing}
