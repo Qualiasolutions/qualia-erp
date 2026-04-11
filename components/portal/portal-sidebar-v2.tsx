@@ -58,7 +58,6 @@ const navItems: NavItemDef[] = [
 interface PortalSidebarV2Props {
   displayName: string;
   displayEmail: string;
-  isAdminViewing: boolean;
   companyName?: string | null;
   userId?: string;
 }
@@ -123,17 +122,7 @@ function NavLink({
 /* UserMenu                                                            */
 /* ------------------------------------------------------------------ */
 
-function UserMenu({
-  displayName,
-  displayEmail,
-  isAdminViewing,
-  onLinkClick,
-}: {
-  displayName: string;
-  displayEmail: string;
-  isAdminViewing: boolean;
-  onLinkClick?: () => void;
-}) {
+function UserMenu({ displayName, displayEmail }: { displayName: string; displayEmail: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -171,20 +160,6 @@ function UserMenu({
           <p className="text-xs text-muted-foreground/70">{displayEmail}</p>
         </div>
         <DropdownMenuSeparator />
-        {isAdminViewing && (
-          <>
-            <DropdownMenuItem
-              onClick={() => {
-                setOpen(false);
-                onLinkClick?.();
-                router.push('/');
-              }}
-            >
-              Exit preview
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
         <DropdownMenuItem
           onClick={handleSignOut}
           className="text-destructive focus:text-destructive"
@@ -204,7 +179,6 @@ function UserMenu({
 function SidebarContent({
   displayName,
   displayEmail,
-  isAdminViewing,
   companyName,
   userId,
   onLinkClick,
@@ -266,12 +240,7 @@ function SidebarContent({
 
       {/* User area at bottom */}
       <div className="border-t border-border/30 bg-primary/[0.02] px-3 py-3 backdrop-blur-sm">
-        <UserMenu
-          displayName={displayName}
-          displayEmail={displayEmail}
-          isAdminViewing={isAdminViewing}
-          onLinkClick={onLinkClick}
-        />
+        <UserMenu displayName={displayName} displayEmail={displayEmail} />
       </div>
     </div>
   );
