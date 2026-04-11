@@ -45,7 +45,7 @@ const navItems: NavItemDef[] = [
   { name: 'Home', href: '/portal', icon: House, exact: true },
   { name: 'Projects', href: '/portal/projects', icon: FolderKanban },
   { name: 'Messages', href: '/portal/messages', icon: MessageSquare },
-  { name: 'Files', href: null, icon: FileStack, comingSoon: true },
+  { name: 'Files', href: '/portal/files', icon: FileStack },
   { name: 'Billing', href: '/portal/billing', icon: Receipt },
   { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
   { name: 'Settings', href: '/portal/settings', icon: Settings },
