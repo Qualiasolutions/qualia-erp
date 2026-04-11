@@ -135,7 +135,7 @@ export async function setViewAsUser(userId: string): Promise<ActionResult> {
 
     const cookieStore = await cookies();
     cookieStore.set(VIEW_AS_COOKIE, userId, {
-      httpOnly: false, // Needs to be readable by client for banner
+      httpOnly: false, // Readable by AdminProvider for client-side role resolution
       path: '/',
       sameSite: 'strict',
       maxAge: MAX_AGE,

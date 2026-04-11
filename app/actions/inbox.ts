@@ -6,6 +6,7 @@ import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validat
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
 import { canModifyTask, isUserAdmin, type ActionResult } from './shared';
+import { canAccessProject } from '@/lib/portal-utils';
 
 /**
  * Check if a task with requires_attachment can be marked as Done.
@@ -590,6 +591,13 @@ export async function getProjectTasks(projectId: string): Promise<Task[]> {
 
   if (!user) {
     console.error('[getProjectTasks] No authenticated user');
+    return [];
+  }
+
+  // Verify user has access to this project
+  const hasAccess = await canAccessProject(user.id, projectId);
+  if (!hasAccess) {
+    console.error('[getProjectTasks] Access denied for user', user.id);
     return [];
   }
 

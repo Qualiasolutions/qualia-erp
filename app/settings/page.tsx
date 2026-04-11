@@ -163,8 +163,17 @@ export default async function SettingsPage() {
   const dbRole = await getUserRoleForSettings();
   // Check for view-as cookie (admin viewing as another role)
   const cookieStore = await cookies();
-  const viewAsRole = cookieStore.get('qualia_view_as_role')?.value;
-  const effectiveRole = dbRole === 'admin' && viewAsRole ? viewAsRole : dbRole;
+  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+  let effectiveRole = dbRole;
+  if (dbRole === 'admin' && viewAsUserId) {
+    const supabase = await createClient();
+    const { data: viewAsProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', viewAsUserId)
+      .single();
+    if (viewAsProfile?.role) effectiveRole = viewAsProfile.role;
+  }
   const isAdmin = effectiveRole === 'admin';
   const sections = allSections
     .filter((s) => isAdmin || !s.adminOnly)

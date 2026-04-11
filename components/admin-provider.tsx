@@ -6,9 +6,8 @@ import { createClient } from '@/lib/supabase/client';
 // The super admin email address
 const SUPER_ADMIN_EMAIL = 'info@qualiasolutions.net';
 
-// Cookie names for "view as" role override
-const VIEW_AS_COOKIE = 'qualia_view_as_role';
-const VIEW_AS_USER_COOKIE = 'qualia_view_as_user';
+// Unified view-as cookie managed by app/actions/view-as.ts
+const VIEW_AS_COOKIE = 'view-as-user-id';
 
 interface AdminContextType {
   isAdmin: boolean;
@@ -78,20 +77,29 @@ export function AdminProvider({ children }: AdminProviderProps) {
     loading: boolean;
   }>({ isSuperAdmin: false, userEmail: null, userId: null, loading: true });
 
-  // Read cookies on mount for view-as persistence across navigation
+  // Read the unified view-as cookie on mount
   useEffect(() => {
-    const cookieRole = getCookie(VIEW_AS_COOKIE);
-    const cookieUser = getCookie(VIEW_AS_USER_COOKIE);
-    if (cookieRole) setViewAsRole(cookieRole);
-    if (cookieUser) setViewAsUserId(cookieUser);
+    const cookieUser = getCookie(VIEW_AS_COOKIE);
+    if (cookieUser) {
+      setViewAsUserId(cookieUser);
+      // Resolve the impersonated user's role
+      const supabase = createClient();
+      supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', cookieUser)
+        .single()
+        .then(({ data }) => {
+          if (data?.role) setViewAsRole(data.role);
+        });
+    }
   }, []);
 
   const startViewAs = useCallback((role: string, userId?: string) => {
     setViewAsRole(role);
-    setCookie(VIEW_AS_COOKIE, role);
     if (userId) {
       setViewAsUserId(userId);
-      setCookie(VIEW_AS_USER_COOKIE, userId);
+      setCookie(VIEW_AS_COOKIE, userId);
     }
     window.location.reload();
   }, []);
@@ -100,7 +108,6 @@ export function AdminProvider({ children }: AdminProviderProps) {
     setViewAsRole(null);
     setViewAsUserId(null);
     deleteCookie(VIEW_AS_COOKIE);
-    deleteCookie(VIEW_AS_USER_COOKIE);
     window.location.reload();
   }, []);
 

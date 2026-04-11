@@ -464,6 +464,18 @@ export async function getEmployeeAssignments(employeeId: string): Promise<Action
     return { success: false, error: 'Not authenticated' };
   }
 
+  // Authorization: users can only view their own assignments, admins/managers can view any
+  if (user.id !== employeeId) {
+    const { data: callerProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (callerProfile?.role !== 'admin' && callerProfile?.role !== 'manager') {
+      return { success: false, error: 'Not authorized' };
+    }
+  }
+
   // Fetch active assignments with project data
   const { data: assignments, error } = await supabase
     .from('project_assignments')

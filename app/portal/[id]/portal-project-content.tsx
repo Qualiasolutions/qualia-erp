@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { usePortalProjectWithPhases } from '@/lib/swr';
 import { PortalProjectTabs } from '@/components/portal/portal-project-tabs';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,13 @@ export function PortalProjectContent({
   userRole,
   currentUserId,
 }: PortalProjectContentProps) {
+  const searchParams = useSearchParams();
+  const workspaceId = searchParams.get('workspace');
+  const workspaceName = searchParams.get('wname');
+  const backHref = workspaceId
+    ? `/portal/projects?workspace=${workspaceId}${workspaceName ? `&wname=${encodeURIComponent(workspaceName)}` : ''}`
+    : '/portal/projects';
+
   const { project, phases, isLoading, isValidating, isError } =
     usePortalProjectWithPhases(projectId);
 
@@ -70,7 +78,7 @@ export function PortalProjectContent({
       {/* Header with back link, name, status */}
       <header>
         <Link
-          href="/portal/projects"
+          href={backHref}
           className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />

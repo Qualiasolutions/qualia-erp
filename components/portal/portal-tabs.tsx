@@ -29,7 +29,7 @@ export function PortalTabs({ projectId }: PortalTabsProps) {
             key={tab.name}
             href={fullHref}
             className={cn(
-              'rounded-lg px-3.5 py-1.5 text-[13px] font-medium transition-all duration-150',
+              'flex min-h-[44px] items-center rounded-lg px-3.5 py-2 text-[13px] font-medium transition-all duration-150',
               isActive
                 ? 'bg-primary/[0.08] text-primary dark:bg-primary/[0.12] dark:text-primary'
                 : 'text-muted-foreground/60 hover:bg-muted/30 hover:text-foreground'

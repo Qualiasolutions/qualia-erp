@@ -89,8 +89,21 @@ async function hasMessageAccess(
   role: string | null,
   projectId: string
 ): Promise<boolean> {
-  if (role === 'admin' || role === 'manager' || role === 'employee') {
+  if (role === 'admin' || role === 'manager') {
     return true;
+  }
+
+  if (role === 'employee') {
+    // Employees can only access messages for projects they are assigned to
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from('project_assignments')
+      .select('id')
+      .eq('employee_id', userId)
+      .eq('project_id', projectId)
+      .is('removed_at', null)
+      .maybeSingle();
+    return !!data;
   }
 
   if (role === 'client') {
@@ -126,12 +139,23 @@ export async function getMessageChannels(userId: string): Promise<ActionResult> 
 
     const role = await getUserRole(user.id);
     const isClient = role === 'client';
+    const isEmployee = role === 'employee';
 
-    // Get client project IDs if needed
-    let clientProjectIds: string[] = [];
+    // Scope project IDs for clients and employees
+    let scopedProjectIds: string[] = [];
     if (isClient) {
-      clientProjectIds = await getClientProjectIds(user.id);
-      if (clientProjectIds.length === 0) {
+      scopedProjectIds = await getClientProjectIds(user.id);
+      if (scopedProjectIds.length === 0) {
+        return { success: true, data: [] };
+      }
+    } else if (isEmployee) {
+      const { data: assignments } = await supabase
+        .from('project_assignments')
+        .select('project_id')
+        .eq('employee_id', user.id)
+        .is('removed_at', null);
+      scopedProjectIds = (assignments || []).map((a) => a.project_id);
+      if (scopedProjectIds.length === 0) {
         return { success: true, data: [] };
       }
     }
@@ -153,9 +177,9 @@ export async function getMessageChannels(userId: string): Promise<ActionResult> 
       )
       .order('last_message_at', { ascending: false, nullsFirst: false });
 
-    // Filter for client users
-    if (isClient) {
-      query = query.in('project_id', clientProjectIds);
+    // Filter for client and employee users
+    if (isClient || isEmployee) {
+      query = query.in('project_id', scopedProjectIds);
     }
 
     const { data: channels, error: channelsError } = await query;

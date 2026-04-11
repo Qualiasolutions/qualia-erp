@@ -255,6 +255,7 @@ function SidebarContent({
   isAdminViewing,
   companyName,
   userId,
+  userRole,
   realUserRole,
   onLinkClick,
 }: PortalSidebarV2Props & { onLinkClick?: () => void }) {
@@ -344,7 +345,13 @@ function SidebarContent({
       {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 pt-4" aria-label="Portal navigation">
         {navItems
-          .filter((item) => item.name !== 'Billing' || displayEmail === 'info@qualiasolutions.net')
+          .filter((item) => {
+            // Billing: admin/manager only
+            if (item.name === 'Billing') return userRole === 'admin' || userRole === 'manager';
+            // Requests: hide from employees (they can't create/view requests)
+            if (item.name === 'Requests') return userRole !== 'employee';
+            return true;
+          })
           .map((item) => (
             <NavLink
               key={item.name}

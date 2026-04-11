@@ -69,6 +69,15 @@ export default async function PortalFilesPage({
       .not('status', 'eq', 'Canceled');
 
     projectIds = (allProjects || []).map((p) => p.id);
+  } else if (profile?.role === 'employee') {
+    // Employee: get assigned project IDs
+    const { data: assignments } = await supabase
+      .from('project_assignments')
+      .select('project_id')
+      .eq('employee_id', user.id)
+      .is('removed_at', null);
+
+    projectIds = (assignments || []).map((a) => a.project_id);
   } else {
     // Client: get their project IDs from client_projects
     const { data: clientProjects } = await supabase

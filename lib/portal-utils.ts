@@ -61,27 +61,39 @@ export async function canAccessProject(userId: string, projectId: string): Promi
   try {
     const supabase = await createClient();
 
-    // Admins can access any project in the portal
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', userId)
       .single();
 
-    if (profile?.role === 'admin') {
+    // Admins and managers can access any project
+    if (profile?.role === 'admin' || profile?.role === 'manager') {
       return true;
     }
 
+    // Employees: check project_assignments
+    if (profile?.role === 'employee') {
+      const { data } = await supabase
+        .from('project_assignments')
+        .select('id')
+        .eq('employee_id', userId)
+        .eq('project_id', projectId)
+        .is('removed_at', null)
+        .maybeSingle();
+      return !!data;
+    }
+
+    // Clients: check client_projects
     const { data } = await supabase
       .from('client_projects')
       .select('id')
       .eq('client_id', userId)
       .eq('project_id', projectId)
-      .single();
+      .maybeSingle();
 
     return !!data;
   } catch {
-    // No match found or error - deny access
     return false;
   }
 }

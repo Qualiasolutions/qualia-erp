@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
+import { canAccessProject } from '@/lib/portal-utils';
 export type { ActivityLogEntry } from '@/lib/activity-utils';
 
 interface CreateActivityLogInput {
@@ -35,6 +36,12 @@ export async function getProjectActivityFeed(
 
   if (!user) {
     return { success: false, error: 'Not authenticated' };
+  }
+
+  // Verify user has access to this project
+  const hasAccess = await canAccessProject(user.id, projectId);
+  if (!hasAccess) {
+    return { success: false, error: 'Access denied' };
   }
 
   // Build query

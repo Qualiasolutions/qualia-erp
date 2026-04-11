@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -152,14 +153,15 @@ function ProjectCard({
   project,
   progress,
   index,
-}: NormalizedProject & { progress: number; index: number }) {
+  workspaceSuffix,
+}: NormalizedProject & { progress: number; index: number; workspaceSuffix: string }) {
   const TypeIcon = getProjectTypeIcon(project.project_type);
   const status = project.project_status || 'Active';
 
   return (
     <Link
       key={clientProjectId}
-      href={`/portal/${project.id}`}
+      href={`/portal/${project.id}${workspaceSuffix}`}
       style={index < 12 ? getStaggerDelay(index) : undefined}
       className={cn(
         'group rounded-xl border border-border bg-card p-6',
@@ -212,12 +214,20 @@ function ProjectCard({
 }
 
 /** Compact card used inside kanban columns */
-function ColumnProjectCard({ project, progress }: { project: ProjectShape; progress: number }) {
+function ColumnProjectCard({
+  project,
+  progress,
+  workspaceSuffix,
+}: {
+  project: ProjectShape;
+  progress: number;
+  workspaceSuffix: string;
+}) {
   const TypeIcon = getProjectTypeIcon(project.project_type);
 
   return (
     <Link
-      href={`/portal/${project.id}`}
+      href={`/portal/${project.id}${workspaceSuffix}`}
       className={cn(
         'group block rounded-lg border border-border bg-card/80 p-3.5',
         'hover:border-primary/20 hover:shadow-sm',
@@ -263,10 +273,12 @@ function StatusColumn({
   status,
   projects,
   progressMap,
+  workspaceSuffix,
 }: {
   status: string;
   projects: NormalizedProject[];
   progressMap: Record<string, number>;
+  workspaceSuffix: string;
 }) {
   const config = STATUS_COLUMN_CONFIG[status] || STATUS_COLUMN_CONFIG['Archived'];
   const Icon = config.icon;
@@ -310,6 +322,7 @@ function StatusColumn({
                 key={p.clientProjectId}
                 project={p.project}
                 progress={progressMap[p.projectId] ?? 0}
+                workspaceSuffix={workspaceSuffix}
               />
             ))}
           </div>
@@ -324,6 +337,13 @@ export function PortalProjectsGrid({
   progressMap,
   groupByStatus = false,
 }: PortalProjectsGridProps) {
+  const searchParams = useSearchParams();
+  const wsId = searchParams.get('workspace');
+  const wsName = searchParams.get('wname');
+  const workspaceSuffix = wsId
+    ? `?workspace=${wsId}${wsName ? `&wname=${encodeURIComponent(wsName)}` : ''}`
+    : '';
+
   const [search, setSearch] = useState('');
   const [doneOpen, setDoneOpen] = useState(false);
   const [archivedOpen, setArchivedOpen] = useState(false);
@@ -393,6 +413,7 @@ export function PortalProjectsGrid({
                 status={status}
                 projects={colProjects}
                 progressMap={progressMap}
+                workspaceSuffix={workspaceSuffix}
               />
             ))}
           </div>
@@ -428,6 +449,7 @@ export function PortalProjectsGrid({
                           {...p}
                           progress={progressMap[p.projectId] ?? 0}
                           index={index}
+                          workspaceSuffix={workspaceSuffix}
                         />
                       ))}
                     </div>
@@ -445,6 +467,7 @@ export function PortalProjectsGrid({
               {...p}
               progress={progressMap[p.projectId] ?? 0}
               index={index}
+              workspaceSuffix={workspaceSuffix}
             />
           ))}
         </div>
