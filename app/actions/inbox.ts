@@ -507,17 +507,23 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
     return { success: false, error: 'Not authenticated' };
   }
 
-  // Authorization: Only task creator, assignee, project lead, or admin can delete
+  // Authorization: admin, task creator, assignee, project lead, or workspace member
   const canModify = await canModifyTask(user.id, taskId);
   if (!canModify) {
     return { success: false, error: 'You do not have permission to delete this task' };
   }
 
-  const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+  // .select() so we detect RLS silently filtering out the row (0 rows affected, no error)
+  const { data, error } = await supabase.from('tasks').delete().eq('id', taskId).select('id');
 
   if (error) {
     console.error('[deleteTask] Error deleting task:', error);
     return { success: false, error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    console.error('[deleteTask] RLS blocked delete for task', taskId);
+    return { success: false, error: 'You do not have permission to delete this task' };
   }
 
   revalidatePath('/portal/inbox');

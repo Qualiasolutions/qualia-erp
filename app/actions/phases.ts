@@ -67,11 +67,26 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
-  const { error } = await supabase.from('project_phases').delete().eq('id', phaseId);
+  // Use .select() so we can detect when RLS silently filtered out the row
+  // (delete + RLS returns no error but zero rows affected). Without this
+  // the UI happily reports "Phase deleted" while the row is still there.
+  const { data, error } = await supabase
+    .from('project_phases')
+    .delete()
+    .eq('id', phaseId)
+    .select('id');
 
   if (error) {
     console.error('[deleteProjectPhase] Error:', error);
     return { success: false, error: error.message };
+  }
+
+  if (!data || data.length === 0) {
+    console.error('[deleteProjectPhase] RLS blocked delete for phase', phaseId);
+    return {
+      success: false,
+      error: 'You do not have permission to delete this phase',
+    };
   }
 
   revalidatePath(`/portal/${projectId}`);

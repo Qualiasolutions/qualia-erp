@@ -300,7 +300,7 @@ describe('inbox actions', () => {
 
       await createTask(formData);
 
-      expect(revalidatePath).toHaveBeenCalledWith('/inbox');
+      expect(revalidatePath).toHaveBeenCalledWith('/portal/inbox');
     });
   });
 
@@ -394,11 +394,21 @@ describe('inbox actions', () => {
   describe('deleteTask', () => {
     it('deletes task when user has permission', async () => {
       const { deleteTask } = await import('@/app/actions/inbox');
-      setupMockClient(null, null);
+      setupMockClient([{ id: TASK_ID }], null);
 
       const result = await deleteTask(TASK_ID);
 
       expect(result.success).toBe(true);
+    });
+
+    it('returns permission error when RLS filters out the row', async () => {
+      const { deleteTask } = await import('@/app/actions/inbox');
+      setupMockClient([], null);
+
+      const result = await deleteTask(TASK_ID);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/permission/i);
     });
 
     it('returns error when not authenticated', async () => {
@@ -436,11 +446,11 @@ describe('inbox actions', () => {
     it('calls revalidatePath after successful delete', async () => {
       const { deleteTask } = await import('@/app/actions/inbox');
       const { revalidatePath } = jest.requireMock('next/cache');
-      setupMockClient(null, null);
+      setupMockClient([{ id: TASK_ID }], null);
 
       await deleteTask(TASK_ID);
 
-      expect(revalidatePath).toHaveBeenCalledWith('/inbox');
+      expect(revalidatePath).toHaveBeenCalledWith('/portal/inbox');
     });
   });
 

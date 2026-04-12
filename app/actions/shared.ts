@@ -155,28 +155,38 @@ export async function canDeletePhaseItem(userId: string, itemId: string): Promis
 
 // ============ TASK AUTHORIZATION HELPERS ============
 
-// Check if user can modify a task (creator, assignee, project lead, or admin)
+// Check if user can modify a task — any workspace member of the task's workspace,
+// plus the task creator/assignee/project lead (covers tasks with no workspace_id).
+// This matches the tasks UPDATE RLS policy so the server action stays consistent
+// with what the DB actually allows.
 export async function canModifyTask(userId: string, taskId: string): Promise<boolean> {
   if (await isUserAdmin(userId)) return true;
 
   const supabase = await createClient();
   const { data: task } = await supabase
     .from('tasks')
-    .select('creator_id, assignee_id, project:projects(lead_id)')
+    .select('creator_id, assignee_id, workspace_id, project:projects(lead_id)')
     .eq('id', taskId)
     .single();
 
   if (!task) return false;
 
-  // Creator can modify
+  // Creator / assignee / project lead always pass
   if (task.creator_id === userId) return true;
-
-  // Assignee can modify
   if (task.assignee_id === userId) return true;
-
-  // Project lead can modify
   const project = Array.isArray(task.project) ? task.project[0] : task.project;
   if (project?.lead_id === userId) return true;
+
+  // Any workspace member can modify tasks in that workspace
+  if (task.workspace_id) {
+    const { data: membership } = await supabase
+      .from('workspace_members')
+      .select('id')
+      .eq('workspace_id', task.workspace_id)
+      .eq('profile_id', userId)
+      .maybeSingle();
+    if (membership) return true;
+  }
 
   return false;
 }

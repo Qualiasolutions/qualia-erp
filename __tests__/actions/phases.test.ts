@@ -205,7 +205,7 @@ describe('phase actions', () => {
 
       await createProjectPhase(PROJECT_ID, 'Test Phase');
 
-      expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
+      expect(revalidatePath).toHaveBeenCalledWith(`/portal/${PROJECT_ID}`);
     });
   });
 
@@ -213,7 +213,7 @@ describe('phase actions', () => {
   describe('deleteProjectPhase', () => {
     it('deletes phase successfully', async () => {
       const { deleteProjectPhase } = await import('@/app/actions/phases');
-      setupMockClient(null, null);
+      setupMockClient([{ id: PHASE_ID }], null);
 
       const result = await deleteProjectPhase(PHASE_ID, PROJECT_ID);
 
@@ -239,14 +239,24 @@ describe('phase actions', () => {
       expect(result.success).toBe(false);
     });
 
+    it('returns permission error when RLS filters out the row', async () => {
+      const { deleteProjectPhase } = await import('@/app/actions/phases');
+      setupMockClient([], null);
+
+      const result = await deleteProjectPhase(PHASE_ID, PROJECT_ID);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/permission/i);
+    });
+
     it('calls revalidatePath after deletion', async () => {
       const { deleteProjectPhase } = await import('@/app/actions/phases');
       const { revalidatePath } = jest.requireMock('next/cache');
-      setupMockClient(null, null);
+      setupMockClient([{ id: PHASE_ID }], null);
 
       await deleteProjectPhase(PHASE_ID, PROJECT_ID);
 
-      expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
+      expect(revalidatePath).toHaveBeenCalledWith(`/portal/${PROJECT_ID}`);
     });
   });
 
