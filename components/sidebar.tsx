@@ -44,19 +44,19 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { createClient } from '@/lib/supabase/client';
 
 const workspaceNav = [
-  { name: 'Dashboard', href: '/', icon: Sun },
-  { name: 'Projects', href: '/projects', icon: Folder },
-  { name: 'Schedule', href: '/schedule', icon: Calendar },
+  { name: 'Dashboard', href: '/portal', icon: Sun },
+  { name: 'Projects', href: '/portal/projects', icon: Folder },
+  { name: 'Schedule', href: '/portal/schedule', icon: Calendar },
 ];
 
 const adminWorkspaceNav = [
-  { name: 'Clients', href: '/clients', icon: Building2 },
-  { name: 'Status', href: '/status', icon: Activity },
+  { name: 'Clients', href: '/portal/clients', icon: Building2 },
+  { name: 'Status', href: '/portal/status', icon: Activity },
 ];
 
 const resourcesNav = [
-  { name: 'Research', href: '/research', icon: FlaskConical },
-  { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
+  { name: 'Research', href: '/portal/research', icon: FlaskConical },
+  { name: 'Knowledge', href: '/portal/knowledge', icon: BookOpen },
 ];
 
 const portalNav = [{ name: 'Portal', href: '/portal', icon: ExternalLink }];

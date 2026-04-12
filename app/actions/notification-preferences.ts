@@ -108,7 +108,7 @@ export async function updateNotificationPreferences(
 
     if (error) throw error;
 
-    revalidatePath('/settings');
+    revalidatePath('/portal/settings');
     revalidatePath('/portal/settings');
     return { success: true };
   } catch (error) {

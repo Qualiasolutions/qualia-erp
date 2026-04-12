@@ -1,20 +1,16 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { canAccessProject } from '@/lib/portal-utils';
 import { getProjectFiles } from '@/app/actions/project-files';
-import { PortalFileList } from '@/components/portal/portal-file-list';
-import { PortalClientUpload } from '@/components/portal/portal-client-upload';
-import { PortalTabs } from '@/components/portal/portal-tabs';
-import { PortalPageHeader } from '@/components/portal/portal-page-header';
-import { fadeInClasses } from '@/lib/transitions';
+import { FileUploadForm } from '@/components/project-files/file-upload-form';
+import { FileList } from '@/components/project-files/file-list';
 import { Suspense } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface PortalFilesPageProps {
+interface ProjectFilesPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function PortalFilesContent({ projectId }: { projectId: string }) {
+async function ProjectFilesContent({ projectId }: { projectId: string }) {
   const supabase = await createClient();
 
   // Get current user
@@ -26,52 +22,106 @@ async function PortalFilesContent({ projectId }: { projectId: string }) {
     redirect('/auth/login');
   }
 
-  // Verify client has access to this project
-  const hasAccess = await canAccessProject(user.id, projectId);
-  if (!hasAccess) {
-    redirect('/portal');
+  // Check user role - only admin/employee can access this page
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile || (profile.role !== 'admin' && profile.role !== 'employee')) {
+    redirect(`/portal/${projectId}`);
+  }
+
+  // Employees can only access files for projects they're assigned to
+  if (profile.role !== 'admin') {
+    const { data: assignment } = await supabase
+      .from('project_assignments')
+      .select('id')
+      .eq('project_id', projectId)
+      .eq('employee_id', user.id)
+      .is('removed_at', null)
+      .single();
+    if (!assignment) {
+      redirect('/portal/projects');
+    }
   }
 
   // Fetch project details
   const { data: project } = await supabase
     .from('projects')
-    .select('id, name, description')
+    .select('id, name')
     .eq('id', projectId)
     .single();
 
   if (!project) {
-    redirect('/portal');
+    redirect('/portal/projects');
   }
 
-  // Fetch client-visible files only
-  const files = await getProjectFiles(projectId, true);
+  // Fetch project phases for upload form
+  const { data: phases } = await supabase
+    .from('project_phases')
+    .select('id, phase_name, status')
+    .eq('project_id', projectId)
+    .order('order_index', { ascending: true });
+
+  // Fetch all files for this project (admin sees all)
+  const files = await getProjectFiles(projectId, false);
+
+  // Split files into client uploads and internal files
+  const clientFiles = files.filter((f) => f.is_client_upload === true);
+  const internalFiles = files.filter((f) => !f.is_client_upload);
 
   return (
-    <div className={`space-y-6 ${fadeInClasses}`}>
-      <PortalPageHeader title={project.name} description={project.description} />
-
-      <PortalTabs projectId={projectId} />
-
-      {/* Upload section */}
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-foreground">Share a file with your team</h3>
-        <PortalClientUpload projectId={projectId} />
+    <div className="space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center gap-4">
+        <a
+          href={`/portal/${projectId}`}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </a>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Project Files</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{project.name}</p>
+        </div>
       </div>
 
-      {/* Info Banner */}
-      <div className="rounded-lg border border-primary/20 bg-primary/[0.06] p-4">
-        <p className="text-sm text-qualia-800 dark:text-primary/80">
-          Files shared by your team appear below.
-        </p>
-      </div>
+      {/* Upload Form */}
+      <FileUploadForm projectId={projectId} phases={phases || []} />
 
-      {/* Files Grid */}
-      <PortalFileList files={files} />
+      {/* Client Uploads Section — shown only when client uploads exist */}
+      {clientFiles.length > 0 && (
+        <div>
+          <div className="mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-foreground">Client Uploads</h2>
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              {clientFiles.length}
+            </span>
+          </div>
+          <FileList files={clientFiles} />
+        </div>
+      )}
+
+      {/* Internal Files List */}
+      <div>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Internal Files</h2>
+        <FileList files={internalFiles} />
+      </div>
     </div>
   );
 }
 
-export default async function PortalFilesPage({ params }: PortalFilesPageProps) {
+export default async function ProjectFilesPage({ params }: ProjectFilesPageProps) {
   const { id: projectId } = await params;
 
   return (
@@ -79,16 +129,12 @@ export default async function PortalFilesPage({ params }: PortalFilesPageProps) 
       fallback={
         <div className="space-y-6">
           <Skeleton className="h-12 w-64" />
-          <Skeleton className="h-16 w-full" />
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-64 w-full" />
-          </div>
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-96 w-full" />
         </div>
       }
     >
-      <PortalFilesContent projectId={projectId} />
+      <ProjectFilesContent projectId={projectId} />
     </Suspense>
   );
 }

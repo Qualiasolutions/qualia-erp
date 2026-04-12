@@ -35,7 +35,7 @@ import { EntityAvatar } from '@/components/entity-avatar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import type { ProjectData } from '@/app/projects/page';
+import type { ProjectData } from '@/app/portal/projects/page';
 
 // Project type configuration — imported from shared module
 
@@ -127,7 +127,7 @@ function ProjectRow({
     if (onProjectClick) {
       onProjectClick(project);
     } else {
-      router.push(`/projects/${project.id}`);
+      router.push(`/portal/${project.id}`);
     }
   };
 

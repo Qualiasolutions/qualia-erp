@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
-import { ResearchPageClient } from '@/app/research/research-page-client';
+import { ResearchPageClient } from './research-page-client';
 import { getResearchEntries } from '@/app/actions/research';
 
 export const metadata = { title: 'Research' };

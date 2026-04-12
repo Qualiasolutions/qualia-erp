@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { getTasks, type Task } from '@/app/actions/inbox';
-import { InboxView } from '@/app/inbox/inbox-view';
+import { InboxView } from './inbox-view';
 
 export const metadata: Metadata = {
   title: 'Inbox | Qualia',

@@ -102,6 +102,7 @@ export async function middleware(request: NextRequest) {
 
     // Old routes → portal equivalents (unified portal layout)
     const ROUTE_REDIRECTS: Record<string, string> = {
+      '/projects': '/portal/projects',
       '/knowledge': '/portal/knowledge',
       '/research': '/portal/research',
       '/clients': '/portal/clients',
@@ -110,12 +111,20 @@ export async function middleware(request: NextRequest) {
       '/inbox': '/portal/inbox',
       '/team': '/portal',
       '/payments': '/portal/billing',
+      '/settings': '/portal/settings',
     };
 
     const redirectTo = ROUTE_REDIRECTS[pathname];
     if (redirectTo) {
       const url = request.nextUrl.clone();
       url.pathname = redirectTo;
+      return NextResponse.redirect(url);
+    }
+
+    // Deep /projects/[id] and sub-paths → /portal/[id]
+    if (pathname.startsWith('/projects/')) {
+      const url = request.nextUrl.clone();
+      url.pathname = pathname.replace(/^\/projects\//, '/portal/');
       return NextResponse.redirect(url);
     }
 

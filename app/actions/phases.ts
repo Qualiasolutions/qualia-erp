@@ -55,7 +55,7 @@ export async function createProjectPhase(projectId: string, name: string) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true, data };
 }
@@ -74,7 +74,7 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
@@ -93,7 +93,7 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
@@ -161,8 +161,8 @@ export async function completePhase(phaseId: string) {
     await supabase.from('project_phases').update({ is_locked: false }).eq('id', nextPhase.id);
   }
 
-  revalidatePath(`/projects/${phase.project_id}`);
-  revalidatePath(`/projects/${phase.project_id}/roadmap`);
+  revalidatePath(`/portal/${phase.project_id}`);
+  revalidatePath(`/portal/${phase.project_id}/roadmap`);
   revalidatePath(`/portal/${phase.project_id}`);
   return { success: true };
 }
@@ -246,8 +246,8 @@ export async function unlockPhase(phaseId: string) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${phase.project_id}`);
-  revalidatePath(`/projects/${phase.project_id}/roadmap`);
+  revalidatePath(`/portal/${phase.project_id}`);
+  revalidatePath(`/portal/${phase.project_id}/roadmap`);
   revalidatePath(`/portal/${phase.project_id}`);
   return { success: true };
 }
@@ -458,7 +458,7 @@ export async function loadQualiaFrameworkPipeline(projectId: string) {
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true, phasesCreated: template.phases.length };
 }
@@ -530,7 +530,7 @@ export async function updatePhaseStatusByName(
       .ilike('phase_name', phaseName);
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }

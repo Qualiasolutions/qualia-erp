@@ -409,7 +409,7 @@ function DoneTile({ project, ariaHidden }: { project: ProjectData; ariaHidden: b
 
   return (
     <Link
-      href={`/projects/${project.id}`}
+      href={`/portal/${project.id}`}
       aria-hidden={ariaHidden || undefined}
       tabIndex={ariaHidden ? -1 : 0}
       className="group flex h-[60px] w-[240px] flex-shrink-0 items-center gap-3 rounded-lg border border-qualia-500/25 bg-qualia-500/5 px-3 transition-all duration-200 hover:border-qualia-500/40 hover:bg-qualia-500/10"

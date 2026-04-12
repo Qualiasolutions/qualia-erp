@@ -137,8 +137,8 @@ export async function inviteClientByEmail(
       };
     }
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
+    revalidatePath('/portal/clients');
+    revalidatePath('/portal/projects');
     revalidatePath('/portal');
 
     return {
@@ -219,8 +219,8 @@ export async function inviteClientToProject(
 
     if (error) throw error;
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
+    revalidatePath('/portal/clients');
+    revalidatePath('/portal/projects');
     revalidatePath('/portal');
 
     return { success: true, data };
@@ -266,8 +266,8 @@ export async function removeClientFromProject(
 
     if (error) throw error;
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
+    revalidatePath('/portal/clients');
+    revalidatePath('/portal/projects');
     revalidatePath('/portal');
 
     return { success: true };
@@ -335,7 +335,7 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
     }
 
     revalidatePath('/portal');
-    revalidatePath('/clients');
+    revalidatePath('/portal/clients');
 
     return { success: true };
   } catch (error) {
@@ -709,8 +709,8 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
       };
     }
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
+    revalidatePath('/portal/clients');
+    revalidatePath('/portal/projects');
     revalidatePath('/portal');
 
     return {
@@ -810,7 +810,7 @@ export async function createProjectFromPortal(input: {
       return { success: false, error: 'Project created but no data returned' };
     }
 
-    revalidatePath('/projects');
+    revalidatePath('/portal/projects');
     revalidatePath('/portal');
 
     return { success: true, data };
@@ -1523,8 +1523,8 @@ export async function setupPortalForClient(
     }
 
     revalidatePath('/portal');
-    revalidatePath('/clients');
-    revalidatePath('/projects');
+    revalidatePath('/portal/clients');
+    revalidatePath('/portal/projects');
 
     // Send invitation email to the client (new accounts only)
     if (!alreadyExisted && tempPassword) {
@@ -2644,7 +2644,7 @@ export async function createClientWorkspace(
     }
 
     revalidatePath('/portal');
-    revalidatePath('/clients');
+    revalidatePath('/portal/clients');
 
     return {
       success: true,

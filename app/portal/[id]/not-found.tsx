@@ -13,7 +13,7 @@ export default function ProjectNotFound() {
         This project doesn&apos;t exist or you don&apos;t have permission to view it.
       </p>
       <Button asChild className="bg-primary hover:bg-qualia-700">
-        <Link href="/projects">
+        <Link href="/portal/projects">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Projects
         </Link>

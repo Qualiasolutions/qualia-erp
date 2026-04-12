@@ -37,7 +37,7 @@ import { getProjectById, updateProject, deleteProject, updateProjectStatus } fro
 import { invalidateProjectStats } from '@/lib/swr';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import type { ProjectData } from '@/app/projects/page';
+import type { ProjectData } from '@/app/portal/projects/page';
 import type { ProjectType } from '@/types/database';
 import { cn } from '@/lib/utils';
 
@@ -162,7 +162,7 @@ export function DemoSheet({ demo, open, onOpenChange }: DemoSheetProps) {
       setSelectedType(null);
       onOpenChange(false);
       // Navigate to the project page
-      router.push(`/projects/${demo.id}`);
+      router.push(`/portal/${demo.id}`);
     } else {
       toast.error('Error', { description: result.error });
     }

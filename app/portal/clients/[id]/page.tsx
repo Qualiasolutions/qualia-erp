@@ -146,7 +146,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-2 border-b border-border bg-card/80 px-6 py-3.5 backdrop-blur-xl sm:px-8">
         <MobileMenuButton />
-        <Link href="/clients">
+        <Link href="/portal/clients">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Clients

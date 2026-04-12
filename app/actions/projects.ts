@@ -129,7 +129,7 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
     (err) => console.error('[createProject] Failed to send email notification:', err)
   );
 
-  revalidatePath('/projects');
+  revalidatePath('/portal/projects');
   revalidatePath('/');
   revalidatePath('/portal');
   return { success: true, data };
@@ -496,8 +496,8 @@ export async function updateProject(formData: FormData): Promise<ActionResult> {
     ).catch((err) => console.error('[updateProject] Client notification error:', err));
   }
 
-  revalidatePath(`/projects/${id}`);
-  revalidatePath('/projects');
+  revalidatePath(`/portal/${id}`);
+  revalidatePath('/portal/projects');
   revalidatePath(`/portal/${id}`);
   return { success: true, data };
 }
@@ -528,7 +528,7 @@ export async function deleteProject(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/projects');
+  revalidatePath('/portal/projects');
   revalidatePath(`/portal/${id}`);
   return { success: true };
 }
@@ -565,7 +565,7 @@ export async function updateProjectPhaseProgress(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
@@ -608,7 +608,7 @@ export async function bulkDeleteProjects(projectIds: string[]): Promise<ActionRe
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/projects');
+  revalidatePath('/portal/projects');
   revalidatePath('/portal');
   return { success: true };
 }
@@ -667,8 +667,8 @@ export async function updateProjectStatus(
     ).catch((err) => console.error('[updateProjectStatus] Client notification error:', err));
   }
 
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal/projects');
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
@@ -710,8 +710,8 @@ export async function toggleProjectPreProduction(projectId: string): Promise<Act
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/projects');
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/portal/projects');
+  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
@@ -967,7 +967,7 @@ export async function createProjectWithRoadmap(
     });
   }
 
-  revalidatePath('/projects');
+  revalidatePath('/portal/projects');
   revalidatePath('/');
   revalidatePath('/portal');
   return { success: true, data: project };
@@ -1025,6 +1025,6 @@ export async function reorderProject(
     return { success: false, error: 'Failed to reorder' };
   }
 
-  revalidatePath('/projects');
+  revalidatePath('/portal/projects');
   return { success: true };
 }

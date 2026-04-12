@@ -219,7 +219,7 @@ export function ProjectDetailView({
         startTransition(async () => {
           const result = await deleteProject(project.id);
           if (result.success) {
-            router.push('/projects');
+            router.push('/portal/projects');
           } else {
             setError(result.error || 'Failed to delete project');
           }
@@ -255,7 +255,7 @@ export function ProjectDetailView({
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <MobileMenuButton />
             <Link
-              href="/projects"
+              href="/portal/projects"
               className="group flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-all hover:border-primary/30 hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />

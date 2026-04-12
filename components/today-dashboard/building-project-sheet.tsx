@@ -145,7 +145,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
               </SheetDescription>
             </div>
             <Button variant="ghost" size="sm" className="ml-2 shrink-0" asChild>
-              <Link href={`/projects/${project?.id}`}>
+              <Link href={`/portal/${project?.id}`}>
                 <ExternalLink className="mr-1.5 size-3.5" />
                 Open
               </Link>
@@ -199,7 +199,7 @@ export function BuildingProjectSheet({ project, open, onOpenChange }: BuildingPr
                 Open the project to set up workflow phases and start tracking progress.
               </p>
               <Button variant="outline" size="sm" className="mt-5 h-8 text-xs" asChild>
-                <Link href={`/projects/${project?.id}`}>Set up workflow</Link>
+                <Link href={`/portal/${project?.id}`}>Set up workflow</Link>
               </Button>
             </div>
           ) : (

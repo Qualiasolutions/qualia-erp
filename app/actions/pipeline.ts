@@ -294,7 +294,7 @@ export async function createProjectNote(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return {
     success: true,
     data: {
@@ -451,7 +451,7 @@ export async function initializeProjectPipeline(
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -493,7 +493,7 @@ export async function updatePhaseStatus(
     });
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -518,7 +518,7 @@ export async function updatePhaseName(
   // Also update phase_name on all linked tasks
   await supabase.from('tasks').update({ phase_name: name }).eq('phase_id', phaseId);
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -556,7 +556,7 @@ export async function deletePhase(phaseId: string, projectId: string): Promise<A
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return { success: true };
 }
 
@@ -595,7 +595,7 @@ export async function createPhase(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/portal/${projectId}`);
   return { success: true, data };
 }
 
@@ -1144,10 +1144,10 @@ export async function togglePhaseTask(itemId: string, phaseId: string): Promise<
 
     // Revalidate relevant paths
     if (projectId) {
-      revalidatePath(`/projects/${projectId}`);
-      revalidatePath(`/projects/${projectId}/roadmap`);
+      revalidatePath(`/portal/${projectId}`);
+      revalidatePath(`/portal/${projectId}/roadmap`);
     }
-    revalidatePath('/projects');
+    revalidatePath('/portal/projects');
 
     return { success: true, data: { is_completed: newState } };
   } catch (error) {

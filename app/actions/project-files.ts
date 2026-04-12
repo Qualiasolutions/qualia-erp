@@ -255,8 +255,8 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}/files`);
+  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/portal/${projectId}/files`);
   revalidatePath(`/portal/${projectId}/files`);
 
   return { success: true, data: fileRecord };
@@ -389,7 +389,7 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
   );
 
   revalidatePath(`/portal/${projectId}/files`);
-  revalidatePath(`/projects/${projectId}/files`);
+  revalidatePath(`/portal/${projectId}/files`);
 
   return { success: true, data: fileRecord };
 }
@@ -443,7 +443,7 @@ export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
     return { success: false, error: 'Failed to delete file record' };
   }
 
-  revalidatePath(`/projects/${file.project_id}`);
+  revalidatePath(`/portal/${file.project_id}`);
 
   return { success: true };
 }

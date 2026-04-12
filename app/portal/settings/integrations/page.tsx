@@ -25,7 +25,7 @@ async function IntegrationsLoader() {
     .single();
 
   if (profile?.role !== 'admin') {
-    redirect('/settings');
+    redirect('/portal/settings');
   }
 
   // Get user's workspace

@@ -192,10 +192,10 @@ export async function createMeeting(formData: FormData): Promise<ActionResult> {
     clientName
   ).catch((err) => console.error('[createMeeting] Failed to send email notification:', err));
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   revalidatePath('/'); // Also revalidate dashboard to show new activity
   if (custom_client_name && finalClientId) {
-    revalidatePath('/clients'); // New client was created — refresh clients page
+    revalidatePath('/portal/clients'); // New client was created — refresh clients page
   }
   return { success: true, data };
 }
@@ -380,7 +380,7 @@ export async function updateMeeting(data: {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   revalidatePath('/');
   return { success: true, data: updatedMeeting };
 }
@@ -411,7 +411,7 @@ export async function deleteMeeting(meetingId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   return { success: true };
 }
 
@@ -461,7 +461,7 @@ export async function createInstantMeeting(title?: string): Promise<ActionResult
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   revalidatePath('/');
   return { success: true, data };
 }
@@ -494,7 +494,7 @@ export async function updateMeetingLink(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   revalidatePath('/');
   return { success: true, data };
 }
@@ -529,7 +529,7 @@ export async function addMeetingAttendee(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   return { success: true, data };
 }
 
@@ -560,7 +560,7 @@ export async function removeMeetingAttendee(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   return { success: true };
 }
 
@@ -592,6 +592,6 @@ export async function updateMeetingAttendeeStatus(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
+  revalidatePath('/portal/schedule');
   return { success: true };
 }

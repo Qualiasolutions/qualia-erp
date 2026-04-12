@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { getUserRole } from '@/lib/portal-utils';
-import { KnowledgePageClient } from '@/app/knowledge/knowledge-page-client';
+import { KnowledgePageClient } from './knowledge-page-client';
 import { getKnowledgeGuides } from '@/app/actions/knowledge';
 import { type Guide } from '@/lib/guides-data';
 

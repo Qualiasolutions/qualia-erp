@@ -116,7 +116,7 @@ export async function seedKnowledgeGuides(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/knowledge');
+  revalidatePath('/portal/knowledge');
   return {
     success: true,
     data: { message: options.force ? 'Re-seeded' : 'Seeded', count: rows.length },
@@ -162,6 +162,6 @@ export async function updateKnowledgeGuide(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/knowledge');
+  revalidatePath('/portal/knowledge');
   return { success: true };
 }
