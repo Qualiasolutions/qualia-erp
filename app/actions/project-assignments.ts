@@ -168,7 +168,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
   }
 
   // Revalidate paths
-  revalidatePath(`/portal/${project_id}`);
+  revalidatePath(`/projects/${project_id}`);
   revalidatePath('/admin/assignments');
 
   return { success: true, data: assignment };
@@ -333,8 +333,8 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   }
 
   // Revalidate paths for both projects
-  revalidatePath(`/portal/${currentAssignment.project_id}`);
-  revalidatePath(`/portal/${new_project_id}`);
+  revalidatePath(`/projects/${currentAssignment.project_id}`);
+  revalidatePath(`/projects/${new_project_id}`);
   revalidatePath('/admin/assignments');
 
   return { success: true, data: newAssignment };
@@ -398,7 +398,7 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
   );
 
   // Revalidate paths
-  revalidatePath(`/portal/${assignment.project_id}`);
+  revalidatePath(`/projects/${assignment.project_id}`);
   revalidatePath('/admin/assignments');
 
   return { success: true };

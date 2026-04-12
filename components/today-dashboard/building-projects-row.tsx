@@ -39,7 +39,7 @@ export function BuildingProjectsRow({ building }: BuildingProjectsRowProps) {
           </span>
         </div>
         <Link
-          href="/portal/projects"
+          href="/projects"
           className="flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-muted-foreground/70 transition-all duration-200 hover:bg-muted/40 hover:text-foreground"
         >
           All projects
@@ -73,7 +73,7 @@ function ProjectChip({ project, dotColor }: { project: PipelineProject; dotColor
 
   return (
     <Link
-      href={`/portal/${project.id}`}
+      href={`/projects/${project.id}`}
       className={cn(
         'group flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 transition-all duration-200',
         'border border-border bg-card',

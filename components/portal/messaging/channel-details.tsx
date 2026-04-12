@@ -107,7 +107,7 @@ export function ChannelDetails({ project, isVisible }: ChannelDetailsProps) {
 
           {/* Link to project */}
           <Link
-            href={`/portal/${project.id}`}
+            href={`/projects/${project.id}`}
             className="group flex cursor-pointer items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm font-medium text-foreground transition-all duration-150 hover:border-primary/20 hover:bg-primary/[0.04]"
           >
             <FolderKanban className="h-4 w-4 text-muted-foreground" />

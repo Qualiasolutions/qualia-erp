@@ -27,14 +27,14 @@ import {
 import { createClient } from '@/lib/supabase/client';
 
 const mainNav = [
-  { name: 'Dashboard', href: '/portal', icon: LayoutDashboard, exact: true },
-  { name: 'Projects', href: '/portal/projects', icon: Folder },
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard, exact: true },
+  { name: 'Projects', href: '/projects', icon: Folder },
 ];
 
 const manageNav = [
-  { name: 'Requests', href: '/portal/requests', icon: Lightbulb },
-  { name: 'Billing', href: '/portal/billing', icon: CreditCard },
-  { name: 'Settings', href: '/portal/settings', icon: Settings },
+  { name: 'Requests', href: '/requests', icon: Lightbulb },
+  { name: 'Billing', href: '/billing', icon: CreditCard },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 type NavItem = (typeof mainNav)[0];
@@ -169,7 +169,7 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-card">
       {/* Logo area */}
       <div className="flex h-[60px] items-center border-b border-border/30 px-5">
-        <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
+        <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:scale-105">
             <Image
               src="/logo.webp"

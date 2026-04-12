@@ -22,7 +22,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
     {
       label: 'Active projects',
       value: stats?.projectCount ?? 0,
-      href: '/portal/projects',
+      href: '/projects',
       icon: FolderKanban,
       iconBg: 'bg-primary/15 text-primary',
       orbColor: 'from-primary/10 to-transparent',
@@ -31,7 +31,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
     {
       label: 'Pending requests',
       value: stats?.pendingRequests ?? 0,
-      href: '/portal/requests',
+      href: '/requests',
       icon: FileText,
       iconBg: 'bg-amber-500/15 text-amber-500',
       orbColor: 'from-amber-500/10 to-transparent',
@@ -40,7 +40,7 @@ export function PortalDashboardStats({ stats, isLoading }: PortalDashboardStatsP
     {
       label: 'Unpaid invoices',
       value: stats?.unpaidInvoiceCount ?? 0,
-      href: '/portal/billing',
+      href: '/billing',
       icon: Receipt,
       iconBg: 'bg-rose-500/15 text-rose-500',
       orbColor: 'from-rose-500/10 to-transparent',

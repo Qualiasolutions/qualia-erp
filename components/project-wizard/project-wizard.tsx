@@ -261,7 +261,7 @@ export function ProjectWizard({
     resetForm();
     onOpenChange(false);
     if (projectId) {
-      router.push(`/portal/${projectId}`);
+      router.push(`/projects/${projectId}`);
     }
     router.refresh();
   };

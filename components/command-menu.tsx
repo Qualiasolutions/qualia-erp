@@ -268,28 +268,28 @@ export function CommandMenu() {
                   <span>Dashboard</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/portal/inbox'))}
+                  onSelect={() => runCommand(() => router.push('/inbox'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Inbox className="h-4 w-4" />
                   <span>Inbox</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/portal/projects'))}
+                  onSelect={() => runCommand(() => router.push('/projects'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Folder className="h-4 w-4" />
                   <span>Projects</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/portal/clients'))}
+                  onSelect={() => runCommand(() => router.push('/clients'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Building2 className="h-4 w-4" />
                   <span>Clients</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/portal/schedule'))}
+                  onSelect={() => runCommand(() => router.push('/schedule'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Calendar className="h-4 w-4" />
@@ -338,14 +338,14 @@ export function CommandMenu() {
                 className="px-2 py-1 text-xs font-medium uppercase tracking-wide text-muted-foreground/70"
               >
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/portal/projects?new=true'))}
+                  onSelect={() => runCommand(() => router.push('/projects?new=true'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Create Project</span>
                 </Command.Item>
                 <Command.Item
-                  onSelect={() => runCommand(() => router.push('/portal/settings'))}
+                  onSelect={() => runCommand(() => router.push('/settings'))}
                   className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-muted-foreground hover:bg-muted hover:text-foreground aria-selected:bg-muted aria-selected:text-foreground"
                 >
                   <Settings className="h-4 w-4" />

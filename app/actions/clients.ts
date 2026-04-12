@@ -90,7 +90,7 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
     (err) => console.error('[createClientRecord] Failed to send email notification:', err)
   );
 
-  revalidatePath('/portal/clients');
+  revalidatePath('/clients');
   revalidatePath('/'); // Revalidate Today dashboard
   return { success: true, data };
 }
@@ -266,8 +266,8 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
     });
   }
 
-  revalidatePath('/portal/clients');
-  revalidatePath(`/portal/clients/${id}`);
+  revalidatePath('/clients');
+  revalidatePath(`/clients/${id}`);
   revalidatePath('/'); // Revalidate Today dashboard
   return { success: true, data };
 }
@@ -298,7 +298,7 @@ export async function deleteClientRecord(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/clients');
+  revalidatePath('/clients');
   revalidatePath('/'); // Revalidate Today dashboard
   return { success: true };
 }
@@ -346,7 +346,7 @@ export async function logClientActivity(
       .eq('id', clientId);
   }
 
-  revalidatePath(`/portal/clients/${clientId}`);
+  revalidatePath(`/clients/${clientId}`);
   return { success: true, data };
 }
 
@@ -406,7 +406,7 @@ export async function toggleClientStatus(
   });
 
   revalidatePath('/');
-  revalidatePath('/portal/clients');
-  revalidatePath(`/portal/clients/${clientId}`);
+  revalidatePath('/clients');
+  revalidatePath(`/clients/${clientId}`);
   return { success: true };
 }

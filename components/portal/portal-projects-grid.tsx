@@ -126,7 +126,7 @@ export function PortalProjectsGrid({ projects, progressMap }: PortalProjectsGrid
             return (
               <Link
                 key={clientProjectId}
-                href={`/portal/${project.id}`}
+                href={`/projects/${project.id}`}
                 style={index < 12 ? getStaggerDelay(index) : undefined}
                 className={cn(
                   'group rounded-xl border border-border bg-card p-6',

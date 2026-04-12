@@ -35,7 +35,7 @@ Deep review across Security, Performance, Architecture, Code Quality, and Test C
 | M3 | Security | View-as impersonation has no audit trail logging | `app/actions/view-as.ts:103-150` |
 | M4 | Performance | `getClientById()` fetches all activities without pagination | `app/actions/clients.ts:161-181` |
 | M5 | Performance | 44 `'use client'` components — many don't need interactivity | `components/` |
-| M6 | Performance | `revalidatePath('/portal')` too broad — purges entire portal cache | `app/actions/phases.ts:176` (30+ places) |
+| M6 | Performance | `revalidatePath('/')` too broad — purges entire portal cache | `app/actions/phases.ts:176` (30+ places) |
 | M7 | Architecture | Portal ↔ internal code duplication (ViewAsBanner, project views) | `components/view-as-banner.tsx` vs `components/portal/view-as-banner.tsx` |
 | M8 | Architecture | WorkspaceProvider re-fetches data already available from server layout | `components/workspace-provider.tsx:35-99` |
 | M9 | Architecture | Inconsistent parameter validation — mix of Zod, inline checks, none | `app/actions/notifications.ts`, `clients.ts` |

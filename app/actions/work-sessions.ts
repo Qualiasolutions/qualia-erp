@@ -657,6 +657,6 @@ export async function updatePlannedLogoutTime(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/settings');
+  revalidatePath('/settings');
   return { success: true };
 }

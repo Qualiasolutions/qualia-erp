@@ -147,7 +147,7 @@ export function PortalRequestList({ requests }: PortalRequestListProps) {
           Got an idea or need a change? Submit your first request and we&apos;ll get on it.
         </p>
         <Link
-          href="/portal/requests"
+          href="/requests"
           className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
           <Lightbulb className="h-4 w-4" />

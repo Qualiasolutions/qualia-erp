@@ -497,7 +497,7 @@ export function PortalHub({
                   {client.projects.slice(0, 3).map((project) => (
                     <button
                       key={project.id}
-                      onClick={() => router.push(`/portal/${project.id}`)}
+                      onClick={() => router.push(`/projects/${project.id}`)}
                       className={cn(
                         'inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-all',
                         'hover:border-primary/30 hover:bg-primary/5',
@@ -538,9 +538,9 @@ export function PortalHub({
                       className="h-7 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         if (client.projects.length === 1) {
-                          router.push(`/portal/${client.projects[0].id}`);
+                          router.push(`/projects/${client.projects[0].id}`);
                         } else {
-                          router.push('/portal');
+                          router.push('/');
                         }
                       }}
                     >

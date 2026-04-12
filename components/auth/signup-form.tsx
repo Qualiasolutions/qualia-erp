@@ -33,7 +33,7 @@ export function SignupForm({ invitation }: SignupFormProps) {
   // Redirect on success
   useEffect(() => {
     if (state.success && state.projectId) {
-      window.location.href = `/portal/${state.projectId}`;
+      window.location.href = `/projects/${state.projectId}`;
     }
   }, [state.success, state.projectId]);
 

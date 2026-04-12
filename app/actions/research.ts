@@ -233,7 +233,7 @@ export async function createResearchEntry(
       author: Array.isArray(data.author) ? data.author[0] || null : data.author,
     };
 
-    revalidatePath('/portal/research');
+    revalidatePath('/research');
     return { success: true, data: normalized as ResearchEntry };
   } catch (err) {
     console.error('[createResearchEntry] Unexpected error:', err);
@@ -278,8 +278,8 @@ export async function updateResearchEntry(input: UpdateResearchInput): Promise<A
       return { success: false, error: error.message };
     }
 
-    revalidatePath('/portal/research');
-    revalidatePath(`/portal/research/${id}`);
+    revalidatePath('/research');
+    revalidatePath(`/research/${id}`);
     return { success: true };
   } catch (err) {
     console.error('[updateResearchEntry] Unexpected error:', err);
@@ -323,7 +323,7 @@ export async function deleteResearchEntry(id: string): Promise<ActionResult> {
       return { success: false, error: error.message };
     }
 
-    revalidatePath('/portal/research');
+    revalidatePath('/research');
     return { success: true };
   } catch (err) {
     console.error('[deleteResearchEntry] Unexpected error:', err);

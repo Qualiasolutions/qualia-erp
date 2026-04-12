@@ -29,7 +29,7 @@ function ProjectPhaseCard({ project }: { project: ProjectWithPhases }) {
 
   return (
     <Link
-      href={`/portal/${project.id}`}
+      href={`/projects/${project.id}`}
       className="group block rounded-xl border border-primary/[0.06] bg-card/80 px-5 py-5 transition-all duration-150 hover:border-primary/15 hover:shadow-sm"
     >
       {/* Project name */}

@@ -21,7 +21,7 @@ export function PortalTabs({ projectId }: PortalTabsProps) {
   return (
     <div className="flex gap-1">
       {tabs.map((tab) => {
-        const fullHref = `/portal/${projectId}${tab.href}`;
+        const fullHref = `/projects/${projectId}${tab.href}`;
         const isActive = pathname === fullHref;
 
         return (

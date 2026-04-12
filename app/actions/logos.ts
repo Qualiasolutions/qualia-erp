@@ -111,8 +111,8 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
     return { success: false, error: 'Failed to update project' };
   }
 
-  revalidatePath(`/portal/${projectId}`);
-  revalidatePath('/portal/projects');
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
   revalidatePath('/');
 
   return { success: true, data: { logo_url: logoUrl } };
@@ -165,8 +165,8 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
     return { success: false, error: 'Failed to update project' };
   }
 
-  revalidatePath(`/portal/${projectId}`);
-  revalidatePath('/portal/projects');
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
   revalidatePath('/');
 
   return { success: true };
@@ -270,8 +270,8 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
     return { success: false, error: 'Failed to update client' };
   }
 
-  revalidatePath(`/portal/clients/${clientId}`);
-  revalidatePath('/portal/clients');
+  revalidatePath(`/clients/${clientId}`);
+  revalidatePath('/clients');
 
   return { success: true, data: { logo_url: logoUrl } };
 }
@@ -323,8 +323,8 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
     return { success: false, error: 'Failed to update client' };
   }
 
-  revalidatePath(`/portal/clients/${clientId}`);
-  revalidatePath('/portal/clients');
+  revalidatePath(`/clients/${clientId}`);
+  revalidatePath('/clients');
 
   return { success: true };
 }

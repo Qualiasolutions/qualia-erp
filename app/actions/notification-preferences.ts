@@ -108,8 +108,8 @@ export async function updateNotificationPreferences(
 
     if (error) throw error;
 
-    revalidatePath('/portal/settings');
-    revalidatePath('/portal/settings');
+    revalidatePath('/settings');
+    revalidatePath('/settings');
     return { success: true };
   } catch (error) {
     console.error('[updateNotificationPreferences] Error:', error);

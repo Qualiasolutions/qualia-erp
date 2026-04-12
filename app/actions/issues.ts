@@ -678,7 +678,7 @@ export async function scheduleIssue(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/schedule');
+  revalidatePath('/schedule');
   return { success: true };
 }
 
@@ -701,6 +701,6 @@ export async function unscheduleIssue(issueId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/schedule');
+  revalidatePath('/schedule');
   return { success: true };
 }

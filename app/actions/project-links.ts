@@ -66,7 +66,7 @@ export async function saveProjectLink(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -86,6 +86,6 @@ export async function removeProjectLink(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }

@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
-import { Sidebar } from '@/components/sidebar';
 import { CommandMenu } from '@/components/command-menu';
 import { ThemeProvider } from '@/components/theme-provider';
 import { WorkspaceProvider } from '@/components/workspace-provider';
@@ -13,11 +12,7 @@ import { AdminProvider } from '@/components/admin-provider';
 import { AIAssistantProvider, AIAssistantWidget } from '@/components/ai-assistant';
 import { SessionGuard } from '@/components/session-guard';
 import { PlannedLogoutBanner } from '@/components/planned-logout-banner';
-import { ViewAsBanner } from '@/components/view-as-banner';
 import { AccessibilityAnnouncer } from '@/components/accessibility-announcer';
-import { PageTransition } from '@/components/page-transition';
-// Onboarding walkthrough disabled — too heavy for a small team
-// import { InternalAppWalkthrough } from '@/components/onboarding/internal-app-walkthrough';
 import { LazyMotionProvider } from '@/lib/lazy-motion';
 import { Toaster } from 'sonner';
 import { Analytics } from '@vercel/analytics/next';
@@ -96,28 +91,6 @@ export const metadata: Metadata = {
   category: 'technology',
 };
 
-function SidebarSkeleton() {
-  return (
-    <div className="ease-out-quart hidden h-full w-56 flex-shrink-0 flex-col border-r border-border bg-card transition-[width] duration-200 md:flex">
-      <div className="flex h-[60px] items-center gap-2.5 border-b border-border px-4">
-        <div className="h-7 w-7 animate-pulse rounded-lg bg-muted" />
-        <div className="h-3 w-14 animate-pulse rounded bg-muted" />
-      </div>
-      <div className="px-3 pt-4">
-        <div className="mb-2 h-3 w-16 animate-pulse rounded bg-muted/30" />
-      </div>
-      <nav className="flex flex-1 flex-col gap-0.5 p-3">
-        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
-        <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
-      </nav>
-    </div>
-  );
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -134,10 +107,6 @@ export default function RootLayout({
       <body
         className={`${GeistSans.variable} ${GeistMono.variable} flex h-screen overflow-hidden bg-background text-foreground antialiased`}
       >
-        {/* Skip to main content link for keyboard users */}
-        <a href="#main-content" className="skip-to-main">
-          Skip to main content
-        </a>
         <LazyMotionProvider>
           <ThemeProvider>
             <SWRProvider>
@@ -155,23 +124,10 @@ export default function RootLayout({
                         <Suspense fallback={null}>
                           <SessionGuard />
                         </Suspense>
-                        <ViewAsBanner />
                         <Suspense fallback={null}>
                           <PlannedLogoutBanner />
                         </Suspense>
-                        {/* Onboarding walkthrough disabled */}
-                        <Suspense fallback={<SidebarSkeleton />}>
-                          <Sidebar />
-                        </Suspense>
-                        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                          <main
-                            id="main-content"
-                            className="min-h-0 flex-1 overflow-y-auto"
-                            tabIndex={-1}
-                          >
-                            <PageTransition>{children}</PageTransition>
-                          </main>
-                        </div>
+                        {children}
                       </AIAssistantProvider>
                     </SidebarProvider>
                   </WorkspaceProvider>

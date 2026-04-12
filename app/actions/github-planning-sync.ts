@@ -49,8 +49,8 @@ export async function syncPlanningFromGitHub(
   }
 
   // Revalidate pages
-  revalidatePath(`/portal/${projectId}`);
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
 
   return {
     success: true,

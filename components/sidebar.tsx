@@ -44,22 +44,22 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { createClient } from '@/lib/supabase/client';
 
 const workspaceNav = [
-  { name: 'Dashboard', href: '/portal', icon: Sun },
-  { name: 'Projects', href: '/portal/projects', icon: Folder },
-  { name: 'Schedule', href: '/portal/schedule', icon: Calendar },
+  { name: 'Dashboard', href: '/', icon: Sun },
+  { name: 'Projects', href: '/projects', icon: Folder },
+  { name: 'Schedule', href: '/schedule', icon: Calendar },
 ];
 
 const adminWorkspaceNav = [
-  { name: 'Clients', href: '/portal/clients', icon: Building2 },
-  { name: 'Status', href: '/portal/status', icon: Activity },
+  { name: 'Clients', href: '/clients', icon: Building2 },
+  { name: 'Status', href: '/status', icon: Activity },
 ];
 
 const resourcesNav = [
-  { name: 'Research', href: '/portal/research', icon: FlaskConical },
-  { name: 'Knowledge', href: '/portal/knowledge', icon: BookOpen },
+  { name: 'Research', href: '/research', icon: FlaskConical },
+  { name: 'Knowledge', href: '/knowledge', icon: BookOpen },
 ];
 
-const portalNav = [{ name: 'Portal', href: '/portal', icon: ExternalLink }];
+const portalNav = [{ name: 'Portal', href: '/', icon: ExternalLink }];
 const adminNav = [
   { name: 'Admin', href: '/admin', icon: Shield },
   { name: 'Tasks', href: '/admin/tasks', icon: ListTodo },
@@ -429,7 +429,7 @@ export function Sidebar() {
   };
 
   // Hide sidebar on auth pages and portal (portal has its own layout)
-  if (pathname.startsWith('/auth') || pathname.startsWith('/portal')) {
+  if (pathname.startsWith('/auth') || pathname.startsWith('/')) {
     return null;
   }
 

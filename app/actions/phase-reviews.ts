@@ -96,8 +96,8 @@ export async function submitPhaseForReview(
     );
   }
 
-  revalidatePath(`/portal/${projectId}`);
-  revalidatePath('/portal/projects');
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
   return { success: true };
 }
 
@@ -182,8 +182,8 @@ export async function approvePhaseReview(
     }
   }
 
-  revalidatePath(`/portal/${projectId}`);
-  revalidatePath('/portal/projects');
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
   return { success: true };
 }
 
@@ -267,8 +267,8 @@ export async function requestPhaseChanges(
     }
   }
 
-  revalidatePath(`/portal/${projectId}`);
-  revalidatePath('/portal/projects');
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath('/projects');
   return { success: true };
 }
 

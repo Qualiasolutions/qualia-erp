@@ -75,7 +75,7 @@ export function PortalRecentActivity({
           Projects
         </h2>
         <Link
-          href="/portal/projects"
+          href="/projects"
           className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground/60 transition-colors hover:text-foreground"
         >
           All <ArrowRight className="h-2.5 w-2.5" />
@@ -86,7 +86,7 @@ export function PortalRecentActivity({
         {projects.map((project) => (
           <Link
             key={project.id}
-            href={`/portal/${project.id}`}
+            href={`/projects/${project.id}`}
             className="group flex items-center gap-3 rounded-lg px-3 py-3 transition-all duration-150 hover:bg-muted/30"
           >
             {/* Name + phase */}

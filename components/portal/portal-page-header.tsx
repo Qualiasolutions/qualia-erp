@@ -43,7 +43,7 @@ export function PortalPageHeader({
     <div className="pb-6">
       <div className="flex items-start gap-3 sm:items-center">
         <Link
-          href="/portal"
+          href="/"
           className="mt-0.5 flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors duration-150 hover:bg-muted/30 hover:text-foreground sm:mt-0"
           aria-label="Back to dashboard"
         >

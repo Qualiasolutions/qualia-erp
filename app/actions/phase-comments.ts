@@ -102,7 +102,7 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
   }
 
   // Only revalidate portal — internal views refresh via client-side state
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
 
   return { success: true, data: comment };
 }
@@ -210,7 +210,7 @@ export async function deletePhaseComment(
   }
 
   // Only revalidate portal — internal views refresh via client-side state
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
 
   return { success: true };
 }

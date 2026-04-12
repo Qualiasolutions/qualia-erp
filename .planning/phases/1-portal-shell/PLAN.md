@@ -49,13 +49,13 @@ Build the new portal sidebar and update the layout to use it. The sidebar must:
 1. **Structure** (top to bottom):
    - Company branding area: Qualia logo (`/logo.webp` via `next/image`) + "QUALIA" text, plus client's `companyName` below if available
    - Navigation section with Lucide icons:
-     - Home (`House`) -- `/portal` (exact match)
-     - Projects (`FolderKanban`) -- `/portal/projects`
-     - Messages (`MessageSquare`) -- `/portal/messages` (link only, no page yet -- show "Coming soon" tooltip)
-     - Files (`Files`) -- `/portal/files` (link only, no page yet -- show "Coming soon" tooltip)
-     - Billing (`Receipt`) -- `/portal/billing`
-     - Requests (`Lightbulb`) -- `/portal/requests`
-     - Settings (`Settings`) -- `/portal/settings`
+     - Home (`House`) -- `/` (exact match)
+     - Projects (`FolderKanban`) -- `/projects`
+     - Messages (`MessageSquare`) -- `/messages` (link only, no page yet -- show "Coming soon" tooltip)
+     - Files (`Files`) -- `/files` (link only, no page yet -- show "Coming soon" tooltip)
+     - Billing (`Receipt`) -- `/billing`
+     - Requests (`Lightbulb`) -- `/requests`
+     - Settings (`Settings`) -- `/settings`
    - User area at bottom: avatar initial circle + name + email + ThemeSwitcher + dropdown menu (profile, theme toggle, sign out, "Exit preview" for admins)
 
 2. **Styling:**
@@ -74,7 +74,7 @@ Build the new portal sidebar and update the layout to use it. The sidebar must:
 
 **Context:** Read `@.planning/DESIGN.md`, `@components/portal/portal-sidebar.tsx` (current implementation to match props), `@app/portal/layout.tsx`, `@components/theme-switcher.tsx`
 **Done when:**
-- Portal loads at `/portal` with the new sidebar layout
+- Portal loads at `/` with the new sidebar layout
 - Sidebar shows all 7 nav items with correct icons
 - Active route is highlighted with primary color left border
 - Mobile: hamburger opens sheet with full sidebar
@@ -114,9 +114,9 @@ Build the new Assembly-inspired portal dashboard. Reuse ALL existing data fetchi
      - Reuse existing `PortalActionItems` component from `@components/portal/portal-action-items.tsx` (it already takes `clientId` prop)
    - Right (3/5 width on `lg`): Projects overview
      - Show each project as a compact row/card: project name, status badge, progress bar, current phase name
-     - Link each to `/portal/${project.id}`
+     - Link each to `/projects/${project.id}`
      - Use the `projects` array from `usePortalDashboard` return (type: `ProjectWithPhases[]`)
-     - Empty state: "No active projects" with link to `/portal/projects`
+     - Empty state: "No active projects" with link to `/projects`
 
 4. **Quick actions row** (below two-column):
    - 3 cards: "Submit a request" (Lightbulb), "View projects" (FolderKanban), "Contact support" (Headphones)
@@ -147,7 +147,7 @@ Build the new Assembly-inspired portal dashboard. Reuse ALL existing data fetchi
 **Files:**
 - CREATE `components/portal/portal-projects-grid.tsx` -- new projects grid component (~200 lines)
 - CREATE `components/portal/portal-project-tabs.tsx` -- new tabbed project detail component (~250 lines)
-- MODIFY `app/portal/projects/page.tsx` -- swap `PortalProjectsList` for `PortalProjectsGrid`
+- MODIFY `app/projects/page.tsx` -- swap `PortalProjectsList` for `PortalProjectsGrid`
 - MODIFY `app/portal/[id]/portal-project-content.tsx` -- use new tabbed layout instead of current tabs + roadmap-only view
 
 **Action:**
@@ -155,7 +155,7 @@ Build the new Assembly-inspired portal dashboard. Reuse ALL existing data fetchi
 ### A. Projects Grid (`portal-projects-grid.tsx`)
 Replace the flat list with a card grid:
 - Grid: `grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5`
-- Each project card: `rounded-xl border bg-card p-6 hover:border-primary/20 hover:shadow-md transition-all duration-200 cursor-pointer` wrapped in `Link` to `/portal/${project.id}`
+- Each project card: `rounded-xl border bg-card p-6 hover:border-primary/20 hover:shadow-md transition-all duration-200 cursor-pointer` wrapped in `Link` to `/projects/${project.id}`
   - Project type icon (map `project_type` to Lucide icons: `web_design` -> `Globe`, `ai_agent` -> `Bot`, `voice_agent` -> `Phone`, `seo` -> `Search`, `ads` -> `Megaphone`, `ai_platform` -> `Brain`, `app` -> `Smartphone`, default -> `Folder`)
   - Project name: `text-base font-semibold`
   - Status badge: use existing status color mapping or simple `Badge` from shadcn with variant
@@ -179,7 +179,7 @@ Replace the current tab pills with an underline tab component:
   - **Files:** Render content from current `app/portal/[id]/files/page.tsx` -- import and use `PortalFileList` + `PortalClientUpload` components. Fetch files using the same server action pattern (call `getProjectFiles` via SWR or inline).
   - **Updates:** Render content from current `app/portal/[id]/updates/page.tsx` -- reuse whatever activity rendering exists.
 
-### C. Modify `app/portal/projects/page.tsx`:
+### C. Modify `app/projects/page.tsx`:
 - Replace `import { PortalProjectsList }` with `import { PortalProjectsGrid }`
 - Pass same data (keep all server-side fetching unchanged)
 - Update heading style to match design system
@@ -187,12 +187,12 @@ Replace the current tab pills with an underline tab component:
 ### D. Modify `app/portal/[id]/portal-project-content.tsx`:
 - Remove imports of `PortalTabs` and `PortalPageHeader`
 - Import `PortalProjectTabs`
-- Build a new header inline: back link (`ChevronLeft` to `/portal/projects`), project name, status badge, progress bar
+- Build a new header inline: back link (`ChevronLeft` to `/projects`), project name, status badge, progress bar
 - Render `<PortalProjectTabs>` with all needed data
 
-**Context:** Read `@.planning/DESIGN.md`, `@components/portal/portal-projects-list.tsx`, `@components/portal/portal-tabs.tsx`, `@components/portal/portal-page-header.tsx`, `@app/portal/projects/page.tsx`, `@app/portal/[id]/portal-project-content.tsx`, `@components/portal/portal-roadmap.tsx` (first 50 lines for props), `@components/portal/portal-file-list.tsx` (first 30 lines for props), `@app/portal/[id]/files/page.tsx`, `@app/portal/[id]/updates/page.tsx`
+**Context:** Read `@.planning/DESIGN.md`, `@components/portal/portal-projects-list.tsx`, `@components/portal/portal-tabs.tsx`, `@components/portal/portal-page-header.tsx`, `@app/projects/page.tsx`, `@app/portal/[id]/portal-project-content.tsx`, `@components/portal/portal-roadmap.tsx` (first 50 lines for props), `@components/portal/portal-file-list.tsx` (first 30 lines for props), `@app/portal/[id]/files/page.tsx`, `@app/portal/[id]/updates/page.tsx`
 **Done when:**
-- `/portal/projects` shows card grid with search bar
+- `/projects` shows card grid with search bar
 - Each card shows project type icon, name, status badge, progress bar, phase info
 - Empty state renders when no projects
 - Click a project card navigates to `/portal/{id}`
@@ -210,14 +210,14 @@ Replace the current tab pills with an underline tab component:
 
 **Wave:** 3 (after Tasks 2, 3, 4)
 **Files:**
-- MODIFY `app/portal/billing/page.tsx` -- update heading styles and layout to match new design
+- MODIFY `app/billing/page.tsx` -- update heading styles and layout to match new design
 - MODIFY `components/portal/portal-billing-summary.tsx` -- modernize card styles (rounded-xl, new typography, stat layout)
 - MODIFY `components/portal/portal-invoice-list.tsx` -- modernize table/list styles, status badges
-- MODIFY `app/portal/requests/page.tsx` -- update heading styles
+- MODIFY `app/requests/page.tsx` -- update heading styles
 - MODIFY `components/portal/portal-request-list.tsx` -- modernize list cards, status/priority badges
 - MODIFY `components/portal/portal-request-dialog.tsx` -- modernize dialog styling
-- MODIFY `app/portal/settings/page.tsx` -- update heading styles (minimal change, settings-content.tsx does the work)
-- MODIFY `app/portal/settings/settings-content.tsx` -- modernize form sections and card layout
+- MODIFY `app/settings/page.tsx` -- update heading styles (minimal change, settings-content.tsx does the work)
+- MODIFY `app/settings/settings-content.tsx` -- modernize form sections and card layout
 - MODIFY `components/portal/portal-skeletons.tsx` -- update skeleton styles to match new rounded-xl cards
 
 **Action:**
@@ -252,7 +252,7 @@ Bring billing, requests, and settings pages up to the same visual standard as th
    - All pages use `fadeInClasses` for entrance animation
    - All pages have proper empty states
 
-**Context:** Read `@.planning/DESIGN.md`, `@app/portal/billing/page.tsx`, `@components/portal/portal-billing-summary.tsx`, `@components/portal/portal-invoice-list.tsx`, `@app/portal/requests/page.tsx`, `@components/portal/portal-request-list.tsx`, `@components/portal/portal-request-dialog.tsx`, `@app/portal/settings/settings-content.tsx`, `@components/portal/portal-skeletons.tsx`
+**Context:** Read `@.planning/DESIGN.md`, `@app/billing/page.tsx`, `@components/portal/portal-billing-summary.tsx`, `@components/portal/portal-invoice-list.tsx`, `@app/requests/page.tsx`, `@components/portal/portal-request-list.tsx`, `@components/portal/portal-request-dialog.tsx`, `@app/settings/settings-content.tsx`, `@components/portal/portal-skeletons.tsx`
 **Done when:**
 - Billing page: summary cards use new card style, invoice list has status badges with correct colors
 - Requests page: request cards match new design, dialog is modernized

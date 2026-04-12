@@ -221,7 +221,7 @@ export async function uploadTaskAttachment(formData: FormData): Promise<ActionRe
       .eq('id', taskId);
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true, data: attachment };
 }
 
@@ -271,7 +271,7 @@ export async function deleteTaskAttachment(attachmentId: string): Promise<Action
     return { success: false, error: 'Failed to delete attachment' };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -357,6 +357,6 @@ export async function submitTaskResponse(
     return { success: false, error: 'Failed to save submission' };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }

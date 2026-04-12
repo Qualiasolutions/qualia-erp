@@ -75,82 +75,49 @@ export async function middleware(request: NextRequest) {
 
     const pathname = request.nextUrl.pathname;
 
-    // Internal routes that clients cannot access
-    const internalRoutes = [
-      '/projects',
-      '/inbox',
-      '/schedule',
-      '/team',
-      '/admin',
-      '/settings',
-      '/clients',
-      '/payments',
-      '/knowledge',
-      '/research',
-      '/agent',
-      '/seo',
-      '/status',
-      '/video-player',
-    ];
-
-    // ALL users: redirect root `/` to `/portal` (unified portal experience)
-    if (pathname === '/') {
+    // Backward-compat: redirect legacy /portal/* URLs to the new unprefixed routes.
+    // Historical links, bookmarks and emails still point at /portal/*.
+    if (pathname === '/portal' || pathname.startsWith('/portal/')) {
       const url = request.nextUrl.clone();
-      url.pathname = '/portal';
-      return NextResponse.redirect(url);
-    }
-
-    // Old routes → portal equivalents (unified portal layout)
-    const ROUTE_REDIRECTS: Record<string, string> = {
-      '/projects': '/portal/projects',
-      '/knowledge': '/portal/knowledge',
-      '/research': '/portal/research',
-      '/clients': '/portal/clients',
-      '/status': '/portal/status',
-      '/schedule': '/portal/schedule',
-      '/inbox': '/portal/inbox',
-      '/team': '/portal',
-      '/payments': '/portal/billing',
-      '/settings': '/portal/settings',
-    };
-
-    const redirectTo = ROUTE_REDIRECTS[pathname];
-    if (redirectTo) {
-      const url = request.nextUrl.clone();
-      url.pathname = redirectTo;
-      return NextResponse.redirect(url);
-    }
-
-    // Deep /projects/[id] and sub-paths → /portal/[id]
-    if (pathname.startsWith('/projects/')) {
-      const url = request.nextUrl.clone();
-      url.pathname = pathname.replace(/^\/projects\//, '/portal/');
-      return NextResponse.redirect(url);
-    }
-
-    // Client users: redirect to portal if trying to access internal routes
-    if (userRole === 'client') {
-      const isAccessingInternal = internalRoutes.some((route) => pathname.startsWith(route));
-
-      if (isAccessingInternal && !pathname.startsWith('/portal')) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/portal';
-        return NextResponse.redirect(url);
+      if (pathname === '/portal') {
+        url.pathname = '/';
+      } else if (pathname === '/portal/admin') {
+        url.pathname = '/workspace';
+      } else {
+        // /portal/<uuid>/... is a project detail — map to /projects/<uuid>/...
+        // /portal/<name>/... is a named route — strip the /portal prefix.
+        const rest = pathname.slice('/portal/'.length);
+        const firstSeg = rest.split('/')[0];
+        const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        url.pathname = uuidRe.test(firstSeg) ? `/projects/${rest}` : `/${rest}`;
       }
+      return NextResponse.redirect(url);
     }
 
-    // Admin-only routes — only admin role (managers access via portal)
+    // Admin-only routes — only admin role can access /admin, managers fall back to /
     const adminOnlyRoutes = ['/admin'];
     if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
-      url.pathname = '/portal';
+      url.pathname = '/';
       return NextResponse.redirect(url);
     }
 
-    // If user is authenticated and trying to access /auth/login or /auth/signup, redirect to portal
+    // Manager-or-admin-only routes — /workspace manages branding/apps/client access
+    const managerOrAboveRoutes = ['/workspace', '/clients', '/seo'];
+    if (
+      userRole !== 'admin' &&
+      userRole !== 'manager' &&
+      managerOrAboveRoutes.some((route) => pathname.startsWith(route))
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
+      return NextResponse.redirect(url);
+    }
+
+    // Authenticated users hitting /auth/login or /auth/signup → home
     if (pathname === '/auth/login' || pathname === '/auth/signup') {
       const url = request.nextUrl.clone();
-      url.pathname = '/portal';
+      url.pathname = '/';
       return NextResponse.redirect(url);
     }
   }

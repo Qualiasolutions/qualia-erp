@@ -7,7 +7,7 @@ waves: 2
 
 # Phase 2: Client Messaging
 
-Goal: Clients and team members can exchange messages in per-project channels. Messages appear in real-time. Admins/managers can write internal notes invisible to clients. The `/portal/messages` page has a three-panel layout (channel list, thread, details). Unread counts show in the sidebar.
+Goal: Clients and team members can exchange messages in per-project channels. Messages appear in real-time. Admins/managers can write internal notes invisible to clients. The `/messages` page has a three-panel layout (channel list, thread, details). Unread counts show in the sidebar.
 
 ---
 
@@ -187,8 +187,8 @@ Goal: Clients and team members can exchange messages in per-project channels. Me
 
 **Wave:** 2 (after Task 1, 2)
 **Files:**
-- `app/portal/messages/page.tsx` (new — server component, auth + data fetch)
-- `app/portal/messages/messages-content.tsx` (new — client component, three-panel layout)
+- `app/messages/page.tsx` (new — server component, auth + data fetch)
+- `app/messages/messages-content.tsx` (new — client component, three-panel layout)
 - `components/portal/messaging/channel-list.tsx` (new)
 - `components/portal/messaging/message-thread.tsx` (new)
 - `components/portal/messaging/message-bubble.tsx` (new)
@@ -197,13 +197,13 @@ Goal: Clients and team members can exchange messages in per-project channels. Me
 
 **Action:**
 
-1. **`app/portal/messages/page.tsx`** — Server component:
+1. **`app/messages/page.tsx`** — Server component:
    - Auth: get user via `supabase.auth.getUser()`, redirect if not authenticated
    - Get role via `getUserRole` from `lib/portal-utils.ts`
    - Pass `userId`, `userRole`, `isAdmin: isPortalAdminRole(role)` as props to `MessagesContent`
    - Export metadata: `{ title: 'Messages' }`
 
-2. **`app/portal/messages/messages-content.tsx`** — `'use client'` three-panel layout:
+2. **`app/messages/messages-content.tsx`** — `'use client'` three-panel layout:
    - State: `selectedProjectId: string | null`, `showDetails: boolean` (right panel toggle), `mobileView: 'list' | 'thread'` (for responsive)
    - Use `useMessageChannels(userId)` for left panel
    - Use `useChannelMessages(selectedProjectId)` for center panel
@@ -264,7 +264,7 @@ Goal: Clients and team members can exchange messages in per-project channels. Me
 **Context:** Read `@.planning/DESIGN.md` for all styling decisions. Read `@components/portal/portal-sidebar-v2.tsx` for active/hover state patterns. Read `@components/ui/rich-text.tsx` for the existing RichText renderer. Read `@app/portal/layout.tsx` for auth pattern in portal pages. Read `@lib/swr.ts` for `usePortalProjectWithPhases` pattern. Use shadcn components: `Input`, `Button`, `Badge`, `ScrollArea`, `Avatar`, `Tabs` from `@components/ui/`.
 
 **Done when:**
-- `/portal/messages` renders the three-panel layout without errors
+- `/messages` renders the three-panel layout without errors
 - Channel list shows projects the user has access to, with last message preview and time
 - Clicking a channel loads its messages in the center panel
 - User can type and send a message; it appears in the thread
@@ -286,7 +286,7 @@ Goal: Clients and team members can exchange messages in per-project channels. Me
 **Action:**
 
 1. **Update `components/portal/portal-sidebar-v2.tsx`**:
-   - Change the Messages nav item from `{ name: 'Messages', href: null, icon: MessageSquare, comingSoon: true }` to `{ name: 'Messages', href: '/portal/messages', icon: MessageSquare }`
+   - Change the Messages nav item from `{ name: 'Messages', href: null, icon: MessageSquare, comingSoon: true }` to `{ name: 'Messages', href: '/messages', icon: MessageSquare }`
    - Add `userId` prop to `PortalSidebarV2Props` and `SidebarContent`
    - Inside `SidebarContent`, call `useUnreadMessageCount(userId)` from `lib/swr.ts`
    - In the `NavLink` component, accept an optional `badge?: number` prop. When present and > 0, render: `<span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">{badge}</span>` — replacing the "Soon" badge for that item
@@ -298,14 +298,14 @@ Goal: Clients and team members can exchange messages in per-project channels. Me
 
 3. **Polish passes:**
    - Verify the Messages nav item is no longer grayed out / disabled
-   - Verify clicking it navigates to `/portal/messages`
+   - Verify clicking it navigates to `/messages`
    - Verify the unread badge appears when there are unread messages and disappears when count is 0
    - Verify the badge uses `bg-primary text-primary-foreground` (teal, not red — matches brand)
 
 **Context:** Read `@components/portal/portal-sidebar-v2.tsx` for current nav structure. Read `@app/portal/layout.tsx` for how props are passed. Read `@.planning/DESIGN.md` for badge styling.
 
 **Done when:**
-- Messages link in sidebar navigates to `/portal/messages` (not disabled)
+- Messages link in sidebar navigates to `/messages` (not disabled)
 - Unread count badge shows next to Messages when count > 0
 - Badge disappears when all messages are read
 - No "Soon" label on Messages anymore
@@ -316,7 +316,7 @@ Goal: Clients and team members can exchange messages in per-project channels. Me
 
 ## Success Criteria
 
-- [ ] `/portal/messages` loads with three-panel layout (channel list, thread, details)
+- [ ] `/messages` loads with three-panel layout (channel list, thread, details)
 - [ ] Channel list shows projects the client has access to with last message preview and timestamp
 - [ ] Clicking a channel loads its message history in the center panel
 - [ ] User can compose and send messages; message appears in thread immediately

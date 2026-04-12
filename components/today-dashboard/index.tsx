@@ -136,7 +136,7 @@ function ActiveProjectsList({ projects }: { projects: PipelineProject[] }) {
           </span>
         </div>
         <Link
-          href="/portal/projects"
+          href="/projects"
           className="flex items-center gap-0.5 text-[11px] text-muted-foreground/40 transition-colors hover:text-foreground"
         >
           All
@@ -157,7 +157,7 @@ function ActiveProjectsList({ projects }: { projects: PipelineProject[] }) {
           return (
             <Link
               key={project.id}
-              href={`/portal/${project.id}`}
+              href={`/projects/${project.id}`}
               className="group flex items-center gap-3 rounded-lg px-2 py-2 transition-colors duration-150 hover:bg-muted/30"
               style={{ animationDelay: `${i * 30}ms` }}
             >

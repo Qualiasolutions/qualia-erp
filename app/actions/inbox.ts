@@ -368,7 +368,7 @@ export async function createTask(formData: FormData): Promise<ActionResult> {
     (err) => console.error('[createTask] Failed to send email notification:', err)
   );
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true, data };
 }
 
@@ -461,7 +461,7 @@ export async function updateTask(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -489,7 +489,7 @@ export async function adminMarkTaskDone(taskId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   revalidatePath('/admin/tasks');
   return { success: true };
 }
@@ -526,7 +526,7 @@ export async function deleteTask(taskId: string): Promise<ActionResult> {
     return { success: false, error: 'You do not have permission to delete this task' };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -581,7 +581,7 @@ export async function reorderTasks(
     return { success: false, error: 'Failed to reorder tasks' };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -691,7 +691,7 @@ export async function toggleTaskInbox(taskId: string, showInInbox: boolean): Pro
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -807,7 +807,7 @@ export async function quickUpdateTask(
     })();
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -927,7 +927,7 @@ export async function scheduleTask(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -962,7 +962,7 @@ export async function unscheduleTask(taskId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/portal/inbox');
+  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -1087,7 +1087,7 @@ export async function quickToggleTaskStatus(taskId: string): Promise<ActionResul
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath('/portal/schedule');
+  revalidatePath('/schedule');
   return { success: true, data: { newStatus } };
 }
 

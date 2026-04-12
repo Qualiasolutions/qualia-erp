@@ -590,7 +590,7 @@ export async function notifyClientsOfPhaseChange(
     }
 
     const statusLabel = newStatus === 'completed' ? 'Completed' : 'Needs Attention';
-    const portalUrl = `${APP_URL}/portal/${projectId}`;
+    const portalUrl = `${APP_URL}/projects/${projectId}`;
 
     const emailPromises = clients
       .filter((c) => c.email)
@@ -1375,7 +1375,7 @@ export async function notifyClientOfProjectStatusChange(
       return { success: true };
     }
 
-    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const portalUrl = `${APP_URL}/projects/${projectId}`;
 
     const emailPromises = clients
       .filter((c) => c.email)
@@ -1520,7 +1520,7 @@ export async function notifyClientOfPhaseMilestone(
       return { success: true };
     }
 
-    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const portalUrl = `${APP_URL}/projects/${projectId}`;
     const milestoneLabel = milestoneType === 'completed' ? 'Completed' : 'Started';
 
     // Build progress bar HTML
@@ -1658,7 +1658,7 @@ export async function notifyClientOfActionItem(
       return { success: true };
     }
 
-    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const portalUrl = `${APP_URL}/projects/${projectId}`;
     const recipientName = client.full_name || 'there';
     const actionLabel =
       actionItem.actionType.charAt(0).toUpperCase() + actionItem.actionType.slice(1);
@@ -1748,7 +1748,7 @@ export async function notifyClientOfActionItemCompleted(
     const shouldSend = await shouldSendEmail(client.id, project.workspace_id, 'project_update');
     if (!shouldSend) return { success: true };
 
-    const portalUrl = `${APP_URL}/portal/projects/${projectId}`;
+    const portalUrl = `${APP_URL}/projects/${projectId}`;
     const recipientName = client.full_name || 'there';
     const subject = `Completed: ${itemTitle} — ${project.name}`;
 
@@ -2064,7 +2064,7 @@ export async function sendWeeklyDigests(): Promise<{ sent: number; errors: numbe
   <div style="background: #ffffff; padding: 32px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
     <p style="margin: 0 0 24px; color: #6b7280;">Hi ${recipientName}, here's your weekly project update:</p>
     ${projectSectionsHtml}
-    <a href="${APP_URL}/portal" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
+    <a href="${APP_URL}/" style="display: inline-block; background: linear-gradient(135deg, #00A4AC 0%, #008C93 100%); color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 500;">
       View Portal
     </a>
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;">

@@ -205,7 +205,7 @@ describe('phase actions', () => {
 
       await createProjectPhase(PROJECT_ID, 'Test Phase');
 
-      expect(revalidatePath).toHaveBeenCalledWith(`/portal/${PROJECT_ID}`);
+      expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
     });
   });
 
@@ -256,7 +256,7 @@ describe('phase actions', () => {
 
       await deleteProjectPhase(PHASE_ID, PROJECT_ID);
 
-      expect(revalidatePath).toHaveBeenCalledWith(`/portal/${PROJECT_ID}`);
+      expect(revalidatePath).toHaveBeenCalledWith(`/projects/${PROJECT_ID}`);
     });
   });
 

@@ -53,31 +53,31 @@ interface NavItemDef {
 
 // Apps visible to everyone
 const coreApps: NavItemDef[] = [
-  { name: 'Home', href: '/portal', icon: House, exact: true, appKey: 'home' },
-  { name: 'Projects', href: '/portal/projects', icon: FolderKanban, appKey: 'projects' },
-  { name: 'Messages', href: '/portal/messages', icon: MessageSquare, appKey: 'messages' },
-  { name: 'Files', href: '/portal/files', icon: FileStack, appKey: 'files' },
-  { name: 'Settings', href: '/portal/settings', icon: Settings, appKey: 'settings' },
+  { name: 'Home', href: '/', icon: House, exact: true, appKey: 'home' },
+  { name: 'Projects', href: '/projects', icon: FolderKanban, appKey: 'projects' },
+  { name: 'Messages', href: '/messages', icon: MessageSquare, appKey: 'messages' },
+  { name: 'Files', href: '/files', icon: FileStack, appKey: 'files' },
+  { name: 'Settings', href: '/settings', icon: Settings, appKey: 'settings' },
 ];
 
 // Client-only apps (hidden from employees)
 const clientApps: NavItemDef[] = [
-  { name: 'Billing', href: '/portal/billing', icon: Receipt, appKey: 'billing' },
-  { name: 'Requests', href: '/portal/requests', icon: Lightbulb, appKey: 'requests' },
+  { name: 'Billing', href: '/billing', icon: Receipt, appKey: 'billing' },
+  { name: 'Requests', href: '/requests', icon: Lightbulb, appKey: 'requests' },
 ];
 
 // Internal team apps (admin, manager, employee — never shown to clients)
 const internalApps: NavItemDef[] = [
-  { name: 'Inbox', href: '/portal/inbox', icon: Inbox, appKey: 'inbox' },
-  { name: 'Schedule', href: '/portal/schedule', icon: Calendar, appKey: 'schedule' },
-  { name: 'Knowledge', href: '/portal/knowledge', icon: BookOpen, appKey: 'knowledge' },
-  { name: 'Research', href: '/portal/research', icon: FlaskConical, appKey: 'research' },
+  { name: 'Inbox', href: '/inbox', icon: Inbox, appKey: 'inbox' },
+  { name: 'Schedule', href: '/schedule', icon: Calendar, appKey: 'schedule' },
+  { name: 'Knowledge', href: '/knowledge', icon: BookOpen, appKey: 'knowledge' },
+  { name: 'Research', href: '/research', icon: FlaskConical, appKey: 'research' },
 ];
 
 // Admin-only apps (admin, manager — never shown to employee or client)
 const adminOnlyApps: NavItemDef[] = [
-  { name: 'Clients', href: '/portal/clients', icon: Building2, appKey: 'clients' },
-  { name: 'Status', href: '/portal/status', icon: Activity, appKey: 'status' },
+  { name: 'Clients', href: '/clients', icon: Building2, appKey: 'clients' },
+  { name: 'Status', href: '/status', icon: Activity, appKey: 'status' },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -299,7 +299,7 @@ function SidebarContent({
     <div className="flex h-full flex-col bg-card">
       {/* Company branding area */}
       <div className="flex items-center gap-2.5 border-b border-border/30 px-5 py-4">
-        <Link href="/portal" className="group flex items-center gap-2.5" onClick={onLinkClick}>
+        <Link href="/" className="group flex items-center gap-2.5" onClick={onLinkClick}>
           <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:scale-105">
             <Image
               src={brandLogoUrl}
@@ -341,8 +341,8 @@ function SidebarContent({
           <>
             <div className="mt-2 border-t border-border/20 pt-2">
               <NavLink
-                item={{ name: 'Admin', href: '/portal/admin', icon: Shield, appKey: 'admin' }}
-                isActive={pathname === '/portal/admin' || pathname.startsWith('/portal/admin/')}
+                item={{ name: 'Admin', href: '/workspace', icon: Shield, appKey: 'admin' }}
+                isActive={pathname === '/workspace' || pathname.startsWith('/workspace/')}
                 onClick={onLinkClick}
               />
             </div>

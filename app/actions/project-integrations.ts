@@ -84,7 +84,7 @@ export async function upsertIntegration(
     return { success: false, error: 'Failed to save integration' };
   }
 
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -108,6 +108,6 @@ export async function deleteIntegration(
     return { success: false, error: 'Failed to delete integration' };
   }
 
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }

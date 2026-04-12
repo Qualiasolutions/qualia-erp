@@ -65,7 +65,7 @@ export function PortalProjectsList({ projects, progressMap = {} }: PortalProject
         return (
           <Link
             key={clientProject.id}
-            href={`/portal/${project.id}`}
+            href={`/projects/${project.id}`}
             style={index < 10 ? getStaggerDelay(index) : undefined}
             className={cn(
               'group flex min-h-[44px] items-center gap-4 rounded-lg px-4 py-3 transition-all duration-150',

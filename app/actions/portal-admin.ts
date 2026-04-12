@@ -184,7 +184,7 @@ export async function updatePortalAppConfig(
       }
     }
 
-    revalidatePath('/portal');
+    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updatePortalAppConfig] Error:', error);
@@ -298,7 +298,7 @@ export async function updatePortalBranding(
       return { success: false, error: 'Failed to update branding' };
     }
 
-    revalidatePath('/portal');
+    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updatePortalBranding] Error:', error);
@@ -354,7 +354,7 @@ export async function uploadPortalLogo(formData: FormData): Promise<ActionResult
 
     // Generate storage path
     const ext = file.type.split('/')[1] === 'jpeg' ? 'jpg' : file.type.split('/')[1];
-    const storagePath = `logos/portal/${workspaceId}/logo.${ext}`;
+    const storagePath = `logos/projects/${workspaceId}/logo.${ext}`;
 
     // Use admin client for storage (bypasses storage RLS — auth already verified above)
     const adminClient = createAdminClient();
@@ -397,7 +397,7 @@ export async function uploadPortalLogo(formData: FormData): Promise<ActionResult
       return { success: false, error: 'Failed to update branding' };
     }
 
-    revalidatePath('/portal');
+    revalidatePath('/');
 
     return { success: true, data: { logo_url: logoUrl } };
   } catch (error) {

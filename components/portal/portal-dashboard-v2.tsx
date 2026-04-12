@@ -56,19 +56,19 @@ const quickActions = [
   {
     title: 'Submit a request',
     description: 'Share a feature idea or request a change',
-    href: '/portal/requests',
+    href: '/requests',
     icon: Lightbulb,
   },
   {
     title: 'View all projects',
     description: 'See progress across all your projects',
-    href: '/portal/projects',
+    href: '/projects',
     icon: FolderKanban,
   },
   {
     title: 'View billing',
     description: 'Check invoices and payment history',
-    href: '/portal/billing',
+    href: '/billing',
     icon: Receipt,
   },
 ];
@@ -158,7 +158,7 @@ function ProjectCard({ project, index }: { project: PortalProject; index: number
 
   return (
     <Link
-      href={`/portal/${project.id}`}
+      href={`/projects/${project.id}`}
       className={cn(
         'group relative block cursor-pointer overflow-hidden rounded-xl border border-border bg-card transition-all duration-200',
         'hover:border-primary/20 hover:shadow-sm',
@@ -392,7 +392,7 @@ export function PortalDashboardV2({
               <h2 className="text-sm font-semibold text-foreground">Your Projects</h2>
               {projects.length > 0 && (
                 <Link
-                  href="/portal/projects"
+                  href="/projects"
                   className="cursor-pointer text-xs font-medium text-muted-foreground transition-colors duration-150 hover:text-primary"
                 >
                   View all

@@ -137,9 +137,9 @@ export async function inviteClientByEmail(
       };
     }
 
-    revalidatePath('/portal/clients');
-    revalidatePath('/portal/projects');
-    revalidatePath('/portal');
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return {
       success: true,
@@ -219,9 +219,9 @@ export async function inviteClientToProject(
 
     if (error) throw error;
 
-    revalidatePath('/portal/clients');
-    revalidatePath('/portal/projects');
-    revalidatePath('/portal');
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return { success: true, data };
   } catch (error) {
@@ -266,9 +266,9 @@ export async function removeClientFromProject(
 
     if (error) throw error;
 
-    revalidatePath('/portal/clients');
-    revalidatePath('/portal/projects');
-    revalidatePath('/portal');
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return { success: true };
   } catch (error) {
@@ -334,8 +334,8 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
       return { success: false, error: `Failed to delete account: ${deleteError.message}` };
     }
 
-    revalidatePath('/portal');
-    revalidatePath('/portal/clients');
+    revalidatePath('/');
+    revalidatePath('/clients');
 
     return { success: true };
   } catch (error) {
@@ -709,9 +709,9 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
       };
     }
 
-    revalidatePath('/portal/clients');
-    revalidatePath('/portal/projects');
-    revalidatePath('/portal');
+    revalidatePath('/clients');
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return {
       success: true,
@@ -810,8 +810,8 @@ export async function createProjectFromPortal(input: {
       return { success: false, error: 'Project created but no data returned' };
     }
 
-    revalidatePath('/portal/projects');
-    revalidatePath('/portal');
+    revalidatePath('/projects');
+    revalidatePath('/');
 
     return { success: true, data };
   } catch (error) {
@@ -1199,8 +1199,8 @@ export async function updateClientProfile(updates: {
 
     if (error) throw error;
 
-    revalidatePath('/portal/settings');
-    revalidatePath('/portal');
+    revalidatePath('/settings');
+    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updateClientProfile] Error:', error);
@@ -1326,8 +1326,8 @@ export async function updateNotificationPreferences(preferences: {
 
     if (error) throw error;
 
-    revalidatePath('/portal/settings');
-    revalidatePath('/portal');
+    revalidatePath('/settings');
+    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updateNotificationPreferences] Error:', error);
@@ -1522,9 +1522,9 @@ export async function setupPortalForClient(
       return { success: false, error: 'Account created but failed to link any projects' };
     }
 
-    revalidatePath('/portal');
-    revalidatePath('/portal/clients');
-    revalidatePath('/portal/projects');
+    revalidatePath('/');
+    revalidatePath('/clients');
+    revalidatePath('/projects');
 
     // Send invitation email to the client (new accounts only)
     if (!alreadyExisted && tempPassword) {
@@ -1719,7 +1719,7 @@ export async function updateClientPortalProjects(
       }
     }
 
-    revalidatePath('/portal');
+    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updateClientPortalProjects] Error:', error);
@@ -2059,7 +2059,7 @@ export async function createClientActionItem(data: {
       }).catch((err) => console.error('[createClientActionItem] Notification error:', err));
     });
 
-    revalidatePath('/portal');
+    revalidatePath('/');
     return { success: true, data: inserted };
   } catch (error) {
     console.error('[createClientActionItem] Error:', error);
@@ -2119,7 +2119,7 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
       });
     }
 
-    revalidatePath('/portal');
+    revalidatePath('/');
     return { success: true, data: updated };
   } catch (error) {
     console.error('[completeClientActionItem] Error:', error);
@@ -2643,8 +2643,8 @@ export async function createClientWorkspace(
       return setupResult;
     }
 
-    revalidatePath('/portal');
-    revalidatePath('/portal/clients');
+    revalidatePath('/');
+    revalidatePath('/clients');
 
     return {
       success: true,

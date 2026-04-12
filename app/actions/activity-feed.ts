@@ -146,8 +146,8 @@ export async function createActivityLogEntry(data: CreateActivityLogInput): Prom
   }
 
   // Revalidate portal updates path
-  revalidatePath(`/portal/${projectId}/updates`);
-  revalidatePath(`/portal/${projectId}`);
+  revalidatePath(`/projects/${projectId}/updates`);
+  revalidatePath(`/projects/${projectId}`);
 
   return { success: true, data: entry };
 }

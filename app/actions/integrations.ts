@@ -179,7 +179,7 @@ export async function saveIntegrationToken(
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
   if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
-  revalidatePath('/portal/settings/integrations');
+  revalidatePath('/settings/integrations');
   return { success: true };
 }
 
@@ -225,7 +225,7 @@ export async function removeIntegration(
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
   if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
-  revalidatePath('/portal/settings/integrations');
+  revalidatePath('/settings/integrations');
   return { success: true };
 }
 
@@ -371,7 +371,7 @@ export async function updateGitHubTemplates(
   }
 
   await clearGitHubClientCache(workspaceId);
-  revalidatePath('/portal/settings/integrations');
+  revalidatePath('/settings/integrations');
   return { success: true };
 }
 

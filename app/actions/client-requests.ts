@@ -94,8 +94,8 @@ export async function createFeatureRequest(input: {
       console.error('[createFeatureRequest] Activity/notification error:', err);
     }
 
-    revalidatePath('/portal/requests');
-    revalidatePath('/portal');
+    revalidatePath('/requests');
+    revalidatePath('/');
     return { success: true, data };
   } catch (error) {
     console.error('[createFeatureRequest] Error:', error);
@@ -214,8 +214,8 @@ export async function updateFeatureRequest(
       return { success: false, error: 'Request not found or access denied' };
     }
 
-    revalidatePath('/portal/requests');
-    revalidatePath('/portal');
+    revalidatePath('/requests');
+    revalidatePath('/');
     return { success: true, data };
   } catch (error) {
     console.error('[updateFeatureRequest] Error:', error);

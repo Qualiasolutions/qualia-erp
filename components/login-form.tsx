@@ -22,7 +22,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
   useEffect(() => {
     if (state.success) {
       // Middleware handles role-based routing, but use the right entry point
-      window.location.href = mode === 'client' ? '/portal' : '/';
+      window.location.href = mode === 'client' ? '/' : '/';
     }
   }, [state.success, mode]);
 

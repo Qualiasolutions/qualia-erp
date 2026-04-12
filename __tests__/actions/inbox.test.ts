@@ -300,7 +300,7 @@ describe('inbox actions', () => {
 
       await createTask(formData);
 
-      expect(revalidatePath).toHaveBeenCalledWith('/portal/inbox');
+      expect(revalidatePath).toHaveBeenCalledWith('/inbox');
     });
   });
 
@@ -450,7 +450,7 @@ describe('inbox actions', () => {
 
       await deleteTask(TASK_ID);
 
-      expect(revalidatePath).toHaveBeenCalledWith('/portal/inbox');
+      expect(revalidatePath).toHaveBeenCalledWith('/inbox');
     });
   });
 
