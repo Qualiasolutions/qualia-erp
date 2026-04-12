@@ -29,6 +29,20 @@ export async function createProjectPhase(projectId: string, name: string) {
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not authenticated' };
 
+  // Look up the project's workspace_id so the insert satisfies the
+  // workspace-scoped RLS policy. Without this the phase would be inserted
+  // with workspace_id = NULL, leaving it invisible to workspace filters.
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('workspace_id')
+    .eq('id', projectId)
+    .single();
+
+  if (projectError || !project) {
+    console.error('[createProjectPhase] Project not found:', projectError);
+    return { success: false, error: 'Project not found' };
+  }
+
   // Get current max sort_order
   const { data: existingPhases } = await supabase
     .from('project_phases')
@@ -44,6 +58,7 @@ export async function createProjectPhase(projectId: string, name: string) {
     .from('project_phases')
     .insert({
       project_id: projectId,
+      workspace_id: project.workspace_id,
       name,
       sort_order: nextOrder,
     })
@@ -52,10 +67,15 @@ export async function createProjectPhase(projectId: string, name: string) {
 
   if (error) {
     console.error('[createProjectPhase] Error:', error);
-    return { success: false, error: error.message };
+    // RLS INSERT failures surface as a Postgres error rather than a silent
+    // zero-row result, so map the classic "new row violates row-level
+    // security policy" message into something the UI can display.
+    const message = error.message.includes('row-level security')
+      ? 'You do not have permission to add phases to this project'
+      : error.message;
+    return { success: false, error: message };
   }
 
-  revalidatePath(`/portal/${projectId}`);
   revalidatePath(`/portal/${projectId}`);
   return { success: true, data };
 }
