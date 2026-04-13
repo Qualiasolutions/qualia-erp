@@ -14,6 +14,7 @@ import {
   Lightbulb,
   Settings,
   LogOut,
+  LogIn,
   ChevronUp,
   Menu,
   Shield,
@@ -23,6 +24,8 @@ import {
   FlaskConical,
   Building2,
   Activity,
+  ClipboardList,
+  Circle,
 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { cn } from '@/lib/utils';
@@ -35,8 +38,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
-import { useUnreadMessageCount } from '@/lib/swr';
+import { useUnreadMessageCount, useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
 import { ViewAsDialog } from './view-as-dialog';
+import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
+import { ClockOutModal } from '@/components/clock-out-modal';
+import { format as formatDate } from 'date-fns';
 
 /* ------------------------------------------------------------------ */
 /* Navigation items                                                    */
@@ -268,6 +274,77 @@ function UserMenu({
 }
 
 /* ------------------------------------------------------------------ */
+/* ClockWidget — clock-in/out for internal users                       */
+/* ------------------------------------------------------------------ */
+
+function ClockWidget({ userId }: { userId: string | null }) {
+  const [showClockIn, setShowClockIn] = useState(false);
+  const [showClockOut, setShowClockOut] = useState(false);
+  const { workspaceId } = useCurrentWorkspaceId();
+  const { session: activeSession, isLoading } = useActiveSession(workspaceId ?? null);
+
+  if (!workspaceId || isLoading) return null;
+
+  if (activeSession) {
+    const elapsed = Math.round((Date.now() - new Date(activeSession.started_at).getTime()) / 60000);
+    const hrs = Math.floor(elapsed / 60);
+    const mins = elapsed % 60;
+
+    return (
+      <div className="border-t border-border/30 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setShowClockOut(true)}
+          className="flex w-full items-center gap-2.5 rounded-lg border border-primary/20 bg-primary/[0.06] px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-primary/[0.10]"
+        >
+          <Circle className="size-2.5 animate-pulse fill-emerald-500 text-emerald-500" />
+          <div className="min-w-0 flex-1">
+            <div className="text-[12px] font-semibold text-foreground">Clocked in</div>
+            <div className="text-[11px] text-muted-foreground/70">
+              {hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`} —{' '}
+              {formatDate(new Date(activeSession.started_at), 'h:mm a')}
+            </div>
+          </div>
+          <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+            Out
+          </span>
+        </button>
+        <ClockOutModal
+          open={showClockOut}
+          onOpenChange={setShowClockOut}
+          workspaceId={workspaceId}
+          session={activeSession}
+          onSuccess={() => setShowClockOut(false)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border/30 px-3 py-2.5">
+      <button
+        type="button"
+        onClick={() => setShowClockIn(true)}
+        className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 text-left text-[13px] font-medium text-muted-foreground transition-all duration-150 hover:border-primary/40 hover:bg-primary/[0.05] hover:text-foreground"
+      >
+        <LogIn className="size-4 shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">Clock in</div>
+          <div className="text-[11px] opacity-60">Start a work session</div>
+        </div>
+      </button>
+      <ClockInModal
+        open={showClockIn}
+        workspaceId={workspaceId}
+        currentUserId={userId}
+        onSuccess={() => setShowClockIn(false)}
+        onDismiss={() => setShowClockIn(false)}
+      />
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* SidebarContent (shared between desktop and mobile)                  */
 /* ------------------------------------------------------------------ */
 
@@ -291,11 +368,11 @@ function SidebarContent({
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
+  const isInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+
   // Build role-aware nav items.
   // Order: Home → Inbox (internal only) → Projects → role extras → Settings
   const allNavItems = useMemo(() => {
-    const isInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
-
     const items: NavItemDef[] = [homeItem];
 
     // Inbox in 2nd slot for internal users
@@ -319,7 +396,7 @@ function SidebarContent({
     items.push(settingsItem);
 
     return items;
-  }, [userRole]);
+  }, [userRole, isInternal]);
 
   // Filter nav items by enabled apps. When admin is actively impersonating,
   // the parent layout passes the viewed user's effective role + enabled apps,
@@ -381,19 +458,30 @@ function SidebarContent({
           />
         ))}
 
-        {/* Admin section — only visible to admin/manager */}
+        {/* Admin section — only visible to admin */}
         {isAdminViewing && (
-          <>
-            <div className="mt-2 border-t border-border/20 pt-2">
-              <NavLink
-                item={{ name: 'Admin', href: '/workspace', icon: Shield, appKey: 'admin' }}
-                isActive={pathname === '/workspace' || pathname.startsWith('/workspace/')}
-                onClick={onLinkClick}
-              />
-            </div>
-          </>
+          <div className="mt-2 space-y-1 border-t border-border/20 pt-2">
+            <NavLink
+              item={{
+                name: 'Attendance',
+                href: '/admin/attendance',
+                icon: ClipboardList,
+                appKey: 'attendance',
+              }}
+              isActive={pathname.startsWith('/admin/attendance')}
+              onClick={onLinkClick}
+            />
+            <NavLink
+              item={{ name: 'Admin', href: '/workspace', icon: Shield, appKey: 'admin' }}
+              isActive={pathname === '/workspace' || pathname.startsWith('/workspace/')}
+              onClick={onLinkClick}
+            />
+          </div>
         )}
       </nav>
+
+      {/* Clock in/out — internal users only */}
+      {isInternal && <ClockWidget userId={userId ?? null} />}
 
       {/* User area at bottom */}
       <div className="border-t border-border/30 bg-primary/[0.02] px-3 py-3 backdrop-blur-sm">
