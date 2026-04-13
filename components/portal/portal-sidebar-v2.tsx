@@ -71,6 +71,11 @@ const inboxItem: NavItemDef = {
 // Core apps shown after Home/Inbox (everyone sees these)
 const coreApps: NavItemDef[] = [
   { name: 'Projects', href: '/projects', icon: FolderKanban, appKey: 'projects' },
+];
+
+// Client-facing extras (Messages, Files, Requests — clients access these standalone,
+// internal users access files/messages within project detail pages instead)
+const clientPortalApps: NavItemDef[] = [
   { name: 'Messages', href: '/messages', icon: MessageSquare, appKey: 'messages' },
   { name: 'Files', href: '/files', icon: FileStack, appKey: 'files' },
 ];
@@ -83,7 +88,7 @@ const settingsItem: NavItemDef = {
   appKey: 'settings',
 };
 
-// Client-only apps (hidden from employees)
+// Client-only apps (hidden from internal users)
 const clientApps: NavItemDef[] = [
   { name: 'Billing', href: '/billing', icon: Receipt, appKey: 'billing' },
   { name: 'Requests', href: '/requests', icon: Lightbulb, appKey: 'requests' },
@@ -287,14 +292,13 @@ function SidebarContent({
   };
 
   // Build role-aware nav items.
-  // Order: Home → Inbox (internal only) → Projects/Messages/Files → role extras → Settings
+  // Order: Home → Inbox (internal only) → Projects → role extras → Settings
   const allNavItems = useMemo(() => {
     const isInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
 
     const items: NavItemDef[] = [homeItem];
 
-    // Inbox in 2nd slot for internal users — matches Fawzi's ask to surface it
-    // as the primary task entry point above project/message nav.
+    // Inbox in 2nd slot for internal users
     if (isInternal) {
       items.push(inboxItem);
     }
@@ -302,13 +306,14 @@ function SidebarContent({
     items.push(...coreApps);
 
     if (userRole === 'client') {
-      items.push(...clientApps);
+      // Clients get Messages, Files, Billing, Requests as standalone pages
+      items.push(...clientPortalApps, ...clientApps);
     } else if (userRole === 'employee') {
       items.push(...internalApps);
     } else if (userRole === 'manager') {
-      items.push(...clientApps, ...internalApps);
+      items.push(...internalApps);
     } else if (userRole === 'admin') {
-      items.push(...clientApps, ...internalApps, ...adminOnlyApps);
+      items.push(...internalApps, ...adminOnlyApps);
     }
 
     items.push(settingsItem);
