@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 import type { ActionResult } from './shared';
 
@@ -47,10 +47,6 @@ export async function syncPlanningFromGitHub(
   if (!result.success) {
     return { success: false, error: result.error };
   }
-
-  // Revalidate pages
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}`);
 
   return {
     success: true,

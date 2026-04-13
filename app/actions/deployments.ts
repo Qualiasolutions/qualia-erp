@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
 
 export interface Deployment {
   id: string;
@@ -171,7 +170,6 @@ export async function checkEnvironmentHealth(environmentId: string) {
       console.error('[checkEnvironmentHealth] Update error:', updateError);
     }
 
-    revalidatePath(`/projects/${env.project_id}`);
     return { success: true, status: healthStatus };
   } catch {
     // URL didn't respond
@@ -183,7 +181,6 @@ export async function checkEnvironmentHealth(environmentId: string) {
       })
       .eq('id', environmentId);
 
-    revalidatePath(`/projects/${env.project_id}`);
     return { success: true, status: 'down' };
   }
 }
@@ -208,6 +205,5 @@ export async function linkVercelProject(projectId: string, vercelProjectId: stri
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }

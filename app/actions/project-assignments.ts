@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { parseFormData, assignEmployeeSchema, reassignEmployeeSchema } from '@/lib/validation';
 import {
   createActivity,
@@ -210,10 +210,6 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     'assignEmployeeToProject'
   );
 
-  // Revalidate paths
-  revalidatePath(`/projects/${project_id}`);
-  revalidatePath('/admin/assignments');
-
   return { success: true, data: assignment };
 }
 
@@ -379,11 +375,6 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     'reassignEmployee'
   );
 
-  // Revalidate paths for both projects
-  revalidatePath(`/projects/${currentAssignment.project_id}`);
-  revalidatePath(`/projects/${new_project_id}`);
-  revalidatePath('/admin/assignments');
-
   return { success: true, data: newAssignment };
 }
 
@@ -443,10 +434,6 @@ export async function removeAssignment(assignmentId: string): Promise<ActionResu
     },
     { action: 'employee_removed' }
   );
-
-  // Revalidate paths
-  revalidatePath(`/projects/${assignment.project_id}`);
-  revalidatePath('/admin/assignments');
 
   return { success: true };
 }

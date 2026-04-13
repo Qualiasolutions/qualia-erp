@@ -1,6 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { isUserManagerOrAbove, type ActionResult } from './shared';
 
@@ -60,7 +59,6 @@ export async function createDashboardNote(content: string): Promise<ActionResult
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath('/');
   return { success: true };
 }
 
@@ -91,7 +89,6 @@ export async function updateDashboardNote(noteId: string, content: string): Prom
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath('/');
   return { success: true };
 }
 
@@ -119,7 +116,6 @@ export async function deleteDashboardNote(noteId: string): Promise<ActionResult>
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath('/');
   return { success: true };
 }
 
@@ -138,6 +134,5 @@ export async function togglePinNote(noteId: string, pinned: boolean): Promise<Ac
 
   if (error) return { success: false, error: error.message };
 
-  revalidatePath('/');
   return { success: true };
 }

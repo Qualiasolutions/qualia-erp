@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
+
 import { createClient } from '@/lib/supabase/server';
 import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
@@ -116,7 +116,6 @@ export async function seedKnowledgeGuides(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/knowledge');
   return {
     success: true,
     data: { message: options.force ? 'Re-seeded' : 'Seeded', count: rows.length },
@@ -162,6 +161,5 @@ export async function updateKnowledgeGuide(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/knowledge');
   return { success: true };
 }

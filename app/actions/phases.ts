@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { getTemplateForType, type GSDPhaseTemplate } from '@/lib/gsd-templates';
 import type { Database } from '@/types/database';
 
@@ -76,10 +76,10 @@ export async function createProjectPhase(projectId: string, name: string) {
     return { success: false, error: message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true, data };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deleteProjectPhase(phaseId: string, projectId: string) {
   const supabase = await createClient();
   const {
@@ -109,11 +109,10 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
     };
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function updateProjectPhase(phaseId: string, name: string, projectId: string) {
   const supabase = await createClient();
   const {
@@ -128,8 +127,6 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -196,9 +193,6 @@ export async function completePhase(phaseId: string) {
     await supabase.from('project_phases').update({ is_locked: false }).eq('id', nextPhase.id);
   }
 
-  revalidatePath(`/projects/${phase.project_id}`);
-  revalidatePath(`/projects/${phase.project_id}/roadmap`);
-  revalidatePath(`/projects/${phase.project_id}`);
   return { success: true };
 }
 
@@ -281,9 +275,6 @@ export async function unlockPhase(phaseId: string) {
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${phase.project_id}`);
-  revalidatePath(`/projects/${phase.project_id}/roadmap`);
-  revalidatePath(`/projects/${phase.project_id}`);
   return { success: true };
 }
 
@@ -493,8 +484,6 @@ export async function loadQualiaFrameworkPipeline(projectId: string) {
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}`);
   return { success: true, phasesCreated: template.phases.length };
 }
 
@@ -565,7 +554,5 @@ export async function updatePhaseStatusByName(
       .ilike('phase_name', phaseName);
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }

@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { parseFormData, createTeamSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from './workspace';
 import { createActivity, isUserAdmin, type ActionResult, type ActivityType } from './shared';
@@ -82,8 +82,6 @@ export async function createTeam(formData: FormData): Promise<ActionResult> {
     { name: team.name, key: team.key }
   );
 
-  revalidatePath('/teams');
-  revalidatePath('/');
   return { success: true, data: team };
 }
 
@@ -199,8 +197,6 @@ export async function updateTeam(formData: FormData): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/teams');
-  revalidatePath(`/teams/${id}`);
   return { success: true, data };
 }
 
@@ -230,6 +226,5 @@ export async function deleteTeam(teamId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/teams');
   return { success: true };
 }

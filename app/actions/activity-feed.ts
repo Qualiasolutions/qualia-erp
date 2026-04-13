@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { canAccessProject } from '@/lib/portal-utils';
@@ -144,10 +144,6 @@ export async function createActivityLogEntry(data: CreateActivityLogInput): Prom
     console.error('[createActivityLogEntry] Error:', error);
     return { success: false, error: error.message };
   }
-
-  // Revalidate portal updates path
-  revalidatePath(`/projects/${projectId}/updates`);
-  revalidatePath(`/projects/${projectId}`);
 
   return { success: true, data: entry };
 }

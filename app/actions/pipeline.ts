@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import {
@@ -294,7 +294,6 @@ export async function createProjectNote(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return {
     success: true,
     data: {
@@ -451,7 +450,6 @@ export async function initializeProjectPipeline(
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -493,13 +491,13 @@ export async function updatePhaseStatus(
     });
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
 export async function updatePhaseName(
   phaseId: string,
   name: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
@@ -518,10 +516,10 @@ export async function updatePhaseName(
   // Also update phase_name on all linked tasks
   await supabase.from('tasks').update({ phase_name: name }).eq('phase_id', phaseId);
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deletePhase(phaseId: string, projectId: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -556,7 +554,6 @@ export async function deletePhase(phaseId: string, projectId: string): Promise<A
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -595,7 +592,6 @@ export async function createPhase(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true, data };
 }
 
@@ -1144,10 +1140,7 @@ export async function togglePhaseTask(itemId: string, phaseId: string): Promise<
 
     // Revalidate relevant paths
     if (projectId) {
-      revalidatePath(`/projects/${projectId}`);
-      revalidatePath(`/projects/${projectId}/roadmap`);
     }
-    revalidatePath('/projects');
 
     return { success: true, data: { is_completed: newState } };
   } catch (error) {

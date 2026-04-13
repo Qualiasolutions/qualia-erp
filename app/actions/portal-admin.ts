@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { type ActionResult, isUserManagerOrAbove, getUserRole } from './shared';
 import { PortalAppConfigSchema, PortalBrandingSchema } from '@/lib/validation';
 
@@ -184,7 +184,6 @@ export async function updatePortalAppConfig(
       }
     }
 
-    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updatePortalAppConfig] Error:', error);
@@ -298,7 +297,6 @@ export async function updatePortalBranding(
       return { success: false, error: 'Failed to update branding' };
     }
 
-    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updatePortalBranding] Error:', error);
@@ -396,8 +394,6 @@ export async function uploadPortalLogo(formData: FormData): Promise<ActionResult
       await adminClient.storage.from(STORAGE_BUCKET).remove([storagePath]);
       return { success: false, error: 'Failed to update branding' };
     }
-
-    revalidatePath('/');
 
     return { success: true, data: { logo_url: logoUrl } };
   } catch (error) {

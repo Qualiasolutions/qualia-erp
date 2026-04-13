@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath, unstable_cache } from 'next/cache';
+import { unstable_cache } from 'next/cache';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { getCurrentWorkspaceId } from './workspace';
 import { randomBytes } from 'node:crypto';
@@ -174,10 +174,6 @@ export async function inviteClientByEmail(
       };
     }
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
-    revalidatePath('/');
-
     return {
       success: true,
       data: { userId: newUserId, tempPassword, emailSent: false },
@@ -256,10 +252,6 @@ export async function inviteClientToProject(
 
     if (error) throw error;
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
-    revalidatePath('/');
-
     return { success: true, data };
   } catch (error) {
     console.error('Failed to invite client to project:', error);
@@ -302,10 +294,6 @@ export async function removeClientFromProject(
       .eq('project_id', projectId);
 
     if (error) throw error;
-
-    revalidatePath('/clients');
-    revalidatePath('/projects');
-    revalidatePath('/');
 
     return { success: true };
   } catch (error) {
@@ -370,9 +358,6 @@ export async function revokePortalAccess(portalUserId: string): Promise<ActionRe
       console.error('[revokePortalAccess] Delete user error:', deleteError);
       return { success: false, error: `Failed to delete account: ${deleteError.message}` };
     }
-
-    revalidatePath('/');
-    revalidatePath('/clients');
 
     return { success: true };
   } catch (error) {
@@ -746,10 +731,6 @@ export async function setupClientForProject(projectId: string): Promise<ActionRe
       };
     }
 
-    revalidatePath('/clients');
-    revalidatePath('/projects');
-    revalidatePath('/');
-
     return {
       success: true,
       data: {
@@ -846,9 +827,6 @@ export async function createProjectFromPortal(input: {
       console.error('[createProjectFromPortal] No data returned after insert');
       return { success: false, error: 'Project created but no data returned' };
     }
-
-    revalidatePath('/projects');
-    revalidatePath('/');
 
     return { success: true, data };
   } catch (error) {
@@ -1263,8 +1241,6 @@ export async function updateClientProfile(updates: {
 
     if (error) throw error;
 
-    revalidatePath('/settings');
-    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updateClientProfile] Error:', error);
@@ -1390,8 +1366,6 @@ export async function updateNotificationPreferences(preferences: {
 
     if (error) throw error;
 
-    revalidatePath('/settings');
-    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updateNotificationPreferences] Error:', error);
@@ -1586,10 +1560,6 @@ export async function setupPortalForClient(
       return { success: false, error: 'Account created but failed to link any projects' };
     }
 
-    revalidatePath('/');
-    revalidatePath('/clients');
-    revalidatePath('/projects');
-
     // Send invitation email to the client (new accounts only)
     if (!alreadyExisted && tempPassword) {
       try {
@@ -1783,7 +1753,6 @@ export async function updateClientPortalProjects(
       }
     }
 
-    revalidatePath('/');
     return { success: true };
   } catch (error) {
     console.error('[updateClientPortalProjects] Error:', error);
@@ -2107,7 +2076,6 @@ export async function createClientActionItem(data: {
       }).catch((err) => console.error('[createClientActionItem] Notification error:', err));
     });
 
-    revalidatePath('/');
     return { success: true, data: inserted };
   } catch (error) {
     console.error('[createClientActionItem] Error:', error);
@@ -2167,7 +2135,6 @@ export async function completeClientActionItem(itemId: string): Promise<ActionRe
       });
     }
 
-    revalidatePath('/');
     return { success: true, data: updated };
   } catch (error) {
     console.error('[completeClientActionItem] Error:', error);
@@ -2678,9 +2645,6 @@ export async function createClientWorkspace(
     if (!setupResult.success) {
       return setupResult;
     }
-
-    revalidatePath('/');
-    revalidatePath('/clients');
 
     return {
       success: true,

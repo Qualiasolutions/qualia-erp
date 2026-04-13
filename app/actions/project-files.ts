@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { Tables } from '@/types/database';
 
 type ProjectFile = Tables<'project_files'>;
@@ -255,10 +255,6 @@ export async function uploadProjectFile(formData: FormData): Promise<ActionResul
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}/files`);
-  revalidatePath(`/projects/${projectId}/files`);
-
   return { success: true, data: fileRecord };
 }
 
@@ -388,9 +384,6 @@ export async function uploadClientFile(formData: FormData): Promise<ActionResult
     description || undefined
   );
 
-  revalidatePath(`/projects/${projectId}/files`);
-  revalidatePath(`/projects/${projectId}/files`);
-
   return { success: true, data: fileRecord };
 }
 
@@ -442,8 +435,6 @@ export async function deleteProjectFile(fileId: string): Promise<ActionResult> {
     console.error('[deleteProjectFile] DB error:', dbError);
     return { success: false, error: 'Failed to delete file record' };
   }
-
-  revalidatePath(`/projects/${file.project_id}`);
 
   return { success: true };
 }

@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
 
@@ -114,7 +114,6 @@ export async function createDailyCheckin(
     console.error('[createCheckin] Failed to notify admins:', err)
   );
 
-  revalidatePath('/');
   return { success: true, data };
 }
 

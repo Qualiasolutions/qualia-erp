@@ -1,6 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { createExpenseSchema, updateExpenseSchema } from '@/lib/validation';
@@ -417,7 +416,6 @@ export async function syncZohoFinancials(): Promise<{
     }
   }
 
-  revalidatePath('/billing');
   return {
     success: true,
     invoiceCount: zohoInvoices.length,
@@ -437,7 +435,7 @@ export async function hideInvoice(zohoId: string): Promise<{ success: boolean; e
     .eq('zoho_id', zohoId);
 
   if (error) return { success: false, error: error.message };
-  revalidatePath('/billing');
+
   return { success: true };
 }
 
@@ -451,7 +449,7 @@ export async function unhideInvoice(zohoId: string): Promise<{ success: boolean;
     .eq('zoho_id', zohoId);
 
   if (error) return { success: false, error: error.message };
-  revalidatePath('/billing');
+
   return { success: true };
 }
 
@@ -462,7 +460,7 @@ export async function deleteInvoice(zohoId: string): Promise<{ success: boolean;
   const { error } = await supabase.from('financial_invoices').delete().eq('zoho_id', zohoId);
 
   if (error) return { success: false, error: error.message };
-  revalidatePath('/billing');
+
   return { success: true };
 }
 
@@ -500,7 +498,7 @@ export async function createExpense(data: unknown): Promise<{ success: boolean; 
   const { error } = await supabase.from('expenses').insert(parsed.data);
 
   if (error) return { success: false, error: error.message };
-  revalidatePath('/billing');
+
   return { success: true };
 }
 
@@ -520,7 +518,7 @@ export async function updateExpense(data: unknown): Promise<{ success: boolean; 
     .eq('id', id);
 
   if (error) return { success: false, error: error.message };
-  revalidatePath('/billing');
+
   return { success: true };
 }
 
@@ -531,6 +529,6 @@ export async function deleteExpense(id: string): Promise<{ success: boolean; err
   const { error } = await supabase.from('expenses').delete().eq('id', id);
 
   if (error) return { success: false, error: error.message };
-  revalidatePath('/billing');
+
   return { success: true };
 }

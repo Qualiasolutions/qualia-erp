@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 
 // Max logo size: 5MB
@@ -111,10 +111,6 @@ export async function uploadProjectLogo(formData: FormData): Promise<ActionResul
     return { success: false, error: 'Failed to update project' };
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/projects');
-  revalidatePath('/');
-
   return { success: true, data: { logo_url: logoUrl } };
 }
 
@@ -164,10 +160,6 @@ export async function deleteProjectLogo(projectId: string): Promise<ActionResult
     console.error('[deleteProjectLogo] DB error:', updateError);
     return { success: false, error: 'Failed to update project' };
   }
-
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/projects');
-  revalidatePath('/');
 
   return { success: true };
 }
@@ -270,9 +262,6 @@ export async function uploadClientLogo(formData: FormData): Promise<ActionResult
     return { success: false, error: 'Failed to update client' };
   }
 
-  revalidatePath(`/clients/${clientId}`);
-  revalidatePath('/clients');
-
   return { success: true, data: { logo_url: logoUrl } };
 }
 
@@ -322,9 +311,6 @@ export async function deleteClientLogo(clientId: string): Promise<ActionResult> 
     console.error('[deleteClientLogo] DB error:', updateError);
     return { success: false, error: 'Failed to update client' };
   }
-
-  revalidatePath(`/clients/${clientId}`);
-  revalidatePath('/clients');
 
   return { success: true };
 }

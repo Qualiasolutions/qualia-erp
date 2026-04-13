@@ -2,7 +2,7 @@
 
 import crypto from 'crypto';
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { Octokit } from '@octokit/rest';
 import type { ActionResult } from './shared';
 
@@ -179,7 +179,6 @@ export async function saveIntegrationToken(
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
   if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
-  revalidatePath('/settings/integrations');
   return { success: true };
 }
 
@@ -225,7 +224,6 @@ export async function removeIntegration(
   if (provider === 'vercel') await clearVercelClientCache(workspaceId);
   if (provider === 'zoho') clearZohoClientCache(workspaceId);
 
-  revalidatePath('/settings/integrations');
   return { success: true };
 }
 
@@ -371,7 +369,7 @@ export async function updateGitHubTemplates(
   }
 
   await clearGitHubClientCache(workspaceId);
-  revalidatePath('/settings/integrations');
+
   return { success: true };
 }
 

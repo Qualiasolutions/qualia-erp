@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { getCurrentWorkspaceId } from './workspace';
 import { isUserAdmin, type ActionResult, type ActivityType } from './shared';
 
@@ -111,7 +111,5 @@ export async function deleteActivity(activityId: string): Promise<ActionResult> 
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/hub');
-  revalidatePath('/');
   return { success: true };
 }

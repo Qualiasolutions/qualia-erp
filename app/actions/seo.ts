@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { z } from 'zod';
 import type { ActionResult } from './shared';
@@ -257,7 +257,6 @@ export async function createBlogPost(formData: FormData): Promise<ActionResult> 
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/seo');
   return { success: true, data };
 }
 
@@ -310,7 +309,6 @@ export async function updateBlogPost(formData: FormData): Promise<ActionResult> 
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/seo');
   return { success: true, data };
 }
 
@@ -335,6 +333,5 @@ export async function deleteBlogPost(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/seo');
   return { success: true };
 }

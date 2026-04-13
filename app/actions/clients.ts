@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { parseFormData, createClientSchema, updateClientSchema } from '@/lib/validation';
 import { notifyClientCreated } from '@/lib/email';
 import { getCurrentWorkspaceId } from './workspace';
@@ -90,8 +90,6 @@ export async function createClientRecord(formData: FormData): Promise<ActionResu
     (err) => console.error('[createClientRecord] Failed to send email notification:', err)
   );
 
-  revalidatePath('/clients');
-  revalidatePath('/'); // Revalidate Today dashboard
   return { success: true, data };
 }
 
@@ -266,9 +264,6 @@ export async function updateClientRecord(formData: FormData): Promise<ActionResu
     });
   }
 
-  revalidatePath('/clients');
-  revalidatePath(`/clients/${id}`);
-  revalidatePath('/'); // Revalidate Today dashboard
   return { success: true, data };
 }
 
@@ -298,8 +293,6 @@ export async function deleteClientRecord(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/clients');
-  revalidatePath('/'); // Revalidate Today dashboard
   return { success: true };
 }
 
@@ -346,7 +339,6 @@ export async function logClientActivity(
       .eq('id', clientId);
   }
 
-  revalidatePath(`/clients/${clientId}`);
   return { success: true, data };
 }
 
@@ -405,8 +397,5 @@ export async function toggleClientStatus(
     new_status: newStatus,
   });
 
-  revalidatePath('/');
-  revalidatePath('/clients');
-  revalidatePath(`/clients/${clientId}`);
   return { success: true };
 }

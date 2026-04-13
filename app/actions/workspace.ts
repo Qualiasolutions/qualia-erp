@@ -2,7 +2,7 @@
 
 import { cache } from 'react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 
@@ -143,7 +143,6 @@ export async function setDefaultWorkspace(workspaceId: string): Promise<ActionRe
     .eq('workspace_id', workspaceId)
     .eq('profile_id', user.id);
 
-  revalidatePath('/');
   return { success: true };
 }
 
@@ -226,7 +225,6 @@ export async function createWorkspace(formData: FormData): Promise<ActionResult>
     };
   }
 
-  revalidatePath('/');
   return { success: true, data };
 }
 

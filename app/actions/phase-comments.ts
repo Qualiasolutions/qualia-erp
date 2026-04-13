@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
@@ -101,9 +101,6 @@ export async function createPhaseComment(data: CreatePhaseCommentInput): Promise
     );
   }
 
-  // Only revalidate portal — internal views refresh via client-side state
-  revalidatePath(`/projects/${projectId}`);
-
   return { success: true, data: comment };
 }
 
@@ -171,6 +168,7 @@ export async function getPhaseComments(
  * Delete a phase comment
  * Only admin or comment author can delete
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deletePhaseComment(
   commentId: string,
   projectId: string
@@ -208,9 +206,6 @@ export async function deletePhaseComment(
     console.error('[deletePhaseComment] Error:', error);
     return { success: false, error: error.message };
   }
-
-  // Only revalidate portal — internal views refresh via client-side state
-  revalidatePath(`/projects/${projectId}`);
 
   return { success: true };
 }

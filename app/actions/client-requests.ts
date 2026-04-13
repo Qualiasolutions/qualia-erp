@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { notifyAssignedEmployees } from '@/lib/notifications';
 import { FeatureRequestCreateSchema } from '@/lib/validation';
@@ -94,8 +94,6 @@ export async function createFeatureRequest(input: {
       console.error('[createFeatureRequest] Activity/notification error:', err);
     }
 
-    revalidatePath('/requests');
-    revalidatePath('/');
     return { success: true, data };
   } catch (error) {
     console.error('[createFeatureRequest] Error:', error);
@@ -214,8 +212,6 @@ export async function updateFeatureRequest(
       return { success: false, error: 'Request not found or access denied' };
     }
 
-    revalidatePath('/requests');
-    revalidatePath('/');
     return { success: true, data };
   } catch (error) {
     console.error('[updateFeatureRequest] Error:', error);

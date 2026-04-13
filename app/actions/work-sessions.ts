@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { isUserAdmin, isUserManagerOrAbove } from './shared';
 import type { ActionResult } from './shared';
 
@@ -121,7 +121,6 @@ export async function clockIn(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/');
   return { success: true, data };
 }
 
@@ -188,7 +187,6 @@ export async function clockOut(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/');
   return { success: true, data };
 }
 
@@ -246,7 +244,6 @@ export async function autoClockOut(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/');
   return { success: true, data };
 }
 
@@ -657,6 +654,5 @@ export async function updatePlannedLogoutTime(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/settings');
   return { success: true };
 }

@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
 
@@ -86,7 +86,6 @@ export async function createOwnerUpdate(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/');
   return { success: true, data };
 }
 
@@ -229,7 +228,6 @@ export async function updateOwnerUpdate(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/');
   return { success: true };
 }
 
@@ -258,6 +256,5 @@ export async function deleteOwnerUpdate(updateId: string): Promise<ActionResult>
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/');
   return { success: true };
 }

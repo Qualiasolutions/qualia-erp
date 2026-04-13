@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 
 // Conversation type
@@ -149,7 +149,6 @@ export async function createConversation(title?: string): Promise<ActionResult> 
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/ai-chat');
   return { success: true, data };
 }
 
@@ -185,7 +184,6 @@ export async function deleteConversation(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/ai-chat');
   return { success: true };
 }
 
@@ -252,7 +250,6 @@ export async function saveMessage(
     // Don't fail - message was saved successfully
   }
 
-  revalidatePath('/ai-chat');
   return { success: true, data };
 }
 
@@ -337,6 +334,5 @@ export async function updateConversationTitle(id: string, title: string): Promis
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/ai-chat');
   return { success: true };
 }

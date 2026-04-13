@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import { isUserAdmin, canModifyTask, type ActionResult } from './shared';
 
 export type TaskAttachment = {
@@ -220,7 +220,6 @@ export async function uploadTaskAttachment(formData: FormData): Promise<ActionRe
       .eq('id', taskId);
   }
 
-  revalidatePath('/inbox');
   return { success: true, data: attachment };
 }
 
@@ -270,7 +269,6 @@ export async function deleteTaskAttachment(attachmentId: string): Promise<Action
     return { success: false, error: 'Failed to delete attachment' };
   }
 
-  revalidatePath('/inbox');
   return { success: true };
 }
 
@@ -365,6 +363,5 @@ export async function submitTaskResponse(
     return { success: false, error: 'Failed to save submission' };
   }
 
-  revalidatePath('/inbox');
   return { success: true };
 }

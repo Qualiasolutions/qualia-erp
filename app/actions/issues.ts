@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import {
   parseFormData,
   createIssueSchema,
@@ -145,10 +145,6 @@ export async function createIssue(formData: FormData): Promise<ActionResult> {
     (err) => console.error('[createIssue] Failed to send email notification:', err)
   );
 
-  revalidatePath('/issues');
-  revalidatePath('/hub');
-  revalidatePath('/board');
-  revalidatePath('/');
   return { success: true, data };
 }
 
@@ -249,10 +245,6 @@ export async function updateIssue(formData: FormData): Promise<ActionResult> {
     }
   }
 
-  revalidatePath(`/issues/${id}`);
-  revalidatePath('/issues');
-  revalidatePath('/hub');
-  revalidatePath('/board');
   return { success: true, data };
 }
 
@@ -282,9 +274,6 @@ export async function deleteIssue(id: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/issues');
-  revalidatePath('/board');
-  revalidatePath('/hub');
   return { success: true };
 }
 
@@ -443,9 +432,6 @@ export async function createComment(formData: FormData): Promise<ActionResult> {
     );
   }
 
-  revalidatePath(`/issues/${issue_id}`);
-  revalidatePath('/');
-  revalidatePath('/hub');
   return { success: true, data };
 }
 
@@ -522,9 +508,6 @@ export async function addIssueAssignee(issueId: string, profileId: string): Prom
     await notifyTaskAssigned(issueId, issue.title, [profileId], issue.workspace_id, assignerName);
   }
 
-  revalidatePath(`/issues/${issueId}`);
-  revalidatePath('/issues');
-  revalidatePath('/hub');
   return { success: true, data };
 }
 
@@ -555,8 +538,6 @@ export async function removeIssueAssignee(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/issues/${issueId}`);
-  revalidatePath('/issues');
   return { success: true };
 }
 
@@ -678,7 +659,6 @@ export async function scheduleIssue(
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
   return { success: true };
 }
 
@@ -701,6 +681,5 @@ export async function unscheduleIssue(issueId: string): Promise<ActionResult> {
     return { success: false, error: error.message };
   }
 
-  revalidatePath('/schedule');
   return { success: true };
 }

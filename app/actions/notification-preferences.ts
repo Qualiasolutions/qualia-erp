@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { notificationPreferencesSchema, type NotificationPreferencesInput } from '@/lib/validation';
 import { ActionResult } from './shared';
-import { revalidatePath } from 'next/cache';
 
 /**
  * Get notification preferences for the current user
@@ -108,8 +107,6 @@ export async function updateNotificationPreferences(
 
     if (error) throw error;
 
-    revalidatePath('/settings');
-    revalidatePath('/settings');
     return { success: true };
   } catch (error) {
     console.error('[updateNotificationPreferences] Error:', error);

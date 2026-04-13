@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 import { isUserAdmin } from './shared';
 import { completePhase } from './phases';
@@ -96,8 +96,6 @@ export async function submitPhaseForReview(
     );
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/projects');
   return { success: true };
 }
 
@@ -182,8 +180,6 @@ export async function approvePhaseReview(
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/projects');
   return { success: true };
 }
 
@@ -267,8 +263,6 @@ export async function requestPhaseChanges(
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath('/projects');
   return { success: true };
 }
 

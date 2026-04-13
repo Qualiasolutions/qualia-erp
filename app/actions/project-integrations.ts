@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
@@ -212,7 +212,6 @@ export async function upsertIntegration(
     }
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -236,6 +235,5 @@ export async function deleteIntegration(
     return { success: false, error: 'Failed to delete integration' };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }

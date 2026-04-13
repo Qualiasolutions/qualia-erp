@@ -1,6 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import type { ActionResult } from './shared';
 
@@ -233,7 +232,6 @@ export async function createResearchEntry(
       author: Array.isArray(data.author) ? data.author[0] || null : data.author,
     };
 
-    revalidatePath('/research');
     return { success: true, data: normalized as ResearchEntry };
   } catch (err) {
     console.error('[createResearchEntry] Unexpected error:', err);
@@ -278,8 +276,6 @@ export async function updateResearchEntry(input: UpdateResearchInput): Promise<A
       return { success: false, error: error.message };
     }
 
-    revalidatePath('/research');
-    revalidatePath(`/research/${id}`);
     return { success: true };
   } catch (err) {
     console.error('[updateResearchEntry] Unexpected error:', err);
@@ -323,7 +319,6 @@ export async function deleteResearchEntry(id: string): Promise<ActionResult> {
       return { success: false, error: error.message };
     }
 
-    revalidatePath('/research');
     return { success: true };
   } catch (err) {
     console.error('[deleteResearchEntry] Unexpected error:', err);

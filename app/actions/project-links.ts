@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+
 import type { ActionResult } from './shared';
 
 export type LinkServiceType = 'github' | 'vercel' | 'figma' | 'notion';
@@ -66,7 +66,6 @@ export async function saveProjectLink(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
 
@@ -75,6 +74,7 @@ export async function saveProjectLink(
  */
 export async function removeProjectLink(
   integrationId: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   projectId: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
@@ -86,6 +86,5 @@ export async function removeProjectLink(
     return { success: false, error: error.message };
   }
 
-  revalidatePath(`/projects/${projectId}`);
   return { success: true };
 }
