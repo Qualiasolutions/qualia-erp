@@ -13,8 +13,8 @@ Full report + handoff instructions in `.planning/OPTIMIZE.md` (READ THIS FIRST).
 
 - ✅ Wave A — 6 CRITICAL + H1 — LIVE (commit `8fea8bc`)
 - 🟡 Wave B partial — H3..H8 LIVE (commit `7d4f862`); H2 still TODO (needs Upstash provisioning)
-- 🟡 Wave C in progress — C-1 (H9 + H10 + H14 + M13 + M17) ready to ship; H11/H12/M14/M15 (inbox reshape) + H13 (client dashboard JOIN) pending
-- ⬜ Wave D — MEDIUM + LOW cleanup — NOT STARTED
+- ✅ Wave C — H9, H10, H11, H12, H13, H14, M13, M14, M15, M17 — LIVE (commits `24139c8`, `12e9cd0`, `d29c59e`). M16 deferred to Wave D (admin-only, not hot path).
+- ⬜ Wave D — MEDIUM + LOW cleanup + H2 (Upstash) + M16 — NOT STARTED
 
 ### Migrations pending `supabase db push`
 Committed to `supabase/migrations/` but not yet applied to live DB:
@@ -45,7 +45,7 @@ Idempotent — safe to apply any time. Indexes + RLS policies for 6 orphan table
 master
 
 ## Last Deploy
-commit `7d4f862` · 2026-04-13 09:33 · production healthy
+commit `d29c59e` · 2026-04-13 10:14 · production healthy (Wave C-3 shipped)
 
 ## Decisions
 - Transform, don't delete — extend existing tables and actions
