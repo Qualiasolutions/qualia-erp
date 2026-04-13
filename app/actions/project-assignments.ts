@@ -1,6 +1,6 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { parseFormData, assignEmployeeSchema, reassignEmployeeSchema } from '@/lib/validation';
 import {
@@ -12,6 +12,65 @@ import {
 import { normalizeFKResponse } from '@/lib/server-utils';
 import { getActiveMilestone, createTasksFromMilestone } from './auto-assign';
 import { createNotification } from './notifications';
+import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
+
+// Debounce window for auto-sync on assign: skip if a phase was synced within this many seconds.
+// Prevents spam when an admin assigns multiple people to the same project in quick succession.
+const AUTO_SYNC_DEBOUNCE_SECONDS = 60;
+
+/**
+ * Best-effort: if the project has a GitHub integration, pull .planning/ from the
+ * repo and upsert phases. Debounced by AUTO_SYNC_DEBOUNCE_SECONDS so rapid-fire
+ * assignments don't hammer the GitHub API.
+ *
+ * Never throws. Logs errors and returns silently — the caller is an assignment
+ * action and must not fail because of sync issues.
+ */
+async function autoSyncPlanningIfGitHubLinked(
+  projectId: string,
+  workspaceId: string,
+  githubRepoUrl: string | null,
+  caller: string
+): Promise<void> {
+  if (!githubRepoUrl) return; // No GitHub integration — nothing to sync
+
+  try {
+    const adminClient = createAdminClient();
+
+    // Debounce check: read max github_synced_at from project_phases
+    const { data: phases } = await adminClient
+      .from('project_phases')
+      .select('github_synced_at')
+      .eq('project_id', projectId)
+      .not('github_synced_at', 'is', null)
+      .order('github_synced_at', { ascending: false })
+      .limit(1);
+
+    const lastSync = phases?.[0]?.github_synced_at;
+    if (lastSync) {
+      const ageSeconds = (Date.now() - new Date(lastSync).getTime()) / 1000;
+      if (ageSeconds < AUTO_SYNC_DEBOUNCE_SECONDS) {
+        console.log(
+          `[${caller}] auto-sync skipped — last sync was ${Math.round(ageSeconds)}s ago (debounced)`
+        );
+        return;
+      }
+    }
+
+    // Fire the sync
+    const result = await syncPlanningFromGitHubWithServiceRole(adminClient, projectId, workspaceId);
+
+    if (result.success) {
+      console.log(
+        `[${caller}] auto-sync complete — upserted ${result.phasesUpserted} phases from GitHub`
+      );
+    } else {
+      console.warn(`[${caller}] auto-sync failed (non-blocking):`, result.error);
+    }
+  } catch (err) {
+    console.error(`[${caller}] auto-sync error (non-blocking):`, err);
+  }
+}
 
 // ============ PROJECT ASSIGNMENT ACTIONS ============
 
@@ -45,7 +104,7 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
   // Get project and employee to verify workspace match
   const { data: project } = await supabase
     .from('projects')
-    .select('workspace_id, name')
+    .select('workspace_id, name, github_repo_url')
     .eq('id', project_id)
     .single();
 
@@ -167,6 +226,16 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     console.error('[assignEmployeeToProject] Auto-task error (non-blocking):', autoTaskError);
   }
 
+  // Auto-sync planning from GitHub (best-effort, debounced)
+  // The moment an employee is assigned, pull the latest .planning/ROADMAP.md and
+  // phases so they see current work without having to click "Sync" manually.
+  await autoSyncPlanningIfGitHubLinked(
+    project_id,
+    project.workspace_id,
+    project.github_repo_url,
+    'assignEmployeeToProject'
+  );
+
   // Revalidate paths
   revalidatePath(`/projects/${project_id}`);
   revalidatePath('/admin/assignments');
@@ -216,7 +285,7 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   // Get new project to verify workspace
   const { data: newProject } = await supabase
     .from('projects')
-    .select('workspace_id, name')
+    .select('workspace_id, name, github_repo_url')
     .eq('id', new_project_id)
     .single();
 
@@ -331,6 +400,14 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
   } catch (autoTaskError) {
     console.error('[reassignEmployee] Auto-task error (non-blocking):', autoTaskError);
   }
+
+  // Auto-sync planning from GitHub for the new project (best-effort, debounced)
+  await autoSyncPlanningIfGitHubLinked(
+    new_project_id,
+    newProject.workspace_id,
+    newProject.github_repo_url,
+    'reassignEmployee'
+  );
 
   // Revalidate paths for both projects
   revalidatePath(`/projects/${currentAssignment.project_id}`);
