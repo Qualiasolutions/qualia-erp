@@ -1,7 +1,7 @@
-import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { isPortalAdminRole } from '@/lib/portal-utils';
+import { getPortalAuthUser, getPortalProfile, getViewAsCookieId } from '@/lib/portal-cache';
 import { PortalDashboardContent } from './portal-dashboard-content';
 import { getClientWorkspaces } from '@/app/actions/portal-workspaces';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
@@ -13,41 +13,32 @@ export default async function PortalDashboard({
 }: {
   searchParams: Promise<{ workspace?: string; wname?: string }>;
 }) {
-  const params = await searchParams;
-  const workspaceId = params.workspace;
+  // H10 (OPTIMIZE.md): page used to re-run auth + profile + viewAs lookups
+  // that the layout had already done, then chain clients → client_contacts →
+  // profiles to resolve the portal user. With lib/portal-cache helpers the
+  // first three are free cache hits, and the client/contact/profile chain
+  // is collapsed into a single JOIN via select('contacts:client_contacts(...)').
+  const { workspace: workspaceId } = await searchParams;
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const user = await getPortalAuthUser();
   if (!user) {
     redirect('/auth/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, role')
-    .eq('id', user.id)
-    .single();
+  // These are free cache hits if the layout already ran this render pass.
+  const [viewAsCookieId, profile] = await Promise.all([
+    getViewAsCookieId(),
+    getPortalProfile(user.id),
+  ]);
 
   const realRole = profile?.role || null;
-
-  // --- View-as impersonation: resolve effective user ---
-  const cookieStore = await cookies();
-  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
 
   let effectiveUserId = user.id;
   let effectiveRole = realRole;
   let effectiveDisplayName = profile?.full_name || user.email?.split('@')[0] || 'there';
 
-  if (viewAsUserId && realRole === 'admin') {
-    const { data: viewAsProfile } = await supabase
-      .from('profiles')
-      .select('id, full_name, role')
-      .eq('id', viewAsUserId)
-      .single();
-
+  if (viewAsCookieId && realRole === 'admin') {
+    const viewAsProfile = await getPortalProfile(viewAsCookieId);
     if (viewAsProfile) {
       effectiveUserId = viewAsProfile.id;
       effectiveRole = viewAsProfile.role || 'client';
@@ -67,29 +58,44 @@ export default async function PortalDashboard({
       return <AdminDashboardContent workspaces={workspaces} displayName={displayName} />;
     }
 
-    // Workspace selected -> validate client exists before proceeding (IDOR protection)
+    // Workspace selected: resolve client + primary contact email in ONE query
+    // via a JOIN on client_contacts, eliminating the 3-step chain
+    // (clients → client_contacts → profiles). The portal profile lookup that
+    // follows is still needed because client_contacts only stores email.
+    const supabase = await createClient();
     const { data: client } = await supabase
       .from('clients')
-      .select('name')
+      .select('name, contacts:client_contacts!inner(email, is_primary)')
       .eq('id', workspaceId)
-      .single();
-
-    if (!client) {
-      // Invalid workspace ID — redirect to workspace grid
-      redirect('/');
-    }
-
-    // Find the portal user ID for this CRM client (via contact email -> profile)
-    const { data: contact } = await supabase
-      .from('client_contacts')
-      .select('email')
-      .eq('client_id', workspaceId)
-      .eq('is_primary', true)
+      .eq('contacts.is_primary', true)
       .maybeSingle();
 
-    const contactEmail = contact?.email?.trim().toLowerCase();
-    let portalUserId: string | null = null;
+    if (!client) {
+      // Invalid workspace ID, or workspace has no primary contact yet.
+      // Fall back to a plain clients lookup so admins can still see the shell
+      // for clients that are mid-setup.
+      const { data: rawClient } = await supabase
+        .from('clients')
+        .select('name')
+        .eq('id', workspaceId)
+        .maybeSingle();
+      if (!rawClient) {
+        redirect('/');
+      }
+      return (
+        <PortalDashboardContent
+          clientId={workspaceId}
+          displayName={displayName}
+          companyName={rawClient.name}
+        />
+      );
+    }
 
+    // Normalize the FK — Supabase returns contacts as an array.
+    const contacts = Array.isArray(client.contacts) ? client.contacts : [client.contacts];
+    const contactEmail = contacts[0]?.email?.trim().toLowerCase() || null;
+
+    let portalUserId: string | null = null;
     if (contactEmail) {
       const { data: portalProfile } = await supabase
         .from('profiles')
@@ -97,12 +103,9 @@ export default async function PortalDashboard({
         .eq('email', contactEmail)
         .eq('role', 'client')
         .maybeSingle();
-
       portalUserId = portalProfile?.id ?? null;
     }
 
-    // If no portal user found, try to get projects via CRM client_id directly
-    // and show an admin view of the dashboard
     const clientId = portalUserId || workspaceId;
     const companyName = client?.name || null;
 
@@ -121,7 +124,7 @@ export default async function PortalDashboard({
   }
 
   // Client: fetch company name for personalization
-  let companyName: string | null = null;
+  const supabase = await createClient();
   const { data: companyMapping } = await supabase
     .from('portal_project_mappings')
     .select('erp_company_name')
@@ -129,7 +132,7 @@ export default async function PortalDashboard({
     .not('erp_company_name', 'is', null)
     .limit(1)
     .maybeSingle();
-  companyName = companyMapping?.erp_company_name || null;
+  const companyName = companyMapping?.erp_company_name || null;
 
   // Client: show their dashboard
   return (

@@ -2,13 +2,50 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_cache } from 'next/cache';
 import { type ActionResult, isUserManagerOrAbove } from './shared';
 import { getCurrentWorkspaceId } from './workspace';
 import { randomBytes } from 'node:crypto';
 import { ClientProfileUpdateSchema } from '@/lib/validation';
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://portal.qualiasolutions.net';
+
+/**
+ * H14 (OPTIMIZE.md): `getPortalHubData` + `getPortalClientManagement` both
+ * called `supabase.auth.admin.listUsers({ perPage: 1000 })` on every dashboard
+ * load. The GoTrue admin endpoint takes ~200–500ms per call and is rate-limited.
+ *
+ * Here we wrap the listUsers round-trip in `unstable_cache` keyed by a
+ * stable tag so both action call sites share a single 120-second snapshot.
+ * The cached value is a plain object (email → last_sign_in_at) so it round-trips
+ * through the cache layer without Map serialization issues. Callers build a
+ * Map from the returned record.
+ *
+ * Cache is tagged `portal-auth-sign-in-map` so admin flows that need a
+ * fresh read can bust it by revalidating the tag.
+ */
+const getCachedPortalSignInMap = unstable_cache(
+  async (): Promise<Record<string, string | null>> => {
+    try {
+      const adminClient = createAdminClient();
+      const { data } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+      const map: Record<string, string | null> = {};
+      for (const authUser of data?.users ?? []) {
+        const email = authUser.email?.toLowerCase();
+        if (email) {
+          map[email] = authUser.last_sign_in_at ?? null;
+        }
+      }
+      return map;
+    } catch {
+      // Service role key missing / listUsers failed — return empty map so
+      // the caller continues to render without last-sign-in enrichment.
+      return {};
+    }
+  },
+  ['portal-auth-sign-in-map'],
+  { revalidate: 120, tags: ['portal-auth-sign-in-map'] }
+);
 
 // ============================================================================
 // SECTION: Client Invitations & Onboarding
@@ -1848,18 +1885,9 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
       return { success: false, error: 'Admin access required' };
     }
 
-    let adminClient: ReturnType<typeof createAdminClient>;
-    try {
-      adminClient = createAdminClient();
-    } catch {
-      return {
-        success: false,
-        error: 'Service role key not configured. Cannot fetch last login data.',
-      };
-    }
-
-    // Fetch all data in parallel
-    const [clientsResult, assignmentsResult, authUsersResult] = await Promise.all([
+    // Fetch all data in parallel. The cached sign-in map (H14) is shared
+    // with getPortalHubData so both hit the same 120s snapshot.
+    const [clientsResult, assignmentsResult, signInRecord] = await Promise.all([
       // All client profiles
       supabase
         .from('profiles')
@@ -1872,22 +1900,15 @@ export async function getPortalClientManagement(): Promise<ActionResult> {
         .from('client_projects')
         .select('client_id, project_id, project:projects!project_id(id, name)'),
 
-      // All auth users (for last_sign_in_at) — limited to 1000 per call
-      adminClient.auth.admin.listUsers({ perPage: 1000 }),
+      // Auth users last_sign_in_at — cached per H14
+      getCachedPortalSignInMap(),
     ]);
 
     if (clientsResult.error) {
       return { success: false, error: clientsResult.error.message };
     }
 
-    // Build email -> last_sign_in_at map from auth users
-    const signInMap = new Map<string, string | null>();
-    for (const authUser of authUsersResult.data?.users ?? []) {
-      const email = authUser.email?.toLowerCase();
-      if (email) {
-        signInMap.set(email, authUser.last_sign_in_at ?? null);
-      }
-    }
+    const signInMap = new Map<string, string | null>(Object.entries(signInRecord));
 
     // Build client_id -> projects map from assignments
     const projectsMap = new Map<string, Array<{ id: string; name: string }>>();
@@ -2408,22 +2429,10 @@ export async function getPortalHubData(): Promise<ActionResult> {
       clientProjectsMap.set(project.client_id, existing);
     }
 
-    // Try to get last sign-in data (optional — fails gracefully without service_role key)
-    const signInMap = new Map<string, string | null>();
-    try {
-      const adminClient = createAdminClient();
-      const { data: authUsersResult } = await adminClient.auth.admin.listUsers({
-        perPage: 1000,
-      });
-      for (const authUser of authUsersResult?.users ?? []) {
-        const email = authUser.email?.toLowerCase();
-        if (email) {
-          signInMap.set(email, authUser.last_sign_in_at ?? null);
-        }
-      }
-    } catch {
-      // No service role key — skip last sign-in data
-    }
+    // Last-sign-in data via the cached shared helper (H14). Swallows
+    // service-role-missing errors internally and returns an empty record.
+    const signInRecord = await getCachedPortalSignInMap();
+    const signInMap = new Map<string, string | null>(Object.entries(signInRecord));
 
     // Build client_id -> primary email map from client_contacts
     const clientEmailMap = new Map<string, string>();

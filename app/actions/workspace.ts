@@ -1,5 +1,6 @@
 'use server';
 
+import { cache } from 'react';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { ActionResult } from './shared';
@@ -8,9 +9,14 @@ import { isUserAdmin } from './shared';
 // ============ WORKSPACE HELPERS ============
 
 /**
- * Get current user's default workspace ID
+ * Request-scoped memoized workspace id lookup. OPTIMIZE.md M17: this is called
+ * 52× across 16 action files per render. React.cache() deduplicates within a
+ * single request so parallel actions share one auth+workspace_members roundtrip.
+ *
+ * The function is parameterless, so every caller in the same request hits the
+ * same cache entry.
  */
-export async function getCurrentWorkspaceId(): Promise<string | null> {
+const getCachedCurrentWorkspaceId = cache(async (): Promise<string | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,6 +32,13 @@ export async function getCurrentWorkspaceId(): Promise<string | null> {
     .single();
 
   return data?.workspace_id || null;
+});
+
+/**
+ * Get current user's default workspace ID. Memoized per-request via React.cache().
+ */
+export async function getCurrentWorkspaceId(): Promise<string | null> {
+  return getCachedCurrentWorkspaceId();
 }
 
 /**

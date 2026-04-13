@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { getUserRole, isPortalAdminRole } from '@/lib/portal-utils';
+import { isPortalAdminRole } from '@/lib/portal-utils';
+import { getPortalAuthUser, getPortalProfile, getViewAsCookieId } from '@/lib/portal-cache';
 import { PortalSidebarV2 } from '@/components/portal/portal-sidebar-v2';
 import { PageTransition } from '@/components/page-transition';
-import { cookies } from 'next/headers';
 import { ViewAsBanner } from '@/components/portal/view-as-banner';
 import { getEnabledAppsForClient, getPortalBranding } from '@/app/actions/portal-admin';
 
@@ -17,51 +17,52 @@ export const metadata: Metadata = {
 };
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // H9 (OPTIMIZE.md): this layout previously fired 5–7 sequential DB queries
+  // before any HTML streamed (auth → getUserRole → profile → viewAs → workspace
+  // → apps+branding). Collapsed to 3 sequential waits by:
+  //   1) reading `role` from a single profile select (drops the separate
+  //      getUserRole round-trip)
+  //   2) batching real profile + viewAs profile in parallel (cookie read is
+  //      fast, so we speculatively fire the viewAs query)
+  //   3) batching workspace lookup + companyName in parallel
+  //   4) apps + branding already parallel
+  //
+  // H10 (OPTIMIZE.md): all user/profile fetches route through lib/portal-cache.ts
+  // so app/(portal)/page.tsx can hit the same React.cache() entries and skip
+  // its own auth + profile + viewAs chain.
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
-  // Allow all authenticated roles: admin, manager, employee, client
-  const actualRole = await getUserRole(user.id);
+  // Parallel batch 1: view-as cookie read + real profile fetch.
+  // Both are async in Next 16 but independent, so running them inside one
+  // Promise.all overlaps the cookie header parse with the profile select.
+  const [viewAsCookieId, profile] = await Promise.all([
+    getViewAsCookieId(),
+    getPortalProfile(user.id),
+  ]);
+
+  const actualRole = profile?.role || null;
   if (!actualRole) {
     redirect('/');
   }
 
-  // Get user profile for display
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, email, avatar_url, role')
-    .eq('id', user.id)
-    .single();
-
   const isAdminViewing = isPortalAdminRole(actualRole);
+
+  // Only honor the viewAs cookie when the actual user is an admin/manager.
+  // Fetching the viewAs profile happens here (still cached via portal-cache)
+  // so non-admin users with a stale cookie pay zero DB cost.
+  const viewAsProfile =
+    isAdminViewing && viewAsCookieId ? await getPortalProfile(viewAsCookieId) : null;
+
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 
-  // Check if admin is actively impersonating someone — do this BEFORE computing
-  // effective role so everything downstream (nav, apps, workspace fetch) uses the
-  // impersonated user's perspective.
-  let viewAsUserId: string | null = null;
-  let viewAsName: string | null = null;
-  let viewAsRole: string | null = null;
-  if (isAdminViewing) {
-    const cookieStore = await cookies();
-    viewAsUserId = cookieStore.get('view-as-user-id')?.value || null;
-    if (viewAsUserId) {
-      const { data: viewAsProfile } = await supabase
-        .from('profiles')
-        .select('full_name, role')
-        .eq('id', viewAsUserId)
-        .single();
-      viewAsName = viewAsProfile?.full_name || 'Unknown';
-      viewAsRole = viewAsProfile?.role || 'client';
-    }
-  }
+  const viewAsUserId = viewAsProfile ? viewAsCookieId : null;
+  const viewAsName = viewAsProfile?.full_name || null;
+  const viewAsRole = viewAsProfile?.role || null;
 
   // When admin is actively impersonating, adopt the viewed user's role + id for
   // sidebar filtering, enabled-apps, workspace/client lookups, and SWR cache keys.
@@ -71,46 +72,53 @@ export default async function PortalLayout({ children }: { children: React.React
   const effectiveIsInternal =
     effectiveRole === 'admin' || effectiveRole === 'manager' || effectiveRole === 'employee';
 
-  let companyName: string | null = null;
-  if (!effectiveIsInternal) {
-    const { data: mapping } = await supabase
-      .from('portal_project_mappings')
-      .select('erp_company_name')
-      .eq('portal_client_id', effectiveUserId)
-      .not('erp_company_name', 'is', null)
-      .limit(1)
-      .maybeSingle();
-    companyName = mapping?.erp_company_name || null;
-  }
+  // Parallel batch 2: workspace lookup + companyName.
+  // Internal: workspace_members → workspace_id
+  // Client: client_projects JOIN projects → workspace_id (one query, was two)
+  const supabase = await createClient();
+  const [workspaceResult, companyNameResult] = await Promise.all([
+    effectiveIsInternal
+      ? supabase
+          .from('workspace_members')
+          .select('workspace_id')
+          .eq('profile_id', effectiveUserId)
+          .limit(1)
+          .maybeSingle()
+      : supabase
+          .from('client_projects')
+          .select('projects!inner(workspace_id)')
+          .eq('client_id', effectiveUserId)
+          .limit(1)
+          .maybeSingle(),
+    effectiveIsInternal
+      ? Promise.resolve({ data: null, error: null })
+      : supabase
+          .from('portal_project_mappings')
+          .select('erp_company_name')
+          .eq('portal_client_id', effectiveUserId)
+          .not('erp_company_name', 'is', null)
+          .limit(1)
+          .maybeSingle(),
+  ]);
 
-  // Fetch workspace ID for app config + branding (scoped to effective user)
   let workspaceId: string | null = null;
   if (effectiveIsInternal) {
-    // Internal team (admin/manager/employee): get from workspace_members
-    const { data: wm } = await supabase
-      .from('workspace_members')
-      .select('workspace_id')
-      .eq('profile_id', effectiveUserId)
-      .limit(1)
-      .maybeSingle();
-    workspaceId = wm?.workspace_id || null;
+    workspaceId = (workspaceResult.data as { workspace_id?: string } | null)?.workspace_id || null;
   } else {
-    // Client: get workspace via their first linked project
-    const { data: cp } = await supabase
-      .from('client_projects')
-      .select('project_id')
-      .eq('client_id', effectiveUserId)
-      .limit(1)
-      .maybeSingle();
-    if (cp?.project_id) {
-      const { data: proj } = await supabase
-        .from('projects')
-        .select('workspace_id')
-        .eq('id', cp.project_id)
-        .single();
-      workspaceId = proj?.workspace_id || null;
-    }
+    // Normalize the `projects` FK — Supabase returns it as object or array
+    // depending on the relationship metadata.
+    const cpRow = workspaceResult.data as {
+      projects: { workspace_id: string } | { workspace_id: string }[] | null;
+    } | null;
+    const proj = cpRow?.projects
+      ? Array.isArray(cpRow.projects)
+        ? cpRow.projects[0]
+        : cpRow.projects
+      : null;
+    workspaceId = proj?.workspace_id || null;
   }
+
+  const companyName = effectiveIsInternal ? null : companyNameResult.data?.erp_company_name || null;
 
   // Fetch enabled apps and branding in parallel
   const allAppKeys = [

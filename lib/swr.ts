@@ -1219,11 +1219,11 @@ export function usePortalProjectWithPhases(projectId: string | null) {
 
       const supabase = (await import('@/lib/supabase/client')).createClient();
 
-      // Verify user is authenticated
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return null;
+      // M13 (OPTIMIZE.md): dropped the client-side supabase.auth.getUser()
+      // preflight that used to run before every poll of this hook. RLS
+      // already enforces project ownership — the preflight added ~30–80ms
+      // per revalidation with no security benefit. Any unauthenticated
+      // request hits empty-set RLS and short-circuits naturally below.
 
       // Fetch project details
       const { data: project, error: projectError } = await supabase
