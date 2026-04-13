@@ -3,7 +3,7 @@
  * Accepts a Supabase client (either user-auth or service-role).
  */
 
-import { parseRoadmap, parseStateTable } from '@/lib/planning-parser';
+import { parseRoadmap, parseStateRoadmap, parseStateTable } from '@/lib/planning-parser';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 interface SyncResult {
@@ -138,29 +138,49 @@ export async function syncPlanningFromGitHubWithServiceRole(
         break;
       }
     }
-    if (!roadmapResult.content) {
-      const detail =
-        lastStatus === 404
-          ? 'No .planning/ROADMAP.md found'
-          : lastStatus === 401 || lastStatus === 403
-            ? 'GitHub token lacks access to this repo'
-            : `GitHub fetch failed (HTTP ${lastStatus})`;
-      return { success: false, phasesUpserted: 0, error: detail };
-    }
   }
-  const roadmapContent = roadmapResult.content;
 
-  // 4. Fetch STATE.md for dates
+  // 4. Fetch STATE.md (used for both supplemental dates AND fallback parsing).
   const stateResult = await fetchGitHubFile(
     token,
     repoParsed.owner,
     repoParsed.repo,
     '.planning/STATE.md'
   );
-  const stateMap = stateResult.content ? parseStateTable(stateResult.content) : new Map();
 
-  // 5. Parse ROADMAP.md
-  const milestones = parseRoadmap(roadmapContent);
+  // 5. Choose parsing strategy:
+  //    - If ROADMAP.md exists: parse it (the canonical Qualia format).
+  //    - Else if STATE.md has a flat roadmap table: use the fallback parser
+  //      (handles ad-hoc structures like Moayad's JEC project).
+  //    - Else: bail with a clear error.
+  let milestones: ReturnType<typeof parseRoadmap>;
+  let stateMap: ReturnType<typeof parseStateTable> = new Map();
+
+  if (roadmapResult.content) {
+    milestones = parseRoadmap(roadmapResult.content);
+    stateMap = stateResult.content ? parseStateTable(stateResult.content) : new Map();
+  } else if (stateResult.content) {
+    // ROADMAP.md missing — try parseStateRoadmap as a fallback so projects
+    // that ship only STATE.md still sync. parseStateTable (the dotted-phase
+    // map) doesn't apply here since fallback projects use flat numbering.
+    milestones = parseStateRoadmap(stateResult.content);
+    if (milestones.length === 0) {
+      return {
+        success: false,
+        phasesUpserted: 0,
+        error:
+          'No .planning/ROADMAP.md found, and .planning/STATE.md does not contain a parseable roadmap table.',
+      };
+    }
+  } else {
+    const detail =
+      lastStatus === 404
+        ? 'No .planning/ROADMAP.md or .planning/STATE.md found'
+        : lastStatus === 401 || lastStatus === 403
+          ? 'GitHub token lacks access to this repo'
+          : `GitHub fetch failed (HTTP ${lastStatus})`;
+    return { success: false, phasesUpserted: 0, error: detail };
+  }
 
   // 6. For archived milestones with no inline phases, scan phase directories
   for (const ms of milestones) {

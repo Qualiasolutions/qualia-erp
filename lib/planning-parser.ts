@@ -268,3 +268,144 @@ export function normalizeStatus(raw: string): string {
   if (s.includes('pending')) return 'not_started';
   return 'not_started';
 }
+
+// ─── STATE.md flat-roadmap fallback parser ──────────────────────────────────
+//
+// Some projects (e.g. JEC by Moayad) ship a `.planning/STATE.md` with a flat
+// roadmap table and NO `ROADMAP.md` file. This parser produces a milestone
+// list directly from STATE.md so the sync still works.
+//
+// Expected format:
+//
+//     ## Current Position
+//     Phase: 2 of 6 — Case Management
+//     Status: in progress
+//
+//     ## Roadmap
+//     | # | Phase            | Goal                                   | Status |
+//     |---|------------------|----------------------------------------|--------|
+//     | 1 | Foundation       | Auth, schema, RBAC, base layout        | done   |
+//     | 2 | Case Management  | Case CRUD, multi-entity, search        | planned|
+//     | 3 | Financial & Docs | Financial exposure, doc upload, FTS    | —      |
+//
+// Status mapping per row:
+//   - `done` / `complete` / `completed` / `✓`         → completed
+//   - `in progress` / `active` / `wip`                → in_progress
+//   - `planned` / `current` (matches "Phase: N of M") → in_progress
+//   - `planned` (other rows)                          → not_started
+//   - `—` / empty / `tbd` / `pending`                 → not_started
+
+export function parseStateRoadmap(content: string): ParsedMilestone[] {
+  const lines = content.split('\n');
+
+  // 1. Detect the currently active phase from "Phase: N of M — Name".
+  let currentPhaseNumber: number | null = null;
+  for (const line of lines) {
+    const m = line.match(/^\s*Phase:\s*(\d+)\s*of\s*\d+/i);
+    if (m) {
+      currentPhaseNumber = parseInt(m[1], 10);
+      break;
+    }
+  }
+
+  // 2. Find the roadmap table header row and parse subsequent data rows.
+  //    The header is `| # | Phase | Goal | Status |` (case-insensitive),
+  //    optionally with extra whitespace.
+  const phases: ParsedPhase[] = [];
+  let inTable = false;
+  let headerSeen = false;
+
+  for (const line of lines) {
+    // Detect header: matches `| # | phase | goal | status |` shape.
+    const headerMatch = line.match(
+      /^\|\s*#\s*\|\s*(?:phase|name|milestone)\s*\|\s*(?:goal|description)\s*\|\s*status\s*\|\s*$/i
+    );
+    if (headerMatch) {
+      inTable = true;
+      headerSeen = true;
+      continue;
+    }
+
+    // Skip the alignment row `|---|---|---|---|`
+    if (inTable && /^\|[\s\-:|]+\|\s*$/.test(line)) continue;
+
+    // Stop on the first non-table line after the header.
+    if (inTable && !line.trim().startsWith('|')) {
+      inTable = false;
+      continue;
+    }
+
+    if (!inTable) continue;
+
+    // Data row: `| 1 | Foundation | Auth, schema | done |`
+    const rowMatch = line.match(/^\|\s*(\d+)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*$/);
+    if (!rowMatch) continue;
+
+    const num = parseInt(rowMatch[1], 10);
+    const name = rowMatch[2].trim();
+    const goal = rowMatch[3].trim();
+    const rawStatus = rowMatch[4].trim();
+
+    // Status interpretation
+    const lower = rawStatus.toLowerCase();
+    let status: string;
+    if (
+      rawStatus === '—' ||
+      rawStatus === '-' ||
+      rawStatus === '' ||
+      lower === 'tbd' ||
+      lower === 'pending' ||
+      lower === 'not started'
+    ) {
+      status = 'not_started';
+    } else if (lower.includes('done') || lower.includes('complete') || rawStatus === '✓') {
+      status = 'completed';
+    } else if (lower.includes('progress') || lower.includes('active') || lower === 'wip') {
+      status = 'in_progress';
+    } else if (lower.includes('planned') || lower === 'current') {
+      // "planned" rows are not_started UNLESS they are the active phase per
+      // the "Phase: N of M" line, in which case they're in_progress.
+      status = currentPhaseNumber === num ? 'in_progress' : 'not_started';
+    } else {
+      status = 'not_started';
+    }
+
+    // Override: the phase explicitly called out by "Phase: N of M" should
+    // never be `not_started` even if its row says so.
+    if (currentPhaseNumber === num && status === 'not_started') {
+      status = 'in_progress';
+    }
+
+    phases.push({
+      milestoneNumber: num,
+      phaseNumber: String(num),
+      name,
+      description: goal || null,
+      status,
+      planCount: 0,
+      plansCompleted: 0,
+      startedAt: null,
+      completedAt: null,
+    });
+  }
+
+  if (!headerSeen || phases.length === 0) {
+    return [];
+  }
+
+  // 3. Wrap phases in a single synthetic milestone so callers can iterate
+  //    the same shape as `parseRoadmap`. milestone.number = 1, status
+  //    derived from child phases.
+  const allCompleted = phases.every((p) => p.status === 'completed');
+  const anyInProgress = phases.some((p) => p.status === 'in_progress' || p.status === 'completed');
+  const milestoneStatus = allCompleted ? 'complete' : anyInProgress ? 'in_progress' : 'planned';
+
+  return [
+    {
+      number: 1,
+      name: 'Roadmap',
+      status: milestoneStatus,
+      phases,
+    },
+  ];
+}
