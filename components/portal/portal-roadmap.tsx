@@ -1,11 +1,34 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatDate } from '@/lib/utils';
 import { RichText } from '@/components/ui/rich-text';
-import { useInView } from 'framer-motion';
 import { m } from '@/lib/lazy-motion';
+
+// Native IntersectionObserver hook — avoids importing full framer-motion bundle
+function useInView(
+  ref: React.RefObject<Element | null>,
+  opts?: { once?: boolean; margin?: string }
+) {
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          if (opts?.once) observer.disconnect();
+        }
+      },
+      { rootMargin: opts?.margin ?? '0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [ref, opts?.once, opts?.margin]);
+  return inView;
+}
 import { PhaseCommentThread } from './phase-comment-thread';
 import { getPhaseComments, getAllPhaseCommentCounts } from '@/app/actions/phase-comments';
 import { getProjectStatusColor } from '@/lib/portal-styles';
@@ -127,7 +150,7 @@ function getPhaseStatusConfig(status: string) {
 
 // ─── Deliverable item row ─────────────────────────────────────────────────────
 
-function DeliverableItem({ item }: { item: PhaseItem }) {
+const DeliverableItem = React.memo(function DeliverableItem({ item }: { item: PhaseItem }) {
   const isDone = item.is_completed || item.status === 'completed' || item.status === 'done';
 
   return (
@@ -168,7 +191,7 @@ function DeliverableItem({ item }: { item: PhaseItem }) {
       )}
     </div>
   );
-}
+});
 
 // ─── Phase card ───────────────────────────────────────────────────────────────
 

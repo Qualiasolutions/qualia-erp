@@ -51,10 +51,7 @@ CREATE POLICY "financial_invoices_select"
       )
       OR (
         client_id IS NOT NULL
-        AND EXISTS (
-          SELECT 1 FROM public.client_projects cp
-          WHERE cp.client_id = (SELECT auth.uid())
-        )
+        AND client_id = (SELECT auth.uid())
       )
     )
   );

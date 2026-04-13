@@ -354,38 +354,43 @@ export async function getProjectStats(workspaceId?: string | null): Promise<{
  */
 export async function getProjectById(id: string) {
   const supabase = await createClient();
-  const { data: project, error } = await supabase
-    .from('projects')
-    .select(
-      `
+
+  // Parallelize project + issues queries — they're independent
+  const [projectResult, issuesResult] = await Promise.all([
+    supabase
+      .from('projects')
+      .select(
+        `
             *,
             lead:profiles!projects_lead_id_fkey (id, full_name, email, avatar_url),
             team:teams (id, name, key),
             client:clients (id, name)
         `
-    )
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error('Error fetching project:', error);
-    return null;
-  }
-
-  // Fetch issues separately for this project
-  const { data: issues } = await supabase
-    .from('issues')
-    .select(
-      `
+      )
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('issues')
+      .select(
+        `
             id,
             title,
             status,
             priority,
             created_at
         `
-    )
-    .eq('project_id', id)
-    .order('created_at', { ascending: false });
+      )
+      .eq('project_id', id)
+      .order('created_at', { ascending: false }),
+  ]);
+
+  const { data: project, error } = projectResult;
+  const { data: issues } = issuesResult;
+
+  if (error) {
+    console.error('Error fetching project:', error);
+    return null;
+  }
 
   // Compute stats from already-fetched issues (was a second query before)
   const totalIssues = issues?.length || 0;

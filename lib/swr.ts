@@ -1274,54 +1274,37 @@ export function usePortalProjectWithPhases(projectId: string | null) {
     async () => {
       if (!projectId) return null;
 
-      const supabase = (await import('@/lib/supabase/client')).createClient();
+      // M21 (OPTIMIZE.md): moved from client-side Supabase queries to a server action.
+      // Server action runs with proper auth context and avoids exposing raw DB queries to the client.
+      const { getPortalProjectWithPhases } = await import('@/app/actions/phases');
+      const result = await getPortalProjectWithPhases(projectId);
+      if (!result.success || !result.data) return null;
 
-      // M13 (OPTIMIZE.md): dropped the client-side supabase.auth.getUser()
-      // preflight that used to run before every poll of this hook. RLS
-      // already enforces project ownership — the preflight added ~30–80ms
-      // per revalidation with no security benefit. Any unauthenticated
-      // request hits empty-set RLS and short-circuits naturally below.
-
-      // Fetch project details
-      const { data: project, error: projectError } = await supabase
-        .from('projects')
-        .select('id, name, project_status:status, description')
-        .eq('id', projectId)
-        .single();
-
-      if (projectError || !project) return null;
-
-      // Fetch phases with their items (deliverables)
-      const { data: phases, error: phasesError } = await supabase
-        .from('project_phases')
-        .select(
-          `
-          id, name, status, description, sort_order, completed_at,
-          items:phase_items(id, title, description, display_order, is_completed, completed_at, status)
-        `
-        )
-        .eq('project_id', projectId)
-        .order('sort_order', { ascending: true });
-
-      if (phasesError) {
-        return { project, phases: [] };
-      }
-
-      // Sort items within each phase by display_order
-      const phasesWithSortedItems = (phases || []).map((phase) => ({
-        ...phase,
-        order_index: phase.sort_order,
-        start_date: null,
-        target_date: null,
-        items: Array.isArray(phase.items)
-          ? [...phase.items].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-          : [],
-      }));
-
-      return {
-        project,
-        phases: phasesWithSortedItems,
+      const { project, phases } = result.data as {
+        project: { id: string; name: string; project_status: string; description: string | null };
+        phases: Array<{
+          id: string;
+          name: string;
+          status: string;
+          description: string | null;
+          sort_order: number;
+          completed_at: string | null;
+          order_index: number;
+          start_date: string | null;
+          target_date: string | null;
+          items: Array<{
+            id: string;
+            title: string;
+            description: string | null;
+            display_order: number | null;
+            is_completed: boolean;
+            completed_at: string | null;
+            status: string | null;
+          }>;
+        }>;
       };
+
+      return { project, phases };
     },
     autoRefreshConfig
   );

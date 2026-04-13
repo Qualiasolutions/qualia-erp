@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import {
   FolderKanban,
@@ -151,7 +152,13 @@ function formatRelativeTime(dateStr: string): string {
 // Project card — each card has a distinct feel based on progress
 // ---------------------------------------------------------------------------
 
-function ProjectCard({ project, index }: { project: PortalProject; index: number }) {
+const ProjectCard = React.memo(function ProjectCard({
+  project,
+  index,
+}: {
+  project: PortalProject;
+  index: number;
+}) {
   const progressPct = Math.round(project.progress);
   const hasPhases = project.totalPhases > 0;
   const isComplete = progressPct === 100;
@@ -225,7 +232,7 @@ function ProjectCard({ project, index }: { project: PortalProject; index: number
       />
     </Link>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Loading skeletons

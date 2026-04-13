@@ -548,3 +548,48 @@ export const PortalBrandingSchema = z.object({
 
 export type PortalAppConfigInput = z.infer<typeof PortalAppConfigSchema>;
 export type PortalBrandingInput = z.infer<typeof PortalBrandingSchema>;
+
+// =====================
+// Common Param Schemas (Wave D optimization)
+// =====================
+export const uuidParam = z.string().uuid('Invalid ID');
+
+// =====================
+// Phase Schemas
+// =====================
+export const createPhaseSchema = z.object({
+  projectId: z.string().uuid('Invalid project ID'),
+  name: z.string().min(1, 'Phase name is required').max(200, 'Phase name too long'),
+});
+
+export const updatePhaseSchema = z.object({
+  phaseId: z.string().uuid('Invalid phase ID'),
+  name: z.string().min(1, 'Phase name is required').max(200, 'Phase name too long'),
+  projectId: z.string().uuid('Invalid project ID'),
+});
+
+// =====================
+// Dashboard Note Schemas
+// =====================
+export const dashboardNoteContentSchema = z
+  .string()
+  .min(1, 'Note content is required')
+  .max(5000, 'Note content too long');
+
+// =====================
+// Owner Update Schemas
+// =====================
+export const createOwnerUpdateSchema = z.object({
+  workspaceId: z.string().uuid('Invalid workspace ID'),
+  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
+  body: z.string().min(1, 'Body is required').max(10000, 'Body too long'),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  pinned: z.boolean().optional(),
+});
+
+export const updateOwnerUpdateSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  body: z.string().min(1).max(10000).optional(),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).optional(),
+  pinned: z.boolean().optional(),
+});

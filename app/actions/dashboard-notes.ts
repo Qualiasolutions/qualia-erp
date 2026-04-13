@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { uuidParam, dashboardNoteContentSchema } from '@/lib/validation';
 import { isUserManagerOrAbove, type ActionResult } from './shared';
 
 export type DashboardNote = {
@@ -42,6 +43,9 @@ export async function getDashboardNotes(): Promise<DashboardNote[]> {
 }
 
 export async function createDashboardNote(content: string): Promise<ActionResult> {
+  const check = dashboardNoteContentSchema.safeParse(content);
+  if (!check.success) return { success: false, error: check.error.issues[0].message };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -63,6 +67,11 @@ export async function createDashboardNote(content: string): Promise<ActionResult
 }
 
 export async function updateDashboardNote(noteId: string, content: string): Promise<ActionResult> {
+  const idCheck = uuidParam.safeParse(noteId);
+  const contentCheck = dashboardNoteContentSchema.safeParse(content);
+  if (!idCheck.success) return { success: false, error: 'Invalid note ID' };
+  if (!contentCheck.success) return { success: false, error: contentCheck.error.issues[0].message };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -93,6 +102,9 @@ export async function updateDashboardNote(noteId: string, content: string): Prom
 }
 
 export async function deleteDashboardNote(noteId: string): Promise<ActionResult> {
+  const idCheck = uuidParam.safeParse(noteId);
+  if (!idCheck.success) return { success: false, error: 'Invalid note ID' };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -120,6 +132,9 @@ export async function deleteDashboardNote(noteId: string): Promise<ActionResult>
 }
 
 export async function togglePinNote(noteId: string, pinned: boolean): Promise<ActionResult> {
+  const idCheck = uuidParam.safeParse(noteId);
+  if (!idCheck.success) return { success: false, error: 'Invalid note ID' };
+
   const supabase = await createClient();
   const {
     data: { user },

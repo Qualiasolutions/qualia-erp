@@ -125,6 +125,11 @@ async function ensureGitHubWebhook(
 export async function getProjectIntegrations(projectId: string) {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('project_integrations')
     .select('*')

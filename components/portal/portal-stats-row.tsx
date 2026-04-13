@@ -38,10 +38,10 @@ const statCards = [
     icon: Receipt,
     format: (v: number) =>
       v === 0
-        ? '$0'
-        : v.toLocaleString('en-US', {
+        ? '\u20AC0'
+        : v.toLocaleString('de-DE', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'EUR',
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           }),

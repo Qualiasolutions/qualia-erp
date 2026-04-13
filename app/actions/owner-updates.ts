@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { uuidParam, createOwnerUpdateSchema, updateOwnerUpdateSchema } from '@/lib/validation';
 
 import { isUserAdmin } from './shared';
 import type { ActionResult } from './shared';
@@ -53,6 +54,9 @@ export async function createOwnerUpdate(
     return { success: false, error: 'Not authenticated' };
   }
 
+  const parsed = createOwnerUpdateSchema.safeParse({ workspaceId, title, body, ...options });
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+
   const admin = await isUserAdmin(user.id);
   if (!admin) {
     return { success: false, error: 'Only admins can create owner updates' };
@@ -60,13 +64,6 @@ export async function createOwnerUpdate(
 
   const trimmedTitle = title.trim();
   const trimmedBody = body.trim();
-
-  if (!trimmedTitle) {
-    return { success: false, error: 'Title is required' };
-  }
-  if (!trimmedBody) {
-    return { success: false, error: 'Body is required' };
-  }
 
   const { data, error } = await supabase
     .from('owner_updates')
@@ -160,6 +157,9 @@ export async function getOwnerUpdates(
  * Upserts into owner_update_reads — idempotent.
  */
 export async function acknowledgeOwnerUpdate(updateId: string): Promise<ActionResult> {
+  const idCheck = uuidParam.safeParse(updateId);
+  if (!idCheck.success) return { success: false, error: 'Invalid update ID' };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -198,6 +198,11 @@ export async function updateOwnerUpdate(
     pinned?: boolean;
   }
 ): Promise<ActionResult> {
+  const idCheck = uuidParam.safeParse(updateId);
+  if (!idCheck.success) return { success: false, error: 'Invalid update ID' };
+  const patchCheck = updateOwnerUpdateSchema.safeParse(patch);
+  if (!patchCheck.success) return { success: false, error: patchCheck.error.issues[0].message };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -235,6 +240,9 @@ export async function updateOwnerUpdate(
  * Delete an owner update. Admin only.
  */
 export async function deleteOwnerUpdate(updateId: string): Promise<ActionResult> {
+  const idCheck = uuidParam.safeParse(updateId);
+  if (!idCheck.success) return { success: false, error: 'Invalid update ID' };
+
   const supabase = await createClient();
   const {
     data: { user },

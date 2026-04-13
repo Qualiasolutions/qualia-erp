@@ -166,15 +166,19 @@ export async function canDeletePhaseItem(userId: string, itemId: string): Promis
 // must be ASSIGNED to the task's project via project_assignments. Plain
 // workspace membership alone is no longer sufficient.
 export async function canModifyTask(userId: string, taskId: string): Promise<boolean> {
-  if (await isUserAdmin(userId)) return true;
-
   const supabase = await createClient();
-  const { data: task } = await supabase
-    .from('tasks')
-    .select('creator_id, assignee_id, workspace_id, project_id, project:projects(lead_id)')
-    .eq('id', taskId)
-    .single();
 
+  // Parallelize the admin check and task fetch — they're independent
+  const [isAdmin, { data: task }] = await Promise.all([
+    isUserAdmin(userId),
+    supabase
+      .from('tasks')
+      .select('creator_id, assignee_id, workspace_id, project_id, project:projects(lead_id)')
+      .eq('id', taskId)
+      .single(),
+  ]);
+
+  if (isAdmin) return true;
   if (!task) return false;
 
   // Creator / assignee / project lead always pass

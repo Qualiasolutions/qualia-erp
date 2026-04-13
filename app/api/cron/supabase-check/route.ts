@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeCompare } from '@/lib/auth-utils';
 import { createClient } from '@supabase/supabase-js';
 
 export const maxDuration = 60;
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || !safeCompare(authHeader, `Bearer ${cronSecret}`)) {
       console.error('[cron/supabase-check] Unauthorized request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

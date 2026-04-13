@@ -14,5 +14,6 @@ export function LazyMotionProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export { m } from 'framer-motion';
-export { AnimatePresence } from 'framer-motion';
+// Re-export m from the mini entry point to avoid pulling in the full framer-motion bundle.
+// framer-motion/m exports the m proxy as the module namespace (m.div, m.span, etc.).
+export { m, AnimatePresence } from 'framer-motion';

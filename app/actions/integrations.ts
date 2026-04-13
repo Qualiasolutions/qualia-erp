@@ -388,6 +388,18 @@ export async function startProvisioning(
 ): Promise<ActionResult & { data?: { jobStarted: boolean } }> {
   const supabase = await createClient();
 
+  // Auth check — only admins can trigger provisioning
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+  if (profile?.role !== 'admin') return { success: false, error: 'Admin access required' };
+
   // Get project info
   const { data: project, error: projectError } = await supabase
     .from('projects')
@@ -555,47 +567,44 @@ export async function syncGitHubWebhooks(
     return { success: true, data: { synced: 0, skipped: 0, failed: [] } };
   }
 
-  let synced = 0;
-  let skipped = 0;
-  const failed: string[] = [];
+  // Parallelize webhook checks across all repos (was sequential N+1)
+  const results = await Promise.allSettled(
+    integrations.map(async (integration) => {
+      const repoUrl = integration.external_url;
+      if (!repoUrl) return 'skip' as const;
 
-  for (const integration of integrations) {
-    const repoUrl = integration.external_url;
-    if (!repoUrl) continue;
+      const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (!match) return 'skip' as const;
+      const [, owner, repo] = match;
 
-    // Extract owner/repo from URL
-    const match = repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
-    if (!match) continue;
-    const [, owner, repo] = match;
-
-    try {
-      // Check existing webhooks
       const { data: hooks } = await octokit.repos.listWebhooks({ owner, repo });
       const existing = hooks.find((h) => h.config.url === WEBHOOK_URL);
+      if (existing) return 'skipped' as const;
 
-      if (existing) {
-        skipped++;
-        continue;
-      }
-
-      // Create webhook
       await octokit.repos.createWebhook({
         owner,
         repo,
-        config: {
-          url: WEBHOOK_URL,
-          content_type: 'json',
-          secret: webhookSecret,
-        },
+        config: { url: WEBHOOK_URL, content_type: 'json', secret: webhookSecret },
         events: ['push'],
         active: true,
       });
-      synced++;
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      failed.push(`${owner}/${repo}: ${msg}`);
+      return 'synced' as const;
+    })
+  );
+
+  let synced = 0;
+  let skipped = 0;
+  const failed: string[] = [];
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled') {
+      if (r.value === 'synced') synced++;
+      else if (r.value === 'skipped') skipped++;
+    } else {
+      const url = integrations[i].external_url || 'unknown';
+      const msg = r.reason instanceof Error ? r.reason.message : 'Unknown error';
+      failed.push(`${url}: ${msg}`);
     }
-  }
+  });
 
   return { success: true, data: { synced, skipped, failed } };
 }

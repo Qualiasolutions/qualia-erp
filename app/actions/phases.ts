@@ -1,14 +1,21 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { uuidParam, createPhaseSchema, updatePhaseSchema } from '@/lib/validation';
 
 import { getTemplateForType, type GSDPhaseTemplate } from '@/lib/gsd-templates';
+import type { ActionResult } from './shared';
 import type { Database } from '@/types/database';
 
 type ProjectType = Database['public']['Enums']['project_type'];
 
 export async function getProjectPhases(projectId: string) {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('project_phases')
     .select('*')
@@ -23,6 +30,9 @@ export async function getProjectPhases(projectId: string) {
 }
 
 export async function createProjectPhase(projectId: string, name: string) {
+  const parsed = createPhaseSchema.safeParse({ projectId, name });
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -81,6 +91,9 @@ export async function createProjectPhase(projectId: string, name: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function deleteProjectPhase(phaseId: string, projectId: string) {
+  const idCheck = uuidParam.safeParse(phaseId);
+  if (!idCheck.success) return { success: false, error: 'Invalid phase ID' };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -112,8 +125,10 @@ export async function deleteProjectPhase(phaseId: string, projectId: string) {
   return { success: true };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function updateProjectPhase(phaseId: string, name: string, projectId: string) {
+  const parsed = updatePhaseSchema.safeParse({ phaseId, name, projectId });
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -134,6 +149,9 @@ export async function updateProjectPhase(phaseId: string, name: string, projectI
  * Mark a phase as complete and auto-unlock the next phase
  */
 export async function completePhase(phaseId: string) {
+  const idCheck = uuidParam.safeParse(phaseId);
+  if (!idCheck.success) return { success: false, error: 'Invalid phase ID' };
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -555,4 +573,52 @@ export async function updatePhaseStatusByName(
   }
 
   return { success: true };
+}
+
+/**
+ * Server action for portal project-with-phases data.
+ * Replaces the client-side Supabase queries that `usePortalProjectWithPhases` used to run directly.
+ */
+export async function getPortalProjectWithPhases(projectId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not authenticated' };
+
+  // Parallelize project + phases queries
+  const [projectResult, phasesResult] = await Promise.all([
+    supabase
+      .from('projects')
+      .select('id, name, project_status:status, description')
+      .eq('id', projectId)
+      .single(),
+    supabase
+      .from('project_phases')
+      .select(
+        `id, name, status, description, sort_order, completed_at,
+         items:phase_items(id, title, description, display_order, is_completed, completed_at, status)`
+      )
+      .eq('project_id', projectId)
+      .order('sort_order', { ascending: true }),
+  ]);
+
+  if (projectResult.error || !projectResult.data) {
+    return { success: false, error: 'Project not found' };
+  }
+
+  const phasesWithSortedItems = (phasesResult.data || []).map((phase) => ({
+    ...phase,
+    order_index: phase.sort_order,
+    start_date: null,
+    target_date: null,
+    items: Array.isArray(phase.items)
+      ? [...phase.items].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+      : [],
+  }));
+
+  return {
+    success: true,
+    data: { project: projectResult.data, phases: phasesWithSortedItems },
+  };
 }

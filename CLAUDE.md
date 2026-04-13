@@ -593,8 +593,8 @@ Required (see `.env.example`):
 
 ## Deployment
 
-- **Vercel Team**: `archivedqualia` (Archived) — NOT `qualiasolutionscy`
-- **Production**: https://portal.qualiasolutions.net (deploy via `vercel --prod --scope archivedqualia`)
+- **Vercel Team**: `qualiasolutionscy` (Qualia Solutions - Development)
+- **Production**: https://portal.qualiasolutions.net (deploy via `vercel --prod --scope qualiasolutionscy`)
 - **Supabase Ref**: `vbpzaiqovffpsroxaulv`
 - **Pre-commit hooks**: ESLint + Prettier (via husky + lint-staged). Run `npx tsc --noEmit` manually for TypeScript checks.
 - **Post-deploy checklist**: HTTP 200, auth flow, console errors, API latency <500ms (see `rules/deployment.md`)

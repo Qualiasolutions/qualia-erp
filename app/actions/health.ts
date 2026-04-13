@@ -77,8 +77,8 @@ export async function getWorkspaceHealthDashboard(workspaceId?: string): Promise
       return { success: false, error: 'No workspace selected' };
     }
 
-    // First, refresh the materialized view
-    await supabase.rpc('refresh_project_health_view');
+    // Materialized view is refreshed by recordAllProjectsHealth (write path)
+    // and the supabase-check cron — not on every read.
 
     // Query materialized view for fast results
     const { data: projects, error } = await supabase

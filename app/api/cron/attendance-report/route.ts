@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { safeCompare } from '@/lib/auth-utils';
 import { createClient } from '@/lib/supabase/server';
 import { Resend } from 'resend';
 import { WORK_SCHEDULES } from '@/lib/team-constants';
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     const authHeader = request.headers.get('authorization');
     const cronSecret = process.env.CRON_SECRET;
 
-    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret || !safeCompare(authHeader, `Bearer ${cronSecret}`)) {
       console.error('[cron/attendance-report] Unauthorized request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

@@ -12,7 +12,6 @@ interface CreateActivityLogInput {
   actionType: string;
   actionData?: Record<string, unknown>;
   isClientVisible: boolean;
-  actorId?: string;
 }
 
 /**
@@ -122,10 +121,10 @@ export async function createActivityLogEntry(data: CreateActivityLogInput): Prom
     return { success: false, error: 'Not authenticated' };
   }
 
-  const { projectId, actionType, actionData, isClientVisible, actorId } = data;
+  const { projectId, actionType, actionData, isClientVisible } = data;
 
-  // Use provided actorId or fall back to current user
-  const finalActorId = actorId || user.id;
+  // Always use the authenticated user — never trust caller-supplied actor IDs
+  const finalActorId = user.id;
 
   // Insert activity log entry
   const { data: entry, error } = await supabase

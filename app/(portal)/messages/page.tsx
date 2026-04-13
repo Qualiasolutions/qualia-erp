@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { getPortalAuthUser, getPortalProfile } from '@/lib/portal-cache';
 import { MessagesContent } from './messages-content';
 
 export const metadata: Metadata = {
@@ -8,20 +8,13 @@ export const metadata: Metadata = {
 };
 
 export default async function PortalMessagesPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getPortalAuthUser();
 
   if (!user) {
     redirect('/auth/login');
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, full_name, email, role')
-    .eq('id', user.id)
-    .single();
+  const profile = await getPortalProfile(user.id);
 
   const userName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const userRole = profile?.role || 'client';

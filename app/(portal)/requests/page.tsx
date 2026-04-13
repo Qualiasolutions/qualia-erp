@@ -26,10 +26,11 @@ export default async function PortalRequestsPage() {
     redirect('/');
   }
 
-  const isAdmin = await isUserManagerOrAbove(user.id);
-
-  // Get feature requests
-  const requestsResult = await getClientFeatureRequests();
+  // Parallelize the admin check + feature requests fetch (independent)
+  const [isAdmin, requestsResult] = await Promise.all([
+    isUserManagerOrAbove(user.id),
+    getClientFeatureRequests(),
+  ]);
 
   // Get project dropdown: admins see all active projects, clients see their linked projects
   let projectsData: { id: string; name: string }[] = [];
