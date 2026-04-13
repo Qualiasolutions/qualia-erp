@@ -16,7 +16,13 @@ import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { quickUpdateTask } from '@/app/actions/inbox';
-import { useInboxTasks, invalidateInboxTasks, invalidateDailyFlow } from '@/lib/swr';
+import type { InboxPreviewResponse } from '@/app/actions/inbox';
+import {
+  useInboxPreview,
+  invalidateInboxPreview,
+  invalidateInboxTasks,
+  invalidateDailyFlow,
+} from '@/lib/swr';
 import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 
 interface InboxWidgetProps {
@@ -52,23 +58,24 @@ function formatDue(dueDate: string): string {
 /**
  * Compact inbox preview shown on the home dashboard.
  *
- * Behaviour:
- * - Pulls top-N inbox tasks (sorted by overdue first, then priority) via SWR
- *   so counts stay live alongside the full inbox view.
- * - Lets the user tick off a task inline without leaving the dashboard.
- * - "View all" deep-links to the full inbox.
+ * Behaviour (post H11 + M15):
+ * - Uses `useInboxPreview(limit)` which fetches ~4× limit rows + two
+ *   head-only COUNT queries instead of the whole inbox. ~95% bandwidth
+ *   savings compared to the old `useInboxTasks()` call.
+ * - Overdue / total badges come straight from the preview response counts
+ *   so the numbers stay correct even when there are more overdue tasks
+ *   than we render rows for.
+ * - Completion is optimistic: we drop the task from the SWR cache
+ *   immediately, then revalidate in the background. No double-invalidation
+ *   with `immediate:true` storms.
  */
 export function InboxWidget({ limit = 5 }: InboxWidgetProps) {
-  const { tasks, isLoading, isError, revalidate } = useInboxTasks();
+  const { data, isLoading, isError, revalidate } = useInboxPreview(limit);
+  const { tasks, overdueCount, totalOpen } = data;
   const [, startTransition] = useTransition();
 
-  const openTasks = useMemo(
-    () => tasks.filter((t) => t.status !== 'Done' && t.item_type !== 'note'),
-    [tasks]
-  );
-
   const sortedTasks = useMemo(() => {
-    return [...openTasks].sort((a, b) => {
+    return [...tasks].sort((a, b) => {
       // Overdue first
       const aOverdue = isOverdue(a.due_date) ? 0 : 1;
       const bOverdue = isOverdue(b.due_date) ? 0 : 1;
@@ -88,25 +95,58 @@ export function InboxWidget({ limit = 5 }: InboxWidgetProps) {
 
       return 0;
     });
-  }, [openTasks]);
+  }, [tasks]);
 
   const visibleTasks = sortedTasks.slice(0, limit);
-  const overdueCount = useMemo(
-    () => openTasks.filter((t) => isOverdue(t.due_date)).length,
-    [openTasks]
-  );
 
-  const handleComplete = useCallback((taskId: string) => {
-    startTransition(async () => {
-      const result = await quickUpdateTask(taskId, { status: 'Done' });
-      if (!result.success) {
-        toast.error(result.error ?? 'Failed to complete task');
-        return;
-      }
-      invalidateInboxTasks(true);
-      invalidateDailyFlow(true);
-    });
-  }, []);
+  const handleComplete = useCallback(
+    (taskId: string) => {
+      // M15 (OPTIMIZE.md): optimistic update — drop the completed task from
+      // the SWR cache immediately, then kick off a background revalidation
+      // when the mutation resolves. The old path double-invalidated with
+      // `immediate:true` and forced two sequential refetches per click,
+      // producing a 300–800ms feedback delay.
+      const optimistic = (prev?: InboxPreviewResponse): InboxPreviewResponse => {
+        const base = prev ?? { tasks: [], overdueCount: 0, totalOpen: 0 };
+        const removed = base.tasks.find((t) => t.id === taskId);
+        if (!removed) return base;
+        return {
+          tasks: base.tasks.filter((t) => t.id !== taskId),
+          totalOpen: Math.max(0, base.totalOpen - 1),
+          overdueCount: isOverdue(removed.due_date)
+            ? Math.max(0, base.overdueCount - 1)
+            : base.overdueCount,
+        };
+      };
+
+      revalidate(
+        (async () => {
+          const result = await quickUpdateTask(taskId, { status: 'Done' });
+          if (!result.success) {
+            throw new Error(result.error ?? 'Failed to complete task');
+          }
+          // Cross-cache invalidation for the full inbox view + daily flow.
+          // Non-immediate so they revalidate quietly in the background.
+          invalidateInboxPreview(false);
+          invalidateInboxTasks(false);
+          invalidateDailyFlow(false);
+          // Return undefined so SWR refetches the canonical value.
+          return undefined;
+        })(),
+        {
+          optimisticData: optimistic,
+          rollbackOnError: true,
+          revalidate: true,
+          populateCache: false,
+        }
+      ).catch((err: Error) => {
+        startTransition(() => {
+          toast.error(err.message || 'Failed to complete task');
+        });
+      });
+    },
+    [revalidate]
+  );
 
   return (
     <section aria-labelledby="inbox-widget-heading">
@@ -118,9 +158,9 @@ export function InboxWidget({ limit = 5 }: InboxWidgetProps) {
           >
             Inbox
           </h2>
-          {!isLoading && openTasks.length > 0 && (
+          {!isLoading && totalOpen > 0 && (
             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold tabular-nums text-muted-foreground">
-              {openTasks.length}
+              {totalOpen}
             </span>
           )}
           {overdueCount > 0 && (

@@ -87,6 +87,14 @@ export type Task = {
   } | null;
 };
 
+// H12 (OPTIMIZE.md): previously unlimited getTasks fetched every task in the
+// workspace × 4 joined records (creator, assignee, project, nested project
+// lead) on every poll. This cap is a safety net even when callers forget to
+// pass `limit`. Inbox hot paths should pass an explicit `limit` (50 for the
+// full inbox view). The nested `project.lead` join has been dropped from the
+// default projection and is now fetched on-demand via getProjectTasks.
+const DEFAULT_TASK_FETCH_LIMIT = 200;
+
 /**
  * Get tasks for a workspace
  */
@@ -149,7 +157,7 @@ export async function getTasks(
       updated_at,
       creator:profiles!tasks_creator_id_fkey (id, full_name, email, avatar_url),
       assignee:profiles!tasks_assignee_id_fkey (id, full_name, email, avatar_url),
-      project:projects (id, name, project_type, lead:profiles!projects_lead_id_fkey (id, full_name, avatar_url))
+      project:projects (id, name, project_type)
     `
     )
     .eq('workspace_id', wsId)
@@ -165,9 +173,7 @@ export async function getTasks(
     query = query.in('status', options.status);
   }
 
-  if (options.limit) {
-    query = query.limit(options.limit);
-  }
+  query = query.limit(options.limit ?? DEFAULT_TASK_FETCH_LIMIT);
 
   const { data: tasks, error } = await query;
 
@@ -189,6 +195,129 @@ export async function getTasks(
       project: Array.isArray(t.project) ? t.project[0] : t.project,
     } as Task;
   });
+}
+
+// ============================================================================
+// H11 (OPTIMIZE.md): getInboxPreview — lean slice for dashboard InboxWidget
+// ============================================================================
+
+/**
+ * Lean projection for the dashboard InboxWidget. Avoids all FK joins except a
+ * minimal `project(id, name)` needed for the row's subtitle.
+ */
+export type InboxPreviewTask = {
+  id: string;
+  title: string;
+  status: 'Todo' | 'In Progress' | 'Done';
+  priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
+  item_type: 'task' | 'issue' | 'note' | 'resource';
+  due_date: string | null;
+  project: { id: string; name: string } | null;
+};
+
+export type InboxPreviewResponse = {
+  tasks: InboxPreviewTask[];
+  overdueCount: number;
+  totalOpen: number;
+};
+
+/**
+ * H11 (OPTIMIZE.md): previously the dashboard InboxWidget called
+ * `useInboxTasks()` which fetched the entire inbox (hundreds of rows × 4
+ * joins) just to display the top 5. This action returns a small preview
+ * slice plus two head-only count queries so the widget can still badge
+ * totals and overdue numbers without hydrating the full set.
+ *
+ * Runs three queries in parallel:
+ *   - preview: ~4× limit rows, tiny projection, sorted by due_date
+ *   - totalOpen: COUNT head-only
+ *   - overdueCount: COUNT head-only with due_date < today
+ */
+export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return { tasks: [], overdueCount: 0, totalOpen: 0 };
+  }
+
+  const wsId = await getCurrentWorkspaceId();
+  if (!wsId) {
+    return { tasks: [], overdueCount: 0, totalOpen: 0 };
+  }
+
+  // Fetch more than `limit` so the client-side priority reshuffle has
+  // headroom — the widget sorts by overdue → priority → due_date which
+  // we can't express cleanly in a single PostgREST .order() chain.
+  const fetchLimit = Math.max(limit * 4, 20);
+
+  // Use start-of-today as the overdue threshold to match the widget's
+  // `isOverdue` semantics (past due_date but not today).
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayStartIso = todayStart.toISOString();
+
+  const openStatuses = ['Todo', 'In Progress'];
+
+  const [previewResult, totalOpenResult, overdueResult] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select('id, title, status, priority, item_type, due_date, project:projects(id, name)')
+      .eq('workspace_id', wsId)
+      .eq('show_in_inbox', true)
+      .neq('item_type', 'note')
+      .in('status', openStatuses)
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(fetchLimit),
+    supabase
+      .from('tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', wsId)
+      .eq('show_in_inbox', true)
+      .neq('item_type', 'note')
+      .in('status', openStatuses),
+    supabase
+      .from('tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', wsId)
+      .eq('show_in_inbox', true)
+      .neq('item_type', 'note')
+      .in('status', openStatuses)
+      .lt('due_date', todayStartIso),
+  ]);
+
+  type RawPreviewRow = {
+    id: string;
+    title: string;
+    status: InboxPreviewTask['status'];
+    priority: InboxPreviewTask['priority'];
+    item_type: InboxPreviewTask['item_type'];
+    due_date: string | null;
+    project: { id: string; name: string } | { id: string; name: string }[] | null;
+  };
+
+  const rawTasks = (previewResult.data || []) as unknown as RawPreviewRow[];
+  const tasks: InboxPreviewTask[] = rawTasks.map((t) => {
+    const project = Array.isArray(t.project) ? t.project[0] || null : t.project || null;
+    return {
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      priority: t.priority,
+      item_type: t.item_type,
+      due_date: t.due_date,
+      project: project ? { id: project.id, name: project.name } : null,
+    };
+  });
+
+  return {
+    tasks,
+    overdueCount: overdueResult.count || 0,
+    totalOpen: totalOpenResult.count || 0,
+  };
 }
 
 /**
@@ -755,51 +884,51 @@ export async function quickUpdateTask(
     updateData.description = updates.description?.trim() || null;
   if (updates.assignee_id !== undefined) updateData.assignee_id = updates.assignee_id;
 
-  // Fetch task info before update (needed for completion notification)
-  let taskWorkspaceId: string | null = null;
-  let taskTitle: string | null = null;
-  if (updates.status === 'Done') {
-    const { data: taskInfo } = await supabase
-      .from('tasks')
-      .select('workspace_id, title')
-      .eq('id', taskId)
-      .single();
-    taskWorkspaceId = taskInfo?.workspace_id || null;
-    taskTitle = taskInfo?.title || null;
-  }
-
-  const { error } = await supabase.from('tasks').update(updateData).eq('id', taskId);
+  // M14 (OPTIMIZE.md): merged the post-update SELECT into the UPDATE via
+  // `.select('workspace_id, title').single()`. Previously we paid an extra
+  // round-trip just to read back data the UPDATE already had access to.
+  const { data: updatedTask, error } = await supabase
+    .from('tasks')
+    .update(updateData)
+    .eq('id', taskId)
+    .select('workspace_id, title')
+    .single();
 
   if (error) {
     console.error('[quickUpdateTask] Error updating task:', error);
     return { success: false, error: error.message };
   }
 
-  // Fire task completion notifications to all admins (except the actor)
-  if (updates.status === 'Done' && taskWorkspaceId && taskTitle) {
+  // Fire task completion notifications to all admins (except the actor).
+  // M14: replaced the per-admin `createNotification()` fan-out with one bulk
+  // INSERT ... SELECT style fetch + insert so N admin targets = 2 queries
+  // (one SELECT, one bulk INSERT) regardless of team size.
+  if (updates.status === 'Done' && updatedTask?.workspace_id && updatedTask?.title) {
+    const taskWorkspaceId = updatedTask.workspace_id;
+    const taskTitle = updatedTask.title;
     (async () => {
       try {
-        const { createNotification } = await import('@/app/actions/notifications');
-        // Fetch all admin profiles in the workspace
         const { data: adminProfiles } = await supabase
           .from('profiles')
           .select('id')
           .eq('role', 'admin')
           .neq('id', user.id);
 
-        if (adminProfiles && adminProfiles.length > 0) {
-          await Promise.all(
-            adminProfiles.map((admin) =>
-              createNotification(
-                admin.id,
-                taskWorkspaceId!,
-                'task_completed',
-                'Task Completed',
-                `${taskTitle} was marked as done`,
-                `/inbox`
-              )
-            )
-          );
+        if (!adminProfiles || adminProfiles.length === 0) return;
+
+        const rows = adminProfiles.map((admin) => ({
+          user_id: admin.id,
+          workspace_id: taskWorkspaceId,
+          type: 'task_completed',
+          title: 'Task Completed',
+          message: `${taskTitle} was marked as done`,
+          link: '/inbox',
+          metadata: {},
+        }));
+
+        const { error: insertError } = await supabase.from('notifications').insert(rows);
+        if (insertError) {
+          console.error('[quickUpdateTask] Bulk notification insert failed:', insertError);
         }
       } catch (err) {
         console.error('[quickUpdateTask] Failed to send completion notifications:', err);

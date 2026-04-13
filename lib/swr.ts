@@ -1,6 +1,6 @@
 'use client';
 
-import useSWR, { SWRConfiguration, mutate } from 'swr';
+import useSWR, { SWRConfiguration, mutate, type KeyedMutator } from 'swr';
 import {
   getTeams,
   getProjects,
@@ -10,7 +10,13 @@ import {
   getNotifications,
   getUnreadNotificationCount,
 } from '@/app/actions';
-import { getTasks, getProjectTasks, getScheduledTasks } from '@/app/actions/inbox';
+import {
+  getTasks,
+  getProjectTasks,
+  getScheduledTasks,
+  getInboxPreview,
+  type InboxPreviewResponse,
+} from '@/app/actions/inbox';
 import { getProjectPhases } from '@/app/actions/phases';
 import { getConversations, getMessages } from '@/app/actions/ai-conversations';
 import {
@@ -57,6 +63,7 @@ export const cacheKeys = {
   profiles: 'profiles',
   workspaceId: 'workspace-id',
   inboxTasks: 'inbox-tasks',
+  inboxPreview: (limit: number) => ['inbox-preview', limit] as const,
   projectTasks: (projectId: string) => `project-tasks-${projectId}`,
   todaysTasks: 'todays-tasks',
   todaysMeetings: 'todays-meetings',
@@ -431,6 +438,56 @@ export function useInboxTasks(): UseInboxTasksReturn {
     error,
     revalidate,
   };
+}
+
+export type UseInboxPreviewReturn = {
+  data: InboxPreviewResponse;
+  isLoading: boolean;
+  isValidating: boolean;
+  isError: boolean;
+  error: unknown;
+  revalidate: KeyedMutator<InboxPreviewResponse>;
+};
+
+/**
+ * H11 (OPTIMIZE.md): lightweight inbox preview hook for the dashboard widget.
+ * Only fetches ~20 rows with a tiny projection + two head-only COUNT queries,
+ * instead of the full inbox (hundreds of rows × 4 joins) that `useInboxTasks`
+ * returns. ~95% bandwidth savings on the home route.
+ */
+export function useInboxPreview(limit = 5): UseInboxPreviewReturn {
+  const {
+    data,
+    error,
+    isLoading,
+    isValidating,
+    mutate: revalidate,
+  } = useSWR(cacheKeys.inboxPreview(limit), () => getInboxPreview(limit), autoRefreshConfig);
+
+  return {
+    data: data || { tasks: [], overdueCount: 0, totalOpen: 0 },
+    isLoading,
+    isValidating,
+    isError: !!error,
+    error,
+    revalidate,
+  };
+}
+
+/**
+ * Invalidate the inbox preview SWR cache. Pairs with `invalidateInboxTasks`
+ * when mutations (complete, delete, hide) affect both the preview and the
+ * full view.
+ */
+export function invalidateInboxPreview(immediate = true) {
+  // Use a key-predicate wildcard so every limit variant is invalidated.
+  if (immediate) {
+    mutate((key) => Array.isArray(key) && key[0] === 'inbox-preview', undefined, {
+      revalidate: true,
+    });
+  } else {
+    mutate((key) => Array.isArray(key) && key[0] === 'inbox-preview');
+  }
 }
 
 /**
