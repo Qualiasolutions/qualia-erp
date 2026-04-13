@@ -125,16 +125,18 @@ export default async function ProjectFilesPage({ params }: ProjectFilesPageProps
   const { id: projectId } = await params;
 
   return (
-    <Suspense
-      fallback={
-        <div className="space-y-6">
-          <Skeleton className="h-12 w-64" />
-          <Skeleton className="h-64 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      }
-    >
-      <ProjectFilesContent projectId={projectId} />
-    </Suspense>
+    <div className="px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
+      <Suspense
+        fallback={
+          <div className="space-y-6">
+            <Skeleton className="h-12 w-64" />
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-96 w-full" />
+          </div>
+        }
+      >
+        <ProjectFilesContent projectId={projectId} />
+      </Suspense>
+    </div>
   );
 }

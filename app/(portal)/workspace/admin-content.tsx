@@ -13,7 +13,7 @@ interface AdminContentProps {
 
 export function AdminContent({ workspaceId }: AdminContentProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
       {/* Page header */}
       <header>
         <h1 className="text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">

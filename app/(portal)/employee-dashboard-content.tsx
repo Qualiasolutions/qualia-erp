@@ -75,7 +75,7 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
       {/* Greeting */}
       <section
         className="animate-fade-in-up"

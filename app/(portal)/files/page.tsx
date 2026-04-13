@@ -140,7 +140,9 @@ export default async function PortalFilesPage() {
   });
 
   return (
-    <div className={`space-y-6 ${fadeInClasses}`}>
+    <div
+      className={`space-y-6 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)] ${fadeInClasses}`}
+    >
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">Files</h1>
         <p className="mt-1 text-[13px] text-muted-foreground/70">All files across your projects</p>
