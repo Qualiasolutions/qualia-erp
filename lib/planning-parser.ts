@@ -376,8 +376,12 @@ export function parseStateRoadmap(content: string): ParsedMilestone[] {
       status = 'in_progress';
     }
 
+    // All phases live under the synthetic milestone 1 (the "Roadmap" wrapper
+    // built below). The project_workflow UI groups phases by milestone_number
+    // and looks for a sibling milestone row to label the group — if every
+    // phase had its own milestone_number we'd get 6 ghost groups.
     phases.push({
-      milestoneNumber: num,
+      milestoneNumber: 1,
       phaseNumber: String(num),
       name,
       description: goal || null,
