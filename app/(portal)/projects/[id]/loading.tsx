@@ -18,7 +18,7 @@ export default function ProjectDetailLoading() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
-        <div className="mx-auto max-w-6xl space-y-6">
+        <div className="space-y-6">
           {/* Stats skeleton */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {[...Array(4)].map((_, i) => (

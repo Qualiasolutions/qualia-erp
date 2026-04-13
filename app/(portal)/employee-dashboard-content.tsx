@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { FolderKanban, Calendar, Clock } from 'lucide-react';
+import { FolderKanban, Calendar, Clock, TrendingUp } from 'lucide-react';
 import { useEmployeeAssignments } from '@/lib/swr';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { InboxWidget } from '@/components/portal/inbox-widget';
+import { PROJECT_STATUS_COLORS, type ProjectStatusKey } from '@/lib/color-constants';
 
 interface EmployeeDashboardContentProps {
   userId: string;
@@ -27,16 +28,6 @@ interface Assignment {
   project: AssignmentProject | null;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  Active: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-  Demos: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  Launched: 'bg-primary/10 text-primary',
-  Delayed: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  Done: 'bg-muted text-muted-foreground',
-};
-
-// "Go to Inbox" removed — the InboxWidget below surfaces the same entry point
-// inline with live tasks, so the redundant shortcut would be noise.
 const quickActions = [
   {
     title: 'View Schedule',
@@ -52,6 +43,64 @@ const quickActions = [
   },
 ];
 
+/* ------------------------------------------------------------------ */
+/* Stat Card — left-accent treatment matching admin dashboard          */
+/* ------------------------------------------------------------------ */
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  accentColor,
+}: {
+  label: string;
+  value: number | null;
+  icon: typeof FolderKanban;
+  accentColor: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'group relative overflow-hidden rounded-xl border border-border/60 bg-card',
+        'transition-all duration-200 hover:border-border hover:shadow-sm'
+      )}
+    >
+      {/* Left accent */}
+      <div
+        className={cn(
+          'absolute left-0 top-0 h-full w-[3px] transition-all duration-200',
+          accentColor,
+          'group-hover:w-[4px]'
+        )}
+      />
+
+      <div className="flex items-center justify-between px-5 py-5 pl-6">
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground/70">
+            {label}
+          </p>
+          {value === null ? (
+            <Skeleton className="mt-1.5 h-7 w-10" />
+          ) : (
+            <p className="mt-1.5 text-2xl font-bold tabular-nums tracking-tight text-foreground">
+              {value}
+            </p>
+          )}
+        </div>
+        <Icon
+          className="h-5 w-5 text-muted-foreground/15 transition-colors duration-200 group-hover:text-muted-foreground/25"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Employee Dashboard                                                  */
+/* ------------------------------------------------------------------ */
+
 export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashboardContentProps) {
   const { data: assignments, isLoading } = useEmployeeAssignments(userId);
   const typedAssignments = (assignments || []) as Assignment[];
@@ -64,14 +113,11 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
 
   const formatDate = () => {
     const now = new Date();
-    return now
-      .toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      })
-      .toUpperCase();
+    return now.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
   };
 
   return (
@@ -81,41 +127,57 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
         className="animate-fade-in-up"
         style={{ animationDelay: '0ms', animationFillMode: 'both' }}
       >
-        <p className="mb-2 text-xs font-medium uppercase tracking-widest text-muted-foreground">
+        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
           {formatDate()}
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+        <h1 className="mt-2 text-[clamp(1.5rem,1.2rem+1.5vw,2.25rem)] font-semibold tracking-tight text-foreground">
           {greeting}, <span className="text-primary">{displayName}</span>
         </h1>
       </section>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Assigned Projects"
-          value={isLoading ? null : activeProjects.length}
-          icon={FolderKanban}
-        />
-        <StatCard
-          label="Active"
-          value={
-            isLoading ? null : activeProjects.filter((a) => a.project?.status === 'Active').length
-          }
-          icon={Clock}
-        />
-        <StatCard
-          label="Total Assigned"
-          value={isLoading ? null : typedAssignments.length}
-          icon={FolderKanban}
-        />
-      </div>
+      {/* Stats */}
+      <section
+        className="animate-fade-in-up"
+        style={{ animationDelay: '60ms', animationFillMode: 'both' }}
+      >
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+          <StatCard
+            label="Assigned Projects"
+            value={isLoading ? null : activeProjects.length}
+            icon={FolderKanban}
+            accentColor="bg-primary/40"
+          />
+          <StatCard
+            label="Active"
+            value={
+              isLoading ? null : activeProjects.filter((a) => a.project?.status === 'Active').length
+            }
+            icon={TrendingUp}
+            accentColor="bg-emerald-500/40"
+          />
+          <StatCard
+            label="Total Assigned"
+            value={isLoading ? null : typedAssignments.length}
+            icon={Clock}
+            accentColor="bg-primary/30"
+          />
+        </div>
+      </section>
 
-      {/* Inbox preview — top priorities inline with a quick-complete affordance */}
-      <InboxWidget />
+      {/* Inbox preview */}
+      <section
+        className="animate-fade-in-up"
+        style={{ animationDelay: '120ms', animationFillMode: 'both' }}
+      >
+        <InboxWidget />
+      </section>
 
       {/* Quick actions */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.06em] text-muted-foreground/60">
+      <section
+        className="animate-fade-in-up"
+        style={{ animationDelay: '180ms', animationFillMode: 'both' }}
+      >
+        <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground/60">
           Quick Actions
         </h2>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -124,14 +186,14 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
               key={action.href}
               href={action.href}
               className={cn(
-                'group flex items-center gap-3 rounded-xl border border-border/50 p-4',
-                'transition-all duration-150',
-                'hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-sm',
+                'group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-4',
+                'transition-all duration-200',
+                'hover:border-primary/20 hover:shadow-sm',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                 'cursor-pointer'
               )}
             >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-150 group-hover:bg-primary/15">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors duration-200 group-hover:bg-primary/15">
                 <action.icon className="h-5 w-5" />
               </div>
               <div className="min-w-0">
@@ -144,25 +206,28 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
       </section>
 
       {/* Assigned projects list */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.06em] text-muted-foreground/60">
+      <section
+        className="animate-fade-in-up"
+        style={{ animationDelay: '240ms', animationFillMode: 'both' }}
+      >
+        <h2 className="mb-3 text-[11px] font-medium uppercase tracking-[0.1em] text-muted-foreground/60">
           Your Projects
         </h2>
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-full rounded-xl" />
+              <Skeleton key={i} className="h-[68px] w-full rounded-xl" />
             ))}
           </div>
         ) : activeProjects.length === 0 ? (
-          <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border/50">
+          <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-border/60">
             <div className="text-center">
               <FolderKanban
-                className="mx-auto h-10 w-10 text-muted-foreground/30"
+                className="mx-auto h-12 w-12 text-muted-foreground/30"
                 aria-hidden="true"
               />
-              <p className="mt-3 text-sm font-medium text-foreground">No projects assigned yet</p>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="mt-3 text-base font-medium text-foreground">No projects assigned yet</p>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Projects will appear here once you are assigned to them.
               </p>
             </div>
@@ -173,20 +238,23 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
               const project = assignment.project;
               if (!project) return null;
 
+              const statusColors =
+                PROJECT_STATUS_COLORS[project.status as ProjectStatusKey] || null;
+
               return (
                 <Link
                   key={assignment.id}
                   href={`/projects/${project.id}`}
                   className={cn(
-                    'group flex items-center justify-between rounded-xl border border-border/50 px-5 py-4',
-                    'transition-all duration-150',
-                    'hover:border-primary/30 hover:bg-primary/[0.03] hover:shadow-sm',
+                    'group flex items-center justify-between rounded-xl border border-border/60 bg-card px-5 py-4',
+                    'transition-all duration-200',
+                    'hover:border-primary/20 hover:shadow-sm',
                     'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
                     'cursor-pointer'
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground group-hover:text-primary">
+                    <p className="truncate text-sm font-medium text-foreground transition-colors duration-150 group-hover:text-primary">
                       {project.name}
                     </p>
                     {project.client && (
@@ -204,7 +272,9 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
                     <span
                       className={cn(
                         'rounded-md px-2 py-0.5 text-[10px] font-medium',
-                        STATUS_COLORS[project.status] || 'bg-muted text-muted-foreground'
+                        statusColors
+                          ? `${statusColors.bg} ${statusColors.text}`
+                          : 'bg-muted text-muted-foreground'
                       )}
                     >
                       {project.status}
@@ -216,34 +286,6 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: number | null;
-  icon: typeof FolderKanban;
-}) {
-  return (
-    <div className="rounded-xl border border-border/50 px-5 py-4">
-      <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-4 w-4" />
-        </div>
-        <div>
-          {value === null ? (
-            <Skeleton className="mb-1 h-6 w-8" />
-          ) : (
-            <p className="text-xl font-semibold text-foreground">{value}</p>
-          )}
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </div>
-      </div>
     </div>
   );
 }

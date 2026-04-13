@@ -42,42 +42,60 @@ async function ScheduleLoader({ view }: { view: string }) {
 
 function ScheduleSkeleton() {
   return (
-    <div>
-      <div className="flex gap-5">
-        <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card xl:block">
-          <div className="px-5 pb-3 pt-5">
-            <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-          </div>
-          <div className="space-y-2 px-3 pb-4">
-            {[...Array(7)].map((_, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
-                <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
-                <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+    <div className="flex h-full gap-5">
+      {/* Sidebar skeleton — xl only, matches MeetingDaySidebar */}
+      <div className="hidden w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card xl:block">
+        <div className="px-5 pb-3 pt-5">
+          <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+        </div>
+        <div className="space-y-1 px-3 pb-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3 rounded-lg px-3 py-2.5">
+              <div className="size-8 shrink-0 animate-pulse rounded-full bg-muted" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-3.5 w-24 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-16 animate-pulse rounded bg-muted" />
               </div>
-            ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Calendar skeleton */}
+      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
+            <div className="h-8 w-20 animate-pulse rounded-lg bg-muted" />
+            <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
           </div>
         </div>
-        <div className="flex-1 overflow-hidden rounded-xl border border-border bg-card">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-16 animate-pulse rounded-lg bg-muted" />
-              <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
-              <div className="h-8 w-8 animate-pulse rounded-lg bg-muted" />
+
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-px border-t border-border bg-border">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="bg-muted/50 py-3 text-center">
+              <div className="mx-auto h-3 w-8 animate-pulse rounded bg-muted" />
             </div>
-          </div>
-          <div className="grid grid-cols-7 gap-px border-t border-border bg-border">
-            {[...Array(7)].map((_, i) => (
-              <div key={i} className="bg-secondary/50 py-3 text-center">
-                <div className="mx-auto h-3 w-8 animate-pulse rounded bg-muted" />
-              </div>
-            ))}
-            {[...Array(35)].map((_, i) => (
-              <div key={i} className="h-24 bg-card p-2">
-                <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
-              </div>
-            ))}
-          </div>
+          ))}
+        </div>
+
+        {/* Calendar cells */}
+        <div className="grid grid-cols-7 gap-px bg-border">
+          {[...Array(35)].map((_, i) => (
+            <div key={i} className="h-24 bg-card p-2">
+              <div className="size-7 animate-pulse rounded-full bg-muted" />
+              {i % 5 === 1 && <div className="mt-1.5 h-4 w-full animate-pulse rounded bg-muted" />}
+              {i % 7 === 3 && (
+                <div className="mt-1.5 space-y-1">
+                  <div className="h-4 w-full animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-3/4 animate-pulse rounded bg-muted" />
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

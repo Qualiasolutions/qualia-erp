@@ -147,13 +147,15 @@ const ClientTableRow = React.memo(function ClientTableRow({
       <tr
         onClick={handleRowClick}
         className={cn(
-          'group cursor-pointer border-b border-border transition-colors',
-          'hover:bg-secondary/40',
+          'group cursor-pointer border-b border-border transition-colors duration-150',
+          'hover:bg-muted/30',
           isPending && 'pointer-events-none opacity-50'
         )}
       >
         {/* ID Column */}
-        <td className="px-4 py-3 text-sm text-muted-foreground">#{rowIndex + 1}</td>
+        <td className="py-3 pl-4 pr-2 text-sm tabular-nums text-muted-foreground/60">
+          {rowIndex + 1}
+        </td>
 
         {/* Client Name */}
         <td className="px-4 py-3">
@@ -278,8 +280,9 @@ const ClientTableRow = React.memo(function ClientTableRow({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all hover:bg-secondary hover:text-foreground md:h-7 md:w-7 md:opacity-0 md:group-hover:opacity-100"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 hover:bg-muted/50 hover:text-foreground md:h-7 md:w-7 md:opacity-0 md:group-hover:opacity-100"
                 onClick={(e) => e.stopPropagation()}
+                aria-label="Client actions"
               >
                 <MoreVertical className="h-4 w-4" />
               </button>
@@ -578,22 +581,22 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
         <ClientCardView clients={processedClients} onOpenDetail={handleOpenDetail} />
       ) : (
         <div className="overflow-x-auto rounded-lg border border-border bg-card">
-          <table className="w-full min-w-[950px] table-fixed">
-            <thead className="table-header">
-              <tr>
-                <th className="w-14 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  ID
+          <table className="w-full min-w-[900px]">
+            <thead>
+              <tr className="border-b border-border/40 bg-muted/50">
+                <th className="w-12 py-3 pl-4 pr-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  #
                 </th>
-                <th className="w-[200px] px-4 py-3 text-left">
+                <th className="py-3 pl-4 pr-4 text-left">
                   <SortableHeader
                     field="name"
-                    label="Client Name"
+                    label="Client"
                     currentField={sortField}
                     direction={sortDirection}
                     onSort={handleSort}
                   />
                 </th>
-                <th className="w-28 px-4 py-3 text-left">
+                <th className="w-[120px] px-4 py-3 text-left">
                   <SortableHeader
                     field="status"
                     label="Status"
@@ -602,7 +605,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
                     onSort={handleSort}
                   />
                 </th>
-                <th className="w-20 px-4 py-3 text-left">
+                <th className="w-[80px] px-4 py-3 text-left">
                   <SortableHeader
                     field="projects"
                     label="Projects"
@@ -611,7 +614,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
                     onSort={handleSort}
                   />
                 </th>
-                <th className="w-28 px-4 py-3 text-left">
+                <th className="w-[120px] px-4 py-3 text-left">
                   <SortableHeader
                     field="assigned"
                     label="Assigned"
@@ -620,7 +623,7 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
                     onSort={handleSort}
                   />
                 </th>
-                <th className="w-28 px-4 py-3 text-left">
+                <th className="w-[120px] px-4 py-3 text-left">
                   <SortableHeader
                     field="last_contact"
                     label="Last Contact"
@@ -629,10 +632,10 @@ export function ClientTableView({ clients }: ClientTableViewProps) {
                     onSort={handleSort}
                   />
                 </th>
-                <th className="w-32 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th className="w-[140px] px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Website
                 </th>
-                <th className="w-28 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <th className="w-[120px] px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Phone
                 </th>
                 <th className="w-10 px-2 py-3"></th>

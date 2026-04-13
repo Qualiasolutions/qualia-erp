@@ -249,7 +249,7 @@ export function SeoPageClient({ blogPosts, seoProjects, blogTasks }: SeoPageClie
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl space-y-6 p-6">
+        <div className="space-y-6 p-6">
           {/* Today's Task Banner */}
           {todaysTask && (
             <div

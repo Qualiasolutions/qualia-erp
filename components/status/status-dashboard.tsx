@@ -16,10 +16,8 @@ import {
   Activity,
   ArrowUpRight,
   Clock,
-  Menu,
 } from 'lucide-react';
-import { useSidebar } from '@/components/sidebar-provider';
-import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/page-header';
 import type { Monitor, MonitorStatus, MonitorSource } from '@/lib/uptime';
 import { getStatusLabel } from '@/lib/uptime';
 
@@ -450,7 +448,6 @@ export function StatusDashboard({
   error: string | null;
   projectMap?: Record<string, ProjectInfo>;
 }) {
-  const { toggleMobile } = useSidebar();
   const upCount = monitors.filter((m) => m.status === 2).length;
 
   // Group by source
@@ -487,25 +484,14 @@ export function StatusDashboard({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Mobile-only top bar with hamburger */}
-      <header className="flex items-center justify-between border-b border-border bg-card/80 px-6 py-4 backdrop-blur-xl sm:px-8 md:hidden">
-        <div className="flex items-center gap-2.5">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="min-h-[44px] min-w-[44px]"
-            onClick={toggleMobile}
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-            <Activity className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <h1 className="text-sm font-semibold text-foreground">System Status</h1>
-        </div>
-      </header>
+      {/* Mobile-only top bar with hamburger — uses shared PageHeader */}
+      <div className="md:hidden">
+        <PageHeader
+          icon={<Activity className="h-3.5 w-3.5 text-primary" />}
+          iconBg="bg-primary/10"
+          title="System Status"
+        />
+      </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-10 px-6 py-8 lg:px-8">

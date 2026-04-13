@@ -38,25 +38,26 @@ async function ClientListLoader() {
 function ClientTableSkeleton() {
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-5">
-        <Skeleton className="h-7 w-8" />
-        <Skeleton className="h-4 w-14" />
-        <div className="h-5 w-px bg-border" />
-        <Skeleton className="h-4 w-16" />
-        <Skeleton className="h-4 w-16" />
+      {/* Stats bar */}
+      <div className="flex items-center gap-2">
+        {[64, 80, 80].map((w, i) => (
+          <Skeleton key={i} className="h-8 rounded-lg" style={{ width: `${w}px` }} />
+        ))}
       </div>
-      <div className="flex gap-3">
-        <Skeleton className="h-9 w-48" />
-        <Skeleton className="h-9 w-32" />
-        <Skeleton className="h-9 w-36" />
+
+      {/* Filter bar */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+        <Skeleton className="h-9 w-full sm:max-w-xs sm:flex-1" />
+        <Skeleton className="h-9 w-[130px]" />
+        <Skeleton className="h-9 w-[140px]" />
       </div>
+
+      {/* Table */}
       <div className="overflow-hidden rounded-lg border border-border bg-card">
-        <div className="flex items-center gap-4 border-b border-border bg-secondary/50 px-4 py-3">
-          <Skeleton className="h-4 w-8" />
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-4 w-16" />
-          <Skeleton className="h-4 w-24" />
+        <div className="flex items-center border-b border-border/40 bg-muted/50 px-4 py-3">
+          <Skeleton className="mr-4 h-3 w-6" />
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="ml-auto h-3 w-14" />
         </div>
         {[...Array(6)].map((_, i) => (
           <div
@@ -64,10 +65,11 @@ function ClientTableSkeleton() {
             className="flex items-center gap-4 border-b border-border px-4 py-3 last:border-0"
           >
             <Skeleton className="h-4 w-6" />
-            <Skeleton className="h-8 w-8 rounded-full" />
+            <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
             <Skeleton className="h-4 w-28" />
             <Skeleton className="h-5 w-16 rounded-full" />
-            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-8" />
+            <Skeleton className="ml-auto h-3 w-16" />
           </div>
         ))}
       </div>

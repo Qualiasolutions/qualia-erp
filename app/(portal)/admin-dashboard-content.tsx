@@ -94,9 +94,12 @@ export function AdminDashboardContent({ workspaces, displayName }: AdminDashboar
   const portalActiveCount = workspaces.filter((ws) => ws.portalUserId).length;
 
   return (
-    <div className="space-y-10 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
-      {/* Greeting — clean, minimal */}
-      <section className="animate-fade-in" style={{ animationFillMode: 'both' }}>
+    <div className="space-y-8 px-[clamp(1.5rem,4vw,2.5rem)] pb-[clamp(1.5rem,3vw,2.5rem)] pt-16 md:pt-[clamp(1.5rem,3vw,2.5rem)]">
+      {/* Greeting */}
+      <section
+        className="animate-fade-in-up"
+        style={{ animationDelay: '0ms', animationFillMode: 'both' }}
+      >
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground/60">
           {formatDate()}
         </p>
@@ -105,9 +108,9 @@ export function AdminDashboardContent({ workspaces, displayName }: AdminDashboar
         </h1>
       </section>
 
-      {/* Stats — 4 cards with left accent bars */}
+      {/* Stats */}
       <section
-        className="animate-fade-in"
+        className="animate-fade-in-up"
         style={{ animationDelay: '60ms', animationFillMode: 'both' }}
       >
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -142,9 +145,9 @@ export function AdminDashboardContent({ workspaces, displayName }: AdminDashboar
         </div>
       </section>
 
-      {/* Inbox preview — surface admin's own tasks right on the home screen */}
+      {/* Inbox preview */}
       <section
-        className="animate-fade-in"
+        className="animate-fade-in-up"
         style={{ animationDelay: '120ms', animationFillMode: 'both' }}
       >
         <InboxWidget />
@@ -152,8 +155,8 @@ export function AdminDashboardContent({ workspaces, displayName }: AdminDashboar
 
       {/* Workspace grid */}
       <section
-        className="animate-fade-in"
-        style={{ animationDelay: '160ms', animationFillMode: 'both' }}
+        className="animate-fade-in-up"
+        style={{ animationDelay: '180ms', animationFillMode: 'both' }}
       >
         <PortalWorkspaceGrid workspaces={workspaces} />
       </section>
