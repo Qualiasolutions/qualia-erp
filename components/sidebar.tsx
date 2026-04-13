@@ -12,6 +12,7 @@ import {
   ChevronUp,
   ChevronLeft,
   ChevronRight,
+  LogIn,
   LogOut,
   Settings,
   BookOpen,
@@ -31,6 +32,7 @@ import { useSidebar } from '@/components/sidebar-provider';
 import { useAdminContext } from '@/components/admin-provider';
 import { useActiveSession, useCurrentWorkspaceId } from '@/lib/swr';
 import { ClockOutModal } from '@/components/clock-out-modal';
+import { ClockInModal } from '@/components/today-dashboard/clock-in-modal';
 
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import {
@@ -206,16 +208,17 @@ function SidebarContent({
   collapsed?: boolean;
 }) {
   const pathname = usePathname();
-  const { isAdmin, userRole } = useAdminContext();
+  const { isAdmin, userRole, userId } = useAdminContext();
   // All internal roles (admin, employee, manager) can clock in/out.
   // When an admin is viewing-as an employee, userRole becomes 'employee', so this still works.
   const canTrackTime = userRole === 'admin' || userRole === 'employee' || userRole === 'manager';
   const [showClockOut, setShowClockOut] = useState(false);
+  const [showClockIn, setShowClockIn] = useState(false);
   const { toggleSidebar } = useSidebar();
 
-  // Session clock-out (employees and managers)
+  // Session clock-in/out (all internal roles)
   const { workspaceId } = useCurrentWorkspaceId();
-  const { session: activeSession } = useActiveSession(
+  const { session: activeSession, isLoading: sessionLoading } = useActiveSession(
     canTrackTime && workspaceId ? workspaceId : null
   );
 
@@ -336,52 +339,96 @@ function SidebarContent({
           )}
         </nav>
 
-        {/* Clock-out button — employees and managers with active session */}
-        {canTrackTime && activeSession && workspaceId && (
+        {/* Clock in/out — all internal roles */}
+        {canTrackTime && workspaceId && !sessionLoading && (
           <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
             <div className="mb-2 h-px bg-border/40" />
-            {collapsed ? (
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
+            {activeSession ? (
+              /* ── Active session: show clock-out ── */
+              <>
+                {collapsed ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setShowClockOut(true)}
+                        className="flex w-full items-center justify-center rounded-lg border border-primary/30 bg-primary/10 p-2.5 transition-all duration-200 hover:bg-primary/15"
+                      >
+                        <Timer className="size-4 text-primary" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={8}>
+                      Clock out — {activeSession.project?.name ?? 'Session active'}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
                   <button
                     type="button"
                     onClick={() => setShowClockOut(true)}
-                    className="flex w-full items-center justify-center rounded-lg border border-primary/30 bg-primary/10 p-2.5 transition-all duration-200 hover:bg-primary/15"
+                    className="flex w-full items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
                   >
-                    <Timer className="size-4 text-primary" />
+                    <Timer className="size-4 shrink-0 text-primary" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold">
+                        {activeSession.project?.name ?? 'Session active'}
+                      </div>
+                      <div className="text-[11px] text-primary/70 dark:text-primary/70">
+                        Tap to clock out
+                      </div>
+                    </div>
+                    <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary dark:text-primary">
+                      LIVE
+                    </span>
                   </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={8}>
-                  Clock out — {activeSession.project?.name ?? 'Session active'}
-                </TooltipContent>
-              </Tooltip>
+                )}
+                <ClockOutModal
+                  open={showClockOut}
+                  onOpenChange={setShowClockOut}
+                  workspaceId={workspaceId}
+                  session={activeSession}
+                  onSuccess={() => setShowClockOut(false)}
+                />
+              </>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowClockOut(true)}
-                className="flex w-full items-center gap-2.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2.5 text-left text-[13px] font-medium text-qualia-700 transition-all duration-200 hover:bg-primary/15 dark:text-qualia-300"
-              >
-                <Timer className="size-4 shrink-0 text-primary" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold">
-                    {activeSession.project?.name ?? 'Session active'}
-                  </div>
-                  <div className="text-[11px] text-primary/70 dark:text-primary/70">
-                    Tap to clock out
-                  </div>
-                </div>
-                <span className="shrink-0 rounded-md bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-primary dark:text-primary">
-                  LIVE
-                </span>
-              </button>
+              /* ── No session: show clock-in ── */
+              <>
+                {collapsed ? (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        onClick={() => setShowClockIn(true)}
+                        className="flex w-full items-center justify-center rounded-lg border border-border/60 bg-muted/30 p-2.5 transition-all duration-200 hover:border-primary/40 hover:bg-primary/5"
+                      >
+                        <LogIn className="size-4 text-muted-foreground" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={8}>
+                      Clock in
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowClockIn(true)}
+                    className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5 text-left text-[13px] font-medium text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/5 hover:text-foreground"
+                  >
+                    <LogIn className="size-4 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">Clock in</div>
+                      <div className="text-[11px] opacity-60">Start a work session</div>
+                    </div>
+                  </button>
+                )}
+                <ClockInModal
+                  open={showClockIn}
+                  workspaceId={workspaceId}
+                  currentUserId={userId}
+                  onSuccess={() => setShowClockIn(false)}
+                  onDismiss={() => setShowClockIn(false)}
+                />
+              </>
             )}
-            <ClockOutModal
-              open={showClockOut}
-              onOpenChange={setShowClockOut}
-              workspaceId={workspaceId}
-              session={activeSession}
-              onSuccess={() => setShowClockOut(false)}
-            />
           </div>
         )}
 
