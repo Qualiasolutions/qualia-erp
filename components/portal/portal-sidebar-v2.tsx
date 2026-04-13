@@ -305,7 +305,9 @@ function SidebarContent({
       items.push(...clientApps);
     } else if (userRole === 'employee') {
       items.push(...internalApps);
-    } else if (userRole === 'admin' || userRole === 'manager') {
+    } else if (userRole === 'manager') {
+      items.push(...clientApps, ...internalApps);
+    } else if (userRole === 'admin') {
       items.push(...clientApps, ...internalApps, ...adminOnlyApps);
     }
 

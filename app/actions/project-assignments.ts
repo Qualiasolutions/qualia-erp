@@ -10,7 +10,7 @@ import {
   type ActivityType,
 } from './shared';
 import { normalizeFKResponse } from '@/lib/server-utils';
-import { getActiveMilestone, createTasksFromMilestone } from './auto-assign';
+import { createTasksFromPhases } from './auto-assign';
 import { createNotification } from './notifications';
 import { syncPlanningFromGitHubWithServiceRole } from '@/lib/planning-sync-core';
 
@@ -181,45 +181,19 @@ export async function assignEmployeeToProject(formData: FormData): Promise<Actio
     }
   );
 
-  // Auto-task: transfer existing undone auto-tasks or create from active milestone
+  // Auto-task: create one inbox task per non-completed phase
   try {
-    const { data: undoneTasks } = await supabase
-      .from('tasks')
-      .select('id')
-      .eq('project_id', project_id)
-      .neq('status', 'Done')
-      .not('source_phase_item_id', 'is', null);
+    const autoResult = await createTasksFromPhases(project_id, employee_id, 'assignment');
 
-    if (undoneTasks && undoneTasks.length > 0) {
-      // Transfer existing auto-created tasks to the new assignee
-      await supabase
-        .from('tasks')
-        .update({ assignee_id: employee_id })
-        .eq('project_id', project_id)
-        .neq('status', 'Done')
-        .not('source_phase_item_id', 'is', null);
-    } else {
-      // No existing auto-tasks — create from active milestone
-      const milestone = await getActiveMilestone(project_id);
-      if (milestone) {
-        const autoResult = await createTasksFromMilestone(
-          project_id,
-          milestone.milestoneNumber,
-          employee_id,
-          'assignment'
-        );
-
-        if (autoResult.created > 0) {
-          await createNotification(
-            employee_id,
-            project.workspace_id,
-            'task_assigned',
-            'Tasks auto-assigned',
-            `${autoResult.created} tasks from Milestone ${milestone.milestoneNumber} on ${project.name}`,
-            `/projects/${project_id}/roadmap`
-          );
-        }
-      }
+    if (autoResult.created > 0) {
+      await createNotification(
+        employee_id,
+        project.workspace_id,
+        'task_assigned',
+        'Phase tasks assigned',
+        `${autoResult.created} phase tasks on ${project.name}`,
+        `/projects/${project_id}/roadmap`
+      );
     }
   } catch (autoTaskError) {
     // Auto-task creation is best-effort — never fail the assignment
@@ -375,27 +349,23 @@ export async function reassignEmployee(formData: FormData): Promise<ActionResult
     { action: 'employee_assigned', project_name: newProject.name }
   );
 
-  // Auto-task: create tasks from new project's active milestone
+  // Auto-task: create phase-level tasks for the new project
   try {
-    const milestone = await getActiveMilestone(new_project_id);
-    if (milestone) {
-      const autoResult = await createTasksFromMilestone(
-        new_project_id,
-        milestone.milestoneNumber,
-        currentAssignment.employee_id,
-        'assignment'
-      );
+    const autoResult = await createTasksFromPhases(
+      new_project_id,
+      currentAssignment.employee_id,
+      'assignment'
+    );
 
-      if (autoResult.created > 0) {
-        await createNotification(
-          currentAssignment.employee_id,
-          currentAssignment.workspace_id,
-          'task_assigned',
-          'Tasks auto-assigned',
-          `${autoResult.created} tasks from Milestone ${milestone.milestoneNumber} on ${newProject.name}`,
-          `/projects/${new_project_id}/roadmap`
-        );
-      }
+    if (autoResult.created > 0) {
+      await createNotification(
+        currentAssignment.employee_id,
+        currentAssignment.workspace_id,
+        'task_assigned',
+        'Phase tasks assigned',
+        `${autoResult.created} phase tasks on ${newProject.name}`,
+        `/projects/${new_project_id}/roadmap`
+      );
     }
   } catch (autoTaskError) {
     console.error('[reassignEmployee] Auto-task error (non-blocking):', autoTaskError);

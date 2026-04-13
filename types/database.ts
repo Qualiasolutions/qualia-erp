@@ -6,31 +6,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: '13.0.5';
   };
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       activities: {
@@ -2171,6 +2146,225 @@ export type Database = {
           },
         ];
       };
+      portal_app_config: {
+        Row: {
+          app_key: string;
+          client_id: string | null;
+          created_at: string | null;
+          enabled: boolean;
+          id: string;
+          updated_at: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          app_key: string;
+          client_id?: string | null;
+          created_at?: string | null;
+          enabled?: boolean;
+          id?: string;
+          updated_at?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          app_key?: string;
+          client_id?: string | null;
+          created_at?: string | null;
+          enabled?: boolean;
+          id?: string;
+          updated_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'portal_app_config_client_id_fkey';
+            columns: ['client_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'portal_app_config_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      portal_branding: {
+        Row: {
+          accent_color: string | null;
+          company_name: string | null;
+          created_at: string | null;
+          id: string;
+          logo_url: string | null;
+          updated_at: string | null;
+          workspace_id: string;
+        };
+        Insert: {
+          accent_color?: string | null;
+          company_name?: string | null;
+          created_at?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          updated_at?: string | null;
+          workspace_id: string;
+        };
+        Update: {
+          accent_color?: string | null;
+          company_name?: string | null;
+          created_at?: string | null;
+          id?: string;
+          logo_url?: string | null;
+          updated_at?: string | null;
+          workspace_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'portal_branding_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      portal_message_channels: {
+        Row: {
+          created_at: string | null;
+          id: string;
+          last_message_at: string | null;
+          last_message_preview: string | null;
+          last_message_sender_id: string | null;
+          project_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          id?: string;
+          last_message_at?: string | null;
+          last_message_preview?: string | null;
+          last_message_sender_id?: string | null;
+          project_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          id?: string;
+          last_message_at?: string | null;
+          last_message_preview?: string | null;
+          last_message_sender_id?: string | null;
+          project_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'portal_message_channels_last_message_sender_id_fkey';
+            columns: ['last_message_sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'portal_message_channels_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: true;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      portal_message_read_status: {
+        Row: {
+          channel_id: string;
+          id: string;
+          last_read_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          channel_id: string;
+          id?: string;
+          last_read_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          channel_id?: string;
+          id?: string;
+          last_read_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'portal_message_read_status_channel_id_fkey';
+            columns: ['channel_id'];
+            isOneToOne: false;
+            referencedRelation: 'portal_message_channels';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'portal_message_read_status_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      portal_messages: {
+        Row: {
+          channel_id: string;
+          content: string;
+          content_html: string | null;
+          created_at: string | null;
+          id: string;
+          is_internal: boolean | null;
+          project_id: string;
+          sender_id: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          channel_id: string;
+          content: string;
+          content_html?: string | null;
+          created_at?: string | null;
+          id?: string;
+          is_internal?: boolean | null;
+          project_id: string;
+          sender_id: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          channel_id?: string;
+          content?: string;
+          content_html?: string | null;
+          created_at?: string | null;
+          id?: string;
+          is_internal?: boolean | null;
+          project_id?: string;
+          sender_id?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'portal_messages_channel_id_fkey';
+            columns: ['channel_id'];
+            isOneToOne: false;
+            referencedRelation: 'portal_message_channels';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'portal_messages_project_id_fkey';
+            columns: ['project_id'];
+            isOneToOne: false;
+            referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'portal_messages_sender_id_fkey';
+            columns: ['sender_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -3261,8 +3455,11 @@ export type Database = {
           scheduled_start_time: string | null;
           show_in_inbox: boolean;
           sort_order: number;
+          source_phase_id: string | null;
           source_phase_item_id: string | null;
           status: Database['public']['Enums']['task_status'];
+          submission_text: string | null;
+          submitted_at: string | null;
           title: string;
           updated_at: string;
           workspace_id: string;
@@ -3290,8 +3487,11 @@ export type Database = {
           scheduled_start_time?: string | null;
           show_in_inbox?: boolean;
           sort_order?: number;
+          source_phase_id?: string | null;
           source_phase_item_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
+          submission_text?: string | null;
+          submitted_at?: string | null;
           title: string;
           updated_at?: string;
           workspace_id: string;
@@ -3319,8 +3519,11 @@ export type Database = {
           scheduled_start_time?: string | null;
           show_in_inbox?: boolean;
           sort_order?: number;
+          source_phase_id?: string | null;
           source_phase_item_id?: string | null;
           status?: Database['public']['Enums']['task_status'];
+          submission_text?: string | null;
+          submitted_at?: string | null;
           title?: string;
           updated_at?: string;
           workspace_id?: string;
@@ -3352,6 +3555,13 @@ export type Database = {
             columns: ['project_id'];
             isOneToOne: false;
             referencedRelation: 'projects';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'tasks_source_phase_id_fkey';
+            columns: ['source_phase_id'];
+            isOneToOne: false;
+            referencedRelation: 'project_phases';
             referencedColumns: ['id'];
           },
           {
@@ -3654,6 +3864,7 @@ export type Database = {
           id: string;
           profile_id: string;
           project_id: string | null;
+          report_url: string | null;
           started_at: string;
           summary: string | null;
           workspace_id: string;
@@ -3666,6 +3877,7 @@ export type Database = {
           id?: string;
           profile_id: string;
           project_id?: string | null;
+          report_url?: string | null;
           started_at?: string;
           summary?: string | null;
           workspace_id: string;
@@ -3678,6 +3890,7 @@ export type Database = {
           id?: string;
           profile_id?: string;
           project_id?: string | null;
+          report_url?: string | null;
           started_at?: string;
           summary?: string | null;
           workspace_id?: string;
@@ -4006,6 +4219,10 @@ export type Database = {
       is_admin_or_manager: { Args: never; Returns: boolean };
       is_client_of_project: { Args: { p_project_id: string }; Returns: boolean };
       is_issue_assignee: { Args: { p_issue_id: string }; Returns: boolean };
+      is_project_workspace_member: {
+        Args: { p_project_id: string };
+        Returns: boolean;
+      };
       is_super_admin: { Args: never; Returns: boolean };
       is_system_admin: { Args: never; Returns: boolean };
       is_team_member: { Args: { team_uuid: string }; Returns: boolean };
@@ -4055,7 +4272,7 @@ export type Database = {
         | 'tiktok'
         | 'linkedin'
         | 'none';
-      integration_provider: 'github' | 'vercel' | 'vapi';
+      integration_provider: 'github' | 'vercel' | 'vapi' | 'zoho';
       invitation_status: 'sent' | 'resent' | 'opened' | 'accepted' | 'expired';
       issue_priority: 'No Priority' | 'Urgent' | 'High' | 'Medium' | 'Low';
       issue_status: 'Yet to Start' | 'Todo' | 'In Progress' | 'Done' | 'Canceled';
@@ -4219,9 +4436,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       activity_type: [
@@ -4247,7 +4461,7 @@ export const Constants = {
         'linkedin',
         'none',
       ],
-      integration_provider: ['github', 'vercel', 'vapi'],
+      integration_provider: ['github', 'vercel', 'vapi', 'zoho'],
       invitation_status: ['sent', 'resent', 'opened', 'accepted', 'expired'],
       issue_priority: ['No Priority', 'Urgent', 'High', 'Medium', 'Low'],
       issue_status: ['Yet to Start', 'Todo', 'In Progress', 'Done', 'Canceled'],
@@ -4280,24 +4494,10 @@ export const Constants = {
   },
 } as const;
 
-// ============================================================================
-// Type Aliases for Convenience
-// ============================================================================
-
-// Table type aliases
+// ============ Convenience aliases ============
 export type Client = Tables<'clients'>;
-export type Project = Tables<'projects'>;
-export type Task = Tables<'tasks'>;
-export type Issue = Tables<'issues'>;
-export type Meeting = Tables<'meetings'>;
-export type Profile = Tables<'profiles'>;
 export type ProjectFile = Tables<'project_files'>;
 export type ProjectIntegration = Tables<'project_integrations'>;
-
-// Enum type aliases
-export type ProjectType = Database['public']['Enums']['project_type'];
-export type ProjectStatus = Database['public']['Enums']['project_status'];
-export type ProjectGroup = Database['public']['Enums']['project_group'];
-export type DeploymentPlatform = Database['public']['Enums']['deployment_platform'];
-export type UserRole = Database['public']['Enums']['user_role'];
-export type LeadStatus = Database['public']['Enums']['lead_status'];
+export type ProjectType = Enums<'project_type'>;
+export type ProjectGroup = Enums<'project_group'>;
+export type DeploymentPlatform = Enums<'deployment_platform'>;

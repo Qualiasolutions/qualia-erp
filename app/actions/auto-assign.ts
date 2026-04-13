@@ -5,7 +5,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { isUserManagerOrAbove } from './shared';
 
 // ============ AUTO-ASSIGNMENT ENGINE ============
-// Engine functions for creating tasks from project phase items.
+// Creates phase-level inbox tasks when employees are assigned to projects.
+// Each non-completed phase becomes one task: "Complete {phase name}".
 // When called without an externalClient (i.e. as a server action),
 // auth is enforced. When called with an externalClient (webhook),
 // the caller is responsible for auth.
@@ -30,19 +31,124 @@ async function requireAuthIfServerAction(externalClient?: AnySupabaseClient): Pr
 }
 
 /**
- * Get the current active milestone for a project.
+ * Create one inbox task per non-completed phase in the project.
  *
- * Finds the lowest milestone_number where at least one phase is not yet completed,
- * then returns all phases and phase_items for that milestone.
+ * Each task is titled "Complete {phase name}" and linked via source_phase_id
+ * for idempotency — duplicate phases are silently skipped via the unique
+ * index on (source_phase_id, assignee_id).
  *
  * @param projectId - The project UUID
- * @returns The active milestone data, or null if no milestones exist or all are complete
+ * @param assigneeId - The user UUID to assign tasks to
+ * @param trigger - What caused this generation ('assignment' or 'milestone_cascade')
+ * @returns Counts of created, skipped, and total phases
+ */
+export async function createTasksFromPhases(
+  projectId: string,
+  assigneeId: string,
+  trigger: 'assignment' | 'milestone_cascade',
+  supabaseClient?: AnySupabaseClient
+): Promise<{ created: number; skipped: number; total: number }> {
+  if (!(await requireAuthIfServerAction(supabaseClient)))
+    return { created: 0, skipped: 0, total: 0 };
+  const supabase = await getClient(supabaseClient);
+
+  // 1. Fetch project to get workspace_id
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('workspace_id, name')
+    .eq('id', projectId)
+    .single();
+
+  if (projectError || !project) {
+    console.error('[createTasksFromPhases] Project not found:', projectError);
+    return { created: 0, skipped: 0, total: 0 };
+  }
+
+  // 2. Fetch all non-completed phases for this project, ordered by sort_order
+  const { data: phases, error: phasesError } = await supabase
+    .from('project_phases')
+    .select('id, name, description, sort_order, milestone_number, status')
+    .eq('project_id', projectId)
+    .neq('status', 'completed')
+    .order('sort_order', { ascending: true });
+
+  if (phasesError) {
+    console.error('[createTasksFromPhases] Error fetching phases:', phasesError);
+    return { created: 0, skipped: 0, total: 0 };
+  }
+
+  if (!phases || phases.length === 0) {
+    return { created: 0, skipped: 0, total: 0 };
+  }
+
+  const total = phases.length;
+
+  // 3. Check which phases already have tasks for this assignee
+  const phaseIds = phases.map((p) => p.id);
+  const { data: existingTasks } = await supabase
+    .from('tasks')
+    .select('source_phase_id')
+    .in('source_phase_id', phaseIds)
+    .eq('assignee_id', assigneeId);
+
+  const existingPhaseIds = new Set((existingTasks || []).map((t) => t.source_phase_id));
+
+  // 4. Build task objects for phases that don't already have tasks
+  const taskObjects = phases
+    .filter((phase) => !existingPhaseIds.has(phase.id))
+    .map((phase) => {
+      const milestone = phase.milestone_number ? `Milestone ${phase.milestone_number}` : null;
+
+      return {
+        title: `Complete ${phase.name}`,
+        description: phase.description || null,
+        project_id: projectId,
+        assignee_id: assigneeId,
+        phase_id: phase.id,
+        phase_name: phase.name,
+        milestone,
+        source_phase_id: phase.id,
+        auto_assign_trigger: trigger,
+        show_in_inbox: true,
+        status: phase.status === 'in_progress' ? ('In Progress' as const) : ('Todo' as const),
+        item_type: 'task' as const,
+        priority: 'Medium' as const,
+        workspace_id: project.workspace_id,
+        sort_order: (phase.sort_order ?? 0) * 100,
+      };
+    });
+
+  if (taskObjects.length === 0) {
+    return { created: 0, skipped: total, total };
+  }
+
+  // 5. Insert (skip duplicates via unique index on source_phase_id + assignee_id)
+  const { data: inserted, error: insertError } = await supabase
+    .from('tasks')
+    .insert(taskObjects)
+    .select('id');
+
+  if (insertError) {
+    console.error('[createTasksFromPhases] Insert error:', insertError);
+    return { created: 0, skipped: total, total };
+  }
+
+  const created = inserted?.length ?? 0;
+  const skipped = total - created;
+
+  return { created, skipped, total };
+}
+
+// ============ LEGACY FUNCTIONS (used by webhook cascade) ============
+
+/**
+ * Get the current active milestone for a project.
+ * @deprecated Use createTasksFromPhases instead for new assignment flows.
  */
 export async function getActiveMilestone(projectId: string, supabaseClient?: AnySupabaseClient) {
   if (!(await requireAuthIfServerAction(supabaseClient))) return null;
   const supabase = await getClient(supabaseClient);
 
-  // Fetch all phases with milestone numbers, ordered by milestone_number
   const { data: phases, error } = await supabase
     .from('project_phases')
     .select('id, name, status, milestone_number, sort_order')
@@ -56,11 +162,8 @@ export async function getActiveMilestone(projectId: string, supabaseClient?: Any
     return null;
   }
 
-  if (!phases || phases.length === 0) {
-    return null;
-  }
+  if (!phases || phases.length === 0) return null;
 
-  // Group phases by milestone_number
   const milestoneGroups: Record<number, typeof phases> = {};
   for (const phase of phases) {
     const mn = phase.milestone_number as number;
@@ -68,29 +171,24 @@ export async function getActiveMilestone(projectId: string, supabaseClient?: Any
     milestoneGroups[mn].push(phase);
   }
 
-  // Find the lowest milestone_number where at least one phase is not completed
   const milestoneNumbers = Object.keys(milestoneGroups)
     .map(Number)
     .sort((a, b) => a - b);
 
   let activeMilestoneNumber: number | null = null;
   for (const mn of milestoneNumbers) {
-    const groupPhases = milestoneGroups[mn];
-    const allCompleted = groupPhases.every((p) => p.status === 'completed');
+    const allCompleted = milestoneGroups[mn].every((p) => p.status === 'completed');
     if (!allCompleted) {
       activeMilestoneNumber = mn;
       break;
     }
   }
 
-  if (activeMilestoneNumber === null) {
-    return null;
-  }
+  if (activeMilestoneNumber === null) return null;
 
   const milestonePhases = milestoneGroups[activeMilestoneNumber];
   const phaseIds = milestonePhases.map((p) => p.id);
 
-  // Fetch all phase_items for those phases
   const { data: phaseItems, error: itemsError } = await supabase
     .from('phase_items')
     .select('id, phase_id, title, description, helper_text, display_order, status, is_completed')
@@ -111,15 +209,7 @@ export async function getActiveMilestone(projectId: string, supabaseClient?: Any
 
 /**
  * Create tasks from all phase items in a given milestone.
- *
- * Uses upsert with onConflict on source_phase_item_id for DB-level
- * idempotency -- duplicate items are silently skipped.
- *
- * @param projectId - The project UUID
- * @param milestoneNumber - Which milestone to generate tasks from
- * @param assigneeId - The user UUID to assign tasks to
- * @param trigger - What caused this generation ('assignment' or 'milestone_cascade')
- * @returns Counts of created, skipped, and total items
+ * @deprecated Use createTasksFromPhases instead for new assignment flows.
  */
 export async function createTasksFromMilestone(
   projectId: string,
@@ -132,7 +222,6 @@ export async function createTasksFromMilestone(
     return { created: 0, skipped: 0, total: 0 };
   const supabase = await getClient(supabaseClient);
 
-  // 1. Fetch project to get workspace_id
   const { data: project, error: projectError } = await supabase
     .from('projects')
     .select('workspace_id')
@@ -144,7 +233,6 @@ export async function createTasksFromMilestone(
     return { created: 0, skipped: 0, total: 0 };
   }
 
-  // 2. Fetch all phases for this milestone_number
   const { data: phases, error: phasesError } = await supabase
     .from('project_phases')
     .select('id, name, sort_order')
@@ -159,7 +247,6 @@ export async function createTasksFromMilestone(
 
   const phaseIds = phases.map((p) => p.id);
 
-  // 3. Fetch all phase_items for those phases
   const { data: phaseItems, error: itemsError } = await supabase
     .from('phase_items')
     .select('id, phase_id, title, description, helper_text, display_order')
@@ -173,7 +260,6 @@ export async function createTasksFromMilestone(
 
   const total = phaseItems.length;
 
-  // 4. Check which items already have tasks (to count skipped)
   const itemIds = phaseItems.map((item) => item.id);
   const { data: existingTasks } = await supabase
     .from('tasks')
@@ -182,8 +268,6 @@ export async function createTasksFromMilestone(
 
   const existingItemIds = new Set((existingTasks || []).map((t) => t.source_phase_item_id));
 
-  // 5. Build task objects only for items that don't already have tasks
-  // Build a phase lookup for name and sort_order
   const phaseLookup: Record<string, { name: string; sort_order: number | null }> = {};
   for (const phase of phases) {
     phaseLookup[phase.id] = { name: phase.name, sort_order: phase.sort_order };
@@ -218,7 +302,6 @@ export async function createTasksFromMilestone(
     return { created: 0, skipped: total, total };
   }
 
-  // 6. Upsert with DB-level idempotency
   const { data: upserted, error: upsertError } = await supabase
     .from('tasks')
     .upsert(taskObjects, {
@@ -238,16 +321,13 @@ export async function createTasksFromMilestone(
   return { created, skipped, total };
 }
 
+// ============ SHARED FUNCTIONS ============
+
 /**
- * Handle reassignment of auto-created tasks when a project member changes.
+ * Handle reassignment of phase-level tasks when a project member changes.
  *
- * If the old user has undone auto-created tasks, transfers them to the new user.
- * If none exist (e.g., first assignment), creates fresh tasks from the active milestone.
- *
- * @param projectId - The project UUID
- * @param fromUserId - The user being removed/replaced
- * @param toUserId - The user being assigned
- * @returns Counts of transferred and/or created tasks
+ * Transfers undone phase tasks from the old user to the new user.
+ * If none exist, creates fresh phase tasks.
  */
 export async function handleReassignment(
   projectId: string,
@@ -257,21 +337,20 @@ export async function handleReassignment(
   if (!(await requireAuthIfServerAction())) return { transferred: 0, created: 0 };
   const supabase = await createClient();
 
-  // 1. Find undone auto-created tasks assigned to the old user
+  // Find undone phase-level tasks assigned to the old user
   const { data: existingTasks, error: fetchError } = await supabase
     .from('tasks')
     .select('id')
     .eq('project_id', projectId)
     .eq('assignee_id', fromUserId)
     .neq('status', 'Done')
-    .not('source_phase_item_id', 'is', null);
+    .not('source_phase_id', 'is', null);
 
   if (fetchError) {
     console.error('[handleReassignment] Error fetching tasks:', fetchError);
     return { transferred: 0, created: 0 };
   }
 
-  // 2. If tasks exist, transfer them
   if (existingTasks && existingTasks.length > 0) {
     const taskIds = existingTasks.map((t) => t.id);
     const { error: updateError } = await supabase
@@ -287,30 +366,43 @@ export async function handleReassignment(
     return { transferred: existingTasks.length, created: 0 };
   }
 
-  // 3. No existing tasks -- create fresh from active milestone
-  const activeMilestone = await getActiveMilestone(projectId);
-  if (!activeMilestone) {
-    return { transferred: 0, created: 0 };
-  }
-
-  const result = await createTasksFromMilestone(
-    projectId,
-    activeMilestone.milestoneNumber,
-    toUserId,
-    'assignment'
-  );
-
+  // No existing tasks — create fresh phase-level tasks
+  const result = await createTasksFromPhases(projectId, toUserId, 'assignment');
   return { transferred: 0, created: result.created };
 }
 
 /**
- * Mark all auto-created tasks in a milestone as Done.
- *
- * Used when a milestone is completed to bulk-close its generated tasks.
- *
- * @param projectId - The project UUID
- * @param milestoneNumber - Which milestone to close out
- * @returns Count of tasks marked as done
+ * Mark a phase-level auto-created task as Done when its phase is completed.
+ */
+export async function markPhaseTaskDone(
+  projectId: string,
+  phaseId: string,
+  supabaseClient?: AnySupabaseClient
+): Promise<number> {
+  if (!(await requireAuthIfServerAction(supabaseClient))) return 0;
+  const supabase = await getClient(supabaseClient);
+
+  const { data: updated, error: updateError } = await supabase
+    .from('tasks')
+    .update({
+      status: 'Done' as const,
+      completed_at: new Date().toISOString(),
+    })
+    .eq('project_id', projectId)
+    .eq('source_phase_id', phaseId)
+    .neq('status', 'Done')
+    .select('id');
+
+  if (updateError) {
+    console.error('[markPhaseTaskDone] Error updating tasks:', updateError);
+    return 0;
+  }
+
+  return updated?.length ?? 0;
+}
+
+/**
+ * Mark all phase-level tasks in a milestone as Done.
  */
 export async function markMilestoneTasksDone(
   projectId: string,
@@ -320,7 +412,6 @@ export async function markMilestoneTasksDone(
   if (!(await requireAuthIfServerAction(supabaseClient))) return 0;
   const supabase = await getClient(supabaseClient);
 
-  // 1. Get all phase IDs for this milestone_number
   const { data: phases, error: phasesError } = await supabase
     .from('project_phases')
     .select('id')
@@ -334,16 +425,14 @@ export async function markMilestoneTasksDone(
 
   const phaseIds = phases.map((p) => p.id);
 
-  // 2. Update auto-created tasks that aren't already done
   const { data: updated, error: updateError } = await supabase
     .from('tasks')
     .update({
       status: 'Done' as const,
       completed_at: new Date().toISOString(),
     })
-    .in('phase_id', phaseIds)
+    .in('source_phase_id', phaseIds)
     .neq('status', 'Done')
-    .not('source_phase_item_id', 'is', null)
     .select('id');
 
   if (updateError) {

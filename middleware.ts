@@ -95,7 +95,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Admin-only routes — only admin role can access /admin, managers fall back to /
-    const adminOnlyRoutes = ['/admin'];
+    const adminOnlyRoutes = ['/admin', '/clients'];
     if (userRole !== 'admin' && adminOnlyRoutes.some((route) => pathname.startsWith(route))) {
       const url = request.nextUrl.clone();
       url.pathname = '/';
@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Manager-or-admin-only routes — /workspace manages branding/apps/client access
-    const managerOrAboveRoutes = ['/workspace', '/clients', '/seo'];
+    const managerOrAboveRoutes = ['/workspace', '/seo'];
     if (
       userRole !== 'admin' &&
       userRole !== 'manager' &&

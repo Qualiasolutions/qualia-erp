@@ -149,9 +149,9 @@ export default async function PortalLayout({ children }: { children: React.React
         ? Promise.resolve({
             success: true,
             data:
-              effectiveRole === 'employee'
-                ? allAppKeys.filter((k) => k !== 'billing' && k !== 'clients')
-                : allAppKeys,
+              effectiveRole === 'admin'
+                ? allAppKeys
+                : allAppKeys.filter((k) => k !== 'billing' && k !== 'clients'),
           })
         : getEnabledAppsForClient(workspaceId, effectiveUserId),
       getPortalBranding(workspaceId),

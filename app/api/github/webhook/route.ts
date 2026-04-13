@@ -432,7 +432,7 @@ export async function POST(request: NextRequest) {
       if (!allCompleted) continue;
 
       // Milestone is fully completed — run cascade
-      const { markMilestoneTasksDone, getActiveMilestone, createTasksFromMilestone } =
+      const { markMilestoneTasksDone, createTasksFromPhases } =
         await import('@/app/actions/auto-assign');
 
       // 1. Mark completed milestone's auto-created tasks as Done
@@ -449,38 +449,31 @@ export async function POST(request: NextRequest) {
       let totalCreated = 0;
 
       if (assigneeIds.length > 0) {
-        // 3. Get the next active milestone (now that this one is complete)
-        const nextMilestone = await getActiveMilestone(projectId, supabase);
+        // 3. Create phase-level tasks for each assignee (covers remaining phases)
+        for (const assigneeId of assigneeIds) {
+          const result = await createTasksFromPhases(
+            projectId,
+            assigneeId,
+            'milestone_cascade',
+            supabase
+          );
+          totalCreated += result.created;
 
-        if (nextMilestone) {
-          // 4. Create tasks for each assignee
-          for (const assigneeId of assigneeIds) {
-            const result = await createTasksFromMilestone(
-              projectId,
-              nextMilestone.milestoneNumber,
-              assigneeId,
-              'milestone_cascade',
-              supabase
-            );
-            totalCreated += result.created;
-
-            // 5. Send notification to assignee
-            if (result.created > 0) {
-              await supabase.from('notifications').insert({
-                title: `New milestone tasks assigned`,
-                message: `${result.created} tasks from Milestone ${nextMilestone.milestoneNumber} on ${project.name}`,
-                type: 'auto_assignment',
-                user_id: assigneeId,
-                workspace_id: project.workspace_id,
-                link: `/projects/${projectId}/roadmap`,
-                metadata: {
-                  source: 'milestone_cascade',
-                  milestone_number: nextMilestone.milestoneNumber,
-                  task_count: result.created,
-                  project_name: project.name,
-                },
-              });
-            }
+          // 4. Send notification to assignee
+          if (result.created > 0) {
+            await supabase.from('notifications').insert({
+              title: `New phase tasks assigned`,
+              message: `${result.created} phase tasks on ${project.name}`,
+              type: 'auto_assignment',
+              user_id: assigneeId,
+              workspace_id: project.workspace_id,
+              link: `/projects/${projectId}/roadmap`,
+              metadata: {
+                source: 'milestone_cascade',
+                task_count: result.created,
+                project_name: project.name,
+              },
+            });
           }
         }
       }
