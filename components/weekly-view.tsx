@@ -481,18 +481,21 @@ export function WeeklyView({ meetings }: WeeklyViewProps) {
                             >
                               <span
                                 className={cn(
-                                  'truncate font-semibold text-foreground/90',
+                                  'font-semibold text-foreground/90',
                                   isCompact
-                                    ? 'text-[9px] sm:text-[10px]'
-                                    : 'text-[10px] sm:text-[11px]'
+                                    ? 'truncate text-[9px] sm:text-[10px]'
+                                    : 'line-clamp-2 text-[10px] leading-tight sm:text-xs'
                                 )}
                               >
                                 {ev.meeting.title}
                               </span>
 
                               {!isCompact && (
-                                <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/55 sm:text-[10px]">
-                                  <Clock className="size-2.5 shrink-0" strokeWidth={1.5} />
+                                <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground/60 sm:text-[11px]">
+                                  <Clock
+                                    className="size-2.5 shrink-0 sm:size-3"
+                                    strokeWidth={1.5}
+                                  />
                                   <span className="tabular-nums">
                                     {format(ev.start, 'h:mm')} – {format(ev.end, 'h:mm a')}
                                   </span>
