@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentWorkspaceId } from '@/app/actions';
 import { isUserAdmin, canModifyTask, type ActionResult } from './shared';
 
 export type TaskAttachment = {
@@ -298,9 +297,18 @@ export async function getTaskAttachmentUrl(attachmentId: string): Promise<Action
     return { success: false, error: 'Attachment not found' };
   }
 
-  // Workspace membership check
-  const wsId = await getCurrentWorkspaceId();
-  if (wsId !== attachment.workspace_id) {
+  // Verify the user is a member of the attachment's workspace directly,
+  // not via the session's "current workspace" cookie. Users who belong to
+  // multiple workspaces previously got inconsistent auth based on which
+  // workspace happened to be "current" (OPTIMIZE.md finding H4).
+  const { data: membership } = await supabase
+    .from('workspace_members')
+    .select('id')
+    .eq('workspace_id', attachment.workspace_id)
+    .eq('profile_id', user.id)
+    .maybeSingle();
+
+  if (!membership) {
     return { success: false, error: 'Access denied' };
   }
 

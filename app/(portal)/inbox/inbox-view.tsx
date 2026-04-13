@@ -141,9 +141,13 @@ const TaskRow = React.memo(function TaskRow({
         isCompleted && 'opacity-50'
       )}
     >
-      {/* Checkbox */}
+      {/* Checkbox — stops propagation so ticking done doesn't also open edit */}
       <button
-        onClick={() => onToggle(task.id, !isCompleted)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle(task.id, !isCompleted);
+        }}
+        aria-label={isCompleted ? `Mark "${task.title}" as todo` : `Mark "${task.title}" as done`}
         className={cn(
           'flex size-5 shrink-0 items-center justify-center rounded-md border-2 transition-all duration-200',
           isCompleted
@@ -154,8 +158,15 @@ const TaskRow = React.memo(function TaskRow({
         {isCompleted && <Check className="size-3" strokeWidth={3} />}
       </button>
 
-      {/* Title */}
-      <div className="min-w-0 flex-1">
+      {/* Title — clickable opens edit modal. Using a <button> inside the row
+          so the entire title area is a proper interactive element for
+          keyboard + screen readers. Previous version was inert. */}
+      <button
+        type="button"
+        onClick={() => onEdit(task)}
+        className="min-w-0 flex-1 cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+        aria-label={`Edit task: ${task.title}`}
+      >
         <span
           className={cn(
             'text-sm font-medium',
@@ -167,7 +178,7 @@ const TaskRow = React.memo(function TaskRow({
         {task.description && (
           <p className="mt-0.5 truncate text-xs text-muted-foreground">{task.description}</p>
         )}
-      </div>
+      </button>
 
       {/* Project */}
       <div className="hidden w-40 shrink-0 md:block">
@@ -212,8 +223,10 @@ const TaskRow = React.memo(function TaskRow({
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex w-24 shrink-0 items-center justify-end gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+      {/* Actions — always visible on mobile/tablet (touch devices can't hover),
+          reveal on hover only at md+. Previously action icons were invisible
+          on touch devices entirely (OPTIMIZE.md H7). */}
+      <div className="flex w-24 shrink-0 items-center justify-end gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
         <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -265,7 +278,7 @@ export function InboxView({ initialTasks }: InboxViewProps) {
   const { toggleMobile } = useSidebar();
   const [isPending, startTransition] = useTransition();
   // SWR keeps data fresh across tabs/background refetch (45s interval)
-  const { tasks: liveTasks } = useInboxTasks();
+  const { tasks: liveTasks, isError: isTaskError, revalidate: revalidateTasks } = useInboxTasks();
   const { workspaceId } = useCurrentWorkspaceId();
   // Realtime: auto-refresh when any task changes
   useRealtimeTasks(workspaceId ?? null);
@@ -609,7 +622,20 @@ export function InboxView({ initialTasks }: InboxViewProps) {
         ref={parentRef}
         className={cn('min-h-0 flex-1 overflow-auto', isPending && 'opacity-70')}
       >
-        {filteredTasks.length === 0 ? (
+        {isTaskError && filteredTasks.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center py-16">
+            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-red-500/10">
+              <AlertCircle className="size-8 text-red-600 dark:text-red-400" />
+            </div>
+            <p className="text-lg font-medium text-foreground">Couldn&apos;t load tasks</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Something went wrong fetching your inbox.
+            </p>
+            <Button onClick={() => revalidateTasks()} variant="outline" size="sm" className="mt-4">
+              Retry
+            </Button>
+          </div>
+        ) : filteredTasks.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-16">
             <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
               <CheckCircle2 className="size-8 text-emerald-500" />

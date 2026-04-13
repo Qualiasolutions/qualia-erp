@@ -2,7 +2,15 @@
 
 import { useMemo, useTransition, useCallback } from 'react';
 import Link from 'next/link';
-import { Check, Circle, Clock, Inbox as InboxIcon, ArrowRight } from 'lucide-react';
+import {
+  Check,
+  Circle,
+  Clock,
+  Inbox as InboxIcon,
+  ArrowRight,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { parseISO, isPast, isToday, format } from 'date-fns';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,7 +59,7 @@ function formatDue(dueDate: string): string {
  * - "View all" deep-links to the full inbox.
  */
 export function InboxWidget({ limit = 5 }: InboxWidgetProps) {
-  const { tasks, isLoading } = useInboxTasks();
+  const { tasks, isLoading, isError, revalidate } = useInboxTasks();
   const [, startTransition] = useTransition();
 
   const openTasks = useMemo(
@@ -147,6 +155,24 @@ export function InboxWidget({ limit = 5 }: InboxWidgetProps) {
                 <Skeleton className="h-4 w-16" />
               </div>
             ))}
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-red-500/10">
+              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <p className="text-sm font-medium text-foreground">Couldn&apos;t load inbox</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Something went wrong fetching your tasks.
+            </p>
+            <button
+              type="button"
+              onClick={() => revalidate()}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors duration-150 hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            >
+              <RefreshCw className="h-3 w-3" aria-hidden="true" />
+              Retry
+            </button>
           </div>
         ) : visibleTasks.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center">

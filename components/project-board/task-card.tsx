@@ -34,22 +34,32 @@ interface TaskCardProps {
 export const TaskCard = React.memo(function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
   const dotColor = PRIORITY_DOT_COLORS[task.priority];
   const overdue = task.due_date ? isOverdue(task.due_date, task.status) : false;
+  // Only render as an interactive button when a handler is actually wired.
+  // Previously the card always claimed role="button" + tabIndex=0 even in
+  // KanbanBoard (which doesn't pass onClick) — screen readers focused an
+  // inert button. See OPTIMIZE.md H8.
+  const interactive = typeof onClick === 'function';
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={() => onClick?.(task)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onClick?.(task);
-        }
-      }}
+      {...(interactive
+        ? {
+            role: 'button' as const,
+            tabIndex: 0,
+            onClick: () => onClick(task),
+            onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick(task);
+              }
+            },
+          }
+        : {})}
       className={cn(
-        'cursor-pointer rounded-lg border border-border bg-card p-3 transition-all duration-200',
+        'rounded-lg border border-border bg-card p-3 transition-all duration-200',
         'hover:border-primary/20 hover:shadow-sm',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+        interactive &&
+          'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
         isDragging && 'rotate-[1deg] scale-[1.02] opacity-90 shadow-md'
       )}
     >
