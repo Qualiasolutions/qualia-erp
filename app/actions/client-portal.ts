@@ -942,7 +942,14 @@ export async function getClientInvoices(): Promise<ActionResult> {
 // ============================================================================
 
 /**
- * Get dashboard summary data for a client
+ * Get dashboard summary data for a client.
+ *
+ * H13 (OPTIMIZE.md): collapsed the previous 3-layer sequential chain
+ * (client_projects → projects → financial_invoices) into a single JOIN.
+ * The `client_projects` select now pulls each linked project's `client_id`
+ * via a FK join so we have both portal project ids AND CRM client ids after
+ * one round-trip. `projectCount` comes from the same array instead of a
+ * duplicate head-only COUNT query.
  */
 export async function getClientDashboardData(clientId: string): Promise<ActionResult> {
   try {
@@ -956,56 +963,55 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
       return { success: false, error: 'Not authorized' };
     }
 
-    // Get client's project IDs first (needed for activity feed)
+    // Single JOIN: client_projects -> projects gives us projectIds + crmClientIds.
     const { data: clientProjectLinks } = await supabase
       .from('client_projects')
-      .select('project_id')
+      .select('project_id, project:projects!inner(client_id)')
       .eq('client_id', clientId);
 
-    const clientProjectIds = (clientProjectLinks || []).map((cp) => cp.project_id);
+    type LinkRow = {
+      project_id: string;
+      project: { client_id: string | null } | { client_id: string | null }[] | null;
+    };
+    const links = (clientProjectLinks || []) as unknown as LinkRow[];
 
-    // Run all dashboard queries in parallel
-    const [
-      { count: projectCount },
-      { count: pendingRequests },
-      { data: unpaidInvoices },
-      { data: recentActivity },
-    ] = await Promise.all([
-      supabase
-        .from('client_projects')
-        .select('id', { count: 'exact', head: true })
-        .eq('client_id', clientId),
-      supabase
-        .from('client_feature_requests')
-        .select('id', { count: 'exact', head: true })
-        .eq('client_id', clientId)
-        .in('status', ['pending', 'in_review']),
-      // Resolve CRM client_id from portal user's project links
-      (async () => {
-        const { data: prjs } = await supabase
-          .from('projects')
-          .select('client_id')
-          .in('id', clientProjectIds.length > 0 ? clientProjectIds : ['__none__'])
-          .not('client_id', 'is', null);
-        const crmIds = [...new Set((prjs || []).map((p) => p.client_id).filter(Boolean))];
-        if (crmIds.length === 0) return { data: [] };
-        return supabase
-          .from('financial_invoices')
-          .select('balance')
-          .in('client_id', crmIds as string[])
-          .eq('is_hidden', false)
-          .in('status', ['pending', 'overdue']);
-      })(),
-      clientProjectIds.length > 0
-        ? supabase
-            .from('activity_log')
-            .select('id, action_type, action_data, created_at, project:projects(id, name)')
-            .eq('is_client_visible', true)
-            .in('project_id', clientProjectIds)
-            .order('created_at', { ascending: false })
-            .limit(5)
-        : Promise.resolve({ data: [] }),
-    ]);
+    const clientProjectIds = links.map((l) => l.project_id);
+    const projectCount = clientProjectIds.length;
+    const crmClientIds = Array.from(
+      new Set(
+        links
+          .map((l) => (Array.isArray(l.project) ? l.project[0] : l.project))
+          .map((p) => p?.client_id)
+          .filter((cid): cid is string => !!cid)
+      )
+    );
+
+    // Run all remaining dashboard queries in parallel.
+    const [{ count: pendingRequests }, { data: unpaidInvoices }, { data: recentActivity }] =
+      await Promise.all([
+        supabase
+          .from('client_feature_requests')
+          .select('id', { count: 'exact', head: true })
+          .eq('client_id', clientId)
+          .in('status', ['pending', 'in_review']),
+        crmClientIds.length > 0
+          ? supabase
+              .from('financial_invoices')
+              .select('balance')
+              .in('client_id', crmClientIds)
+              .eq('is_hidden', false)
+              .in('status', ['pending', 'overdue'])
+          : Promise.resolve({ data: [] as Array<{ balance: number | string }> }),
+        clientProjectIds.length > 0
+          ? supabase
+              .from('activity_log')
+              .select('id, action_type, action_data, created_at, project:projects(id, name)')
+              .eq('is_client_visible', true)
+              .in('project_id', clientProjectIds)
+              .order('created_at', { ascending: false })
+              .limit(5)
+          : Promise.resolve({ data: [] }),
+      ]);
 
     const unpaidTotal = (unpaidInvoices || []).reduce((sum, inv) => sum + Number(inv.balance), 0);
 
@@ -1017,7 +1023,7 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
     return {
       success: true,
       data: {
-        projectCount: projectCount || 0,
+        projectCount,
         pendingRequests: pendingRequests || 0,
         unpaidInvoiceCount: (unpaidInvoices || []).length,
         unpaidTotal,
@@ -1034,7 +1040,12 @@ export async function getClientDashboardData(clientId: string): Promise<ActionRe
 }
 
 /**
- * Get client dashboard projects with phase progress
+ * Get client dashboard projects with phase progress.
+ *
+ * H13 (OPTIMIZE.md): collapsed the 3-query chain
+ * (client_projects → projects → project_phases) into a single JOIN:
+ * `client_projects -> projects -> project_phases`. One round-trip returns
+ * each linked project and its ordered phase array in one shot.
  */
 export async function getClientDashboardProjects(clientId: string): Promise<ActionResult> {
   try {
@@ -1048,46 +1059,62 @@ export async function getClientDashboardProjects(clientId: string): Promise<Acti
       return { success: false, error: 'Not authorized' };
     }
 
-    // Get client's project IDs
-    const { data: clientProjects } = await supabase
+    // Single JOIN: client_projects -> projects -> project_phases.
+    const { data: rawRows } = await supabase
       .from('client_projects')
-      .select('project_id')
+      .select(
+        `
+        project:projects!inner(
+          id,
+          name,
+          status,
+          project_type,
+          description,
+          phases:project_phases(id, name, status, sort_order)
+        )
+      `
+      )
       .eq('client_id', clientId);
 
-    if (!clientProjects || clientProjects.length === 0) {
+    if (!rawRows || rawRows.length === 0) {
       return { success: true, data: [] };
     }
 
-    const projectIds = clientProjects.map((cp) => cp.project_id);
+    type PhaseRow = {
+      id: string;
+      name: string;
+      status: string | null;
+      sort_order: number | null;
+    };
+    type ProjectRow = {
+      id: string;
+      name: string;
+      status: string | null;
+      project_type: string | null;
+      description: string | null;
+      phases: PhaseRow[] | null;
+    };
+    type LinkRow = { project: ProjectRow | ProjectRow[] | null };
 
-    // Get project details
-    const { data: projects } = await supabase
-      .from('projects')
-      .select('id, name, status, project_type, description')
-      .in('id', projectIds)
-      .order('name');
-
-    if (!projects || projects.length === 0) {
-      return { success: true, data: [] };
+    // Normalize + sort + dedupe by project id.
+    const byId = new Map<string, ProjectRow>();
+    for (const row of rawRows as unknown as LinkRow[]) {
+      const proj = Array.isArray(row.project) ? row.project[0] : row.project;
+      if (!proj || byId.has(proj.id)) continue;
+      byId.set(proj.id, proj);
     }
+    const projects = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 
-    // Get all phases for these projects
-    const { data: phases } = await supabase
-      .from('project_phases')
-      .select('id, project_id, name, status, sort_order')
-      .in('project_id', projectIds)
-      .order('sort_order', { ascending: true });
-
-    // Build response with phase data per project
     const projectsWithPhases = projects.map((project) => {
-      const projectPhases = (phases || []).filter((p) => p.project_id === project.id);
+      const projectPhases = [...(project.phases || [])].sort(
+        (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+      );
       const completedCount = projectPhases.filter(
         (p) => p.status === 'completed' || p.status === 'done'
       ).length;
       const progress =
         projectPhases.length > 0 ? Math.round((completedCount / projectPhases.length) * 100) : 0;
 
-      // Find current phase (first non-completed)
       const currentPhase = projectPhases.find(
         (p) => p.status !== 'completed' && p.status !== 'done'
       );
