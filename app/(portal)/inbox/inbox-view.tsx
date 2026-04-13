@@ -58,7 +58,6 @@ import {
 import { useRealtimeTasks } from '@/lib/hooks/use-realtime-tasks';
 import { EditTaskModal } from '@/components/edit-task-modal';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import { m, AnimatePresence } from '@/lib/lazy-motion';
 import Link from 'next/link';
 import { TASK_PRIORITY_COLORS, type TaskPriorityKey } from '@/lib/color-constants';
 
@@ -634,35 +633,31 @@ export function InboxView({ initialTasks }: InboxViewProps) {
               position: 'relative',
             }}
           >
-            <AnimatePresence mode="popLayout">
-              {virtualizer.getVirtualItems().map((virtualRow) => {
-                const task = filteredTasks[virtualRow.index];
-                return (
-                  <m.div
-                    key={task.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: `${virtualRow.size}px`,
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                  >
-                    <TaskRow
-                      task={task}
-                      onToggle={handleToggleTask}
-                      onHide={handleHideTask}
-                      onDelete={handleDeleteTask}
-                      onEdit={setEditingTask}
-                    />
-                  </m.div>
-                );
-              })}
-            </AnimatePresence>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const task = filteredTasks[virtualRow.index];
+              return (
+                <div
+                  key={task.id}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <TaskRow
+                    task={task}
+                    onToggle={handleToggleTask}
+                    onHide={handleHideTask}
+                    onDelete={handleDeleteTask}
+                    onEdit={setEditingTask}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

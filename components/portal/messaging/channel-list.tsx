@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, MessageSquare } from 'lucide-react';
+import { Search, MessageSquare, Plus } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ interface ChannelListProps {
   channels: ChannelData[];
   selectedProjectId: string | null;
   onSelectChannel: (projectId: string, channelId: string) => void;
+  onNewConversation: () => void;
   isLoading: boolean;
 }
 
@@ -27,6 +28,7 @@ export function ChannelList({
   channels,
   selectedProjectId,
   onSelectChannel,
+  onNewConversation,
   isLoading,
 }: ChannelListProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,8 +40,22 @@ export function ChannelList({
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="shrink-0 border-b border-border px-4 py-3">
+      <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-base font-semibold text-foreground">Messages</h2>
+        <button
+          type="button"
+          onClick={onNewConversation}
+          className={cn(
+            'flex h-8 items-center gap-1.5 rounded-lg border border-border bg-background px-2.5',
+            'text-xs font-medium text-foreground transition-colors duration-150',
+            'hover:border-primary/30 hover:bg-primary/[0.06] hover:text-primary',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+          )}
+          aria-label="Start a new conversation"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          New
+        </button>
       </div>
 
       {/* Search */}
@@ -75,8 +91,23 @@ export function ChannelList({
             <p className="mt-1 text-xs text-muted-foreground">
               {searchQuery.trim()
                 ? 'Try a different search term'
-                : 'Messages will appear here when a conversation starts'}
+                : 'Start a conversation about any of your projects'}
             </p>
+            {!searchQuery.trim() && (
+              <button
+                type="button"
+                onClick={onNewConversation}
+                className={cn(
+                  'mt-4 inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/[0.06] px-3 py-1.5',
+                  'text-xs font-medium text-primary transition-colors duration-150',
+                  'hover:bg-primary/10',
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30'
+                )}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                New conversation
+              </button>
+            )}
           </div>
         ) : (
           filteredChannels.map((channel) => {

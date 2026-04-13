@@ -150,7 +150,7 @@ export function PortalWorkspaceGrid({ workspaces }: { workspaces: ClientWorkspac
     const params = new URLSearchParams();
     params.set('workspace', workspace.id);
     params.set('wname', workspace.name);
-    router.push(`/portal?${params.toString()}`);
+    router.push(`/?${params.toString()}`);
   };
 
   return (

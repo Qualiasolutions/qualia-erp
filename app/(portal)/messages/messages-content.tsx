@@ -13,6 +13,7 @@ import { markChannelRead } from '@/app/actions/portal-messages';
 import { ChannelList } from '@/components/portal/messaging/channel-list';
 import { MessageThread } from '@/components/portal/messaging/message-thread';
 import { ChannelDetails } from '@/components/portal/messaging/channel-details';
+import { NewConversationDialog } from '@/components/portal/messaging/new-conversation-dialog';
 import { cn } from '@/lib/utils';
 
 interface MessagesContentProps {
@@ -26,6 +27,7 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
   const [mobileView, setMobileView] = useState<'channels' | 'thread'>('channels');
   const [showDetails] = useState(true);
+  const [newConversationOpen, setNewConversationOpen] = useState(false);
 
   // Suppress unused variable warnings — userName is part of the interface contract,
   // selectedChannelId is tracked for markChannelRead calls
@@ -75,6 +77,18 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
     setMobileView('channels');
   }, []);
 
+  // Handle "new conversation" — opens the project picker dialog
+  const handleOpenNewConversation = useCallback(() => {
+    setNewConversationOpen(true);
+  }, []);
+
+  // After the dialog successfully creates/opens a channel, select it
+  const handleConversationStarted = useCallback((projectId: string, channelId: string) => {
+    setSelectedProjectId(projectId);
+    setSelectedChannelId(channelId);
+    setMobileView('thread');
+  }, []);
+
   // Handle message sent — refresh messages and channels
   const handleMessageSent = useCallback(() => {
     if (selectedProjectId) {
@@ -122,6 +136,7 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
           channels={normalizedChannels}
           selectedProjectId={selectedProjectId}
           onSelectChannel={handleSelectChannel}
+          onNewConversation={handleOpenNewConversation}
           isLoading={channelsLoading}
         />
       </div>
@@ -161,6 +176,14 @@ export function MessagesContent({ userId, userName, userRole }: MessagesContentP
           isVisible={showDetails}
         />
       )}
+
+      {/* New Conversation Dialog */}
+      <NewConversationDialog
+        open={newConversationOpen}
+        onClose={() => setNewConversationOpen(false)}
+        userId={userId}
+        onConversationStarted={handleConversationStarted}
+      />
     </div>
   );
 }

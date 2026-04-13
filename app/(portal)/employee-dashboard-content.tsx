@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { FolderKanban, Inbox, Calendar, Clock } from 'lucide-react';
+import { FolderKanban, Calendar, Clock } from 'lucide-react';
 import { useEmployeeAssignments } from '@/lib/swr';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { InboxWidget } from '@/components/portal/inbox-widget';
 
 interface EmployeeDashboardContentProps {
   userId: string;
@@ -34,13 +35,9 @@ const STATUS_COLORS: Record<string, string> = {
   Done: 'bg-muted text-muted-foreground',
 };
 
+// "Go to Inbox" removed — the InboxWidget below surfaces the same entry point
+// inline with live tasks, so the redundant shortcut would be noise.
 const quickActions = [
-  {
-    title: 'Go to Inbox',
-    description: 'View your tasks and action items',
-    href: '/inbox',
-    icon: Inbox,
-  },
   {
     title: 'View Schedule',
     description: 'Check your calendar and meetings',
@@ -113,12 +110,15 @@ export function EmployeeDashboardContent({ userId, displayName }: EmployeeDashbo
         />
       </div>
 
+      {/* Inbox preview — top priorities inline with a quick-complete affordance */}
+      <InboxWidget />
+
       {/* Quick actions */}
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-[0.06em] text-muted-foreground/60">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {quickActions.map((action) => (
             <Link
               key={action.href}

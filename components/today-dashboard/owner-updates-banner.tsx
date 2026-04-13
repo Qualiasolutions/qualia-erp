@@ -58,10 +58,26 @@ export function OwnerUpdatesBanner({ workspaceId }: OwnerUpdatesBannerProps) {
     setTimeout(() => setOpen(false), 300);
   };
 
+  // HTML-escape user-authored text BEFORE applying markdown-lite transforms.
+  // Without this escape, a stored-XSS sink existed — any user who could post
+  // an owner update could embed `<script>` or `<img onerror=…>` payloads that
+  // would execute in every team member's browser.
+  const escapeHtml = (text: string): string =>
+    text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
   const formatBody = (text: string) => {
     return text.split('\n').map((line, i) => {
       if (!line.trim()) return <div key={i} className="h-3" />;
-      const html = line
+      // Escape first, then apply the markdown-lite regex against the escaped
+      // text. Pattern captures operate on escaped content so `<` inside
+      // backticks becomes `&lt;` rather than a tag.
+      const escaped = escapeHtml(line);
+      const html = escaped
         .replace(
           /`([^`]+)`/g,
           '<code class="rounded bg-qualia-900/10 dark:bg-qualia-400/10 px-1.5 py-0.5 font-mono text-[11px] text-qualia-700 dark:text-qualia-300">$1</code>'

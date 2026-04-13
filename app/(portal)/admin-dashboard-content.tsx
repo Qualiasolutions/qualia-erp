@@ -4,6 +4,7 @@ import { FolderKanban, Users, Building2, TrendingUp } from 'lucide-react';
 import { PortalWorkspaceGrid } from '@/components/portal/portal-workspace-grid';
 import type { ClientWorkspace } from '@/app/actions/portal-workspaces';
 import { cn } from '@/lib/utils';
+import { InboxWidget } from '@/components/portal/inbox-widget';
 
 interface AdminDashboardContentProps {
   workspaces: ClientWorkspace[];
@@ -141,10 +142,18 @@ export function AdminDashboardContent({ workspaces, displayName }: AdminDashboar
         </div>
       </section>
 
-      {/* Workspace grid */}
+      {/* Inbox preview — surface admin's own tasks right on the home screen */}
       <section
         className="animate-fade-in"
         style={{ animationDelay: '120ms', animationFillMode: 'both' }}
+      >
+        <InboxWidget />
+      </section>
+
+      {/* Workspace grid */}
+      <section
+        className="animate-fade-in"
+        style={{ animationDelay: '160ms', animationFillMode: 'both' }}
       >
         <PortalWorkspaceGrid workspaces={workspaces} />
       </section>

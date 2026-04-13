@@ -27,8 +27,8 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   // Allow all authenticated roles: admin, manager, employee, client
-  const userRole = await getUserRole(user.id);
-  if (!userRole) {
+  const actualRole = await getUserRole(user.id);
+  if (!actualRole) {
     redirect('/');
   }
 
@@ -39,31 +39,58 @@ export default async function PortalLayout({ children }: { children: React.React
     .eq('id', user.id)
     .single();
 
-  const isAdminViewing = isPortalAdminRole(userRole);
-  const isInternalUser = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+  const isAdminViewing = isPortalAdminRole(actualRole);
   const displayName = profile?.full_name || user.email?.split('@')[0] || 'User';
   const displayEmail = profile?.email || user.email || '';
 
+  // Check if admin is actively impersonating someone — do this BEFORE computing
+  // effective role so everything downstream (nav, apps, workspace fetch) uses the
+  // impersonated user's perspective.
+  let viewAsUserId: string | null = null;
+  let viewAsName: string | null = null;
+  let viewAsRole: string | null = null;
+  if (isAdminViewing) {
+    const cookieStore = await cookies();
+    viewAsUserId = cookieStore.get('view-as-user-id')?.value || null;
+    if (viewAsUserId) {
+      const { data: viewAsProfile } = await supabase
+        .from('profiles')
+        .select('full_name, role')
+        .eq('id', viewAsUserId)
+        .single();
+      viewAsName = viewAsProfile?.full_name || 'Unknown';
+      viewAsRole = viewAsProfile?.role || 'client';
+    }
+  }
+
+  // When admin is actively impersonating, adopt the viewed user's role + id for
+  // sidebar filtering, enabled-apps, workspace/client lookups, and SWR cache keys.
+  const isImpersonating = !!(isAdminViewing && viewAsUserId && viewAsRole);
+  const effectiveRole = isImpersonating ? (viewAsRole as string) : actualRole;
+  const effectiveUserId = isImpersonating ? (viewAsUserId as string) : user.id;
+  const effectiveIsInternal =
+    effectiveRole === 'admin' || effectiveRole === 'manager' || effectiveRole === 'employee';
+
   let companyName: string | null = null;
-  if (!isInternalUser) {
+  if (!effectiveIsInternal) {
     const { data: mapping } = await supabase
       .from('portal_project_mappings')
       .select('erp_company_name')
-      .eq('portal_client_id', user.id)
+      .eq('portal_client_id', effectiveUserId)
       .not('erp_company_name', 'is', null)
       .limit(1)
       .maybeSingle();
     companyName = mapping?.erp_company_name || null;
   }
 
-  // Fetch workspace ID for app config + branding
+  // Fetch workspace ID for app config + branding (scoped to effective user)
   let workspaceId: string | null = null;
-  if (isInternalUser) {
+  if (effectiveIsInternal) {
     // Internal team (admin/manager/employee): get from workspace_members
     const { data: wm } = await supabase
       .from('workspace_members')
       .select('workspace_id')
-      .eq('profile_id', user.id)
+      .eq('profile_id', effectiveUserId)
       .limit(1)
       .maybeSingle();
     workspaceId = wm?.workspace_id || null;
@@ -72,7 +99,7 @@ export default async function PortalLayout({ children }: { children: React.React
     const { data: cp } = await supabase
       .from('client_projects')
       .select('project_id')
-      .eq('client_id', user.id)
+      .eq('client_id', effectiveUserId)
       .limit(1)
       .maybeSingle();
     if (cp?.project_id) {
@@ -110,12 +137,15 @@ export default async function PortalLayout({ children }: { children: React.React
 
   if (workspaceId) {
     const [appsResult, brandingResult] = await Promise.all([
-      isInternalUser
+      effectiveIsInternal
         ? Promise.resolve({
             success: true,
-            data: userRole === 'employee' ? allAppKeys.filter((k) => k !== 'billing') : allAppKeys,
+            data:
+              effectiveRole === 'employee'
+                ? allAppKeys.filter((k) => k !== 'billing' && k !== 'clients')
+                : allAppKeys,
           })
-        : getEnabledAppsForClient(workspaceId, user.id),
+        : getEnabledAppsForClient(workspaceId, effectiveUserId),
       getPortalBranding(workspaceId),
     ]);
 
@@ -128,23 +158,6 @@ export default async function PortalLayout({ children }: { children: React.React
         logo_url?: string | null;
         accent_color?: string | null;
       };
-    }
-  }
-
-  // Check if admin is actively impersonating someone
-  let viewAsName: string | null = null;
-  let viewAsRole: string | null = null;
-  if (isAdminViewing) {
-    const cookieStore = await cookies();
-    const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
-    if (viewAsUserId) {
-      const { data: viewAsProfile } = await supabase
-        .from('profiles')
-        .select('full_name, role')
-        .eq('id', viewAsUserId)
-        .single();
-      viewAsName = viewAsProfile?.full_name || 'Unknown';
-      viewAsRole = viewAsProfile?.role || 'client';
     }
   }
 
@@ -161,10 +174,10 @@ export default async function PortalLayout({ children }: { children: React.React
         displayEmail={displayEmail}
         isAdminViewing={isAdminViewing}
         companyName={companyName}
-        userId={user.id}
+        userId={effectiveUserId}
         enabledApps={enabledApps}
         branding={branding}
-        userRole={userRole}
+        userRole={effectiveRole}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         {/* View-as banner — only shows when admin is actively impersonating someone */}

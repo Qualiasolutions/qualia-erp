@@ -51,14 +51,37 @@ interface NavItemDef {
   appKey: string;
 }
 
-// Apps visible to everyone
+// Home — always shown first
+const homeItem: NavItemDef = {
+  name: 'Home',
+  href: '/',
+  icon: House,
+  exact: true,
+  appKey: 'home',
+};
+
+// Inbox — promoted to 2nd slot for internal users (admin/manager/employee)
+const inboxItem: NavItemDef = {
+  name: 'Inbox',
+  href: '/inbox',
+  icon: Inbox,
+  appKey: 'inbox',
+};
+
+// Core apps shown after Home/Inbox (everyone sees these)
 const coreApps: NavItemDef[] = [
-  { name: 'Home', href: '/', icon: House, exact: true, appKey: 'home' },
   { name: 'Projects', href: '/projects', icon: FolderKanban, appKey: 'projects' },
   { name: 'Messages', href: '/messages', icon: MessageSquare, appKey: 'messages' },
   { name: 'Files', href: '/files', icon: FileStack, appKey: 'files' },
-  { name: 'Settings', href: '/settings', icon: Settings, appKey: 'settings' },
 ];
+
+// Settings — always last
+const settingsItem: NavItemDef = {
+  name: 'Settings',
+  href: '/settings',
+  icon: Settings,
+  appKey: 'settings',
+};
 
 // Client-only apps (hidden from employees)
 const clientApps: NavItemDef[] = [
@@ -67,8 +90,8 @@ const clientApps: NavItemDef[] = [
 ];
 
 // Internal team apps (admin, manager, employee — never shown to clients)
+// Inbox is promoted above; this list holds the rest.
 const internalApps: NavItemDef[] = [
-  { name: 'Inbox', href: '/inbox', icon: Inbox, appKey: 'inbox' },
   { name: 'Schedule', href: '/schedule', icon: Calendar, appKey: 'schedule' },
   { name: 'Knowledge', href: '/knowledge', icon: BookOpen, appKey: 'knowledge' },
   { name: 'Research', href: '/research', icon: FlaskConical, appKey: 'research' },
@@ -263,9 +286,20 @@ function SidebarContent({
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
-  // Build role-aware nav items
+  // Build role-aware nav items.
+  // Order: Home → Inbox (internal only) → Projects/Messages/Files → role extras → Settings
   const allNavItems = useMemo(() => {
-    const items = [...coreApps];
+    const isInternal = userRole === 'admin' || userRole === 'manager' || userRole === 'employee';
+
+    const items: NavItemDef[] = [homeItem];
+
+    // Inbox in 2nd slot for internal users — matches Fawzi's ask to surface it
+    // as the primary task entry point above project/message nav.
+    if (isInternal) {
+      items.push(inboxItem);
+    }
+
+    items.push(...coreApps);
 
     if (userRole === 'client') {
       items.push(...clientApps);
@@ -275,12 +309,16 @@ function SidebarContent({
       items.push(...clientApps, ...internalApps, ...adminOnlyApps);
     }
 
+    items.push(settingsItem);
+
     return items;
   }, [userRole]);
 
-  // Filter nav items by enabled apps (admins always see all)
+  // Filter nav items by enabled apps. When admin is actively impersonating,
+  // the parent layout passes the viewed user's effective role + enabled apps,
+  // so the same filter produces the correct "as-if-I-was-them" sidebar.
   const visibleNavItems =
-    isAdminViewing || !enabledApps || enabledApps.length === 0
+    !enabledApps || enabledApps.length === 0
       ? allNavItems
       : allNavItems.filter((item) => enabledApps.includes(item.appKey));
 

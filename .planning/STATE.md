@@ -1,7 +1,7 @@
 # State — Portal v2
 
 ## Current Phase
-Phase 3: Project Boards
+Phase 4: Portal Apps (Files, Forms)
 
 ## Status
 setup
@@ -9,21 +9,21 @@ setup
 ## Progress
 - [x] Phase 1: Portal Shell & Foundation — DONE
 - [x] Phase 2: Client Messaging — DONE
-- [ ] Phase 3: Project Boards — IN PROGRESS
-- [ ] Phase 4: Portal Apps (Files, Forms)
+- [x] Phase 3: Project Boards — DONE (verified 2026-04-13)
+- [ ] Phase 4: Portal Apps (Files, Forms) — NEXT
 - [ ] Phase 5: Admin Controls
 - [ ] Phase 6: Polish & Ship
 
 ## Phases
 1. Portal Shell & Foundation — done
 2. Client Messaging — done
-3. Project Boards (GitHub Projects-style) — setup
-4. Portal Apps (Files, Forms) — pending
+3. Project Boards (GitHub Projects-style) — done
+4. Portal Apps (Files, Forms) — setup
 5. Admin Controls — pending
 6. Polish & Ship — pending
 
 ## Branch
-feat/portal-v2-assembly
+master
 
 ## Decisions
 - Transform, don't delete — extend existing tables and actions
