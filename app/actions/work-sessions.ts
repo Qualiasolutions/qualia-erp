@@ -52,7 +52,9 @@ function todayUTC(): string {
 export async function clockIn(
   workspaceId: string,
   projectId: string | null,
-  clockInNote?: string
+  clockInNote?: string,
+  plannedDurationMinutes?: number,
+  clockInReason?: string
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const {
@@ -104,6 +106,14 @@ export async function clockIn(
     return { success: false, error: 'Please describe what you will be working on.' };
   }
 
+  if (!projectId && !plannedDurationMinutes) {
+    return { success: false, error: 'Please select how long you plan to work.' };
+  }
+
+  if (!projectId && !clockInReason?.trim()) {
+    return { success: false, error: 'Please provide a reason for this session.' };
+  }
+
   const { data, error } = await supabase
     .from('work_sessions')
     .insert({
@@ -112,6 +122,8 @@ export async function clockIn(
       project_id: projectId,
       started_at: new Date().toISOString(),
       clock_in_note: clockInNote?.trim() || null,
+      planned_duration_minutes: plannedDurationMinutes || null,
+      clock_in_reason: clockInReason?.trim() || null,
     })
     .select()
     .single();

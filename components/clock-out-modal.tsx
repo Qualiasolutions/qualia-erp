@@ -102,17 +102,10 @@ export function ClockOutModal({
       return;
     }
 
-    if (!reportUrl) {
-      setError(
-        'No report found. Run /qualia-report in Claude Code first — it auto-uploads to the ERP.'
-      );
-      return;
-    }
-
     setError(null);
 
     startTransition(async () => {
-      const result = await clockOut(workspaceId, session.id, summary, reportUrl);
+      const result = await clockOut(workspaceId, session.id, summary, reportUrl ?? undefined);
 
       if (!result.success) {
         setError(result.error ?? 'Failed to clock out. Please try again.');
@@ -127,7 +120,7 @@ export function ClockOutModal({
   };
 
   const startedAtFormatted = format(parseISO(session.started_at), 'h:mm a');
-  const canSubmit = summary.trim() && reportUrl && !isPending;
+  const canSubmit = summary.trim() && !isPending;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -137,9 +130,7 @@ export function ClockOutModal({
             <LogOut className="size-4 text-primary" />
             Clock Out
           </DialogTitle>
-          <DialogDescription>
-            Summarize your session. Report must be generated first.
-          </DialogDescription>
+          <DialogDescription>Summarize your session before clocking out.</DialogDescription>
         </DialogHeader>
 
         {/* Session info row */}
@@ -161,9 +152,7 @@ export function ClockOutModal({
         <div className="space-y-2">
           <Label className="text-[13px] font-medium">
             Session Report{' '}
-            <span className="text-destructive" aria-hidden="true">
-              *
-            </span>
+            <span className="text-[11px] font-normal text-muted-foreground">(optional)</span>
           </Label>
 
           {checkingReport ? (
@@ -192,27 +181,24 @@ export function ClockOutModal({
               </a>
             </div>
           ) : (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
-                <XCircle className="size-4 shrink-0 text-amber-600" />
-                <div className="min-w-0 flex-1">
-                  <span className="text-[12px] font-medium text-amber-700 dark:text-amber-400">
-                    No report found
-                  </span>
-                  <p className="text-[10px] text-amber-600/60 dark:text-amber-500/60">
-                    Run <code className="font-mono">/qualia-report</code> in Claude Code — it
-                    auto-uploads
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 shrink-0 px-2 text-[10px] text-amber-600"
-                  onClick={checkForReport}
-                >
-                  Refresh
-                </Button>
+            <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5">
+              <XCircle className="size-4 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <span className="text-[12px] font-medium text-muted-foreground">
+                  No report attached
+                </span>
+                <p className="text-[10px] text-muted-foreground/60">
+                  Run <code className="font-mono">/qualia-report</code> to attach one (optional)
+                </p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 shrink-0 px-2 text-[10px] text-muted-foreground"
+                onClick={checkForReport}
+              >
+                Refresh
+              </Button>
             </div>
           )}
         </div>

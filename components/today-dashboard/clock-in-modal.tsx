@@ -9,6 +9,7 @@ import {
   FolderOpen,
   MoreHorizontal,
   ArrowLeft,
+  Timer,
 } from 'lucide-react';
 import {
   Dialog,
@@ -19,6 +20,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { clockIn } from '@/app/actions/work-sessions';
 import { invalidateActiveSession } from '@/lib/swr';
 import { getEmployeeAssignments } from '@/app/actions/project-assignments';
@@ -48,6 +50,8 @@ export function ClockInModal({
   const [clockingProjectId, setClockingProjectId] = useState<string | null>(null);
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherNote, setOtherNote] = useState('');
+  const [plannedDuration, setPlannedDuration] = useState<number | null>(null);
+  const [otherReason, setOtherReason] = useState('');
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -58,6 +62,8 @@ export function ClockInModal({
     setClockingProjectId(null);
     setShowOtherInput(false);
     setOtherNote('');
+    setPlannedDuration(null);
+    setOtherReason('');
 
     // Admin sees all active projects; employees see only assigned ones
     const fetchProjects = isAdmin
@@ -77,13 +83,18 @@ export function ClockInModal({
       .finally(() => setLoadingProjects(false));
   }, [open, currentUserId, isAdmin]);
 
-  function handleClockIn(projectId: string | null, note?: string) {
+  function handleClockIn(
+    projectId: string | null,
+    note?: string,
+    duration?: number,
+    reason?: string
+  ) {
     setError(null);
     setClockingProjectId(projectId ?? '__other__');
 
     startTransition(async () => {
       try {
-        const result = await clockIn(workspaceId, projectId, note);
+        const result = await clockIn(workspaceId, projectId, note, duration, reason);
 
         if (!result.success) {
           setError(result.error ?? 'Failed to clock in. Please try again.');
@@ -137,6 +148,8 @@ export function ClockInModal({
                 onClick={() => {
                   setShowOtherInput(false);
                   setOtherNote('');
+                  setPlannedDuration(null);
+                  setOtherReason('');
                   setError(null);
                 }}
                 disabled={isPending}
@@ -144,18 +157,81 @@ export function ClockInModal({
                 <ArrowLeft className="size-3" />
                 Back to projects
               </button>
-              <Textarea
-                placeholder="What will you be working on?"
-                value={otherNote}
-                onChange={(e) => setOtherNote(e.target.value)}
-                className="min-h-[80px] resize-none text-sm"
-                autoFocus
-                disabled={isPending}
-              />
+
+              {/* Planned duration */}
+              <div className="space-y-1.5">
+                <Label className="text-[13px] font-medium">
+                  How long do you plan to be here?{' '}
+                  <span className="text-destructive" aria-hidden="true">
+                    *
+                  </span>
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: '1 hour', value: 60 },
+                    { label: '2 hours', value: 120 },
+                    { label: '3 hours', value: 180 },
+                    { label: '4 hours', value: 240 },
+                    { label: '6 hours', value: 360 },
+                    { label: '8 hours', value: 480 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                        plannedDuration === opt.value
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border bg-background text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      }`}
+                      onClick={() => setPlannedDuration(opt.value)}
+                      disabled={isPending}
+                    >
+                      <Timer className="size-3" />
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reason */}
+              <div className="space-y-1.5">
+                <Label className="text-[13px] font-medium">
+                  Why?{' '}
+                  <span className="text-destructive" aria-hidden="true">
+                    *
+                  </span>
+                </Label>
+                <Textarea
+                  placeholder="Why are you clocking in under Other?"
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  className="min-h-[60px] resize-none text-sm"
+                  disabled={isPending}
+                />
+              </div>
+
+              {/* What are you working on */}
+              <div className="space-y-1.5">
+                <Label className="text-[13px] font-medium">
+                  What will you be working on?{' '}
+                  <span className="text-destructive" aria-hidden="true">
+                    *
+                  </span>
+                </Label>
+                <Textarea
+                  placeholder="Describe the task or activity..."
+                  value={otherNote}
+                  onChange={(e) => setOtherNote(e.target.value)}
+                  className="min-h-[60px] resize-none text-sm"
+                  autoFocus
+                  disabled={isPending}
+                />
+              </div>
+
               <Button
                 className="w-full"
-                disabled={isPending || !otherNote.trim()}
-                onClick={() => handleClockIn(null, otherNote)}
+                disabled={isPending || !otherNote.trim() || !plannedDuration || !otherReason.trim()}
+                onClick={() => handleClockIn(null, otherNote, plannedDuration!, otherReason)}
               >
                 {clockingProjectId === '__other__' ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />
