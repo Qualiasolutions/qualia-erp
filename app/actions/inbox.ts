@@ -5,11 +5,12 @@ import { createClient } from '@/lib/supabase/server';
 import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
+import { cookies } from 'next/headers';
 import { canModifyTask, isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
 import { canAccessProject } from '@/lib/portal-utils';
 
 /**
- * Get the project IDs a non-admin user is allowed to see tasks for.
+ * Get the project IDs a user is allowed to see tasks for.
  * Returns IDs from project_assignments (active, not removed) + projects they lead.
  */
 async function getUserProjectIds(
@@ -29,6 +30,29 @@ async function getUserProjectIds(
   for (const row of assignmentResult.data || []) ids.add(row.project_id);
   for (const row of leadResult.data || []) ids.add(row.id);
   return Array.from(ids);
+}
+
+/**
+ * When an admin uses "View as", we scope task queries to the impersonated user.
+ * Returns { effectiveUserId, shouldScope } — shouldScope is true when we must
+ * filter tasks to that user's assignments (i.e. viewing-as a non-admin).
+ */
+async function getEffectiveUser(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  realUserId: string
+): Promise<{ effectiveUserId: string; shouldScope: boolean }> {
+  const cookieStore = await cookies();
+  const viewAsUserId = cookieStore.get('view-as-user-id')?.value;
+
+  if (!viewAsUserId || viewAsUserId === realUserId) {
+    // No impersonation — use real role check
+    const elevated = await isUserManagerOrAbove(realUserId);
+    return { effectiveUserId: realUserId, shouldScope: !elevated };
+  }
+
+  // Admin is impersonating — check the TARGET user's role
+  const targetElevated = await isUserManagerOrAbove(viewAsUserId);
+  return { effectiveUserId: viewAsUserId, shouldScope: !targetElevated };
 }
 
 /**
@@ -152,11 +176,9 @@ export async function getTasks(
     return [];
   }
 
-  // Non-admin/manager users only see tasks they're involved with:
-  //   - assigned to them
-  //   - created by them
-  //   - belonging to a project they're assigned to or lead
-  const isElevated = await isUserManagerOrAbove(user.id);
+  // Scope tasks: admins/managers see all, others see only their tasks.
+  // When admin uses "View as", scope to the impersonated user's assignments.
+  const { effectiveUserId, shouldScope } = await getEffectiveUser(supabase, user.id);
 
   let query = supabase
     .from('tasks')
@@ -193,17 +215,15 @@ export async function getTasks(
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
 
-  // Scope visibility for non-elevated users
-  if (!isElevated) {
-    const projectIds = await getUserProjectIds(supabase, user.id);
+  // Scope visibility: filter to effective user's tasks/projects
+  if (shouldScope) {
+    const projectIds = await getUserProjectIds(supabase, effectiveUserId);
     if (projectIds.length > 0) {
-      // Tasks assigned to me, created by me, OR belonging to my projects
       query = query.or(
-        `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+        `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId},project_id.in.(${projectIds.join(',')})`
       );
     } else {
-      // No project assignments — only see tasks directly involving me
-      query = query.or(`assignee_id.eq.${user.id},creator_id.eq.${user.id}`);
+      query = query.or(`assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`);
     }
   }
 
@@ -304,15 +324,15 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
 
   const openStatuses = ['Todo', 'In Progress'];
 
-  // Scope visibility for non-elevated users
-  const isElevated = await isUserManagerOrAbove(user.id);
+  // Scope visibility — respects "View as" impersonation
+  const { effectiveUserId, shouldScope } = await getEffectiveUser(supabase, user.id);
   let scopeFilter: string | null = null;
-  if (!isElevated) {
-    const projectIds = await getUserProjectIds(supabase, user.id);
+  if (shouldScope) {
+    const projectIds = await getUserProjectIds(supabase, effectiveUserId);
     scopeFilter =
       projectIds.length > 0
-        ? `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
-        : `assignee_id.eq.${user.id},creator_id.eq.${user.id}`;
+        ? `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId},project_id.in.(${projectIds.join(',')})`
+        : `assignee_id.eq.${effectiveUserId},creator_id.eq.${effectiveUserId}`;
   }
 
   // Build scoped queries — apply the .or() filter when non-elevated
@@ -1056,16 +1076,16 @@ export async function getScheduledTasks(workspaceId?: string | null): Promise<Ta
     query = query.eq('workspace_id', wsId);
   }
 
-  // Scope visibility for non-elevated users
-  const isElevated = await isUserManagerOrAbove(user.id);
-  if (!isElevated) {
-    const projectIds = await getUserProjectIds(supabase, user.id);
+  // Scope visibility — respects "View as" impersonation
+  const { effectiveUserId: euId, shouldScope: scope } = await getEffectiveUser(supabase, user.id);
+  if (scope) {
+    const projectIds = await getUserProjectIds(supabase, euId);
     if (projectIds.length > 0) {
       query = query.or(
-        `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+        `assignee_id.eq.${euId},creator_id.eq.${euId},project_id.in.(${projectIds.join(',')})`
       );
     } else {
-      query = query.or(`assignee_id.eq.${user.id},creator_id.eq.${user.id}`);
+      query = query.or(`assignee_id.eq.${euId},creator_id.eq.${euId}`);
     }
   }
 
@@ -1257,16 +1277,16 @@ export async function getBacklogTasks(workspaceId?: string | null): Promise<Task
     query = query.eq('workspace_id', wsId);
   }
 
-  // Scope visibility for non-elevated users
-  const isElevated = await isUserManagerOrAbove(user.id);
-  if (!isElevated) {
-    const projectIds = await getUserProjectIds(supabase, user.id);
+  // Scope visibility — respects "View as" impersonation
+  const { effectiveUserId: euId, shouldScope: scope } = await getEffectiveUser(supabase, user.id);
+  if (scope) {
+    const projectIds = await getUserProjectIds(supabase, euId);
     if (projectIds.length > 0) {
       query = query.or(
-        `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+        `assignee_id.eq.${euId},creator_id.eq.${euId},project_id.in.(${projectIds.join(',')})`
       );
     } else {
-      query = query.or(`assignee_id.eq.${user.id},creator_id.eq.${user.id}`);
+      query = query.or(`assignee_id.eq.${euId},creator_id.eq.${euId}`);
     }
   }
 
