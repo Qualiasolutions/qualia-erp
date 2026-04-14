@@ -5,8 +5,31 @@ import { createClient } from '@/lib/supabase/server';
 import { parseFormData, createTaskSchema, updateTaskSchema } from '@/lib/validation';
 import { getCurrentWorkspaceId } from '@/app/actions';
 import { notifyTaskCreated } from '@/lib/email';
-import { canModifyTask, isUserAdmin, type ActionResult } from './shared';
+import { canModifyTask, isUserAdmin, isUserManagerOrAbove, type ActionResult } from './shared';
 import { canAccessProject } from '@/lib/portal-utils';
+
+/**
+ * Get the project IDs a non-admin user is allowed to see tasks for.
+ * Returns IDs from project_assignments (active, not removed) + projects they lead.
+ */
+async function getUserProjectIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string
+): Promise<string[]> {
+  const [assignmentResult, leadResult] = await Promise.all([
+    supabase
+      .from('project_assignments')
+      .select('project_id')
+      .eq('employee_id', userId)
+      .is('removed_at', null),
+    supabase.from('projects').select('id').eq('lead_id', userId),
+  ]);
+
+  const ids = new Set<string>();
+  for (const row of assignmentResult.data || []) ids.add(row.project_id);
+  for (const row of leadResult.data || []) ids.add(row.id);
+  return Array.from(ids);
+}
 
 /**
  * Check if a task with requires_attachment can be marked as Done.
@@ -129,6 +152,12 @@ export async function getTasks(
     return [];
   }
 
+  // Non-admin/manager users only see tasks they're involved with:
+  //   - assigned to them
+  //   - created by them
+  //   - belonging to a project they're assigned to or lead
+  const isElevated = await isUserManagerOrAbove(user.id);
+
   let query = supabase
     .from('tasks')
     .select(
@@ -163,6 +192,20 @@ export async function getTasks(
     .eq('workspace_id', wsId)
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: false });
+
+  // Scope visibility for non-elevated users
+  if (!isElevated) {
+    const projectIds = await getUserProjectIds(supabase, user.id);
+    if (projectIds.length > 0) {
+      // Tasks assigned to me, created by me, OR belonging to my projects
+      query = query.or(
+        `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+      );
+    } else {
+      // No project assignments — only see tasks directly involving me
+      query = query.or(`assignee_id.eq.${user.id},creator_id.eq.${user.id}`);
+    }
+  }
 
   // Filter for inbox-only tasks
   if (options.inboxOnly) {
@@ -261,32 +304,54 @@ export async function getInboxPreview(limit = 5): Promise<InboxPreviewResponse> 
 
   const openStatuses = ['Todo', 'In Progress'];
 
+  // Scope visibility for non-elevated users
+  const isElevated = await isUserManagerOrAbove(user.id);
+  let scopeFilter: string | null = null;
+  if (!isElevated) {
+    const projectIds = await getUserProjectIds(supabase, user.id);
+    scopeFilter =
+      projectIds.length > 0
+        ? `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+        : `assignee_id.eq.${user.id},creator_id.eq.${user.id}`;
+  }
+
+  // Build scoped queries — apply the .or() filter when non-elevated
+  let previewQuery = supabase
+    .from('tasks')
+    .select('id, title, status, priority, item_type, due_date, project:projects(id, name)')
+    .eq('workspace_id', wsId)
+    .eq('show_in_inbox', true)
+    .neq('item_type', 'note')
+    .in('status', openStatuses);
+  if (scopeFilter) previewQuery = previewQuery.or(scopeFilter);
+  previewQuery = previewQuery
+    .order('due_date', { ascending: true, nullsFirst: false })
+    .order('created_at', { ascending: false })
+    .limit(fetchLimit);
+
+  let totalOpenQuery = supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', wsId)
+    .eq('show_in_inbox', true)
+    .neq('item_type', 'note')
+    .in('status', openStatuses);
+  if (scopeFilter) totalOpenQuery = totalOpenQuery.or(scopeFilter);
+
+  let overdueQuery = supabase
+    .from('tasks')
+    .select('id', { count: 'exact', head: true })
+    .eq('workspace_id', wsId)
+    .eq('show_in_inbox', true)
+    .neq('item_type', 'note')
+    .in('status', openStatuses)
+    .lt('due_date', todayStartIso);
+  if (scopeFilter) overdueQuery = overdueQuery.or(scopeFilter);
+
   const [previewResult, totalOpenResult, overdueResult] = await Promise.all([
-    supabase
-      .from('tasks')
-      .select('id, title, status, priority, item_type, due_date, project:projects(id, name)')
-      .eq('workspace_id', wsId)
-      .eq('show_in_inbox', true)
-      .neq('item_type', 'note')
-      .in('status', openStatuses)
-      .order('due_date', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .limit(fetchLimit),
-    supabase
-      .from('tasks')
-      .select('id', { count: 'exact', head: true })
-      .eq('workspace_id', wsId)
-      .eq('show_in_inbox', true)
-      .neq('item_type', 'note')
-      .in('status', openStatuses),
-    supabase
-      .from('tasks')
-      .select('id', { count: 'exact', head: true })
-      .eq('workspace_id', wsId)
-      .eq('show_in_inbox', true)
-      .neq('item_type', 'note')
-      .in('status', openStatuses)
-      .lt('due_date', todayStartIso),
+    previewQuery,
+    totalOpenQuery,
+    overdueQuery,
   ]);
 
   type RawPreviewRow = {
@@ -991,6 +1056,19 @@ export async function getScheduledTasks(workspaceId?: string | null): Promise<Ta
     query = query.eq('workspace_id', wsId);
   }
 
+  // Scope visibility for non-elevated users
+  const isElevated = await isUserManagerOrAbove(user.id);
+  if (!isElevated) {
+    const projectIds = await getUserProjectIds(supabase, user.id);
+    if (projectIds.length > 0) {
+      query = query.or(
+        `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+      );
+    } else {
+      query = query.or(`assignee_id.eq.${user.id},creator_id.eq.${user.id}`);
+    }
+  }
+
   const { data: tasks, error } = await query;
 
   if (error) {
@@ -1177,6 +1255,19 @@ export async function getBacklogTasks(workspaceId?: string | null): Promise<Task
 
   if (wsId) {
     query = query.eq('workspace_id', wsId);
+  }
+
+  // Scope visibility for non-elevated users
+  const isElevated = await isUserManagerOrAbove(user.id);
+  if (!isElevated) {
+    const projectIds = await getUserProjectIds(supabase, user.id);
+    if (projectIds.length > 0) {
+      query = query.or(
+        `assignee_id.eq.${user.id},creator_id.eq.${user.id},project_id.in.(${projectIds.join(',')})`
+      );
+    } else {
+      query = query.or(`assignee_id.eq.${user.id},creator_id.eq.${user.id}`);
+    }
   }
 
   const { data: tasks, error } = await query;

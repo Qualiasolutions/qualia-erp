@@ -136,11 +136,16 @@ export function parseRoadmap(content: string): ParsedMilestone[] {
     if (currentPhase) {
       // Status: "- **Status**: complete" or "**Status:** complete"
       const statusMatch = line.match(
-        /^-?\s*\*\*Status:?\*\*:?\s*(complete|completed|in.progress|planned|pending|not.started)/i
+        /^-?\s*\*\*Status:?\*\*:?\s*(complete|completed|verified|shipped|in.progress|planned|pending|not.started)/i
       );
       if (statusMatch) {
         const rawStatus = statusMatch[1].toLowerCase().replace(/\s+/g, '_');
-        if (rawStatus === 'complete' || rawStatus === 'completed') {
+        if (
+          rawStatus === 'complete' ||
+          rawStatus === 'completed' ||
+          rawStatus === 'verified' ||
+          rawStatus === 'shipped'
+        ) {
           currentPhase.status = 'completed';
           const dateMatch = line.match(/\((\d{4}-\d{2}-\d{2})/);
           if (dateMatch) currentPhase.completedAt = dateMatch[1];
@@ -262,7 +267,13 @@ export function parseStateTable(
 
 export function normalizeStatus(raw: string): string {
   const s = raw.toLowerCase().replace(/\s+/g, '_');
-  if (s.includes('complete') || s.includes('done')) return 'completed';
+  if (
+    s.includes('complete') ||
+    s.includes('done') ||
+    s.includes('verified') ||
+    s.includes('shipped')
+  )
+    return 'completed';
   if (s.includes('progress')) return 'in_progress';
   if (s.includes('planned')) return 'planned';
   if (s.includes('pending')) return 'not_started';
@@ -358,7 +369,13 @@ export function parseStateRoadmap(content: string): ParsedMilestone[] {
       lower === 'not started'
     ) {
       status = 'not_started';
-    } else if (lower.includes('done') || lower.includes('complete') || rawStatus === '✓') {
+    } else if (
+      lower.includes('done') ||
+      lower.includes('complete') ||
+      lower.includes('verified') ||
+      lower.includes('shipped') ||
+      rawStatus === '✓'
+    ) {
       status = 'completed';
     } else if (lower.includes('progress') || lower.includes('active') || lower === 'wip') {
       status = 'in_progress';
